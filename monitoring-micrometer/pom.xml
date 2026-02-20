@@ -10,17 +10,12 @@
     </parent>
     <artifactId>monitoring-micrometer</artifactId>
     <packaging>jar</packaging>
-    <name>HestiaStore Monitoring Micrometer</name>
+    <name>HestiaStore Monitoring Micrometer Bridge</name>
 
     <dependencies>
         <dependency>
             <groupId>org.hestiastore</groupId>
             <artifactId>engine</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hestiastore</groupId>
-            <artifactId>monitoring-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

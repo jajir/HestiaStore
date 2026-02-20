@@ -15,7 +15,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.management.agent.ManagementAgentServer;
+import org.hestiastore.management.restjson.ManagementAgentServer;
 
 /**
  * One-command local demo for direct monitoring-console-web mode.
@@ -37,7 +37,7 @@ public final class MonitoringConsoleWebDemoMain {
     }
 
     /**
-     * Starts 3 demo nodes with management-agent and generates periodic traffic.
+     * Starts 3 demo nodes with monitoring-rest-json and generates periodic traffic.
      *
      * @param args first arg optionally sets base port (default 9001)
      * @throws Exception on startup failure
@@ -64,7 +64,10 @@ public final class MonitoringConsoleWebDemoMain {
             final ManagementAgentServer agent = new ManagementAgentServer(
                     "127.0.0.1", basePort + i, indexesForNode.get(0),
                     namesForNode.get(0),
-                    Set.of("indexBusyTimeoutMillis"));
+                    Set.of("maxNumberOfSegmentsInCache",
+                            "maxNumberOfKeysInSegmentCache",
+                            "maxNumberOfKeysInSegmentWriteCache",
+                            "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
             for (int j = 1; j < indexesForNode.size(); j++) {
                 agent.addIndex(namesForNode.get(j), indexesForNode.get(j));
             }

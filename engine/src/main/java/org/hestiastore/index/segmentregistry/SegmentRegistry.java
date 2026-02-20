@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import java.util.List;
+
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 
@@ -75,6 +77,34 @@ public interface SegmentRegistry<K, V> {
      */
     default SegmentRegistryCacheStats metricsSnapshot() {
         return SegmentRegistryCacheStats.empty();
+    }
+
+    /**
+     * Updates registry cache limit at runtime.
+     *
+     * @param newLimit new cache limit
+     * @return true when update was applied
+     */
+    default boolean updateCacheLimit(final int newLimit) {
+        return false;
+    }
+
+    /**
+     * Returns current registry cache limit.
+     *
+     * @return cache limit
+     */
+    default int cacheLimit() {
+        return 0;
+    }
+
+    /**
+     * Returns currently loaded segment instances.
+     *
+     * @return loaded segment snapshot
+     */
+    default List<Segment<K, V>> loadedSegmentsSnapshot() {
+        return List.of();
     }
 
     /**

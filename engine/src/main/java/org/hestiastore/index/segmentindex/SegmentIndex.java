@@ -13,6 +13,7 @@ import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.async.AsyncDirectoryBlockingAdapter;
@@ -463,6 +464,16 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     default SegmentIndexMetricsSnapshot metricsSnapshot() {
         return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, getState());
+    }
+
+    /**
+     * Returns runtime monitoring/tuning control-plane entry point.
+     *
+     * @return index control plane
+     */
+    default IndexControlPlane controlPlane() {
+        throw new UnsupportedOperationException(
+                "controlPlane() is not supported by this implementation.");
     }
 
     record IoDirectoryHandle(Directory directory,

@@ -7,6 +7,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
@@ -129,6 +130,12 @@ final class IndexDirectoryClosingAdapter<K, V>
     @Override
     public SegmentIndexMetricsSnapshot metricsSnapshot() {
         return index.metricsSnapshot();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public IndexControlPlane controlPlane() {
+        return index.controlPlane();
     }
 
     /** {@inheritDoc} */

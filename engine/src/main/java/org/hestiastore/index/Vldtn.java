@@ -1,6 +1,7 @@
 package org.hestiastore.index;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Class provide validation methods. It ensure that error message is easy to
@@ -34,6 +35,25 @@ public final class Vldtn {
                     .format("Property '%s' must not be null.", propertyName));
         }
         return object;
+    }
+
+    /**
+     * Validates that the provided string is not null and not blank.
+     *
+     * @param value        the value to validate
+     * @param propertyName the name of the property being validated
+     * @return normalized (trimmed) string value
+     * @throws IllegalArgumentException if value is null/blank or propertyName is
+     *                                  null
+     */
+    public static String requireNotBlank(final String value,
+            final String propertyName) {
+        final String normalized = requireNonNull(value, propertyName).trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException(String
+                    .format("Property '%s' must not be blank.", propertyName));
+        }
+        return normalized;
     }
 
     /**
@@ -107,6 +127,42 @@ public final class Vldtn {
                     "Property '%s' must be greater than 0", propertyName));
         }
         return value;
+    }
+
+    /**
+     * Validates that given long value is greater than or equal to zero.
+     *
+     * @param value        value to validate
+     * @param propertyName name of the property being validated
+     * @return validated value
+     */
+    public static long requireGreaterThanOrEqualToZero(final long value,
+            final String propertyName) {
+        if (propertyName == null) {
+            throw new IllegalArgumentException(
+                    "Property 'propertyName' must not be null.");
+        }
+        if (value < 0L) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than or equal to 0",
+                    propertyName));
+        }
+        return value;
+    }
+
+    /**
+     * Validates that condition is true.
+     *
+     * @param condition validation condition
+     * @param message   error message when condition is false
+     * @throws IllegalArgumentException if condition is false
+     */
+    public static void requireTrue(final boolean condition,
+            final String message) {
+        final String validatedMessage = requireNotBlank(message, "message");
+        if (!condition) {
+            throw new IllegalArgumentException(validatedMessage);
+        }
     }
 
     /**
@@ -184,6 +240,27 @@ public final class Vldtn {
                     .format("Property '%s' must not be empty.", propertyName));
         }
         return validatedCollection;
+    }
+
+    /**
+     * Validates that the provided map is not null and not empty.
+     *
+     * @param <K>          key type
+     * @param <V>          value type
+     * @param <M>          map type
+     * @param map          the map to validate
+     * @param propertyName the name of the property being validated
+     * @return validated map
+     * @throws IllegalArgumentException if map is null or empty
+     */
+    public static <K, V, M extends Map<K, V>> M requireNotEmptyMap(final M map,
+            final String propertyName) {
+        final M validatedMap = requireNonNull(map, propertyName);
+        if (validatedMap.isEmpty()) {
+            throw new IllegalArgumentException(String
+                    .format("Property '%s' must not be empty.", propertyName));
+        }
+        return validatedMap;
     }
 
 }

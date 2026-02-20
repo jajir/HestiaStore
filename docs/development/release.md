@@ -81,8 +81,8 @@ Before tagging, run:
 
 ```bash
 mvn -N install
-mvn -pl engine,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console-web -DskipTests package
-mvn -pl management-agent,monitoring-console-web,monitoring-prometheus test
+mvn -pl engine,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json-api,monitoring-rest-json,monitoring-console-web -DskipTests package
+mvn -pl monitoring-rest-json,monitoring-console-web,monitoring-prometheus test
 mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
 ```
@@ -153,11 +153,10 @@ Release to maven central:
 Each release publishes aligned versions of:
 
 - `org.hestiastore:engine`
-- `org.hestiastore:monitoring-api`
+- `org.hestiastore:monitoring-rest-json-api`
 - `org.hestiastore:monitoring-micrometer`
 - `org.hestiastore:monitoring-prometheus`
-- `org.hestiastore:management-api`
-- `org.hestiastore:management-agent`
+- `org.hestiastore:monitoring-rest-json`
 - `org.hestiastore:monitoring-console-web`
 
 Compatibility and staged upgrade guidance:

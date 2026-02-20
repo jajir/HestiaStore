@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -9,8 +11,8 @@ import org.hestiastore.index.Vldtn;
 public final class SegmentMaintenancePolicyThreshold<K, V>
         implements SegmentMaintenancePolicy<K, V> {
 
-    private final int maxSegmentCacheKeys;
-    private final int maxWriteCacheKeys;
+    private final AtomicInteger maxSegmentCacheKeys;
+    private final AtomicInteger maxWriteCacheKeys;
     private final int maxDeltaCacheFiles;
 
     /**
@@ -23,10 +25,12 @@ public final class SegmentMaintenancePolicyThreshold<K, V>
      */
     public SegmentMaintenancePolicyThreshold(final int maxSegmentCacheKeys,
             final int maxWriteCacheKeys, final int maxDeltaCacheFiles) {
-        this.maxSegmentCacheKeys = Vldtn.requireBetween(maxSegmentCacheKeys, 0,
-                Integer.MAX_VALUE, "maxSegmentCacheKeys");
-        this.maxWriteCacheKeys = Vldtn.requireBetween(maxWriteCacheKeys, 0,
-                Integer.MAX_VALUE, "maxWriteCacheKeys");
+        this.maxSegmentCacheKeys = new AtomicInteger(
+                Vldtn.requireBetween(maxSegmentCacheKeys, 0,
+                        Integer.MAX_VALUE, "maxSegmentCacheKeys"));
+        this.maxWriteCacheKeys = new AtomicInteger(
+                Vldtn.requireBetween(maxWriteCacheKeys, 0,
+                        Integer.MAX_VALUE, "maxWriteCacheKeys"));
         this.maxDeltaCacheFiles = Vldtn.requireBetween(maxDeltaCacheFiles, 0,
                 Integer.MAX_VALUE, "maxDeltaCacheFiles");
     }
@@ -42,15 +46,29 @@ public final class SegmentMaintenancePolicyThreshold<K, V>
     public SegmentMaintenanceDecision evaluateAfterWrite(
             final Segment<K, V> segment) {
         Vldtn.requireNonNull(segment, "segment");
-        if (segment.getNumberOfKeysInSegmentCache() >= maxSegmentCacheKeys) {
+        if (segment.getNumberOfKeysInSegmentCache() >= maxSegmentCacheKeys.get()) {
             return SegmentMaintenanceDecision.compactOnly();
         }
         if (segment.getNumberOfDeltaCacheFiles() >= maxDeltaCacheFiles) {
             return SegmentMaintenanceDecision.compactOnly();
         }
-        if (segment.getNumberOfKeysInWriteCache() >= maxWriteCacheKeys) {
+        if (segment.getNumberOfKeysInWriteCache() >= maxWriteCacheKeys.get()) {
             return SegmentMaintenanceDecision.flushOnly();
         }
         return SegmentMaintenanceDecision.none();
+    }
+
+    /**
+     * Updates runtime thresholds.
+     *
+     * @param newMaxSegmentCacheKeys max cached keys threshold
+     * @param newMaxWriteCacheKeys max write-cache threshold
+     */
+    public void updateThresholds(final int newMaxSegmentCacheKeys,
+            final int newMaxWriteCacheKeys) {
+        maxSegmentCacheKeys.set(Vldtn.requireBetween(newMaxSegmentCacheKeys, 0,
+                Integer.MAX_VALUE, "newMaxSegmentCacheKeys"));
+        maxWriteCacheKeys.set(Vldtn.requireBetween(newMaxWriteCacheKeys, 0,
+                Integer.MAX_VALUE, "newMaxWriteCacheKeys"));
     }
 }

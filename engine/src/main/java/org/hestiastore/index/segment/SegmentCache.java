@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,8 +27,8 @@ final class SegmentCache<K, V> {
     private UniqueCache<K, V> frozenWriteCache;
     private final Comparator<K> keyComparator;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final int maxNumberOfKeysInSegmentWriteCache;
-    private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final AtomicInteger maxNumberOfKeysInSegmentWriteCache;
+    private final AtomicInteger maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     private static final int MAX_INITIAL_CAPACITY = 1_000_000;
     private final ReentrantLock capacityLock = new ReentrantLock();
     private final Condition capacityAvailable = capacityLock.newCondition();
@@ -53,13 +54,13 @@ final class SegmentCache<K, V> {
                 "keyComparator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
-        this.maxNumberOfKeysInSegmentWriteCache = Vldtn.requireGreaterThanZero(
-                maxNumberOfKeysInSegmentWriteCache,
-                "maxNumberOfKeysInSegmentWriteCache");
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = Vldtn
-                .requireGreaterThanZero(
+        this.maxNumberOfKeysInSegmentWriteCache = new AtomicInteger(
+                Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentWriteCache,
+                        "maxNumberOfKeysInSegmentWriteCache"));
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = new AtomicInteger(
+                Vldtn.requireGreaterThanZero(
                         maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
         final int deltaCapacityHint = Math.min(
                 Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentCache,
                         "maxNumberOfKeysInSegmentCache"),
@@ -338,7 +339,7 @@ final class SegmentCache<K, V> {
      * Blocks until there is capacity for another write-cache entry.
      */
     private void awaitCapacity() {
-        if (maxNumberOfKeysInSegmentWriteCache <= 0) {
+        if (maxNumberOfKeysInSegmentWriteCache.get() <= 0) {
             return;
         }
         capacityLock.lock();
@@ -374,9 +375,9 @@ final class SegmentCache<K, V> {
      */
     private int effectiveWriteCacheLimit() {
         if (frozenWriteCache != null) {
-            return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+            return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance.get();
         }
-        return maxNumberOfKeysInSegmentWriteCache;
+        return maxNumberOfKeysInSegmentWriteCache.get();
     }
 
     /**
@@ -515,13 +516,36 @@ final class SegmentCache<K, V> {
      */
     private UniqueCache<K, V> buildWriteCache() {
         final int capacityHint = Math.min(
-                Math.max(1, maxNumberOfKeysInSegmentWriteCacheDuringMaintenance),
+                Math.max(1,
+                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance.get()),
                 MAX_INITIAL_CAPACITY);
         return UniqueCache.<K, V>builder()//
                 .withKeyComparator(keyComparator)//
                 .withInitialCapacity(capacityHint)//
                 .withThreadSafe(true)//
                 .buildEmpty();
+    }
+
+    /**
+     * Updates write-cache limits for runtime tuning.
+     *
+     * @param writeCacheLimit write-cache threshold
+     * @param writeCacheDuringMaintenanceLimit write-cache threshold while
+     *        maintenance runs
+     */
+    void updateWriteCacheLimits(final int writeCacheLimit,
+            final int writeCacheDuringMaintenanceLimit) {
+        Vldtn.requireGreaterThanZero(writeCacheLimit, "writeCacheLimit");
+        Vldtn.requireGreaterThanZero(writeCacheDuringMaintenanceLimit,
+                "writeCacheDuringMaintenanceLimit");
+        if (writeCacheDuringMaintenanceLimit <= writeCacheLimit) {
+            throw new IllegalArgumentException(
+                    "writeCacheDuringMaintenanceLimit must be greater than writeCacheLimit");
+        }
+        maxNumberOfKeysInSegmentWriteCache.set(writeCacheLimit);
+        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance
+                .set(writeCacheDuringMaintenanceLimit);
+        signalCapacityAvailable();
     }
 
     /**

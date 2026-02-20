@@ -1,0 +1,25 @@
+@startuml monitoring-runtime-flow
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+
+package "Application JVM" {
+  [SegmentIndex]
+  [Segment API\nmetricsSnapshot()]
+  [Management Agent\n/api/v1/*]
+  [Runtime Overrides\n(in-memory)]
+
+  [SegmentIndex] --> [Segment API\nmetricsSnapshot()] : publishes
+  [Management Agent\n/api/v1/*] --> [Segment API\nmetricsSnapshot()] : reads
+  [Management Agent\n/api/v1/*] --> [Runtime Overrides\n(in-memory)] : PATCH /config
+  [Runtime Overrides\n(in-memory)] --> [SegmentIndex] : effective runtime limits
+}
+
+[Monitoring Bridge\n(Micrometer/Prometheus)] --> [Segment API\nmetricsSnapshot()] : exports metrics
+[Monitoring Console Web] -up-> [Management Agent\n/api/v1/*] : poll/report/config
+
+database "Index Metadata\n(meta.txt)" as Meta
+[Management Agent\n/api/v1/*] ..> Meta : reads persisted config
+[Runtime Overrides\n(in-memory)] ..> Meta : no write
+
+@enduml

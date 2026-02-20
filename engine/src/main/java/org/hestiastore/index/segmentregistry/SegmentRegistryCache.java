@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -41,7 +43,7 @@ public final class SegmentRegistryCache<K, V> {
     private final AtomicInteger size = new AtomicInteger();
     private final AtomicLong accessCx = new AtomicLong();
     private final ReentrantLock evictionLock = new ReentrantLock();
-    private final int limit;
+    private final AtomicInteger limit;
     private final Function<K, V> loader;
     private final Consumer<V> unloader;
     private final Executor unloadExecutor;
@@ -72,7 +74,8 @@ public final class SegmentRegistryCache<K, V> {
     SegmentRegistryCache(final int limit, final Function<K, V> loader,
             final Consumer<V> unloader, final Executor unloadExecutor,
             final Predicate<V> unloadablePredicate) {
-        this.limit = Vldtn.requireGreaterThanZero(limit, "limit");
+        this.limit = new AtomicInteger(
+                Vldtn.requireGreaterThanZero(limit, "limit"));
         this.loader = Vldtn.requireNonNull(loader, "loader");
         this.unloader = Vldtn.requireNonNull(unloader, "unloader");
         this.unloadExecutor = Vldtn.requireNonNull(unloadExecutor,
@@ -149,11 +152,36 @@ public final class SegmentRegistryCache<K, V> {
 
     SegmentRegistryCacheStats metricsSnapshot() {
         return new SegmentRegistryCacheStats(hitCount.sum(), missCount.sum(),
-                loadCount.sum(), evictionCount.sum(), size.get(), limit);
+                loadCount.sum(), evictionCount.sum(), size.get(), limit.get());
     }
 
     boolean isEmpty() {
         return map.isEmpty();
+    }
+
+    int getLimit() {
+        return limit.get();
+    }
+
+    boolean updateLimit(final int newLimit) {
+        limit.set(Vldtn.requireGreaterThanZero(newLimit, "newLimit"));
+        while (size.get() > limit.get()) {
+            if (!removeLastRecentUsedSegment(null)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    List<V> readyValuesSnapshot() {
+        final List<V> values = new ArrayList<>();
+        for (final Entry<V> entry : map.values()) {
+            final V readyValue = entry.getReadyValue();
+            if (readyValue != null) {
+                values.add(readyValue);
+            }
+        }
+        return List.copyOf(values);
     }
 
     private V loadValue(final K key, final Entry<V> entry) {
@@ -173,7 +201,7 @@ public final class SegmentRegistryCache<K, V> {
     }
 
     private void evictIfNeeded(final K exceptKey) {
-        if (size.get() <= limit) {
+        if (size.get() <= limit.get()) {
             return;
         }
         removeLastRecentUsedSegment(exceptKey);
@@ -425,6 +453,19 @@ public final class SegmentRegistryCache<K, V> {
                 }
                 value = null;
                 ready.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        V getReadyValue() {
+            lock.lock();
+            try {
+                if (state != EntryState.READY || value == null
+                        || failure != null) {
+                    return null;
+                }
+                return value;
             } finally {
                 lock.unlock();
             }

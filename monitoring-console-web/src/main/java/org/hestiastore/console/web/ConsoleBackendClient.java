@@ -39,7 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
- * HTTP client adapter from web UI directly to management-agent nodes.
+ * HTTP client adapter from web UI directly to monitoring-rest-json nodes.
  */
 @Service
 public class ConsoleBackendClient {

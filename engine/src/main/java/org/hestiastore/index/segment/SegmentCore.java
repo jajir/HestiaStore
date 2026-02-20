@@ -252,6 +252,13 @@ final class SegmentCore<K, V> {
         return maintenancePath.getSegmentConf();
     }
 
+    void applyRuntimeLimits(final SegmentRuntimeLimits limits) {
+        Vldtn.requireNonNull(limits, "limits");
+        segmentCache.updateWriteCacheLimits(
+                limits.maxNumberOfKeysInSegmentWriteCache(),
+                limits.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+    }
+
     SegmentDeltaCacheController<K, V> getDeltaCacheController() {
         return maintenancePath.getDeltaCacheController();
     }

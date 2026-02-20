@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.monitoring.api.HestiaStoreMetricNames;
 
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;

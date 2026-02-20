@@ -5,7 +5,7 @@ skinparam componentStyle rectangle
 package "Node JVM #1" {
   [engine.jar] as ENGINE1
   [SegmentIndex(0..N)] as INDEXES1
-  [management-agent] as AGENT1
+  [monitoring-rest-json] as AGENT1
   ENGINE1 --> INDEXES1
   INDEXES1 --> AGENT1 : addIndex/removeIndex + report/actions
 }
@@ -13,7 +13,7 @@ package "Node JVM #1" {
 package "Node JVM #2" {
   [engine.jar] as ENGINE2
   [SegmentIndex(0..N)] as INDEXES2
-  [management-agent] as AGENT2
+  [monitoring-rest-json] as AGENT2
   ENGINE2 --> INDEXES2
   INDEXES2 --> AGENT2 : addIndex/removeIndex + report/actions
 }
@@ -21,7 +21,7 @@ package "Node JVM #2" {
 package "Node JVM #N" {
   [engine.jar] as ENGINEN
   [SegmentIndex(0..N)] as INDEXESN
-  [management-agent] as AGENTN
+  [monitoring-rest-json] as AGENTN
   ENGINEN --> INDEXESN
   INDEXESN --> AGENTN : addIndex/removeIndex + report/actions
 }

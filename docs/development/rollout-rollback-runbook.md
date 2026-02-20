@@ -23,7 +23,6 @@ Rollback is stage-local. Do not roll back `engine` unless stage A itself fails.
 ## Stage B rollback (monitoring bridge)
 
 1. Remove or downgrade:
-   - `monitoring-api`
    - `monitoring-micrometer`
    - `monitoring-prometheus`
 1. Keep `engine` unchanged.
@@ -31,7 +30,7 @@ Rollback is stage-local. Do not roll back `engine` unless stage A itself fails.
 
 ## Stage C rollback (management agent)
 
-1. Revert `management-agent` and `management-api` to previous release pair.
+1. Revert `monitoring-rest-json` and `monitoring-rest-json-api` to previous release pair.
 1. Keep index runtime alive; management endpoints can be temporarily disabled.
 1. Validate:
    - `/api/v1/report`
@@ -51,7 +50,7 @@ After rollback deployment, run:
 ```bash
 mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
-mvn -pl management-agent test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
+mvn -pl monitoring-rest-json test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
 mvn -pl monitoring-console-web test
 ```
 

@@ -10,7 +10,7 @@
     </parent>
     <artifactId>monitoring-prometheus</artifactId>
     <packaging>jar</packaging>
-    <name>HestiaStore Monitoring Prometheus</name>
+    <name>HestiaStore Monitoring Prometheus Bridge</name>
 
     <dependencies>
         <dependency>

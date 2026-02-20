@@ -12,11 +12,10 @@
 
     <modules>
         <module>engine</module>
-        <module>monitoring-api</module>
         <module>monitoring-micrometer</module>
         <module>monitoring-prometheus</module>
-        <module>management-api</module>
-        <module>management-agent</module>
+        <module>monitoring-rest-json-api</module>
+        <module>monitoring-rest-json</module>
         <module>monitoring-console-web</module>
     </modules>
 

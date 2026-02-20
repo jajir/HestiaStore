@@ -2,15 +2,15 @@
 
 This page describes the **direct mode** architecture:
 
-- your application JVM runs `engine.jar` + `management-agent`
-- `monitoring-console-web` connects directly to node `management-agent` APIs
+- your application JVM runs `engine.jar` + `monitoring-rest-json`
+- `monitoring-console-web` connects directly to node `monitoring-rest-json` APIs
 - no middle `monitoring-console` service is required
 
 ## Runtime topology (recommended)
 
 - Node JVM(s):
   - HestiaStore engine
-  - `management-agent` exposing `/api/v1/*` for all registered indexes
+  - `monitoring-rest-json` exposing `/api/v1/*` for all registered indexes
 - Web JVM:
   - `monitoring-console-web` UI
   - polls each node directly and sends actions directly
@@ -20,7 +20,7 @@ This page describes the **direct mode** architecture:
 PlantUML source:
 [`docs/configuration/images/monitoring-components.plantuml`](images/monitoring-components.plantuml)
 
-## Node-side API (management-agent)
+## Node-side API (monitoring-rest-json)
 
 Each node exposes:
 
@@ -72,7 +72,7 @@ Open:
 
 This command starts:
 
-- 3 in-memory nodes with `management-agent`
+- 3 in-memory nodes with `monitoring-rest-json`
 - synthetic load generator
 - `monitoring-console-web` connected directly to those nodes
 
@@ -94,4 +94,4 @@ Then open:
 ## Notes
 
 This project now uses direct mode only for console UI integration:
-`monitoring-console-web` connects directly to `management-agent` endpoints.
+`monitoring-console-web` connects directly to `monitoring-rest-json` endpoints.
