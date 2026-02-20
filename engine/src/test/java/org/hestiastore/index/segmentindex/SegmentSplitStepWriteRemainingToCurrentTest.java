@@ -13,14 +13,14 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.WriteTransaction;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentId;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentSplitStepWriteRemainingToCurrentTest {

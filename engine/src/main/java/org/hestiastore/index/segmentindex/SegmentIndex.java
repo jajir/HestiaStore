@@ -44,14 +44,13 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param indexConf requested configuration overrides
      * @return a newly created index instance
      */
-    static <M, N> SegmentIndex<M, N> create(
-            final Directory directory,
+    static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
         final int initialIoThreads = resolveIoThreads(
                 indexConf.getNumberOfIoThreads());
-        IoDirectoryHandle ioHandle = newIoDirectory(directory,
-                initialIoThreads, executorRegistry);
+        IoDirectoryHandle ioHandle = newIoDirectory(directory, initialIoThreads,
+                executorRegistry);
         try {
             IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                     new IndexConfiguratonStorage<>(ioHandle.directory()));
@@ -87,14 +86,13 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param indexConf configuration overrides to apply
      * @return index instance backed by the updated configuration
      */
-    static <M, N> SegmentIndex<M, N> open(
-            final Directory directory,
+    static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
         final int initialIoThreads = resolveIoThreads(
                 indexConf.getNumberOfIoThreads());
-        IoDirectoryHandle ioHandle = newIoDirectory(directory,
-                initialIoThreads, executorRegistry);
+        IoDirectoryHandle ioHandle = newIoDirectory(directory, initialIoThreads,
+                executorRegistry);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                     new IndexConfiguratonStorage<>(ioHandle.directory()));
@@ -107,7 +105,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                 ioHandle = newIoDirectory(directory, configuredIoThreads,
                         executorRegistry);
             }
-            return openIndex(ioHandle.directory(), mergedConf, ioHandle.lease());
+            return openIndex(ioHandle.directory(), mergedConf,
+                    ioHandle.lease());
         } catch (final RuntimeException e) {
             closeOnFailure(ioHandle, e);
             throw e;
@@ -125,8 +124,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @param directory backing directory with an existing index
      * @return index instance backed by the persisted configuration
      */
-    static <M, N> SegmentIndex<M, N> open(
-            final Directory directory) {
+    static <M, N> SegmentIndex<M, N> open(final Directory directory) {
         final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
         IoDirectoryHandle ioHandle = newIoDirectory(directory,
                 IndexConfigurationContract.NUMBER_OF_IO_THREADS,
@@ -137,8 +135,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> conf = confManager.loadExisting();
             final int configuredIoThreads = resolveIoThreads(
                     conf.getNumberOfIoThreads());
-            if (configuredIoThreads
-                    != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+            if (configuredIoThreads != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
                 ioHandle.close();
                 ioHandle = newIoDirectory(directory, configuredIoThreads,
                         executorRegistry);
@@ -180,8 +177,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> conf = oConf.get();
             final int configuredIoThreads = resolveIoThreads(
                     conf.getNumberOfIoThreads());
-            if (configuredIoThreads
-                    != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+            if (configuredIoThreads != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
                 ioHandle.close();
                 ioHandle = newIoDirectory(directory, configuredIoThreads,
                         executorRegistry);
@@ -223,8 +219,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     private static IoDirectoryHandle newIoDirectory(final Directory directory,
-            final int ioThreads,
-            final IoExecutorRegistry executorRegistry) {
+            final int ioThreads, final IoExecutorRegistry executorRegistry) {
         final IoExecutorRegistry.ExecutorLease lease = executorRegistry
                 .acquire(ioThreads);
         final Directory wrapped = new AsyncDirectoryBlockingAdapter(directory,
@@ -241,12 +236,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             handle.close();
         } catch (final RuntimeException closeError) {
             failure.addSuppressed(closeError);
-        }
-    }
-
-    private static void closeDirectory(final Directory directory) {
-        if (directory instanceof CloseableResource closeableDirectory) {
-            closeableDirectory.close();
         }
     }
 
@@ -312,9 +301,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     CompletionStage<Void> deleteAsync(K key);
 
     /**
-     * Starts a compaction pass over in-memory and on-disk data structures.
-     * This is the explicit index-level entry point for compaction; automatic
-     * split logic does not invoke compaction.
+     * Starts a compaction pass over in-memory and on-disk data structures. This
+     * is the explicit index-level entry point for compaction; automatic split
+     * logic does not invoke compaction.
      *
      * The call returns after compaction is accepted by each segment.
      */
@@ -360,10 +349,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * 
      * @param segmentWindows allows to limit examined segments. If empty then
      *                       all segments are used.
-     * @return stream of all data.
-     * Equivalent to
-     * {@link #getStream(SegmentWindow, SegmentIteratorIsolation)} with
-     * {@link SegmentIteratorIsolation#FAIL_FAST}.
+     * @return stream of all data. Equivalent to
+     *         {@link #getStream(SegmentWindow, SegmentIteratorIsolation)} with
+     *         {@link SegmentIteratorIsolation#FAIL_FAST}.
      */
     Stream<Entry<K, V>> getStream(SegmentWindow segmentWindows);
 
@@ -371,7 +359,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * Streams entries using the requested iterator isolation level.
      *
      * @param segmentWindows segment selection to stream
-     * @param isolation iterator isolation mode to use
+     * @param isolation      iterator isolation mode to use
      * @return stream of key-value entries from the selected segments
      */
     default Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,

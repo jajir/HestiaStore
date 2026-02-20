@@ -9,7 +9,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -30,8 +29,7 @@ class SegmentBuildContextTest {
         void setUp() {
             final var asyncDirectory = new MemDirectory();
             final SegmentBuilder<Integer, String> builder = Segment
-                    .<Integer, String>builder(asyncDirectory)
-                    .withId(SEGMENT_ID)
+                    .<Integer, String>builder(asyncDirectory).withId(SEGMENT_ID)
                     .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)
                     .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)
                     .withMaxNumberOfKeysInSegmentWriteCache(10)
@@ -56,8 +54,8 @@ class SegmentBuildContextTest {
 
         @Test
         void keeps_bloom_filter_settings_unset() {
-            assertFalse(context.segmentConf
-                    .hasBloomFilterNumberOfHashFunctions());
+            assertFalse(
+                    context.segmentConf.hasBloomFilterNumberOfHashFunctions());
             assertFalse(context.segmentConf.hasBloomFilterIndexSizeInBytes());
         }
     }
@@ -71,8 +69,7 @@ class SegmentBuildContextTest {
         void setUp() {
             final var asyncDirectory = new MemDirectory();
             final SegmentBuilder<Integer, String> builder = Segment
-                    .<Integer, String>builder(asyncDirectory)
-                    .withId(SEGMENT_ID)
+                    .<Integer, String>builder(asyncDirectory).withId(SEGMENT_ID)
                     .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)
                     .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)
                     .withMaxNumberOfKeysInSegmentWriteCache(10)

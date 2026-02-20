@@ -1,7 +1,7 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 
 /**

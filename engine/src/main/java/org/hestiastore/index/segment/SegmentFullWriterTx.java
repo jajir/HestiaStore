@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+
 /**
  * Class test invalid parameters of segment.
  */
@@ -7,7 +9,6 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.lang.reflect.Field;
 import java.util.List;

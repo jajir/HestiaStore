@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -15,7 +15,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 

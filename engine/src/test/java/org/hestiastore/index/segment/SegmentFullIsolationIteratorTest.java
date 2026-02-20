@@ -11,9 +11,8 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
 class SegmentFullIsolationIteratorTest {

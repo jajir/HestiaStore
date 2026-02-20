@@ -11,8 +11,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.EntryIteratorList;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

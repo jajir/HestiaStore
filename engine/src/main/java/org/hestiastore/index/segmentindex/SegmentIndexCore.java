@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;

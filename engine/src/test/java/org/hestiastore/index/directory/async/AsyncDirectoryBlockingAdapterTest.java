@@ -76,13 +76,16 @@ class AsyncDirectoryBlockingAdapterTest {
         final RecordingDirectory recordingDirectory = new RecordingDirectory();
         final AsyncDirectoryBlockingAdapter directory = new AsyncDirectoryBlockingAdapter(
                 recordingDirectory, executor);
+        try {
+            final FileWriter writer = directory.getFileWriter("f");
+            writer.write((byte) 1);
+            writer.close();
 
-        final FileWriter writer = directory.getFileWriter("f");
-        writer.write((byte) 1);
-        writer.close();
-
-        assertTrue(recordingDirectory.lastWriteThreadName.get()
-                .startsWith("io-thread"));
+            assertTrue(recordingDirectory.lastWriteThreadName.get()
+                    .startsWith("io-thread"));
+        } finally {
+            directory.close();
+        }
     }
 
     @Test

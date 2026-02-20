@@ -1,10 +1,10 @@
 package org.hestiastore.index.scarceindex;
 
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.GuardedEntryWriter;
 import org.hestiastore.index.GuardedWriteTransaction;
-import org.hestiastore.index.EntryWriter;
-import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.sorteddatafile.SortedDataFileWriterTx;
 
 public class ScarceIndexWriterTx<K>

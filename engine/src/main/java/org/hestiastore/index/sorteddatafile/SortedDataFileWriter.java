@@ -3,9 +3,9 @@ package org.hestiastore.index.sorteddatafile;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.F;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.ConvertorToBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;

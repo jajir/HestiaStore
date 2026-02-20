@@ -5,10 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,8 +31,8 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void segmentSchemaAddsDefaultsAndMetadata() {
-        final PropertyStore store = PropertyStoreimpl.fromDirectory(
-                asyncDirectory, "manifest.txt", false);
+        final PropertyStore store = PropertyStoreimpl
+                .fromDirectory(asyncDirectory, "manifest.txt", false);
 
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
 
@@ -48,8 +47,8 @@ class IndexPropertiesSchemaTest {
                 IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX));
         assertEquals(0, view.getInt(
                 IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES));
-        assertEquals(0L, view.getLong(
-                IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION));
+        assertEquals(0L, view
+                .getLong(IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION));
         final String requiredKeys = view
                 .getString(IndexPropertiesSchema.REQUIRED_KEYS_KEY);
         assertNotNull(requiredKeys);
@@ -87,26 +86,29 @@ class IndexPropertiesSchemaTest {
         final PropertyView view = store.snapshot();
         assertEquals(IndexPropertiesSchema.CURRENT_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
-        assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
-                view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
+        assertEquals(
+                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+                view.getInt(
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
         final int expectedWriteCache = IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
                 / 2;
-        final int expectedWriteCacheDuringMaintenance = Math.max(
-                expectedWriteCache * 2, expectedWriteCache + 1);
-        assertEquals(expectedWriteCache,
-                view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE));
+        final int expectedWriteCacheDuringMaintenance = Math
+                .max(expectedWriteCache * 2, expectedWriteCache + 1);
+        assertEquals(expectedWriteCache, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE));
         assertEquals(expectedWriteCacheDuringMaintenance, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE));
         assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
-                view.getInt(IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
+                view.getInt(
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
         assertEquals(
                 IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS));
-        assertEquals("",
-                view.getString(IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS));
-        assertEquals("",
-                view.getString(IndexPropertiesSchema.IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS));
+        assertEquals("", view.getString(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS));
+        assertEquals("", view.getString(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS));
         final String requiredKeys = view
                 .getString(IndexPropertiesSchema.REQUIRED_KEYS_KEY);
         assertNotNull(requiredKeys);

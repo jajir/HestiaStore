@@ -3,11 +3,11 @@ package org.hestiastore.index.sorteddatafile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptor;

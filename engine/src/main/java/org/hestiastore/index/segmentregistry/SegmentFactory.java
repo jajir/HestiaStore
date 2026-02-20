@@ -78,13 +78,12 @@ public final class SegmentFactory<K, V> {
         this.compactionRequestListener = Vldtn
                 .requireNonNull(compactionRequestListener,
                         "compactionRequestListener");
-        this.runtimeMaxNumberOfKeysInSegmentCache = conf
-                .getMaxNumberOfKeysInSegmentCache().intValue();
-        this.runtimeMaxNumberOfKeysInSegmentWriteCache = conf
-                .getMaxNumberOfKeysInSegmentWriteCache().intValue();
-        this.runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = conf
-                .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()
-                .intValue();
+        this.runtimeMaxNumberOfKeysInSegmentCache = toIntOrZero(
+                conf.getMaxNumberOfKeysInSegmentCache());
+        this.runtimeMaxNumberOfKeysInSegmentWriteCache = toIntOrZero(
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
+        this.runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = toIntOrZero(
+                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
     }
 
     /**
@@ -107,12 +106,28 @@ public final class SegmentFactory<K, V> {
      */
     public SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
+        refreshRuntimeLimitsFromConfigurationIfInvalid();
+        final int maxNumberOfKeysInSegmentCache = Vldtn.requireGreaterThanZero(
+                runtimeMaxNumberOfKeysInSegmentCache,
+                "maxNumberOfKeysInSegmentCache");
+        final int maxNumberOfKeysInSegmentWriteCache = Vldtn
+                .requireGreaterThanZero(runtimeMaxNumberOfKeysInSegmentWriteCache,
+                        "maxNumberOfKeysInSegmentWriteCache");
+        final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = Vldtn
+                .requireGreaterThanZero(
+                        runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance
+                <= maxNumberOfKeysInSegmentWriteCache) {
+            throw new IllegalArgumentException(
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache");
+        }
         final Directory segmentDirectory = openSegmentDirectory(segmentId);
         final SegmentMaintenancePolicy<K, V> maintenancePolicy = Boolean.TRUE
                 .equals(conf.isSegmentMaintenanceAutoEnabled())
                         ? new SegmentMaintenancePolicyThreshold<>(
-                                runtimeMaxNumberOfKeysInSegmentCache,
-                                runtimeMaxNumberOfKeysInSegmentWriteCache,
+                                maxNumberOfKeysInSegmentCache,
+                                maxNumberOfKeysInSegmentWriteCache,
                                 conf.getMaxNumberOfDeltaCacheFiles())
                         : SegmentMaintenancePolicy.none();
         return Segment.<K, V>builder(segmentDirectory)//
@@ -123,11 +138,11 @@ public final class SegmentFactory<K, V> {
                 .withMaintenancePolicy(maintenancePolicy)//
                 .withCompactionRequestListener(compactionRequestListener)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
-                        runtimeMaxNumberOfKeysInSegmentWriteCache)//
+                        maxNumberOfKeysInSegmentWriteCache)//
                 .withMaxNumberOfKeysInSegmentCache(
-                        runtimeMaxNumberOfKeysInSegmentCache)//
+                        maxNumberOfKeysInSegmentCache)//
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance)//
+                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withMaxNumberOfDeltaCacheFiles(
@@ -175,5 +190,35 @@ public final class SegmentFactory<K, V> {
 
     private Directory openSegmentDirectory(final SegmentId segmentId) {
         return directoryFacade.openSubDirectory(segmentId.getName());
+    }
+
+    private void refreshRuntimeLimitsFromConfigurationIfInvalid() {
+        if (runtimeMaxNumberOfKeysInSegmentCache > 0
+                && runtimeMaxNumberOfKeysInSegmentWriteCache > 0
+                && runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance > runtimeMaxNumberOfKeysInSegmentWriteCache) {
+            return;
+        }
+        final int configuredCache = toIntOrZero(
+                conf.getMaxNumberOfKeysInSegmentCache());
+        final int configuredWrite = toIntOrZero(
+                conf.getMaxNumberOfKeysInSegmentWriteCache());
+        final int configuredWriteDuringMaintenance = toIntOrZero(
+                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+        if (configuredCache > 0) {
+            runtimeMaxNumberOfKeysInSegmentCache = configuredCache;
+        }
+        if (configuredWrite > 0) {
+            runtimeMaxNumberOfKeysInSegmentWriteCache = configuredWrite;
+        }
+        if (configuredWriteDuringMaintenance > 0) {
+            runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = configuredWriteDuringMaintenance;
+        }
+    }
+
+    private static int toIntOrZero(final Integer value) {
+        if (value == null) {
+            return 0;
+        }
+        return value.intValue();
     }
 }

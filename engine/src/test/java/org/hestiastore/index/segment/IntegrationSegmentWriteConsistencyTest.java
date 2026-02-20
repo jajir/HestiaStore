@@ -1,7 +1,7 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.AbstractSegmentTest.verifySegmentData;
 import static org.hestiastore.index.AbstractDataTest.verifyNumberOfFiles;
+import static org.hestiastore.index.segment.AbstractSegmentTest.verifySegmentData;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;

@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.SegmentIndex;

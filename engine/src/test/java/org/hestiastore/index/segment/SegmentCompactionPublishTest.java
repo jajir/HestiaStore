@@ -1,8 +1,8 @@
 package org.hestiastore.index.segment;
 
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -13,9 +13,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;

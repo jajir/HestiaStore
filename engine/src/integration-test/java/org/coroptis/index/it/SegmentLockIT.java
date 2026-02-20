@@ -10,7 +10,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
@@ -25,24 +24,21 @@ class SegmentLockIT {
         final SegmentId segmentId = SegmentId.of(1);
         final Segment<Integer, String> first = newSegment(directory, segmentId);
         try {
-            assertEquals(SegmentBuildStatus.BUSY,
-                    Segment.<Integer, String>builder(
-                            directory)//
-                            .withId(segmentId)//
-                            .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                            .withValueTypeDescriptor(
-                                    new TypeDescriptorShortString())//
-                            .withMaxNumberOfKeysInSegmentWriteCache(4)//
-                            .withMaxNumberOfKeysInSegmentCache(8)//
-                            .withMaxNumberOfKeysInSegmentChunk(2)//
-                            .withMaintenancePolicy(
-                                    SegmentMaintenancePolicy.none())//
-                            .withBloomFilterIndexSizeInBytes(0)//
-                            .withEncodingChunkFilters(
-                                    List.of(new ChunkFilterDoNothing()))//
-                            .withDecodingChunkFilters(
-                                    List.of(new ChunkFilterDoNothing()))//
-                            .build().getStatus());
+            assertEquals(SegmentBuildStatus.BUSY, Segment
+                    .<Integer, String>builder(directory)//
+                    .withId(segmentId)//
+                    .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                    .withValueTypeDescriptor(new TypeDescriptorShortString())//
+                    .withMaxNumberOfKeysInSegmentWriteCache(4)//
+                    .withMaxNumberOfKeysInSegmentCache(8)//
+                    .withMaxNumberOfKeysInSegmentChunk(2)//
+                    .withMaintenancePolicy(SegmentMaintenancePolicy.none())//
+                    .withBloomFilterIndexSizeInBytes(0)//
+                    .withEncodingChunkFilters(
+                            List.of(new ChunkFilterDoNothing()))//
+                    .withDecodingChunkFilters(
+                            List.of(new ChunkFilterDoNothing()))//
+                    .build().getStatus());
         } finally {
             closeAndAwait(first);
         }
@@ -54,8 +50,7 @@ class SegmentLockIT {
 
     private Segment<Integer, String> newSegment(final Directory directory,
             final SegmentId segmentId) {
-        return Segment.<Integer, String>builder(
-                directory)//
+        return Segment.<Integer, String>builder(directory)//
                 .withId(segmentId)//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//

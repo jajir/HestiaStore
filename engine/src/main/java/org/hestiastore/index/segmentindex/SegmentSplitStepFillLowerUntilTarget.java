@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Filter;
-import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.WriteTransaction;
 
 final class SegmentSplitStepFillLowerUntilTarget<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {

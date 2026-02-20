@@ -1,7 +1,7 @@
 package org.hestiastore.index.directory.async;
 
-import java.util.stream.Stream;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.directory.Directory;

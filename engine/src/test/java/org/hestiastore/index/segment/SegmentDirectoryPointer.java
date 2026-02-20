@@ -7,10 +7,10 @@ import java.util.Properties;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
-import org.hestiastore.index.directory.Directory;
 
 /**
  * Manages the pointer file that stores the active segment directory name.
