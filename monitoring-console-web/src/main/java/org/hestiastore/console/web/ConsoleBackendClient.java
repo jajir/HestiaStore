@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -356,6 +357,13 @@ public class ConsoleBackendClient {
             return new NodeDetails(nodeRow, indexRows);
         } catch (final HttpTimeoutException e) {
             logger.info("Node poll timed out: {}", node.nodeId());
+            addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
+                    node.nodeId(), e.getMessage() == null ? "poll failed"
+                            : e.getMessage()));
+            return new NodeDetails(
+                    unavailable(node, e.getMessage(), startedNanos), List.of());
+        } catch (final ConnectException e) {
+            logger.info("Node poll connect failed: {}", node.nodeId());
             addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
                     node.nodeId(), e.getMessage() == null ? "poll failed"
                             : e.getMessage()));

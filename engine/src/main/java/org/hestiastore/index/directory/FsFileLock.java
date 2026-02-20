@@ -1,9 +1,12 @@
 package org.hestiastore.index.directory;
 
 import org.hestiastore.index.Vldtn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FsFileLock implements FileLock {
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Directory directory;
 
     private final String lockFileName;
@@ -25,6 +28,11 @@ public class FsFileLock implements FileLock {
             return true;
         }
         if (lockMetadata.canRecoverAsStale()) {
+            if (lockMetadata.getPid() == ProcessHandle.current().pid()) {
+                logger.info(
+                        "Recovered stale lock '{}' with same pid '{}'. Index is going to be checked for consistency and unlocked.",
+                        lockFileName, lockMetadata.getPid());
+            }
             directory.deleteFile(lockFileName);
             return false;
         }

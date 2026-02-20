@@ -137,8 +137,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             getIndexState().onReady(this);
             setSegmentIndexState(SegmentIndexState.READY);
             if (openingState.wasStaleLockRecovered()) {
-                logger.warn(
-                        "Recovered stale index lock. Running consistency check.");
+                logger.info(
+                        "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.");
                 checkAndRepairConsistency();
             }
         } catch (final RuntimeException e) {
