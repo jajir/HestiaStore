@@ -1,7 +1,6 @@
 package org.hestiastore.management.restjson;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -38,8 +37,7 @@ class ManagementAgentServerTest {
     private static final String INDEX_1 = "agent-test-index-1";
     private static final String INDEX_2 = "agent-test-index-2";
     private static final Set<String> RUNTIME_ALLOWLIST = Set.of(
-            "maxNumberOfSegmentsInCache",
-            "maxNumberOfKeysInSegmentCache",
+            "maxNumberOfSegmentsInCache", "maxNumberOfKeysInSegmentCache",
             "maxNumberOfKeysInSegmentWriteCache",
             "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
 
@@ -87,8 +85,8 @@ class ManagementAgentServerTest {
                 ManagementApiPaths.REPORT, null);
         assertEquals(200, reportResp.statusCode());
 
-        final NodeReportResponse report = objectMapper.readValue(
-                reportResp.body(), NodeReportResponse.class);
+        final NodeReportResponse report = objectMapper
+                .readValue(reportResp.body(), NodeReportResponse.class);
         assertEquals(2, report.indexes().size());
         assertTrue(report.indexes().stream()
                 .anyMatch(idx -> idx.indexName().equals(INDEX_1)));
@@ -123,8 +121,8 @@ class ManagementAgentServerTest {
 
         final HttpResponse<String> response = send("POST",
                 ManagementApiPaths.ACTION_COMPACT,
-                "{\"requestId\":\"req-compact\",\"indexName\":\""
-                        + INDEX_2 + "\"}");
+                "{\"requestId\":\"req-compact\",\"indexName\":\"" + INDEX_2
+                        + "\"}");
         assertEquals(200, response.statusCode());
 
         final ActionResponse payload = objectMapper.readValue(response.body(),
@@ -174,14 +172,15 @@ class ManagementAgentServerTest {
         final HttpResponse<String> response = send("GET",
                 ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1, null);
         assertEquals(200, response.statusCode());
-        final ConfigViewResponse payload = objectMapper.readValue(
-                response.body(), ConfigViewResponse.class);
+        final ConfigViewResponse payload = objectMapper
+                .readValue(response.body(), ConfigViewResponse.class);
         assertEquals(INDEX_1, payload.indexName());
-        assertTrue(payload.original().containsKey("maxNumberOfSegmentsInCache"));
-        assertTrue(payload.current()
-                .containsKey("maxNumberOfKeysInSegmentCache"));
-        assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfSegmentsInCache"));
+        assertTrue(
+                payload.original().containsKey("maxNumberOfSegmentsInCache"));
+        assertTrue(
+                payload.current().containsKey("maxNumberOfKeysInSegmentCache"));
+        assertTrue(
+                payload.supportedKeys().contains("maxNumberOfSegmentsInCache"));
         assertTrue(payload.supportedKeys().contains(
                 "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
     }
@@ -216,8 +215,8 @@ class ManagementAgentServerTest {
                 ManagementApiPaths.REPORT, null);
         assertEquals(200, reportResp.statusCode());
 
-        final NodeReportResponse report = objectMapper.readValue(
-                reportResp.body(), NodeReportResponse.class);
+        final NodeReportResponse report = objectMapper
+                .readValue(reportResp.body(), NodeReportResponse.class);
         assertEquals(1, report.indexes().size());
         assertEquals(INDEX_1, report.indexes().get(0).indexName());
     }

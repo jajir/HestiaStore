@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,11 +24,11 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriter;
 import org.hestiastore.index.bloomfilter.BloomFilterWriterTx;
@@ -42,7 +42,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.hestiastore.index.scarceindex.ScarceIndexWriterTx;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
 import org.junit.jupiter.api.AfterEach;

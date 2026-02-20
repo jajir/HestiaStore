@@ -1,7 +1,7 @@
 package org.hestiastore.index.control;
 
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
 import org.hestiastore.index.control.model.ConfigurationSnapshot;
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
 import org.hestiastore.index.control.model.RuntimePatchResult;
 import org.hestiastore.index.control.model.RuntimePatchValidation;
 

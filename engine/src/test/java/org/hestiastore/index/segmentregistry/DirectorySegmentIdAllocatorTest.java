@@ -10,9 +10,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 

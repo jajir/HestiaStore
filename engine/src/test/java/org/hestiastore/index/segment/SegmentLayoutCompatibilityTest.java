@@ -1,9 +1,9 @@
 package org.hestiastore.index.segment;
 
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 
 import java.util.List;
 
@@ -11,8 +11,8 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

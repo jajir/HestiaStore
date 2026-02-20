@@ -1,13 +1,13 @@
 package org.hestiastore.index.sorteddatafile;
 
+import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.GuardedEntryWriter;
 import org.hestiastore.index.GuardedWriteTransaction;
-import org.hestiastore.index.EntryWriter;
-import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.Directory.Access;
 import org.hestiastore.index.directory.FileWriter;
 
 /**

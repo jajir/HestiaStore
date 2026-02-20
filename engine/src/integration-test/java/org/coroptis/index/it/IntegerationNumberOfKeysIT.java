@@ -1,7 +1,7 @@
 package org.coroptis.index.it;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Random;
@@ -16,9 +16,9 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

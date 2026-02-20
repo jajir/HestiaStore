@@ -6,8 +6,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.EntryIteratorList;
+import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;

@@ -2,9 +2,9 @@ package org.hestiastore.index.segment;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

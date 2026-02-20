@@ -12,9 +12,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
+import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;

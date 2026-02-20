@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.chunkstore.ChunkFilter;
 
 /**
  * Builder for {@link Segment}.

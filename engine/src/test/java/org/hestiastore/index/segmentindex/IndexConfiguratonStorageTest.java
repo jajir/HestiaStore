@@ -9,7 +9,6 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryAdapter;
 import org.junit.jupiter.api.Test;
 
 class IndexConfiguratonStorageTest {

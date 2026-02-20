@@ -1,8 +1,8 @@
 package org.hestiastore.index.segment;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;

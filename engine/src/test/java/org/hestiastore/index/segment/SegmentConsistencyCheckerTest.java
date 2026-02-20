@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.junit.jupiter.api.AfterEach;

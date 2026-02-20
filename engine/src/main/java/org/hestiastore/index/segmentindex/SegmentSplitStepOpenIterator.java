@@ -4,9 +4,9 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Filter;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 final class SegmentSplitStepOpenIterator<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
