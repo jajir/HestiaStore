@@ -38,11 +38,13 @@ nav:
             - Chain of Filters: architecture/general/chain-of-filters.md
             - Access Model: architecture/general/concurrency.md
             - Consistency & Recovery: architecture/general/recovery.md
-            - Monitoring Bridge: architecture/general/monitoring-bridge.md
-            - Management API: architecture/general/management-api.md
             - Package Boundaries: architecture/general/package-boundaries.md
             - Limitations & Trade-offs: architecture/general/limits.md
             - Glossary: architecture/general/glossary.md
+        - Monitoring:
+            - Overview: architecture/monitoring/index.md
+            - Monitoring Bridge: architecture/monitoring/monitoring-bridge.md
+            - Monitoring API: architecture/monitoring/monitoring-api.md
         - SegmentIndex:
             - Overview: architecture/segmentindex/index.md
             - Write Path: architecture/segmentindex/write-path.md

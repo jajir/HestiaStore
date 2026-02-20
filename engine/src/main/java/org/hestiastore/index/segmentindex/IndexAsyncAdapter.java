@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
@@ -129,6 +130,12 @@ class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
     @Override
     public SegmentIndexMetricsSnapshot metricsSnapshot() {
         return index.metricsSnapshot();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public IndexControlPlane controlPlane() {
+        return index.controlPlane();
     }
 
     /** {@inheritDoc} */

@@ -14,9 +14,9 @@ multi-module distribution.
 - Old usage: one runtime jar with mixed concerns.
 - New usage:
   - core only: `org.hestiastore:engine`
-  - metrics bridge: add `monitoring-api` + `monitoring-micrometer` and/or
-    `monitoring-prometheus`
-  - management control plane: add `management-agent` and
+  - metrics bridge: add `monitoring-micrometer` and/or `monitoring-prometheus`
+  - management control plane: add `monitoring-rest-json-api`,
+    `monitoring-rest-json`, and
     `monitoring-console-web` (direct mode)
 
 ## Breaking-change expectation
@@ -29,7 +29,7 @@ multi-module distribution.
 
 1. Upgrade dependency coordinates to new module artifacts.
 1. Keep versions aligned for all HestiaStore modules.
-1. Deploy `management-agent` next to engine JVM if control endpoints are needed.
+1. Deploy `monitoring-rest-json` next to engine JVM if control endpoints are needed.
 1. Configure `monitoring-console-web` with direct node endpoints and validate
    dashboard/action paths.
 1. Enable auth/TLS policy and rate limits before production rollout.

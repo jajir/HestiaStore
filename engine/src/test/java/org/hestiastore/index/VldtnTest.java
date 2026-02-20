@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import java.util.List;
+import java.util.Map;
 
 class VldtnTest {
 
@@ -169,6 +170,60 @@ class VldtnTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Vldtn.requireNotEmpty(List.of(), "items"));
         assertEquals("Property 'items' must not be empty.", e.getMessage());
+    }
+
+    @Test
+    void test_requireNotBlank_returnsTrimmedValue() {
+        assertEquals("abc", Vldtn.requireNotBlank("  abc  ", "value"));
+    }
+
+    @Test
+    void test_requireNotBlank_blankValue() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireNotBlank("   ", "value"));
+        assertEquals("Property 'value' must not be blank.", e.getMessage());
+    }
+
+    @Test
+    void test_requireGreaterThanOrEqualToZero() {
+        assertEquals(0L,
+                Vldtn.requireGreaterThanOrEqualToZero(0L, "revision"));
+        assertEquals(7L,
+                Vldtn.requireGreaterThanOrEqualToZero(7L, "revision"));
+    }
+
+    @Test
+    void test_requireGreaterThanOrEqualToZero_negative() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireGreaterThanOrEqualToZero(-1L, "revision"));
+        assertEquals(
+                "Property 'revision' must be greater than or equal to 0",
+                e.getMessage());
+    }
+
+    @Test
+    void test_requireNotEmptyMap_returnsMap() {
+        final Map<String, String> value = Map.of("k", "v");
+        assertSame(value, Vldtn.requireNotEmptyMap(value, "values"));
+    }
+
+    @Test
+    void test_requireNotEmptyMap_empty() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireNotEmptyMap(Map.of(), "values"));
+        assertEquals("Property 'values' must not be empty.", e.getMessage());
+    }
+
+    @Test
+    void test_requireTrue() {
+        Vldtn.requireTrue(true, "ok");
+    }
+
+    @Test
+    void test_requireTrue_falseCondition() {
+        final Exception e = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireTrue(false, "not valid"));
+        assertEquals("not valid", e.getMessage());
     }
 
 }

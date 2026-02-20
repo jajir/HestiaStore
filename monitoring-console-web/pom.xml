@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>org.hestiastore</groupId>
-            <artifactId>management-agent</artifactId>
+            <artifactId>monitoring-rest-json</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

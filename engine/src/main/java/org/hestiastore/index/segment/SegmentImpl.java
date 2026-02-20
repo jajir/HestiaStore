@@ -302,6 +302,18 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         return core.getBloomFilterFalsePositiveCount();
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public void applyRuntimeLimits(final SegmentRuntimeLimits limits) {
+        Vldtn.requireNonNull(limits, "limits");
+        core.applyRuntimeLimits(limits);
+        if (maintenancePolicy instanceof SegmentMaintenancePolicyThreshold<?, ?> threshold) {
+            threshold.updateThresholds(
+                    limits.maxNumberOfKeysInSegmentCache(),
+                    limits.maxNumberOfKeysInSegmentWriteCache());
+        }
+    }
+
     /**
      * {@inheritDoc}
      */

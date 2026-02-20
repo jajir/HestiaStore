@@ -13,7 +13,7 @@ This document defines releasable stages for the monitoring/management rollout.
 
 ## Stage B: Monitoring bridge (Prometheus/Micrometer)
 
-- Scope: `monitoring-api`, `monitoring-micrometer`, `monitoring-prometheus`.
+- Scope: `monitoring-micrometer`, `monitoring-prometheus`.
 - Required gates:
   - Prometheus scrape contract test:
     `HestiaStorePrometheusExporterTest`.
@@ -22,7 +22,7 @@ This document defines releasable stages for the monitoring/management rollout.
 
 ## Stage C: Node management agent
 
-- Scope: `management-api`, `management-agent`.
+- Scope: `monitoring-rest-json-api`, `monitoring-rest-json`.
 - Required gates:
   - API behavior tests: `ManagementAgentServerTest`.
   - Security tests: `ManagementAgentServerSecurityTest`.
@@ -44,7 +44,7 @@ Run all stage gates:
 ```bash
 mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
-mvn -pl management-agent test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
+mvn -pl monitoring-rest-json test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
 mvn -pl monitoring-console-web test
 ```
 

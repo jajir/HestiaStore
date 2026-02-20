@@ -216,6 +216,16 @@ public interface Segment<K, V> {
     }
 
     /**
+     * Applies runtime-only segment cache/write thresholds.
+     *
+     * Implementations may ignore the call when runtime tuning is unsupported.
+     *
+     * @param limits runtime limits
+     */
+    default void applyRuntimeLimits(final SegmentRuntimeLimits limits) {
+    }
+
+    /**
      * Returns the total number of keys in this segment (delta cache + on-disk
      * index). Tombstones are accounted for according to implementation rules.
      *

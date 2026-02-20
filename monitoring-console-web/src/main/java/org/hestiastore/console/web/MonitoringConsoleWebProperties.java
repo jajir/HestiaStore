@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Web console configuration properties.
  *
  * @param backendBaseUrl legacy single-node base URL (deprecated)
- * @param nodes          managed node endpoints (direct management-agent mode)
+ * @param nodes          managed node endpoints (direct monitoring-rest-json mode)
  * @param refreshMillis  auto refresh interval in milliseconds
  */
 @ConfigurationProperties(prefix = "hestia.console.web")
@@ -56,8 +56,8 @@ public record MonitoringConsoleWebProperties(String backendBaseUrl,
      *
      * @param nodeId    unique node identifier
      * @param nodeName  display name used by UI
-     * @param baseUrl   management-agent base URL
-     * @param agentToken optional bearer token sent to management-agent
+     * @param baseUrl   monitoring-rest-json base URL
+     * @param agentToken optional bearer token sent to monitoring-rest-json
      */
     public record NodeEndpoint(String nodeId, String nodeName, String baseUrl,
             String agentToken) {

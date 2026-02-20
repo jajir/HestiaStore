@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -176,6 +178,28 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     @Override
     public SegmentRegistryCacheStats metricsSnapshot() {
         return cache.metricsSnapshot();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean updateCacheLimit(final int newLimit) {
+        final SegmentRegistryState state = gate.getState();
+        if (state != SegmentRegistryState.READY) {
+            return false;
+        }
+        return cache.updateLimit(newLimit);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public int cacheLimit() {
+        return cache.getLimit();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<Segment<K, V>> loadedSegmentsSnapshot() {
+        return cache.readyValuesSnapshot();
     }
 
     private static SegmentRegistryResultStatus resultForState(

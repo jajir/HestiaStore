@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.slf4j.MDC;
 
@@ -260,6 +261,17 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             return index.metricsSnapshot();
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public IndexControlPlane controlPlane() {
+        setContext();
+        try {
+            return index.controlPlane();
         } finally {
             clearContext();
         }

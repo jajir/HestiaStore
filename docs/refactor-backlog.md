@@ -27,11 +27,11 @@
 [x] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
     - Target logical modules/packages:
       - `org.hestiastore.index.*` (core)
-      - `org.hestiastore.monitoring.api.*` (metrics contracts/shared abstractions)
+      - `org.hestiastore.monitoring.json.api.*` (metrics contracts/shared abstractions)
       - `org.hestiastore.monitoring.micrometer.*` (Micrometer bridge)
       - `org.hestiastore.monitoring.prometheus.*` (Prometheus bridge)
-      - `org.hestiastore.management.api.*` (shared DTOs/contracts)
-      - `org.hestiastore.management.agent.*` (node-local REST API in index JVM)
+      - `org.hestiastore.monitoring.json.api.*` (shared DTOs/contracts)
+      - `org.hestiastore.management.restjson.*` (node-local REST API in index JVM)
       - `org.hestiastore.console.*` (web UI / control plane)
     - Start in single-module codebase with strict package boundaries to keep
       later physical split low risk.
@@ -68,7 +68,7 @@
 
 [x] 78.3 Build monitoring bridge layer (Micrometer/Prometheus) (Risk: HIGH)
     - Implement monitoring adapters:
-      - `org.hestiastore.monitoring.api.*`
+      - `org.hestiastore.monitoring.json.api.*`
       - `org.hestiastore.monitoring.micrometer.*`
       - `org.hestiastore.monitoring.prometheus.*`
       - Micrometer binder reading from core snapshot API.
@@ -81,17 +81,17 @@
       - Zero adapter overhead when monitoring package is not used.
     - Delivered:
       - Introduced dedicated modules:
-        `monitoring-api`, `monitoring-micrometer`, `monitoring-prometheus`.
+        `monitoring-rest-json-api`, `monitoring-micrometer`, `monitoring-prometheus`.
       - Added `HestiaStoreMicrometerBinder` in
         `org.hestiastore.monitoring.micrometer.*`.
       - Added `HestiaStorePrometheusExporter` in
         `org.hestiastore.monitoring.prometheus.*`.
       - Added Prometheus scrape test:
         `HestiaStorePrometheusExporterTest` (checks names and `index` label).
-      - Kept core `index` module free of Micrometer/Prometheus dependencies.
+      - Kept core `engine` module free of Micrometer/Prometheus dependencies.
 
 [x] 78.4 Add management API contracts and versioning (Risk: HIGH)
-    - Create `org.hestiastore.management.api.*` DTOs:
+    - Create `org.hestiastore.monitoring.json.api.*` DTOs:
       - `NodeReportResponse` (`JvmMetricsResponse` + per-index sections),
         `ActionRequest/Response`,
         `ConfigPatchRequest`, `ErrorResponse`.
@@ -102,7 +102,7 @@
       - OpenAPI (or equivalent) published with examples.
       - Contract tests verify backward-compatible serialization.
     - Delivered:
-      - Added shared DTO/contracts in `management-api` module:
+      - Added shared DTO/contracts in `monitoring-rest-json-api` module:
         `NodeReportResponse`, `IndexReportResponse`, `JvmMetricsResponse`,
         `ActionRequest`, `ActionResponse`, `ConfigPatchRequest`,
         `ErrorResponse`.
@@ -111,7 +111,7 @@
       - Added compatibility contract tests:
         `ManagementApiContractCompatibilityTest`.
       - Added API contract documentation with example payloads:
-        `docs/architecture/general/management-api.md`.
+        `docs/architecture/monitoring/monitoring-api.md`.
 
 [x] 78.5 Implement node-local management agent (Risk: HIGH)
     - Add lightweight REST server integration for index JVM process:
@@ -125,7 +125,7 @@
       - End-to-end test: invoke actions and verify effect on index state.
       - Negative tests for forbidden config keys and invalid state transitions.
     - Delivered:
-      - Implemented `ManagementAgentServer` in `management-agent` module with
+      - Implemented `ManagementAgentServer` in `monitoring-rest-json` module with
         versioned management endpoints, plus `/health` and `/ready`.
       - `ManagementAgentServer` now supports M:N mapping between one agent and
         multiple indexes via `addIndex`/`removeIndex`.
@@ -150,7 +150,7 @@
       - Multi-node dashboard works for at least 3 registered nodes.
       - Action execution shows pending/success/failure lifecycle.
     - Delivered:
-      - Added `MonitoringConsoleServer` in `monitoring-console` module.
+      - Added monitoring console runtime in `monitoring-console-web` module.
       - Implemented APIs for:
         - node registration/list/removal (`/console/v1/nodes`),
         - aggregated dashboard polling (`/console/v1/dashboard`),
@@ -197,13 +197,12 @@
 
 [x] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
     - Release artifacts initially from same repo:
-      - `index` (core)
-      - `monitoring-api`
+      - `engine` (core)
+      - `monitoring-rest-json-api`
       - `monitoring-micrometer`
       - `monitoring-prometheus`
-      - `management-api`
-      - `management-agent`
-      - `monitoring-console`
+      - `monitoring-rest-json`
+      - `monitoring-console-web`
     - Keep aligned versions per release line (for example `0.2.x` for all).
     - Document migration from single-module to multi-module build:
       move packages with no API break using prior boundary rules from 78.1.
@@ -223,8 +222,8 @@
       - Added documentation navigation entries in `mkdocs.yml` and
         `docs/development/index.md`.
       - Verified packaging and cross-module tests:
-        - `mvn -pl index,monitoring-api,monitoring-micrometer,monitoring-prometheus,management-api,management-agent,monitoring-console,monitoring-console-web -DskipTests package`
-        - `mvn -pl management-agent,monitoring-console,monitoring-console-web,monitoring-prometheus test`
+        - `mvn -pl engine,monitoring-rest-json-api,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json,monitoring-console-web -DskipTests package`
+        - `mvn -pl monitoring-rest-json,monitoring-console-web,monitoring-prometheus test`
 
 [x] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
     - Stage A: core snapshot API only; no external exporters.

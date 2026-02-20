@@ -1,11 +1,17 @@
 package org.hestiastore.index.segmentindex;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -13,12 +19,23 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.control.IndexConfigurationManagement;
+import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.control.IndexRuntimeView;
+import org.hestiastore.index.control.model.ConfigurationSnapshot;
+import org.hestiastore.index.control.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
+import org.hestiastore.index.control.model.RuntimePatchResult;
+import org.hestiastore.index.control.model.RuntimePatchValidation;
+import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.control.model.ValidationIssue;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentStats;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
@@ -45,11 +62,14 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentFactory<K, V> segmentFactory;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentAsyncExecutor segmentAsyncExecutor;
     private final SplitAsyncExecutor splitAsyncExecutor;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
+    private final RuntimeTuningState runtimeTuningState;
+    private final IndexControlPlane controlPlane;
     private final Stats stats = new Stats();
     private final Object asyncMonitor = new Object();
     private int asyncInFlight = 0;
@@ -73,6 +93,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
+            this.runtimeTuningState = RuntimeTuningState
+                    .fromConfiguration(conf);
             final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
@@ -87,9 +109,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final int splitThreads = splitThreadsConf.intValue();
             this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
                     "index-maintenance");
-            final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
-                    directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                    conf, segmentAsyncExecutor.getExecutor());
+            this.segmentFactory = new SegmentFactory<>(directoryFacade,
+                    keyTypeDescriptor, valueTypeDescriptor, conf,
+                    segmentAsyncExecutor.getExecutor());
             final int registryLifecycleThreads = conf
                     .getNumberOfRegistryLifecycleThreads().intValue();
             final AtomicInteger registryLifecycleThreadCx = new AtomicInteger(
@@ -134,6 +156,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.retryPolicy = new IndexRetryPolicy(
                     conf.getIndexBusyBackoffMillis(),
                     conf.getIndexBusyTimeoutMillis());
+            this.controlPlane = new IndexControlPlaneImpl();
             getIndexState().onReady(this);
             setSegmentIndexState(SegmentIndexState.READY);
             if (openingState.wasStaleLockRecovered()) {
@@ -320,9 +343,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
                 && closeResult
                         .getStatus() != SegmentRegistryResultStatus.CLOSED) {
-            throw new IndexException(String.format(
-                    "Index operation '%s' failed: %s", "close",
-                    closeResult.getStatus()));
+            throw new IndexException(
+                    String.format("Index operation '%s' failed: %s", "close",
+                            closeResult.getStatus()));
         }
         keyToSegmentMap.optionalyFlush();
         if (!segmentAsyncExecutor.wasClosed()) {
@@ -416,15 +439,19 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 stats.getPutCx(), stats.getDeleteCx(), cacheStats.hitCount(),
                 cacheStats.missCount(), cacheStats.loadCount(),
                 cacheStats.evictionCount(), cacheStats.size(),
-                cacheStats.limit(), conf.getMaxNumberOfKeysInSegmentCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
-                segmentRuntime.segmentCount,
-                segmentRuntime.segmentReadyCount,
+                cacheStats.limit(),
+                runtimeTuningState.effectiveValue(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE),
+                runtimeTuningState.effectiveValue(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE),
+                runtimeTuningState.effectiveValue(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE),
+                segmentRuntime.segmentCount, segmentRuntime.segmentReadyCount,
                 segmentRuntime.segmentMaintenanceCount,
                 segmentRuntime.segmentErrorCount,
                 segmentRuntime.segmentClosedCount,
-                segmentRuntime.segmentBusyCount, segmentRuntime.totalSegmentKeys,
+                segmentRuntime.segmentBusyCount,
+                segmentRuntime.totalSegmentKeys,
                 segmentRuntime.totalSegmentCacheKeys,
                 segmentRuntime.totalWriteCacheKeys,
                 segmentRuntime.totalDeltaCacheFiles,
@@ -701,7 +728,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             } else if (state == SegmentState.CLOSED) {
                 aggregate.segmentClosedCount++;
             }
-            aggregate.totalSegmentKeys += Math.max(0L, segment.getNumberOfKeys());
+            aggregate.totalSegmentKeys += Math.max(0L,
+                    segment.getNumberOfKeys());
             aggregate.totalSegmentCacheKeys += Math.max(0L,
                     segment.getNumberOfKeysInSegmentCache());
             aggregate.totalWriteCacheKeys += Math.max(0L,
@@ -723,6 +751,238 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     segment.getBloomFilterFalsePositiveCount());
         }
         return aggregate;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public IndexControlPlane controlPlane() {
+        return controlPlane;
+    }
+
+    private RuntimePatchValidation validateRuntimePatch(
+            final RuntimeConfigPatch patch) {
+        final List<ValidationIssue> issues = new ArrayList<>();
+        final EnumMap<RuntimeSettingKey, Integer> normalized = new EnumMap<>(
+                RuntimeSettingKey.class);
+        if (patch == null) {
+            issues.add(new ValidationIssue(null, "patch must not be null"));
+            return new RuntimePatchValidation(false, issues, normalized);
+        }
+        if (patch.expectedRevision() != null && patch.expectedRevision()
+                .longValue() != runtimeTuningState.revision()) {
+            issues.add(new ValidationIssue(null,
+                    "expectedRevision does not match current revision"));
+        }
+        for (final Map.Entry<RuntimeSettingKey, Integer> entry : patch.values()
+                .entrySet()) {
+            final RuntimeSettingKey key = entry.getKey();
+            final int value = entry.getValue().intValue();
+            if (value < 1) {
+                issues.add(new ValidationIssue(key, "value must be >= 1"));
+                continue;
+            }
+            if (key == RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
+                    && value < 3) {
+                issues.add(new ValidationIssue(key, "value must be >= 3"));
+                continue;
+            }
+            normalized.put(key, Integer.valueOf(value));
+        }
+        final Map<RuntimeSettingKey, Integer> effective = runtimeTuningState
+                .previewEffective(normalized);
+        final int writeCache = effective.get(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE)
+                .intValue();
+        final int writeCacheDuringMaintenance = effective.get(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE)
+                .intValue();
+        if (writeCacheDuringMaintenance <= writeCache) {
+            issues.add(new ValidationIssue(
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE,
+                    "value must be greater than maxNumberOfKeysInSegmentWriteCache"));
+        }
+        return new RuntimePatchValidation(issues.isEmpty(), issues, normalized);
+    }
+
+    private RuntimePatchResult applyRuntimePatch(
+            final RuntimeConfigPatch patch) {
+        final RuntimePatchValidation validation = validateRuntimePatch(patch);
+        if (!validation.valid()) {
+            return new RuntimePatchResult(false, validation,
+                    runtimeTuningState.snapshotCurrent());
+        }
+        if (patch.dryRun()) {
+            return new RuntimePatchResult(false, validation,
+                    runtimeTuningState.snapshotCurrent());
+        }
+        final Map<RuntimeSettingKey, Integer> effective = runtimeTuningState
+                .previewEffective(validation.normalizedValues());
+        applyRuntimeEffectiveLimits(effective);
+        final ConfigurationSnapshot snapshot = runtimeTuningState
+                .apply(validation.normalizedValues());
+        return new RuntimePatchResult(true, validation, snapshot);
+    }
+
+    private void applyRuntimeEffectiveLimits(
+            final Map<RuntimeSettingKey, Integer> effective) {
+        final int maxSegmentsInCache = effective
+                .get(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE)
+                .intValue();
+        segmentRegistry.updateCacheLimit(maxSegmentsInCache);
+        final int maxSegmentCache = effective
+                .get(RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE)
+                .intValue();
+        final int maxWriteCache = effective.get(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE)
+                .intValue();
+        final int maxWriteCacheDuringMaintenance = effective.get(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE)
+                .intValue();
+        segmentFactory.updateRuntimeLimits(maxSegmentCache, maxWriteCache,
+                maxWriteCacheDuringMaintenance);
+        final SegmentRuntimeLimits limits = new SegmentRuntimeLimits(
+                maxSegmentCache, maxWriteCache, maxWriteCacheDuringMaintenance);
+        for (final Segment<K, V> segment : segmentRegistry
+                .loadedSegmentsSnapshot()) {
+            segment.applyRuntimeLimits(limits);
+        }
+    }
+
+    private final class IndexControlPlaneImpl implements IndexControlPlane {
+        private final IndexRuntimeView runtime = new IndexRuntimeViewImpl();
+        private final IndexConfigurationManagement configuration = new IndexConfigurationManagementImpl();
+
+        @Override
+        public String indexName() {
+            return conf.getIndexName();
+        }
+
+        @Override
+        public IndexRuntimeView runtime() {
+            return runtime;
+        }
+
+        @Override
+        public IndexConfigurationManagement configuration() {
+            return configuration;
+        }
+    }
+
+    private final class IndexRuntimeViewImpl implements IndexRuntimeView {
+
+        @Override
+        public IndexRuntimeSnapshot snapshot() {
+            return new IndexRuntimeSnapshot(conf.getIndexName(), getState(),
+                    metricsSnapshot(), Instant.now());
+        }
+    }
+
+    private final class IndexConfigurationManagementImpl
+            implements IndexConfigurationManagement {
+        @Override
+        public ConfigurationSnapshot getConfigurationActual() {
+            return runtimeTuningState.snapshotCurrent();
+        }
+
+        @Override
+        public ConfigurationSnapshot getConfigurationOriginal() {
+            return runtimeTuningState.snapshotOriginal();
+        }
+
+        @Override
+        public RuntimePatchValidation validate(final RuntimeConfigPatch patch) {
+            return validateRuntimePatch(patch);
+        }
+
+        @Override
+        public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
+            return applyRuntimePatch(patch);
+        }
+    }
+
+    private static final class RuntimeTuningState {
+        private final String indexName;
+        private final EnumMap<RuntimeSettingKey, Integer> baseline;
+        private final EnumMap<RuntimeSettingKey, Integer> overrides = new EnumMap<>(
+                RuntimeSettingKey.class);
+        private final AtomicLong revision = new AtomicLong(0L);
+
+        private RuntimeTuningState(final String indexName,
+                final EnumMap<RuntimeSettingKey, Integer> baseline) {
+            this.indexName = Vldtn.requireNonNull(indexName, "indexName");
+            this.baseline = Vldtn.requireNonNull(baseline, "baseline");
+        }
+
+        private static <K, V> RuntimeTuningState fromConfiguration(
+                final IndexConfiguration<K, V> configuration) {
+            final EnumMap<RuntimeSettingKey, Integer> baselineValues = new EnumMap<>(
+                    RuntimeSettingKey.class);
+            baselineValues.put(
+                    RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+                    configuration.getMaxNumberOfSegmentsInCache());
+            baselineValues.put(
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+                    configuration.getMaxNumberOfKeysInSegmentCache());
+            baselineValues.put(
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
+                    configuration.getMaxNumberOfKeysInSegmentWriteCache());
+            baselineValues.put(
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE,
+                    configuration
+                            .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+            return new RuntimeTuningState(configuration.getIndexName(),
+                    baselineValues);
+        }
+
+        private synchronized ConfigurationSnapshot snapshotCurrent() {
+            return new ConfigurationSnapshot(indexName,
+                    effectiveFromOverrides(overrides), revision.get(),
+                    Instant.now());
+        }
+
+        private synchronized ConfigurationSnapshot snapshotOriginal() {
+            return new ConfigurationSnapshot(indexName, baseline,
+                    revision.get(), Instant.now());
+        }
+
+        private synchronized ConfigurationSnapshot apply(
+                final Map<RuntimeSettingKey, Integer> patchValues) {
+            overrides.putAll(patchValues);
+            final long nextRevision = revision.incrementAndGet();
+            return new ConfigurationSnapshot(indexName,
+                    effectiveFromOverrides(overrides), nextRevision,
+                    Instant.now());
+        }
+
+        private synchronized Map<RuntimeSettingKey, Integer> previewEffective(
+                final Map<RuntimeSettingKey, Integer> patchValues) {
+            final EnumMap<RuntimeSettingKey, Integer> mergedOverrides = new EnumMap<>(
+                    RuntimeSettingKey.class);
+            mergedOverrides.putAll(overrides);
+            mergedOverrides.putAll(patchValues);
+            return effectiveFromOverrides(mergedOverrides);
+        }
+
+        private synchronized int effectiveValue(final RuntimeSettingKey key) {
+            final Integer override = overrides.get(key);
+            if (override != null) {
+                return override.intValue();
+            }
+            return baseline.get(key).intValue();
+        }
+
+        private synchronized long revision() {
+            return revision.get();
+        }
+
+        private EnumMap<RuntimeSettingKey, Integer> effectiveFromOverrides(
+                final Map<RuntimeSettingKey, Integer> overrideValues) {
+            final EnumMap<RuntimeSettingKey, Integer> effective = new EnumMap<>(
+                    RuntimeSettingKey.class);
+            effective.putAll(baseline);
+            effective.putAll(overrideValues);
+            return effective;
+        }
     }
 
     private static final class SegmentRuntimeAggregate {
