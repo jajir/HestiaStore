@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.net.URLEncoder;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
@@ -20,7 +22,9 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -50,6 +54,7 @@ public class ConsoleBackendClient {
     private static final String API_REPORT = "/api/v1/report";
     private static final String API_ACTION_FLUSH = "/api/v1/actions/flush";
     private static final String API_ACTION_COMPACT = "/api/v1/actions/compact";
+    private static final String API_CONFIG = "/api/v1/config";
     private static final int MAX_HISTORY = 200;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -175,6 +180,75 @@ public class ConsoleBackendClient {
                 status, message, Instant.now().toString()));
         addEvent(new EventRow(Instant.now().toString(), "ACTION_" + status,
                 nodeId, actionType.toUpperCase() + " requestId=" + requestId));
+    }
+
+    /**
+     * Reads runtime/original configuration view for one index on one node.
+     *
+     * @param nodeId    node id
+     * @param indexName index name
+     * @return config view when both node and index are available
+     */
+    public Optional<RuntimeConfigView> fetchRuntimeConfig(final String nodeId,
+            final String indexName) {
+        if (nodeId == null || nodeId.isBlank() || indexName == null
+                || indexName.isBlank()) {
+            return Optional.empty();
+        }
+        final MonitoringConsoleWebProperties.NodeEndpoint node = nodeById
+                .get(nodeId);
+        if (node == null) {
+            return Optional.empty();
+        }
+        final String encodedIndexName = URLEncoder.encode(indexName.trim(),
+                StandardCharsets.UTF_8);
+        try {
+            final JsonNode config = getJson(node,
+                    API_CONFIG + "?indexName=" + encodedIndexName);
+            return Optional.of(new RuntimeConfigView(
+                    config.path("indexName").asText(indexName.trim()),
+                    parseConfigMap(config.path("original")),
+                    parseConfigMap(config.path("current")),
+                    parseStringList(config.path("supportedKeys")),
+                    Math.max(0L, config.path("revision").asLong(0L)),
+                    asInstantText(config.path("capturedAt"))));
+        } catch (final Exception e) {
+            logger.info("Runtime config poll failed: node={} index={}", nodeId,
+                    indexName);
+            addEvent(new EventRow(Instant.now().toString(),
+                    "NODE_CONFIG_POLL_FAILED", nodeId,
+                    e.getMessage() == null ? "config poll failed"
+                            : e.getMessage()));
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Applies or validates runtime config updates for one node/index.
+     *
+     * @param nodeId    node id
+     * @param indexName index name
+     * @param values    patch values
+     * @param dryRun    when true validates only
+     */
+    public void patchRuntimeConfig(final String nodeId, final String indexName,
+            final Map<String, String> values, final boolean dryRun) {
+        final MonitoringConsoleWebProperties.NodeEndpoint node = nodeById
+                .get(nodeId);
+        if (node == null) {
+            throw new IllegalArgumentException("Unknown nodeId: " + nodeId);
+        }
+        if (indexName == null || indexName.isBlank()) {
+            throw new IllegalArgumentException("indexName is required");
+        }
+        if (values == null || values.isEmpty()) {
+            throw new IllegalArgumentException("No configuration values provided");
+        }
+        final String encodedIndexName = URLEncoder.encode(indexName.trim(),
+                StandardCharsets.UTF_8);
+        patchNoContent(node, API_CONFIG + "?indexName=" + encodedIndexName,
+                Map.of("values", Map.copyOf(values), "dryRun",
+                        Boolean.valueOf(dryRun)));
     }
 
     private NodeDetails fetchNodeDetails(
@@ -446,11 +520,61 @@ public class ConsoleBackendClient {
                 }
                 return mapper.readTree(response.body());
             }
-            throw new IllegalStateException("POST " + path + " failed: "
-                    + response.statusCode() + " body=" + response.body());
+            throw new IllegalStateException(
+                    formatHttpError("POST", path, response));
         } catch (final Exception e) {
             throw new IllegalStateException("POST " + path + " failed", e);
         }
+    }
+
+    private void patchNoContent(
+            final MonitoringConsoleWebProperties.NodeEndpoint node,
+            final String path, final Map<String, Object> body) {
+        try {
+            final HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(node.baseUrl() + path))
+                    .timeout(Duration.ofSeconds(5))
+                    .header(CONTENT_TYPE, APPLICATION_JSON);
+            if (!node.agentToken().isEmpty()) {
+                requestBuilder.header(AUTHORIZATION,
+                        "Bearer " + node.agentToken());
+            }
+            final HttpRequest request = requestBuilder
+                    .method("PATCH", HttpRequest.BodyPublishers
+                            .ofString(mapper.writeValueAsString(body)))
+                    .build();
+            final HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return;
+            }
+            throw new IllegalStateException(
+                    formatHttpError("PATCH", path, response));
+        } catch (final Exception e) {
+            throw new IllegalStateException("PATCH " + path + " failed", e);
+        }
+    }
+
+    private String formatHttpError(final String method, final String path,
+            final HttpResponse<String> response) {
+        final String body = response.body() == null ? ""
+                : response.body().trim();
+        if (body.isBlank()) {
+            return method + " " + path + " failed: " + response.statusCode();
+        }
+        try {
+            final JsonNode json = mapper.readTree(body);
+            final String code = json.path("code").asText("");
+            final String message = json.path("message").asText("");
+            if (!code.isBlank() || !message.isBlank()) {
+                return method + " " + path + " failed: "
+                        + response.statusCode() + " " + code + " " + message;
+            }
+        } catch (final Exception ignore) {
+            // Fallback to plain body below.
+        }
+        return method + " " + path + " failed: " + response.statusCode()
+                + " body=" + body;
     }
 
     private String asInstantText(final JsonNode node) {
@@ -670,6 +794,40 @@ public class ConsoleBackendClient {
 
     private int nonNegativeInt(final int value) {
         return Math.max(0, value);
+    }
+
+    private Map<String, Integer> parseConfigMap(final JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return Map.of();
+        }
+        final Map<String, Integer> values = new LinkedHashMap<>();
+        final TreeSet<String> sortedKeys = new TreeSet<>();
+        node.fieldNames().forEachRemaining(sortedKeys::add);
+        for (final String key : sortedKeys) {
+            final JsonNode valueNode = node.get(key);
+            if (valueNode == null || !valueNode.isNumber()) {
+                continue;
+            }
+            values.put(key, Integer.valueOf(valueNode.asInt()));
+        }
+        return Map.copyOf(values);
+    }
+
+    private List<String> parseStringList(final JsonNode node) {
+        if (node == null || !node.isArray()) {
+            return List.of();
+        }
+        final List<String> values = new ArrayList<>();
+        for (final JsonNode item : node) {
+            if (!item.isTextual()) {
+                continue;
+            }
+            final String text = item.asText("").trim();
+            if (!text.isEmpty()) {
+                values.add(text);
+            }
+        }
+        return List.copyOf(values);
     }
 
     private void addAction(final ActionRow row) {
@@ -1316,5 +1474,13 @@ public class ConsoleBackendClient {
      * Event row model.
      */
     public record EventRow(String at, String type, String nodeId, String detail) {
+    }
+
+    /**
+     * Runtime configuration snapshot shown in node detail editor.
+     */
+    public record RuntimeConfigView(String indexName, Map<String, Integer> original,
+            Map<String, Integer> current, List<String> supportedKeys,
+            long revision, String capturedAt) {
     }
 }

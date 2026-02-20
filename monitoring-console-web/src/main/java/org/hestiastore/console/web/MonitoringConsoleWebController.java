@@ -1,8 +1,12 @@
 package org.hestiastore.console.web;
 
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.LinkedHashMap;
 
 import jakarta.validation.constraints.NotBlank;
 
@@ -65,6 +69,8 @@ public class MonitoringConsoleWebController {
      */
     @GetMapping("/nodes/{nodeId}")
     public String nodeDetail(@PathVariable("nodeId") final String nodeId,
+            @RequestParam(name = "indexName",
+                    required = false) final String indexName,
             final Model model) {
         model.addAttribute("refreshMillis", properties.refreshMillis());
         final Optional<ConsoleBackendClient.NodeDetails> nodeDetails = backendClient
@@ -76,6 +82,23 @@ public class MonitoringConsoleWebController {
         model.addAttribute("nodeDetail", nodeDetails.get());
         model.addAttribute("node", nodeDetails.get().node());
         model.addAttribute("indexSections", nodeDetails.get().indexes());
+        final List<String> indexNames = nodeDetails.get().indexes().stream()
+                .map(ConsoleBackendClient.IndexRow::indexName).sorted().toList();
+        model.addAttribute("indexNames", indexNames);
+        final String selectedIndexName = resolveSelectedIndex(indexName,
+                indexNames);
+        model.addAttribute("selectedIndexName", selectedIndexName);
+        if (!selectedIndexName.isBlank()) {
+            final Optional<ConsoleBackendClient.RuntimeConfigView> config = backendClient
+                    .fetchRuntimeConfig(nodeId, selectedIndexName);
+            if (config.isPresent()) {
+                fillRuntimeConfigModel(model, config.get());
+            } else {
+                model.addAttribute("runtimeConfigUnavailable", true);
+            }
+        } else {
+            model.addAttribute("runtimeConfigUnavailable", true);
+        }
         return "node-detail";
     }
 
@@ -190,6 +213,50 @@ public class MonitoringConsoleWebController {
         return "fragments/flash :: flash";
     }
 
+    /**
+     * Applies or validates runtime config patch from node detail page.
+     *
+     * @param nodeId             node id
+     * @param indexName          selected index name
+     * @param operation          validate|apply
+     * @param requestParameters  raw request parameters
+     * @param redirectAttributes flash attributes
+     * @return redirect back to node detail
+     */
+    @PostMapping("/nodes/{nodeId}/runtime-config")
+    public String updateRuntimeConfig(
+            @PathVariable("nodeId") final String nodeId,
+            @RequestParam("indexName") @NotBlank final String indexName,
+            @RequestParam(name = "operation",
+                    defaultValue = "apply") final String operation,
+            @RequestParam final Map<String, String> requestParameters,
+            final RedirectAttributes redirectAttributes) {
+        final Map<String, String> values = extractConfigValues(
+                requestParameters);
+        if (values.isEmpty()) {
+            redirectAttributes.addFlashAttribute("message",
+                    "No editable values provided.");
+            redirectAttributes.addFlashAttribute("level", "warn");
+            redirectAttributes.addAttribute("indexName", indexName);
+            return "redirect:/nodes/" + nodeId;
+        }
+        final boolean dryRun = "validate".equalsIgnoreCase(operation);
+        try {
+            backendClient.patchRuntimeConfig(nodeId, indexName, values, dryRun);
+            redirectAttributes.addFlashAttribute("message",
+                    dryRun
+                            ? "Validation succeeded for " + indexName + "."
+                            : "Configuration applied for " + indexName + ".");
+            redirectAttributes.addFlashAttribute("level", "ok");
+        } catch (final Exception e) {
+            redirectAttributes.addFlashAttribute("message",
+                    "Config update failed: " + rootMessage(e));
+            redirectAttributes.addFlashAttribute("level", "bad");
+        }
+        redirectAttributes.addAttribute("indexName", indexName);
+        return "redirect:/nodes/" + nodeId;
+    }
+
     private void fillModel(final Model model) {
         fillNodes(model);
         model.addAttribute("actions", backendClient.fetchActions());
@@ -250,5 +317,128 @@ public class MonitoringConsoleWebController {
                         .formatWholeNumberValue(cacheFillRatio));
         model.addAttribute("statAvgLatency", Math.round(avgLatency.orElse(0D)));
         model.addAttribute("statMaxLatency", maxLatency);
+    }
+
+    private String resolveSelectedIndex(final String requestedIndexName,
+            final List<String> indexNames) {
+        if (requestedIndexName != null && !requestedIndexName.isBlank()) {
+            final String requested = requestedIndexName.trim();
+            if (indexNames.contains(requested)) {
+                return requested;
+            }
+        }
+        if (indexNames.isEmpty()) {
+            return "";
+        }
+        return indexNames.get(0);
+    }
+
+    private void fillRuntimeConfigModel(final Model model,
+            final ConsoleBackendClient.RuntimeConfigView configView) {
+        final Set<String> supportedKeys = Set.copyOf(configView.supportedKeys());
+        final Set<String> allKeys = new TreeSet<>();
+        allKeys.addAll(configView.original().keySet());
+        allKeys.addAll(configView.current().keySet());
+        final List<RuntimeConfigRow> rows = allKeys.stream().map(key -> {
+            final Integer original = configView.original().get(key);
+            final Integer current = configView.current().get(key);
+            final boolean editable = supportedKeys.contains(key);
+            final boolean overridden = original != null && current != null
+                    && !original.equals(current);
+            return new RuntimeConfigRow(key, original, current, editable,
+                    overridden);
+        }).toList();
+        final long changedCount = rows.stream().filter(RuntimeConfigRow::overridden)
+                .count();
+        model.addAttribute("runtimeConfigView", configView);
+        model.addAttribute("runtimeConfigRows", rows);
+        model.addAttribute("runtimeConfigChangedCount", changedCount);
+        model.addAttribute("runtimeConfigPendingCount", 0);
+    }
+
+    private Map<String, String> extractConfigValues(
+            final Map<String, String> requestParameters) {
+        final Map<String, String> values = new LinkedHashMap<>();
+        for (final Map.Entry<String, String> entry : requestParameters
+                .entrySet()) {
+            final String rawKey = entry.getKey();
+            if (rawKey == null || !rawKey.startsWith("value.")) {
+                continue;
+            }
+            final String key = rawKey.substring("value.".length()).trim();
+            final String value = entry.getValue() == null ? ""
+                    : entry.getValue().trim();
+            if (key.isEmpty() || value.isEmpty()) {
+                continue;
+            }
+            values.put(key, value);
+        }
+        return values;
+    }
+
+    private String rootMessage(final Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null
+                && current.getCause() != current) {
+            current = current.getCause();
+        }
+        if (current.getMessage() == null || current.getMessage().isBlank()) {
+            return "Unknown error";
+        }
+        return current.getMessage();
+    }
+
+    /**
+     * Runtime config row model for node detail table.
+     */
+    public record RuntimeConfigRow(String key, Integer original, Integer current,
+            boolean editable, boolean overridden) {
+
+        /**
+         * Original value display.
+         *
+         * @return formatted display
+         */
+        public String originalDisplay() {
+            if (original == null) {
+                return "-";
+            }
+            return ConsoleBackendClient.NodeRow
+                    .formatWholeNumberValue(original.longValue());
+        }
+
+        /**
+         * Current value display.
+         *
+         * @return formatted display
+         */
+        public String currentDisplay() {
+            if (current == null) {
+                return "-";
+            }
+            return ConsoleBackendClient.NodeRow
+                    .formatWholeNumberValue(current.longValue());
+        }
+
+        /**
+         * Value used to prefill editable input.
+         *
+         * @return current value as plain integer string
+         */
+        public String inputValue() {
+            if (current == null) {
+                return "";
+            }
+            return Integer.toString(current.intValue());
+        }
+
+        /**
+         * Server-computed status label.
+         *
+         * @return status text
+         */
+        public String statusLabel() {
+            return overridden ? "Overridden" : "Unchanged";
+        }
     }
 }
