@@ -104,19 +104,29 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final int maintenanceThreads = maintenanceThreadsConf.intValue();
             this.segmentAsyncExecutor = new SegmentAsyncExecutor(
                     maintenanceThreads, "segment-maintenance");
+            ExecutorService segmentMaintenanceExecutor = segmentAsyncExecutor
+                    .getExecutor();
             final Integer splitThreadsConf = conf
                     .getNumberOfIndexMaintenanceThreads();
             final int splitThreads = splitThreadsConf.intValue();
             this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
                     "index-maintenance");
+            ExecutorService splitMaintenanceExecutor = splitAsyncExecutor
+                    .getExecutor();
+            if (Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
+                segmentMaintenanceExecutor = new IndexNameMdcExecutorService(
+                        conf.getIndexName(), segmentMaintenanceExecutor);
+                splitMaintenanceExecutor = new IndexNameMdcExecutorService(
+                        conf.getIndexName(), splitMaintenanceExecutor);
+            }
             this.segmentFactory = new SegmentFactory<>(directoryFacade,
                     keyTypeDescriptor, valueTypeDescriptor, conf,
-                    segmentAsyncExecutor.getExecutor());
+                    segmentMaintenanceExecutor);
             final int registryLifecycleThreads = conf
                     .getNumberOfRegistryLifecycleThreads().intValue();
             final AtomicInteger registryLifecycleThreadCx = new AtomicInteger(
                     1);
-            final ExecutorService registryLifecycleExecutor = Executors
+            ExecutorService registryLifecycleExecutor = Executors
                     .newFixedThreadPool(registryLifecycleThreads, runnable -> {
                         final Thread thread = new Thread(runnable,
                                 "registry-lifecycle-"
@@ -125,6 +135,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         thread.setDaemon(true);
                         return thread;
                     });
+            if (Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
+                registryLifecycleExecutor = new IndexNameMdcExecutorService(
+                        conf.getIndexName(), registryLifecycleExecutor);
+            }
             final SegmentRegistry<K, V> registry;
             try {
                 registry = SegmentRegistry.<K, V>builder()
@@ -134,8 +148,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .withConfiguration(conf)
                         .withCompactionRequestListener(
                                 stats::incCompactRequestCx)
-                        .withMaintenanceExecutor(
-                                segmentAsyncExecutor.getExecutor())
+                        .withMaintenanceExecutor(segmentMaintenanceExecutor)
                         .withLifecycleExecutor(registryLifecycleExecutor)
                         .build();
             } catch (final RuntimeException e) {
@@ -148,7 +161,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
                     conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
             final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
-                    splitCoordinator, splitAsyncExecutor.getExecutor());
+                    splitCoordinator, splitMaintenanceExecutor);
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                     conf, keyToSegmentMap, asyncSplitCoordinator);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
