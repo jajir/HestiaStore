@@ -6,7 +6,14 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.control.IndexConfigurationManagement;
 import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.control.IndexRuntimeView;
+import org.hestiastore.index.control.model.ConfigurationSnapshot;
+import org.hestiastore.index.control.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
+import org.hestiastore.index.control.model.RuntimePatchResult;
+import org.hestiastore.index.control.model.RuntimePatchValidation;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.slf4j.MDC;
 
@@ -271,7 +278,7 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
     public IndexControlPlane controlPlane() {
         setContext();
         try {
-            return index.controlPlane();
+            return new ContextLoggingIndexControlPlane(index.controlPlane());
         } finally {
             clearContext();
         }
@@ -288,6 +295,119 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
             index.close();
         } finally {
             clearContext();
+        }
+    }
+
+    private final class ContextLoggingIndexControlPlane
+            implements IndexControlPlane {
+
+        private final IndexControlPlane delegate;
+
+        private ContextLoggingIndexControlPlane(
+                final IndexControlPlane delegate) {
+            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public String indexName() {
+            setContext();
+            try {
+                return delegate.indexName();
+            } finally {
+                clearContext();
+            }
+        }
+
+        @Override
+        public IndexRuntimeView runtime() {
+            setContext();
+            try {
+                return new ContextLoggingIndexRuntimeView(delegate.runtime());
+            } finally {
+                clearContext();
+            }
+        }
+
+        @Override
+        public IndexConfigurationManagement configuration() {
+            setContext();
+            try {
+                return new ContextLoggingIndexConfigurationManagement(
+                        delegate.configuration());
+            } finally {
+                clearContext();
+            }
+        }
+    }
+
+    private final class ContextLoggingIndexRuntimeView
+            implements IndexRuntimeView {
+
+        private final IndexRuntimeView delegate;
+
+        private ContextLoggingIndexRuntimeView(final IndexRuntimeView delegate) {
+            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public IndexRuntimeSnapshot snapshot() {
+            setContext();
+            try {
+                return delegate.snapshot();
+            } finally {
+                clearContext();
+            }
+        }
+    }
+
+    private final class ContextLoggingIndexConfigurationManagement
+            implements IndexConfigurationManagement {
+
+        private final IndexConfigurationManagement delegate;
+
+        private ContextLoggingIndexConfigurationManagement(
+                final IndexConfigurationManagement delegate) {
+            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+        }
+
+        @Override
+        public ConfigurationSnapshot getConfigurationActual() {
+            setContext();
+            try {
+                return delegate.getConfigurationActual();
+            } finally {
+                clearContext();
+            }
+        }
+
+        @Override
+        public ConfigurationSnapshot getConfigurationOriginal() {
+            setContext();
+            try {
+                return delegate.getConfigurationOriginal();
+            } finally {
+                clearContext();
+            }
+        }
+
+        @Override
+        public RuntimePatchValidation validate(final RuntimeConfigPatch patch) {
+            setContext();
+            try {
+                return delegate.validate(patch);
+            } finally {
+                clearContext();
+            }
+        }
+
+        @Override
+        public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
+            setContext();
+            try {
+                return delegate.apply(patch);
+            } finally {
+                clearContext();
+            }
         }
     }
 }
