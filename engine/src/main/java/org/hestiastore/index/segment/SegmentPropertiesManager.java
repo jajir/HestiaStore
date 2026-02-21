@@ -45,13 +45,6 @@ public class SegmentPropertiesManager {
         this.id = Vldtn.requireNonNull(id, "segmentId");
         this.layout = new SegmentDirectoryLayout(id);
         this.propertyStore = createStore(directoryFacade);
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "SegmentPropertiesManager created: segment='{}' file='{}' thread='{}' manager='{}'",
-                    this.id.getName(), getPropertiesFilename(),
-                    Thread.currentThread().getName(),
-                    Integer.toHexString(System.identityHashCode(this)));
-        }
     }
 
     private PropertyStore createStore(final Directory directoryFacade) {
@@ -347,7 +340,7 @@ public class SegmentPropertiesManager {
         }
         if (changed && logger.isDebugEnabled()) {
             logger.debug(
-                    "Segment properties write end: segment='{}' file='{}' reason='{}' thread='{}' manager='{}'",
+                    "Segment properties were written: segment='{}' file='{}' reason='{}' thread='{}' manager='{}'",
                     id.getName(), getPropertiesFilename(),
                     reason,
                     Thread.currentThread().getName(),
