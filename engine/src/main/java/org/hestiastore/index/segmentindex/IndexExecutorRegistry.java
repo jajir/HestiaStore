@@ -12,8 +12,8 @@ import org.hestiastore.index.Vldtn;
  * Owns executor lifecycle for SegmentIndex subsystems.
  * <p>
  * All executor pools are created eagerly at construction time and are shared
- * for the full lifetime of this registry. Getter methods reject access once
- * the registry is closed.
+ * for the full lifetime of this registry. Getter methods reject access once the
+ * registry is closed.
  * </p>
  */
 final class IndexExecutorRegistry extends AbstractCloseableResource {
@@ -40,6 +40,8 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         // FIXME remove it
         this(ioThreads, 4, 3, 3);
     }
+
+    // TODO add constructor with IndexConfiguration
 
     /**
      * Creates a registry with explicit pool sizes for each executor group.
