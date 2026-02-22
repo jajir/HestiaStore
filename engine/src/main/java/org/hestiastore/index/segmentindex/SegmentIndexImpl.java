@@ -3,8 +3,10 @@ package org.hestiastore.index.segmentindex;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
@@ -720,16 +722,22 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private SegmentRuntimeAggregate collectSegmentRuntime() {
         final SegmentRuntimeAggregate aggregate = new SegmentRuntimeAggregate();
-        for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
-            aggregate.segmentCount++;
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                    || loaded.getValue() == null) {
-                aggregate.segmentBusyCount++;
+        final List<SegmentId> mappedSegmentIds = keyToSegmentMap
+                .getSegmentIds();
+        aggregate.segmentCount = mappedSegmentIds.size();
+        if (mappedSegmentIds.isEmpty()) {
+            return aggregate;
+        }
+        final Set<SegmentId> mappedSegmentIdSet = new HashSet<>(
+                mappedSegmentIds);
+        int accountedSegments = 0;
+        for (final Segment<K, V> segment : segmentRegistry
+                .loadedSegmentsSnapshot()) {
+            if (segment == null
+                    || !mappedSegmentIdSet.contains(segment.getId())) {
                 continue;
             }
-            final Segment<K, V> segment = loaded.getValue();
+            accountedSegments++;
             final SegmentState state = segment.getState();
             if (state == SegmentState.READY) {
                 aggregate.segmentReadyCount++;
@@ -763,6 +771,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             aggregate.bloomFilterFalsePositiveCount += Math.max(0L,
                     segment.getBloomFilterFalsePositiveCount());
         }
+        aggregate.segmentBusyCount = Math.max(0,
+                aggregate.segmentCount - accountedSegments);
         return aggregate;
     }
 

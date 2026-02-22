@@ -118,6 +118,59 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         }
     }
 
+    @Test
+    void metricsSnapshot_doesNotLoadSegmentsOutsideRegistryCache() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegmentCache(5) //
+                .withMaxNumberOfKeysInSegmentWriteCache(64) //
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128) //
+                .withMaxNumberOfKeysInSegment(20) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withMaxNumberOfDeltaCacheFiles(1) //
+                .withMaxNumberOfSegmentsInCache(3) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withSegmentMaintenanceAutoEnabled(true) //
+                .withContextLoggingEnabled(false) //
+                .withName("metrics_cache_only_runtime_test") //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            for (int i = 0; i < 300; i++) {
+                index.put(i, "v-" + i);
+            }
+
+            awaitCondition(
+                    () -> {
+                        final SegmentIndexMetricsSnapshot snapshot = index
+                                .metricsSnapshot();
+                        return snapshot.getSegmentCount() > snapshot
+                                .getRegistryCacheLimit();
+                    },
+                    10_000L);
+            awaitIdle(index);
+
+            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+
+            assertTrue(
+                    before.getSegmentCount() > before.getRegistryCacheLimit());
+            assertEquals(before.getRegistryCacheLoadCount(),
+                    after.getRegistryCacheLoadCount());
+            assertEquals(before.getRegistryCacheMissCount(),
+                    after.getRegistryCacheMissCount());
+        }
+    }
+
     private static void awaitIdle(final SegmentIndex<Integer, String> index) {
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = index
