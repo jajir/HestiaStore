@@ -2,13 +2,8 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
@@ -46,11 +41,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
+        IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+                resolveIoThreads(indexConf.getNumberOfIoThreads()));
         final int initialIoThreads = resolveIoThreads(
                 indexConf.getNumberOfIoThreads());
-        IoDirectoryHandle ioHandle = newIoDirectory(directory, initialIoThreads,
-                executorRegistry);
+        IoDirectoryHandle ioHandle = newIoDirectory(directory, executorRegistry);
         try {
             IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                     new IndexConfiguratonStorage<>(ioHandle.directory()));
@@ -60,8 +55,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                     conf.getNumberOfIoThreads());
             if (configuredIoThreads != initialIoThreads) {
                 ioHandle.close();
-                ioHandle = newIoDirectory(directory, configuredIoThreads,
-                        executorRegistry);
+                executorRegistry = new IndexExecutorRegistry(
+                        configuredIoThreads);
+                ioHandle = newIoDirectory(directory, executorRegistry);
                 confManager = new IndexConfigurationManager<>(
                         new IndexConfiguratonStorage<>(ioHandle.directory()));
             }
@@ -88,11 +84,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
+        IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+                resolveIoThreads(indexConf.getNumberOfIoThreads()));
         final int initialIoThreads = resolveIoThreads(
                 indexConf.getNumberOfIoThreads());
-        IoDirectoryHandle ioHandle = newIoDirectory(directory, initialIoThreads,
-                executorRegistry);
+        IoDirectoryHandle ioHandle = newIoDirectory(directory, executorRegistry);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                     new IndexConfiguratonStorage<>(ioHandle.directory()));
@@ -102,8 +98,9 @@ public interface SegmentIndex<K, V> extends CloseableResource {
                     mergedConf.getNumberOfIoThreads());
             if (configuredIoThreads != initialIoThreads) {
                 ioHandle.close();
-                ioHandle = newIoDirectory(directory, configuredIoThreads,
-                        executorRegistry);
+                executorRegistry = new IndexExecutorRegistry(
+                        configuredIoThreads);
+                ioHandle = newIoDirectory(directory, executorRegistry);
             }
             return openIndex(ioHandle.directory(), mergedConf,
                     ioHandle.lease());
@@ -125,20 +122,21 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return index instance backed by the persisted configuration
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory) {
-        final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
-        IoDirectoryHandle ioHandle = newIoDirectory(directory,
-                IndexConfigurationContract.NUMBER_OF_IO_THREADS,
-                executorRegistry);
+        final int defaultIoThreads = IndexConfigurationContract.NUMBER_OF_IO_THREADS;
+        IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+                defaultIoThreads);
+        IoDirectoryHandle ioHandle = newIoDirectory(directory, executorRegistry);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                     new IndexConfiguratonStorage<>(ioHandle.directory()));
             final IndexConfiguration<M, N> conf = confManager.loadExisting();
             final int configuredIoThreads = resolveIoThreads(
                     conf.getNumberOfIoThreads());
-            if (configuredIoThreads != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+            if (configuredIoThreads != defaultIoThreads) {
                 ioHandle.close();
-                ioHandle = newIoDirectory(directory, configuredIoThreads,
-                        executorRegistry);
+                executorRegistry = new IndexExecutorRegistry(
+                        configuredIoThreads);
+                ioHandle = newIoDirectory(directory, executorRegistry);
             }
             return openIndex(ioHandle.directory(), conf, ioHandle.lease());
         } catch (final RuntimeException e) {
@@ -161,10 +159,10 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        final IoExecutorRegistry executorRegistry = new IoExecutorRegistry();
-        IoDirectoryHandle ioHandle = newIoDirectory(directory,
-                IndexConfigurationContract.NUMBER_OF_IO_THREADS,
-                executorRegistry);
+        final int defaultIoThreads = IndexConfigurationContract.NUMBER_OF_IO_THREADS;
+        IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+                defaultIoThreads);
+        IoDirectoryHandle ioHandle = newIoDirectory(directory, executorRegistry);
         try {
             final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
                     new IndexConfiguratonStorage<>(ioHandle.directory()));
@@ -177,10 +175,11 @@ public interface SegmentIndex<K, V> extends CloseableResource {
             final IndexConfiguration<M, N> conf = oConf.get();
             final int configuredIoThreads = resolveIoThreads(
                     conf.getNumberOfIoThreads());
-            if (configuredIoThreads != IndexConfigurationContract.NUMBER_OF_IO_THREADS) {
+            if (configuredIoThreads != defaultIoThreads) {
                 ioHandle.close();
-                ioHandle = newIoDirectory(directory, configuredIoThreads,
-                        executorRegistry);
+                executorRegistry = new IndexExecutorRegistry(
+                        configuredIoThreads);
+                ioHandle = newIoDirectory(directory, executorRegistry);
             }
             return Optional.of(
                     openIndex(ioHandle.directory(), conf, ioHandle.lease()));
@@ -219,12 +218,10 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     private static IoDirectoryHandle newIoDirectory(final Directory directory,
-            final int ioThreads, final IoExecutorRegistry executorRegistry) {
-        final IoExecutorRegistry.ExecutorLease lease = executorRegistry
-                .acquire(ioThreads);
+            final IndexExecutorRegistry executorRegistry) {
         final Directory wrapped = new AsyncDirectoryBlockingAdapter(directory,
-                lease.executor());
-        return new IoDirectoryHandle(wrapped, lease);
+                executorRegistry.getIoExecutor());
+        return new IoDirectoryHandle(wrapped, executorRegistry);
     }
 
     private static void closeOnFailure(final IoDirectoryHandle handle,
@@ -465,7 +462,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     record IoDirectoryHandle(Directory directory,
-            IoExecutorRegistry.ExecutorLease lease)
+            IndexExecutorRegistry lease)
             implements CloseableResource {
         @Override
         public boolean wasClosed() {
@@ -497,86 +494,4 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         }
     }
 
-    final class IoExecutorRegistry {
-        private final Object monitor = new Object();
-        private final ConcurrentHashMap<Integer, Holder> holders = new ConcurrentHashMap<>();
-        private final AtomicInteger ioThreadCounter = new AtomicInteger(1);
-
-        ExecutorLease acquire(final int threadCount) {
-            Vldtn.requireGreaterThanZero(threadCount, "threadCount");
-            synchronized (monitor) {
-                final Integer key = Integer.valueOf(threadCount);
-                final Holder holder = holders.computeIfAbsent(key,
-                        ignored -> new Holder(newExecutor(threadCount)));
-                holder.refCount++;
-                return new ExecutorLease(this, key, holder.executor);
-            }
-        }
-
-        private void release(final Integer key) {
-            final ExecutorService executorToShutdown;
-            synchronized (monitor) {
-                final Holder holder = holders.get(key);
-                if (holder == null) {
-                    throw new IllegalStateException(String.format(
-                            "Missing shared executor for key '%s'", key));
-                }
-                holder.refCount--;
-                if (holder.refCount < 0) {
-                    throw new IllegalStateException(String.format(
-                            "Negative refCount for shared executor key '%s'",
-                            key));
-                }
-                if (holder.refCount == 0) {
-                    holders.remove(key, holder);
-                    executorToShutdown = holder.executor;
-                } else {
-                    executorToShutdown = null;
-                }
-            }
-            if (executorToShutdown != null) {
-                executorToShutdown.shutdown();
-            }
-        }
-
-        private ExecutorService newExecutor(final int threadCount) {
-            return Executors.newFixedThreadPool(threadCount, runnable -> {
-                final Thread thread = new Thread(runnable,
-                        "io-" + ioThreadCounter.getAndIncrement());
-                thread.setDaemon(true);
-                return thread;
-            });
-        }
-
-        private static final class Holder {
-            private final ExecutorService executor;
-            private int refCount;
-
-            private Holder(final ExecutorService executor) {
-                this.executor = executor;
-            }
-        }
-
-        final class ExecutorLease extends AbstractCloseableResource {
-            private final IoExecutorRegistry registry;
-            private final Integer key;
-            private final ExecutorService executor;
-
-            ExecutorLease(final IoExecutorRegistry registry, final Integer key,
-                    final ExecutorService executor) {
-                this.registry = Vldtn.requireNonNull(registry, "registry");
-                this.key = Vldtn.requireNonNull(key, "key");
-                this.executor = Vldtn.requireNonNull(executor, "executor");
-            }
-
-            ExecutorService executor() {
-                return executor;
-            }
-
-            @Override
-            protected void doClose() {
-                registry.release(key);
-            }
-        }
-    }
 }

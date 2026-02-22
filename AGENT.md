@@ -31,6 +31,7 @@
 - Always use simple class names with explicit `import` statements (e.g. `import package.ConcreteClass`).
 - Try to avoid creating class instances in constructors.
 - Try to centralize class instantiation in builder classes.
+- Don't use java records.
 
 ## Testing Guidelines
 
