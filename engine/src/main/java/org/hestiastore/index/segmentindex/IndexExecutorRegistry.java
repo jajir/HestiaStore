@@ -9,75 +9,108 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Owns index IO executor lifecycle.
+ * Owns executor lifecycle for SegmentIndex subsystems.
+ * <p>
+ * All executor pools are created eagerly at construction time and are shared
+ * for the full lifetime of this registry. Getter methods reject access once
+ * the registry is closed.
+ * </p>
  */
 final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     private static final AtomicInteger IO_THREAD_COUNTER = new AtomicInteger(1);
+    private static final AtomicInteger SEGMENT_THREAD_COUNTER = new AtomicInteger(
+            1);
     private static final AtomicInteger SEGMENT_MAINTENANCE_THREAD_COUNTER = new AtomicInteger(
             1);
     private static final AtomicInteger REGISTRY_MAINTENANCE_THREAD_COUNTER = new AtomicInteger(
             1);
 
-    private final Object monitor = new Object();
-    private final int ioThreads;
-    private final int segmentMaintenanceThreads;
-    private final int registryMaintenanceThreads;
-    private ExecutorService ioExecutor;
-    private ExecutorService segmentMaintenanceExecutor;
-    private ExecutorService registryMaintenanceExecutor;
+    private final ExecutorService ioExecutor;
+    private final ExecutorService segmentExecutor;
+    private final ExecutorService segmentMaintenanceExecutor;
+    private final ExecutorService registryMaintenanceExecutor;
 
+    /**
+     * Creates a registry with predefined pool sizes.
+     *
+     * @param ioThreads IO pool size
+     */
     IndexExecutorRegistry(final int ioThreads) {
         // FIXME remove it
         this(ioThreads, 4, 3, 3);
     }
 
+    /**
+     * Creates a registry with explicit pool sizes for each executor group.
+     *
+     * @param numberOfIoThreads          IO pool size
+     * @param segmentMaintenanceThreads  segment-maintenance pool size
+     * @param segmentThreads             segment pool size
+     * @param registryMaintenanceThreads registry-maintenance pool size
+     */
     IndexExecutorRegistry(final int numberOfIoThreads,
             final int segmentMaintenanceThreads, final int segmentThreads,
             final int registryMaintenanceThreads) {
         Vldtn.requireGreaterThanZero(numberOfIoThreads, "ioThreads");
+        Vldtn.requireGreaterThanZero(segmentThreads, "segmentThreads");
         Vldtn.requireGreaterThanZero(segmentMaintenanceThreads,
                 "segmentMaintenanceThreads");
         Vldtn.requireGreaterThanZero(registryMaintenanceThreads,
                 "registryMaintenanceThreads");
-        this.ioThreads = numberOfIoThreads;
-        this.segmentMaintenanceThreads = segmentMaintenanceThreads;
-        this.registryMaintenanceThreads = registryMaintenanceThreads;
+        this.ioExecutor = newExecutor(numberOfIoThreads, "index-io-",
+                IO_THREAD_COUNTER);
+        this.segmentExecutor = newExecutor(segmentThreads, "segment-",
+                SEGMENT_THREAD_COUNTER);
+        this.segmentMaintenanceExecutor = newExecutor(segmentMaintenanceThreads,
+                "segment-maintenance-", SEGMENT_MAINTENANCE_THREAD_COUNTER);
+        this.registryMaintenanceExecutor = newExecutor(
+                registryMaintenanceThreads, "registry-maintenance-",
+                REGISTRY_MAINTENANCE_THREAD_COUNTER);
     }
 
+    /**
+     * Returns shared IO executor.
+     *
+     * @return IO executor service
+     * @throws IllegalStateException when registry has already been closed
+     */
     ExecutorService getIoExecutor() {
-        synchronized (monitor) {
-            checkNotClosed();
-            if (ioExecutor == null) {
-                ioExecutor = newExecutor(ioThreads, "index-io-",
-                        IO_THREAD_COUNTER);
-            }
-            return ioExecutor;
-        }
+        checkNotClosed();
+        return ioExecutor;
     }
 
+    /**
+     * Returns shared segment-maintenance executor.
+     *
+     * @return segment-maintenance executor service
+     * @throws IllegalStateException when registry has already been closed
+     */
     ExecutorService getSegmentMaintenanceExecutor() {
-        synchronized (monitor) {
-            checkNotClosed();
-            if (segmentMaintenanceExecutor == null) {
-                segmentMaintenanceExecutor = newExecutor(
-                        segmentMaintenanceThreads, "segment-maintenance-",
-                        SEGMENT_MAINTENANCE_THREAD_COUNTER);
-            }
-            return segmentMaintenanceExecutor;
-        }
+        checkNotClosed();
+        return segmentMaintenanceExecutor;
     }
 
+    /**
+     * Returns shared segment executor.
+     *
+     * @return segment executor service
+     * @throws IllegalStateException when registry has already been closed
+     */
+    ExecutorService getSegmentExecutor() {
+        checkNotClosed();
+        return segmentExecutor;
+    }
+
+    /**
+     * Returns shared registry-maintenance executor.
+     *
+     * @return registry-maintenance executor service
+     * @throws IllegalStateException when registry has already been closed
+     */
     ExecutorService getRegistryMaintenanceExecutor() {
-        synchronized (monitor) {
-            checkNotClosed();
-            if (registryMaintenanceExecutor == null) {
-                registryMaintenanceExecutor = newExecutor(
-                        registryMaintenanceThreads, "registry-maintenance-",
-                        REGISTRY_MAINTENANCE_THREAD_COUNTER);
-            }
-            return registryMaintenanceExecutor;
-        }
+        checkNotClosed();
+        return registryMaintenanceExecutor;
     }
 
     private static ExecutorService newExecutor(final int threadCount,
@@ -92,26 +125,24 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     @Override
     protected void doClose() {
-        final ExecutorService io;
-        final ExecutorService segmentMaintenance;
-        final ExecutorService registryMaintenance;
-        synchronized (monitor) {
-            io = ioExecutor;
-            segmentMaintenance = segmentMaintenanceExecutor;
-            registryMaintenance = registryMaintenanceExecutor;
-            ioExecutor = null;
-            segmentMaintenanceExecutor = null;
-            registryMaintenanceExecutor = null;
-        }
         RuntimeException failure = null;
-        failure = shutdownAndAwait(io, failure);
-        failure = shutdownAndAwait(segmentMaintenance, failure);
-        failure = shutdownAndAwait(registryMaintenance, failure);
+        failure = shutdownAndAwait(ioExecutor, failure);
+        failure = shutdownAndAwait(segmentExecutor, failure);
+        failure = shutdownAndAwait(segmentMaintenanceExecutor, failure);
+        failure = shutdownAndAwait(registryMaintenanceExecutor, failure);
         if (failure != null) {
             throw failure;
         }
     }
 
+    /**
+     * Shuts down executor and waits until termination, aggregating failures.
+     *
+     * @param executor executor to shut down
+     * @param failure  previously observed failure (if any)
+     * @return original or aggregated failure, {@code null} when shutdown
+     *         completed cleanly
+     */
     private RuntimeException shutdownAndAwait(final ExecutorService executor,
             final RuntimeException failure) {
         if (executor == null) {
