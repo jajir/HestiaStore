@@ -1,6 +1,11 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
+import org.hestiastore.index.segment.SegmentState;
 
 /**
  * Immutable snapshot of index and segment runtime metrics.
@@ -50,65 +55,33 @@ public final class SegmentIndexMetricsSnapshot {
     private final long bloomFilterRefusedCount;
     private final long bloomFilterPositiveCount;
     private final long bloomFilterFalsePositiveCount;
+    private final List<SegmentMetricsSnapshot> segmentRuntimeSnapshots;
     private final SegmentIndexState state;
 
     /**
-     * Backward-compatible constructor with only operation counters.
+     * Full runtime metrics constructor including per-segment metrics.
      */
     public SegmentIndexMetricsSnapshot(final long getOperationCount,
             final long putOperationCount, final long deleteOperationCount,
-            final SegmentIndexState state) {
-        this(getOperationCount, putOperationCount, deleteOperationCount, 0L,
-                0L, 0L, 0L, 0, 0, state);
-    }
-
-    /**
-     * Backward-compatible constructor with registry cache counters.
-     */
-    public SegmentIndexMetricsSnapshot(final long getOperationCount,
-            final long putOperationCount, final long deleteOperationCount,
-            final long registryCacheHitCount,
-            final long registryCacheMissCount,
-            final long registryCacheLoadCount,
-            final long registryCacheEvictionCount, final int registryCacheSize,
-            final int registryCacheLimit, final SegmentIndexState state) {
-        this(getOperationCount, putOperationCount, deleteOperationCount,
-                registryCacheHitCount, registryCacheMissCount,
-                registryCacheLoadCount, registryCacheEvictionCount,
-                registryCacheSize, registryCacheLimit, 0, 0, 0, 0, 0, 0, 0, 0,
-                0,
-                0L, 0L,
-                0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                0D, 0L, 0L, 0L, 0L, state);
-    }
-
-    /**
-     * Full runtime metrics constructor.
-     */
-    public SegmentIndexMetricsSnapshot(final long getOperationCount,
-            final long putOperationCount, final long deleteOperationCount,
-            final long registryCacheHitCount,
-            final long registryCacheMissCount,
+            final long registryCacheHitCount, final long registryCacheMissCount,
             final long registryCacheLoadCount,
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
             final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-            final int segmentCount,
-            final int segmentReadyCount, final int segmentMaintenanceCount,
-            final int segmentErrorCount, final int segmentClosedCount,
-            final int segmentBusyCount, final long totalSegmentKeys,
-            final long totalSegmentCacheKeys, final long totalWriteCacheKeys,
-            final long totalDeltaCacheFiles, final long compactRequestCount,
-            final long flushRequestCount, final long splitScheduleCount,
-            final int splitInFlightCount, final int maintenanceQueueSize,
-            final int maintenanceQueueCapacity, final int splitQueueSize,
-            final int splitQueueCapacity, final long readLatencyP50Micros,
-            final long readLatencyP95Micros, final long readLatencyP99Micros,
-            final long writeLatencyP50Micros,
-            final long writeLatencyP95Micros,
-            final long writeLatencyP99Micros,
+            final int segmentCount, final int segmentReadyCount,
+            final int segmentMaintenanceCount, final int segmentErrorCount,
+            final int segmentClosedCount, final int segmentBusyCount,
+            final long totalSegmentKeys, final long totalSegmentCacheKeys,
+            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long compactRequestCount, final long flushRequestCount,
+            final long splitScheduleCount, final int splitInFlightCount,
+            final int maintenanceQueueSize, final int maintenanceQueueCapacity,
+            final int splitQueueSize, final int splitQueueCapacity,
+            final long readLatencyP50Micros, final long readLatencyP95Micros,
+            final long readLatencyP99Micros, final long writeLatencyP50Micros,
+            final long writeLatencyP95Micros, final long writeLatencyP99Micros,
             final int bloomFilterHashFunctions,
             final int bloomFilterIndexSizeInBytes,
             final double bloomFilterProbabilityOfFalsePositive,
@@ -116,6 +89,7 @@ public final class SegmentIndexMetricsSnapshot {
             final long bloomFilterRefusedCount,
             final long bloomFilterPositiveCount,
             final long bloomFilterFalsePositiveCount,
+            final List<SegmentMetricsSnapshot> segmentRuntimeSnapshots,
             final SegmentIndexState state) {
         requireNotNegative(getOperationCount, "getOperationCount");
         requireNotNegative(putOperationCount, "putOperationCount");
@@ -215,6 +189,12 @@ public final class SegmentIndexMetricsSnapshot {
         this.bloomFilterRefusedCount = bloomFilterRefusedCount;
         this.bloomFilterPositiveCount = bloomFilterPositiveCount;
         this.bloomFilterFalsePositiveCount = bloomFilterFalsePositiveCount;
+        final List<SegmentMetricsSnapshot> runtimeMetrics = new ArrayList<>(
+                Vldtn.requireNonNull(segmentRuntimeSnapshots,
+                        "segmentRuntimeSnapshots"));
+        runtimeMetrics.forEach(metric -> Vldtn.requireNonNull(metric,
+                "segmentRuntimeSnapshotsItem"));
+        this.segmentRuntimeSnapshots = List.copyOf(runtimeMetrics);
         this.state = Vldtn.requireNonNull(state, "state");
     }
 
@@ -397,7 +377,160 @@ public final class SegmentIndexMetricsSnapshot {
         return bloomFilterFalsePositiveCount;
     }
 
+    public List<SegmentMetricsSnapshot> getSegmentRuntimeSnapshots() {
+        return segmentRuntimeSnapshots;
+    }
+
     public SegmentIndexState getState() {
         return state;
+    }
+
+    /**
+     * Immutable per-segment metrics captured as part of index runtime snapshot.
+     */
+    public static final class SegmentMetricsSnapshot {
+        private final String segmentId;
+        private final SegmentState state;
+        private final long numberOfKeysInDeltaCache;
+        private final long numberOfKeysInSegment;
+        private final long numberOfKeysInScarceIndex;
+        private final long numberOfKeysInSegmentCache;
+        private final int numberOfKeysInWriteCache;
+        private final int numberOfDeltaCacheFiles;
+        private final long compactRequestCount;
+        private final long flushRequestCount;
+        private final long bloomFilterRequestCount;
+        private final long bloomFilterRefusedCount;
+        private final long bloomFilterPositiveCount;
+        private final long bloomFilterFalsePositiveCount;
+
+        /**
+         * Creates per-segment metrics from one runtime snapshot.
+         *
+         * @param runtimeSnapshot segment runtime snapshot
+         */
+        public SegmentMetricsSnapshot(
+                final SegmentRuntimeSnapshot runtimeSnapshot) {
+            this(Vldtn.requireNonNull(runtimeSnapshot, "runtimeSnapshot")
+                    .getSegmentId().getName(),
+                    runtimeSnapshot.getState(),
+                    runtimeSnapshot.getNumberOfKeysInDeltaCache(),
+                    runtimeSnapshot.getNumberOfKeysInSegment(),
+                    runtimeSnapshot.getNumberOfKeysInScarceIndex(),
+                    runtimeSnapshot.getNumberOfKeysInSegmentCache(),
+                    runtimeSnapshot.getNumberOfKeysInWriteCache(),
+                    runtimeSnapshot.getNumberOfDeltaCacheFiles(),
+                    runtimeSnapshot.getNumberOfCompacts(),
+                    runtimeSnapshot.getNumberOfFlushes(),
+                    runtimeSnapshot.getBloomFilterRequestCount(),
+                    runtimeSnapshot.getBloomFilterRefusedCount(),
+                    runtimeSnapshot.getBloomFilterPositiveCount(),
+                    runtimeSnapshot.getBloomFilterFalsePositiveCount());
+        }
+
+        public SegmentMetricsSnapshot(final String segmentId,
+                final SegmentState state, final long numberOfKeysInDeltaCache,
+                final long numberOfKeysInSegment,
+                final long numberOfKeysInScarceIndex,
+                final long numberOfKeysInSegmentCache,
+                final int numberOfKeysInWriteCache,
+                final int numberOfDeltaCacheFiles,
+                final long compactRequestCount, final long flushRequestCount,
+                final long bloomFilterRequestCount,
+                final long bloomFilterRefusedCount,
+                final long bloomFilterPositiveCount,
+                final long bloomFilterFalsePositiveCount) {
+            this.segmentId = Vldtn.requireNotBlank(segmentId, "segmentId");
+            this.state = Vldtn.requireNonNull(state, "state");
+            requireNotNegative(numberOfKeysInDeltaCache,
+                    "numberOfKeysInDeltaCache");
+            requireNotNegative(numberOfKeysInSegment, "numberOfKeysInSegment");
+            requireNotNegative(numberOfKeysInScarceIndex,
+                    "numberOfKeysInScarceIndex");
+            requireNotNegative(numberOfKeysInSegmentCache,
+                    "numberOfKeysInSegmentCache");
+            requireNotNegative(numberOfKeysInWriteCache,
+                    "numberOfKeysInWriteCache");
+            requireNotNegative(numberOfDeltaCacheFiles,
+                    "numberOfDeltaCacheFiles");
+            requireNotNegative(compactRequestCount, "compactRequestCount");
+            requireNotNegative(flushRequestCount, "flushRequestCount");
+            requireNotNegative(bloomFilterRequestCount,
+                    "bloomFilterRequestCount");
+            requireNotNegative(bloomFilterRefusedCount,
+                    "bloomFilterRefusedCount");
+            requireNotNegative(bloomFilterPositiveCount,
+                    "bloomFilterPositiveCount");
+            requireNotNegative(bloomFilterFalsePositiveCount,
+                    "bloomFilterFalsePositiveCount");
+            this.numberOfKeysInDeltaCache = numberOfKeysInDeltaCache;
+            this.numberOfKeysInSegment = numberOfKeysInSegment;
+            this.numberOfKeysInScarceIndex = numberOfKeysInScarceIndex;
+            this.numberOfKeysInSegmentCache = numberOfKeysInSegmentCache;
+            this.numberOfKeysInWriteCache = numberOfKeysInWriteCache;
+            this.numberOfDeltaCacheFiles = numberOfDeltaCacheFiles;
+            this.compactRequestCount = compactRequestCount;
+            this.flushRequestCount = flushRequestCount;
+            this.bloomFilterRequestCount = bloomFilterRequestCount;
+            this.bloomFilterRefusedCount = bloomFilterRefusedCount;
+            this.bloomFilterPositiveCount = bloomFilterPositiveCount;
+            this.bloomFilterFalsePositiveCount = bloomFilterFalsePositiveCount;
+        }
+
+        public String getSegmentId() {
+            return segmentId;
+        }
+
+        public SegmentState getState() {
+            return state;
+        }
+
+        public long getNumberOfKeysInDeltaCache() {
+            return numberOfKeysInDeltaCache;
+        }
+
+        public long getNumberOfKeysInSegment() {
+            return numberOfKeysInSegment;
+        }
+
+        public long getNumberOfKeysInScarceIndex() {
+            return numberOfKeysInScarceIndex;
+        }
+
+        public long getNumberOfKeysInSegmentCache() {
+            return numberOfKeysInSegmentCache;
+        }
+
+        public int getNumberOfKeysInWriteCache() {
+            return numberOfKeysInWriteCache;
+        }
+
+        public int getNumberOfDeltaCacheFiles() {
+            return numberOfDeltaCacheFiles;
+        }
+
+        public long getCompactRequestCount() {
+            return compactRequestCount;
+        }
+
+        public long getFlushRequestCount() {
+            return flushRequestCount;
+        }
+
+        public long getBloomFilterRequestCount() {
+            return bloomFilterRequestCount;
+        }
+
+        public long getBloomFilterRefusedCount() {
+            return bloomFilterRefusedCount;
+        }
+
+        public long getBloomFilterPositiveCount() {
+            return bloomFilterPositiveCount;
+        }
+
+        public long getBloomFilterFalsePositiveCount() {
+            return bloomFilterFalsePositiveCount;
+        }
     }
 }

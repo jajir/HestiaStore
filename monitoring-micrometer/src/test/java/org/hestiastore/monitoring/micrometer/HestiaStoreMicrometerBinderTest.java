@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -20,8 +21,7 @@ class HestiaStoreMicrometerBinderTest {
     void bindTo_exposesDynamicCountersAndStateGauge() {
         final SegmentIndex<Integer, String> index = mock(SegmentIndex.class);
         final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
-                new SegmentIndexMetricsSnapshot(1L, 2L, 3L,
-                        SegmentIndexState.READY));
+                snapshot(1L, 2L, 3L, SegmentIndexState.READY));
         when(index.metricsSnapshot()).thenAnswer(inv -> snapshotRef.get());
         when(index.getState()).thenAnswer(inv -> snapshotRef.get().getState());
 
@@ -41,8 +41,7 @@ class HestiaStoreMicrometerBinderTest {
         assertEquals(1D, registry.get("hestiastore_index_up")
                 .tag("index", "orders").gauge().value());
 
-        snapshotRef.set(new SegmentIndexMetricsSnapshot(5L, 8L, 13L,
-                SegmentIndexState.CLOSED));
+        snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED));
 
         assertEquals(5D,
                 registry.get("hestiastore_ops_get_total").tag("index", "orders")
@@ -54,5 +53,25 @@ class HestiaStoreMicrometerBinderTest {
                 .tag("index", "orders").functionCounter().count());
         assertEquals(0D, registry.get("hestiastore_index_up")
                 .tag("index", "orders").gauge().value());
+    }
+
+    private SegmentIndexMetricsSnapshot snapshot(final long getCount,
+            final long putCount, final long deleteCount,
+            final SegmentIndexState state) {
+        return new SegmentIndexMetricsSnapshot(
+                getCount, putCount, deleteCount,
+                0L, 0L, 0L, 0L,
+                0, 0,
+                0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
+                0, 0, 0, 0, 0,
+                0L, 0L, 0L,
+                0L, 0L, 0L,
+                0, 0, 0D,
+                0L, 0L, 0L, 0L,
+                List.of(),
+                state);
     }
 }

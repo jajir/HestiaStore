@@ -46,8 +46,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
      *
      * @param indexConfiguration index configuration
      */
-    IndexExecutorRegistry(
-            final IndexConfiguration<?, ?> indexConfiguration) {
+    IndexExecutorRegistry(final IndexConfiguration<?, ?> indexConfiguration) {
         this(Vldtn.requireNonNull(indexConfiguration, "indexConfiguration")
                 .getNumberOfIoThreads(),
                 indexConfiguration.getNumberOfSegmentIndexMaintenanceThreads(),
@@ -80,9 +79,8 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 segmentThreads, 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(segmentExecutorQueueCapacity),
                 runnable -> {
-                    final Thread thread = new Thread(runnable,
-                            "segment-"
-                                    + segmentThreadCounter.getAndIncrement());
+                    final Thread thread = new Thread(runnable, "segment-"
+                            + segmentThreadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
                 }, new ThreadPoolExecutor.AbortPolicy());
@@ -93,8 +91,8 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 1);
         this.segmentMaintenanceExecutor = new ThreadPoolExecutor(
                 segmentMaintenanceThreads, segmentMaintenanceThreads, 0L,
-                TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(segmentMaintenanceExecutorQueueCapacity),
+                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(
+                        segmentMaintenanceExecutorQueueCapacity),
                 runnable -> {
                     final Thread thread = new Thread(runnable,
                             "segment-maintenance-"

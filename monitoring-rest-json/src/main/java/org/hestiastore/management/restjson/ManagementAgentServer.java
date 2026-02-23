@@ -53,6 +53,7 @@ import org.hestiastore.monitoring.json.api.IndexReportResponse;
 import org.hestiastore.monitoring.json.api.JvmMetricsResponse;
 import org.hestiastore.monitoring.json.api.ManagementApiPaths;
 import org.hestiastore.monitoring.json.api.NodeReportResponse;
+import org.hestiastore.monitoring.json.api.SegmentRuntimeReportResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -661,7 +662,32 @@ public final class ManagementAgentServer
                 snapshot.getBloomFilterRequestCount(),
                 snapshot.getBloomFilterRefusedCount(),
                 snapshot.getBloomFilterPositiveCount(),
-                snapshot.getBloomFilterFalsePositiveCount());
+                snapshot.getBloomFilterFalsePositiveCount(),
+                toSegmentRuntimeSections(snapshot));
+    }
+
+    private List<SegmentRuntimeReportResponse> toSegmentRuntimeSections(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        return snapshot.getSegmentRuntimeSnapshots().stream()
+                .map(this::toSegmentRuntimeSection).toList();
+    }
+
+    private SegmentRuntimeReportResponse toSegmentRuntimeSection(
+            final SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot segment) {
+        return new SegmentRuntimeReportResponse(segment.getSegmentId(),
+                segment.getState().name(),
+                segment.getNumberOfKeysInDeltaCache(),
+                segment.getNumberOfKeysInSegment(),
+                segment.getNumberOfKeysInScarceIndex(),
+                segment.getNumberOfKeysInSegmentCache(),
+                segment.getNumberOfKeysInWriteCache(),
+                segment.getNumberOfDeltaCacheFiles(),
+                segment.getCompactRequestCount(),
+                segment.getFlushRequestCount(),
+                segment.getBloomFilterRequestCount(),
+                segment.getBloomFilterRefusedCount(),
+                segment.getBloomFilterPositiveCount(),
+                segment.getBloomFilterFalsePositiveCount());
     }
 
     private ConfigViewResponse toConfigViewResponse(

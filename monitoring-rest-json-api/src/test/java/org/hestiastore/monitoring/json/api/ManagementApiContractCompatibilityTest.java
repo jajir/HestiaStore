@@ -70,7 +70,8 @@ class ManagementApiContractCompatibilityTest {
                         "bloomFilterRequestCount",
                         "bloomFilterRefusedCount",
                         "bloomFilterPositiveCount",
-                        "bloomFilterFalsePositiveCount"),
+                        "bloomFilterFalsePositiveCount",
+                        "segmentRuntimeSnapshots"),
                 List.of(String.class, String.class, boolean.class, long.class,
                         long.class, long.class, long.class, long.class,
                         long.class, long.class, int.class, int.class,
@@ -81,7 +82,25 @@ class ManagementApiContractCompatibilityTest {
                         int.class, int.class, int.class, long.class,
                         long.class, long.class, long.class, long.class,
                         long.class, int.class, int.class, double.class,
-                        long.class, long.class, long.class, long.class));
+                        long.class, long.class, long.class, long.class,
+                        List.class));
+    }
+
+    @Test
+    void segmentRuntimeRecordComponentsRemainStable() {
+        assertRecordComponents(SegmentRuntimeReportResponse.class,
+                List.of("segmentId", "state", "numberOfKeysInDeltaCache",
+                        "numberOfKeysInSegment", "numberOfKeysInScarceIndex",
+                        "numberOfKeysInSegmentCache",
+                        "numberOfKeysInWriteCache", "numberOfDeltaCacheFiles",
+                        "compactRequestCount", "flushRequestCount",
+                        "bloomFilterRequestCount", "bloomFilterRefusedCount",
+                        "bloomFilterPositiveCount",
+                        "bloomFilterFalsePositiveCount"),
+                List.of(String.class, String.class, long.class, long.class,
+                        long.class, long.class, int.class, int.class,
+                        long.class, long.class, long.class, long.class,
+                        long.class, long.class));
     }
 
     @Test

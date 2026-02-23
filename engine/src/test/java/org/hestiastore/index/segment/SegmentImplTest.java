@@ -175,6 +175,15 @@ class SegmentImplTest {
         assertEquals(2L, snapshot.getNumberOfKeysInScarceIndex());
         assertEquals(0L, snapshot.getCompactRequestCount());
         assertEquals(0L, snapshot.getFlushRequestCount());
+        final SegmentRuntimeSnapshot runtimeSnapshot = subject
+                .getRuntimeSnapshot();
+        assertSame(segmentId, runtimeSnapshot.getSegmentId());
+        assertEquals(SegmentState.READY, runtimeSnapshot.getState());
+        assertEquals(3L, runtimeSnapshot.getNumberOfKeysInDeltaCache());
+        assertEquals(4L, runtimeSnapshot.getNumberOfKeysInSegment());
+        assertEquals(2L, runtimeSnapshot.getNumberOfKeysInScarceIndex());
+        assertEquals(0L, runtimeSnapshot.getNumberOfCompacts());
+        assertEquals(0L, runtimeSnapshot.getNumberOfFlushes());
         assertEquals(7L, subject.getNumberOfKeys());
     }
 
