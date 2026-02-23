@@ -41,7 +41,7 @@ final class FileLockMetadata {
         this.pid = pid;
         this.processStartEpochMillis = processStartEpochMillis;
         this.host = Vldtn.requireNonNull(host, "host");
-        this.sessionId = Vldtn.requireNonNull(sessionId, "sessionId");
+        this.sessionId = Vldtn.requireNonNull(sessionId, KEY_SESSION_ID);
     }
 
     static FileLockMetadata currentProcess() {
