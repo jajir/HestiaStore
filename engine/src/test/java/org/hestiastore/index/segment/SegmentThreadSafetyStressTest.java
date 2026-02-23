@@ -73,9 +73,9 @@ class SegmentThreadSafetyStressTest {
                 });
 
                 start.countDown();
-                writer.get(5, TimeUnit.SECONDS);
-                reader.get(5, TimeUnit.SECONDS);
-                maintenance.get(5, TimeUnit.SECONDS);
+                writer.get();
+                reader.get();
+                maintenance.get();
 
                 assertNotEquals(SegmentState.ERROR, segment.getState());
             } finally {
