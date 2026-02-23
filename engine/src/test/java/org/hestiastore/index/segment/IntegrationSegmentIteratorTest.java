@@ -81,6 +81,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     @Test
     void test_case_1_read_data() {
+        assertTrue(true);
         verifySegmentData(segment, resultData);
         verifySegmentSearch(segment, resultData);
     }

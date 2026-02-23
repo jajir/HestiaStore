@@ -1,6 +1,7 @@
 package org.hestiastore.index;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -217,7 +218,7 @@ class VldtnTest {
 
     @Test
     void test_requireTrue() {
-        Vldtn.requireTrue(true, "ok");
+        assertDoesNotThrow(() -> Vldtn.requireTrue(true, "ok"));
     }
 
     @Test

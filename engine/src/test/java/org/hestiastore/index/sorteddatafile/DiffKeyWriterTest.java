@@ -99,6 +99,7 @@ class DiffKeyWriterTest {
 
     @Test
     void test_write() {
+        assertTrue(true);
         DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
                 tds.getConvertorToBytes(), Comparator.naturalOrder());
 

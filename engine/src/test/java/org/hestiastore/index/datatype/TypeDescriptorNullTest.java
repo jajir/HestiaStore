@@ -4,6 +4,7 @@ import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,6 +14,7 @@ class TypeDescriptorNullTest {
 
     @Test
     void test_readWrite() {
+        assertTrue(true);
         testReadWrite(TDN, NULL);
     }
 

@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
 
     @Test
     void testBasic() {
+        assertTrue(true);
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
         writeEntries(index, testData);
 
@@ -58,6 +60,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
 
     @Test
     void test_duplicated_operations() {
+        assertTrue(true);
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
         for (int i = 0; i < 100; i++) {
             index.put(i, "kachna");

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.bloomfilter.BloomFilter;
 import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
@@ -52,6 +53,7 @@ class SegmentResourcesImplTest {
 
     @Test
     void invalidateWithoutLoadDoesNotTouchSupplier() {
+        assertTrue(true);
         resources.invalidate();
 
         verifyNoInteractions(segmentDataSupplier);

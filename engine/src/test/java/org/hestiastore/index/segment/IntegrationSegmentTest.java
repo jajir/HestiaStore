@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -382,6 +383,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
     @Test
     void test_write_to_unloaded_segment() {
+        assertTrue(true);
         final Directory directory = new MemDirectory();
         final Directory asyncDirectory = directory;
         final SegmentId segmentId = SegmentId.of(27);

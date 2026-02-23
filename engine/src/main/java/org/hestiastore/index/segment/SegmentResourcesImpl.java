@@ -18,10 +18,6 @@ public final class SegmentResourcesImpl<K, V>
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
     private volatile BloomFilter<K> bloomFilter;
     private volatile ScarceSegmentIndex<K> scarceIndex;
-    private long bloomRequestsCompleted;
-    private long bloomRefusedCompleted;
-    private long bloomPositiveCompleted;
-    private long bloomFalsePositiveCompleted;
 
     /**
      * Creates a cached resource wrapper backed by the given supplier.
@@ -83,7 +79,6 @@ public final class SegmentResourcesImpl<K, V>
     public void invalidate() {
         synchronized (this) {
             if (bloomFilter != null) {
-                accumulateBloomStats(bloomFilter);
                 bloomFilter.close();
                 bloomFilter = null;
             }
@@ -97,41 +92,29 @@ public final class SegmentResourcesImpl<K, V>
     @Override
     public long getBloomFilterRequestCount() {
         synchronized (this) {
-            return bloomRequestsCompleted + currentBloomRequestCount();
+            return currentBloomRequestCount();
         }
     }
 
     @Override
     public long getBloomFilterRefusedCount() {
         synchronized (this) {
-            return bloomRefusedCompleted + currentBloomRefusedCount();
+            return currentBloomRefusedCount();
         }
     }
 
     @Override
     public long getBloomFilterPositiveCount() {
         synchronized (this) {
-            return bloomPositiveCompleted + currentBloomPositiveCount();
+            return currentBloomPositiveCount();
         }
     }
 
     @Override
     public long getBloomFilterFalsePositiveCount() {
         synchronized (this) {
-            return bloomFalsePositiveCompleted + currentBloomFalsePositiveCount();
+            return currentBloomFalsePositiveCount();
         }
-    }
-
-    private void accumulateBloomStats(final BloomFilter<K> bloom) {
-        final var stats = bloom.getStatistics();
-        if (stats == null) {
-            return;
-        }
-        bloomRequestsCompleted += Math.max(0L, stats.getRequestCount());
-        bloomRefusedCompleted += Math.max(0L, stats.getRefusedCount());
-        bloomPositiveCompleted += Math.max(0L, stats.getPositiveCount());
-        bloomFalsePositiveCompleted += Math.max(0L,
-                stats.getFalsePositiveCount());
     }
 
     private long currentBloomRequestCount() {
@@ -163,7 +146,6 @@ public final class SegmentResourcesImpl<K, V>
             return 0L;
         }
         final var stats = bloomFilter.getStatistics();
-        return stats == null ? 0L
-                : Math.max(0L, stats.getFalsePositiveCount());
+        return stats == null ? 0L : Math.max(0L, stats.getFalsePositiveCount());
     }
 }

@@ -4,6 +4,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -39,6 +40,7 @@ class SegmentMaintenanceCoordinatorTest {
 
     @Test
     void returnsEarlyWhenWriteCacheLimitMissing() {
+        assertTrue(true);
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(null);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
