@@ -3,11 +3,6 @@ package org.hestiastore.index.chunkstore;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
-import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorLong;
 
 /**
  * Provides encoding and decoding utilities for {@link ChunkHeader}.
@@ -19,18 +14,6 @@ final class ChunkHeaderCodec {
     private static final int PAYLOAD_LENGTH_OFFSET = 12;
     private static final int CRC_OFFSET = 16;
     private static final int FLAGS_OFFSET = 24;
-
-    private static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
-    private static final ConvertorFromBytes<Long> LONG_FROM_BYTES = TYPE_DESCRIPTOR_LONG
-            .getConvertorFromBytes();
-    private static final ConvertorToBytes<Long> LONG_TO_BYTES = TYPE_DESCRIPTOR_LONG
-            .getConvertorToBytes();
-
-    private static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();
-    private static final ConvertorFromBytes<Integer> INT_FROM_BYTES = TYPE_DESCRIPTOR_INTEGER
-            .getConvertorFromBytes();
-    private static final ConvertorToBytes<Integer> INT_TO_BYTES = TYPE_DESCRIPTOR_INTEGER
-            .getConvertorToBytes();
 
     private ChunkHeaderCodec() {
         // utility class
@@ -75,36 +58,40 @@ final class ChunkHeaderCodec {
     }
 
     private static long readLong(final byte[] data, final int offset) {
-        final byte[] buffer = new byte[8];
-        System.arraycopy(data, offset, buffer, 0, 8);
-        final Long value = LONG_FROM_BYTES.fromBytes(buffer);
-        if (value == null) {
-            throw new IllegalArgumentException(
-                    "Unable to read long from chunk header");
-        }
-        return value;
+        return ((long) data[offset] & 0xFFL) << 56
+                | ((long) data[offset + 1] & 0xFFL) << 48
+                | ((long) data[offset + 2] & 0xFFL) << 40
+                | ((long) data[offset + 3] & 0xFFL) << 32
+                | ((long) data[offset + 4] & 0xFFL) << 24
+                | ((long) data[offset + 5] & 0xFFL) << 16
+                | ((long) data[offset + 6] & 0xFFL) << 8
+                | ((long) data[offset + 7] & 0xFFL);
     }
 
     private static int readInt(final byte[] data, final int offset) {
-        final byte[] buffer = new byte[4];
-        System.arraycopy(data, offset, buffer, 0, 4);
-        final Integer value = INT_FROM_BYTES.fromBytes(buffer);
-        if (value == null) {
-            throw new IllegalArgumentException(
-                    "Unable to read int from chunk header");
-        }
-        return value;
+        return (data[offset] & 0xFF) << 24
+                | (data[offset + 1] & 0xFF) << 16
+                | (data[offset + 2] & 0xFF) << 8
+                | (data[offset + 3] & 0xFF);
     }
 
     private static void writeLong(final byte[] data, final int offset,
             final long value) {
-        final byte[] bytes = LONG_TO_BYTES.toBytes(value);
-        System.arraycopy(bytes, 0, data, offset, 8);
+        data[offset] = (byte) (value >>> 56);
+        data[offset + 1] = (byte) (value >>> 48);
+        data[offset + 2] = (byte) (value >>> 40);
+        data[offset + 3] = (byte) (value >>> 32);
+        data[offset + 4] = (byte) (value >>> 24);
+        data[offset + 5] = (byte) (value >>> 16);
+        data[offset + 6] = (byte) (value >>> 8);
+        data[offset + 7] = (byte) value;
     }
 
     private static void writeInt(final byte[] data, final int offset,
             final int value) {
-        final byte[] bytes = INT_TO_BYTES.toBytes(value);
-        System.arraycopy(bytes, 0, data, offset, 4);
+        data[offset] = (byte) (value >>> 24);
+        data[offset + 1] = (byte) (value >>> 16);
+        data[offset + 2] = (byte) (value >>> 8);
+        data[offset + 3] = (byte) value;
     }
 }
