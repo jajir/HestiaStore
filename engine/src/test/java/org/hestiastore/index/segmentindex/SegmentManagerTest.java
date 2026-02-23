@@ -40,8 +40,6 @@ class SegmentManagerTest {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         final ExecutorService maintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                maintenancePool);
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
@@ -49,7 +47,7 @@ class SegmentManagerTest {
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
-                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withMaintenanceExecutor(maintenancePool)
                 .withLifecycleExecutor(Executors.newSingleThreadExecutor())
                 .build();
         when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
@@ -83,9 +81,6 @@ class SegmentManagerTest {
          */
         assertSame(s1, s2);
         segmentRegistry.close();
-        if (!maintenanceExecutor.wasClosed()) {
-            maintenanceExecutor.close();
-        }
         maintenancePool.shutdownNow();
     }
 
@@ -95,8 +90,6 @@ class SegmentManagerTest {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         final ExecutorService maintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                maintenancePool);
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
@@ -104,13 +97,10 @@ class SegmentManagerTest {
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
-                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withMaintenanceExecutor(maintenancePool)
                 .withLifecycleExecutor(Executors.newSingleThreadExecutor())
                 .build();
         assertDoesNotThrow(() -> segmentRegistry.close());
-        if (!maintenanceExecutor.wasClosed()) {
-            maintenanceExecutor.close();
-        }
         maintenancePool.shutdownNow();
     }
 

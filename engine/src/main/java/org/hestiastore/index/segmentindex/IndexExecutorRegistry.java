@@ -33,9 +33,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     private final ExecutorService ioExecutor;
     private final ThreadPoolExecutor segmentExecutor;
-    private final int segmentExecutorQueueCapacity;
     private final ThreadPoolExecutor segmentMaintenanceExecutor;
-    private final int segmentMaintenanceExecutorQueueCapacity;
     private final ExecutorService registryMaintenanceExecutor;
 
     /**
@@ -84,7 +82,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 "registryMaintenanceThreads");
         this.ioExecutor = newExecutor(numberOfIoThreads, "index-io-",
                 IO_THREAD_COUNTER);
-        this.segmentExecutorQueueCapacity = Math.max(MIN_QUEUE_CAPACITY,
+        final int segmentExecutorQueueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 segmentThreads * QUEUE_CAPACITY_MULTIPLIER);
         this.segmentExecutor = new ThreadPoolExecutor(segmentThreads,
                 segmentThreads, 0L, TimeUnit.MILLISECONDS,
@@ -97,7 +95,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                     thread.setDaemon(true);
                     return thread;
                 }, new ThreadPoolExecutor.AbortPolicy());
-        this.segmentMaintenanceExecutorQueueCapacity = Math.max(
+        final int segmentMaintenanceExecutorQueueCapacity = Math.max(
                 MIN_QUEUE_CAPACITY,
                 segmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         this.segmentMaintenanceExecutor = new ThreadPoolExecutor(
@@ -139,21 +137,6 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         return segmentMaintenanceExecutor;
     }
 
-    int getSegmentMaintenanceExecutorQueueSize() {
-        checkNotClosed();
-        return segmentMaintenanceExecutor.getQueue().size();
-    }
-
-    int getSegmentMaintenanceExecutorActiveCount() {
-        checkNotClosed();
-        return segmentMaintenanceExecutor.getActiveCount();
-    }
-
-    int getSegmentMaintenanceExecutorQueueCapacity() {
-        checkNotClosed();
-        return segmentMaintenanceExecutorQueueCapacity;
-    }
-
     /**
      * Returns shared segment executor.
      *
@@ -163,21 +146,6 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     ExecutorService getSegmentExecutor() {
         checkNotClosed();
         return segmentExecutor;
-    }
-
-    int getSegmentExecutorQueueSize() {
-        checkNotClosed();
-        return segmentExecutor.getQueue().size();
-    }
-
-    int getSegmentExecutorActiveCount() {
-        checkNotClosed();
-        return segmentExecutor.getActiveCount();
-    }
-
-    int getSegmentExecutorQueueCapacity() {
-        checkNotClosed();
-        return segmentExecutorQueueCapacity;
     }
 
     /**

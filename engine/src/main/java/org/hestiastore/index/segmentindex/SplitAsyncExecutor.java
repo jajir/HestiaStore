@@ -32,18 +32,6 @@ public final class SplitAsyncExecutor extends AbstractCloseableResource {
         return executorRegistry.getSegmentExecutor();
     }
 
-    int getQueueSize() {
-        return executorRegistry.getSegmentExecutorQueueSize();
-    }
-
-    int getActiveCount() {
-        return executorRegistry.getSegmentExecutorActiveCount();
-    }
-
-    int getQueueCapacity() {
-        return executorRegistry.getSegmentExecutorQueueCapacity();
-    }
-
     @Override
     protected void doClose() {
         // Executor lifecycle is owned by IndexExecutorRegistry.

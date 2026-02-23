@@ -21,7 +21,6 @@ import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentAsyncExecutor;
 import org.junit.jupiter.api.Test;
 
 class SegmentFactoryTest {
@@ -32,12 +31,9 @@ class SegmentFactoryTest {
         final Directory directory = new MemDirectory();
         final ExecutorService maintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                maintenancePool);
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
-                maintenanceExecutor.getExecutor());
+                new TypeDescriptorShortString(), conf, maintenancePool);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
                 .buildSegment(segmentId);
@@ -48,9 +44,6 @@ class SegmentFactoryTest {
             assertEquals(segmentId, segment.getId());
         } finally {
             SegmentTestHelper.closeAndAwait(segment);
-            if (!maintenanceExecutor.wasClosed()) {
-                maintenanceExecutor.close();
-            }
             maintenancePool.shutdownNow();
         }
     }
@@ -61,12 +54,9 @@ class SegmentFactoryTest {
         final Directory directory = new MemDirectory();
         final ExecutorService maintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                maintenancePool);
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
-                maintenanceExecutor.getExecutor());
+                new TypeDescriptorShortString(), conf, maintenancePool);
         final SegmentId segmentId = SegmentId.of(7);
         final String lockFileName = new SegmentDirectoryLayout(segmentId)
                 .getLockFileName();
@@ -81,9 +71,6 @@ class SegmentFactoryTest {
             assertTrue(segmentDirectory.isFileExists(lockFileName));
         } finally {
             SegmentTestHelper.closeAndAwait(segment);
-            if (!maintenanceExecutor.wasClosed()) {
-                maintenanceExecutor.close();
-            }
             maintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
