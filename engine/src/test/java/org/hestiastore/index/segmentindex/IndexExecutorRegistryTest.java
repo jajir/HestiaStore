@@ -1,16 +1,54 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
 
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.junit.jupiter.api.Test;
 
 class IndexExecutorRegistryTest {
+
+    @Test
+    void configurationConstructorRejectsNullConfiguration() {
+        final IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new IndexExecutorRegistry((IndexConfiguration<?, ?>) null));
+        assertEquals("Property 'indexConfiguration' must not be null.",
+                ex.getMessage());
+    }
+
+    @Test
+    void configurationConstructorUsesProvidedConfiguration() {
+        final IndexConfiguration<Integer, String> conf = buildConf(2, 3, 4, 5);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
+        try {
+            assertNotNull(registry.getIoExecutor());
+            assertNotNull(registry.getSegmentExecutor());
+            assertNotNull(registry.getSegmentMaintenanceExecutor());
+            assertNotNull(registry.getRegistryMaintenanceExecutor());
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void configurationConstructorRejectsNonPositiveIoThreads() {
+        final IndexConfiguration<Integer, String> conf = buildConf(0, 1, 1, 1);
+        final IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new IndexExecutorRegistry(conf));
+        assertEquals("Property 'ioThreads' must be greater than 0",
+                ex.getMessage());
+    }
 
     @Test
     void constructorRejectsNonPositiveIoThreads() {
@@ -140,5 +178,36 @@ class IndexExecutorRegistryTest {
         } finally {
             registry.close();
         }
+    }
+
+    private static IndexConfiguration<Integer, String> buildConf(
+            final int ioThreads, final int segmentMaintenanceThreads,
+            final int segmentThreads, final int registryMaintenanceThreads) {
+        return IndexConfiguration.<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                .withValueTypeDescriptor(new TypeDescriptorShortString())//
+                .withName("index-executor-registry-test")//
+                .withContextLoggingEnabled(false)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaxNumberOfKeysInSegment(100)//
+                .withMaxNumberOfSegmentsInCache(3)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withIndexWorkerThreadCount(segmentThreads)//
+                .withNumberOfIoThreads(ioThreads)//
+                .withNumberOfSegmentIndexMaintenanceThreads(
+                        segmentMaintenanceThreads)//
+                .withNumberOfRegistryLifecycleThreads(
+                        registryMaintenanceThreads)//
+                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .build();
     }
 }
