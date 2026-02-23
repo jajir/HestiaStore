@@ -32,47 +32,49 @@ class SegmentSplitStepCreateLowerSegmentTest {
 
     @Test
     void test_missing_ctx() {
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(null, new SegmentSplitState<>()));
+                () -> step.filter(null, state));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                null, null, null, null, null);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null, null),
-                        null));
+                () -> step.filter(ctx, null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_segment() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                null, null, SegmentId.of(1), SegmentId.of(2), id -> null);
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null,
-                        SegmentId.of(1), SegmentId.of(2), id -> null),
-                        new SegmentSplitState<>()));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'segment' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_lowerSegmentId() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                segment, null, null, SegmentId.of(2), id -> null);
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(
-                        new SegmentSplitContext<>(segment, null, null,
-                                SegmentId.of(2),
-                                id -> null),
-                        new SegmentSplitState<>()));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'lowerSegmentId' must not be null.",
                 err.getMessage());
     }
 
     @Test
     void test_missing_writerTxFactory() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                segment, null, SegmentId.of(1), SegmentId.of(2), null);
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(segment, null,
-                        SegmentId.of(1), SegmentId.of(2), null),
-                        new SegmentSplitState<>()));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'writerTxFactory' must not be null.",
                 err.getMessage());
     }

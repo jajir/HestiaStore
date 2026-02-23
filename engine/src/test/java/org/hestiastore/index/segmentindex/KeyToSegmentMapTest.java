@@ -21,9 +21,10 @@ class KeyToSegmentMapTest {
     @Test
     void insertSegmentRejectsDuplicateId() {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
-        cache.insertSegment(5, SegmentId.of(0));
+        final SegmentId existingId = SegmentId.of(0);
+        cache.insertSegment(5, existingId);
         assertThrows(IllegalArgumentException.class,
-                () -> cache.insertSegment(6, SegmentId.of(0)));
+                () -> cache.insertSegment(6, existingId));
     }
 
     @Test

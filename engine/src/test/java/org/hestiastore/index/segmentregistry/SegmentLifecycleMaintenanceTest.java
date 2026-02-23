@@ -54,10 +54,11 @@ class SegmentLifecycleMaintenanceTest {
     void loadSegment_throwsBusyException_whenDirectoryMissing() {
         try (Fixture fixture = new Fixture()) {
             fixture.gate.finishFreezeToReady();
+            final SegmentId missingSegmentId = SegmentId.of(10);
 
             final SegmentBusyException ex = assertThrows(
                     SegmentBusyException.class,
-                    () -> fixture.maintenance.loadSegment(SegmentId.of(10)));
+                    () -> fixture.maintenance.loadSegment(missingSegmentId));
             assertSame(SegmentBusyException.class, ex.getClass());
         }
     }

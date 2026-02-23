@@ -312,15 +312,17 @@ class SegmentCacheTest {
 
     @Test
     void constructor_rejects_non_positive_limits() {
+        final var comparator = keyType.getComparator();
+        final List<Entry<Integer, String>> entries = List.of();
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentCache<>(keyType.getComparator(), valueType,
-                        List.of(), 0, 1, DEFAULT_MAX_SEGMENT_CACHE));
+                () -> new SegmentCache<>(comparator, valueType, entries, 0, 1,
+                        DEFAULT_MAX_SEGMENT_CACHE));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentCache<>(keyType.getComparator(), valueType,
-                        List.of(), 1, 0, DEFAULT_MAX_SEGMENT_CACHE));
+                () -> new SegmentCache<>(comparator, valueType, entries, 1, 0,
+                        DEFAULT_MAX_SEGMENT_CACHE));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentCache<>(keyType.getComparator(), valueType,
-                        List.of(), 1, 1, 0));
+                () -> new SegmentCache<>(comparator, valueType, entries, 1, 1,
+                        0));
     }
 
     @Test

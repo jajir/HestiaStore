@@ -443,8 +443,9 @@ class SegmentRegistryCacheTest {
 
         assertThrows(IllegalStateException.class,
                 () -> entry.finishLoad("other"));
+        final IllegalStateException failure = new IllegalStateException("boom");
         assertThrows(IllegalStateException.class,
-                () -> entry.fail(new IllegalStateException("boom")));
+                () -> entry.fail(failure));
         assertThrows(IllegalStateException.class, entry::finishUnload);
     }
 
