@@ -1,5 +1,6 @@
 package org.hestiastore.index.datablockfile;
 
+import org.apache.commons.codec.digest.PureJavaCrc32;
 import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
 
@@ -48,8 +49,7 @@ public final class DataBlock {
      * @return the header of this data block
      */
     public DataBlockHeader getHeader() {
-        return DataBlockHeader
-                .of(bytes.subBytes(0, DataBlockHeader.HEADER_SIZE));
+        return DataBlockHeader.of(bytes);
     }
 
     /**
@@ -94,7 +94,11 @@ public final class DataBlock {
      * @return the CRC of the payload of this data block
      */
     long calculateCrc() {
-        return getPayload().calculateCrc();
+        final PureJavaCrc32 crc = new PureJavaCrc32();
+        final byte[] data = bytes.getData();
+        crc.update(data, DataBlockHeader.HEADER_SIZE,
+                data.length - DataBlockHeader.HEADER_SIZE);
+        return crc.getValue();
     }
 
 }

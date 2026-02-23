@@ -17,14 +17,16 @@ import org.hestiastore.index.Filter;
  */
 class SegmentSearcher<K, V> extends AbstractCloseableResource {
 
-    private final List<Filter<SegmentSearcherContext<K, V>, SegmentSearcherResult<V>>> steps;
+    private final SegmentSearcherPipeline<K, V> pipeline;
 
     /**
      * Creates a searcher pipeline for segment lookups.
      */
     public SegmentSearcher() {
-        this.steps = List.of(new SegmentSearcherStepBloomFilter<>(),
-                new SegmentSearcherStepIndexFile<>());
+        this.pipeline = new SegmentSearcherPipeline<>(List
+                .<Filter<SegmentSearcherContext<K, V>, SegmentSearcherResult<V>>>of(
+                        new SegmentSearcherStepBloomFilter<>(),
+                        new SegmentSearcherStepIndexFile<>()));
     }
 
     /**
@@ -41,8 +43,6 @@ class SegmentSearcher<K, V> extends AbstractCloseableResource {
         final SegmentSearcherContext<K, V> ctx = SegmentSearcherContext.of(key,
                 segmentDataProvider, segmentIndexSearcher);
         final SegmentSearcherResult<V> result = new SegmentSearcherResult<>();
-        final SegmentSearcherPipeline<K, V> pipeline = new SegmentSearcherPipeline<>(
-                steps);
         pipeline.run(ctx, result);
         return result.getValue();
     }

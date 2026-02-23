@@ -51,26 +51,30 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
     @Override
     public Bytes readExactly(final int length) {
         Vldtn.requireGreaterThanZero(length, "length");
-        int bytesToread = Vldtn.requireCellSize(length, "length");
+        int bytesToRead = Vldtn.requireCellSize(length, "length");
         optionalyMoveToNextDataBlock();
-        Bytes chunkPayloadBytes = Bytes.EMPTY;
-        while (bytesToread > 0) {
+        final byte[] out = new byte[bytesToRead];
+        int outOffset = 0;
+        while (bytesToRead > 0) {
             if (currentDataBlock == null) {
                 return null;
             }
             final int remainingBytesToReadInChunk = dataBlockPayloadSize
                     - currentBlockPosition;
             final int bytesToReadFromCurrentBlock = Math
-                    .min(remainingBytesToReadInChunk, bytesToread);
-            chunkPayloadBytes = chunkPayloadBytes
-                    .concat(currentDataBlock.getPayload().getBytes()
-                            .subBytes(currentBlockPosition, currentBlockPosition
-                                    + bytesToReadFromCurrentBlock));
+                    .min(remainingBytesToReadInChunk, bytesToRead);
+            final byte[] currentBlockBytes = currentDataBlock.getBytes()
+                    .getData();
+            final int sourceOffset = DataBlockHeader.HEADER_SIZE
+                    + currentBlockPosition;
+            System.arraycopy(currentBlockBytes, sourceOffset, out, outOffset,
+                    bytesToReadFromCurrentBlock);
+            outOffset += bytesToReadFromCurrentBlock;
             currentBlockPosition += bytesToReadFromCurrentBlock;
-            bytesToread -= bytesToReadFromCurrentBlock;
+            bytesToRead -= bytesToReadFromCurrentBlock;
             optionalyMoveToNextDataBlock();
         }
-        return chunkPayloadBytes;
+        return Bytes.of(out);
     }
 
     private void optionalyMoveToNextDataBlock() {
