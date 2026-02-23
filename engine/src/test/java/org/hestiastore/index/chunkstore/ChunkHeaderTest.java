@@ -90,9 +90,9 @@ class ChunkHeaderTest {
 
     @Test
     void test_payload_length_must_not_be_negative() {
+        final long magicNumber = ChunkHeader.MAGIC_NUMBER;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, VERSION, -1,
-                        CRC));
+                () -> ChunkHeader.of(magicNumber, VERSION, -1, CRC));
         assertEquals("Property 'payloadLength' must be greater than 0",
                 e.getMessage());
     }

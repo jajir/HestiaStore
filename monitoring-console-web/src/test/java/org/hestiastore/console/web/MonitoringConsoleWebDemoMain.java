@@ -1,5 +1,6 @@
 package org.hestiastore.console.web;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -59,13 +60,21 @@ public final class MonitoringConsoleWebDemoMain {
                 indexesForNode.add(index);
                 indexes.add(index);
             }
-            final ManagementAgentServer agent = new ManagementAgentServer(
-                    "127.0.0.1", basePort + i, indexesForNode.get(0),
-                    namesForNode.get(0),
-                    Set.of("maxNumberOfSegmentsInCache",
-                            "maxNumberOfKeysInSegmentCache",
-                            "maxNumberOfKeysInSegmentWriteCache",
-                            "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
+            final ManagementAgentServer agent;
+            try {
+                agent = new ManagementAgentServer("127.0.0.1", basePort + i,
+                        indexesForNode.get(0), namesForNode.get(0),
+                        Set.of("maxNumberOfSegmentsInCache",
+                                "maxNumberOfKeysInSegmentCache",
+                                "maxNumberOfKeysInSegmentWriteCache",
+                                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
+            } catch (final IOException e) {
+                shutdownResources(loadExecutor, agents, indexes);
+                throw new IllegalStateException(
+                        "Failed to start management agent on port "
+                                + (basePort + i),
+                        e);
+            }
             for (int j = 1; j < indexesForNode.size(); j++) {
                 agent.addIndex(namesForNode.get(j), indexesForNode.get(j));
             }
@@ -74,17 +83,8 @@ public final class MonitoringConsoleWebDemoMain {
         }
 
         startSyntheticLoad(loadExecutor, indexes);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            loadExecutor.shutdownNow();
-            for (final ManagementAgentServer agent : agents) {
-                agent.close();
-            }
-            for (final SegmentIndex<Integer, String> index : indexes) {
-                if (!index.wasClosed()) {
-                    index.close();
-                }
-            }
-        }));
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(() -> shutdownResources(loadExecutor, agents, indexes)));
 
         System.out.println("Management agents started (direct mode):");
         for (int i = 0; i < NODE_COUNT; i++) {
@@ -100,6 +100,21 @@ public final class MonitoringConsoleWebDemoMain {
             Thread.currentThread().join();
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void shutdownResources(
+            final ScheduledExecutorService loadExecutor,
+            final List<ManagementAgentServer> agents,
+            final List<SegmentIndex<Integer, String>> indexes) {
+        loadExecutor.shutdownNow();
+        for (final ManagementAgentServer agent : agents) {
+            agent.close();
+        }
+        for (final SegmentIndex<Integer, String> index : indexes) {
+            if (!index.wasClosed()) {
+                index.close();
+            }
         }
     }
 

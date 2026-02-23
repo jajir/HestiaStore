@@ -9,8 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.intThat;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -325,13 +326,15 @@ class SegmentImplTest {
 
     @Test
     void get_falls_back_to_searcher_on_cache_miss() {
-        when(segmentSearcher.get(eq(123), eq(segmentDataProvider), any()))
+        when(segmentSearcher.get(intThat(key -> key == 123),
+                same(segmentDataProvider), any()))
                 .thenReturn("val");
 
         final SegmentResult<String> result = subject.get(123);
         assertEquals(SegmentResultStatus.OK, result.getStatus());
         assertEquals("val", result.getValue());
-        verify(segmentSearcher).get(eq(123), eq(segmentDataProvider), any());
+        verify(segmentSearcher).get(intThat(key -> key == 123),
+                same(segmentDataProvider), any());
     }
 
     @Test

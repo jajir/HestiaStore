@@ -55,10 +55,11 @@ class SegmentLifecycleMaintenanceTest {
         try (Fixture fixture = new Fixture()) {
             fixture.gate.finishFreezeToReady();
             final SegmentId missingSegmentId = SegmentId.of(10);
+            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
 
             final SegmentBusyException ex = assertThrows(
                     SegmentBusyException.class,
-                    () -> fixture.maintenance.loadSegment(missingSegmentId));
+                    () -> maintenance.loadSegment(missingSegmentId));
             assertSame(SegmentBusyException.class, ex.getClass());
         }
     }
@@ -68,9 +69,10 @@ class SegmentLifecycleMaintenanceTest {
         try (Fixture fixture = new Fixture()) {
             final SegmentId segmentId = SegmentId.of(2);
             fixture.createSegmentDirectory(segmentId);
+            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
 
             assertThrows(SegmentBusyException.class,
-                    () -> fixture.maintenance.loadSegment(segmentId));
+                    () -> maintenance.loadSegment(segmentId));
         }
     }
 
@@ -113,9 +115,10 @@ class SegmentLifecycleMaintenanceTest {
             fixture.gate.finishFreezeToReady();
             final Segment<Integer, String> loaded = fixture.maintenance
                     .loadSegment(segmentId);
+            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
             try {
                 assertThrows(SegmentBusyException.class,
-                        () -> fixture.maintenance.loadSegment(segmentId));
+                        () -> maintenance.loadSegment(segmentId));
             } finally {
                 fixture.maintenance.closeSegmentIfNeeded(loaded);
             }

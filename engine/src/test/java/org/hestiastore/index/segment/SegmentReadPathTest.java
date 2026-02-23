@@ -8,7 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.intThat;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -130,12 +131,14 @@ class SegmentReadPathTest {
     @Test
     void get_delegates_to_searcher_on_cache_miss() {
         when(segmentCache.get(1)).thenReturn(null);
-        when(segmentSearcher.get(eq(1), eq(segmentResources), any()))
+        when(segmentSearcher.get(intThat(key -> key == 1),
+                same(segmentResources), any()))
                 .thenReturn("value");
 
         assertEquals("value", subject.get(1));
 
-        verify(segmentSearcher).get(eq(1), eq(segmentResources), any());
+        verify(segmentSearcher).get(intThat(key -> key == 1),
+                same(segmentResources), any());
     }
 
     @Test
