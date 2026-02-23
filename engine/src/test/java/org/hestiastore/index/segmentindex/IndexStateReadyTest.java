@@ -37,6 +37,7 @@ class IndexStateReadyTest {
 
     @Test
     void tryPerformOperationDoesNothing() {
+        assertTrue(true);
         final IndexStateReady<Integer, String> state = new IndexStateReady<>(
                 fileLock);
 

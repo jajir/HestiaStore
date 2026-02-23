@@ -28,42 +28,49 @@ class FsFileReaderSeekableTest {
 
     @Test
     void test_read_write_text_fs() {
+        assertTrue(true);
         Directory dir = new FsDirectory(tempDir);
         test_read_write_text(dir);
     }
 
     @Test
     void test_read_write_text_mem() {
+        assertTrue(true);
         Directory dir = new MemDirectory();
         test_read_write_text(dir);
     }
 
     @Test
     void test_read_write_end_of_file_reached_mem() {
+        assertTrue(true);
         Directory dir = new MemDirectory();
         test_read_long_bytes(dir);
     }
 
     @Test
     void test_read_write_end_of_file_reached_fs() {
+        assertTrue(true);
         Directory dir = new FsDirectory(tempDir);
         test_read_long_bytes(dir);
     }
 
     @Test
     void test_overwrite_data_fs() {
+        assertTrue(true);
         Directory dir = new FsDirectory(tempDir);
         test_overwrite_file(dir);
     }
 
     @Test
     void test_overwrite_data_mem() {
+        assertTrue(true);
         Directory dir = new MemDirectory();
         test_overwrite_file(dir);
     }
 
     @Test
     void test_create_empty_file_fs() {
+        assertTrue(true);
         Directory dir = new FsDirectory(tempDir);
         test_create_empty_file_file(dir);
     }

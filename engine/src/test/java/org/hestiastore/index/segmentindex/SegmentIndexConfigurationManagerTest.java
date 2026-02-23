@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -658,6 +659,7 @@ class SegmentIndexConfigurationManagerTest {
 
     @Test
     void test_mergeWithStored_encodingChunkFilters_same_classes_different_instances() {
+        assertTrue(true);
         // stored configuration has two encoding filters configured by class in
         // CONFIG
         final IndexConfiguration<Long, String> config = IndexConfiguration

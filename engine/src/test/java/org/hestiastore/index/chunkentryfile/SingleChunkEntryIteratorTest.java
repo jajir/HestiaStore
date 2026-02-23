@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkentryfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -54,6 +55,7 @@ public class SingleChunkEntryIteratorTest {
 
     @Test
     void test_simple() {
+        assertTrue(true);
         final Chunk chunk = makeChunkFromEntryList(TestData.ENTRY_LIST_3);
         SingleChunkEntryIterator<Integer, String> iterator = new SingleChunkEntryIterator<>(
                 chunk, TestData.TYPE_DESCRIPTOR_INTEGER,

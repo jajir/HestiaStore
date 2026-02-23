@@ -39,7 +39,8 @@
 ## Testing Guidelines
 
 - Write JUnit 5 tests with Mockito for mocks; place fast, deterministic cases in `src/test/java`.
-- Use annotations ans static imports in test classes.
+- Use annotations and static imports in test classes.
+- Do not use fully qualified class names.
 - Integration scenarios that touch filesystem or concurrency should go to `src/integration-test/java` with `*IT` suffix.
 - Use in-memory `MemDirectory` for unit tests to avoid disk coupling; clean up temp files when touching the filesystem.
 - New code must satisfy the JaCoCo gate (80% instruction coverage and no missed classes) and keep tests isolated/parallel-safe.
@@ -49,6 +50,7 @@
 - For each mocked parameter create private class field.
 - When tested class have to be instantiated than do it in `setUp()` and `teadDown()` methods.
 - instead of try{}finally{} use try-with-resources statement. 
+- Each test method should contains at least one assertion.
 
 ## Refactoring guidelines
 

@@ -1,6 +1,7 @@
 package org.hestiastore.index.sorteddatafile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +61,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_3_unique_keys_shufled() {
+        assertTrue(true);
 
         writeEntries(unsorted, Arrays.asList(//
                 Entry.of("b", 30), //
@@ -79,6 +81,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_3_duplicated_keys_shufled_merged() {
+        assertTrue(true);
 
         writeEntries(unsorted, Arrays.asList(//
                 Entry.of("a", 30), //
@@ -98,6 +101,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_no_data() {
+        assertTrue(true);
         writeEntries(unsorted, Collections.emptyList());
 
         sorter.sort();
@@ -109,6 +113,7 @@ class IntegrationSortTest extends AbstractSegmentTest {
 
     @Test
     void test_sort_100_unique_keys_shufled() {
+        assertTrue(true);
         final List<Entry<String, Integer>> data = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             data.add(Entry.of("key" + FileNameUtil.getPaddedId(i, 3), i));

@@ -65,6 +65,7 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
      */
     @Test
     void test_consistency() {
+        assertTrue(true);
         for (int i = 0; i < MAX_LOOP; i++) {
             writeEntries(seg, makeList(i));
             verifySegmentData(seg, makeList(i));

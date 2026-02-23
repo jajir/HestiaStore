@@ -9,19 +9,19 @@ import java.util.List;
  * {@link #filter(Object, Object)} to drive the chain. Execution stops when a
  * filter returns {@code false}, enabling short-circuit behavior.
  *
- * @param <Context> immutable input available to every filter
- * @param <Result>  mutable accumulator updated by filters
+ * @param <C> immutable input available to every filter
+ * @param <R> mutable accumulator updated by filters
  */
-public abstract class AbstractChainOfFilters<Context, Result> {
+public abstract class AbstractChainOfFilters<C, R> {
 
-    private final List<Filter<Context, Result>> filters;
+    private final List<Filter<C, R>> filters;
 
     /**
      * Constructs a chain of filters executed in order.
      *
      * @param filters ordered list of filters to run
      */
-    public AbstractChainOfFilters(final List<Filter<Context, Result>> filters) {
+    protected AbstractChainOfFilters(final List<Filter<C, R>> filters) {
         this.filters = filters;
     }
 
@@ -36,8 +36,8 @@ public abstract class AbstractChainOfFilters<Context, Result> {
      * @param result  mutable result accumulator passed to each filter
      * @return {@code true} if all filters ran, {@code false} if short-circuited
      */
-    protected boolean filter(final Context context, final Result result) {
-        for (final Filter<Context, Result> filter : filters) {
+    protected boolean filter(final C context, final R result) {
+        for (final Filter<C, R> filter : filters) {
             if (!filter.filter(context, result)) {
                 return false;
             }
