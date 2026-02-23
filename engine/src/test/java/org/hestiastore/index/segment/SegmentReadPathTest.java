@@ -24,6 +24,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileReaderSeekable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +53,8 @@ class SegmentReadPathTest {
     private Directory asyncDirectory;
     @Mock
     private EntryIteratorWithCurrent<Integer, String> baseIterator;
+    @Mock
+    private FileReaderSeekable seekableReader;
 
     private SegmentReadPath<Integer, String> subject;
     private final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
@@ -70,6 +73,8 @@ class SegmentReadPathTest {
         when(segmentFiles.getIndexFileName()).thenReturn("segment.index");
         when(segmentFiles.getDirectory()).thenReturn(asyncDirectory);
         when(asyncDirectory.isFileExists("segment.index")).thenReturn(false);
+        when(asyncDirectory.getFileReaderSeekable("segment.index"))
+                .thenReturn(seekableReader);
         when(segmentCache.getAsSortedList()).thenReturn(List.of());
         when(segmentCache.mergedIterator())
                 .thenReturn(List.<Entry<Integer, String>>of().iterator());
