@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
  */
 class SegmentSplitCoordinator<K, V> {
 
+    private static final String SEGMENT_ARG = "segment";
+    private static final String SEGMENT_CLOSE_FAILED_FORMAT = "Segment '%s' failed during close: %s";
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
@@ -71,7 +73,7 @@ class SegmentSplitCoordinator<K, V> {
 
     boolean optionallySplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
         if (!isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)) {
             return false;
@@ -141,7 +143,7 @@ class SegmentSplitCoordinator<K, V> {
         }
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
                 writerTxFactory);
-        final SegmentSplitApplyPlan<K, V> applyPlan;
+        final SegmentSplitApplyPlan<K> applyPlan;
         final boolean applyResult;
         boolean applied = false;
         try (SegmentSplitter.SplitExecution<K, V> execution = splitter
@@ -180,9 +182,9 @@ class SegmentSplitCoordinator<K, V> {
         }
     }
 
-    static <K, V> SegmentSplitApplyPlan<K, V> toApplyPlan(
+    static <K, V> SegmentSplitApplyPlan<K> toApplyPlan(
             final SegmentId oldSegmentId, final SegmentId upperSegmentId,
-            final SegmentSplitterResult<K, V> result) {
+            final SegmentSplitterResult<K> result) {
         Vldtn.requireNonNull(oldSegmentId, "oldSegmentId");
         Vldtn.requireNonNull(result, "result");
         final SegmentId resolvedUpperId;
@@ -197,14 +199,14 @@ class SegmentSplitCoordinator<K, V> {
                 result.getStatus());
     }
 
-    private SegmentSplitterPolicy<K, V> createPolicy(
+    private SegmentSplitterPolicy createPolicy(
             final Segment<K, V> segment) {
         final long estimatedNumberOfKeys = segment.getNumberOfKeysInCache();
-        return new SegmentSplitterPolicy<>(estimatedNumberOfKeys);
+        return new SegmentSplitterPolicy(estimatedNumberOfKeys);
     }
 
     private SegmentSplitterPlan<K, V> buildPlan(final Segment<K, V> segment) {
-        final SegmentSplitterPolicy<K, V> policy = createPolicy(segment);
+        final SegmentSplitterPolicy policy = createPolicy(segment);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
 
@@ -245,10 +247,10 @@ class SegmentSplitCoordinator<K, V> {
     }
 
     boolean applySplitPlan(
-            final SegmentSplitApplyPlan<K, V> plan,
+            final SegmentSplitApplyPlan<K> plan,
             final Segment<K, V> segment) {
         Vldtn.requireNonNull(plan, "plan");
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         try {
             if (!keyToSegmentMap.applySplitPlan(plan)) {
                 return false;
@@ -261,7 +263,7 @@ class SegmentSplitCoordinator<K, V> {
     }
 
     private void closeSegmentAfterSplit(final Segment<K, V> segment) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentState state = segment.getState();
@@ -270,7 +272,7 @@ class SegmentSplitCoordinator<K, V> {
             }
             if (state == SegmentState.ERROR) {
                 throw new IndexException(
-                        String.format("Segment '%s' failed during close: %s",
+                        String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                                 segment.getId(), state));
             }
             final SegmentResult<Void> result = segment.close();
@@ -288,7 +290,7 @@ class SegmentSplitCoordinator<K, V> {
                 continue;
             }
             throw new IndexException(
-                    String.format("Segment '%s' failed during close: %s",
+                    String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                             segment.getId(), status));
         }
     }
@@ -302,7 +304,7 @@ class SegmentSplitCoordinator<K, V> {
             }
             if (state == SegmentState.ERROR) {
                 throw new IndexException(
-                        String.format("Segment '%s' failed during close: %s",
+                        String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                                 segment.getId(), state));
             }
             retryPolicy.backoffOrThrow(startNanos, "close", segment.getId());

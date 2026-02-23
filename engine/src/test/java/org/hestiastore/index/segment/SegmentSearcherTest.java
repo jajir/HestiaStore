@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SegmentSearcherTest {
+class SegmentSearcherTest {
 
     @Mock
     private SegmentIndexSearcher<String, Long> segmentIndexSearcher;

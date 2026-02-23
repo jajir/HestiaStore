@@ -1,14 +1,12 @@
 package org.hestiastore.index.datablockfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.TestData;
@@ -21,7 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class DataBlockReaderImplTest {
+class DataBlockReaderImplTest {
 
     private static final DataBlockSize BLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);
@@ -62,7 +60,7 @@ public class DataBlockReaderImplTest {
         });
         DataBlock ret1 = reader.read();
         assertNotNull(ret1);
-        assertTrue(Arrays.equals(bufferBytes, ret1.getBytes().getData()));
+        assertArrayEquals(bufferBytes, ret1.getBytes().getData());
         assertEquals(2048, ret1.getPosition().getValue());
     }
 

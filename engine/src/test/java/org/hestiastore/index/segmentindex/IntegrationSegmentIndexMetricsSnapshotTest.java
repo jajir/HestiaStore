@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.function.Supplier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -186,11 +188,9 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             if (snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit()) {
                 return;
             }
-            try {
-                Thread.sleep(20L);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new AssertionError("Interrupted while waiting", e);
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
             }
         }
         final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
@@ -206,11 +206,9 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             if (condition.get()) {
                 return;
             }
-            try {
-                Thread.sleep(20L);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new AssertionError("Interrupted while waiting", e);
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
             }
         }
         assertTrue(condition.get(),

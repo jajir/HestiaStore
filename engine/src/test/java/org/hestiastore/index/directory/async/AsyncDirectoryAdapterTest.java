@@ -68,7 +68,7 @@ class AsyncDirectoryAdapterTest {
     }
 
     @Test
-    void rejects_operations_after_close() throws Exception {
+    void rejects_operations_after_close() {
         executor = Executors.newSingleThreadExecutor();
         final RecordingFileWriter delegate = new RecordingFileWriter();
         final AsyncFileWriter writer = new AsyncFileWriterAdapter(delegate,
@@ -83,7 +83,7 @@ class AsyncDirectoryAdapterTest {
     }
 
     @Test
-    void directory_rejects_new_requests_after_close() throws Exception {
+    void directory_rejects_new_requests_after_close() {
         final AsyncDirectory asyncDirectory = newAsyncDirectory(1);
         asyncDirectory.close();
         final CompletableFuture<AsyncFileWriter> future = asyncDirectory

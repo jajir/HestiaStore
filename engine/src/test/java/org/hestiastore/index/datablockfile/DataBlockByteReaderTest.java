@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class DataBlockByteReaderTest {
+class DataBlockByteReaderTest {
 
     private static final DataBlockPayload dataBlockPayload1 = DataBlockPayload
             .of(TestData.BYTES_1024.subBytes(0, 64));

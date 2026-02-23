@@ -37,7 +37,9 @@ class NodeStateResponseTest {
 
     @Test
     void rejectsNullJvmSection() {
+        final List<IndexReportResponse> indexes = List.of();
+        final Instant now = Instant.now();
         assertThrows(NullPointerException.class,
-                () -> new NodeReportResponse(null, List.of(), Instant.now()));
+                () -> new NodeReportResponse(null, indexes, now));
     }
 }

@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractDataTest {
 
-    private final static Logger LOGGER = LoggerFactory
+    private static final Logger LOGGER = LoggerFactory
             .getLogger(AbstractDataTest.class);
 
     /**

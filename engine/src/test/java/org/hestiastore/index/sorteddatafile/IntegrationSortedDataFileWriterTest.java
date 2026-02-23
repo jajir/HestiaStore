@@ -37,9 +37,8 @@ class IntegrationSortedDataFileWriterTest {
         try (SortedDataFileWriter<String, Byte> siw = new SortedDataFileWriter<>(
                 byteTd.getTypeWriter(), fileWriter, stringTd)) {
             siw.write(P_AAABBB_1);
-            assertThrows(IllegalArgumentException.class, () -> {
-                siw.write(P_AAA_0);
-            });
+            assertThrows(IllegalArgumentException.class,
+                    () -> siw.write(P_AAA_0));
         }
     }
 

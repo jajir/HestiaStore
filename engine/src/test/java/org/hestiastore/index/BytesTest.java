@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-public class BytesTest {
+class BytesTest {
 
     private static final byte[] TEST_DATA = ("Do you need real-time search"
             + " after insert? (favor Qdrant-style)").getBytes();

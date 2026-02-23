@@ -24,7 +24,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
 
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
     private final Executor splitExecutor;
-    private final Map<SegmentId, SplitInFlight<K, V>> inFlightSplits = new ConcurrentHashMap<>();
+    private final Map<SegmentId, SplitInFlight> inFlightSplits = new ConcurrentHashMap<>();
     private final LongAdder scheduledCount = new LongAdder();
     private final LongAdder completedCount = new LongAdder();
 
@@ -43,7 +43,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         if (timeoutMillis <= 0) {
             return;
         }
-        final SplitInFlight<K, V> inFlight = inFlightSplits.get(segmentId);
+        final SplitInFlight inFlight = inFlightSplits.get(segmentId);
         if (inFlight == null) {
             return;
         }
@@ -57,12 +57,12 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
-            final List<SplitInFlight<K, V>> snapshot = new ArrayList<>(
+            final List<SplitInFlight> snapshot = new ArrayList<>(
                     inFlightSplits.values());
             if (snapshot.isEmpty()) {
                 return;
             }
-            for (final SplitInFlight<K, V> inFlight : snapshot) {
+            for (final SplitInFlight inFlight : snapshot) {
                 final long remainingMillis = TimeUnit.NANOSECONDS
                         .toMillis(deadline - System.nanoTime());
                 if (remainingMillis <= 0) {
@@ -79,7 +79,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
             final long maxNumberOfKeysInSegment) {
         Vldtn.requireNonNull(segment, "segment");
         final SegmentId segmentId = segment.getId();
-        final SplitInFlight<K, V> inFlight = inFlightSplits.compute(segmentId,
+        final SplitInFlight inFlight = inFlightSplits.compute(segmentId,
                 (id, existing) -> {
                     // Keep a single in-flight split per segment id so
                     // awaitAllCompletions
@@ -95,10 +95,10 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         return inFlight.handle;
     }
 
-    private SplitInFlight<K, V> scheduleSplit(final Segment<K, V> segment,
+    private SplitInFlight scheduleSplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment, final SegmentId segmentId) {
         final SplitHandle handle = new SplitHandle(segmentId);
-        final SplitInFlight<K, V> inFlight = new SplitInFlight<>(handle);
+        final SplitInFlight inFlight = new SplitInFlight(handle);
         try {
             splitExecutor.execute(() -> {
                 handle.markStarted();
@@ -106,8 +106,8 @@ final class SegmentAsyncSplitCoordinator<K, V> {
                     final boolean split = splitCoordinator
                             .optionallySplit(segment, maxNumberOfKeysInSegment);
                     handle.complete(split);
-                } catch (final Throwable t) {
-                    handle.completeExceptionally(t);
+                } catch (final Exception e) {
+                    handle.completeExceptionally(e);
                 } finally {
                     completedCount.increment();
                     inFlightSplits.remove(segmentId, inFlight);
@@ -194,7 +194,7 @@ final class SegmentAsyncSplitCoordinator<K, V> {
         }
     }
 
-    private static final class SplitInFlight<K, V> {
+    private static final class SplitInFlight {
         private final SplitHandle handle;
 
         private SplitInFlight(final SplitHandle handle) {

@@ -1,4 +1,5 @@
 package org.hestiastore.index.segmentindex;
+
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 
@@ -32,7 +33,7 @@ final class SegmentSplitterPlan<K, V> {
      * @return new split plan
      */
     static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
-            final SegmentSplitterPolicy<K, V> segmentSplitterPolicy) {
+            final SegmentSplitterPolicy segmentSplitterPolicy) {
         Vldtn.requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
         final long estimatedNumberOfKeys = segmentSplitterPolicy
                 .estimateNumberOfKeys();

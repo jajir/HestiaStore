@@ -3,11 +3,8 @@ package org.hestiastore.index.segmentindex;
 /**
  * Encapsulates pre-split statistics for a segment, providing an estimated
  * number of keys that drives split planning.
- *
- * @param <K> key type handled by the segment
- * @param <V> value type handled by the segment
  */
-final class SegmentSplitterPolicy<K, V> {
+final class SegmentSplitterPolicy {
 
     private final long estimatedNumberOfKeys;
 

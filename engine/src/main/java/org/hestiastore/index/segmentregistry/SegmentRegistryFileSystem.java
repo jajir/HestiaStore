@@ -11,6 +11,7 @@ import org.hestiastore.index.segment.SegmentId;
  */
 final class SegmentRegistryFileSystem {
 
+    private static final String SEGMENT_ID_ARG = "segmentId";
     private final Directory directoryFacade;
 
     /**
@@ -31,7 +32,7 @@ final class SegmentRegistryFileSystem {
      * @return {@code true} when the segment directory exists
      */
     boolean segmentDirectoryExists(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return exists(segmentId.getName());
     }
 
@@ -41,7 +42,7 @@ final class SegmentRegistryFileSystem {
      * @param segmentId segment identifier
      */
     void deleteSegmentFiles(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         deleteDirectory(segmentId.getName());
     }
 
@@ -51,7 +52,7 @@ final class SegmentRegistryFileSystem {
      * @param segmentId segment identifier
      */
     void ensureSegmentDirectory(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         directoryFacade.openSubDirectory(segmentId.getName());
     }
 

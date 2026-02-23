@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -151,6 +152,7 @@ class SegmentRegistryCacheTest {
         final AtomicInteger loads = new AtomicInteger();
         final CountDownLatch loadStarted = new CountDownLatch(1);
         final CountDownLatch waitersReady = new CountDownLatch(waiters);
+        final CountDownLatch waitersStartedLoad = new CountDownLatch(waiters);
         final CountDownLatch startWaiters = new CountDownLatch(1);
         final CountDownLatch allowFailure = new CountDownLatch(1);
         final RuntimeException expected = new RuntimeException("load failed");
@@ -171,12 +173,13 @@ class SegmentRegistryCacheTest {
             waiterFutures.add(executor.submit(() -> {
                 waitersReady.countDown();
                 awaitLatch(startWaiters);
+                waitersStartedLoad.countDown();
                 return cache.get(1);
             }));
         }
         assertTrue(waitersReady.await(1, TimeUnit.SECONDS));
         startWaiters.countDown();
-        Thread.sleep(30L);
+        assertTrue(waitersStartedLoad.await(1, TimeUnit.SECONDS));
         allowFailure.countDown();
 
         final ExecutionException firstFailure = assertThrows(
@@ -482,10 +485,8 @@ class SegmentRegistryCacheTest {
             if (System.nanoTime() >= deadline) {
                 throw new TimeoutException("Condition not met in time");
             }
-            try {
-                Thread.sleep(10L);
-            } catch (final InterruptedException ex) {
-                Thread.currentThread().interrupt();
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+            if (Thread.currentThread().isInterrupted()) {
                 throw new TimeoutException("Interrupted while waiting");
             }
         }

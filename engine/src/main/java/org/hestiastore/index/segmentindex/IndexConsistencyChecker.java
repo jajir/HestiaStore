@@ -65,27 +65,7 @@ class IndexConsistencyChecker<K, V> {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
             logger.debug("checking segment '{}'.", segmentId);
-            Segment<K, V> segment = null;
-            while (true) {
-                final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
-                        segmentId);
-                if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                    Thread.onSpinWait();
-                    continue;
-                }
-                if (loaded.getStatus() != SegmentRegistryResultStatus.OK) {
-                    throw new IndexException(String.format(
-                            ERROR_MSG + "Segment '%s' is not found in index.",
-                            segmentId));
-                }
-                segment = loaded.getValue();
-                if (segment != null) {
-                    break;
-                }
-                throw new IndexException(String.format(
-                        ERROR_MSG + "Segment '%s' is not found in index.",
-                        segmentId));
-            }
+            final Segment<K, V> segment = awaitLoadedSegment(segmentId);
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {
                 removeEmptySegment(segmentId, segment);
@@ -129,6 +109,23 @@ class IndexConsistencyChecker<K, V> {
             throw new IndexException(String.format(
                     "Segment '%s' failed to open iterator: %s", segment.getId(),
                     result.getStatus()));
+        }
+    }
+
+    private Segment<K, V> awaitLoadedSegment(final SegmentId segmentId) {
+        while (true) {
+            final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
+                    segmentId);
+            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                Thread.onSpinWait();
+            } else if (loaded.getStatus() == SegmentRegistryResultStatus.OK
+                    && loaded.getValue() != null) {
+                return loaded.getValue();
+            } else {
+                throw new IndexException(String.format(
+                        ERROR_MSG + "Segment '%s' is not found in index.",
+                        segmentId));
+            }
         }
     }
 

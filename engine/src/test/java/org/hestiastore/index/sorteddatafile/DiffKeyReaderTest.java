@@ -26,13 +26,8 @@ class DiffKeyReaderTest {
                 tds.getConvertorFromBytes());
 
         // header not fully read => reader returns null
-        when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
-            final byte[] h = (byte[]) inv.getArguments()[0];
-            if (h == null) {
-                return -1;
-            }
-            return -1; // simulate EOF on header
-        });
+        when(fileReader.read(any(byte[].class)))
+                .thenAnswer(invocation -> -1); // simulate EOF on header
         final String ret = reader.read(fileReader);
         assertNull(ret);
     }
@@ -167,12 +162,10 @@ class DiffKeyReaderTest {
                         return 2;
                     }
                 }
-                if (buf.length == 5) {
-                    if (step == 0) {
-                        loadStringToByteArray(inv, "prase");
-                        step = 1;
-                        return 5;
-                    }
+                if (buf.length == 5 && step == 0) {
+                    loadStringToByteArray(inv, "prase");
+                    step = 1;
+                    return 5;
                 }
                 return -1;
             }
@@ -207,9 +200,8 @@ class DiffKeyReaderTest {
                         loadStringToByteArray(inv, "prase");
                         step = 1;
                         return 5;
-                    } else {
-                        return 3; // partial read for diff
                     }
+                    return 3; // partial read for diff
                 }
                 return -1;
             }

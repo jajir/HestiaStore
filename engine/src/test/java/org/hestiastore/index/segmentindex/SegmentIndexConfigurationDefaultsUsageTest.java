@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
@@ -86,7 +85,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
 
     private List<Class<? extends ChunkFilter>> toFilterClasses(
             final List<ChunkFilter> filters) {
-        return filters.stream().map(ChunkFilter::getClass)
-                .collect(Collectors.toList());
+        return filters.stream().map(ChunkFilter::getClass).toList();
     }
 }

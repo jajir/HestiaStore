@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class DataBlockWriterImplTest {
+class DataBlockWriterImplTest {
 
     private static final DataBlockSize BLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

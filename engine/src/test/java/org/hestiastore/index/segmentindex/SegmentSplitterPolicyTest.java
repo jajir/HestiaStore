@@ -9,7 +9,7 @@ class SegmentSplitterPolicyTest {
 
     @Test
     void estimateNumberOfKeys_returnsConfiguredValue() {
-        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+        final SegmentSplitterPolicy policy = new SegmentSplitterPolicy(
                 57L);
         assertEquals(57L, policy.estimateNumberOfKeys());
     }
@@ -18,7 +18,7 @@ class SegmentSplitterPolicyTest {
     void rejects_negative_estimated_keys() {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentSplitterPolicy<>(-1L));
+                () -> new SegmentSplitterPolicy(-1L));
         assertEquals(
                 "Property 'estimatedNumberOfKeys' must be >= 0.",
                 err.getMessage());

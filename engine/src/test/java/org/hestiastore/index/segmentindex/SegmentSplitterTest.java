@@ -61,7 +61,7 @@ class SegmentSplitterTest {
     @Test
     void split_rejects_null_segment_id() {
         final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(4L));
+                .fromPolicy(new SegmentSplitterPolicy(4L));
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> splitter.split(null, UPPER_ID, plan));
@@ -81,7 +81,7 @@ class SegmentSplitterTest {
     void split_fails_when_plan_is_not_feasible() {
         when(segment.getId()).thenReturn(SEGMENT_ID);
         final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(2L));
+                .fromPolicy(new SegmentSplitterPolicy(2L));
         final IllegalStateException err = assertThrows(
                 IllegalStateException.class,
                 () -> splitter.split(LOWER_ID, UPPER_ID, plan));
@@ -94,7 +94,7 @@ class SegmentSplitterTest {
     void split_writes_lower_and_upper_entries() {
         when(segment.getId()).thenReturn(SEGMENT_ID);
         final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(4L));
+                .fromPolicy(new SegmentSplitterPolicy(4L));
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(iterator));
         when(iterator.hasNext()).thenReturn(true, true, true, true, false);
@@ -107,7 +107,7 @@ class SegmentSplitterTest {
         when(lowerTx.open()).thenReturn(lowerWriter);
         when(currentTx.open()).thenReturn(currentWriter);
 
-        final SegmentSplitterResult<String, String> result = splitter
+        final SegmentSplitterResult<String> result = splitter
                 .split(LOWER_ID, UPPER_ID, plan);
 
         assertTrue(result.isSplit());
@@ -126,7 +126,7 @@ class SegmentSplitterTest {
     void split_compacts_when_no_upper_entries_remain() {
         when(segment.getId()).thenReturn(SEGMENT_ID);
         final SegmentSplitterPlan<String, String> plan = SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy<>(4L));
+                .fromPolicy(new SegmentSplitterPolicy(4L));
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(iterator));
         when(iterator.hasNext()).thenReturn(true, true, false, false);
@@ -134,7 +134,7 @@ class SegmentSplitterTest {
         when(writerTxFactory.openWriterTx(LOWER_ID)).thenReturn(lowerTx);
         when(lowerTx.open()).thenReturn(lowerWriter);
 
-        final SegmentSplitterResult<String, String> result = splitter
+        final SegmentSplitterResult<String> result = splitter
                 .split(LOWER_ID, UPPER_ID, plan);
 
         assertFalse(result.isSplit());

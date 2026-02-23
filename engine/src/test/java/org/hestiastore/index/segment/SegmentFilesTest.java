@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -34,20 +35,30 @@ class SegmentFilesTest {
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
+        final List<ChunkFilter> encodingFilters = files
+                .getEncodingChunkFilters();
+        final List<ChunkFilter> decodingFilters = files
+                .getDecodingChunkFilters();
 
-        assertThrows(UnsupportedOperationException.class, () -> files
-                .getEncodingChunkFilters().add(new ChunkFilterDoNothing()));
-        assertThrows(UnsupportedOperationException.class, () -> files
-                .getDecodingChunkFilters().add(new ChunkFilterDoNothing()));
+        assertThrows(UnsupportedOperationException.class,
+                () -> encodingFilters.add(new ChunkFilterDoNothing()));
+        assertThrows(UnsupportedOperationException.class,
+                () -> decodingFilters.add(new ChunkFilterDoNothing()));
     }
 
     @Test
     void constructorRejectsEmptyFilterLists() {
+        final MemDirectory directory = new MemDirectory();
+        final SegmentId segmentId = SegmentId.of(1);
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final List<ChunkFilter> emptyFilters = List.of();
+        final List<ChunkFilter> decodingFilters = List
+                .of(new ChunkFilterDoNothing());
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentFiles<>(new MemDirectory(), SegmentId.of(1),
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), 1024, List.of(),
-                        List.of(new ChunkFilterDoNothing()), 1L));
+                () -> new SegmentFiles<>(directory, segmentId, keyDescriptor,
+                        valueDescriptor, 1024, emptyFilters, decodingFilters,
+                        1L));
     }
 
     @Test

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
-public class DataBlockPayloadTest {
+class DataBlockPayloadTest {
 
     private static final Bytes BYTES_1 = Bytes.of("test data".getBytes());
 

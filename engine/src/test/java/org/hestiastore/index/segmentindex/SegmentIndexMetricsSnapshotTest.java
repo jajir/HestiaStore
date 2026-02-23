@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Test;
 
 class SegmentIndexMetricsSnapshotTest {
 
+    private static final List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> NO_SEGMENTS = List
+            .of();
+
     @Test
     void fullConstructorCanRepresentEmptySnapshot() {
         final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
@@ -51,31 +54,28 @@ class SegmentIndexMetricsSnapshotTest {
 
     @Test
     void rejectsNegativeGetCount() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new SegmentIndexMetricsSnapshot(-1L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
-                    0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L,
-                    0L, List.of(), SegmentIndexState.READY);
-        });
+        assertThrows(IllegalArgumentException.class,
+                () -> buildSnapshot(-1L, 0L, 0L));
     }
 
     @Test
     void rejectsNegativePutCount() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new SegmentIndexMetricsSnapshot(0L, -1L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
-                    0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L,
-                    0L, List.of(), SegmentIndexState.READY);
-        });
+        assertThrows(IllegalArgumentException.class,
+                () -> buildSnapshot(0L, -1L, 0L));
     }
 
     @Test
     void rejectsNegativeDeleteCount() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new SegmentIndexMetricsSnapshot(0L, 0L, -1L, 0L, 0L, 0L, 0L, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
-                    0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L,
-                    0L, List.of(), SegmentIndexState.READY);
-        });
+        assertThrows(IllegalArgumentException.class,
+                () -> buildSnapshot(0L, 0L, -1L));
+    }
+
+    private static SegmentIndexMetricsSnapshot buildSnapshot(
+            final long getCount, final long putCount,
+            final long deleteCount) {
+        return new SegmentIndexMetricsSnapshot(getCount, putCount, deleteCount,
+                0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
+                0D, 0L, 0L, 0L, 0L, NO_SEGMENTS, SegmentIndexState.READY);
     }
 }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.AbstractDataTest;
 import org.hestiastore.index.Entry;
@@ -158,10 +159,8 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             if (idle) {
                 return;
             }
-            try {
-                Thread.sleep(10);
-            } catch (final InterruptedException ex) {
-                Thread.currentThread().interrupt();
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+            if (Thread.currentThread().isInterrupted()) {
                 break;
             }
         }

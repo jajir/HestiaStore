@@ -13,11 +13,11 @@ class SegmentSplitCoordinatorApplyPlanTest {
         final SegmentId oldSegmentId = SegmentId.of(1);
         final SegmentId lowerSegmentId = SegmentId.of(2);
         final SegmentId upperSegmentId = SegmentId.of(3);
-        final SegmentSplitterResult<Integer, String> result = new SegmentSplitterResult<>(
+        final SegmentSplitterResult<Integer> result = new SegmentSplitterResult<>(
                 lowerSegmentId, 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
 
-        final SegmentSplitApplyPlan<Integer, String> plan = SegmentSplitCoordinator
+        final SegmentSplitApplyPlan<Integer> plan = SegmentSplitCoordinator
                 .toApplyPlan(oldSegmentId, upperSegmentId, result);
 
         assertEquals(oldSegmentId, plan.getOldSegmentId());
@@ -35,11 +35,11 @@ class SegmentSplitCoordinatorApplyPlanTest {
         final SegmentId oldSegmentId = SegmentId.of(1);
         final SegmentId lowerSegmentId = SegmentId.of(2);
         final SegmentId upperSegmentId = SegmentId.of(3);
-        final SegmentSplitterResult<Integer, String> result = new SegmentSplitterResult<>(
+        final SegmentSplitterResult<Integer> result = new SegmentSplitterResult<>(
                 lowerSegmentId, 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
 
-        final SegmentSplitApplyPlan<Integer, String> plan = SegmentSplitCoordinator
+        final SegmentSplitApplyPlan<Integer> plan = SegmentSplitCoordinator
                 .toApplyPlan(oldSegmentId, upperSegmentId, result);
 
         assertEquals(oldSegmentId, plan.getOldSegmentId());

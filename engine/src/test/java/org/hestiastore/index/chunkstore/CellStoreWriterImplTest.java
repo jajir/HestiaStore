@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class CellStoreWriterImplTest {
+class CellStoreWriterImplTest {
 
     private static final CellPosition CELL_POSITION_0 = CellPosition
             .of(TestData.DATA_BLOCK_SIZE, 0);

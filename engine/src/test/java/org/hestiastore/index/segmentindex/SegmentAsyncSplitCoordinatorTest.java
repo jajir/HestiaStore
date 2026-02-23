@@ -62,7 +62,7 @@ class SegmentAsyncSplitCoordinatorTest {
                 .optionallySplitAsync(segment, 10L);
 
         assertSame(first, second);
-        assertTrue(submissions.get() == 1);
+        assertEquals(1, submissions.get());
 
         assertNotNull(scheduled.get());
         scheduled.get().run();

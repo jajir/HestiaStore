@@ -286,7 +286,7 @@ public final class ManagementAgentServer
             throws IOException {
         try {
             handler.handle(exchange);
-        } catch (final Exception e) {
+        } catch (final RuntimeException e) {
             logger.error("Unhandled management agent error: method={} path={}",
                     exchange.getRequestMethod(), exchange.getRequestURI(), e);
             final ErrorResponse error = new ErrorResponse("INTERNAL_ERROR",
@@ -1000,7 +1000,7 @@ public final class ManagementAgentServer
 
     @FunctionalInterface
     private interface Handler {
-        void handle(HttpExchange exchange) throws Exception;
+        void handle(HttpExchange exchange) throws IOException;
     }
 
     @FunctionalInterface

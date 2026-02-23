@@ -451,10 +451,8 @@ class IndexConfigurationManager<K, V> {
                 indexConf.getDecodingChunkFilters());
     }
 
-    final static Comparator<ChunkFilter> chunkFilterCmp = (f1, f2) -> {
-        int c = f1.getClass().getName().compareTo(f2.getClass().getName());
-        return c;
-    };
+    static final Comparator<ChunkFilter> chunkFilterCmp = (f1, f2) -> f1
+            .getClass().getName().compareTo(f2.getClass().getName());
 
     private <T> boolean equalLists(List<T> a, List<T> b,
             Comparator<? super T> cmp) {

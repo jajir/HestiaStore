@@ -37,6 +37,7 @@ class IndexInternalTest {
 
         @Override
         public void put(final String key, final String value) {
+            // no-op test stub
         }
 
         @Override
@@ -57,6 +58,7 @@ class IndexInternalTest {
 
         @Override
         public void delete(final String key) {
+            // no-op test stub
         }
 
         @Override
@@ -66,22 +68,27 @@ class IndexInternalTest {
 
         @Override
         public void compact() {
+            // no-op test stub
         }
 
         @Override
         public void compactAndWait() {
+            // no-op test stub
         }
 
         @Override
         public void flush() {
+            // no-op test stub
         }
 
         @Override
         public void flushAndWait() {
+            // no-op test stub
         }
 
         @Override
         public void checkAndRepairConsistency() {
+            // no-op test stub
         }
 
         @Override
@@ -101,6 +108,7 @@ class IndexInternalTest {
 
         @Override
         public void close() {
+            // no-op test stub
         }
     }
 }

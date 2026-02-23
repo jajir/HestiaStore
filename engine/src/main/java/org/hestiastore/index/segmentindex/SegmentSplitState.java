@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.SegmentId;
 final class SegmentSplitState<K, V> {
     private SegmentId lowerSegmentId;
     private EntryIterator<K, V> iterator;
-    private SegmentSplitterResult<K, V> result;
+    private SegmentSplitterResult<K> result;
 
     SegmentId getLowerSegmentId() {
         return lowerSegmentId;
@@ -27,11 +27,11 @@ final class SegmentSplitState<K, V> {
         this.iterator = iterator;
     }
 
-    SegmentSplitterResult<K, V> getResult() {
+    SegmentSplitterResult<K> getResult() {
         return result;
     }
 
-    void setResult(final SegmentSplitterResult<K, V> result) {
+    void setResult(final SegmentSplitterResult<K> result) {
         this.result = result;
     }
 }

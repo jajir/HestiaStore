@@ -37,7 +37,7 @@ class SegmentSplitStepFillLowerUntilTargetTest {
     }
 
     private SegmentSplitterPlan<Integer, String> feasiblePlan() {
-        final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
+        final SegmentSplitterPolicy policy = new SegmentSplitterPolicy(
                 6);
         return SegmentSplitterPlan.fromPolicy(policy);
     }
@@ -79,13 +79,13 @@ class SegmentSplitStepFillLowerUntilTargetTest {
 
     @Test
     void test_missing_iterator() {
-        final SegmentSplitStepFillLowerUntilTarget<Integer, String> step = new SegmentSplitStepFillLowerUntilTarget<>();
+        final SegmentSplitStepFillLowerUntilTarget<Integer, String> localStep = new SegmentSplitStepFillLowerUntilTarget<>();
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, feasiblePlan(), SegmentId.of(1), null, id -> null);
         final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         state.setLowerSegmentId(SegmentId.of(1));
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(ctx, state));
+                () -> localStep.filter(ctx, state));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
     }
 

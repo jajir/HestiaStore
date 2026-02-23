@@ -3,7 +3,6 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
@@ -135,7 +134,7 @@ class SegmentDeltaCacheWriterTest {
 
         writer.close();
 
-        assertTrue(writer.getNumberOfKeys() == 0);
+        assertEquals(0, writer.getNumberOfKeys());
         verify(propertiesManager, never())
                 .increaseNumberOfKeysInDeltaCache(anyInt());
         verify(propertiesManager, never()).getAndIncreaseDeltaFileName();

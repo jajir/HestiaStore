@@ -234,12 +234,7 @@ public final class SegmentDirectoryLayout {
     }
 
     private String buildVersionedPrefix(final long version) {
-        if (version < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Version '%s' must be greater than or equal to 0",
-                    version));
-        }
-        return VERSION_DIRECTORY_PREFIX + padVersion(version);
+        return getVersionDirectoryName(version);
     }
 
     private static String padVersion(final long version) {

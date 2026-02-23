@@ -7,7 +7,7 @@ import org.hestiastore.index.Bytes;
 import org.hestiastore.index.TestData;
 import org.junit.jupiter.api.Test;
 
-public class ChunkTest {
+class ChunkTest {
 
     private static final int VERSION = 682;
 

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class SegmentSplitterPlanTest {
 
     private SegmentSplitterPlan<String, String> newPlan() {
-        final SegmentSplitterPolicy<String, String> policy = new SegmentSplitterPolicy<>(
+        final SegmentSplitterPolicy policy = new SegmentSplitterPolicy(
                 3L);
         return SegmentSplitterPlan.fromPolicy(policy);
     }

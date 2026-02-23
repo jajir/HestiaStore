@@ -12,6 +12,7 @@ import org.hestiastore.index.Vldtn;
  */
 final class SegmentDeltaCacheController<K, V> {
 
+    private static final String SEGMENT_CACHE_ARG = "segmentCache";
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final SegmentResources<K> segmentCacheDataProvider;
@@ -48,7 +49,7 @@ final class SegmentDeltaCacheController<K, V> {
      * @return number of non-tombstone entries
      */
     public int getDeltaCacheSizeWithoutTombstones() {
-        return Vldtn.requireNonNull(segmentCache, "segmentCache")
+        return Vldtn.requireNonNull(segmentCache, SEGMENT_CACHE_ARG)
                 .sizeWithoutTombstones();
     }
 
@@ -58,7 +59,7 @@ final class SegmentDeltaCacheController<K, V> {
      * @return number of cached entries
      */
     public int getDeltaCacheSize() {
-        return Vldtn.requireNonNull(segmentCache, "segmentCache").size();
+        return Vldtn.requireNonNull(segmentCache, SEGMENT_CACHE_ARG).size();
     }
 
     /**
@@ -78,7 +79,8 @@ final class SegmentDeltaCacheController<K, V> {
      * @param segmentCache segment cache instance
      */
     void setSegmentCache(final SegmentCache<K, V> segmentCache) {
-        this.segmentCache = Vldtn.requireNonNull(segmentCache, "segmentCache");
+        this.segmentCache = Vldtn.requireNonNull(segmentCache,
+                SEGMENT_CACHE_ARG);
     }
 
     /**

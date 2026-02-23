@@ -33,16 +33,17 @@ class SegmentRuntimeSnapshotTest {
 
     @Test
     void rejectsNegativeValues() {
+        final SegmentId segmentId = SegmentId.of(1);
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentRuntimeSnapshot(SegmentId.of(1),
+                () -> new SegmentRuntimeSnapshot(segmentId,
                         SegmentState.READY, -1L, 0L, 0L, 0L, 0, 0, 0L, 0L,
                         0L, 0L, 0L, 0L));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentRuntimeSnapshot(SegmentId.of(1),
+                () -> new SegmentRuntimeSnapshot(segmentId,
                         SegmentState.READY, 0L, 0L, 0L, 0L, 0, 0, -1L, 0L,
                         0L, 0L, 0L, 0L));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentRuntimeSnapshot(SegmentId.of(1),
+                () -> new SegmentRuntimeSnapshot(segmentId,
                         SegmentState.READY, 0L, 0L, 0L, 0L, 0, 0, 0L, -1L,
                         0L, 0L, 0L, 0L));
     }

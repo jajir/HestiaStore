@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.junit.jupiter.api.Test;
 
@@ -43,12 +44,14 @@ class SegmentConfTest {
         final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
                 0.01D, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
+        final List<ChunkFilter> encodingFilters = conf
+                .getEncodingChunkFilters();
+        final List<ChunkFilter> decodingFilters = conf
+                .getDecodingChunkFilters();
 
         assertThrows(UnsupportedOperationException.class,
-                () -> conf.getEncodingChunkFilters()
-                        .add(new ChunkFilterDoNothing()));
+                () -> encodingFilters.add(new ChunkFilterDoNothing()));
         assertThrows(UnsupportedOperationException.class,
-                () -> conf.getDecodingChunkFilters()
-                        .add(new ChunkFilterDoNothing()));
+                () -> decodingFilters.add(new ChunkFilterDoNothing()));
     }
 }

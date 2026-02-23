@@ -10,7 +10,7 @@ import java.util.Optional;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
-public class ChunkHeaderTest {
+class ChunkHeaderTest {
 
     private static final int VERSION = 1000000;
     private static final int PAYLOAD_LENGTH = 12345;

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +40,7 @@ class SegmentConcurrencyGateTest {
         waiter.start();
 
         assertTrue(started.await(1, TimeUnit.SECONDS));
-        Thread.sleep(10);
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
         assertFalse(result.isDone());
 
         gate.exitRead();
@@ -83,7 +84,7 @@ class SegmentConcurrencyGateTest {
         waiter.start();
 
         assertTrue(started.await(1, TimeUnit.SECONDS));
-        Thread.sleep(10);
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
         assertFalse(result.isDone());
 
         gate.exitRead();

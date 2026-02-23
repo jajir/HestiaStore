@@ -50,7 +50,7 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
 
     @Test
     void applySplitPlan_persists_map_after_apply() {
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         when(keyToSegmentMap.applySplitPlan(plan)).thenReturn(true);
@@ -62,7 +62,7 @@ class SegmentSplitCoordinatorApplyPlanOrderTest {
 
     @Test
     void applySplitPlan_skips_map_flush_when_apply_fails() {
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         when(keyToSegmentMap.applySplitPlan(plan)).thenReturn(false);

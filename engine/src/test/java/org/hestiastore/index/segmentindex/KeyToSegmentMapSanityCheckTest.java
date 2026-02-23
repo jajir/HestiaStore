@@ -36,14 +36,16 @@ class KeyToSegmentMapSanityCheckTest {
             writer.write(Entry.of("eee", SegmentId.of(5)));
             writer.write(Entry.of("fff", SegmentId.of(3)));
         });
-        assertThrows(IllegalStateException.class, () -> {
-            try (KeyToSegmentMap<String> fif = new KeyToSegmentMap<>(
-                    directory,
-                    stringTd)) {
-                // Intentionally left empty to trigger Exception
-            }
-        }, "Unable to load scarce index, sanity check failed.");
+        assertThrows(IllegalStateException.class,
+                () -> createKeyToSegmentMap(directory, stringTd),
+                "Unable to load scarce index, sanity check failed.");
 
+    }
+
+    private static KeyToSegmentMap<String> createKeyToSegmentMap(
+            final Directory directory,
+            final TypeDescriptorShortString keyTypeDescriptor) {
+        return new KeyToSegmentMap<>(directory, keyTypeDescriptor);
     }
 
 }

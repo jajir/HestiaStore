@@ -46,7 +46,7 @@ class SegmentSplitPipelineTest {
 
         private SegmentSplitPipeline<String, String> pipeline;
         private ClosingIterator iterator;
-        private SegmentSplitterResult<String, String> result;
+        private SegmentSplitterResult<String> result;
 
         @BeforeEach
         void setUp() {
@@ -71,7 +71,7 @@ class SegmentSplitPipelineTest {
 
         @Test
         void runClosesIteratorAndReturnsResult() {
-            final SegmentSplitterResult<String, String> out = pipeline
+            final SegmentSplitterResult<String> out = pipeline
                     .run(context);
 
             assertSame(result, out);

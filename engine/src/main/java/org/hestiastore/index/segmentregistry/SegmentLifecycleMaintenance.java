@@ -25,6 +25,7 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
  */
 final class SegmentLifecycleMaintenance<K, V> {
 
+    private static final String SEGMENT_CLOSE_FAILED_FORMAT = "Segment '%s' failed during close: %s";
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentRegistryFileSystem fileSystem;
     private final IndexRetryPolicy closeRetryPolicy;
@@ -83,7 +84,7 @@ final class SegmentLifecycleMaintenance<K, V> {
             }
             if (state == SegmentState.ERROR) {
                 throw new IndexException(
-                        String.format("Segment '%s' failed during close: %s",
+                        String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                                 segment.getId(), state));
             }
             final SegmentResult<Void> result = segment.close();
@@ -101,7 +102,7 @@ final class SegmentLifecycleMaintenance<K, V> {
                 continue;
             }
             throw new IndexException(
-                    String.format("Segment '%s' failed during close: %s",
+                    String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                             segment.getId(), status));
         }
     }
@@ -115,7 +116,7 @@ final class SegmentLifecycleMaintenance<K, V> {
             }
             if (state == SegmentState.ERROR) {
                 throw new IndexException(
-                        String.format("Segment '%s' failed during close: %s",
+                        String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                                 segment.getId(), state));
             }
             closeRetryPolicy.backoffOrThrow(startNanos, "close",

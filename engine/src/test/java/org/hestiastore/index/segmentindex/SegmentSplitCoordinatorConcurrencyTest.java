@@ -60,7 +60,7 @@ class SegmentSplitCoordinatorConcurrencyTest {
 
     @Test
     void applySplitPlan_returns_busy_when_old_segment_missing() {
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(9), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         assertFalse(coordinator.applySplitPlan(plan, segment));
@@ -68,7 +68,7 @@ class SegmentSplitCoordinatorConcurrencyTest {
 
     @Test
     void applySplitPlan_updates_map_when_valid() {
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         assertTrue(coordinator.applySplitPlan(plan, segment));

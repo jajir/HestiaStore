@@ -264,8 +264,7 @@ class ManagementAgentServerTest {
         assertTrue(notReady.body().contains("\"NOT_READY\""));
     }
 
-    private SegmentIndex<Integer, String> createIndex(final String name)
-            throws IOException {
+    private SegmentIndex<Integer, String> createIndex(final String name) {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//

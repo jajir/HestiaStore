@@ -35,6 +35,20 @@
 - In each class keep only one constructor.
 - Try to minimize creating new instaces in constrictors. It make junit test more complicated.
 - Validation perform primary with `Vldtn` class.
+- For duplicated string literals (3+ occurrences), always extract them into `private static final` constants.
+- Do not use `catch (Throwable)`; catch `Exception` or a specific exception type.
+- When handling `InterruptedException`, always call `Thread.currentThread().interrupt()` and then safely return or rethrow.
+- In tests, do not use `Thread.sleep()`. Prefer `CountDownLatch`, timeout-based polling, `LockSupport.parkNanos`, or await helpers.
+- In `assertThrows(...)` lambdas, keep only one potentially-throwing invocation (prepare all other inputs before the lambda).
+- In tests, remove unnecessary `throws Exception/IOException` declarations when the method body cannot throw them.
+- In Mockito, remove unnecessary `eq(...)` wrappers when all arguments are direct values.
+- Prefer `Stream.toList()` over `collect(Collectors.toList())` when list mutability is not required.
+- Minimize `break/continue` in a single loop (target at most one); prefer guard conditions and helper methods.
+- Replace simple boolean `if/else` return blocks with a single return expression.
+- Remove unused generic type parameters (for example `<K, V>` when one type is not used).
+- In tests, prefer package-private classes/methods over `public` when framework visibility does not require `public`.
+- Frontend: prefer `.dataset` over `getAttribute("data-*")`.
+- Frontend: enforce minimum text/background contrast (WCAG AA), especially for muted/status colors.
 
 ## Testing Guidelines
 

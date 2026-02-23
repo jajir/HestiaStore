@@ -2,7 +2,6 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -145,8 +144,7 @@ class SegmentFilesRenamerTest {
         when(propertiesManager.getCacheDeltaFileNames())
                 .thenReturn(List.of("v01-delta-0999.cache"));
         doThrow(new IndexException("delta missing")).when(asyncDirectory)
-                .renameFile(eq("v01-delta-0999.cache"),
-                        eq("v01-delta-0999.cache"));
+                .renameFile("v01-delta-0999.cache", "v01-delta-0999.cache");
 
         final IndexException exception = assertThrows(
                 IndexException.class,

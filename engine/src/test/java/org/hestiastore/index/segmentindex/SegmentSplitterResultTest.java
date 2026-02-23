@@ -12,7 +12,7 @@ class SegmentSplitterResultTest {
     @Test
     void exposesSplitValues() {
         final SegmentId segmentId = SegmentId.of(1);
-        final SegmentSplitterResult<String, String> result = new SegmentSplitterResult<>(
+        final SegmentSplitterResult<String> result = new SegmentSplitterResult<>(
                 segmentId, "min", "max",
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
 
@@ -26,7 +26,7 @@ class SegmentSplitterResultTest {
 
     @Test
     void compactionIsNotSplit() {
-        final SegmentSplitterResult<String, String> result = new SegmentSplitterResult<>(
+        final SegmentSplitterResult<String> result = new SegmentSplitterResult<>(
                 SegmentId.of(1), "min", "max",
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
 

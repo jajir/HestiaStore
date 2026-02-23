@@ -31,7 +31,7 @@ class KeyToSegmentMapTest {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
 
@@ -58,7 +58,7 @@ class KeyToSegmentMapTest {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(3), null, 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
 
@@ -84,7 +84,7 @@ class KeyToSegmentMapTest {
     void applySplitPlan_requires_registry_lock_when_enforced() {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1))));
-        final SegmentSplitApplyPlan<Integer, String> plan = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
         final String previousEnforce = System.getProperty(

@@ -155,10 +155,8 @@ class SegmentImplTest {
 
     @AfterEach
     void tearDown() {
-        if (subject != null) {
-            if (subject.getState() != SegmentState.ERROR) {
-                closeAndAwait(subject);
-            }
+        if (subject != null && subject.getState() != SegmentState.ERROR) {
+            closeAndAwait(subject);
         }
     }
 
@@ -626,7 +624,7 @@ class SegmentImplTest {
     }
 
     @Test
-    void close_returns_busy_for_full_isolation_iterator() throws Exception {
+    void close_returns_busy_for_full_isolation_iterator() {
         final SegmentImpl<Integer, String> segment = newSegment(Runnable::run,
                 versionController);
         final SegmentResult<EntryIterator<Integer, String>> iteratorResult = segment
@@ -646,7 +644,7 @@ class SegmentImplTest {
     }
 
     @Test
-    void maintenance_keeps_closed_state_after_completion() throws Exception {
+    void maintenance_keeps_closed_state_after_completion() {
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
                 versionController);

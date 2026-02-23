@@ -22,6 +22,7 @@ class AbstractCloseableResourceTest {
 
         @Override
         protected void doClose() {
+            // no-op test stub
         }
     }
 

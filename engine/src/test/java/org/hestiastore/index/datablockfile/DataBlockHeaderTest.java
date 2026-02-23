@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.Bytes;
 import org.junit.jupiter.api.Test;
 
-public class DataBlockHeaderTest {
+class DataBlockHeaderTest {
 
     private static final long CRC = 0x5AD3F91C7E28A46BL;
 

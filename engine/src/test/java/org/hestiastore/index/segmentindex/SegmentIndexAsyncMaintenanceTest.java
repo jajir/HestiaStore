@@ -69,9 +69,9 @@ class SegmentIndexAsyncMaintenanceTest {
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
-            final Segment<Integer, String> blockingSegment = mockBlockingSegment(
-                    segmentId, started, stateRef, true);
-            replaceSegment(registry, segmentId, blockingSegment);
+            final Segment<Integer, String> mockedSegment = mockBlockingSegment(
+                    started, stateRef, true);
+            replaceSegment(registry, segmentId, mockedSegment);
 
             final Future<?> flushTask = executor.submit(index::flushAndWait);
             assertTrue(started.await(1, TimeUnit.SECONDS));
@@ -101,9 +101,9 @@ class SegmentIndexAsyncMaintenanceTest {
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
-            final Segment<Integer, String> blockingSegment = mockBlockingSegment(
-                    segmentId, started, stateRef, false);
-            replaceSegment(registry, segmentId, blockingSegment);
+            final Segment<Integer, String> mockedSegment = mockBlockingSegment(
+                    started, stateRef, false);
+            replaceSegment(registry, segmentId, mockedSegment);
 
             final Future<?> compactTask = executor.submit(index::compactAndWait);
             assertTrue(started.await(1, TimeUnit.SECONDS));
@@ -150,7 +150,7 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     private Segment<Integer, String> mockBlockingSegment(
-            final SegmentId segmentId, final CountDownLatch started,
+            final CountDownLatch started,
             final AtomicReference<SegmentState> stateRef,
             final boolean forFlush) {
         when(blockingSegment.getState()).thenAnswer(

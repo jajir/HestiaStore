@@ -17,6 +17,7 @@ class GuardedWriteTransactionTest {
 
         @Override
         protected void doCommit(final EntryWriter<String, String> resource) {
+            // no-op test stub
         }
     }
 

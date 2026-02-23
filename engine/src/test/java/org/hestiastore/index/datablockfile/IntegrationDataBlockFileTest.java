@@ -11,7 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationDataBlockFileTest {
+class IntegrationDataBlockFileTest {
 
     private static final DataBlockSize BLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

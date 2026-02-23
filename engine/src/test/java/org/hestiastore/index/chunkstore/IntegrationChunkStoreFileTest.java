@@ -13,7 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class IntegrationChunkStoreFileTest {
+class IntegrationChunkStoreFileTest {
 
     private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

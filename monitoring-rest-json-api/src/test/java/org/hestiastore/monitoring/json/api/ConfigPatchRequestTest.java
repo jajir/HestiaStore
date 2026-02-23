@@ -23,7 +23,8 @@ class ConfigPatchRequestTest {
 
     @Test
     void rejectsEmptyValues() {
+        final Map<String, String> empty = Map.of();
         assertThrows(IllegalArgumentException.class,
-                () -> new ConfigPatchRequest(Map.of(), false));
+                () -> new ConfigPatchRequest(empty, false));
     }
 }

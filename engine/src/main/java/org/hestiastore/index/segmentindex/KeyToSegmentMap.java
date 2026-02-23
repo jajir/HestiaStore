@@ -304,7 +304,7 @@ final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return removedKey;
     }
 
-    boolean applySplitPlan(final SegmentSplitApplyPlan<K, ?> plan) {
+    boolean applySplitPlan(final SegmentSplitApplyPlan<K> plan) {
         ensureSplitApplyLockOrder();
         Vldtn.requireNonNull(plan, "plan");
         final SegmentId oldSegmentId = plan.getOldSegmentId();
