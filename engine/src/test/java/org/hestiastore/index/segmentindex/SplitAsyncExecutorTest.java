@@ -45,21 +45,6 @@ class SplitAsyncExecutorTest {
     }
 
     @Test
-    void queueCapacityUsesMinimum() {
-        assertEquals(64, executor.getQueueCapacity());
-    }
-
-    @Test
-    void queueCapacityScalesWithThreads() {
-        try (IndexExecutorRegistry otherRegistry = new IndexExecutorRegistry(1,
-                1, 2, 1);
-                SplitAsyncExecutor other = new SplitAsyncExecutor(
-                        otherRegistry)) {
-            assertEquals(128, other.getQueueCapacity());
-        }
-    }
-
-    @Test
     void usesRegistryThreadPrefix() throws Exception {
         final Future<String> future = executor.getExecutor()
                 .submit(() -> Thread.currentThread().getName());

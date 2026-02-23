@@ -40,17 +40,15 @@ class SegmentSplitCoordinatorFlowTest {
                 newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
         final ExecutorService maintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                maintenancePool);
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
-                maintenanceExecutor.getExecutor());
+                maintenancePool);
         final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directory)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
-                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withMaintenanceExecutor(maintenancePool)
                 .withLifecycleExecutor(Executors.newSingleThreadExecutor())
                 .build();
         final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
@@ -82,9 +80,6 @@ class SegmentSplitCoordinatorFlowTest {
         } finally {
             keyToSegmentMap.close();
             registry.close();
-            if (!maintenanceExecutor.wasClosed()) {
-                maintenanceExecutor.close();
-            }
             maintenancePool.shutdownNow();
         }
     }
@@ -109,17 +104,15 @@ class SegmentSplitCoordinatorFlowTest {
                 newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
         final ExecutorService maintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                maintenancePool);
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
-                maintenanceExecutor.getExecutor());
+                maintenancePool);
         final SegmentRegistryImpl<Integer, String> registryImpl = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directory)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
-                .withMaintenanceExecutor(maintenanceExecutor.getExecutor())
+                .withMaintenanceExecutor(maintenancePool)
                 .withLifecycleExecutor(Executors.newSingleThreadExecutor())
                 .build();
         final TrackingRegistry<Integer, String> registry = new TrackingRegistry<>(
@@ -143,9 +136,6 @@ class SegmentSplitCoordinatorFlowTest {
         } finally {
             keyToSegmentMap.close();
             registry.close();
-            if (!maintenanceExecutor.wasClosed()) {
-                maintenanceExecutor.close();
-            }
             maintenancePool.shutdownNow();
         }
     }

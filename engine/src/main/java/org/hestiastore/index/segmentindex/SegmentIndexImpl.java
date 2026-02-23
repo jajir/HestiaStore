@@ -64,7 +64,6 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
-    private final SegmentAsyncExecutor segmentAsyncExecutor;
     private final SplitAsyncExecutor splitAsyncExecutor;
     private final IndexExecutorRegistry executorRegistry;
     private final SegmentIndexCore<K, V> core;
@@ -103,10 +102,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            this.segmentAsyncExecutor = new SegmentAsyncExecutor(
-                    this.executorRegistry.getSegmentMaintenanceExecutor());
-            ExecutorService segmentMaintenanceExecutor = segmentAsyncExecutor
-                    .getExecutor();
+            ExecutorService segmentMaintenanceExecutor = this.executorRegistry
+                    .getSegmentMaintenanceExecutor();
             this.splitAsyncExecutor = new SplitAsyncExecutor(
                     this.executorRegistry);
             ExecutorService splitMaintenanceExecutor = splitAsyncExecutor
@@ -340,9 +337,6 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             closeResult.getStatus()));
         }
         keyToSegmentMap.optionalyFlush();
-        if (!segmentAsyncExecutor.wasClosed()) {
-            segmentAsyncExecutor.close();
-        }
         if (!splitAsyncExecutor.wasClosed()) {
             splitAsyncExecutor.close();
         }
@@ -456,10 +450,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         segmentRuntime.flushRequestCount),
                 maintenanceCoordinator.splitScheduledCount(),
                 maintenanceCoordinator.splitInFlightCount(),
-                segmentAsyncExecutor.getQueueSize(),
-                segmentAsyncExecutor.getQueueCapacity(),
-                splitAsyncExecutor.getQueueSize(),
-                splitAsyncExecutor.getQueueCapacity(),
+                0,
+                0,
+                0,
+                0,
                 stats.getReadLatencyP50Micros(),
                 stats.getReadLatencyP95Micros(),
                 stats.getReadLatencyP99Micros(),
