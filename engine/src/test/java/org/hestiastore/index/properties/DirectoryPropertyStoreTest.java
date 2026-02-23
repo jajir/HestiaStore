@@ -1,6 +1,7 @@
 package org.hestiastore.index.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,7 +40,7 @@ class DirectoryPropertyStoreTest {
         final PropertyView reloadedView = reloaded.snapshot();
         assertEquals(7, reloadedView.getInt("alpha"));
         assertEquals(42L, reloadedView.getLong("beta"));
-        assertEquals(true, reloadedView.getBoolean("gamma"));
+        assertTrue(reloadedView.getBoolean("gamma"));
         final String fileContent = new String(
                 directory.getFileBytes(FILE_NAME).getData(),
                 StandardCharsets.UTF_8);
@@ -70,7 +71,7 @@ class DirectoryPropertyStoreTest {
         assertEquals(0, view.getInt("missing-int"));
         assertEquals(0L, view.getLong("missing-long"));
         assertEquals(0D, view.getDouble("missing-double"));
-        assertEquals(false, view.getBoolean("missing-bool"));
+        assertFalse(view.getBoolean("missing-bool"));
     }
 
     @Test
@@ -85,6 +86,6 @@ class DirectoryPropertyStoreTest {
         final PropertyView view = store.snapshot();
         assertNotNull(view);
         assertEquals(99, view.getInt("foo"));
-        assertEquals(true, view.getBoolean("bar"));
+        assertTrue(view.getBoolean("bar"));
     }
 }

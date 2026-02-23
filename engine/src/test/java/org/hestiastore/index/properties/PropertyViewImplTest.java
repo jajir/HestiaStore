@@ -1,7 +1,9 @@
 package org.hestiastore.index.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +29,8 @@ class PropertyViewImplTest {
         assertEquals(7, view.getInt("int"));
         assertEquals(42L, view.getLong("long"));
         assertEquals(3.14, view.getDouble("double"));
-        assertEquals(true, view.getBoolean("booleanTrue"));
-        assertEquals(false, view.getBoolean("booleanFalse"));
+        assertTrue(view.getBoolean("booleanTrue"));
+        assertFalse(view.getBoolean("booleanFalse"));
         assertNull(view.getString("missing"));
         assertEquals("fallback", view.getStringOrDefault("missing", "fallback"));
     }

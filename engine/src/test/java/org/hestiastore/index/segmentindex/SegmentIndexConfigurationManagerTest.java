@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -420,7 +420,7 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(true, ret.isContextLoggingEnabled());
+        assertTrue(ret.isContextLoggingEnabled());
     }
 
     @Test

@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -86,7 +87,7 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
                 List.of(Entry.of(1, "a"))));
         final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
                 null, plan, SegmentId.of(10), null, null);
-        assertEquals(true, step.filter(ctx, state1));
+        assertTrue(step.filter(ctx, state1));
         assertNull(state1.getResult());
 
         final SegmentSplitState<Integer, String> state2 = new SegmentSplitState<>();

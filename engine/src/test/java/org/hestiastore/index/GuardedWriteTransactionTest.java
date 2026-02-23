@@ -2,6 +2,7 @@ package org.hestiastore.index;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -112,6 +113,6 @@ class GuardedWriteTransactionTest {
         RecordingEntryWriter delegate = tx.delegateWriter();
         assertEquals(1, delegate.writeCount);
         assertEquals(1, delegate.closeCount);
-        assertEquals(true, tx.wasCommitted());
+        assertTrue(tx.wasCommitted());
     }
 }

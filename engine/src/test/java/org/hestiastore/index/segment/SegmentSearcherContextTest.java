@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -73,7 +74,7 @@ class SegmentSearcherContextTest {
     void delegates_bloom_filter_check() {
         when(dataProvider.getBloomFilter()).thenReturn(bloomFilter);
         when(bloomFilter.isNotStored("k")).thenReturn(true);
-        assertEquals(true, ctx.isNotStoredInBloomFilter());
+        assertTrue(ctx.isNotStoredInBloomFilter());
     }
 
     @Test
