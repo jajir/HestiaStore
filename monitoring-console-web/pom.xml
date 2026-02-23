@@ -13,7 +13,7 @@
     <name>HestiaStore Monitoring Console Web</name>
 
     <properties>
-        <spring.boot.version>3.4.3</spring.boot.version>
+        <spring.boot.version>3.5.11</spring.boot.version>
     </properties>
 
     <dependencyManagement>
