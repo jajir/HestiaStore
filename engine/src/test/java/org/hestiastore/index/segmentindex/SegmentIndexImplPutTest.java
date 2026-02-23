@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -76,8 +78,10 @@ class SegmentIndexImplPutTest {
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
                 .getValue();
         awaitSegmentReady(segment);
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance-test");
+                maintenancePool);
         try {
             final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                     directory, tdi, tds, index.getConfiguration(),
@@ -91,6 +95,7 @@ class SegmentIndexImplPutTest {
             assertEquals(SegmentId.of(1), cache.findSegmentId(1));
         } finally {
             maintenanceExecutor.close();
+            maintenancePool.shutdownNow();
         }
     }
 
@@ -120,7 +125,7 @@ class SegmentIndexImplPutTest {
                 final TypeDescriptor<V> valueTypeDescriptor,
                 final IndexConfiguration<K, V> conf) {
             super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                    conf);
+                    conf, new IndexExecutorRegistry(conf));
         }
 
         void awaitSplitsIdlePublic() {

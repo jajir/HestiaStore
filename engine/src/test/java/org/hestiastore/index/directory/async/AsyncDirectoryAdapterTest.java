@@ -31,8 +31,7 @@ class AsyncDirectoryAdapterTest {
 
     @Test
     void round_trip_with_mem_directory() throws Exception {
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory(), 2);
+        final AsyncDirectory asyncDirectory = newAsyncDirectory(2);
         final AsyncFileWriter writer = asyncDirectory.getFileWriterAsync("f")
                 .toCompletableFuture().get(5, TimeUnit.SECONDS);
         writer.writeAsync("hi".getBytes(StandardCharsets.ISO_8859_1))
@@ -85,8 +84,7 @@ class AsyncDirectoryAdapterTest {
 
     @Test
     void directory_rejects_new_requests_after_close() throws Exception {
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory(), 1);
+        final AsyncDirectory asyncDirectory = newAsyncDirectory(1);
         asyncDirectory.close();
         final CompletableFuture<AsyncFileWriter> future = asyncDirectory
                 .getFileWriterAsync("f").toCompletableFuture();
@@ -97,8 +95,7 @@ class AsyncDirectoryAdapterTest {
 
     @Test
     void open_subdirectory_round_trip() throws Exception {
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory(), 1);
+        final AsyncDirectory asyncDirectory = newAsyncDirectory(1);
         final AsyncDirectory subDirectory = asyncDirectory
                 .openSubDirectory("child").toCompletableFuture().get(5,
                         TimeUnit.SECONDS);
@@ -125,8 +122,7 @@ class AsyncDirectoryAdapterTest {
 
     @Test
     void rmdir_removes_empty_directory() throws Exception {
-        final AsyncDirectory asyncDirectory = AsyncDirectoryAdapter
-                .wrap(new MemDirectory(), 1);
+        final AsyncDirectory asyncDirectory = newAsyncDirectory(1);
         asyncDirectory.openSubDirectory("child").toCompletableFuture().get(5,
                 TimeUnit.SECONDS);
 
@@ -134,6 +130,11 @@ class AsyncDirectoryAdapterTest {
                 .get(5, TimeUnit.SECONDS));
 
         asyncDirectory.close();
+    }
+
+    private AsyncDirectory newAsyncDirectory(final int numberOfIoThreads) {
+        executor = Executors.newFixedThreadPool(numberOfIoThreads);
+        return new AsyncDirectoryAdapter(new MemDirectory(), executor, true);
     }
 
     /**

@@ -30,12 +30,15 @@ class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
      * @param keyTypeDescriptor key type descriptor
      * @param valueTypeDescriptor value type descriptor
      * @param conf configuration for the index
+     * @param executorRegistry shared executor registry
      */
     IndexInternalConcurrent(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf) {
-        super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);
+            final IndexConfiguration<K, V> conf,
+            final IndexExecutorRegistry executorRegistry) {
+        super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
+                executorRegistry);
     }
 
     /** {@inheritDoc} */

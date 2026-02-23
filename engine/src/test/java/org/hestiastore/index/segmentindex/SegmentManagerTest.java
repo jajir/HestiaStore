@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -37,8 +38,10 @@ class SegmentManagerTest {
     void test_getting_same_segmentId() {
         final Directory directory = new MemDirectory();
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance");
+                maintenancePool);
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
@@ -83,14 +86,17 @@ class SegmentManagerTest {
         if (!maintenanceExecutor.wasClosed()) {
             maintenanceExecutor.close();
         }
+        maintenancePool.shutdownNow();
     }
 
     @Test
     void test_close() {
         final Directory directory = new MemDirectory();
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance");
+                maintenancePool);
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
                 .withDirectoryFacade(
@@ -105,6 +111,7 @@ class SegmentManagerTest {
         if (!maintenanceExecutor.wasClosed()) {
             maintenanceExecutor.close();
         }
+        maintenancePool.shutdownNow();
     }
 
 }

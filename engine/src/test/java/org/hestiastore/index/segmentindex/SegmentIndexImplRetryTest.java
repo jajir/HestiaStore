@@ -107,9 +107,10 @@ class SegmentIndexImplRetryTest {
     }
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
+        final IndexConfiguration<Integer, String> conf = buildConf();
         return new IndexInternalConcurrent<>(
                 new MemDirectory(), tdi, tds,
-                buildConf());
+                conf, new IndexExecutorRegistry(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

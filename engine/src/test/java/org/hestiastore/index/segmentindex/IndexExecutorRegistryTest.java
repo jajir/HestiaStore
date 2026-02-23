@@ -182,7 +182,7 @@ class IndexExecutorRegistryTest {
 
     private static IndexConfiguration<Integer, String> buildConf(
             final int ioThreads, final int segmentMaintenanceThreads,
-            final int segmentThreads, final int registryMaintenanceThreads) {
+            final int splitThreads, final int registryMaintenanceThreads) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -200,7 +200,8 @@ class IndexExecutorRegistryTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(segmentThreads)//
+                .withIndexWorkerThreadCount(1)//
+                .withNumberOfIndexMaintenanceThreads(splitThreads)//
                 .withNumberOfIoThreads(ioThreads)//
                 .withNumberOfSegmentIndexMaintenanceThreads(
                         segmentMaintenanceThreads)//

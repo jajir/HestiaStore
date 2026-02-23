@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -28,8 +30,10 @@ class SegmentFactoryTest {
     void buildSegment_createsSegmentWithId() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final Directory directory = new MemDirectory();
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance-test");
+                maintenancePool);
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), conf,
@@ -47,6 +51,7 @@ class SegmentFactoryTest {
             if (!maintenanceExecutor.wasClosed()) {
                 maintenanceExecutor.close();
             }
+            maintenancePool.shutdownNow();
         }
     }
 
@@ -54,8 +59,10 @@ class SegmentFactoryTest {
     void buildSegment_enablesDirectoryLockingForRegistrySegments() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final Directory directory = new MemDirectory();
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance-test");
+                maintenancePool);
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), conf,
@@ -77,6 +84,7 @@ class SegmentFactoryTest {
             if (!maintenanceExecutor.wasClosed()) {
                 maintenanceExecutor.close();
             }
+            maintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
     }

@@ -1,42 +1,29 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Shared executor for segment maintenance tasks.
+ * Segment-maintenance executor facade backed by an externally owned executor.
  */
 public final class SegmentAsyncExecutor extends AbstractCloseableResource {
 
-    private static final int MIN_QUEUE_CAPACITY = 64;
-    private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
-
-    private final ThreadPoolExecutor executor;
-    private final int queueCapacity;
+    private final ExecutorService executor;
+    private final ThreadPoolExecutor threadPoolExecutor;
 
     /**
-     * Creates a shared executor for segment maintenance tasks.
+     * Creates segment-maintenance executor facade.
      *
-     * @param threads number of threads in the pool
-     * @param threadNamePrefix thread name prefix
+     * @param executor shared executor service
      */
-    public SegmentAsyncExecutor(final int threads,
-            final String threadNamePrefix) {
-        Vldtn.requireGreaterThanZero(threads, "threads");
-        this.queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
-                threads * QUEUE_CAPACITY_MULTIPLIER);
-        this.executor = new ThreadPoolExecutor(threads, threads, 0L,
-                TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(queueCapacity),
-                namedThreadFactory(threadNamePrefix),
-                new ThreadPoolExecutor.CallerRunsPolicy());
+    public SegmentAsyncExecutor(final ExecutorService executor) {
+        this.executor = Vldtn.requireNonNull(executor, "executor");
+        this.threadPoolExecutor = executor instanceof ThreadPoolExecutor tp
+                ? tp
+                : null;
     }
 
     /**
@@ -49,51 +36,29 @@ public final class SegmentAsyncExecutor extends AbstractCloseableResource {
     }
 
     int getQueueSize() {
-        return executor.getQueue().size();
+        if (threadPoolExecutor == null) {
+            return 0;
+        }
+        return threadPoolExecutor.getQueue().size();
     }
 
     int getActiveCount() {
-        return executor.getActiveCount();
+        if (threadPoolExecutor == null) {
+            return 0;
+        }
+        return threadPoolExecutor.getActiveCount();
     }
 
     int getQueueCapacity() {
-        return queueCapacity;
+        if (threadPoolExecutor == null) {
+            return 0;
+        }
+        return threadPoolExecutor.getQueue().size()
+                + threadPoolExecutor.getQueue().remainingCapacity();
     }
 
     @Override
     protected void doClose() {
-        executor.shutdown();
-        awaitTermination();
-    }
-
-    private void awaitTermination() {
-        boolean interrupted = false;
-        try {
-            while (!executor.isTerminated()) {
-                try {
-                    executor.awaitTermination(1, TimeUnit.SECONDS);
-                } catch (final InterruptedException e) {
-                    interrupted = true;
-                }
-            }
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    private static ThreadFactory namedThreadFactory(final String prefix) {
-        Vldtn.requireNonNull(prefix, "prefix");
-        if (prefix.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Property 'prefix' must not be empty.");
-        }
-        final AtomicInteger counter = new AtomicInteger(1);
-        return runnable -> {
-            final Thread thread = new Thread(runnable);
-            thread.setName(prefix + "-" + counter.getAndIncrement());
-            return thread;
-        };
+        // Executor lifecycle is owned by caller.
     }
 }

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,11 +14,13 @@ import org.junit.jupiter.api.Test;
 
 class SegmentAsyncExecutorTest {
 
+    private IndexExecutorRegistry registry;
     private SegmentAsyncExecutor executor;
 
     @BeforeEach
     void setUp() {
-        executor = new SegmentAsyncExecutor(1, "segment-async-test");
+        registry = new IndexExecutorRegistry(1, 1, 1, 1);
+        executor = new SegmentAsyncExecutor(registry.getSegmentMaintenanceExecutor());
     }
 
     @AfterEach
@@ -25,24 +28,20 @@ class SegmentAsyncExecutorTest {
         if (executor != null && !executor.wasClosed()) {
             executor.close();
         }
+        if (registry != null && !registry.wasClosed()) {
+            registry.close();
+        }
         executor = null;
+        registry = null;
     }
 
     @Test
-    void constructorRejectsNonPositiveThreads() {
+    void constructorRejectsNullExecutor() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentAsyncExecutor(0, "segment-async-test"));
-        assertEquals("Property 'threads' must be greater than 0",
+                () -> new SegmentAsyncExecutor(null));
+        assertEquals("Property 'executor' must not be null.",
                 ex.getMessage());
-    }
-
-    @Test
-    void constructorRejectsEmptyPrefix() {
-        final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> new SegmentAsyncExecutor(1, ""));
-        assertEquals("Property 'prefix' must not be empty.", ex.getMessage());
     }
 
     @Test
@@ -52,28 +51,29 @@ class SegmentAsyncExecutorTest {
 
     @Test
     void queueCapacityScalesWithThreads() {
-        try (SegmentAsyncExecutor other = new SegmentAsyncExecutor(2,
-                "segment-async-other")) {
+        try (IndexExecutorRegistry otherRegistry = new IndexExecutorRegistry(1,
+                2, 1, 1);
+                SegmentAsyncExecutor other = new SegmentAsyncExecutor(
+                        otherRegistry.getSegmentMaintenanceExecutor())) {
             assertEquals(128, other.getQueueCapacity());
         }
     }
 
     @Test
-    void usesThreadNamePrefix() throws Exception {
+    void usesRegistryThreadNamePrefix() throws Exception {
         final Future<String> future = executor.getExecutor()
                 .submit(() -> Thread.currentThread().getName());
         final String name = future.get(1, TimeUnit.SECONDS);
-        assertTrue(name.startsWith("segment-async-test-"));
+        assertTrue(name.startsWith("segment-maintenance-"));
     }
 
     @Test
-    void closeShutsDownExecutor() {
+    void closeDoesNotShutdownUnderlyingExecutor() {
         final SegmentAsyncExecutor closeExecutor = executor;
         executor = null;
 
         closeExecutor.close();
 
-        assertTrue(closeExecutor.getExecutor().isShutdown());
-        assertTrue(closeExecutor.getExecutor().isTerminated());
+        assertFalse(closeExecutor.getExecutor().isShutdown());
     }
 }

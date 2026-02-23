@@ -76,7 +76,8 @@ class IndexStateReadyTest {
                 final TypeDescriptorInteger keyTypeDescriptor,
                 final TypeDescriptorShortString valueTypeDescriptor,
                 final IndexConfiguration<Integer, String> conf) {
-            super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf);
+            super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
+                    new IndexExecutorRegistry(conf));
         }
     }
 }

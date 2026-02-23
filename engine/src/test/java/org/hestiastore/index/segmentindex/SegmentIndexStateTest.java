@@ -20,11 +20,12 @@ class SegmentIndexStateTest {
 
     @BeforeEach
     void setUp() {
-        index = SegmentIndex.create(new MemDirectory(), buildConf());
+        final IndexConfiguration<Integer, String> conf = buildConf();
+        index = SegmentIndex.create(new MemDirectory(), conf);
         errorIndex = new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                buildConf());
+                conf, new IndexExecutorRegistry(conf));
     }
 
     @AfterEach

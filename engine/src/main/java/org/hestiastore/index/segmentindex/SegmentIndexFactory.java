@@ -120,7 +120,7 @@ final class SegmentIndexFactory {
                 "isContextLoggingEnabled");
         SegmentIndex<M, N> index = new IndexInternalConcurrent<>(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                indexConf);
+                indexConf, lifecycle.getManagedExecutorRegistry());
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
             index = new IndexContextLoggingAdapter<>(indexConf, index);
         }

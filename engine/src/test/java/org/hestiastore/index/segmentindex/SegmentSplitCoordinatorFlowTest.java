@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.hestiastore.index.Entry;
@@ -37,8 +38,10 @@ class SegmentSplitCoordinatorFlowTest {
         final Directory directory = new MemDirectory();
         final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance");
+                maintenancePool);
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
                 maintenanceExecutor.getExecutor());
@@ -82,6 +85,7 @@ class SegmentSplitCoordinatorFlowTest {
             if (!maintenanceExecutor.wasClosed()) {
                 maintenanceExecutor.close();
             }
+            maintenancePool.shutdownNow();
         }
     }
 
@@ -103,8 +107,10 @@ class SegmentSplitCoordinatorFlowTest {
         final Directory directory = new MemDirectory();
         final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 newKeyMap(List.of(Entry.of(100, SegmentId.of(0)))));
+        final ExecutorService maintenancePool = Executors
+                .newSingleThreadExecutor();
         final SegmentAsyncExecutor maintenanceExecutor = new SegmentAsyncExecutor(
-                1, "segment-maintenance");
+                maintenancePool);
         final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 directory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
                 maintenanceExecutor.getExecutor());
@@ -140,6 +146,7 @@ class SegmentSplitCoordinatorFlowTest {
             if (!maintenanceExecutor.wasClosed()) {
                 maintenanceExecutor.close();
             }
+            maintenancePool.shutdownNow();
         }
     }
 
