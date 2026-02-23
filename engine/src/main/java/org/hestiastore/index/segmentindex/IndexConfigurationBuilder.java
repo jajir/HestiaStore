@@ -523,27 +523,7 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveMaxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles == null
                 ? IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES
                 : maxNumberOfDeltaCacheFiles;
-        final Integer effectiveWriteCacheDuringMaintenance;
-        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null
-                && maxNumberOfKeysInSegmentWriteCache != null) {
-            effectiveWriteCacheDuringMaintenance = Math.max(
-                    (int) Math.ceil(maxNumberOfKeysInSegmentWriteCache * 1.4),
-                    maxNumberOfKeysInSegmentWriteCache + 1);
-        } else if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null) {
-            effectiveWriteCacheDuringMaintenance = null;
-        } else if (maxNumberOfKeysInSegmentWriteCache == null) {
-            effectiveWriteCacheDuringMaintenance = Vldtn.requireGreaterThanZero(
-                    maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
-        } else {
-            if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance <= maxNumberOfKeysInSegmentWriteCache) {
-                throw new IllegalArgumentException(String.format(
-                        "Property '%s' must be greater than '%s'",
-                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
-                        "maxNumberOfKeysInSegmentWriteCache"));
-            }
-            effectiveWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
-        }
+        final Integer effectiveWriteCacheDuringMaintenance = resolveEffectiveWriteCacheDuringMaintenance();
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
@@ -562,6 +542,30 @@ public class IndexConfigurationBuilder<K, V> {
                 effectiveIndexBusyTimeoutMillis,
                 effectiveSegmentMaintenanceAutoEnabled,
                 encodingChunkFilters, decodingChunkFilters);
+    }
+
+    private Integer resolveEffectiveWriteCacheDuringMaintenance() {
+        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null
+                && maxNumberOfKeysInSegmentWriteCache != null) {
+            return Math.max(
+                    (int) Math.ceil(maxNumberOfKeysInSegmentWriteCache * 1.4),
+                    maxNumberOfKeysInSegmentWriteCache + 1);
+        }
+        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null) {
+            return null;
+        }
+        if (maxNumberOfKeysInSegmentWriteCache == null) {
+            return Vldtn.requireGreaterThanZero(
+                    maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        }
+        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance <= maxNumberOfKeysInSegmentWriteCache) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be greater than '%s'",
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
+                    "maxNumberOfKeysInSegmentWriteCache"));
+        }
+        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     }
 
     private ChunkFilter instantiateFilter(
