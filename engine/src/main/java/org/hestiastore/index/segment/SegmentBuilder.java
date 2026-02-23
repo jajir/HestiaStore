@@ -43,7 +43,6 @@ public final class SegmentBuilder<K, V> {
     private Executor maintenanceExecutor;
     private SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private boolean directoryLockingEnabled = true;
-    private Runnable compactionRequestListener = () -> {};
 
     /**
      * Creates a new builder with the required segment directory.
@@ -305,19 +304,6 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
-     * Sets a callback invoked when compaction is accepted by the segment.
-     *
-     * @param listener compaction callback
-     * @return this builder for chaining
-     */
-    public SegmentBuilder<K, V> withCompactionRequestListener(
-            final Runnable listener) {
-        this.compactionRequestListener = Vldtn.requireNonNull(listener,
-                "compactionRequestListener");
-        return this;
-    }
-
-    /**
      * Opens a full writer transaction that builds the segment from a sorted
      * stream of entries. Entries must be unique, sorted by key in ascending
      * order, and must not contain tombstones. The returned transaction writes
@@ -393,7 +379,7 @@ public final class SegmentBuilder<K, V> {
                     .requireNonNull(maintenancePolicy, "maintenancePolicy");
             return SegmentBuildResult.ok(new SegmentImpl<>(core, compacter,
                     context.maintenanceExecutor, configuredMaintenancePolicy,
-                    directoryLocking, compactionRequestListener));
+                    directoryLocking));
         } catch (final RuntimeException e) {
             if (directoryLocking != null) {
                 directoryLocking.unlock();

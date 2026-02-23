@@ -36,8 +36,8 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
+import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segment.SegmentStats;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -71,6 +71,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final RuntimeTuningState runtimeTuningState;
     private final IndexControlPlane controlPlane;
     private final Stats stats = new Stats();
+    private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
+    private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
     private final Object asyncMonitor = new Object();
     private int asyncInFlight = 0;
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
@@ -128,7 +130,6 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     .withKeyTypeDescriptor(keyTypeDescriptor)
                     .withValueTypeDescriptor(valueTypeDescriptor)
                     .withConfiguration(conf)
-                    .withCompactionRequestListener(stats::incCompactRequestCx)
                     .withMaintenanceExecutor(segmentMaintenanceExecutor)
                     .withLifecycleExecutor(registryLifecycleExecutor).build();
             this.segmentRegistry = registry;
@@ -424,6 +425,12 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final SegmentRegistryCacheStats cacheStats = segmentRegistry
                 .metricsSnapshot();
         final SegmentRuntimeAggregate segmentRuntime = collectSegmentRuntime();
+        final long compactRequestCount = Math.max(stats.getCompactRequestCx(),
+                updateHighWaterMark(compactRequestHighWaterMark,
+                        segmentRuntime.compactRequestCount));
+        final long flushRequestCount = Math.max(stats.getFlushRequestCx(),
+                updateHighWaterMark(flushRequestHighWaterMark,
+                        segmentRuntime.flushRequestCount));
         return new SegmentIndexMetricsSnapshot(stats.getGetCx(),
                 stats.getPutCx(), stats.getDeleteCx(), cacheStats.hitCount(),
                 cacheStats.missCount(), cacheStats.loadCount(),
@@ -444,16 +451,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.totalSegmentCacheKeys,
                 segmentRuntime.totalWriteCacheKeys,
                 segmentRuntime.totalDeltaCacheFiles,
-                Math.max(stats.getCompactRequestCx(),
-                        segmentRuntime.compactRequestCount),
-                Math.max(stats.getFlushRequestCx(),
-                        segmentRuntime.flushRequestCount),
+                compactRequestCount, flushRequestCount,
                 maintenanceCoordinator.splitScheduledCount(),
-                maintenanceCoordinator.splitInFlightCount(),
-                0,
-                0,
-                0,
-                0,
+                maintenanceCoordinator.splitInFlightCount(), 0, 0, 0, 0,
                 stats.getReadLatencyP50Micros(),
                 stats.getReadLatencyP95Micros(),
                 stats.getReadLatencyP99Micros(),
@@ -466,7 +466,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.bloomFilterRequestCount,
                 segmentRuntime.bloomFilterRefusedCount,
                 segmentRuntime.bloomFilterPositiveCount,
-                segmentRuntime.bloomFilterFalsePositiveCount, getState());
+                segmentRuntime.bloomFilterFalsePositiveCount,
+                segmentRuntime.segmentRuntimeSnapshots, getState());
     }
 
     final void setSegmentIndexState(final SegmentIndexState state) {
@@ -694,6 +695,20 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return keyToSegmentMap.getSegmentIds().contains(segmentId);
     }
 
+    private static long updateHighWaterMark(final AtomicLong highWaterMark,
+            final long observedValue) {
+        final long sanitizedValue = Math.max(0L, observedValue);
+        while (true) {
+            final long currentValue = highWaterMark.get();
+            if (sanitizedValue <= currentValue) {
+                return currentValue;
+            }
+            if (highWaterMark.compareAndSet(currentValue, sanitizedValue)) {
+                return sanitizedValue;
+            }
+        }
+    }
+
     private SegmentRuntimeAggregate collectSegmentRuntime() {
         final SegmentRuntimeAggregate aggregate = new SegmentRuntimeAggregate();
         final List<SegmentId> mappedSegmentIds = keyToSegmentMap
@@ -707,12 +722,17 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         int accountedSegments = 0;
         for (final Segment<K, V> segment : segmentRegistry
                 .loadedSegmentsSnapshot()) {
-            if (segment == null
-                    || !mappedSegmentIdSet.contains(segment.getId())) {
+            if (segment == null) {
+                continue;
+            }
+            final SegmentRuntimeSnapshot segmentRuntime = segment
+                    .getRuntimeSnapshot();
+            final SegmentId segmentId = segmentRuntime.getSegmentId();
+            if (!mappedSegmentIdSet.contains(segmentId)) {
                 continue;
             }
             accountedSegments++;
-            final SegmentState state = segment.getState();
+            final SegmentState state = segmentRuntime.getState();
             if (state == SegmentState.READY) {
                 aggregate.segmentReadyCount++;
             } else if (state == SegmentState.MAINTENANCE_RUNNING
@@ -724,26 +744,28 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 aggregate.segmentClosedCount++;
             }
             aggregate.totalSegmentKeys += Math.max(0L,
-                    segment.getNumberOfKeys());
+                    segmentRuntime.getNumberOfKeys());
             aggregate.totalSegmentCacheKeys += Math.max(0L,
-                    segment.getNumberOfKeysInSegmentCache());
+                    segmentRuntime.getNumberOfKeysInSegmentCache());
             aggregate.totalWriteCacheKeys += Math.max(0L,
-                    segment.getNumberOfKeysInWriteCache());
+                    segmentRuntime.getNumberOfKeysInWriteCache());
             aggregate.totalDeltaCacheFiles += Math.max(0,
-                    segment.getNumberOfDeltaCacheFiles());
-            final SegmentStats segmentStats = segment.getStats();
+                    segmentRuntime.getNumberOfDeltaCacheFiles());
+            aggregate.segmentRuntimeSnapshots
+                    .add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
+                            segmentRuntime));
             aggregate.compactRequestCount += Math.max(0L,
-                    segmentStats.getCompactRequestCount());
+                    segmentRuntime.getNumberOfCompacts());
             aggregate.flushRequestCount += Math.max(0L,
-                    segmentStats.getFlushRequestCount());
+                    segmentRuntime.getNumberOfFlushes());
             aggregate.bloomFilterRequestCount += Math.max(0L,
-                    segment.getBloomFilterRequestCount());
+                    segmentRuntime.getBloomFilterRequestCount());
             aggregate.bloomFilterRefusedCount += Math.max(0L,
-                    segment.getBloomFilterRefusedCount());
+                    segmentRuntime.getBloomFilterRefusedCount());
             aggregate.bloomFilterPositiveCount += Math.max(0L,
-                    segment.getBloomFilterPositiveCount());
+                    segmentRuntime.getBloomFilterPositiveCount());
             aggregate.bloomFilterFalsePositiveCount += Math.max(0L,
-                    segment.getBloomFilterFalsePositiveCount());
+                    segmentRuntime.getBloomFilterFalsePositiveCount());
         }
         aggregate.segmentBusyCount = Math.max(0,
                 aggregate.segmentCount - accountedSegments);
@@ -999,6 +1021,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         private long bloomFilterRefusedCount;
         private long bloomFilterPositiveCount;
         private long bloomFilterFalsePositiveCount;
+        private final List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> segmentRuntimeSnapshots = new ArrayList<>();
     }
 
     /** {@inheritDoc} */

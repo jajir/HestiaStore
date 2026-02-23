@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
@@ -304,7 +305,10 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * @return metrics snapshot
      */
     default SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, getState());
+        return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0,
+                0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, List.of(),
+                getState());
     }
 
     /**

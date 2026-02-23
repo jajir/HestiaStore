@@ -7,6 +7,10 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+concurrency:
+  group: maven-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,13 +59,6 @@ jobs:
         badges-directory: ./badges
         coverage-badge-filename: jacoco-badge-${{ github.ref_name }}.svg
     
-    - name: Upload badge (JaCoCo) to Gist
-      uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
-      with:
-        token: ${{ secrets.GIST_TOKEN }}
-        gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
-        file: ./badges/jacoco-badge-${{ github.ref_name }}.svg
-          
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
       id: test-results
@@ -95,13 +92,6 @@ jobs:
         color: ${{ env.BADGE_COLOR }}
         path: badge-${{ github.ref_name }}.svg
     
-    - name: Upload badge (test results) to Gist
-      uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
-      with:
-        token: ${{ secrets.GIST_TOKEN }}
-        gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
-        file: badge-${{ github.ref_name }}.svg
-
     - name: OWASP vulnerabilities - count
       id: vuln
       run: |
@@ -117,10 +107,59 @@ jobs:
         color: 31c653
         path: badge-owasp-${{ github.ref_name }}.svg
 
-    - name: OWASP vulnerabilities - Upload badge to Gist
-      uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
-      with:
-        token: ${{ secrets.GIST_TOKEN }}
-        gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
-        file: badge-owasp-${{ github.ref_name }}.svg
+    - name: Upload badges to Gist
+      if: ${{ secrets.GIST_TOKEN != '' }}
+      env:
+        GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        GIST_ID: a613341fb9d9d0c6a426b42a714700b7
+        JACOCO_BADGE: ./badges/jacoco-badge-${{ github.ref_name }}.svg
+        TEST_BADGE: badge-${{ github.ref_name }}.svg
+        OWASP_BADGE: badge-owasp-${{ github.ref_name }}.svg
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        payload_file="$(mktemp)"
+        response_file="$(mktemp)"
+
+        jq -n \
+          --arg jacocoName "$(basename "$JACOCO_BADGE")" \
+          --rawfile jacocoContent "$JACOCO_BADGE" \
+          --arg testName "$(basename "$TEST_BADGE")" \
+          --rawfile testContent "$TEST_BADGE" \
+          --arg owaspName "$(basename "$OWASP_BADGE")" \
+          --rawfile owaspContent "$OWASP_BADGE" \
+          '{
+            files: {
+              ($jacocoName): {filename: $jacocoName, content: $jacocoContent},
+              ($testName): {filename: $testName, content: $testContent},
+              ($owaspName): {filename: $owaspName, content: $owaspContent}
+            }
+          }' > "$payload_file"
+
+        for attempt in 1 2 3 4 5; do
+          status_code="$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" \
+            --request PATCH \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: token ${GIST_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data @"$payload_file" \
+            "https://api.github.com/gists/${GIST_ID}")"
+
+          if [ "$status_code" = "200" ]; then
+            echo "Gist badges updated successfully."
+            exit 0
+          fi
+
+          if [ "$status_code" = "409" ] && [ "$attempt" -lt 5 ]; then
+            sleep_seconds=$((attempt * 2))
+            echo "Gist update conflict (HTTP 409). Retrying in ${sleep_seconds}s..."
+            sleep "$sleep_seconds"
+            continue
+          fi
+
+          echo "Failed to update gist. HTTP status: ${status_code}"
+          cat "$response_file"
+          exit 1
+        done
             

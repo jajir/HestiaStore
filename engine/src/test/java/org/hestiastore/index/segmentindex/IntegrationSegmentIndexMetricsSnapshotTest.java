@@ -58,6 +58,8 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getBloomFilterRefusedCount() >= 0L);
             assertTrue(snapshot.getBloomFilterPositiveCount() >= 0L);
             assertTrue(snapshot.getBloomFilterFalsePositiveCount() >= 0L);
+            assertTrue(snapshot.getSegmentRuntimeSnapshots()
+                    .size() <= snapshot.getSegmentCount());
             assertEquals(SegmentIndexState.READY, snapshot.getState());
         }
     }

@@ -164,6 +164,73 @@
             font-size: 14px;
         }
 
+        .segment-table-wrap {
+            overflow: auto;
+            border: 1px solid rgba(20, 50, 38, .1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .7);
+        }
+
+        .segment-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 1050px;
+        }
+
+        .segment-table th,
+        .segment-table td {
+            padding: 7px 8px;
+            border-bottom: 1px solid rgba(20, 50, 38, .1);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .segment-table thead th {
+            color: var(--muted);
+            font-weight: 600;
+            letter-spacing: .01em;
+            background: rgba(13, 143, 129, .08);
+        }
+
+        .segment-table tbody tr:hover {
+            background: rgba(13, 143, 129, .05);
+        }
+
+        .segment-state {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .02em;
+        }
+
+        .segment-state.state-ready {
+            background: rgba(15, 157, 107, .15);
+            color: #0c6b4a;
+        }
+
+        .segment-state.state-maintenance {
+            background: rgba(212, 138, 18, .18);
+            color: #8c5a07;
+        }
+
+        .segment-state.state-freeze {
+            background: rgba(13, 143, 129, .18);
+            color: #0a655b;
+        }
+
+        .segment-state.state-closed {
+            background: rgba(75, 110, 93, .16);
+            color: #3a5a4d;
+        }
+
+        .segment-state.state-error {
+            background: rgba(197, 75, 59, .18);
+            color: #8e3025;
+        }
+
         .value-runtime {
             color: var(--text);
             font-weight: 700;

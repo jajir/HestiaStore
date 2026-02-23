@@ -180,6 +180,59 @@
                                 th:text="${idx.bloomMeasuredFalsePositiveProbabilityDisplay}">0</strong></div>
                     </article>
                 </section>
+
+                <article class="card section" style="margin-top:16px;">
+                    <h3>Segments In Registry Runtime</h3>
+                    <div th:if="${idx.segmentRuntimeSnapshots == null or #lists.isEmpty(idx.segmentRuntimeSnapshots)}"
+                        class="mono">
+                        No per-segment runtime snapshots available.
+                    </div>
+                    <div th:if="${idx.segmentRuntimeSnapshots != null and !#lists.isEmpty(idx.segmentRuntimeSnapshots)}"
+                        class="segment-table-wrap">
+                        <table class="segment-table">
+                            <thead>
+                                <tr>
+                                    <th>Segment</th>
+                                    <th>State</th>
+                                    <th>Keys</th>
+                                    <th>Delta Keys</th>
+                                    <th>Scarce Keys</th>
+                                    <th>Seg Cache Keys</th>
+                                    <th>Write Cache Keys</th>
+                                    <th>Delta Files</th>
+                                    <th>Compact</th>
+                                    <th>Flush</th>
+                                    <th>Bloom Req</th>
+                                    <th>Bloom Refused</th>
+                                    <th>Bloom Positive</th>
+                                    <th>Bloom False+</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="segment : ${idx.segmentRuntimeSnapshots}">
+                                    <td class="mono" th:text="${segment.segmentId}">segment-00001</td>
+                                    <td>
+                                        <span class="segment-state"
+                                            th:classappend="${segment.state == 'READY'} ? ' state-ready' : (${segment.state == 'MAINTENANCE_RUNNING'} ? ' state-maintenance' : (${segment.state == 'FREEZE'} ? ' state-freeze' : (${segment.state == 'CLOSED'} ? ' state-closed' : ' state-error')))"
+                                            th:text="${segment.state}">READY</span>
+                                    </td>
+                                    <td th:text="${node.formatWholeNumber(segment.numberOfKeysInSegment)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.numberOfKeysInDeltaCache)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.numberOfKeysInScarceIndex)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.numberOfKeysInSegmentCache)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.numberOfKeysInWriteCache)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.numberOfDeltaCacheFiles)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.compactRequestCount)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.flushRequestCount)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.bloomFilterRequestCount)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.bloomFilterRefusedCount)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.bloomFilterPositiveCount)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.bloomFilterFalsePositiveCount)}">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
             </div>
 
             <article class="card section" th:if="${indexSections == null or #lists.isEmpty(indexSections)}">

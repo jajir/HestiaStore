@@ -57,6 +57,28 @@ public interface Segment<K, V> {
     SegmentStats getStats();
 
     /**
+     * Returns immutable runtime snapshot for this segment.
+     *
+     * @return runtime metrics snapshot
+     */
+    default SegmentRuntimeSnapshot getRuntimeSnapshot() {
+        final SegmentStats stats = getStats();
+        return new SegmentRuntimeSnapshot(getId(), getState(),
+                Math.max(0L, stats.getNumberOfKeysInDeltaCache()),
+                Math.max(0L, stats.getNumberOfKeysInSegment()),
+                Math.max(0L, stats.getNumberOfKeysInScarceIndex()),
+                Math.max(0L, getNumberOfKeysInSegmentCache()),
+                Math.max(0, getNumberOfKeysInWriteCache()),
+                Math.max(0, getNumberOfDeltaCacheFiles()),
+                Math.max(0L, stats.getCompactRequestCount()),
+                Math.max(0L, stats.getFlushRequestCount()),
+                Math.max(0L, getBloomFilterRequestCount()),
+                Math.max(0L, getBloomFilterRefusedCount()),
+                Math.max(0L, getBloomFilterPositiveCount()),
+                Math.max(0L, getBloomFilterFalsePositiveCount()));
+    }
+
+    /**
      * Starts a compaction pass that rewrites on-disk data and updates
      * metadata. The call returns once compaction is accepted.
      *

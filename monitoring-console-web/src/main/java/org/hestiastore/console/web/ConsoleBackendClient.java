@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.monitoring.MonitoredIndex;
+import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.slf4j.Logger;
@@ -667,7 +668,8 @@ public class ConsoleBackendClient {
                     flushRate.unit(),
                     splitRate.value(),
                     splitRate.unit(),
-                    capturedAt));
+                    capturedAt,
+                    toSegmentRows(snapshot.getSegmentRuntimeSnapshots())));
         }
         rows.sort(Comparator.comparing(IndexRow::indexName));
         return List.copyOf(rows);
@@ -755,9 +757,87 @@ public class ConsoleBackendClient {
                                     indexNode.path("bloomFilterPositiveCount").asLong(0L)),
                             nonNegativeLong(indexNode.path("bloomFilterFalsePositiveCount")
                                     .asLong(0L)),
+                            parseSegmentRuntimeSnapshots(
+                                    indexNode.path("segmentRuntimeSnapshots")),
                             parseState(indexNode.path("state").asText("ERROR")))));
         }
         return List.copyOf(parsed);
+    }
+
+    private List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> parseSegmentRuntimeSnapshots(
+            final JsonNode snapshotsNode) {
+        if (snapshotsNode == null || !snapshotsNode.isArray()) {
+            return List.of();
+        }
+        final List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> parsed = new ArrayList<>();
+        for (final JsonNode snapshotNode : snapshotsNode) {
+            parsed.add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
+                    snapshotNode.path("segmentId").asText("unknown-segment"),
+                    parseSegmentState(snapshotNode.path("state").asText("ERROR")),
+                    nonNegativeLong(
+                            snapshotNode.path("numberOfKeysInDeltaCache")
+                                    .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("numberOfKeysInSegment")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("numberOfKeysInScarceIndex")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("numberOfKeysInSegmentCache")
+                            .asLong(0L)),
+                    nonNegativeInt(snapshotNode.path("numberOfKeysInWriteCache")
+                            .asInt(0)),
+                    nonNegativeInt(snapshotNode.path("numberOfDeltaCacheFiles")
+                            .asInt(0)),
+                    nonNegativeLong(snapshotNode.path("compactRequestCount")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("flushRequestCount")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("bloomFilterRequestCount")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("bloomFilterRefusedCount")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("bloomFilterPositiveCount")
+                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode.path("bloomFilterFalsePositiveCount")
+                            .asLong(0L))));
+        }
+        return List.copyOf(parsed);
+    }
+
+    private SegmentState parseSegmentState(final String state) {
+        if (state == null) {
+            return SegmentState.ERROR;
+        }
+        try {
+            return SegmentState.valueOf(state.trim().toUpperCase(Locale.ROOT));
+        } catch (final IllegalArgumentException e) {
+            return SegmentState.ERROR;
+        }
+    }
+
+    private List<SegmentRow> toSegmentRows(
+            final List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> snapshots) {
+        if (snapshots == null || snapshots.isEmpty()) {
+            return List.of();
+        }
+        final List<SegmentRow> rows = new ArrayList<>(snapshots.size());
+        for (final SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot snapshot : snapshots) {
+            rows.add(new SegmentRow(snapshot.getSegmentId(),
+                    snapshot.getState().name(),
+                    snapshot.getNumberOfKeysInDeltaCache(),
+                    snapshot.getNumberOfKeysInSegment(),
+                    snapshot.getNumberOfKeysInScarceIndex(),
+                    snapshot.getNumberOfKeysInSegmentCache(),
+                    snapshot.getNumberOfKeysInWriteCache(),
+                    snapshot.getNumberOfDeltaCacheFiles(),
+                    snapshot.getCompactRequestCount(),
+                    snapshot.getFlushRequestCount(),
+                    snapshot.getBloomFilterRequestCount(),
+                    snapshot.getBloomFilterRefusedCount(),
+                    snapshot.getBloomFilterPositiveCount(),
+                    snapshot.getBloomFilterFalsePositiveCount()));
+        }
+        rows.sort(Comparator.comparing(SegmentRow::segmentId));
+        return List.copyOf(rows);
     }
 
     private SegmentIndexState parseState(final String state) {
@@ -1295,7 +1375,7 @@ public class ConsoleBackendClient {
             double compactRateValue, String compactRateUnit,
             double flushRateValue, String flushRateUnit, double splitRateValue,
             String splitRateUnit,
-            String capturedAt) {
+            String capturedAt, List<SegmentRow> segmentRuntimeSnapshots) {
 
         /**
          * Total operations count.
@@ -1461,6 +1541,18 @@ public class ConsoleBackendClient {
                     maxFractionDigits));
             return format.format(value);
         }
+    }
+
+    /**
+     * Per-segment row model shown in node detail index sections.
+     */
+    public record SegmentRow(String segmentId, String state,
+            long numberOfKeysInDeltaCache, long numberOfKeysInSegment,
+            long numberOfKeysInScarceIndex, long numberOfKeysInSegmentCache,
+            int numberOfKeysInWriteCache, int numberOfDeltaCacheFiles,
+            long compactRequestCount, long flushRequestCount,
+            long bloomFilterRequestCount, long bloomFilterRefusedCount,
+            long bloomFilterPositiveCount, long bloomFilterFalsePositiveCount) {
     }
 
     /**

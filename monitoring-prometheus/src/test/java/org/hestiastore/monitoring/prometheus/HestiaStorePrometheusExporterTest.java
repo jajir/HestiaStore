@@ -2,6 +2,8 @@ package org.hestiastore.monitoring.prometheus;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -16,8 +18,7 @@ class HestiaStorePrometheusExporterTest {
         final SegmentIndex<Integer, String> index = Mockito.mock(
                 SegmentIndex.class);
         Mockito.when(index.metricsSnapshot())
-                .thenReturn(new SegmentIndexMetricsSnapshot(7L, 11L, 13L,
-                        SegmentIndexState.READY));
+                .thenReturn(snapshot(7L, 11L, 13L, SegmentIndexState.READY));
         Mockito.when(index.getState()).thenReturn(SegmentIndexState.READY);
 
         final String scrape = HestiaStorePrometheusExporter.scrape(
@@ -28,5 +29,25 @@ class HestiaStorePrometheusExporterTest {
         assertTrue(scrape.contains("hestiastore_ops_delete_total"));
         assertTrue(scrape.contains("hestiastore_index_up"));
         assertTrue(scrape.contains("index=\"orders\""));
+    }
+
+    private SegmentIndexMetricsSnapshot snapshot(final long getCount,
+            final long putCount, final long deleteCount,
+            final SegmentIndexState state) {
+        return new SegmentIndexMetricsSnapshot(
+                getCount, putCount, deleteCount,
+                0L, 0L, 0L, 0L,
+                0, 0,
+                0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
+                0, 0, 0, 0, 0,
+                0L, 0L, 0L,
+                0L, 0L, 0L,
+                0, 0, 0D,
+                0L, 0L, 0L, 0L,
+                List.of(),
+                state);
     }
 }

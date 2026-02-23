@@ -95,6 +95,10 @@ class ManagementAgentServerTest {
         assertTrue(report.jvm().heapUsedBytes() >= 0L);
         assertTrue(report.jvm().heapMaxBytes() >= 0L);
         assertTrue(report.jvm().gcCount() >= 0L);
+        assertTrue(report.indexes().stream()
+                .allMatch(idx -> idx.segmentRuntimeSnapshots() != null));
+        assertTrue(report.indexes().stream()
+                .allMatch(idx -> !idx.segmentRuntimeSnapshots().isEmpty()));
     }
 
     @Test
