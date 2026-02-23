@@ -34,22 +34,28 @@ class SegmentSplitStepValidateFeasibilityTest {
 
     @Test
     void test_missing_ctx() {
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(null, new SegmentSplitState<>()));
+                () -> step.filter(null, state));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                null, null, null, null, null);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null, null, null, null), null));
+                () -> step.filter(ctx, null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_plan() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                null, null, null, null, null);
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(new SegmentSplitContext<>(null, null, null, null, null), new SegmentSplitState<>()));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
 
@@ -57,12 +63,14 @@ class SegmentSplitStepValidateFeasibilityTest {
     void throws_when_not_feasible_and_passes_when_feasible() {
         final SegmentSplitContext<Integer, String> ctxNot = new SegmentSplitContext<>(
                 null, planWithEstimate(2), null, null, null);
+        final SegmentSplitState<Integer, String> missingState = new SegmentSplitState<>();
         assertThrows(IllegalStateException.class,
-                () -> step.filter(ctxNot, new SegmentSplitState<>()));
+                () -> step.filter(ctxNot, missingState));
 
         final SegmentSplitContext<Integer, String> ctxOk = new SegmentSplitContext<>(
                 null, planWithEstimate(10), null, null, null);
+        final SegmentSplitState<Integer, String> validState = new SegmentSplitState<>();
         assertDoesNotThrow(
-                () -> step.filter(ctxOk, new SegmentSplitState<>()));
+                () -> step.filter(ctxOk, validState));
     }
 }

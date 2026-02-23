@@ -35,17 +35,19 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
 
     @Test
     void test_missing_ctx() {
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(null, new SegmentSplitState<>()));
+                () -> step.filter(null, state));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_plan() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                null, null, null, null, null);
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null, null),
-                        new SegmentSplitState<>()));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'plan' must not be null.", err.getMessage());
     }
 
@@ -53,14 +55,16 @@ class SegmentSplitStepEnsureLowerNotEmptyTest {
     void throws_when_lower_empty_and_passes_when_not() {
         final SegmentSplitContext<Integer, String> ctxEmpty = new SegmentSplitContext<>(
                 null, planWithEstimate(10), null, null, null);
+        final SegmentSplitState<Integer, String> emptyState = new SegmentSplitState<>();
         assertThrows(SegmentSplitAbortException.class,
-                () -> step.filter(ctxEmpty, new SegmentSplitState<>()));
+                () -> step.filter(ctxEmpty, emptyState));
 
         final SegmentSplitterPlan<Integer, String> plan = planWithEstimate(10);
         plan.recordLower(Entry.of(1, "a"));
         final SegmentSplitContext<Integer, String> ctxNonEmpty = new SegmentSplitContext<>(
                 null, plan, null, null, null);
+        final SegmentSplitState<Integer, String> nonEmptyState = new SegmentSplitState<>();
         assertDoesNotThrow(
-                () -> step.filter(ctxNonEmpty, new SegmentSplitState<>()));
+                () -> step.filter(ctxNonEmpty, nonEmptyState));
     }
 }

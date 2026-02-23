@@ -32,17 +32,18 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
 
     @Test
     void test_missing_ctx() {
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(null, new SegmentSplitState<>()));
+                () -> step.filter(null, state));
         assertEquals("Property 'ctx' must not be null.", err.getMessage());
     }
 
     @Test
     void test_missing_state() {
+        final SegmentSplitContext<Integer, String> ctx = new SegmentSplitContext<>(
+                null, null, null, null, null);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(
-                        new SegmentSplitContext<>(null, null, null, null, null),
-                        null));
+                () -> step.filter(ctx, null));
         assertEquals("Property 'state' must not be null.", err.getMessage());
     }
 
@@ -52,8 +53,9 @@ class SegmentSplitStepReplaceIfNoRemainingTest {
                 null, SegmentSplitterPlan.fromPolicy(
                         new SegmentSplitterPolicy(5)),
                 SegmentId.of(1), null, null);
+        final SegmentSplitState<Integer, String> state = new SegmentSplitState<>();
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> step.filter(ctx, new SegmentSplitState<>()));
+                () -> step.filter(ctx, state));
         assertEquals("Property 'iterator' must not be null.", err.getMessage());
     }
 

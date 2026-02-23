@@ -15,6 +15,7 @@ import java.util.List;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -172,9 +173,10 @@ class SegmentBuilderTest {
     @Test
     void test_withEncodingChunkFilters_empty() {
         final SegmentBuilder<Integer, String> builder = newBuilder();
+        final List<ChunkFilter> emptyFilters = List.of();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.withEncodingChunkFilters(List.of()));
+                () -> builder.withEncodingChunkFilters(emptyFilters));
 
         assertEquals("Property 'encodingChunkFilters' must not be empty.",
                 e.getMessage());
@@ -194,9 +196,10 @@ class SegmentBuilderTest {
     @Test
     void test_withDecodingChunkFilters_empty() {
         final SegmentBuilder<Integer, String> builder = newBuilder();
+        final List<ChunkFilter> emptyFilters = List.of();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.withDecodingChunkFilters(List.of()));
+                () -> builder.withDecodingChunkFilters(emptyFilters));
 
         assertEquals("Property 'decodingChunkFilters' must not be empty.",
                 e.getMessage());
