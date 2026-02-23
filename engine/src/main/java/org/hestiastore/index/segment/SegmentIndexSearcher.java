@@ -16,8 +16,8 @@ import org.hestiastore.index.directory.FileReaderSeekable;
  * at that block and scans forward (up to the configured page size) comparing
  * keys in order until it finds a match or determines absence.
  * <p>
- * A shared {@link FileReaderSeekable} can be supplied to reuse an underlying
- * channel across lookups; otherwise a fresh reader is created per call.
+ * The searcher uses a shared {@link FileReaderSeekable} to reuse an
+ * underlying channel across lookups.
  *
  * @param <K> key type
  * @param <V> value type
@@ -37,8 +37,7 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
      *                                   the start position
      * @param keyTypeComparator          comparator used for key ordering in the
      *                                   index
-     * @param seekableReader             optional shared reader to reuse across
-     *                                   lookups
+     * @param seekableReader             shared reader reused across lookups
      */
     SegmentIndexSearcher(final ChunkEntryFile<K, V> chunkPairFile,
             final int maxNumberOfKeysInIndexPage,
@@ -50,16 +49,16 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
                 maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
         this.keyTypeComparator = Vldtn.requireNonNull(keyTypeComparator,
                 "keyTypeComparator");
-        this.seekableReader = seekableReader;
+        this.seekableReader = Vldtn.requireNonNull(seekableReader,
+                "seekableReader");
     }
 
     /**
-     * Releases resources held by the searcher. This implementation is a no-op
-     * because the searcher does not own shared readers.
+     * Releases resources held by the searcher.
      */
     @Override
     protected void doClose() {
-        // intentionally no-op
+        seekableReader.close();
     }
 
     /**
@@ -70,10 +69,8 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
      * @return value when found, otherwise {@code null}
      */
     public V search(final K key, long startPosition) {
-        try (EntryIterator<K, V> iterator = seekableReader == null
-                ? chunkPairFile.openIteratorAtPosition(startPosition)
-                : chunkPairFile.openIteratorAtPosition(startPosition,
-                        seekableReader)) {
+        try (EntryIterator<K, V> iterator = chunkPairFile
+                .openIteratorAtPosition(startPosition, seekableReader)) {
             for (int i = 0; iterator.hasNext()
                     && i < maxNumberOfKeysInIndexPage; i++) {
                 final Entry<K, V> entry = iterator.next();
