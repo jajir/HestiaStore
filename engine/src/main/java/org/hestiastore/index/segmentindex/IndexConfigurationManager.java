@@ -228,12 +228,24 @@ class IndexConfigurationManager<K, V> {
     IndexConfiguration<K, V> mergeWithStored(
             final IndexConfiguration<K, V> indexConf) {
         final IndexConfiguration<K, V> storedConf = confStorage.load();
-
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
-        boolean dirty = false;
-
         validateThatFixPropertiesAreNotOverriden(storedConf, indexConf);
+        boolean dirty = false;
+        dirty |= applyBasicOverrides(builder, storedConf, indexConf);
+        dirty |= applyThreadAndBusyOverrides(builder, storedConf, indexConf);
+        dirty |= applyBooleanOverrides(builder, storedConf, indexConf);
+        final IndexConfiguration<K, V> merged = builder.build();
+        if (dirty) {
+            confStorage.save(merged);
+        }
+        return validate(merged);
+    }
 
+    private boolean applyBasicOverrides(
+            final IndexConfigurationBuilder<K, V> builder,
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        boolean dirty = false;
         dirty |= applyIf(isIndexNameOverriden(storedConf, indexConf),
                 () -> builder.withName(indexConf.getIndexName()));
         dirty |= applyIf(isDiskIoBufferSizeOverriden(storedConf, indexConf),
@@ -256,7 +268,14 @@ class IndexConfigurationManager<K, V> {
         dirty |= applyIf(isMaxNumberOfDeltaCacheFilesOverriden(storedConf,
                 indexConf), () -> builder.withMaxNumberOfDeltaCacheFiles(
                         indexConf.getMaxNumberOfDeltaCacheFiles()));
+        return dirty;
+    }
 
+    private boolean applyThreadAndBusyOverrides(
+            final IndexConfigurationBuilder<K, V> builder,
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        boolean dirty = false;
         dirty |= applyIf(
                 isPositiveOverride(indexConf.getIndexWorkerThreadCount(),
                         storedConf.getIndexWorkerThreadCount()),
@@ -294,6 +313,14 @@ class IndexConfigurationManager<K, V> {
                         storedConf.getIndexBusyTimeoutMillis()),
                 () -> builder.withIndexBusyTimeoutMillis(
                         indexConf.getIndexBusyTimeoutMillis()));
+        return dirty;
+    }
+
+    private boolean applyBooleanOverrides(
+            final IndexConfigurationBuilder<K, V> builder,
+            final IndexConfiguration<K, V> storedConf,
+            final IndexConfiguration<K, V> indexConf) {
+        boolean dirty = false;
         dirty |= applyIf(
                 isBooleanOverride(indexConf.isSegmentMaintenanceAutoEnabled(),
                         storedConf.isSegmentMaintenanceAutoEnabled()),
@@ -304,11 +331,7 @@ class IndexConfigurationManager<K, V> {
                         storedConf.isContextLoggingEnabled()),
                 () -> builder.withContextLoggingEnabled(
                         indexConf.isContextLoggingEnabled()));
-
-        if (dirty) {
-            confStorage.save(builder.build());
-        }
-        return validate(builder.build());
+        return dirty;
     }
 
     private boolean applyIf(final boolean condition, final Runnable applier) {

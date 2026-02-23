@@ -417,32 +417,45 @@ public final class ManagementAgentServer
             final ActionType action, final IndexOperation operation)
             throws IOException {
         final String endpoint = exchange.getRequestURI().getPath();
+        final MutatingRequestContext context = prepareMutatingRequest(exchange,
+                endpoint);
+        if (context == null) {
+            return;
+        }
+        final List<RegisteredIndex> targets = resolveActionTargetsOrReject(
+                exchange, context.endpoint(), context.body(),
+                context.request());
+        if (targets == null) {
+            return;
+        }
+        if (!validateActionTargets(exchange, context.endpoint(),
+                context.body(), context.request(), targets)) {
+            return;
+        }
+        executeAction(exchange, context.endpoint(), context.body(),
+                context.request(), action, operation, targets);
+    }
+
+    private MutatingRequestContext prepareMutatingRequest(
+            final HttpExchange exchange, final String endpoint)
+            throws IOException {
         if (!METHOD_POST.equals(exchange.getRequestMethod())) {
             writeMethodNotAllowed(exchange);
-            return;
+            return null;
         }
         final String body = readBodyOrRejectTooLarge(exchange, endpoint);
         if (body == null) {
-            return;
+            return null;
         }
         if (!authorize(exchange, AgentRole.OPERATE, true, endpoint, body)) {
-            return;
+            return null;
         }
         final ActionRequest request = parseActionRequest(exchange, endpoint,
                 body);
         if (request == null) {
-            return;
+            return null;
         }
-        final List<RegisteredIndex> targets = resolveActionTargetsOrReject(
-                exchange, endpoint, body, request);
-        if (targets == null) {
-            return;
-        }
-        if (!validateActionTargets(exchange, endpoint, body, request, targets)) {
-            return;
-        }
-        executeAction(exchange, endpoint, body, request, action, operation,
-                targets);
+        return new MutatingRequestContext(endpoint, body, request);
     }
 
     private String readBodyOrRejectTooLarge(final HttpExchange exchange,
@@ -956,57 +969,64 @@ public final class ManagementAgentServer
             final String endpoint, final String requestBody)
             throws IOException {
         if (securityPolicy.requireTls() && !isSecureTransport(exchange)) {
-            writeError(exchange, 400, "TLS_REQUIRED",
-                    "HTTPS transport is required.", "");
-            if (mutating) {
-                audit(exchange, endpoint, requestBody, 400, "REJECTED_TLS");
-            }
+            rejectAuthorization(exchange, mutating, endpoint, requestBody, 400,
+                    "TLS_REQUIRED", "HTTPS transport is required.",
+                    "REJECTED_TLS");
             return false;
         }
+        final AuthorizationPrincipal principal = resolveAuthorizationPrincipal(
+                exchange, mutating, endpoint, requestBody);
+        if (principal == null) {
+            return false;
+        }
+        if (!principal.role().allows(requiredRole)) {
+            rejectAuthorization(exchange, mutating, endpoint, requestBody, 403,
+                    "FORBIDDEN", "Insufficient privileges for endpoint.",
+                    "REJECTED_FORBIDDEN");
+            return false;
+        }
+        if (mutating && !mutatingRateLimiter
+                .tryAcquire(principal.actor() + ":" + endpoint)) {
+            rejectAuthorization(exchange, true, endpoint, requestBody, 429,
+                    "RATE_LIMITED", "Mutating request rate limit exceeded.",
+                    "REJECTED_RATE_LIMIT");
+            return false;
+        }
+        return true;
+    }
 
-        final AgentRole actualRole;
-        final String actor;
+    private AuthorizationPrincipal resolveAuthorizationPrincipal(
+            final HttpExchange exchange, final boolean mutating,
+            final String endpoint, final String requestBody)
+            throws IOException {
         if (securityPolicy.tokenRoles().isEmpty()) {
-            actualRole = AgentRole.ADMIN;
-            actor = "anonymous";
-        } else {
-            final String token = readToken(exchange);
-            if (token == null) {
-                writeError(exchange, 401, "UNAUTHORIZED",
-                        "Authentication token is required.", "");
-                if (mutating) {
-                    audit(exchange, endpoint, requestBody, 401,
-                            "REJECTED_UNAUTHORIZED");
-                }
-                return false;
-            }
-            actualRole = securityPolicy.tokenRoles().get(token);
-            if (actualRole == null) {
-                writeError(exchange, 401, "UNAUTHORIZED",
-                        "Authentication token is invalid.", "");
-                if (mutating) {
-                    audit(exchange, endpoint, requestBody, 401,
-                            "REJECTED_UNAUTHORIZED");
-                }
-                return false;
-            }
-            actor = token;
+            return new AuthorizationPrincipal(AgentRole.ADMIN, "anonymous");
         }
-        if (!actualRole.allows(requiredRole)) {
-            writeError(exchange, 403, "FORBIDDEN",
-                    "Insufficient privileges for endpoint.", "");
-            if (mutating) {
-                audit(exchange, endpoint, requestBody, 403,
-                        "REJECTED_FORBIDDEN");
-            }
-            return false;
+        final String token = readToken(exchange);
+        if (token == null) {
+            rejectAuthorization(exchange, mutating, endpoint, requestBody, 401,
+                    "UNAUTHORIZED", "Authentication token is required.",
+                    "REJECTED_UNAUTHORIZED");
+            return null;
         }
-        if (mutating
-                && !mutatingRateLimiter.tryAcquire(actor + ":" + endpoint)) {
-            writeError(exchange, 429, "RATE_LIMITED",
-                    "Mutating request rate limit exceeded.", "");
-            audit(exchange, endpoint, requestBody, 429, "REJECTED_RATE_LIMIT");
-            return false;
+        final AgentRole actualRole = securityPolicy.tokenRoles().get(token);
+        if (actualRole == null) {
+            rejectAuthorization(exchange, mutating, endpoint, requestBody, 401,
+                    "UNAUTHORIZED", "Authentication token is invalid.",
+                    "REJECTED_UNAUTHORIZED");
+            return null;
+        }
+        return new AuthorizationPrincipal(actualRole, token);
+    }
+
+    private boolean rejectAuthorization(final HttpExchange exchange,
+            final boolean mutating, final String endpoint,
+            final String requestBody, final int statusCode, final String code,
+            final String message, final String auditOutcome)
+            throws IOException {
+        writeError(exchange, statusCode, code, message, "");
+        if (mutating) {
+            audit(exchange, endpoint, requestBody, statusCode, auditOutcome);
         }
         return true;
     }
@@ -1081,6 +1101,13 @@ public final class ManagementAgentServer
     @FunctionalInterface
     private interface IndexOperation {
         void run(RegisteredIndex index);
+    }
+
+    private record MutatingRequestContext(String endpoint, String body,
+            ActionRequest request) {
+    }
+
+    private record AuthorizationPrincipal(AgentRole role, String actor) {
     }
 
     private static final class RequestBodyTooLargeException

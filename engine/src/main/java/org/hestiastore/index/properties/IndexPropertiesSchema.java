@@ -263,8 +263,40 @@ public final class IndexPropertiesSchema {
 
     private static IndexPropertiesSchema buildIndexConfigurationSchema() {
         final Map<String, DefaultValueProvider> defaults = new LinkedHashMap<>();
+        addCoreDefaults(defaults);
+        addSegmentDefaults(defaults);
+        addThreadingDefaults(defaults);
+        addBloomAndIoDefaults(defaults);
+        addChunkFilterDefaults(defaults);
+
+        final Set<String> requiredKeys = new LinkedHashSet<>();
+        requiredKeys.add(IndexConfigurationKeys.PROP_KEY_CLASS);
+        requiredKeys.add(IndexConfigurationKeys.PROP_VALUE_CLASS);
+        requiredKeys.add(IndexConfigurationKeys.PROP_KEY_TYPE_DESCRIPTOR);
+        requiredKeys.add(IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR);
+        requiredKeys.add(IndexConfigurationKeys.PROP_INDEX_NAME);
+        requiredKeys.addAll(defaults.keySet());
+        final Set<String> blankAllowed = Set.of(
+                IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS,
+                IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS);
+        return new IndexPropertiesSchema("index-configuration", requiredKeys,
+                defaults, blankAllowed);
+    }
+
+    private static void addCoreDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_CONTEXT_LOGGING_ENABLED,
                 view -> Boolean.FALSE.toString());
+        defaults.put(IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT,
+                IndexPropertiesSchema::resolveLegacyOrDefaultWorkerThreads);
+        defaults.put(
+                IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
+                view -> String.valueOf(
+                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED));
+    }
+
+    private static void addSegmentDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 view -> String.valueOf(
@@ -290,15 +322,10 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 view -> String.valueOf(
                         IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE));
-        defaults.put(IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT,
-                view -> {
-                    final String legacy = view
-                            .getString(LEGACY_PROP_NUMBER_OF_THREADS);
-                    return legacy == null || legacy.isBlank() ? String
-                            .valueOf(
-                                    IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT)
-                            : legacy;
-                });
+    }
+
+    private static void addThreadingDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS,
                 view -> String.valueOf(
                         IndexConfigurationContract.NUMBER_OF_IO_THREADS));
@@ -320,10 +347,10 @@ public final class IndexPropertiesSchema {
         defaults.put(IndexConfigurationKeys.PROP_INDEX_BUSY_TIMEOUT_MILLIS,
                 view -> String.valueOf(
                         IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS));
-        defaults.put(
-                IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
-                view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED));
+    }
+
+    private static void addBloomAndIoDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 view -> String.valueOf(
@@ -340,23 +367,23 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationKeys.PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,
                 view -> String.valueOf(
                         IndexConfigurationContract.DISK_IO_BUFFER_SIZE_IN_BYTES));
+    }
+
+    private static void addChunkFilterDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS,
                 view -> "");
         defaults.put(IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS,
                 view -> "");
+    }
 
-        final Set<String> requiredKeys = new LinkedHashSet<>();
-        requiredKeys.add(IndexConfigurationKeys.PROP_KEY_CLASS);
-        requiredKeys.add(IndexConfigurationKeys.PROP_VALUE_CLASS);
-        requiredKeys.add(IndexConfigurationKeys.PROP_KEY_TYPE_DESCRIPTOR);
-        requiredKeys.add(IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR);
-        requiredKeys.add(IndexConfigurationKeys.PROP_INDEX_NAME);
-        requiredKeys.addAll(defaults.keySet());
-        final Set<String> blankAllowed = Set.of(
-                IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS,
-                IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS);
-        return new IndexPropertiesSchema("index-configuration", requiredKeys,
-                defaults, blankAllowed);
+    private static String resolveLegacyOrDefaultWorkerThreads(
+            final PropertyView view) {
+        final String legacy = view.getString(LEGACY_PROP_NUMBER_OF_THREADS);
+        if (legacy != null && !legacy.isBlank()) {
+            return legacy;
+        }
+        return String.valueOf(IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT);
     }
 
     private static String defaultSegmentWriteCache(final PropertyView view) {

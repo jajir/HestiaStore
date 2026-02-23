@@ -39,9 +39,8 @@ public final class MonitoringConsoleWebDemoMain {
      * Starts 3 demo nodes with monitoring-rest-json and generates periodic traffic.
      *
      * @param args first arg optionally sets base port (default 9001)
-     * @throws Exception on startup failure
      */
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
         final int basePort = resolveBasePort(args);
         final List<SegmentIndex<Integer, String>> indexes = new ArrayList<>();
         final List<ManagementAgentServer> agents = new ArrayList<>();
@@ -93,7 +92,15 @@ public final class MonitoringConsoleWebDemoMain {
                     + (basePort + i) + " indexes="
                     + String.join(",", nodeIndexNames.get(i)));
         }
-        Thread.currentThread().join();
+        awaitShutdownSignal();
+    }
+
+    private static void awaitShutdownSignal() {
+        try {
+            Thread.currentThread().join();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private static int resolveBasePort(final String[] args) {
