@@ -118,50 +118,13 @@ public final class IndexPropertiesSchema {
         Vldtn.requireNonNull(store, "store");
         final PropertyView view = store.snapshot();
         final int schemaVersion = view.getInt(SCHEMA_VERSION_KEY);
-        if (schemaVersion > CURRENT_SCHEMA_VERSION) {
-            throw new IllegalStateException(String.format(
-                    "Unsupported schema version %s for '%s'",
-                    schemaVersion, schemaName));
-        }
+        ensureSchemaVersionSupported(schemaVersion);
         final Map<String, String> updates = new LinkedHashMap<>();
         final List<String> missing = new ArrayList<>();
-        for (final String key : requiredKeys) {
-            if (isMissing(view, key)) {
-                final DefaultValueProvider provider = defaultProviders.get(key);
-                if (provider == null) {
-                    missing.add(key);
-                } else {
-                    final String value = provider.provide(view);
-                    if (value == null || (value.isBlank()
-                            && !blankAllowedKeys.contains(key))) {
-                        missing.add(key);
-                    } else {
-                        updates.put(key, value);
-                    }
-                }
-            }
-        }
-        if (!missing.isEmpty()) {
-            throw new IllegalStateException(String.format(
-                    "Missing required properties for '%s': %s",
-                    schemaName, String.join(", ", missing)));
-        }
-        final String requiredKeysValue = serializeRequiredKeys();
-        if (schemaVersion != CURRENT_SCHEMA_VERSION) {
-            updates.put(SCHEMA_VERSION_KEY,
-                    String.valueOf(CURRENT_SCHEMA_VERSION));
-        }
-        if (!requiredKeysValue.equals(view.getString(REQUIRED_KEYS_KEY))) {
-            updates.put(REQUIRED_KEYS_KEY, requiredKeysValue);
-        }
-        if (!updates.isEmpty()) {
-            try (PropertyTransaction tx = store.beginTransaction()) {
-                final PropertyWriter writer = tx.openPropertyWriter();
-                for (final Map.Entry<String, String> entry : updates.entrySet()) {
-                    writer.setString(entry.getKey(), entry.getValue());
-                }
-            }
-        }
+        collectRequiredKeyUpdates(view, updates, missing);
+        ensureNoMissingRequired(missing);
+        appendSchemaMetadataUpdates(view, schemaVersion, updates);
+        persistUpdates(store, updates);
     }
 
     /**
@@ -185,6 +148,75 @@ public final class IndexPropertiesSchema {
             return true;
         }
         return value.isBlank() && !blankAllowedKeys.contains(key);
+    }
+
+    private void ensureSchemaVersionSupported(final int schemaVersion) {
+        if (schemaVersion > CURRENT_SCHEMA_VERSION) {
+            throw new IllegalStateException(String.format(
+                    "Unsupported schema version %s for '%s'",
+                    schemaVersion, schemaName));
+        }
+    }
+
+    private void collectRequiredKeyUpdates(final PropertyView view,
+            final Map<String, String> updates, final List<String> missing) {
+        for (final String key : requiredKeys) {
+            if (!isMissing(view, key)) {
+                continue;
+            }
+            final String defaultValue = resolveDefaultValue(view, key);
+            if (defaultValue == null) {
+                missing.add(key);
+            } else {
+                updates.put(key, defaultValue);
+            }
+        }
+    }
+
+    private String resolveDefaultValue(final PropertyView view, final String key) {
+        final DefaultValueProvider provider = defaultProviders.get(key);
+        if (provider == null) {
+            return null;
+        }
+        final String value = provider.provide(view);
+        if (value == null
+                || (value.isBlank() && !blankAllowedKeys.contains(key))) {
+            return null;
+        }
+        return value;
+    }
+
+    private void ensureNoMissingRequired(final List<String> missing) {
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException(String.format(
+                    "Missing required properties for '%s': %s",
+                    schemaName, String.join(", ", missing)));
+        }
+    }
+
+    private void appendSchemaMetadataUpdates(final PropertyView view,
+            final int schemaVersion, final Map<String, String> updates) {
+        final String requiredKeysValue = serializeRequiredKeys();
+        if (schemaVersion != CURRENT_SCHEMA_VERSION) {
+            updates.put(SCHEMA_VERSION_KEY,
+                    String.valueOf(CURRENT_SCHEMA_VERSION));
+        }
+        if (!requiredKeysValue.equals(view.getString(REQUIRED_KEYS_KEY))) {
+            updates.put(REQUIRED_KEYS_KEY, requiredKeysValue);
+        }
+    }
+
+    private static void persistUpdates(final PropertyStore store,
+            final Map<String, String> updates) {
+        if (updates.isEmpty()) {
+            return;
+        }
+        try (PropertyTransaction tx = store.beginTransaction()) {
+            final PropertyWriter writer = tx.openPropertyWriter();
+            for (final Map.Entry<String, String> entry : updates.entrySet()) {
+                writer.setString(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     private String serializeRequiredKeys() {

@@ -74,7 +74,6 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      *                        elementTypes.
      */
     @Override
-    @SuppressWarnings("unchecked")
     public Comparator<CompositeValue> getComparator() {
         return this::compareCompositeValues;
     }
@@ -98,7 +97,8 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
     private void validateCompositeSize(final CompositeValue a,
             final CompositeValue b) {
-        if (a.size() != elementTypes.size() || b.size() != elementTypes.size()) {
+        if (a.size() != elementTypes.size()
+                || b.size() != elementTypes.size()) {
             throw new IndexException(
                     "CompositeValue size does not match expected elementTypes size");
         }
@@ -126,8 +126,10 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     }
 
     private void ensureValuesHaveExpectedType(final int index,
-            final Object valA, final Object valB, final Class<?> expectedClass) {
-        if (!expectedClass.isInstance(valA) || !expectedClass.isInstance(valB)) {
+            final Object valA, final Object valB,
+            final Class<?> expectedClass) {
+        if (!expectedClass.isInstance(valA)
+                || !expectedClass.isInstance(valB)) {
             throw new IndexException("Element at index " + index
                     + " is not of expected type: " + expectedClass.getName());
         }

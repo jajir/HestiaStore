@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
@@ -36,6 +37,51 @@ public class SegmentConf {
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
 
+    private SegmentConf(final Builder builder) {
+        maxNumberOfKeysInSegmentWriteCache = requireSet(
+                builder.maxNumberOfKeysInSegmentWriteCache,
+                "maxNumberOfKeysInSegmentWriteCache");
+        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = requireSet(
+                builder.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        maxNumberOfKeysInSegmentCache = requireSet(
+                builder.maxNumberOfKeysInSegmentCache,
+                "maxNumberOfKeysInSegmentCache");
+        maxNumberOfKeysInChunk = requireSet(builder.maxNumberOfKeysInChunk,
+                "maxNumberOfKeysInChunk");
+        maxNumberOfDeltaCacheFiles = requireSet(
+                builder.maxNumberOfDeltaCacheFiles,
+                "maxNumberOfDeltaCacheFiles");
+        bloomFilterNumberOfHashFunctions = builder.bloomFilterNumberOfHashFunctions;
+        bloomFilterIndexSizeInBytes = builder.bloomFilterIndexSizeInBytes;
+        bloomFilterProbabilityOfFalsePositive = builder.bloomFilterProbabilityOfFalsePositive;
+        diskIoBufferSize = requireSet(builder.diskIoBufferSize,
+                "diskIoBufferSize");
+        encodingChunkFilters = List.copyOf(Objects.requireNonNull(
+                builder.encodingChunkFilters, "encodingChunkFilters"));
+        decodingChunkFilters = List.copyOf(Objects.requireNonNull(
+                builder.decodingChunkFilters, "decodingChunkFilters"));
+    }
+
+    /**
+     * Creates a fluent builder for immutable {@link SegmentConf} instances.
+     *
+     * @return new builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Creates a fluent builder pre-populated from an existing configuration.
+     *
+     * @param segmentConf source configuration
+     * @return new builder initialized from source values
+     */
+    public static Builder builder(final SegmentConf segmentConf) {
+        return new Builder(segmentConf);
+    }
+
     /**
      * Creates a configuration with explicit values for all fields.
      *
@@ -54,7 +100,9 @@ public class SegmentConf {
      * @param diskIoBufferSize disk I/O buffer size in bytes
      * @param encodingChunkFilters chunk filters applied during encoding
      * @param decodingChunkFilters chunk filters applied during decoding
+     * @deprecated use {@link #builder()} for clearer named configuration
      */
+    @Deprecated
     public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             final int maxNumberOfKeysInSegmentCache,
@@ -66,17 +114,22 @@ public class SegmentConf {
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
-        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
-        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInChunk = maxNumberOfKeysInChunk;
-        this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
-        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
-        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
-        this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
-        this.diskIoBufferSize = diskIoBufferSize;
-        this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
-        this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
+        this(SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        maxNumberOfKeysInSegmentWriteCache)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)
+                .withMaxNumberOfKeysInSegmentCache(maxNumberOfKeysInSegmentCache)
+                .withMaxNumberOfKeysInChunk(maxNumberOfKeysInChunk)
+                .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)
+                .withBloomFilterNumberOfHashFunctions(
+                        bloomFilterNumberOfHashFunctions)
+                .withBloomFilterIndexSizeInBytes(bloomFilterIndexSizeInBytes)
+                .withBloomFilterProbabilityOfFalsePositive(
+                        bloomFilterProbabilityOfFalsePositive)
+                .withDiskIoBufferSize(diskIoBufferSize)
+                .withEncodingChunkFilters(encodingChunkFilters)
+                .withDecodingChunkFilters(decodingChunkFilters));
     }
 
     /**
@@ -85,17 +138,13 @@ public class SegmentConf {
      * @param segmentConf source configuration
      */
     public SegmentConf(final SegmentConf segmentConf) {
-        this.maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = segmentConf.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
-        this.maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
-        this.maxNumberOfDeltaCacheFiles = segmentConf.maxNumberOfDeltaCacheFiles;
-        this.bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
-        this.bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
-        this.bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
-        this.diskIoBufferSize = segmentConf.diskIoBufferSize;
-        this.encodingChunkFilters = List.copyOf(segmentConf.encodingChunkFilters);
-        this.decodingChunkFilters = List.copyOf(segmentConf.decodingChunkFilters);
+        this(SegmentConf.builder(segmentConf));
+    }
+
+    private static int requireSet(final Integer value,
+            final String propertyName) {
+        return Objects
+                .requireNonNull(value, "Property '" + propertyName + "' must be set.");
     }
 
     /**
@@ -226,5 +275,106 @@ public class SegmentConf {
      */
     public List<ChunkFilter> getDecodingChunkFilters() {
         return decodingChunkFilters;
+    }
+
+    /**
+     * Fluent builder for {@link SegmentConf}.
+     */
+    public static final class Builder {
+
+        private Integer maxNumberOfKeysInSegmentWriteCache;
+        private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        private Integer maxNumberOfKeysInSegmentCache;
+        private Integer maxNumberOfKeysInChunk;
+        private Integer maxNumberOfDeltaCacheFiles;
+        private int bloomFilterNumberOfHashFunctions = UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
+        private int bloomFilterIndexSizeInBytes = UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
+        private double bloomFilterProbabilityOfFalsePositive = UNSET_BLOOM_FILTER_PROBABILITY;
+        private Integer diskIoBufferSize;
+        private List<ChunkFilter> encodingChunkFilters;
+        private List<ChunkFilter> decodingChunkFilters;
+
+        private Builder() {
+        }
+
+        private Builder(final SegmentConf segmentConf) {
+            Objects.requireNonNull(segmentConf, "segmentConf");
+            maxNumberOfKeysInSegmentWriteCache = segmentConf.maxNumberOfKeysInSegmentWriteCache;
+            maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = segmentConf.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+            maxNumberOfKeysInSegmentCache = segmentConf.maxNumberOfKeysInSegmentCache;
+            maxNumberOfKeysInChunk = segmentConf.maxNumberOfKeysInChunk;
+            maxNumberOfDeltaCacheFiles = segmentConf.maxNumberOfDeltaCacheFiles;
+            bloomFilterNumberOfHashFunctions = segmentConf.bloomFilterNumberOfHashFunctions;
+            bloomFilterIndexSizeInBytes = segmentConf.bloomFilterIndexSizeInBytes;
+            bloomFilterProbabilityOfFalsePositive = segmentConf.bloomFilterProbabilityOfFalsePositive;
+            diskIoBufferSize = segmentConf.diskIoBufferSize;
+            encodingChunkFilters = segmentConf.encodingChunkFilters;
+            decodingChunkFilters = segmentConf.decodingChunkFilters;
+        }
+
+        public Builder withMaxNumberOfKeysInSegmentWriteCache(
+                final int value) {
+            maxNumberOfKeysInSegmentWriteCache = value;
+            return this;
+        }
+
+        public Builder withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                final int value) {
+            maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = value;
+            return this;
+        }
+
+        public Builder withMaxNumberOfKeysInSegmentCache(final int value) {
+            maxNumberOfKeysInSegmentCache = value;
+            return this;
+        }
+
+        public Builder withMaxNumberOfKeysInChunk(final int value) {
+            maxNumberOfKeysInChunk = value;
+            return this;
+        }
+
+        public Builder withMaxNumberOfDeltaCacheFiles(final int value) {
+            maxNumberOfDeltaCacheFiles = value;
+            return this;
+        }
+
+        public Builder withBloomFilterNumberOfHashFunctions(
+                final int value) {
+            bloomFilterNumberOfHashFunctions = value;
+            return this;
+        }
+
+        public Builder withBloomFilterIndexSizeInBytes(final int value) {
+            bloomFilterIndexSizeInBytes = value;
+            return this;
+        }
+
+        public Builder withBloomFilterProbabilityOfFalsePositive(
+                final double value) {
+            bloomFilterProbabilityOfFalsePositive = value;
+            return this;
+        }
+
+        public Builder withDiskIoBufferSize(final int value) {
+            diskIoBufferSize = value;
+            return this;
+        }
+
+        public Builder withEncodingChunkFilters(
+                final List<ChunkFilter> filters) {
+            encodingChunkFilters = filters;
+            return this;
+        }
+
+        public Builder withDecodingChunkFilters(
+                final List<ChunkFilter> filters) {
+            decodingChunkFilters = filters;
+            return this;
+        }
+
+        public SegmentConf build() {
+            return new SegmentConf(this);
+        }
     }
 }

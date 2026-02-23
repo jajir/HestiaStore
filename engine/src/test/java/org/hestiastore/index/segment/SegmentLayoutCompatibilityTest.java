@@ -32,11 +32,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final Directory segmentDirectory = useSegmentRoot
                 ? asyncDirectory.openSubDirectory(segmentId.getName())
                 : asyncDirectory;
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
-                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
-                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf segmentConf = createSegmentConf();
         final List<Entry<Integer, String>> entries = List.of(Entry.of(1, "one"),
                 Entry.of(2, "two"));
 
@@ -81,11 +77,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final SegmentId segmentId = SegmentId.of(1);
         final Directory segmentDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName());
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
-                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
-                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf segmentConf = createSegmentConf();
         final List<Entry<Integer, String>> entries = List.of(Entry.of(1, "one"),
                 Entry.of(2, "two"));
 
@@ -118,11 +110,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final SegmentId segmentId = SegmentId.of(1);
         final Directory segmentDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName());
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
-                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
-                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf segmentConf = createSegmentConf();
         final Segment<Integer, String> segment = applyConf(
                 Segment.<Integer, String>builder(segmentDirectory)//
                         .withId(segmentId)//
@@ -149,11 +137,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         final SegmentId segmentId = SegmentId.of(1);
         final Directory segmentDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName());
-        final SegmentConf segmentConf = new SegmentConf(8, 16, 16, 4, 5,
-                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
-                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf segmentConf = createSegmentConf();
         final Directory rootDirectory = asyncDirectory
                 .openSubDirectory(segmentId.getName());
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
@@ -210,6 +194,24 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         segmentConf.getEncodingChunkFilters())
                 .withDecodingChunkFilters(
                         segmentConf.getDecodingChunkFilters());
+    }
+
+    private static SegmentConf createSegmentConf() {
+        return SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(8)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(16)
+                .withMaxNumberOfKeysInSegmentCache(16)
+                .withMaxNumberOfKeysInChunk(4)
+                .withMaxNumberOfDeltaCacheFiles(5)
+                .withBloomFilterNumberOfHashFunctions(
+                        SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS)
+                .withBloomFilterIndexSizeInBytes(
+                        SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES)
+                .withBloomFilterProbabilityOfFalsePositive(0.01)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
     }
 
     private static void awaitReady(final Segment<?, ?> segment) {

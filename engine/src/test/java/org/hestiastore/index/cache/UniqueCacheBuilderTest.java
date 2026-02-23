@@ -71,9 +71,9 @@ class UniqueCacheBuilderTest {
     void test_build_null_keyComparator_throws() {
         final UniqueCacheBuilder<Integer, String> builder = UniqueCache
                 .<Integer, String>builder();
+        builder.withDataFile(sdf);
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.withKeyComparator(null)
-                        .withDataFile(sdf).build());
+                builder::build);
 
         assertEquals("Property 'keyComparator' must not be null.", e.getMessage());
     }
@@ -83,10 +83,9 @@ class UniqueCacheBuilderTest {
         final Comparator<Integer> cmp = Integer::compareTo;
         final UniqueCacheBuilder<Integer, String> builder = UniqueCache
                 .<Integer, String>builder();
+        builder.withKeyComparator(cmp);
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> builder.withKeyComparator(cmp)
-                        // intentionally not setting data file
-                        .build());
+                builder::build);
         assertEquals("Property 'sdf' must not be null.", e.getMessage());
     }
 

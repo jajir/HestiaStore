@@ -24,9 +24,19 @@ class SegmentDataSupplierTest {
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4, 1, 1024, 0.01D,
-                1024, List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf conf = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(5)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
+                .withMaxNumberOfKeysInSegmentCache(10)
+                .withMaxNumberOfKeysInChunk(2)
+                .withMaxNumberOfDeltaCacheFiles(4)
+                .withBloomFilterNumberOfHashFunctions(1)
+                .withBloomFilterIndexSizeInBytes(1024)
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
         final SegmentDataSupplier<Integer, String> supplier = new SegmentDataSupplier<>(
                 files, conf);
 
@@ -54,12 +64,22 @@ class SegmentDataSupplierTest {
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()), 1L);
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4,
-                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
-                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES,
-                SegmentConf.UNSET_BLOOM_FILTER_PROBABILITY, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf conf = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(5)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
+                .withMaxNumberOfKeysInSegmentCache(10)
+                .withMaxNumberOfKeysInChunk(2)
+                .withMaxNumberOfDeltaCacheFiles(4)
+                .withBloomFilterNumberOfHashFunctions(
+                        SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS)
+                .withBloomFilterIndexSizeInBytes(
+                        SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES)
+                .withBloomFilterProbabilityOfFalsePositive(
+                        SegmentConf.UNSET_BLOOM_FILTER_PROBABILITY)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
         final SegmentDataSupplier<Integer, String> supplier = new SegmentDataSupplier<>(
                 files, conf);
 

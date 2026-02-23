@@ -41,14 +41,7 @@ class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> conf) {
         validateDatatypesAndIndexName(conf);
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(conf);
-        if (conf.getKeyTypeDescriptor() == null) {
-            builder.withKeyTypeDescriptor(DataTypeDescriptorRegistry
-                    .getTypeDescriptor(conf.getKeyClass()));
-        }
-        if (conf.getValueTypeDescriptor() == null) {
-            builder.withValueTypeDescriptor(DataTypeDescriptorRegistry
-                    .getTypeDescriptor(conf.getValueClass()));
-        }
+        applyTypeDescriptorDefaults(conf, builder);
         final Optional<IndexConfigurationContract> oDefaults = IndexConfigurationRegistry
                 .get(conf.getKeyClass());
         if (oDefaults.isEmpty()) {
@@ -57,6 +50,33 @@ class IndexConfigurationManager<K, V> {
             return validate(builder.build());
         }
         final IndexConfigurationContract defaults = oDefaults.get();
+        applyCoreDefaults(conf, defaults, builder);
+        final int effectiveMaxNumberOfKeysInSegmentCache = applySegmentCacheDefaults(
+                conf, defaults, builder);
+        final int effectiveWriteCacheSize = applyWriteCacheDefaults(conf,
+                builder, effectiveMaxNumberOfKeysInSegmentCache);
+        applyWriteCacheMaintenanceDefaults(conf, builder, effectiveWriteCacheSize);
+        applyRemainingSegmentDefaults(conf, defaults, builder);
+        applyBloomAndIoDefaults(conf, defaults, builder);
+        applyChunkFilterDefaults(conf, defaults, builder);
+        return validate(builder.build());
+    }
+
+    private void applyTypeDescriptorDefaults(final IndexConfiguration<K, V> conf,
+            final IndexConfigurationBuilder<K, V> builder) {
+        if (conf.getKeyTypeDescriptor() == null) {
+            builder.withKeyTypeDescriptor(DataTypeDescriptorRegistry
+                    .getTypeDescriptor(conf.getKeyClass()));
+        }
+        if (conf.getValueTypeDescriptor() == null) {
+            builder.withValueTypeDescriptor(DataTypeDescriptorRegistry
+                    .getTypeDescriptor(conf.getValueClass()));
+        }
+    }
+
+    private void applyCoreDefaults(final IndexConfiguration<K, V> conf,
+            final IndexConfigurationContract defaults,
+            final IndexConfigurationBuilder<K, V> builder) {
         if (conf.isContextLoggingEnabled() == null) {
             builder.withContextLoggingEnabled(
                     defaults.isContextLoggingEnabled());
@@ -95,6 +115,11 @@ class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegment(
                     defaults.getMaxNumberOfKeysInSegment());
         }
+    }
+
+    private int applySegmentCacheDefaults(final IndexConfiguration<K, V> conf,
+            final IndexConfigurationContract defaults,
+            final IndexConfigurationBuilder<K, V> builder) {
         final int effectiveMaxNumberOfKeysInSegmentCache = conf
                 .getMaxNumberOfKeysInSegmentCache() == null
                         ? defaults.getMaxNumberOfKeysInSegmentCache()
@@ -103,15 +128,26 @@ class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegmentCache(
                     effectiveMaxNumberOfKeysInSegmentCache);
         }
-        final int effectiveWriteCacheSize;
+        return effectiveMaxNumberOfKeysInSegmentCache;
+    }
+
+    private int applyWriteCacheDefaults(final IndexConfiguration<K, V> conf,
+            final IndexConfigurationBuilder<K, V> builder,
+            final int effectiveMaxNumberOfKeysInSegmentCache) {
         if (conf.getMaxNumberOfKeysInSegmentWriteCache() == null) {
-            effectiveWriteCacheSize = Math.max(1,
+            final int effectiveWriteCacheSize = Math.max(1,
                     effectiveMaxNumberOfKeysInSegmentCache / 2);
             builder.withMaxNumberOfKeysInSegmentWriteCache(
                     effectiveWriteCacheSize);
-        } else {
-            effectiveWriteCacheSize = conf.getMaxNumberOfKeysInSegmentWriteCache();
+            return effectiveWriteCacheSize;
         }
+        return conf.getMaxNumberOfKeysInSegmentWriteCache();
+    }
+
+    private void applyWriteCacheMaintenanceDefaults(
+            final IndexConfiguration<K, V> conf,
+            final IndexConfigurationBuilder<K, V> builder,
+            final int effectiveWriteCacheSize) {
         if (conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() == null) {
             final int effectiveFlushBackpressure = Math.max(
                     (int) Math.ceil(effectiveWriteCacheSize * 1.4),
@@ -119,6 +155,12 @@ class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
                     effectiveFlushBackpressure);
         }
+    }
+
+    private void applyRemainingSegmentDefaults(
+            final IndexConfiguration<K, V> conf,
+            final IndexConfigurationContract defaults,
+            final IndexConfigurationBuilder<K, V> builder) {
         if (conf.getMaxNumberOfSegmentsInCache() == null) {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
@@ -131,11 +173,11 @@ class IndexConfigurationManager<K, V> {
             builder.withMaxNumberOfDeltaCacheFiles(
                     defaults.getMaxNumberOfDeltaCacheFiles());
         }
-        if (conf.getMaxNumberOfKeysInSegmentChunk() == null) {
-            builder.withMaxNumberOfKeysInSegmentChunk(
-                    defaults.getMaxNumberOfKeysInSegmentChunk());
-        }
-        // bloom filter
+    }
+
+    private void applyBloomAndIoDefaults(final IndexConfiguration<K, V> conf,
+            final IndexConfigurationContract defaults,
+            final IndexConfigurationBuilder<K, V> builder) {
         if (conf.getBloomFilterIndexSizeInBytes() == null) {
             builder.withBloomFilterIndexSizeInBytes(
                     defaults.getBloomFilterIndexSizeInBytes());
@@ -152,13 +194,17 @@ class IndexConfigurationManager<K, V> {
             builder.withDiskIoBufferSizeInBytes(
                     defaults.getDiskIoBufferSizeInBytes());
         }
+    }
+
+    private void applyChunkFilterDefaults(final IndexConfiguration<K, V> conf,
+            final IndexConfigurationContract defaults,
+            final IndexConfigurationBuilder<K, V> builder) {
         if (conf.getEncodingChunkFilters().isEmpty()) {
             builder.withEncodingFilters(defaults.getEncodingChunkFilters());
         }
         if (conf.getDecodingChunkFilters().isEmpty()) {
             builder.withDecodingFilters(defaults.getDecodingChunkFilters());
         }
-        return validate(builder.build());
     }
 
     /**
@@ -188,119 +234,99 @@ class IndexConfigurationManager<K, V> {
 
         validateThatFixPropertiesAreNotOverriden(storedConf, indexConf);
 
-        if (isIndexNameOverriden(storedConf, indexConf)) {
-            builder.withName(indexConf.getIndexName());
-            dirty = true;
-        }
+        dirty |= applyIf(isIndexNameOverriden(storedConf, indexConf),
+                () -> builder.withName(indexConf.getIndexName()));
+        dirty |= applyIf(isDiskIoBufferSizeOverriden(storedConf, indexConf),
+                () -> builder.withDiskIoBufferSizeInBytes(
+                        indexConf.getDiskIoBufferSize()));
+        dirty |= applyIf(
+                isMaxNumberOfKeysInSegmentCacheOverriden(storedConf, indexConf),
+                () -> builder.withMaxNumberOfKeysInSegmentCache(
+                        indexConf.getMaxNumberOfKeysInSegmentCache()));
+        dirty |= applyIf(
+                isMaxNumberOfKeysInSegmentWriteCacheOverriden(storedConf,
+                        indexConf),
+                () -> builder.withMaxNumberOfKeysInSegmentWriteCache(
+                        indexConf.getMaxNumberOfKeysInSegmentWriteCache()));
+        dirty |= applyIf(
+                isMaxNumberOfKeysInSegmentWriteCacheDuringMaintenanceOverriden(
+                        storedConf, indexConf),
+                () -> builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                        indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()));
+        dirty |= applyIf(isMaxNumberOfDeltaCacheFilesOverriden(storedConf,
+                indexConf), () -> builder.withMaxNumberOfDeltaCacheFiles(
+                        indexConf.getMaxNumberOfDeltaCacheFiles()));
 
-        if (isDiskIoBufferSizeOverriden(storedConf, indexConf)) {
-            builder.withDiskIoBufferSizeInBytes(
-                    indexConf.getDiskIoBufferSize());
-            dirty = true;
-        }
-
-        if (isMaxNumberOfKeysInSegmentCacheOverriden(storedConf, indexConf)) {
-            builder.withMaxNumberOfKeysInSegmentCache(
-                    indexConf.getMaxNumberOfKeysInSegmentCache());
-            dirty = true;
-        }
-
-        if (isMaxNumberOfKeysInSegmentWriteCacheOverriden(storedConf,
-                indexConf)) {
-            builder.withMaxNumberOfKeysInSegmentWriteCache(
-                    indexConf.getMaxNumberOfKeysInSegmentWriteCache());
-            dirty = true;
-        }
-        if (isMaxNumberOfKeysInSegmentWriteCacheDuringMaintenanceOverriden(
-                storedConf, indexConf)) {
-            builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                    indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
-            dirty = true;
-        }
-        if (isMaxNumberOfDeltaCacheFilesOverriden(storedConf, indexConf)) {
-            builder.withMaxNumberOfDeltaCacheFiles(
-                    indexConf.getMaxNumberOfDeltaCacheFiles());
-            dirty = true;
-        }
-
-        if (indexConf.getIndexWorkerThreadCount() != null
-                && indexConf.getIndexWorkerThreadCount() > 0
-                && !indexConf.getIndexWorkerThreadCount()
-                        .equals(storedConf.getIndexWorkerThreadCount())) {
-            builder.withIndexWorkerThreadCount(indexConf.getIndexWorkerThreadCount());
-            dirty = true;
-        }
-        if (indexConf.getNumberOfIoThreads() != null
-                && indexConf.getNumberOfIoThreads() > 0
-                && !indexConf.getNumberOfIoThreads()
-                        .equals(storedConf.getNumberOfIoThreads())) {
-            builder.withNumberOfIoThreads(indexConf.getNumberOfIoThreads());
-            dirty = true;
-        }
-        if (indexConf.getNumberOfSegmentIndexMaintenanceThreads() != null
-                && indexConf.getNumberOfSegmentIndexMaintenanceThreads() > 0
-                && !indexConf.getNumberOfSegmentIndexMaintenanceThreads()
-                        .equals(storedConf
-                                .getNumberOfSegmentIndexMaintenanceThreads())) {
-            builder.withNumberOfSegmentIndexMaintenanceThreads(
-                    indexConf.getNumberOfSegmentIndexMaintenanceThreads());
-            dirty = true;
-        }
-        if (indexConf.getNumberOfIndexMaintenanceThreads() != null
-                && indexConf.getNumberOfIndexMaintenanceThreads() > 0
-                && !indexConf.getNumberOfIndexMaintenanceThreads()
-                        .equals(storedConf
-                                .getNumberOfIndexMaintenanceThreads())) {
-            builder.withNumberOfIndexMaintenanceThreads(
-                    indexConf.getNumberOfIndexMaintenanceThreads());
-            dirty = true;
-        }
-        if (indexConf.getNumberOfRegistryLifecycleThreads() != null
-                && indexConf.getNumberOfRegistryLifecycleThreads() > 0
-                && !indexConf.getNumberOfRegistryLifecycleThreads()
-                        .equals(storedConf
-                                .getNumberOfRegistryLifecycleThreads())) {
-            builder.withNumberOfRegistryLifecycleThreads(
-                    indexConf.getNumberOfRegistryLifecycleThreads());
-            dirty = true;
-        }
-        if (indexConf.getIndexBusyBackoffMillis() != null
-                && indexConf.getIndexBusyBackoffMillis() > 0
-                && !indexConf.getIndexBusyBackoffMillis()
-                        .equals(storedConf.getIndexBusyBackoffMillis())) {
-            builder.withIndexBusyBackoffMillis(
-                    indexConf.getIndexBusyBackoffMillis());
-            dirty = true;
-        }
-        if (indexConf.getIndexBusyTimeoutMillis() != null
-                && indexConf.getIndexBusyTimeoutMillis() > 0
-                && !indexConf.getIndexBusyTimeoutMillis()
-                        .equals(storedConf.getIndexBusyTimeoutMillis())) {
-            builder.withIndexBusyTimeoutMillis(
-                    indexConf.getIndexBusyTimeoutMillis());
-            dirty = true;
-        }
-        if (indexConf.isSegmentMaintenanceAutoEnabled() != null
-                && !indexConf.isSegmentMaintenanceAutoEnabled()
-                        .equals(storedConf
-                                .isSegmentMaintenanceAutoEnabled())) {
-            builder.withSegmentMaintenanceAutoEnabled(
-                    indexConf.isSegmentMaintenanceAutoEnabled());
-            dirty = true;
-        }
-
-        if (indexConf.isContextLoggingEnabled() != null
-                && !indexConf.isContextLoggingEnabled()
-                        .equals(storedConf.isContextLoggingEnabled())) {
-            builder.withContextLoggingEnabled(
-                    indexConf.isContextLoggingEnabled());
-            dirty = true;
-        }
+        dirty |= applyIf(
+                isPositiveOverride(indexConf.getIndexWorkerThreadCount(),
+                        storedConf.getIndexWorkerThreadCount()),
+                () -> builder.withIndexWorkerThreadCount(
+                        indexConf.getIndexWorkerThreadCount()));
+        dirty |= applyIf(
+                isPositiveOverride(indexConf.getNumberOfIoThreads(),
+                        storedConf.getNumberOfIoThreads()),
+                () -> builder.withNumberOfIoThreads(
+                        indexConf.getNumberOfIoThreads()));
+        dirty |= applyIf(
+                isPositiveOverride(
+                        indexConf.getNumberOfSegmentIndexMaintenanceThreads(),
+                        storedConf.getNumberOfSegmentIndexMaintenanceThreads()),
+                () -> builder.withNumberOfSegmentIndexMaintenanceThreads(
+                        indexConf.getNumberOfSegmentIndexMaintenanceThreads()));
+        dirty |= applyIf(
+                isPositiveOverride(indexConf.getNumberOfIndexMaintenanceThreads(),
+                        storedConf.getNumberOfIndexMaintenanceThreads()),
+                () -> builder.withNumberOfIndexMaintenanceThreads(
+                        indexConf.getNumberOfIndexMaintenanceThreads()));
+        dirty |= applyIf(
+                isPositiveOverride(
+                        indexConf.getNumberOfRegistryLifecycleThreads(),
+                        storedConf.getNumberOfRegistryLifecycleThreads()),
+                () -> builder.withNumberOfRegistryLifecycleThreads(
+                        indexConf.getNumberOfRegistryLifecycleThreads()));
+        dirty |= applyIf(
+                isPositiveOverride(indexConf.getIndexBusyBackoffMillis(),
+                        storedConf.getIndexBusyBackoffMillis()),
+                () -> builder.withIndexBusyBackoffMillis(
+                        indexConf.getIndexBusyBackoffMillis()));
+        dirty |= applyIf(
+                isPositiveOverride(indexConf.getIndexBusyTimeoutMillis(),
+                        storedConf.getIndexBusyTimeoutMillis()),
+                () -> builder.withIndexBusyTimeoutMillis(
+                        indexConf.getIndexBusyTimeoutMillis()));
+        dirty |= applyIf(
+                isBooleanOverride(indexConf.isSegmentMaintenanceAutoEnabled(),
+                        storedConf.isSegmentMaintenanceAutoEnabled()),
+                () -> builder.withSegmentMaintenanceAutoEnabled(
+                        indexConf.isSegmentMaintenanceAutoEnabled()));
+        dirty |= applyIf(
+                isBooleanOverride(indexConf.isContextLoggingEnabled(),
+                        storedConf.isContextLoggingEnabled()),
+                () -> builder.withContextLoggingEnabled(
+                        indexConf.isContextLoggingEnabled()));
 
         if (dirty) {
             confStorage.save(builder.build());
         }
         return validate(builder.build());
+    }
+
+    private boolean applyIf(final boolean condition, final Runnable applier) {
+        if (!condition) {
+            return false;
+        }
+        applier.run();
+        return true;
+    }
+
+    private static boolean isPositiveOverride(final Integer candidate,
+            final Integer stored) {
+        return candidate != null && candidate > 0 && !candidate.equals(stored);
+    }
+
+    private static boolean isBooleanOverride(final Boolean candidate,
+            final Boolean stored) {
+        return candidate != null && !candidate.equals(stored);
     }
 
     private boolean isIndexNameOverriden(
@@ -360,90 +386,56 @@ class IndexConfigurationManager<K, V> {
     void validateThatFixPropertiesAreNotOverriden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
-        if (indexConf.getKeyClass() != null) {
-            validateThatWasntChanged(
-                    !indexConf.getKeyClass().equals(storedConf.getKeyClass()), //
-                    "KeyClass", //
-                    storedConf.getKeyClass().getName(), //
-                    indexConf.getKeyClass().getName());
-        }
-
-        if (indexConf.getValueClass() != null) {
-            validateThatWasntChanged(
-                    !indexConf.getValueClass()
-                            .equals(storedConf.getValueClass()), //
-                    "ValueClass", //
-                    storedConf.getValueClass().getName(), //
-                    indexConf.getValueClass().getName());
-        }
+        validateClassNotChanged(indexConf.getKeyClass(), storedConf.getKeyClass(),
+                "KeyClass");
+        validateClassNotChanged(indexConf.getValueClass(),
+                storedConf.getValueClass(), "ValueClass");
 
         validateThatWasntChanged(
-                indexConf.getKeyTypeDescriptor() != null
-                        && !indexConf.getKeyTypeDescriptor()
-                                .equals(storedConf.getKeyTypeDescriptor()), //
-                "KeyTypeDescriptor", //
-                storedConf.getKeyTypeDescriptor(), //
+                isChanged(indexConf.getKeyTypeDescriptor(),
+                        storedConf.getKeyTypeDescriptor()),
+                "KeyTypeDescriptor", storedConf.getKeyTypeDescriptor(),
                 indexConf.getKeyTypeDescriptor());
-
         validateThatWasntChanged(
-                indexConf.getValueTypeDescriptor() != null
-                        && !indexConf.getValueTypeDescriptor()
-                                .equals(storedConf.getValueTypeDescriptor()), //
-                "ValueTypeDescriptor", //
-                storedConf.getValueTypeDescriptor(), //
+                isChanged(indexConf.getValueTypeDescriptor(),
+                        storedConf.getValueTypeDescriptor()),
+                "ValueTypeDescriptor", storedConf.getValueTypeDescriptor(),
                 indexConf.getValueTypeDescriptor());
-
         validateThatWasntChanged(
-                indexConf.getMaxNumberOfKeysInSegment() != null
-                        && indexConf.getMaxNumberOfKeysInSegment() > 0
-                        && !indexConf.getMaxNumberOfKeysInSegment().equals(
-                                storedConf.getMaxNumberOfKeysInSegment()), //
-                "MaxNumberOfKeysInSegment", //
-                storedConf.getMaxNumberOfKeysInSegment(), //
+                isPositiveOverride(indexConf.getMaxNumberOfKeysInSegment(),
+                        storedConf.getMaxNumberOfKeysInSegment()),
+                "MaxNumberOfKeysInSegment",
+                storedConf.getMaxNumberOfKeysInSegment(),
                 indexConf.getMaxNumberOfKeysInSegment());
-
         validateThatWasntChanged(
-                indexConf.getMaxNumberOfKeysInSegmentChunk() != null
-                        && indexConf.getMaxNumberOfKeysInSegmentChunk() > 0
-                        && !indexConf.getMaxNumberOfKeysInSegmentChunk().equals(
-                                storedConf.getMaxNumberOfKeysInSegmentChunk()), //
-                "MaxNumberOfKeysInSegmentChunk", //
-                storedConf.getMaxNumberOfKeysInSegmentChunk(), //
+                isPositiveOverride(indexConf.getMaxNumberOfKeysInSegmentChunk(),
+                        storedConf.getMaxNumberOfKeysInSegmentChunk()),
+                "MaxNumberOfKeysInSegmentChunk",
+                storedConf.getMaxNumberOfKeysInSegmentChunk(),
                 indexConf.getMaxNumberOfKeysInSegmentChunk());
-
         validateThatWasntChanged(
-                indexConf.getBloomFilterIndexSizeInBytes() != null
-                        && indexConf.getBloomFilterIndexSizeInBytes() > 0
-                        && !indexConf.getBloomFilterIndexSizeInBytes().equals(
-                                storedConf.getBloomFilterIndexSizeInBytes()), //
-                "BloomFilterIndexSizeInBytes", //
-                storedConf.getBloomFilterIndexSizeInBytes(), //
+                isPositiveOverride(indexConf.getBloomFilterIndexSizeInBytes(),
+                        storedConf.getBloomFilterIndexSizeInBytes()),
+                "BloomFilterIndexSizeInBytes",
+                storedConf.getBloomFilterIndexSizeInBytes(),
                 indexConf.getBloomFilterIndexSizeInBytes());
-
         validateThatWasntChanged(
-                indexConf.getBloomFilterNumberOfHashFunctions() != null
-                        && indexConf.getBloomFilterNumberOfHashFunctions() > 0
-                        && !indexConf.getBloomFilterNumberOfHashFunctions()
-                                .equals(storedConf
-                                        .getBloomFilterNumberOfHashFunctions()), //
-                "BloomFilterNumberOfHashFunctions", //
-                storedConf.getBloomFilterNumberOfHashFunctions(), //
+                isPositiveOverride(indexConf.getBloomFilterNumberOfHashFunctions(),
+                        storedConf.getBloomFilterNumberOfHashFunctions()),
+                "BloomFilterNumberOfHashFunctions",
+                storedConf.getBloomFilterNumberOfHashFunctions(),
                 indexConf.getBloomFilterNumberOfHashFunctions());
-
-        validateThatWasntChanged(indexConf
-                .getBloomFilterProbabilityOfFalsePositive() != null
-                && !indexConf.getBloomFilterProbabilityOfFalsePositive().equals(
-                        storedConf.getBloomFilterProbabilityOfFalsePositive()), //
-                "BloomFilterProbabilityOfFalsePositive", //
-                storedConf.getBloomFilterProbabilityOfFalsePositive(), //
+        validateThatWasntChanged(
+                isChanged(indexConf.getBloomFilterProbabilityOfFalsePositive(),
+                        storedConf.getBloomFilterProbabilityOfFalsePositive()),
+                "BloomFilterProbabilityOfFalsePositive",
+                storedConf.getBloomFilterProbabilityOfFalsePositive(),
                 indexConf.getBloomFilterProbabilityOfFalsePositive());
-
         validateThatWasntChanged(
                 wasntChanged(indexConf.getEncodingChunkFilters(),
                         storedConf.getEncodingChunkFilters()),
                 "EncodingChunkFilters", storedConf.getEncodingChunkFilters(),
                 indexConf.getEncodingChunkFilters());
-
         validateThatWasntChanged(
                 wasntChanged(indexConf.getDecodingChunkFilters(),
                         storedConf.getDecodingChunkFilters()),
@@ -473,10 +465,20 @@ class IndexConfigurationManager<K, V> {
         if (indexFilters.isEmpty()) {
             return false;
         }
-        if (indexFilters.isEmpty()) {
-            return false;
-        }
         return !equalLists(indexFilters, storedFilters, chunkFilterCmp);
+    }
+
+    private void validateClassNotChanged(final Class<?> requested,
+            final Class<?> stored, final String propertyName) {
+        if (requested == null) {
+            return;
+        }
+        validateThatWasntChanged(!requested.equals(stored), propertyName,
+                stored.getName(), requested.getName());
+    }
+
+    private static <T> boolean isChanged(final T candidate, final T stored) {
+        return candidate != null && !candidate.equals(stored);
     }
 
     private void validateThatWasntChanged(final boolean wasChanged,
@@ -493,26 +495,48 @@ class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf, "configuration");
         validateDatatypesAndIndexName(conf);
+        validateMandatoryFields(conf);
+        validateSegmentLimits(conf);
+        validateWriteCacheLimits(conf);
+        validateDiskIoBuffer(conf);
+        validateChunkFilters(conf);
+        validateThreading(conf);
+        validateBusyPolicy(conf);
+        Vldtn.requireNonNull(conf.isSegmentMaintenanceAutoEnabled(),
+                "segmentMaintenanceAutoEnabled");
+        return conf;
+    }
+
+    private void validateMandatoryFields(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getKeyTypeDescriptor(), "keyTypeDescriptor");
         Vldtn.requireNonNull(conf.getValueTypeDescriptor(),
                 "valueTypeDescriptor");
         Vldtn.requireNonNull(conf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
+    }
 
+    private void validateSegmentLimits(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getMaxNumberOfKeysInSegment(),
                 "MaxNumberOfKeysInSegment");
         if (conf.getMaxNumberOfKeysInSegment() < 4) {
             throw new IllegalArgumentException(
                     "Max number of keys in segment must be at least 4.");
         }
-
         Vldtn.requireNonNull(conf.getMaxNumberOfSegmentsInCache(),
                 "MaxNumberOfSegmentsInCache");
         if (conf.getMaxNumberOfSegmentsInCache() < 3) {
             throw new IllegalArgumentException(
                     "Max number of segments in cache must be at least 3.");
         }
+        Vldtn.requireNonNull(conf.getMaxNumberOfDeltaCacheFiles(),
+                "MaxNumberOfDeltaCacheFiles");
+        if (conf.getMaxNumberOfDeltaCacheFiles() < 1) {
+            throw new IllegalArgumentException(
+                    "Max number of delta cache files must be at least 1.");
+        }
+    }
 
+    private void validateWriteCacheLimits(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getMaxNumberOfKeysInSegmentWriteCache(),
                 "MaxNumberOfKeysInSegmentWriteCache");
         if (conf.getMaxNumberOfKeysInSegmentWriteCache() < 1) {
@@ -531,14 +555,9 @@ class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Max number of keys in segment write cache during maintenance must be greater than the flush threshold.");
         }
+    }
 
-        Vldtn.requireNonNull(conf.getMaxNumberOfDeltaCacheFiles(),
-                "MaxNumberOfDeltaCacheFiles");
-        if (conf.getMaxNumberOfDeltaCacheFiles() < 1) {
-            throw new IllegalArgumentException(
-                    "Max number of delta cache files must be at least 1.");
-        }
-
+    private void validateDiskIoBuffer(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getDiskIoBufferSize(), "DiskIoBufferSize");
         if (conf.getDiskIoBufferSize() <= 0) {
             throw new IllegalArgumentException(String.format(
@@ -552,6 +571,9 @@ class IndexConfigurationManager<K, V> {
                             + " can't be divided by 1024 without reminder",
                     conf.getDiskIoBufferSize()));
         }
+    }
+
+    private void validateChunkFilters(final IndexConfiguration<K, V> conf) {
         if (conf.getEncodingChunkFilters() == null
                 || conf.getEncodingChunkFilters().isEmpty()) {
             throw new IllegalArgumentException(
@@ -562,6 +584,9 @@ class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Decoding chunk filters must not be empty.");
         }
+    }
+
+    private void validateThreading(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getIndexWorkerThreadCount(),
                 "indexWorkerThreadCount");
         if (conf.getIndexWorkerThreadCount() < 1) {
@@ -591,6 +616,9 @@ class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Registry lifecycle threads must be at least 1.");
         }
+    }
+
+    private void validateBusyPolicy(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getIndexBusyBackoffMillis(),
                 "indexBusyBackoffMillis");
         if (conf.getIndexBusyBackoffMillis() < 1) {
@@ -603,9 +631,6 @@ class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Index busy timeout must be at least 1 ms.");
         }
-        Vldtn.requireNonNull(conf.isSegmentMaintenanceAutoEnabled(),
-                "segmentMaintenanceAutoEnabled");
-        return conf;
     }
 
     private void validateDatatypesAndIndexName(
