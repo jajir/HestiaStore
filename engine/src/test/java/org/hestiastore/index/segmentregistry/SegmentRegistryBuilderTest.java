@@ -29,44 +29,50 @@ class SegmentRegistryBuilderTest {
 
     @Test
     void builderRejectsNullDirectory() {
+        final SegmentRegistryBuilder<Integer, String> builder = SegmentRegistry
+                .<Integer, String>builder();
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.<Integer, String>builder()
-                        .withDirectoryFacade((Directory) null));
+                () -> builder.withDirectoryFacade((Directory) null));
     }
 
     @Test
     void builderRejectsNullKeyDescriptor() {
+        final SegmentRegistryBuilder<Integer, String> builder = SegmentRegistry
+                .<Integer, String>builder();
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.<Integer, String>builder()
-                        .withKeyTypeDescriptor(null));
+                () -> builder.withKeyTypeDescriptor(null));
     }
 
     @Test
     void builderRejectsNullValueDescriptor() {
+        final SegmentRegistryBuilder<Integer, String> builder = SegmentRegistry
+                .<Integer, String>builder();
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.<Integer, String>builder()
-                        .withValueTypeDescriptor(null));
+                () -> builder.withValueTypeDescriptor(null));
     }
 
     @Test
     void builderRejectsNullConfiguration() {
+        final SegmentRegistryBuilder<Integer, String> builder = SegmentRegistry
+                .<Integer, String>builder();
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.<Integer, String>builder()
-                        .withConfiguration(null));
+                () -> builder.withConfiguration(null));
     }
 
     @Test
     void builderRejectsNullMaintenanceExecutor() {
+        final SegmentRegistryBuilder<Integer, String> builder = SegmentRegistry
+                .<Integer, String>builder();
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.<Integer, String>builder()
-                        .withMaintenanceExecutor(null));
+                () -> builder.withMaintenanceExecutor(null));
     }
 
     @Test
     void builderRejectsNullLifecycleExecutor() {
+        final SegmentRegistryBuilder<Integer, String> builder = SegmentRegistry
+                .<Integer, String>builder();
         assertThrows(IllegalArgumentException.class,
-                () -> SegmentRegistry.<Integer, String>builder()
-                        .withLifecycleExecutor(null));
+                () -> builder.withLifecycleExecutor(null));
     }
 
     @Test
@@ -117,15 +123,8 @@ class SegmentRegistryBuilderTest {
         try {
             final IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
-                    () -> SegmentRegistry.<Integer, String>builder()
-                            .withDirectoryFacade(asyncDirectory)
-                            .withKeyTypeDescriptor(
-                                    new TypeDescriptorInteger())
-                            .withValueTypeDescriptor(
-                                    new TypeDescriptorShortString())
-                            .withConfiguration(conf)
-                            .withMaintenanceExecutor(maintenanceExecutor)
-                            .build());
+                    () -> buildWithoutLifecycleExecutor(asyncDirectory,
+                            maintenanceExecutor));
             assertTrue(ex.getMessage()
                     .contains("Property 'lifecycleExecutor' must not be null."));
         } finally {
@@ -142,5 +141,17 @@ class SegmentRegistryBuilderTest {
             throw new IllegalStateException(
                     "Unable to read field " + name, e);
         }
+    }
+
+    private SegmentRegistry<Integer, String> buildWithoutLifecycleExecutor(
+            final Directory asyncDirectory,
+            final ExecutorService maintenanceExecutor) {
+        return SegmentRegistry.<Integer, String>builder()
+                .withDirectoryFacade(asyncDirectory)
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                .withValueTypeDescriptor(new TypeDescriptorShortString())
+                .withConfiguration(conf)
+                .withMaintenanceExecutor(maintenanceExecutor)
+                .build();
     }
 }

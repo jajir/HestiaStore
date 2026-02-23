@@ -28,13 +28,14 @@ class GuardedEntryWriterTest {
         final RecordingWriter<String, String> delegate = new RecordingWriter<>();
         final GuardedEntryWriter<String, String> writer = new GuardedEntryWriter<>(
                 delegate);
+        final Entry<String, String> entry = Entry.of("k2", "v2");
 
         writer.write(Entry.of("k", "v"));
         writer.close();
 
         assertEquals(1, delegate.closeCount);
         assertThrows(IllegalStateException.class,
-                () -> writer.write(Entry.of("k2", "v2")));
+                () -> writer.write(entry));
     }
 
     @Test

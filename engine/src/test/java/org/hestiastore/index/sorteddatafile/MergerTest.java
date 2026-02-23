@@ -12,8 +12,9 @@ class MergerTest {
     @Test
     void test_merge_missing_entry1() {
         final Merger<String, Integer> merger = (key, v1, v2) -> v1;
+        final Entry<String, Integer> entry = new Entry<>("a", 1);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> merger.merge(null, new Entry<>("a", 1)));
+                () -> merger.merge(null, entry));
 
         assertEquals("Property 'entry1' must not be null.", err.getMessage());
     }
@@ -21,8 +22,9 @@ class MergerTest {
     @Test
     void test_merge_missing_entry2() {
         final Merger<String, Integer> merger = (key, v1, v2) -> v1;
+        final Entry<String, Integer> entry = new Entry<>("a", 1);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> merger.merge(new Entry<>("a", 1), null));
+                () -> merger.merge(entry, null));
 
         assertEquals("Property 'entry2' must not be null.", err.getMessage());
     }
@@ -30,9 +32,10 @@ class MergerTest {
     @Test
     void test_merge_with_different_keys() {
         final Merger<String, Integer> merger = (key, v1, v2) -> v1 + v2;
+        final Entry<String, Integer> left = new Entry<>("a", 1);
+        final Entry<String, Integer> right = new Entry<>("b", 2);
         final Exception err = assertThrows(IllegalArgumentException.class,
-                () -> merger.merge(new Entry<>("a", 1),
-                        new Entry<>("b", 2)));
+                () -> merger.merge(left, right));
 
         assertEquals("Comparing entry with different keys", err.getMessage());
     }

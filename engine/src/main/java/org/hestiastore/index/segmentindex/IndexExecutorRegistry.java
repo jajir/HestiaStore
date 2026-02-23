@@ -191,6 +191,10 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         try {
             while (!executor.isTerminated()) {
                 interrupted = awaitTerminationStep(executor) || interrupted;
+                if (interrupted) {
+                    executor.shutdownNow();
+                    break;
+                }
             }
         } catch (final RuntimeException e) {
             if (nextFailure == null) {
@@ -211,6 +215,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
             executor.awaitTermination(1, TimeUnit.SECONDS);
             return false;
         } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
             return true;
         }
     }

@@ -182,7 +182,7 @@ class SegmentSplitCoordinator<K, V> {
         }
     }
 
-    static <K, V> SegmentSplitApplyPlan<K> toApplyPlan(
+    static <K> SegmentSplitApplyPlan<K> toApplyPlan(
             final SegmentId oldSegmentId, final SegmentId upperSegmentId,
             final SegmentSplitterResult<K> result) {
         Vldtn.requireNonNull(oldSegmentId, "oldSegmentId");

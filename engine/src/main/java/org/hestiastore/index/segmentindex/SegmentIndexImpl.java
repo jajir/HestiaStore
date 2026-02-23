@@ -700,7 +700,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private boolean isContextLoggingEnabled() {
-        return Boolean.TRUE.equals(conf.isContextLoggingEnabled());
+        final Boolean enabled = conf.isContextLoggingEnabled();
+        return enabled != null && enabled;
     }
 
     private static long updateHighWaterMark(final AtomicLong highWaterMark,

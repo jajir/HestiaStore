@@ -161,16 +161,18 @@ class VldtnTest {
 
     @Test
     void test_requireNotEmpty_nullPropertyName() {
+        final List<String> singleValue = List.of("a");
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requireNotEmpty(List.of("a"), null));
+                () -> Vldtn.requireNotEmpty(singleValue, null));
         assertEquals("Property 'propertyName' must not be null.",
                 e.getMessage());
     }
 
     @Test
     void test_requireNotEmpty_emptyCollection() {
+        final List<String> empty = List.of();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requireNotEmpty(List.of(), "items"));
+                () -> Vldtn.requireNotEmpty(empty, "items"));
         assertEquals("Property 'items' must not be empty.", e.getMessage());
     }
 
@@ -211,8 +213,9 @@ class VldtnTest {
 
     @Test
     void test_requireNotEmptyMap_empty() {
+        final Map<String, String> empty = Map.of();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> Vldtn.requireNotEmptyMap(Map.of(), "values"));
+                () -> Vldtn.requireNotEmptyMap(empty, "values"));
         assertEquals("Property 'values' must not be empty.", e.getMessage());
     }
 

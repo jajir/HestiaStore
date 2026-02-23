@@ -64,16 +64,16 @@ class UniqueCacheBuilderTest {
         // Iterator provided to builder is closed
         // EntryIteratorList exposes wasClosed() via AbstractCloseableResource
         //noinspection resource
-        assertEquals(true, ((EntryIteratorList<Integer, String>) iterator).wasClosed());
+        assertTrue(((EntryIteratorList<Integer, String>) iterator).wasClosed());
     }
 
     @Test
     void test_build_null_keyComparator_throws() {
+        final UniqueCacheBuilder<Integer, String> builder = UniqueCache
+                .<Integer, String>builder();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> UniqueCache.<Integer, String>builder()
-                        .withKeyComparator(null)
-                        .withDataFile(sdf)
-                        .build());
+                () -> builder.withKeyComparator(null)
+                        .withDataFile(sdf).build());
 
         assertEquals("Property 'keyComparator' must not be null.", e.getMessage());
     }
@@ -81,9 +81,10 @@ class UniqueCacheBuilderTest {
     @Test
     void test_build_missing_dataFile_throws() {
         final Comparator<Integer> cmp = Integer::compareTo;
+        final UniqueCacheBuilder<Integer, String> builder = UniqueCache
+                .<Integer, String>builder();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> UniqueCache.<Integer, String>builder()
-                        .withKeyComparator(cmp)
+                () -> builder.withKeyComparator(cmp)
                         // intentionally not setting data file
                         .build());
         assertEquals("Property 'sdf' must not be null.", e.getMessage());
@@ -121,18 +122,20 @@ class UniqueCacheBuilderTest {
 
     @Test
     void test_withInitialCapacity_zero_throws() {
+        final UniqueCacheBuilder<Integer, String> builder = UniqueCache
+                .<Integer, String>builder();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> UniqueCache.<Integer, String>builder()
-                        .withInitialCapacity(0));
+                () -> builder.withInitialCapacity(0));
         assertEquals("Property 'initialCapacity' must be greater than 0",
                 e.getMessage());
     }
 
     @Test
     void test_withInitialCapacity_negative_throws() {
+        final UniqueCacheBuilder<Integer, String> builder = UniqueCache
+                .<Integer, String>builder();
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> UniqueCache.<Integer, String>builder()
-                        .withInitialCapacity(-10));
+                () -> builder.withInitialCapacity(-10));
         assertEquals("Property 'initialCapacity' must be greater than 0",
                 e.getMessage());
     }

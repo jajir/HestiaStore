@@ -16,10 +16,11 @@ class IndexInternalTest {
     @Test
     void defaultGetStreamThrows() {
         try (IndexInternal<String, String> index = new StubIndexInternal()) {
+            final SegmentWindow window = SegmentWindow.unbounded();
 
             final UnsupportedOperationException ex = assertThrows(
                     UnsupportedOperationException.class,
-                    () -> index.getStream(SegmentWindow.unbounded()));
+                    () -> index.getStream(window));
             assertEquals("should be definec in the concrete class",
                     ex.getMessage());
         }

@@ -41,6 +41,8 @@ class SegmentConfTest {
 
     @Test
     void filterListsAreImmutable() {
+        final ChunkFilterDoNothing encodingFilterToAdd = new ChunkFilterDoNothing();
+        final ChunkFilterDoNothing decodingFilterToAdd = new ChunkFilterDoNothing();
         final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
                 0.01D, 1024, List.of(new ChunkFilterDoNothing()),
                 List.of(new ChunkFilterDoNothing()));
@@ -50,8 +52,8 @@ class SegmentConfTest {
                 .getDecodingChunkFilters();
 
         assertThrows(UnsupportedOperationException.class,
-                () -> encodingFilters.add(new ChunkFilterDoNothing()));
+                () -> encodingFilters.add(encodingFilterToAdd));
         assertThrows(UnsupportedOperationException.class,
-                () -> decodingFilters.add(new ChunkFilterDoNothing()));
+                () -> decodingFilters.add(decodingFilterToAdd));
     }
 }

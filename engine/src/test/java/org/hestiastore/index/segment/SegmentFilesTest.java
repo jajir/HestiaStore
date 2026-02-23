@@ -30,6 +30,8 @@ class SegmentFilesTest {
 
     @Test
     void filterListsAreImmutable() {
+        final ChunkFilterDoNothing encodingFilterToAdd = new ChunkFilterDoNothing();
+        final ChunkFilterDoNothing decodingFilterToAdd = new ChunkFilterDoNothing();
         final SegmentFiles<Integer, String> files = new SegmentFiles<>(
                 new MemDirectory(), SegmentId.of(1),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
@@ -41,9 +43,9 @@ class SegmentFilesTest {
                 .getDecodingChunkFilters();
 
         assertThrows(UnsupportedOperationException.class,
-                () -> encodingFilters.add(new ChunkFilterDoNothing()));
+                () -> encodingFilters.add(encodingFilterToAdd));
         assertThrows(UnsupportedOperationException.class,
-                () -> decodingFilters.add(new ChunkFilterDoNothing()));
+                () -> decodingFilters.add(decodingFilterToAdd));
     }
 
     @Test

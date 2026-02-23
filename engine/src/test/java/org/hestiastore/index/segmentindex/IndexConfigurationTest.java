@@ -35,10 +35,12 @@ class IndexConfigurationTest {
                 .getEncodingChunkFilters();
         final List<ChunkFilter> configDecoding = config
                 .getDecodingChunkFilters();
+        final ChunkFilterDoNothing encodingFilterToAdd = new ChunkFilterDoNothing();
+        final ChunkFilterDoNothing decodingFilterToAdd = new ChunkFilterDoNothing();
         assertThrows(UnsupportedOperationException.class,
-                () -> configEncoding.add(new ChunkFilterDoNothing()));
+                () -> configEncoding.add(encodingFilterToAdd));
         assertThrows(UnsupportedOperationException.class,
-                () -> configDecoding.add(new ChunkFilterDoNothing()));
+                () -> configDecoding.add(decodingFilterToAdd));
     }
 
     @Test
