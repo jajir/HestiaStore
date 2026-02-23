@@ -23,14 +23,6 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
-    private static final AtomicInteger IO_THREAD_COUNTER = new AtomicInteger(1);
-    private static final AtomicInteger SEGMENT_THREAD_COUNTER = new AtomicInteger(
-            1);
-    private static final AtomicInteger SEGMENT_MAINTENANCE_THREAD_COUNTER = new AtomicInteger(
-            1);
-    private static final AtomicInteger REGISTRY_MAINTENANCE_THREAD_COUNTER = new AtomicInteger(
-            1);
-
     private final ExecutorService ioExecutor;
     private final ThreadPoolExecutor segmentExecutor;
     private final ThreadPoolExecutor segmentMaintenanceExecutor;
@@ -80,24 +72,25 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 "segmentMaintenanceThreads");
         Vldtn.requireGreaterThanZero(registryMaintenanceThreads,
                 "registryMaintenanceThreads");
-        this.ioExecutor = newExecutor(numberOfIoThreads, "index-io-",
-                IO_THREAD_COUNTER);
+        this.ioExecutor = newExecutor(numberOfIoThreads, "index-io-");
         final int segmentExecutorQueueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 segmentThreads * QUEUE_CAPACITY_MULTIPLIER);
+        final AtomicInteger segmentThreadCounter = new AtomicInteger(1);
         this.segmentExecutor = new ThreadPoolExecutor(segmentThreads,
                 segmentThreads, 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(segmentExecutorQueueCapacity),
                 runnable -> {
                     final Thread thread = new Thread(runnable,
                             "segment-"
-                                    + SEGMENT_THREAD_COUNTER
-                                            .getAndIncrement());
+                                    + segmentThreadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
                 }, new ThreadPoolExecutor.AbortPolicy());
         final int segmentMaintenanceExecutorQueueCapacity = Math.max(
                 MIN_QUEUE_CAPACITY,
                 segmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
+        final AtomicInteger segmentMaintenanceThreadCounter = new AtomicInteger(
+                1);
         this.segmentMaintenanceExecutor = new ThreadPoolExecutor(
                 segmentMaintenanceThreads, segmentMaintenanceThreads, 0L,
                 TimeUnit.MILLISECONDS,
@@ -105,14 +98,13 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 runnable -> {
                     final Thread thread = new Thread(runnable,
                             "segment-maintenance-"
-                                    + SEGMENT_MAINTENANCE_THREAD_COUNTER
+                                    + segmentMaintenanceThreadCounter
                                             .getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
                 }, new ThreadPoolExecutor.CallerRunsPolicy());
         this.registryMaintenanceExecutor = newExecutor(
-                registryMaintenanceThreads, "registry-maintenance-",
-                REGISTRY_MAINTENANCE_THREAD_COUNTER);
+                registryMaintenanceThreads, "registry-maintenance-");
     }
 
     /**
@@ -160,7 +152,8 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     }
 
     private static ExecutorService newExecutor(final int threadCount,
-            final String threadNamePrefix, final AtomicInteger threadCounter) {
+            final String threadNamePrefix) {
+        final AtomicInteger threadCounter = new AtomicInteger(1);
         return Executors.newFixedThreadPool(threadCount, runnable -> {
             final Thread thread = new Thread(runnable,
                     threadNamePrefix + threadCounter.getAndIncrement());

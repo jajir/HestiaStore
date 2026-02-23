@@ -7,8 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -176,6 +180,45 @@ class IndexExecutorRegistryTest {
             assertTrue(segmentMaintenanceDaemon);
             assertTrue(registryMaintenanceDaemon);
         } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void ioExecutorUsesConfiguredThreadCount() throws Exception {
+        final int ioThreads = 4;
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(
+                ioThreads, 1, 1, 1);
+        final CountDownLatch started = new CountDownLatch(ioThreads);
+        final CountDownLatch release = new CountDownLatch(1);
+        try {
+            final List<java.util.concurrent.Future<String>> futures = java.util.stream.IntStream
+                    .range(0, ioThreads)
+                    .mapToObj(i -> registry.getIoExecutor().submit(() -> {
+                        started.countDown();
+                        release.await();
+                        return Thread.currentThread().getName();
+                    }))
+                    .toList();
+            assertTrue(started.await(2, TimeUnit.SECONDS),
+                    "IO executor did not start all configured workers.");
+            release.countDown();
+            final Set<String> threadNames = futures.stream().map(future -> {
+                try {
+                    return future.get();
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(
+                            "Interrupted while collecting IO worker names.", e);
+                } catch (final ExecutionException e) {
+                    throw new IllegalStateException(
+                            "Failed while collecting IO worker names.",
+                            e.getCause());
+                }
+            }).collect(Collectors.toSet());
+            assertEquals(ioThreads, threadNames.size());
+        } finally {
+            release.countDown();
             registry.close();
         }
     }
