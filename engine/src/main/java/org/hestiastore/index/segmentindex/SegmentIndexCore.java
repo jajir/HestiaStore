@@ -77,62 +77,24 @@ final class SegmentIndexCore<K, V> {
     }
 
     IndexResult<Void> put(final K key, final V value) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        if (snapshot.findSegmentId(key) == null
-                && !keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
+        final IndexResult<WriteContext<K, V>> writeContextResult = resolveWriteContext(
+                key);
+        if (writeContextResult.getStatus() != IndexResultStatus.OK
+                || writeContextResult.getValue() == null) {
+            return toVoidResult(writeContextResult.getStatus());
+        }
+        final WriteContext<K, V> context = writeContextResult.getValue();
+        final IndexResult<Void> putResult = toPutResult(
+                context.segment().put(key, value).getStatus());
+        if (putResult.getStatus() != IndexResultStatus.OK) {
+            return putResult;
+        }
+        if (!isMappingStableAfterPut(key, context)) {
+            logSplitLoss(key, context);
             return IndexResult.busy();
         }
-        final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
-                .snapshot();
-        final SegmentId segmentId = stableSnapshot.findSegmentId(key);
-        if (segmentId == null) {
-            return IndexResult.busy();
-        }
-        final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
-                segmentId);
-        if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                || loaded.getValue() == null) {
-            return fromRegistryStatus(loaded.getStatus());
-        }
-        final Segment<K, V> segment = loaded.getValue();
-        if (segment.getState() == SegmentState.CLOSED) {
-            return IndexResult.busy();
-        }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                stableSnapshot.version())) {
-            return IndexResult.busy();
-        }
-        final SegmentResult<Void> result = segment.put(key, value);
-        final IndexResult<Void> putResult;
-        if (result.getStatus() == SegmentResultStatus.OK) {
-            putResult = IndexResult.ok();
-        } else if (result.getStatus() == SegmentResultStatus.BUSY
-                || result.getStatus() == SegmentResultStatus.CLOSED) {
-            putResult = IndexResult.busy();
-        } else {
-            putResult = IndexResult.error();
-        }
-        if (putResult.getStatus() == IndexResultStatus.OK) {
-            final boolean mappingUnchanged = keyToSegmentMap
-                    .isKeyMappedToSegment(key, segmentId)
-                    && keyToSegmentMap.isMappingValid(key, segmentId,
-                            stableSnapshot.version());
-            if (!mappingUnchanged) {
-                if (DEBUG_SPLIT_LOSS) {
-                    final KeyToSegmentMap.Snapshot<K> currentSnapshot = keyToSegmentMap
-                            .snapshot();
-                    final SegmentId currentSegmentId = currentSnapshot
-                            .findSegmentId(key);
-                    logger.warn(
-                            "Split debug: key '{}' wrote to segment '{}' at map version '{}', now mapped to '{}' (version '{}'). Retrying write.",
-                            key, segmentId, stableSnapshot.version(),
-                            currentSegmentId, currentSnapshot.version());
-                }
-                return IndexResult.busy();
-            }
-            maintenanceCoordinator.handlePostWrite(segment, key, segmentId,
-                    stableSnapshot.version());
-        }
+        maintenanceCoordinator.handlePostWrite(context.segment(), key,
+                context.segmentId(), context.mapVersion());
         return putResult;
     }
 
@@ -213,5 +175,82 @@ final class SegmentIndexCore<K, V> {
             return IndexResult.closed();
         }
         return IndexResult.error();
+    }
+
+    private IndexResult<WriteContext<K, V>> resolveWriteContext(final K key) {
+        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
+        if (snapshot.findSegmentId(key) == null
+                && !keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
+            return IndexResult.busy();
+        }
+        final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
+                .snapshot();
+        final SegmentId segmentId = stableSnapshot.findSegmentId(key);
+        if (segmentId == null) {
+            return IndexResult.busy();
+        }
+        final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
+                segmentId);
+        if (loaded.getStatus() != SegmentRegistryResultStatus.OK
+                || loaded.getValue() == null) {
+            return fromRegistryStatus(loaded.getStatus());
+        }
+        final Segment<K, V> segment = loaded.getValue();
+        if (segment.getState() == SegmentState.CLOSED
+                || !keyToSegmentMap.isMappingValid(key, segmentId,
+                        stableSnapshot.version())) {
+            return IndexResult.busy();
+        }
+        return IndexResult.ok(
+                new WriteContext<>(segmentId, stableSnapshot.version(), segment));
+    }
+
+    private static IndexResult<Void> toVoidResult(final IndexResultStatus status) {
+        if (status == IndexResultStatus.BUSY) {
+            return IndexResult.busy();
+        }
+        if (status == IndexResultStatus.CLOSED) {
+            return IndexResult.closed();
+        }
+        if (status == IndexResultStatus.OK) {
+            return IndexResult.ok();
+        }
+        return IndexResult.error();
+    }
+
+    private static IndexResult<Void> toPutResult(
+            final SegmentResultStatus status) {
+        if (status == SegmentResultStatus.OK) {
+            return IndexResult.ok();
+        }
+        if (status == SegmentResultStatus.BUSY
+                || status == SegmentResultStatus.CLOSED) {
+            return IndexResult.busy();
+        }
+        return IndexResult.error();
+    }
+
+    private boolean isMappingStableAfterPut(final K key,
+            final WriteContext<K, V> context) {
+        return keyToSegmentMap.isKeyMappedToSegment(key, context.segmentId())
+                && keyToSegmentMap.isMappingValid(key, context.segmentId(),
+                        context.mapVersion());
+    }
+
+    private void logSplitLoss(final K key, final WriteContext<K, V> context) {
+        if (!DEBUG_SPLIT_LOSS) {
+            return;
+        }
+        final KeyToSegmentMap.Snapshot<K> currentSnapshot = keyToSegmentMap
+                .snapshot();
+        final SegmentId currentSegmentId = currentSnapshot.findSegmentId(key);
+        logger.warn(
+                "Split debug: key '{}' wrote to segment '{}' at map version '{}', now mapped to '{}' (version '{}'). Retrying write.",
+                key, context.segmentId(), context.mapVersion(),
+                currentSegmentId, currentSnapshot.version());
+    }
+
+    private record WriteContext<K, V>(SegmentId segmentId, long mapVersion,
+            Segment<K, V> segment) {
     }
 }

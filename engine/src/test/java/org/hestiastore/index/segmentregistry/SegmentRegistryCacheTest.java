@@ -184,12 +184,12 @@ class SegmentRegistryCacheTest {
 
         final ExecutionException firstFailure = assertThrows(
                 ExecutionException.class,
-                () -> first.get(1, TimeUnit.SECONDS));
+                () -> futureGetWithTimeout(first));
         assertSame(expected, firstFailure.getCause());
         for (final Future<Object> waiter : waiterFutures) {
             final ExecutionException waiterFailure = assertThrows(
                     ExecutionException.class,
-                    () -> waiter.get(1, TimeUnit.SECONDS));
+                    () -> futureGetWithTimeout(waiter));
             assertSame(expected, waiterFailure.getCause());
         }
         assertEquals(1, loads.get());
@@ -491,5 +491,10 @@ class SegmentRegistryCacheTest {
                 throw new TimeoutException("Interrupted while waiting");
             }
         }
+    }
+
+    private static <T> T futureGetWithTimeout(final Future<T> future)
+            throws Exception {
+        return future.get(1, TimeUnit.SECONDS);
     }
 }
