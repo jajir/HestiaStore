@@ -51,7 +51,7 @@ jobs:
       uses: cicirello/jacoco-badge-generator@v2
       with:
         generate-branches-badge: true
-        jacoco-csv-file: ./target/site/jacoco/jacoco.csv
+        jacoco-csv-file: ./engine/target/site/jacoco/jacoco.csv
         badges-directory: ./badges
         coverage-badge-filename: jacoco-badge-${{ github.ref_name }}.svg
     
@@ -105,7 +105,7 @@ jobs:
     - name: OWASP vulnerabilities - count
       id: vuln
       run: |
-        VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' target/dependency-check-report.json)
+        VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' engine/target/dependency-check-report.json)
         echo "OWASP Vulnerabilities count: $VULN_COUNT"
         echo "VULN_COUNT=$VULN_COUNT" >> $GITHUB_ENV
 
@@ -124,4 +124,3 @@ jobs:
         gistURL: https://gist.github.com/jajir/a613341fb9d9d0c6a426b42a714700b7
         file: badge-owasp-${{ github.ref_name }}.svg
             
-

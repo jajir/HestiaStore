@@ -52,31 +52,11 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
-    <T> T withReadLock(final java.util.function.Supplier<T> action) {
-        Vldtn.requireNonNull(action, "action");
-        readLock.lock();
-        try {
-            return action.get();
-        } finally {
-            readLock.unlock();
-        }
-    }
-
-    void withReadLock(final Runnable action) {
-        Vldtn.requireNonNull(action, "action");
-        readLock.lock();
-        try {
-            action.run();
-        } finally {
-            readLock.unlock();
-        }
-    }
-
     <T> T withWriteLock(final java.util.function.Supplier<T> action) {
         Vldtn.requireNonNull(action, "action");
         writeLock.lock();
-        final String previous = System.getProperty(
-                "hestiastore.keyMapLockHeld");
+        final String previous = System
+                .getProperty("hestiastore.keyMapLockHeld");
         final boolean enforce = Boolean
                 .getBoolean("hestiastore.enforceSplitLockOrder");
         if (enforce) {
@@ -99,8 +79,8 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
     void withWriteLock(final Runnable action) {
         Vldtn.requireNonNull(action, "action");
         writeLock.lock();
-        final String previous = System.getProperty(
-                "hestiastore.keyMapLockHeld");
+        final String previous = System
+                .getProperty("hestiastore.keyMapLockHeld");
         final boolean enforce = Boolean
                 .getBoolean("hestiastore.enforceSplitLockOrder");
         if (enforce) {
@@ -169,7 +149,7 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
     /**
      * Inserts or updates a mapping for the provided key and segment id.
      *
-     * @param key key to map
+     * @param key       key to map
      * @param segmentId segment id to associate
      */
     void insertSegment(final K key, final SegmentId segmentId) {
