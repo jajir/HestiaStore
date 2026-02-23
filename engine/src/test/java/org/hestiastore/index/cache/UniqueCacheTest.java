@@ -99,9 +99,7 @@ class UniqueCacheTest {
     @Test
     void test_constructor_null_comparator_throws() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> UniqueCache.<Integer, String>builder()
-                        .withKeyComparator(null)
-                        .buildEmpty());
+                this::buildWithNullComparator);
         assertEquals("Property 'keyComparator' must not be null.",
                 e.getMessage());
     }
@@ -115,15 +113,17 @@ class UniqueCacheTest {
 
     @Test
     void test_put_with_null_key_throws() {
+        final Entry<Integer, String> entryWithNullKey = Entry.of(null, "value");
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> cache.put(Entry.of(null, "value")));
+                () -> cache.put(entryWithNullKey));
         assertEquals("Property 'entry.key' must not be null.", e.getMessage());
     }
 
     @Test
     void test_put_with_null_value_throws() {
+        final Entry<Integer, String> entryWithNullValue = Entry.of(1, null);
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> cache.put(Entry.of(1, null)));
+                () -> cache.put(entryWithNullValue));
         assertEquals("Property 'entry.value' must not be null.", e.getMessage());
     }
 
@@ -215,6 +215,11 @@ class UniqueCacheTest {
         }
 
         assertEquals(threads * perThread, threadSafe.size());
+    }
+
+    private void buildWithNullComparator() {
+        UniqueCache.<Integer, String>builder().withKeyComparator(null)
+                .buildEmpty();
     }
 
 }

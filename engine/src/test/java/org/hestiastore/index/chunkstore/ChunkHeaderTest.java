@@ -105,9 +105,10 @@ class ChunkHeaderTest {
         buffer.putInt(-1);
         buffer.putLong(CRC);
         buffer.putLong(0L);
+        final byte[] invalidHeader = buffer.array();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.of(buffer.array()));
+                () -> ChunkHeader.of(invalidHeader));
         assertEquals("Property 'payloadLength' must be greater than 0",
                 e.getMessage());
     }

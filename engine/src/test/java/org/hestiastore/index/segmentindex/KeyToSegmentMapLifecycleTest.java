@@ -39,9 +39,10 @@ class KeyToSegmentMapLifecycleTest {
 
     @Test
     void insertSegmentThrowsAfterClose() {
+        final SegmentId segmentId = SegmentId.of(0);
         keyToSegmentMap.close();
         assertThrows(IllegalStateException.class,
-                () -> keyToSegmentMap.insertSegment(1, SegmentId.of(0)));
+                () -> keyToSegmentMap.insertSegment(1, segmentId));
     }
 
     @Test
