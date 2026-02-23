@@ -391,18 +391,17 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             throw new IllegalStateException(
                     "close() must not be called from an async index operation.");
         }
-        boolean interrupted = false;
         synchronized (asyncMonitor) {
             while (asyncInFlight > 0) {
                 try {
                     asyncMonitor.wait();
                 } catch (final InterruptedException e) {
-                    interrupted = true;
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(
+                            "Interrupted while waiting for async operations to finish.",
+                            e);
                 }
             }
-        }
-        if (interrupted) {
-            Thread.currentThread().interrupt();
         }
     }
 
