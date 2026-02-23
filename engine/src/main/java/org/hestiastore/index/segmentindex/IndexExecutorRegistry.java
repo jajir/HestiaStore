@@ -32,16 +32,31 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private final ExecutorService registryMaintenanceExecutor;
 
     /**
-     * Creates a registry with predefined pool sizes.
+     * Creates a registry with predefined non-IO pool sizes.
+     * <p>
+     * Kept as compatibility constructor for existing call-sites that only
+     * choose IO pool size.
+     * </p>
      *
      * @param ioThreads IO pool size
      */
     IndexExecutorRegistry(final int ioThreads) {
-        // FIXME remove it
         this(ioThreads, 4, 3, 3);
     }
 
-    // TODO add constructor with IndexConfiguration
+    /**
+     * Creates a registry using thread settings from index configuration.
+     *
+     * @param indexConfiguration index configuration
+     */
+    IndexExecutorRegistry(
+            final IndexConfiguration<?, ?> indexConfiguration) {
+        this(Vldtn.requireNonNull(indexConfiguration, "indexConfiguration")
+                .getNumberOfIoThreads(),
+                indexConfiguration.getNumberOfSegmentIndexMaintenanceThreads(),
+                indexConfiguration.getIndexWorkerThreadCount(),
+                indexConfiguration.getNumberOfRegistryLifecycleThreads());
+    }
 
     /**
      * Creates a registry with explicit pool sizes for each executor group.

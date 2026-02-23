@@ -23,7 +23,7 @@ class SegmentIndexTest {
         assertTrue(beforeCreate.isEmpty());
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
-                buildConf())) {
+                buildConf("segment-index-test", 1))) {
             index.put(1, "one");
             assertEquals("one", index.get(1));
         }
@@ -34,13 +34,44 @@ class SegmentIndexTest {
         reopened.get().close();
     }
 
-    private IndexConfiguration<Integer, String> buildConf() {
+    @Test
+    void openWithStoredConfiguration() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> created = SegmentIndex.create(
+                directory, buildConf("segment-index-open-stored", 1))) {
+            created.put(1, "one");
+        }
+
+        try (SegmentIndex<Integer, String> opened = SegmentIndex.open(directory)) {
+            assertEquals("one", opened.get(1));
+        }
+    }
+
+    @Test
+    void openWithOverrideConfiguration() {
+        final MemDirectory directory = new MemDirectory();
+        final String indexName = "segment-index-open-override";
+        try (SegmentIndex<Integer, String> created = SegmentIndex.create(
+                directory, buildConf(indexName, 1))) {
+            created.put(1, "one");
+        }
+
+        try (SegmentIndex<Integer, String> opened = SegmentIndex.open(directory,
+                buildConf(indexName, 2))) {
+            assertEquals("one", opened.get(1));
+            opened.put(2, "two");
+            assertEquals("two", opened.get(2));
+        }
+    }
+
+    private IndexConfiguration<Integer, String> buildConf(final String indexName,
+            final int ioThreads) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("segment-index-test")//
+                .withName(indexName)//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
                 .withMaxNumberOfKeysInSegmentWriteCache(5)//
@@ -53,7 +84,7 @@ class SegmentIndexTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withIndexWorkerThreadCount(1)//
-                .withNumberOfIoThreads(1)//
+                .withNumberOfIoThreads(ioThreads)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .build();

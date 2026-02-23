@@ -12,11 +12,11 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 
 /**
- * Wraps a {@link SegmentIndex} and ensures the internally created
- * directory adapter gets closed alongside the index.
+ * Wraps a {@link SegmentIndex} and ensures the internally created directory
+ * adapter gets closed alongside the index.
  */
-final class IndexDirectoryClosingAdapter<K, V>
-        extends AbstractCloseableResource implements SegmentIndex<K, V> {
+final class IndexDirectoryClosingAdapter<K, V> extends AbstractCloseableResource
+        implements SegmentIndex<K, V> {
 
     private final SegmentIndex<K, V> index;
     private final Directory directory;
@@ -28,8 +28,7 @@ final class IndexDirectoryClosingAdapter<K, V>
     }
 
     IndexDirectoryClosingAdapter(final SegmentIndex<K, V> index,
-            final Directory directory,
-            final CloseableResource onClose) {
+            final Directory directory, final CloseableResource onClose) {
         this.index = Vldtn.requireNonNull(index, "index");
         this.directory = Vldtn.requireNonNull(directory, "directory");
         this.onClose = onClose;
