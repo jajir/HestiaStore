@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -165,34 +167,16 @@ class SegmentMaintenancePolicyThresholdTest {
             policy = new SegmentMaintenancePolicyThreshold<>(10, 5, 3);
         }
 
-        @Test
-        void compact_when_write_cache_reached_and_delta_cache_exceeds_cap() {
+        @ParameterizedTest
+        @CsvSource({
+                "3",
+                "4",
+                "6" })
+        void compact_when_delta_cache_at_or_above_cap(
+                final int deltaCacheFiles) {
             when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
-            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(4);
-
-            final SegmentMaintenanceDecision decision = policy
-                    .evaluateAfterWrite(segment);
-
-            assertFalse(decision.shouldFlush());
-            assertTrue(decision.shouldCompact());
-        }
-
-        @Test
-        void compact_when_write_cache_reached_and_delta_cache_at_cap() {
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
-            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(3);
-
-            final SegmentMaintenanceDecision decision = policy
-                    .evaluateAfterWrite(segment);
-
-            assertFalse(decision.shouldFlush());
-            assertTrue(decision.shouldCompact());
-        }
-
-        @Test
-        void compact_when_write_cache_below_threshold_even_if_delta_cache_exceeds() {
-            when(segment.getNumberOfKeysInSegmentCache()).thenReturn(4L);
-            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(4);
+            when(segment.getNumberOfDeltaCacheFiles()).thenReturn(
+                    deltaCacheFiles);
 
             final SegmentMaintenanceDecision decision = policy
                     .evaluateAfterWrite(segment);

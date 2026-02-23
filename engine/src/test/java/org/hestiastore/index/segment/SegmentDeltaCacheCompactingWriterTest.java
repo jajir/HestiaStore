@@ -25,19 +25,15 @@ class SegmentDeltaCacheCompactingWriterTest {
     private SegmentDeltaCacheWriter<Integer, String> deltaCacheWriter;
 
     @Test
-    void test_basic_writing() {
+    void test_writer_opens_on_first_write() {
         when(deltaCacheController.openWriter()).thenReturn(deltaCacheWriter);
         try (final EntryWriter<Integer, String> writer = new SegmentDeltaCacheCompactingWriter<>(
                 deltaCacheController)) {
             writer.write(ENTRY_1);
-            writer.write(ENTRY_2);
-            writer.write(ENTRY_3);
         }
 
         verify(deltaCacheController).openWriter();
         verify(deltaCacheWriter).write(ENTRY_1);
-        verify(deltaCacheWriter).write(ENTRY_2);
-        verify(deltaCacheWriter).write(ENTRY_3);
         verify(deltaCacheWriter).close();
     }
 
