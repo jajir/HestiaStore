@@ -48,17 +48,27 @@ final class SegmentBuildContext<K, V> {
                 "encodingChunkFilters");
         Vldtn.requireNotEmpty(builder.getDecodingChunkFilters(),
                 "decodingChunkFilters");
-        segmentConf = new SegmentConf(maxNumberOfKeysInSegmentWriteCache,
-                builder.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
-                builder.getMaxNumberOfKeysInSegmentCache(),
-                builder.getMaxNumberOfKeysInSegmentChunk(),
-                builder.getMaxNumberOfDeltaCacheFiles(),
-                builder.getBloomFilterNumberOfHashFunctions(),
-                builder.getBloomFilterIndexSizeInBytes(),
-                builder.getBloomFilterProbabilityOfFalsePositive(),
-                builder.getDiskIoBufferSize(),
-                builder.getEncodingChunkFilters(),
-                builder.getDecodingChunkFilters());
+        segmentConf = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(
+                        maxNumberOfKeysInSegmentWriteCache)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                        builder.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
+                .withMaxNumberOfKeysInSegmentCache(
+                        builder.getMaxNumberOfKeysInSegmentCache())
+                .withMaxNumberOfKeysInChunk(
+                        builder.getMaxNumberOfKeysInSegmentChunk())
+                .withMaxNumberOfDeltaCacheFiles(
+                        builder.getMaxNumberOfDeltaCacheFiles())
+                .withBloomFilterNumberOfHashFunctions(
+                        builder.getBloomFilterNumberOfHashFunctions())
+                .withBloomFilterIndexSizeInBytes(
+                        builder.getBloomFilterIndexSizeInBytes())
+                .withBloomFilterProbabilityOfFalsePositive(
+                        builder.getBloomFilterProbabilityOfFalsePositive())
+                .withDiskIoBufferSize(builder.getDiskIoBufferSize())
+                .withEncodingChunkFilters(builder.getEncodingChunkFilters())
+                .withDecodingChunkFilters(builder.getDecodingChunkFilters())
+                .build();
 
         final SegmentId resolvedId = Vldtn.requireNonNull(builder.getId(),
                 "segmentId");

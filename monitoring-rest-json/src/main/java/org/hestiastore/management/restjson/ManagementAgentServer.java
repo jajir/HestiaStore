@@ -360,89 +360,30 @@ public final class ManagementAgentServer
 
     private void handleConfigPatch(final HttpExchange exchange,
             final String endpoint) throws IOException {
-        final String body;
-        try {
-            body = readBody(exchange);
-        } catch (final RequestBodyTooLargeException e) {
-            writeError(exchange, 413, "REQUEST_TOO_LARGE", e.getMessage(), "");
-            audit(exchange, endpoint, "", 413, "REJECTED_TOO_LARGE");
+        final String body = readBodyOrRejectTooLarge(exchange, endpoint);
+        if (body == null) {
             return;
         }
         if (!authorize(exchange, AgentRole.ADMIN, true, endpoint, body)) {
             return;
         }
-        final ConfigPatchRequest request;
-        try {
-            request = objectMapper.readValue(body, ConfigPatchRequest.class);
-        } catch (final RuntimeException e) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
-                    "Invalid JSON payload.", "", Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, AUDIT_FAILED);
+        final ConfigPatchRequest request = parseConfigPatchRequest(exchange,
+                endpoint, body);
+        if (request == null) {
             return;
         }
-        final Optional<String> oIndexName = queryParam(exchange, PARAM_INDEX_NAME);
-        if (oIndexName.isEmpty()) {
-            writeError(exchange, 400, ERROR_INVALID_REQUEST,
-                    "Query parameter 'indexName' is required.", "");
-            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
+        final Optional<RegisteredIndex> target = resolveConfigPatchTarget(
+                exchange, endpoint, body);
+        if (target.isEmpty()) {
             return;
         }
-        final String indexName = oIndexName.get();
-        final RegisteredIndex target = findRegisteredIndex(indexName)
-                .orElse(null);
-        if (target == null) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INDEX_NOT_FOUND,
-                    UNKNOWN_INDEX_PREFIX + indexName, "", Instant.now());
-            writeJson(exchange, 404, error);
-            audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
+        final RuntimeConfigPatch runtimePatch = toRuntimePatchOrReject(exchange,
+                endpoint, body, request);
+        if (runtimePatch == null) {
             return;
         }
-        if (!target.ready()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
-                    "Index is not in READY state: " + indexName, "",
-                    Instant.now());
-            writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
-            return;
-        }
-        final RuntimeConfigPatch runtimePatch;
-        try {
-            runtimePatch = toRuntimePatch(request);
-        } catch (final ConfigKeyNotSupportedException e) {
-            final ErrorResponse error = new ErrorResponse(
-                    "CONFIG_KEY_NOT_SUPPORTED", e.getMessage(), "",
-                    Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
-            return;
-        } catch (final IllegalArgumentException e) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
-                    e.getMessage(), "", Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
-            return;
-        }
-        final RuntimePatchResult result = target.index().controlPlane()
-                .configuration().apply(runtimePatch);
-        if (!result.validation().valid()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
-                    formatValidationIssues(result.validation()), "",
-                    Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
-            return;
-        }
-        if (!request.dryRun() && !result.applied()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
-                    "Runtime patch was not applied.", "", Instant.now());
-            writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
-            return;
-        }
-        writeNoContent(exchange);
-        audit(exchange, endpoint, body, 204,
-                request.dryRun() ? "DRY_RUN" : "APPLIED");
+        applyConfigPatch(exchange, endpoint, body, request, target.get(),
+                runtimePatch);
     }
 
     private void handleHealth(final HttpExchange exchange) throws IOException {
@@ -480,44 +421,171 @@ public final class ManagementAgentServer
             writeMethodNotAllowed(exchange);
             return;
         }
-        final String body;
-        try {
-            body = readBody(exchange);
-        } catch (final RequestBodyTooLargeException e) {
-            writeError(exchange, 413, "REQUEST_TOO_LARGE", e.getMessage(), "");
-            audit(exchange, endpoint, "", 413, "REJECTED_TOO_LARGE");
+        final String body = readBodyOrRejectTooLarge(exchange, endpoint);
+        if (body == null) {
             return;
         }
         if (!authorize(exchange, AgentRole.OPERATE, true, endpoint, body)) {
             return;
         }
-        final ActionRequest request;
+        final ActionRequest request = parseActionRequest(exchange, endpoint,
+                body);
+        if (request == null) {
+            return;
+        }
+        final List<RegisteredIndex> targets = resolveActionTargetsOrReject(
+                exchange, endpoint, body, request);
+        if (targets == null) {
+            return;
+        }
+        if (!validateActionTargets(exchange, endpoint, body, request, targets)) {
+            return;
+        }
+        executeAction(exchange, endpoint, body, request, action, operation,
+                targets);
+    }
+
+    private String readBodyOrRejectTooLarge(final HttpExchange exchange,
+            final String endpoint) throws IOException {
         try {
-            request = objectMapper.readValue(body, ActionRequest.class);
+            return readBody(exchange);
+        } catch (final RequestBodyTooLargeException e) {
+            writeError(exchange, 413, "REQUEST_TOO_LARGE", e.getMessage(), "");
+            audit(exchange, endpoint, "", 413, "REJECTED_TOO_LARGE");
+            return null;
+        }
+    }
+
+    private ConfigPatchRequest parseConfigPatchRequest(
+            final HttpExchange exchange, final String endpoint,
+            final String body) throws IOException {
+        try {
+            return objectMapper.readValue(body, ConfigPatchRequest.class);
         } catch (final RuntimeException e) {
             final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
                     "Invalid JSON payload.", "", Instant.now());
             writeJson(exchange, 400, error);
             audit(exchange, endpoint, body, 400, AUDIT_FAILED);
+            return null;
+        }
+    }
+
+    private Optional<RegisteredIndex> resolveConfigPatchTarget(
+            final HttpExchange exchange, final String endpoint,
+            final String body) throws IOException {
+        final Optional<String> oIndexName = queryParam(exchange, PARAM_INDEX_NAME);
+        if (oIndexName.isEmpty()) {
+            writeError(exchange, 400, ERROR_INVALID_REQUEST,
+                    "Query parameter 'indexName' is required.", "");
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
+            return Optional.empty();
+        }
+        final String indexName = oIndexName.get();
+        final RegisteredIndex target = findRegisteredIndex(indexName)
+                .orElse(null);
+        if (target == null) {
+            final ErrorResponse error = new ErrorResponse(ERROR_INDEX_NOT_FOUND,
+                    UNKNOWN_INDEX_PREFIX + indexName, "", Instant.now());
+            writeJson(exchange, 404, error);
+            audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
+            return Optional.empty();
+        }
+        if (!target.ready()) {
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
+                    "Index is not in READY state: " + indexName, "",
+                    Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
+            return Optional.empty();
+        }
+        return Optional.of(target);
+    }
+
+    private RuntimeConfigPatch toRuntimePatchOrReject(
+            final HttpExchange exchange, final String endpoint,
+            final String body, final ConfigPatchRequest request)
+            throws IOException {
+        try {
+            return toRuntimePatch(request);
+        } catch (final ConfigKeyNotSupportedException e) {
+            final ErrorResponse error = new ErrorResponse(
+                    "CONFIG_KEY_NOT_SUPPORTED", e.getMessage(), "",
+                    Instant.now());
+            writeJson(exchange, 400, error);
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
+            return null;
+        } catch (final IllegalArgumentException e) {
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
+                    e.getMessage(), "", Instant.now());
+            writeJson(exchange, 400, error);
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
+            return null;
+        }
+    }
+
+    private void applyConfigPatch(final HttpExchange exchange,
+            final String endpoint, final String body,
+            final ConfigPatchRequest request, final RegisteredIndex target,
+            final RuntimeConfigPatch runtimePatch) throws IOException {
+        final RuntimePatchResult result = target.index().controlPlane()
+                .configuration().apply(runtimePatch);
+        if (!result.validation().valid()) {
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
+                    formatValidationIssues(result.validation()), "",
+                    Instant.now());
+            writeJson(exchange, 400, error);
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
             return;
         }
-        final List<RegisteredIndex> targets;
+        if (!request.dryRun() && !result.applied()) {
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
+                    "Runtime patch was not applied.", "", Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
+            return;
+        }
+        writeNoContent(exchange);
+        audit(exchange, endpoint, body, 204,
+                request.dryRun() ? "DRY_RUN" : "APPLIED");
+    }
+
+    private ActionRequest parseActionRequest(final HttpExchange exchange,
+            final String endpoint, final String body) throws IOException {
         try {
-            targets = resolveActionTargets(request);
+            return objectMapper.readValue(body, ActionRequest.class);
+        } catch (final RuntimeException e) {
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
+                    "Invalid JSON payload.", "", Instant.now());
+            writeJson(exchange, 400, error);
+            audit(exchange, endpoint, body, 400, AUDIT_FAILED);
+            return null;
+        }
+    }
+
+    private List<RegisteredIndex> resolveActionTargetsOrReject(
+            final HttpExchange exchange, final String endpoint,
+            final String body, final ActionRequest request) throws IOException {
+        try {
+            return resolveActionTargets(request);
         } catch (final IllegalStateException e) {
             final ErrorResponse error = new ErrorResponse(ERROR_INDEX_NOT_FOUND,
                     e.getMessage(), request.requestId(), Instant.now());
             writeJson(exchange, 404, error);
             audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
-            return;
+            return null;
         }
+    }
+
+    private boolean validateActionTargets(final HttpExchange exchange,
+            final String endpoint, final String body, final ActionRequest request,
+            final List<RegisteredIndex> targets) throws IOException {
         if (targets.isEmpty()) {
             final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "No monitored indexes available.", request.requestId(),
                     Instant.now());
             writeJson(exchange, 409, error);
             audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
-            return;
+            return false;
         }
         final List<String> notReady = notReadyIndexes(targets);
         if (!notReady.isEmpty()) {
@@ -527,8 +595,15 @@ public final class ManagementAgentServer
                     request.requestId(), Instant.now());
             writeJson(exchange, 409, error);
             audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
-            return;
+            return false;
         }
+        return true;
+    }
+
+    private void executeAction(final HttpExchange exchange,
+            final String endpoint, final String body, final ActionRequest request,
+            final ActionType action, final IndexOperation operation,
+            final List<RegisteredIndex> targets) throws IOException {
         try {
             for (final RegisteredIndex target : targets) {
                 operation.run(target);

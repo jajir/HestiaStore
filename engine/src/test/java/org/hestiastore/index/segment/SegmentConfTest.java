@@ -13,9 +13,19 @@ class SegmentConfTest {
 
     @Test
     void copyConstructorPreservesValues() {
-        final SegmentConf original = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
-                0.01D, 1024, List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf original = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(5)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
+                .withMaxNumberOfKeysInSegmentCache(10)
+                .withMaxNumberOfKeysInChunk(2)
+                .withMaxNumberOfDeltaCacheFiles(4)
+                .withBloomFilterNumberOfHashFunctions(1)
+                .withBloomFilterIndexSizeInBytes(1024)
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
 
         final SegmentConf copy = new SegmentConf(original);
 
@@ -43,9 +53,19 @@ class SegmentConfTest {
     void filterListsAreImmutable() {
         final ChunkFilterDoNothing encodingFilterToAdd = new ChunkFilterDoNothing();
         final ChunkFilterDoNothing decodingFilterToAdd = new ChunkFilterDoNothing();
-        final SegmentConf conf = new SegmentConf(5, 6, 10, 2, 4, 1, 1024,
-                0.01D, 1024, List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf conf = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(5)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
+                .withMaxNumberOfKeysInSegmentCache(10)
+                .withMaxNumberOfKeysInChunk(2)
+                .withMaxNumberOfDeltaCacheFiles(4)
+                .withBloomFilterNumberOfHashFunctions(1)
+                .withBloomFilterIndexSizeInBytes(1024)
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
         final List<ChunkFilter> encodingFilters = conf
                 .getEncodingChunkFilters();
         final List<ChunkFilter> decodingFilters = conf

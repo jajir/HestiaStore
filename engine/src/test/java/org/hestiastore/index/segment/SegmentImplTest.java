@@ -108,11 +108,21 @@ class SegmentImplTest {
 
     @BeforeEach
     void setUpSubject() {
-        conf = new SegmentConf(50, 100, 1000, 3, 7,
-                SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
-                SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES, 0.01, 1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        conf = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(50)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(100)
+                .withMaxNumberOfKeysInSegmentCache(1000)
+                .withMaxNumberOfKeysInChunk(3)
+                .withMaxNumberOfDeltaCacheFiles(7)
+                .withBloomFilterNumberOfHashFunctions(
+                        SegmentConf.UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS)
+                .withBloomFilterIndexSizeInBytes(
+                        SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES)
+                .withBloomFilterProbabilityOfFalsePositive(0.01)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
         when(segmentFiles.getId()).thenReturn(segmentId);
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(tdi);
         when(segmentFiles.getValueTypeDescriptor()).thenReturn(tds);

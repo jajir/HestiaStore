@@ -33,10 +33,19 @@ class SegmentMaintenancePathTest {
 
     @BeforeEach
     void setUp() {
-        final SegmentConf conf = new SegmentConf(1, 1, 1, 1, 1, 0, 0, 0.01,
-                1024,
-                List.of(new ChunkFilterDoNothing()),
-                List.of(new ChunkFilterDoNothing()));
+        final SegmentConf conf = SegmentConf.builder()
+                .withMaxNumberOfKeysInSegmentWriteCache(1)
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(1)
+                .withMaxNumberOfKeysInSegmentCache(1)
+                .withMaxNumberOfKeysInChunk(1)
+                .withMaxNumberOfDeltaCacheFiles(1)
+                .withBloomFilterNumberOfHashFunctions(0)
+                .withBloomFilterIndexSizeInBytes(0)
+                .withBloomFilterProbabilityOfFalsePositive(0.01)
+                .withDiskIoBufferSize(1024)
+                .withEncodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingChunkFilters(List.of(new ChunkFilterDoNothing()))
+                .build();
         subject = new SegmentMaintenancePath<>(segmentFiles, conf,
                 segmentPropertiesManager, segmentResources, deltaCacheController);
     }
