@@ -7,6 +7,9 @@ import org.hestiastore.index.Vldtn;
 
 public final class FsDirectory extends AbstractDirectory {
 
+    private static final String DIRECTORY_NAME_ARG = "directoryName";
+    private static final String ERROR_REQUIRED_DIRECTORY_IS_FILE = "There is required directory but '%s' is file.";
+
     public FsDirectory(final File directory) {
         super(directory);
     }
@@ -53,12 +56,12 @@ public final class FsDirectory extends AbstractDirectory {
 
     @Override
     public Directory openSubDirectory(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
         final File subdirectory = getFile(directoryName);
         if (subdirectory.exists()) {
             if (subdirectory.isFile()) {
                 throw new IndexException(String.format(
-                        "There is required directory but '%s' is file.",
+                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
                         subdirectory.getAbsolutePath()));
             }
         } else if (!subdirectory.mkdirs()) {
@@ -71,12 +74,12 @@ public final class FsDirectory extends AbstractDirectory {
 
     @Override
     public boolean mkdir(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
         final File subdirectory = getFile(directoryName);
         if (subdirectory.exists()) {
             if (subdirectory.isFile()) {
                 throw new IndexException(String.format(
-                        "There is required directory but '%s' is file.",
+                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
                         subdirectory.getAbsolutePath()));
             }
             return false;
@@ -91,14 +94,14 @@ public final class FsDirectory extends AbstractDirectory {
 
     @Override
     public boolean rmdir(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
         final File subdirectory = getFile(directoryName);
         if (!subdirectory.exists()) {
             return false;
         }
         if (subdirectory.isFile()) {
             throw new IndexException(String.format(
-                    "There is required directory but '%s' is file.",
+                    ERROR_REQUIRED_DIRECTORY_IS_FILE,
                     subdirectory.getAbsolutePath()));
         }
         final String[] entries = subdirectory.list();

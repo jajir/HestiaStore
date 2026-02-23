@@ -21,8 +21,9 @@ class ActionResponseTest {
 
     @Test
     void rejectsBlankRequestId() {
+        final Instant now = Instant.now();
         assertThrows(IllegalArgumentException.class,
                 () -> new ActionResponse(" ", ActionType.FLUSH,
-                        ActionStatus.ACCEPTED, "", Instant.now()));
+                        ActionStatus.ACCEPTED, "", now));
     }
 }

@@ -26,7 +26,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
 
     private KeyToSegmentMapSynchronizedAdapter<Integer> adapter;
     private ExecutorService executor;
-    private SegmentSplitApplyPlan<Integer, String> plan;
+    private SegmentSplitApplyPlan<Integer> plan;
 
     @BeforeEach
     void setUp() {

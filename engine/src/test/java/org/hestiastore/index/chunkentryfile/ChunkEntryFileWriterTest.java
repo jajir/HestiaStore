@@ -22,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class ChunkEntryFileWriterTest {
+class ChunkEntryFileWriterTest {
 
     private static final DataBlockSize DATA_BLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.junit.jupiter.api.Test;
 
-public class CellPositionTest {
+class CellPositionTest {
 
     private static final DataBlockSize DATA_BLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

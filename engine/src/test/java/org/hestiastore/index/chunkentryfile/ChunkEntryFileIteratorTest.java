@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class ChunkEntryFileIteratorTest {
+class ChunkEntryFileIteratorTest {
 
     @Mock
     private ChunkStoreReader chunkStoreReader;

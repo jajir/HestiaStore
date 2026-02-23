@@ -1,6 +1,5 @@
 package org.hestiastore.console.web;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -110,8 +109,7 @@ public final class MonitoringConsoleWebDemoMain {
                 DEFAULT_BASE_PORT);
     }
 
-    private static SegmentIndex<Integer, String> createIndex(final String name)
-            throws IOException {
+    private static SegmentIndex<Integer, String> createIndex(final String name) {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()

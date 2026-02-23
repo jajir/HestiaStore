@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class CellStoreWriterCursorTest {
+class CellStoreWriterCursorTest {
 
     private static final DataBlockSize DATABLOCK_SIZE = DataBlockSize
             .ofDataBlockSize(1024);

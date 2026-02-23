@@ -21,7 +21,7 @@ final class SegmentSplitPipeline<K, V>
         super(List.copyOf(steps));
     }
 
-    SegmentSplitterResult<K, V> run(final SegmentSplitContext<K, V> ctx) {
+    SegmentSplitterResult<K> run(final SegmentSplitContext<K, V> ctx) {
         final SegmentSplitState<K, V> state = runKeepingIterator(ctx);
         try {
             return state.getResult();

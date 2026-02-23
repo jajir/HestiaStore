@@ -9,9 +9,8 @@ import org.hestiastore.index.segment.SegmentId;
  * Immutable DTO carrying data required to apply a completed split.
  *
  * @param <K> key type
- * @param <V> value type
  */
-public final class SegmentSplitApplyPlan<K, V> {
+public final class SegmentSplitApplyPlan<K> {
 
     private final SegmentId oldSegmentId;
     private final SegmentId lowerSegmentId;

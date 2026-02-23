@@ -7,7 +7,7 @@ import org.hestiastore.index.segment.SegmentId;
 /**
  * Provides result of segment splitting.
  */
-public class SegmentSplitterResult<K, V> {
+public class SegmentSplitterResult<K> {
 
     /**
      * Status of segment after splitting.

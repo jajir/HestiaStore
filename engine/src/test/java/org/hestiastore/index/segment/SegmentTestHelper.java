@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 public final class SegmentTestHelper {
 
@@ -30,12 +31,11 @@ public final class SegmentTestHelper {
                 throw new AssertionError(String.format(
                         "Segment '%s' failed to close.", segment.getId()));
             }
-            try {
-                Thread.sleep(CLOSE_POLL_MILLIS);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
+            LockSupport.parkNanos(
+                    TimeUnit.MILLISECONDS.toNanos(CLOSE_POLL_MILLIS));
+            if (Thread.currentThread().isInterrupted()) {
                 throw new AssertionError(
-                        "Interrupted while waiting for segment close.", e);
+                        "Interrupted while waiting for segment close.");
             }
         }
         throw new AssertionError(String.format(

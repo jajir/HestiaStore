@@ -308,7 +308,7 @@ class IndexConfiguratonStorage<K, V> {
     private List<ChunkFilter> parseFilterList(final String value) {
         return Arrays.stream(value.split(",")).map(String::trim)
                 .filter(s -> !s.isEmpty()).map(this::instantiateFilter)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private String serializeFilters(final List<ChunkFilter> filters) {

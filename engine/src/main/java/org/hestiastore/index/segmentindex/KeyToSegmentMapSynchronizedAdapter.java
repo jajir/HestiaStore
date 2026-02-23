@@ -159,7 +159,7 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
         withWriteLock(() -> delegate.updateSegmentMaxKey(segmentId, newMaxKey));
     }
 
-    boolean applySplitPlan(final SegmentSplitApplyPlan<K, ?> plan) {
+    boolean applySplitPlan(final SegmentSplitApplyPlan<K> plan) {
         return withWriteLock(() -> delegate.applySplitPlan(plan));
     }
 

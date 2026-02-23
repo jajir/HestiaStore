@@ -67,13 +67,13 @@ class SegmentCoreTest {
     }
 
     @Test
-    void invalidateIteratorsBumpsVersion() throws Exception {
+    void invalidateIteratorsBumpsVersion() {
         core.invalidateIterators();
         verify(versionController).changeVersion();
     }
 
     @Test
-    void tryPutWithoutWaitingUpdatesWriteCacheCount() throws Exception {
+    void tryPutWithoutWaitingUpdatesWriteCacheCount() {
         when(writePath.getNumberOfKeysInWriteCache()).thenReturn(0, 1);
         when(writePath.tryPutWithoutWaiting(1, "one")).thenReturn(true);
 
@@ -83,7 +83,7 @@ class SegmentCoreTest {
     }
 
     @Test
-    void snapshotCacheEntries_returns_sorted_entries() throws Exception {
+    void snapshotCacheEntries_returns_sorted_entries() {
         final List<Entry<Integer, String>> snapshot = List.of(Entry.of(1, "a"),
                 Entry.of(2, "b"));
         when(segmentCache.getAsSortedList()).thenReturn(snapshot);
@@ -95,7 +95,7 @@ class SegmentCoreTest {
 
     @Test
     void openIteratorFromCompactionSnapshot_reads_snapshot_entries()
-            throws Exception {
+    {
         final List<Entry<Integer, String>> snapshot = List.of(Entry.of(2, "b"));
         when(segmentFiles.getIndexFile()).thenReturn(indexFile);
         when(segmentFiles.getKeyTypeDescriptor()).thenReturn(keyDescriptor);

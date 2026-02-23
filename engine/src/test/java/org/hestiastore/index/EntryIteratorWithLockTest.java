@@ -60,9 +60,8 @@ class EntryIteratorWithLockTest {
     void test_try_to_move_next_in_locked() {
         when(lock.isLocked()).thenReturn(true);
 
-        final Exception e = assertThrows(NoSuchElementException.class, () -> {
-            iterator.next();
-        });
+        final Exception e = assertThrows(NoSuchElementException.class,
+                iterator::next);
 
         assertEquals(
                 "Iterator for 'segment-00027' was invalidated by a concurrent write.",

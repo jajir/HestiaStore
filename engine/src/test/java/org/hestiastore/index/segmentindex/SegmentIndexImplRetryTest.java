@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,7 +61,7 @@ class SegmentIndexImplRetryTest {
                 .getValue();
 
         final AtomicInteger attempts = new AtomicInteger();
-        when(segment.get(eq(1))).thenAnswer(invocation -> {
+        when(segment.get(1)).thenAnswer(invocation -> {
             if (attempts.getAndIncrement() == 0) {
                 return SegmentResult.busy();
             }
@@ -90,7 +89,7 @@ class SegmentIndexImplRetryTest {
                 .getValue();
 
         final AtomicInteger attempts = new AtomicInteger();
-        when(segment.put(eq(2), eq("two"))).thenAnswer(invocation -> {
+        when(segment.put(2, "two")).thenAnswer(invocation -> {
             if (attempts.getAndIncrement() == 0) {
                 return SegmentResult.busy();
             }

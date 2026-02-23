@@ -16,7 +16,7 @@ class SegmentSplitApplyPlanTest {
     private SegmentId oldSegmentId;
     private SegmentId lowerSegmentId;
     private SegmentId upperSegmentId;
-    private SegmentSplitApplyPlan<Integer, String> splitPlan;
+    private SegmentSplitApplyPlan<Integer> splitPlan;
 
     @BeforeEach
     void setUp() {
@@ -50,7 +50,7 @@ class SegmentSplitApplyPlanTest {
 
     @Test
     void compacted_allows_missing_upper_segment() {
-        final SegmentSplitApplyPlan<Integer, String> compacted = new SegmentSplitApplyPlan<>(
+        final SegmentSplitApplyPlan<Integer> compacted = new SegmentSplitApplyPlan<>(
                 oldSegmentId, lowerSegmentId, null, 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
         assertFalse(compacted.getUpperSegmentId().isPresent());

@@ -47,7 +47,6 @@ class SegmentRegistryImplCloseTest {
         try {
             final Future<SegmentRegistryResult<Void>> closeFuture = closer
                     .submit(registry::close);
-            Thread.sleep(30L);
             entry.finishLoad(segment);
 
             final SegmentRegistryResult<Void> result = closeFuture.get(1,
@@ -62,7 +61,7 @@ class SegmentRegistryImplCloseTest {
     }
 
     @Test
-    void closeReturnsErrorWhenCacheCannotDrainBeforeTimeout() throws Exception {
+    void closeReturnsErrorWhenCacheCannotDrainBeforeTimeout() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
                 4, id -> {

@@ -1,8 +1,8 @@
 package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
@@ -28,9 +28,8 @@ class ChunkFilterSnappyCompressTest {
         final byte[] uncompressed = Snappy
                 .uncompress(result.getPayload().getData());
         assertEquals(PAYLOAD, Bytes.of(uncompressed));
-        assertTrue(
-                (result.getFlags()
-                        & ChunkFilterSnappyCompress.FLAG_COMPRESSED) != 0L,
+        assertNotEquals(0L,
+                result.getFlags() & ChunkFilterSnappyCompress.FLAG_COMPRESSED,
                 "Compression flag should be set");
         assertEquals(input.getMagicNumber(), result.getMagicNumber());
         assertEquals(input.getCrc(), result.getCrc());

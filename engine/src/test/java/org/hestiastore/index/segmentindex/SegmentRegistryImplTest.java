@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -216,7 +217,7 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void getSegment_returnsBusyWhenEntryIsUnloading() throws Exception {
+    void getSegment_returnsBusyWhenEntryIsUnloading() {
         stubSegmentConfig();
         final Segment<Integer, String> created = registry.createSegment()
                 .getValue();
@@ -245,10 +246,8 @@ class SegmentRegistryImplTest {
             if (System.nanoTime() >= deadline) {
                 return;
             }
-            try {
-                Thread.sleep(10L);
-            } catch (final InterruptedException ex) {
-                Thread.currentThread().interrupt();
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+            if (Thread.currentThread().isInterrupted()) {
                 return;
             }
         }

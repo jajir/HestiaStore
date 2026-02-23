@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
  */
 final class SegmentIndexCore<K, V> {
 
+    private static final String SEGMENT_ID_ARG = "segmentId";
     private static final Logger logger = LoggerFactory
             .getLogger(SegmentIndexCore.class);
     private static final boolean DEBUG_SPLIT_LOSS = Boolean
@@ -77,10 +78,9 @@ final class SegmentIndexCore<K, V> {
 
     IndexResult<Void> put(final K key, final V value) {
         final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        if (snapshot.findSegmentId(key) == null) {
-            if (!keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
-                return IndexResult.busy();
-            }
+        if (snapshot.findSegmentId(key) == null
+                && !keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
+            return IndexResult.busy();
         }
         final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
                 .snapshot();
@@ -138,7 +138,7 @@ final class SegmentIndexCore<K, V> {
 
     IndexResult<EntryIterator<K, V>> openIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
                 segmentId);
         if (loaded.getStatus() != SegmentRegistryResultStatus.OK
@@ -161,7 +161,7 @@ final class SegmentIndexCore<K, V> {
     }
 
     IndexResult<Segment<K, V>> compact(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
                 segmentId);
         if (loaded.getStatus() != SegmentRegistryResultStatus.OK
@@ -183,7 +183,7 @@ final class SegmentIndexCore<K, V> {
     }
 
     IndexResult<Segment<K, V>> flush(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
                 segmentId);
         if (loaded.getStatus() != SegmentRegistryResultStatus.OK

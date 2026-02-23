@@ -229,19 +229,16 @@ public final class SegmentRegistryCache<K, V> {
         Entry<V> oldestEntry = null;
         for (final Map.Entry<K, Entry<V>> mapEntry : map.entrySet()) {
             final K key = mapEntry.getKey();
-            if (exceptKey != null && exceptKey.equals(key)) {
-                continue;
-            }
-            final Entry<V> entry = mapEntry.getValue();
-            final long entryAccessCx = entry
-                    .getEvictionOrder(unloadablePredicate);
-            if (entryAccessCx == Long.MAX_VALUE) {
-                continue;
-            }
-            if (entryAccessCx < oldestAccessCx) {
-                oldestAccessCx = entryAccessCx;
-                oldestKey = key;
-                oldestEntry = entry;
+            if (exceptKey == null || !exceptKey.equals(key)) {
+                final Entry<V> entry = mapEntry.getValue();
+                final long entryAccessCx = entry
+                        .getEvictionOrder(unloadablePredicate);
+                if (entryAccessCx != Long.MAX_VALUE
+                        && entryAccessCx < oldestAccessCx) {
+                    oldestAccessCx = entryAccessCx;
+                    oldestKey = key;
+                    oldestEntry = entry;
+                }
             }
         }
         if (oldestEntry == null || oldestKey == null) {

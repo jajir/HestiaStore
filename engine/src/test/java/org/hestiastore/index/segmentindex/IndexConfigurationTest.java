@@ -31,12 +31,14 @@ class IndexConfigurationTest {
 
         assertEquals(1, config.getEncodingChunkFilters().size());
         assertEquals(1, config.getDecodingChunkFilters().size());
+        final List<ChunkFilter> configEncoding = config
+                .getEncodingChunkFilters();
+        final List<ChunkFilter> configDecoding = config
+                .getDecodingChunkFilters();
         assertThrows(UnsupportedOperationException.class,
-                () -> config.getEncodingChunkFilters()
-                        .add(new ChunkFilterDoNothing()));
+                () -> configEncoding.add(new ChunkFilterDoNothing()));
         assertThrows(UnsupportedOperationException.class,
-                () -> config.getDecodingChunkFilters()
-                        .add(new ChunkFilterDoNothing()));
+                () -> configDecoding.add(new ChunkFilterDoNothing()));
     }
 
     @Test

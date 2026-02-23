@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
  */
 final class SegmentCompacter<K, V> {
 
+    private static final String SEGMENT_ARG = "segment";
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final VersionController versionController;
 
@@ -37,7 +38,7 @@ final class SegmentCompacter<K, V> {
      */
     CompactionPlan<K, V> prepareCompactionPlan(
             final SegmentCore<K, V> segment) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         prepareCompaction(segment);
         final long currentVersion = Math.max(0,
                 segment.getSegmentFiles().getActiveVersion());
@@ -52,7 +53,7 @@ final class SegmentCompacter<K, V> {
      * @param segment segment core
      */
     public void prepareCompaction(final SegmentCore<K, V> segment) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         logger.debug("Start of compacting '{}'", segment.getId());
         segment.resetSegmentIndexSearcher();
         segment.freezeWriteCacheForFlush();
@@ -60,7 +61,7 @@ final class SegmentCompacter<K, V> {
 
     void writeCompaction(final SegmentCore<K, V> segment,
             final SegmentFullWriterTx<K, V> writerTx) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         Vldtn.requireNonNull(writerTx, "writerTx");
         try (EntryWriter<K, V> writer = writerTx.open();
                 EntryIterator<K, V> iterator = segment
@@ -88,7 +89,7 @@ final class SegmentCompacter<K, V> {
      * @param segment segment core
      */
     void publishCompaction(final SegmentCore<K, V> segment) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segment, SEGMENT_ARG);
         versionController.changeVersion();
         logger.debug("End of compacting '{}'", segment.getId());
     }

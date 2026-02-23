@@ -20,7 +20,8 @@ class ErrorResponseTest {
 
     @Test
     void rejectsBlankCode() {
+        final Instant now = Instant.now();
         assertThrows(IllegalArgumentException.class,
-                () -> new ErrorResponse(" ", "x", "", Instant.now()));
+                () -> new ErrorResponse(" ", "x", "", now));
     }
 }

@@ -27,7 +27,7 @@ class SegmentSplitStepValidateFeasibilityTest {
 
     private SegmentSplitterPlan<Integer, String> planWithEstimate(
             long estimate) {
-        final SegmentSplitterPolicy<Integer, String> policy = new SegmentSplitterPolicy<>(
+        final SegmentSplitterPolicy policy = new SegmentSplitterPolicy(
                 estimate);
         return SegmentSplitterPlan.fromPolicy(policy);
     }

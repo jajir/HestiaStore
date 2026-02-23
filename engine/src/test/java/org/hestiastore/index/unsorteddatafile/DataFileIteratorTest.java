@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class DataFileIteratorTest {
+class DataFileIteratorTest {
 
     @Mock
     private TypeReader<String> keyTypeReader;

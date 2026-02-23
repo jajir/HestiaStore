@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -163,10 +164,8 @@ class SegmentIndexImplPutTest {
             if (cache.getSegmentIds().size() == expectedCount) {
                 return;
             }
-            try {
-                Thread.sleep(10);
-            } catch (final InterruptedException ex) {
-                Thread.currentThread().interrupt();
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+            if (Thread.currentThread().isInterrupted()) {
                 break;
             }
         }

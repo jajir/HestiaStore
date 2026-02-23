@@ -13,7 +13,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
-public class SegmentBuilderFromConfTest {
+class SegmentBuilderFromConfTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(27);
     private static final Directory DIRECTORY = new MemDirectory();

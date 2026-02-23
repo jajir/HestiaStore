@@ -37,7 +37,7 @@ class SegmentSplitStateTest {
         assertNull(state.getResult());
 
         final SegmentId lower = SegmentId.of(1);
-        final SegmentSplitterResult<String, String> result = new SegmentSplitterResult<>(
+        final SegmentSplitterResult<String> result = new SegmentSplitterResult<>(
                 SegmentId.of(2), "a", "z",
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
 

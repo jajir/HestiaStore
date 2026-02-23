@@ -56,6 +56,8 @@ import org.slf4j.LoggerFactory;
 abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
+    private static final String OPERATION_COMPACT = "compact";
+    private static final String OPERATION_FLUSH = "flush";
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
@@ -110,7 +112,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     this.executorRegistry);
             ExecutorService splitMaintenanceExecutor = splitAsyncExecutor
                     .getExecutor();
-            if (Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
+            if (isContextLoggingEnabled()) {
                 segmentMaintenanceExecutor = new IndexNameMdcExecutorService(
                         conf.getIndexName(), segmentMaintenanceExecutor);
                 splitMaintenanceExecutor = new IndexNameMdcExecutorService(
@@ -121,7 +123,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     segmentMaintenanceExecutor);
             ExecutorService registryLifecycleExecutor = this.executorRegistry
                     .getRegistryMaintenanceExecutor();
-            if (Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
+            if (isContextLoggingEnabled()) {
                 registryLifecycleExecutor = new IndexNameMdcExecutorService(
                         conf.getIndexName(), registryLifecycleExecutor);
             }
@@ -239,7 +241,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final EntryIterator<K, V> segmentIterator = new SegmentsIterator<>(
                 keyToSegmentMap.getSegmentIds(resolvedWindows), segmentRegistry,
                 isolation, retryPolicy);
-        if (conf.isContextLoggingEnabled()) {
+        if (isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         }
         return segmentIterator;
@@ -356,8 +358,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         incrementAsync();
         try {
             return CompletableFuture.supplyAsync(() -> {
-                final boolean previous = Boolean.TRUE
-                        .equals(inAsyncOperation.get());
+                final boolean previous = inAsyncOperation.get();
                 inAsyncOperation.set(Boolean.TRUE);
                 try {
                     return task.get();
@@ -386,7 +387,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void awaitAsyncOperations() {
-        if (Boolean.TRUE.equals(inAsyncOperation.get())) {
+        if (inAsyncOperation.get()) {
             throw new IllegalStateException(
                     "close() must not be called from an async index operation.");
         }
@@ -515,7 +516,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 if (waitForCompletion) {
                     final Segment<K, V> segment = result.getValue();
                     if (segment != null) {
-                        awaitSegmentReady(segmentId, "compact", segment);
+                        awaitSegmentReady(segmentId, OPERATION_COMPACT,
+                                segment);
                     }
                 }
                 return;
@@ -527,14 +529,15 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 if (!isSegmentStillMapped(segmentId)) {
                     return;
                 }
-                retryPolicy.backoffOrThrow(startNanos, "compact", segmentId);
+                retryPolicy.backoffOrThrow(startNanos, OPERATION_COMPACT,
+                        segmentId);
                 continue;
             }
             if (status == IndexResultStatus.ERROR
                     && !isSegmentStillMapped(segmentId)) {
                 return;
             }
-            throw newIndexException("compact", segmentId, status);
+            throw newIndexException(OPERATION_COMPACT, segmentId, status);
         }
     }
 
@@ -549,7 +552,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 if (waitForCompletion) {
                     final Segment<K, V> segment = result.getValue();
                     if (segment != null) {
-                        awaitSegmentReady(segmentId, "flush", segment);
+                        awaitSegmentReady(segmentId, OPERATION_FLUSH, segment);
                     }
                 }
                 return;
@@ -561,14 +564,15 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 if (!isSegmentStillMapped(segmentId)) {
                     return;
                 }
-                retryPolicy.backoffOrThrow(startNanos, "flush", segmentId);
+                retryPolicy.backoffOrThrow(startNanos, OPERATION_FLUSH,
+                        segmentId);
                 continue;
             }
             if (status == IndexResultStatus.ERROR
                     && !isSegmentStillMapped(segmentId)) {
                 return;
             }
-            throw newIndexException("flush", segmentId, status);
+            throw newIndexException(OPERATION_FLUSH, segmentId, status);
         }
     }
 
@@ -695,6 +699,10 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return keyToSegmentMap.getSegmentIds().contains(segmentId);
     }
 
+    private boolean isContextLoggingEnabled() {
+        return Boolean.TRUE.equals(conf.isContextLoggingEnabled());
+    }
+
     private static long updateHighWaterMark(final AtomicLong highWaterMark,
             final long observedValue) {
         final long sanitizedValue = Math.max(0L, observedValue);
@@ -722,50 +730,48 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         int accountedSegments = 0;
         for (final Segment<K, V> segment : segmentRegistry
                 .loadedSegmentsSnapshot()) {
-            if (segment == null) {
-                continue;
+            if (segment != null) {
+                final SegmentRuntimeSnapshot segmentRuntime = segment
+                        .getRuntimeSnapshot();
+                final SegmentId segmentId = segmentRuntime.getSegmentId();
+                if (mappedSegmentIdSet.contains(segmentId)) {
+                    accountedSegments++;
+                    final SegmentState state = segmentRuntime.getState();
+                    if (state == SegmentState.READY) {
+                        aggregate.segmentReadyCount++;
+                    } else if (state == SegmentState.MAINTENANCE_RUNNING
+                            || state == SegmentState.FREEZE) {
+                        aggregate.segmentMaintenanceCount++;
+                    } else if (state == SegmentState.ERROR) {
+                        aggregate.segmentErrorCount++;
+                    } else if (state == SegmentState.CLOSED) {
+                        aggregate.segmentClosedCount++;
+                    }
+                    aggregate.totalSegmentKeys += Math.max(0L,
+                            segmentRuntime.getNumberOfKeys());
+                    aggregate.totalSegmentCacheKeys += Math.max(0L,
+                            segmentRuntime.getNumberOfKeysInSegmentCache());
+                    aggregate.totalWriteCacheKeys += Math.max(0L,
+                            segmentRuntime.getNumberOfKeysInWriteCache());
+                    aggregate.totalDeltaCacheFiles += Math.max(0,
+                            segmentRuntime.getNumberOfDeltaCacheFiles());
+                    aggregate.segmentRuntimeSnapshots
+                            .add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
+                                    segmentRuntime));
+                    aggregate.compactRequestCount += Math.max(0L,
+                            segmentRuntime.getNumberOfCompacts());
+                    aggregate.flushRequestCount += Math.max(0L,
+                            segmentRuntime.getNumberOfFlushes());
+                    aggregate.bloomFilterRequestCount += Math.max(0L,
+                            segmentRuntime.getBloomFilterRequestCount());
+                    aggregate.bloomFilterRefusedCount += Math.max(0L,
+                            segmentRuntime.getBloomFilterRefusedCount());
+                    aggregate.bloomFilterPositiveCount += Math.max(0L,
+                            segmentRuntime.getBloomFilterPositiveCount());
+                    aggregate.bloomFilterFalsePositiveCount += Math.max(0L,
+                            segmentRuntime.getBloomFilterFalsePositiveCount());
+                }
             }
-            final SegmentRuntimeSnapshot segmentRuntime = segment
-                    .getRuntimeSnapshot();
-            final SegmentId segmentId = segmentRuntime.getSegmentId();
-            if (!mappedSegmentIdSet.contains(segmentId)) {
-                continue;
-            }
-            accountedSegments++;
-            final SegmentState state = segmentRuntime.getState();
-            if (state == SegmentState.READY) {
-                aggregate.segmentReadyCount++;
-            } else if (state == SegmentState.MAINTENANCE_RUNNING
-                    || state == SegmentState.FREEZE) {
-                aggregate.segmentMaintenanceCount++;
-            } else if (state == SegmentState.ERROR) {
-                aggregate.segmentErrorCount++;
-            } else if (state == SegmentState.CLOSED) {
-                aggregate.segmentClosedCount++;
-            }
-            aggregate.totalSegmentKeys += Math.max(0L,
-                    segmentRuntime.getNumberOfKeys());
-            aggregate.totalSegmentCacheKeys += Math.max(0L,
-                    segmentRuntime.getNumberOfKeysInSegmentCache());
-            aggregate.totalWriteCacheKeys += Math.max(0L,
-                    segmentRuntime.getNumberOfKeysInWriteCache());
-            aggregate.totalDeltaCacheFiles += Math.max(0,
-                    segmentRuntime.getNumberOfDeltaCacheFiles());
-            aggregate.segmentRuntimeSnapshots
-                    .add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
-                            segmentRuntime));
-            aggregate.compactRequestCount += Math.max(0L,
-                    segmentRuntime.getNumberOfCompacts());
-            aggregate.flushRequestCount += Math.max(0L,
-                    segmentRuntime.getNumberOfFlushes());
-            aggregate.bloomFilterRequestCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterRequestCount());
-            aggregate.bloomFilterRefusedCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterRefusedCount());
-            aggregate.bloomFilterPositiveCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterPositiveCount());
-            aggregate.bloomFilterFalsePositiveCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterFalsePositiveCount());
         }
         aggregate.segmentBusyCount = Math.max(0,
                 aggregate.segmentCount - accountedSegments);
@@ -798,14 +804,12 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final int value = entry.getValue().intValue();
             if (value < 1) {
                 issues.add(new ValidationIssue(key, "value must be >= 1"));
-                continue;
-            }
-            if (key == RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
+            } else if (key == RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
                     && value < 3) {
                 issues.add(new ValidationIssue(key, "value must be >= 3"));
-                continue;
+            } else {
+                normalized.put(key, Integer.valueOf(value));
             }
-            normalized.put(key, Integer.valueOf(value));
         }
         final Map<RuntimeSettingKey, Integer> effective = runtimeTuningState
                 .previewEffective(normalized);

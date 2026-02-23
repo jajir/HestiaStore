@@ -60,7 +60,7 @@ class SegmentSplitter<K, V> {
      * @param plan split plan with precomputed boundaries
      * @return split execution result
      */
-    SegmentSplitterResult<K, V> split(final SegmentId lowerSegmentId,
+    SegmentSplitterResult<K> split(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId,
             final SegmentSplitterPlan<K, V> plan) {
         try (SplitExecution<K, V> execution = splitWithIterator(lowerSegmentId,
@@ -89,7 +89,7 @@ class SegmentSplitter<K, V> {
                         new SegmentSplitStepReplaceIfNoRemaining<>(),
                         new SegmentSplitStepWriteRemainingToCurrent<>()));
         final SegmentSplitState<K, V> state = pipeline.runKeepingIterator(ctx);
-        final SegmentSplitterResult<K, V> result = state.getResult();
+        final SegmentSplitterResult<K> result = state.getResult();
 
         if (logger.isDebugEnabled()) {
             logger.debug(
@@ -101,16 +101,16 @@ class SegmentSplitter<K, V> {
     }
 
     static final class SplitExecution<K, V> implements AutoCloseable {
-        private final SegmentSplitterResult<K, V> result;
+        private final SegmentSplitterResult<K> result;
         private final EntryIterator<K, V> iterator;
 
-        private SplitExecution(final SegmentSplitterResult<K, V> result,
+        private SplitExecution(final SegmentSplitterResult<K> result,
                 final EntryIterator<K, V> iterator) {
             this.result = Vldtn.requireNonNull(result, "result");
             this.iterator = iterator;
         }
 
-        SegmentSplitterResult<K, V> getResult() {
+        SegmentSplitterResult<K> getResult() {
             return result;
         }
 

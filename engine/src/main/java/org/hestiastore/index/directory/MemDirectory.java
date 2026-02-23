@@ -14,6 +14,8 @@ import org.hestiastore.index.Vldtn;
 public class MemDirectory implements Directory {
 
     private static final String ERROR_MSG_NO_FILE = "There is no file '%s'";
+    private static final String DIRECTORY_NAME_ARG = "directoryName";
+    private static final String ERROR_REQUIRED_DIRECTORY_IS_FILE = "There is required directory but '%s' is file.";
     private final Map<String, byte[]> data = new HashMap<>();
     private final Map<String, MemDirectory> directories = new HashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -103,7 +105,7 @@ public class MemDirectory implements Directory {
             if (directories.containsKey(currentFileName)) {
                 if (data.containsKey(newFileName)) {
                     throw new IndexException(String.format(
-                            "There is required directory but '%s' is file.",
+                            ERROR_REQUIRED_DIRECTORY_IS_FILE,
                             newFileName));
                 }
                 final MemDirectory directory = directories
@@ -178,12 +180,12 @@ public class MemDirectory implements Directory {
 
     @Override
     public Directory openSubDirectory(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
         writeLock.lock();
         try {
             if (data.containsKey(directoryName)) {
                 throw new IndexException(String.format(
-                        "There is required directory but '%s' is file.",
+                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
                         directoryName));
             }
             MemDirectory directory = directories.get(directoryName);
@@ -199,12 +201,12 @@ public class MemDirectory implements Directory {
 
     @Override
     public boolean mkdir(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
         writeLock.lock();
         try {
             if (data.containsKey(directoryName)) {
                 throw new IndexException(String.format(
-                        "There is required directory but '%s' is file.",
+                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
                         directoryName));
             }
             if (directories.containsKey(directoryName)) {
@@ -219,12 +221,12 @@ public class MemDirectory implements Directory {
 
     @Override
     public boolean rmdir(final String directoryName) {
-        Vldtn.requireNonNull(directoryName, "directoryName");
+        Vldtn.requireNonNull(directoryName, DIRECTORY_NAME_ARG);
         writeLock.lock();
         try {
             if (data.containsKey(directoryName)) {
                 throw new IndexException(String.format(
-                        "There is required directory but '%s' is file.",
+                        ERROR_REQUIRED_DIRECTORY_IS_FILE,
                         directoryName));
             }
             final MemDirectory directory = directories.get(directoryName);

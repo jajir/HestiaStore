@@ -22,6 +22,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  */
 final class SegmentCache<K, V> {
 
+    private static final String ENTRY_ARG = "entry";
     private final UniqueCache<K, V> deltaCache;
     private UniqueCache<K, V> writeCache;
     private UniqueCache<K, V> frozenWriteCache;
@@ -84,7 +85,7 @@ final class SegmentCache<K, V> {
      */
     public void putToWriteCache(final Entry<K, V> entry) {
         awaitCapacity();
-        writeCache.put(Vldtn.requireNonNull(entry, "entry"));
+        writeCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
     }
 
     /**
@@ -99,7 +100,7 @@ final class SegmentCache<K, V> {
             if (currentBufferedKeys() >= effectiveWriteCacheLimit()) {
                 return false;
             }
-            writeCache.put(Vldtn.requireNonNull(entry, "entry"));
+            writeCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
             return true;
         } finally {
             capacityLock.unlock();
@@ -112,7 +113,7 @@ final class SegmentCache<K, V> {
      * @param entry entry to store
      */
     void putToDeltaCache(final Entry<K, V> entry) {
-        deltaCache.put(Vldtn.requireNonNull(entry, "entry"));
+        deltaCache.put(Vldtn.requireNonNull(entry, ENTRY_ARG));
     }
 
     /**

@@ -64,7 +64,7 @@ class SegmentIndexImplConcurrencyTest {
                                         "Unexpected value for key " + key);
                             }
                         }
-                    } catch (final Throwable ex) {
+                    } catch (final Exception ex) {
                         failure.compareAndSet(null, ex);
                     } finally {
                         done.countDown();
