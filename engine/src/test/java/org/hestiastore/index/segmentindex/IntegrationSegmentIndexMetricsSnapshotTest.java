@@ -145,18 +145,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            for (int i = 0; i < 300; i++) {
-                index.put(i, "v-" + i);
-            }
-
-            awaitCondition(
-                    () -> {
-                        final SegmentIndexMetricsSnapshot snapshot = index
-                                .metricsSnapshot();
-                        return snapshot.getSegmentCount() > snapshot
-                                .getRegistryCacheLimit();
-                    },
-                    10_000L);
+            populateUntilSegmentCountExceedsCacheLimit(index, 20_000L);
             awaitIdle(index);
 
             final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
@@ -179,6 +168,33 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                     && snapshot.getMaintenanceQueueSize() == 0
                     && snapshot.getSplitQueueSize() == 0;
         }, 10_000L);
+    }
+
+    private static void populateUntilSegmentCountExceedsCacheLimit(
+            final SegmentIndex<Integer, String> index,
+            final long timeoutMillis) {
+        int key = 0;
+        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+        while (System.nanoTime() < deadline) {
+            for (int i = 0; i < 64; i++) {
+                index.put(key, "v-" + key);
+                key++;
+            }
+            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            if (snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit()) {
+                return;
+            }
+            try {
+                Thread.sleep(20L);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("Interrupted while waiting", e);
+            }
+        }
+        final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+        assertTrue(snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit(),
+                "Segment count did not exceed cache limit within "
+                        + timeoutMillis + " ms.");
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,
