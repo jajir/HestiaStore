@@ -14,6 +14,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
     steps:
     
     - name: Checkout repository
@@ -108,9 +110,8 @@ jobs:
         path: badge-owasp-${{ github.ref_name }}.svg
 
     - name: Upload badges to Gist
-      if: ${{ secrets.GIST_TOKEN != '' }}
+      if: ${{ env.GIST_TOKEN != '' }}
       env:
-        GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
         GIST_ID: a613341fb9d9d0c6a426b42a714700b7
         JACOCO_BADGE: ./badges/jacoco-badge-${{ github.ref_name }}.svg
         TEST_BADGE: badge-${{ github.ref_name }}.svg
