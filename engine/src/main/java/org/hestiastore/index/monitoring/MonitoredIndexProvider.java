@@ -12,5 +12,5 @@ public interface MonitoredIndexProvider {
      *
      * @return monitored index list
      */
-    List<? extends MonitoredIndex> monitoredIndexes();
+    List<MonitoredIndex> monitoredIndexes();
 }

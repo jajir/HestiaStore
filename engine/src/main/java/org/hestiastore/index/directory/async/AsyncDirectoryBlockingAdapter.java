@@ -20,6 +20,9 @@ import org.hestiastore.index.directory.FileWriter;
 public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResource
         implements Directory {
 
+    private static final String FILE_NAME = "fileName";
+    private static final String DIRECTORY_NAME = "directoryName";
+
     private final Directory delegate;
     private final ExecutorService executor;
 
@@ -32,7 +35,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     @Override
     public FileReader getFileReader(final String fileName) {
         final AsyncFileReader reader = call(() -> new AsyncFileReaderAdapter(
-                delegate.getFileReader(Vldtn.requireNonNull(fileName, "fileName")),
+                delegate.getFileReader(Vldtn.requireNonNull(fileName, FILE_NAME)),
                 executor));
         return new AsyncFileReaderBlockingAdapter(reader);
     }
@@ -41,7 +44,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     public FileReader getFileReader(final String fileName,
             final int bufferSize) {
         final AsyncFileReader reader = call(() -> new AsyncFileReaderAdapter(
-                delegate.getFileReader(Vldtn.requireNonNull(fileName, "fileName"),
+                delegate.getFileReader(Vldtn.requireNonNull(fileName, FILE_NAME),
                         bufferSize),
                 executor));
         return new AsyncFileReaderBlockingAdapter(reader);
@@ -52,7 +55,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
         final AsyncFileReaderSeekable reader = call(
                 () -> new AsyncFileReaderSeekableAdapter(
                         delegate.getFileReaderSeekable(
-                                Vldtn.requireNonNull(fileName, "fileName")),
+                                Vldtn.requireNonNull(fileName, FILE_NAME)),
                         executor));
         return new AsyncFileReaderSeekableBlockingAdapter(reader);
     }
@@ -60,7 +63,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     @Override
     public boolean isFileExists(final String fileName) {
         return call(() -> Boolean.valueOf(
-                delegate.isFileExists(Vldtn.requireNonNull(fileName, "fileName"))))
+                delegate.isFileExists(Vldtn.requireNonNull(fileName, FILE_NAME))))
                         .booleanValue();
     }
 
@@ -68,7 +71,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     public FileWriter getFileWriter(final String fileName,
             final Access access) {
         final AsyncFileWriter writer = call(() -> new AsyncFileWriterAdapter(
-                delegate.getFileWriter(Vldtn.requireNonNull(fileName, "fileName"),
+                delegate.getFileWriter(Vldtn.requireNonNull(fileName, FILE_NAME),
                         Vldtn.requireNonNull(access, "access")),
                 executor));
         return new AsyncFileWriterBlockingAdapter(writer);
@@ -78,7 +81,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     public FileWriter getFileWriter(final String fileName, final Access access,
             final int bufferSize) {
         final AsyncFileWriter writer = call(() -> new AsyncFileWriterAdapter(
-                delegate.getFileWriter(Vldtn.requireNonNull(fileName, "fileName"),
+                delegate.getFileWriter(Vldtn.requireNonNull(fileName, FILE_NAME),
                         Vldtn.requireNonNull(access, "access"), bufferSize),
                 executor));
         return new AsyncFileWriterBlockingAdapter(writer);
@@ -87,7 +90,7 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     @Override
     public boolean deleteFile(final String fileName) {
         return call(() -> Boolean.valueOf(
-                delegate.deleteFile(Vldtn.requireNonNull(fileName, "fileName"))))
+                delegate.deleteFile(Vldtn.requireNonNull(fileName, FILE_NAME))))
                         .booleanValue();
     }
 
@@ -107,28 +110,28 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
     @Override
     public Directory openSubDirectory(final String directoryName) {
         final Directory subDirectory = call(() -> delegate.openSubDirectory(
-                Vldtn.requireNonNull(directoryName, "directoryName")));
+                Vldtn.requireNonNull(directoryName, DIRECTORY_NAME)));
         return new AsyncDirectoryBlockingAdapter(subDirectory, executor);
     }
 
     @Override
     public boolean mkdir(final String directoryName) {
         return call(() -> Boolean.valueOf(
-                delegate.mkdir(Vldtn.requireNonNull(directoryName, "directoryName"))))
+                delegate.mkdir(Vldtn.requireNonNull(directoryName, DIRECTORY_NAME))))
                         .booleanValue();
     }
 
     @Override
     public boolean rmdir(final String directoryName) {
         return call(() -> Boolean.valueOf(
-                delegate.rmdir(Vldtn.requireNonNull(directoryName, "directoryName"))))
+                delegate.rmdir(Vldtn.requireNonNull(directoryName, DIRECTORY_NAME))))
                         .booleanValue();
     }
 
     @Override
     public FileLock getLock(final String fileName) {
-        return call(() -> delegate.getLock(Vldtn.requireNonNull(fileName,
-                "fileName")));
+        return call(() -> delegate
+                .getLock(Vldtn.requireNonNull(fileName, FILE_NAME)));
     }
 
     @Override

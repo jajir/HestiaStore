@@ -71,6 +71,13 @@ public final class ManagementAgentServer
     private static final String METHOD_GET = "GET";
     private static final String METHOD_POST = "POST";
     private static final String METHOD_PATCH = "PATCH";
+    private static final String PARAM_INDEX_NAME = "indexName";
+    private static final String ERROR_INVALID_REQUEST = "INVALID_REQUEST";
+    private static final String ERROR_INDEX_NOT_FOUND = "INDEX_NOT_FOUND";
+    private static final String ERROR_INVALID_STATE = "INVALID_STATE";
+    private static final String UNKNOWN_INDEX_PREFIX = "Unknown index: ";
+    private static final String AUDIT_REJECTED = "REJECTED";
+    private static final String AUDIT_FAILED = "FAILED";
     private static final int MAX_AUDIT_RECORDS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
     private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = Map
@@ -208,7 +215,7 @@ public final class ManagementAgentServer
      */
     public void addIndex(final String indexName,
             final SegmentIndex<?, ?> index) {
-        indexes.put(normalize(indexName, "indexName"),
+        indexes.put(normalize(indexName, PARAM_INDEX_NAME),
                 Objects.requireNonNull(index, "index"));
     }
 
@@ -219,7 +226,7 @@ public final class ManagementAgentServer
      * @return true when entry was removed
      */
     public boolean removeIndex(final String indexName) {
-        return indexes.remove(normalize(indexName, "indexName")) != null;
+        return indexes.remove(normalize(indexName, PARAM_INDEX_NAME)) != null;
     }
 
     /**
@@ -243,8 +250,9 @@ public final class ManagementAgentServer
 
     /** {@inheritDoc} */
     @Override
-    public List<? extends MonitoredIndex> monitoredIndexes() {
-        return List.copyOf(activeIndexesSnapshot());
+    public List<MonitoredIndex> monitoredIndexes() {
+        return activeIndexesSnapshot().stream().map(MonitoredIndex.class::cast)
+                .toList();
     }
 
     /** {@inheritDoc} */
@@ -333,17 +341,17 @@ public final class ManagementAgentServer
         if (!authorize(exchange, AgentRole.READ, false, endpoint, "")) {
             return;
         }
-        final Optional<String> oIndexName = queryParam(exchange, "indexName");
+        final Optional<String> oIndexName = queryParam(exchange, PARAM_INDEX_NAME);
         if (oIndexName.isEmpty()) {
-            writeError(exchange, 400, "INVALID_REQUEST",
+            writeError(exchange, 400, ERROR_INVALID_REQUEST,
                     "Query parameter 'indexName' is required.", "");
             return;
         }
         final RegisteredIndex target = findRegisteredIndex(oIndexName.get())
                 .orElse(null);
         if (target == null) {
-            writeError(exchange, 404, "INDEX_NOT_FOUND",
-                    "Unknown index: " + oIndexName.get(), "");
+            writeError(exchange, 404, ERROR_INDEX_NOT_FOUND,
+                    UNKNOWN_INDEX_PREFIX + oIndexName.get(), "");
             return;
         }
         final ConfigViewResponse response = toConfigViewResponse(target);
@@ -367,35 +375,35 @@ public final class ManagementAgentServer
         try {
             request = objectMapper.readValue(body, ConfigPatchRequest.class);
         } catch (final RuntimeException e) {
-            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
                     "Invalid JSON payload.", "", Instant.now());
             writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "FAILED");
+            audit(exchange, endpoint, body, 400, AUDIT_FAILED);
             return;
         }
-        final Optional<String> oIndexName = queryParam(exchange, "indexName");
+        final Optional<String> oIndexName = queryParam(exchange, PARAM_INDEX_NAME);
         if (oIndexName.isEmpty()) {
-            writeError(exchange, 400, "INVALID_REQUEST",
+            writeError(exchange, 400, ERROR_INVALID_REQUEST,
                     "Query parameter 'indexName' is required.", "");
-            audit(exchange, endpoint, body, 400, "REJECTED");
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
             return;
         }
         final String indexName = oIndexName.get();
         final RegisteredIndex target = findRegisteredIndex(indexName)
                 .orElse(null);
         if (target == null) {
-            final ErrorResponse error = new ErrorResponse("INDEX_NOT_FOUND",
-                    "Unknown index: " + indexName, "", Instant.now());
+            final ErrorResponse error = new ErrorResponse(ERROR_INDEX_NOT_FOUND,
+                    UNKNOWN_INDEX_PREFIX + indexName, "", Instant.now());
             writeJson(exchange, 404, error);
-            audit(exchange, endpoint, body, 404, "REJECTED");
+            audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
             return;
         }
         if (!target.ready()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "Index is not in READY state: " + indexName, "",
                     Instant.now());
             writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, "REJECTED");
+            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
             return;
         }
         final RuntimeConfigPatch runtimePatch;
@@ -406,30 +414,30 @@ public final class ManagementAgentServer
                     "CONFIG_KEY_NOT_SUPPORTED", e.getMessage(), "",
                     Instant.now());
             writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "REJECTED");
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
             return;
         } catch (final IllegalArgumentException e) {
-            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
                     e.getMessage(), "", Instant.now());
             writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "REJECTED");
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
             return;
         }
         final RuntimePatchResult result = target.index().controlPlane()
                 .configuration().apply(runtimePatch);
         if (!result.validation().valid()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
                     formatValidationIssues(result.validation()), "",
                     Instant.now());
             writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "REJECTED");
+            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
             return;
         }
         if (!request.dryRun() && !result.applied()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "Runtime patch was not applied.", "", Instant.now());
             writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, "REJECTED");
+            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
             return;
         }
         writeNoContent(exchange);
@@ -487,38 +495,38 @@ public final class ManagementAgentServer
         try {
             request = objectMapper.readValue(body, ActionRequest.class);
         } catch (final RuntimeException e) {
-            final ErrorResponse error = new ErrorResponse("INVALID_REQUEST",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
                     "Invalid JSON payload.", "", Instant.now());
             writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, "FAILED");
+            audit(exchange, endpoint, body, 400, AUDIT_FAILED);
             return;
         }
         final List<RegisteredIndex> targets;
         try {
             targets = resolveActionTargets(request);
         } catch (final IllegalStateException e) {
-            final ErrorResponse error = new ErrorResponse("INDEX_NOT_FOUND",
+            final ErrorResponse error = new ErrorResponse(ERROR_INDEX_NOT_FOUND,
                     e.getMessage(), request.requestId(), Instant.now());
             writeJson(exchange, 404, error);
-            audit(exchange, endpoint, body, 404, "REJECTED");
+            audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
             return;
         }
         if (targets.isEmpty()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "No monitored indexes available.", request.requestId(),
                     Instant.now());
             writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, "REJECTED");
+            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
             return;
         }
         final List<String> notReady = notReadyIndexes(targets);
         if (!notReady.isEmpty()) {
-            final ErrorResponse error = new ErrorResponse("INVALID_STATE",
+            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "Indexes are not in READY state: "
                             + String.join(",", notReady),
                     request.requestId(), Instant.now());
             writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, "REJECTED");
+            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
             return;
         }
         try {
@@ -536,7 +544,7 @@ public final class ManagementAgentServer
                     request.requestId(), action, ActionStatus.FAILED,
                     e.getMessage(), Instant.now());
             writeJson(exchange, 500, response);
-            audit(exchange, endpoint, body, 500, "FAILED");
+            audit(exchange, endpoint, body, 500, AUDIT_FAILED);
         }
     }
 
@@ -550,7 +558,7 @@ public final class ManagementAgentServer
                 .filter(i -> i.indexName().equals(request.indexName()))
                 .findFirst().map(List::of)
                 .orElseThrow(() -> new IllegalStateException(
-                        "Unknown index: " + request.indexName()));
+                        UNKNOWN_INDEX_PREFIX + request.indexName()));
     }
 
     private List<RegisteredIndex> activeIndexesSnapshot() {
@@ -593,7 +601,7 @@ public final class ManagementAgentServer
 
     private List<String> notReadyIndexes(final List<RegisteredIndex> targets) {
         return targets.stream().filter(target -> !target.ready())
-                .map(RegisteredIndex::indexName).collect(Collectors.toList());
+                .map(RegisteredIndex::indexName).toList();
     }
 
     private JvmMetricsResponse readJvmMetrics() {
@@ -744,7 +752,7 @@ public final class ManagementAgentServer
 
     private Optional<RegisteredIndex> findRegisteredIndex(
             final String indexName) {
-        final String normalizedName = normalize(indexName, "indexName");
+        final String normalizedName = normalize(indexName, PARAM_INDEX_NAME);
         return activeIndexesSnapshot().stream().filter(
                 registered -> registered.indexName().equals(normalizedName))
                 .findFirst();
@@ -757,27 +765,25 @@ public final class ManagementAgentServer
             return Optional.empty();
         }
         for (final String queryPart : rawQuery.split("&")) {
-            if (queryPart == null || queryPart.isEmpty()) {
-                continue;
+            if (queryPart != null && !queryPart.isEmpty()) {
+                final int equalsIndex = queryPart.indexOf('=');
+                final String rawKey = equalsIndex >= 0
+                        ? queryPart.substring(0, equalsIndex)
+                        : queryPart;
+                final String decodedKey = URLDecoder.decode(rawKey,
+                        StandardCharsets.UTF_8);
+                if (key.equals(decodedKey)) {
+                    final String rawValue = equalsIndex >= 0
+                            ? queryPart.substring(equalsIndex + 1)
+                            : "";
+                    final String decodedValue = URLDecoder
+                            .decode(rawValue, StandardCharsets.UTF_8).trim();
+                    if (decodedValue.isEmpty()) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(decodedValue);
+                }
             }
-            final int equalsIndex = queryPart.indexOf('=');
-            final String rawKey = equalsIndex >= 0
-                    ? queryPart.substring(0, equalsIndex)
-                    : queryPart;
-            final String decodedKey = URLDecoder.decode(rawKey,
-                    StandardCharsets.UTF_8);
-            if (!key.equals(decodedKey)) {
-                continue;
-            }
-            final String rawValue = equalsIndex >= 0
-                    ? queryPart.substring(equalsIndex + 1)
-                    : "";
-            final String decodedValue = URLDecoder
-                    .decode(rawValue, StandardCharsets.UTF_8).trim();
-            if (decodedValue.isEmpty()) {
-                return Optional.empty();
-            }
-            return Optional.of(decodedValue);
         }
         return Optional.empty();
     }

@@ -10,9 +10,8 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
  * @author honza
  *
  * @param <K>
- * @param <V>
  */
-public interface SegmentResources<K, V> {
+public interface SegmentResources<K> {
 
     /**
      * Returns the Bloom filter for this segment.

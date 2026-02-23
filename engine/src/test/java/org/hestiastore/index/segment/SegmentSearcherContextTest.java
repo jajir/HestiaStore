@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentSearcherContextTest {
 
     @Mock
-    private SegmentResources<String, Long> dataProvider;
+    private SegmentResources<String> dataProvider;
     @Mock
     private BloomFilter<String> bloomFilter;
     @Mock

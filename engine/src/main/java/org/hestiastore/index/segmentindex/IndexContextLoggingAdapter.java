@@ -33,7 +33,8 @@ import org.slf4j.MDC;
 class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         implements SegmentIndex<K, V> {
 
-    private final static String INDEX_NAME_MDC_KEY = "index.name";
+    private static final String INDEX_NAME_MDC_KEY = "index.name";
+    private static final String DELEGATE = "delegate";
     private final IndexConfiguration<K, V> indexConf;
     private final SegmentIndex<K, V> index;
 
@@ -305,7 +306,7 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
         private ContextLoggingIndexControlPlane(
                 final IndexControlPlane delegate) {
-            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+            this.delegate = Vldtn.requireNonNull(delegate, DELEGATE);
         }
 
         @Override
@@ -346,7 +347,7 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         private final IndexRuntimeView delegate;
 
         private ContextLoggingIndexRuntimeView(final IndexRuntimeView delegate) {
-            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+            this.delegate = Vldtn.requireNonNull(delegate, DELEGATE);
         }
 
         @Override
@@ -367,7 +368,7 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
         private ContextLoggingIndexConfigurationManagement(
                 final IndexConfigurationManagement delegate) {
-            this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+            this.delegate = Vldtn.requireNonNull(delegate, DELEGATE);
         }
 
         @Override

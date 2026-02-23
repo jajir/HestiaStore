@@ -89,10 +89,7 @@ final class SegmentConcurrencyGate {
      * @return true when transition succeeded
      */
     boolean enterMaintenanceRunning() {
-        if (!stateMachine.enterMaintenanceRunning()) {
-            return false;
-        }
-        return true;
+        return stateMachine.enterMaintenanceRunning();
     }
 
     /**
@@ -113,10 +110,7 @@ final class SegmentConcurrencyGate {
      * @return true when transition succeeded
      */
     boolean finishFreezeToReady() {
-        if (!stateMachine.finishFreezeToReady()) {
-            return false;
-        }
-        return true;
+        return stateMachine.finishFreezeToReady();
     }
 
     /**
@@ -125,10 +119,7 @@ final class SegmentConcurrencyGate {
      * @return true when transition succeeded
      */
     boolean finishCloseToClosed() {
-        if (!stateMachine.finishFreezeToClosed()) {
-            return false;
-        }
-        return true;
+        return stateMachine.finishFreezeToClosed();
     }
 
     /**

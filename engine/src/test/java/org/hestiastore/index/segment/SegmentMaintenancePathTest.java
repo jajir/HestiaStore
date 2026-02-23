@@ -23,7 +23,7 @@ class SegmentMaintenancePathTest {
     @Mock
     private SegmentPropertiesManager segmentPropertiesManager;
     @Mock
-    private SegmentResources<Integer, String> segmentResources;
+    private SegmentResources<Integer> segmentResources;
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock

@@ -13,7 +13,7 @@ class SegmentSearcherPipelineTest {
     @Test
     void run_executesFiltersInOrder() {
         @SuppressWarnings("unchecked")
-        final SegmentResources<Integer, String> resources = (SegmentResources<Integer, String>) mock(
+        final SegmentResources<Integer> resources = (SegmentResources<Integer>) mock(
                 SegmentResources.class);
         @SuppressWarnings("unchecked")
         final SegmentIndexSearcher<Integer, String> searcher = (SegmentIndexSearcher<Integer, String>) mock(

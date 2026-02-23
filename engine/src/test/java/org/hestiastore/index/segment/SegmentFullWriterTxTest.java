@@ -37,7 +37,7 @@ class SegmentFullWriterTxTest {
     @Mock
     private EntryWriter<Integer, Integer> scarceWriter;
     @Mock
-    private SegmentResources<Integer, String> resources;
+    private SegmentResources<Integer> resources;
     @Mock
     private BloomFilter<Integer> bloomFilter;
     @Mock

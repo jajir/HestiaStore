@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 
+<head>
+    <title>Node Live Fragment</title>
+</head>
+
 <body>
     <div th:fragment="nodeLive">
         <div id="node-live" th:if="${node != null}"
@@ -248,7 +252,7 @@
                 </p>
             </article>
         </div>
-        <div id="node-live" th:if="${node == null}" class="card warn" th:text="${'Node not found: ' + missingNodeId}">
+        <div id="node-live-missing" th:if="${node == null}" class="card warn" th:text="${'Node not found: ' + missingNodeId}">
             Node not found.
         </div>
     </div>

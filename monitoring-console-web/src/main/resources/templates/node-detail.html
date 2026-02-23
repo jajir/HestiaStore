@@ -81,7 +81,6 @@
         }
 
         .btn {
-            border: 0;
             border-radius: 10px;
             font: inherit;
             padding: 8px 12px;
@@ -601,7 +600,7 @@
 
             for (const button of resetButtons) {
                 button.addEventListener("click", function () {
-                    const key = this.getAttribute("data-reset-row");
+                    const key = this.dataset.resetRow;
                     if (!key) {
                         return;
                     }

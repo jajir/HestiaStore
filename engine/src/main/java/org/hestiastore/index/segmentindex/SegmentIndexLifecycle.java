@@ -53,9 +53,7 @@ public class SegmentIndexLifecycle<K, V> {
                 = new Managed<>(null, () -> {
                     IndexConfigurationManager<K, V> confManager = new IndexConfigurationManager<>(
                             new IndexConfiguratonStorage<>(dir));
-                    final IndexConfiguration<K, V> mergedConf = confManager
-                            .mergeWithStored(userProvidedConf);
-                    return mergedConf;
+                    return confManager.mergeWithStored(userProvidedConf);
                 }, toClose -> {
                     managedConf.resource = null;
                 });
@@ -83,14 +81,11 @@ public class SegmentIndexLifecycle<K, V> {
                 = new Managed<>(null, () -> {
                     final ExecutorService ioExecutor = managedExecutorRegistry.resource
                             .getIoExecutor();
-                    final Directory wrapped = new AsyncDirectoryBlockingAdapter(
-                            dir, ioExecutor);
-                    return wrapped;
+                    return new AsyncDirectoryBlockingAdapter(dir, ioExecutor);
                 }, toClose -> {
-                    if (toClose instanceof CloseableResource closeable) {
-                        if (!closeable.wasClosed()) {
-                            closeable.close();
-                        }
+                    if (toClose instanceof CloseableResource closeable
+                            && !closeable.wasClosed()) {
+                        closeable.close();
                     }
                     managedDirectory.resource = null;
                 });

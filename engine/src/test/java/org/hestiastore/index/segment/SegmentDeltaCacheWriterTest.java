@@ -29,7 +29,7 @@ class SegmentDeltaCacheWriterTest {
     @Mock
     private SegmentPropertiesManager propertiesManager;
     @Mock
-    private SegmentResources<Integer, String> dataProvider;
+    private SegmentResources<Integer> dataProvider;
     @Mock
     private ChunkEntryFile<Integer, String> deltaFile;
     @Mock

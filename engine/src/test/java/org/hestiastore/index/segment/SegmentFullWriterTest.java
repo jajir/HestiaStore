@@ -22,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentFullWriterTest {
 
     @Mock
-    private SegmentResources<Integer, String> resources;
+    private SegmentResources<Integer> resources;
     @Mock
     private BloomFilter<Integer> bloomFilter;
     @Mock

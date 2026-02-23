@@ -46,7 +46,7 @@ class SegmentFullWriter<K, V> extends AbstractCloseableResource
      * @param scarceWriter writer for the scarce index
      */
     SegmentFullWriter(final int maxNumberOfKeysInIndexPage,
-            final SegmentResources<K, V> segmentCacheDataProvider,
+            final SegmentResources<K> segmentCacheDataProvider,
             final ChunkEntryFileWriter<K, V> chunkPairFileWriter,
             final EntryWriter<K, Integer> scarceWriter) {
         this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(

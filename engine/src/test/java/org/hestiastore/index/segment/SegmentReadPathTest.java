@@ -40,7 +40,7 @@ class SegmentReadPathTest {
     @Mock
     private SegmentFiles<Integer, String> segmentFiles;
     @Mock
-    private SegmentResources<Integer, String> segmentResources;
+    private SegmentResources<Integer> segmentResources;
     @Mock
     private SegmentSearcher<Integer, String> segmentSearcher;
     @Mock
