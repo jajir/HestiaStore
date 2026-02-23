@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,11 +14,13 @@ import org.junit.jupiter.api.Test;
 
 class SplitAsyncExecutorTest {
 
+    private IndexExecutorRegistry registry;
     private SplitAsyncExecutor executor;
 
     @BeforeEach
     void setUp() {
-        executor = new SplitAsyncExecutor(1, "split-async-test");
+        registry = new IndexExecutorRegistry(1, 1, 1, 1);
+        executor = new SplitAsyncExecutor(registry);
     }
 
     @AfterEach
@@ -25,24 +28,20 @@ class SplitAsyncExecutorTest {
         if (executor != null && !executor.wasClosed()) {
             executor.close();
         }
+        if (registry != null && !registry.wasClosed()) {
+            registry.close();
+        }
         executor = null;
+        registry = null;
     }
 
     @Test
-    void constructorRejectsNonPositiveThreads() {
+    void constructorRejectsNullRegistry() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SplitAsyncExecutor(0, "split-async-test"));
-        assertEquals("Property 'threads' must be greater than 0",
+                () -> new SplitAsyncExecutor(null));
+        assertEquals("Property 'executorRegistry' must not be null.",
                 ex.getMessage());
-    }
-
-    @Test
-    void constructorRejectsEmptyPrefix() {
-        final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> new SplitAsyncExecutor(1, ""));
-        assertEquals("Property 'prefix' must not be empty.", ex.getMessage());
     }
 
     @Test
@@ -52,28 +51,29 @@ class SplitAsyncExecutorTest {
 
     @Test
     void queueCapacityScalesWithThreads() {
-        try (SplitAsyncExecutor other = new SplitAsyncExecutor(2,
-                "split-async-other")) {
+        try (IndexExecutorRegistry otherRegistry = new IndexExecutorRegistry(1,
+                1, 2, 1);
+                SplitAsyncExecutor other = new SplitAsyncExecutor(
+                        otherRegistry)) {
             assertEquals(128, other.getQueueCapacity());
         }
     }
 
     @Test
-    void usesThreadNamePrefix() throws Exception {
+    void usesRegistryThreadPrefix() throws Exception {
         final Future<String> future = executor.getExecutor()
                 .submit(() -> Thread.currentThread().getName());
         final String name = future.get(1, TimeUnit.SECONDS);
-        assertTrue(name.startsWith("split-async-test-"));
+        assertTrue(name.startsWith("segment-"));
     }
 
     @Test
-    void closeShutsDownExecutor() {
+    void closeDoesNotShutdownRegistryExecutor() {
         final SplitAsyncExecutor closeExecutor = executor;
         executor = null;
 
         closeExecutor.close();
 
-        assertTrue(closeExecutor.getExecutor().isShutdown());
-        assertTrue(closeExecutor.getExecutor().isTerminated());
+        assertFalse(closeExecutor.getExecutor().isShutdown());
     }
 }

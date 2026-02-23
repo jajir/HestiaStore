@@ -1,7 +1,9 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -18,6 +20,9 @@ import org.hestiastore.index.Vldtn;
  */
 final class IndexExecutorRegistry extends AbstractCloseableResource {
 
+    private static final int MIN_QUEUE_CAPACITY = 64;
+    private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
+
     private static final AtomicInteger IO_THREAD_COUNTER = new AtomicInteger(1);
     private static final AtomicInteger SEGMENT_THREAD_COUNTER = new AtomicInteger(
             1);
@@ -27,8 +32,10 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
             1);
 
     private final ExecutorService ioExecutor;
-    private final ExecutorService segmentExecutor;
-    private final ExecutorService segmentMaintenanceExecutor;
+    private final ThreadPoolExecutor segmentExecutor;
+    private final int segmentExecutorQueueCapacity;
+    private final ThreadPoolExecutor segmentMaintenanceExecutor;
+    private final int segmentMaintenanceExecutorQueueCapacity;
     private final ExecutorService registryMaintenanceExecutor;
 
     /**
@@ -54,7 +61,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         this(Vldtn.requireNonNull(indexConfiguration, "indexConfiguration")
                 .getNumberOfIoThreads(),
                 indexConfiguration.getNumberOfSegmentIndexMaintenanceThreads(),
-                indexConfiguration.getIndexWorkerThreadCount(),
+                indexConfiguration.getNumberOfIndexMaintenanceThreads(),
                 indexConfiguration.getNumberOfRegistryLifecycleThreads());
     }
 
@@ -77,10 +84,34 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 "registryMaintenanceThreads");
         this.ioExecutor = newExecutor(numberOfIoThreads, "index-io-",
                 IO_THREAD_COUNTER);
-        this.segmentExecutor = newExecutor(segmentThreads, "segment-",
-                SEGMENT_THREAD_COUNTER);
-        this.segmentMaintenanceExecutor = newExecutor(segmentMaintenanceThreads,
-                "segment-maintenance-", SEGMENT_MAINTENANCE_THREAD_COUNTER);
+        this.segmentExecutorQueueCapacity = Math.max(MIN_QUEUE_CAPACITY,
+                segmentThreads * QUEUE_CAPACITY_MULTIPLIER);
+        this.segmentExecutor = new ThreadPoolExecutor(segmentThreads,
+                segmentThreads, 0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(segmentExecutorQueueCapacity),
+                runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "segment-"
+                                    + SEGMENT_THREAD_COUNTER
+                                            .getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }, new ThreadPoolExecutor.AbortPolicy());
+        this.segmentMaintenanceExecutorQueueCapacity = Math.max(
+                MIN_QUEUE_CAPACITY,
+                segmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
+        this.segmentMaintenanceExecutor = new ThreadPoolExecutor(
+                segmentMaintenanceThreads, segmentMaintenanceThreads, 0L,
+                TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(segmentMaintenanceExecutorQueueCapacity),
+                runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "segment-maintenance-"
+                                    + SEGMENT_MAINTENANCE_THREAD_COUNTER
+                                            .getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }, new ThreadPoolExecutor.CallerRunsPolicy());
         this.registryMaintenanceExecutor = newExecutor(
                 registryMaintenanceThreads, "registry-maintenance-",
                 REGISTRY_MAINTENANCE_THREAD_COUNTER);
@@ -108,6 +139,21 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         return segmentMaintenanceExecutor;
     }
 
+    int getSegmentMaintenanceExecutorQueueSize() {
+        checkNotClosed();
+        return segmentMaintenanceExecutor.getQueue().size();
+    }
+
+    int getSegmentMaintenanceExecutorActiveCount() {
+        checkNotClosed();
+        return segmentMaintenanceExecutor.getActiveCount();
+    }
+
+    int getSegmentMaintenanceExecutorQueueCapacity() {
+        checkNotClosed();
+        return segmentMaintenanceExecutorQueueCapacity;
+    }
+
     /**
      * Returns shared segment executor.
      *
@@ -117,6 +163,21 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     ExecutorService getSegmentExecutor() {
         checkNotClosed();
         return segmentExecutor;
+    }
+
+    int getSegmentExecutorQueueSize() {
+        checkNotClosed();
+        return segmentExecutor.getQueue().size();
+    }
+
+    int getSegmentExecutorActiveCount() {
+        checkNotClosed();
+        return segmentExecutor.getActiveCount();
+    }
+
+    int getSegmentExecutorQueueCapacity() {
+        checkNotClosed();
+        return segmentExecutorQueueCapacity;
     }
 
     /**

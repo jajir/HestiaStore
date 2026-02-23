@@ -64,8 +64,14 @@ class SegmentIndexStartupRecoveryTest {
         private int startupConsistencyChecks;
 
         private TrackingIndex(final Directory directoryFacade) {
+            this(directoryFacade, buildConf());
+        }
+
+        private TrackingIndex(final Directory directoryFacade,
+                final IndexConfiguration<Integer, String> conf) {
             super(directoryFacade, new TypeDescriptorInteger(),
-                    new TypeDescriptorShortString(), buildConf());
+                    new TypeDescriptorShortString(), conf,
+                    new IndexExecutorRegistry(conf));
         }
 
         @Override

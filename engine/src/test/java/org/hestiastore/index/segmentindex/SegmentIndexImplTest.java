@@ -19,11 +19,12 @@ class SegmentIndexImplTest {
 
     @BeforeEach
     void setUp() {
+        final IndexConfiguration<Integer, String> conf = buildConf();
         index = new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
-                buildConf());
+                conf, new IndexExecutorRegistry(conf));
     }
 
     @AfterEach

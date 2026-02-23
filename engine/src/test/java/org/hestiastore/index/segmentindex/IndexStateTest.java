@@ -24,9 +24,10 @@ class IndexStateTest {
 
     @BeforeEach
     void setUp() {
+        final IndexConfiguration<Integer, String> conf = buildConf();
         index = new IndexInternalConcurrent<>(
                 new MemDirectory(),
-                tdi, tds, buildConf());
+                tdi, tds, conf, new IndexExecutorRegistry(conf));
     }
 
     @AfterEach

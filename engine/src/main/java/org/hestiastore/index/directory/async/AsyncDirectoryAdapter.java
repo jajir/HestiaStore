@@ -3,10 +3,7 @@ package org.hestiastore.index.directory.async;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -23,23 +20,9 @@ import org.hestiastore.index.directory.FileReaderSeekable;
 public final class AsyncDirectoryAdapter extends AbstractCloseableResource
         implements AsyncDirectory {
 
-    private static final String IO_THREAD_NAME_PREFIX = "io";
-
     private final Directory delegate;
     private final ExecutorService executor;
     private final boolean shutdownExecutorOnClose;
-
-    public static AsyncDirectory wrap(final Directory delegate,
-            final int numberOfIoThreads) {
-        final ExecutorService executor = Executors
-                .newFixedThreadPool(numberOfIoThreads,
-                        namedThreadFactory(IO_THREAD_NAME_PREFIX));
-        return new AsyncDirectoryAdapter(delegate, executor, true);
-    }
-
-    public static AsyncDirectory wrap(final Directory delegate) {
-        return wrap(delegate, 1);
-    }
 
     public AsyncDirectoryAdapter(final Directory delegate,
             final ExecutorService executor,
@@ -134,15 +117,6 @@ public final class AsyncDirectoryAdapter extends AbstractCloseableResource
     @Override
     public CompletionStage<FileLock> getLockAsync(final String fileName) {
         return supply(() -> delegate.getLock(fileName));
-    }
-
-    private static ThreadFactory namedThreadFactory(final String prefix) {
-        final AtomicInteger counter = new AtomicInteger(1);
-        return runnable -> {
-            final Thread thread = new Thread(runnable);
-            thread.setName(prefix + "-" + counter.getAndIncrement());
-            return thread;
-        };
     }
 
     @Override

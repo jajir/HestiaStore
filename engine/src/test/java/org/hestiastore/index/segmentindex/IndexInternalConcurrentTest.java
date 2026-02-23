@@ -26,10 +26,11 @@ class IndexInternalConcurrentTest {
 
     @BeforeEach
     void setUp() {
+        final IndexConfiguration<Integer, String> conf = buildConf();
         index = new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                buildConf());
+                conf, new IndexExecutorRegistry(conf));
     }
 
     @AfterEach
@@ -117,7 +118,7 @@ class IndexInternalConcurrentTest {
                 final IndexConfiguration<Integer, String> conf) {
             super(new MemDirectory(),
                     new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                    conf);
+                    conf, new IndexExecutorRegistry(conf));
             this.iterator = iterator;
         }
 

@@ -32,6 +32,9 @@
 - Try to avoid creating class instances in constructors.
 - Try to centralize class instantiation in builder classes.
 - Don't use java records.
+- In each class keep only one constructor.
+- Try to minimize creating new instaces in constrictors. It make junit test more complicated.
+- Validation perform primary with `Vldtn` class.
 
 ## Testing Guidelines
 

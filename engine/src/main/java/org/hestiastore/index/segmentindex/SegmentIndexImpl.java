@@ -10,9 +10,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -68,6 +66,7 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final SegmentAsyncExecutor segmentAsyncExecutor;
     private final SplitAsyncExecutor splitAsyncExecutor;
+    private final IndexExecutorRegistry executorRegistry;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
     private final RuntimeTuningState runtimeTuningState;
@@ -83,7 +82,8 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected SegmentIndexImpl(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf) {
+            final IndexConfiguration<K, V> conf,
+            final IndexExecutorRegistry executorRegistry) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
                 directoryFacade);
@@ -95,24 +95,20 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
+            this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                    "executorRegistry");
             this.runtimeTuningState = RuntimeTuningState
                     .fromConfiguration(conf);
             final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            final Integer maintenanceThreadsConf = conf
-                    .getNumberOfSegmentIndexMaintenanceThreads();
-            final int maintenanceThreads = maintenanceThreadsConf.intValue();
             this.segmentAsyncExecutor = new SegmentAsyncExecutor(
-                    maintenanceThreads, "segment-maintenance");
+                    this.executorRegistry.getSegmentMaintenanceExecutor());
             ExecutorService segmentMaintenanceExecutor = segmentAsyncExecutor
                     .getExecutor();
-            final Integer splitThreadsConf = conf
-                    .getNumberOfIndexMaintenanceThreads();
-            final int splitThreads = splitThreadsConf.intValue();
-            this.splitAsyncExecutor = new SplitAsyncExecutor(splitThreads,
-                    "index-maintenance");
+            this.splitAsyncExecutor = new SplitAsyncExecutor(
+                    this.executorRegistry);
             ExecutorService splitMaintenanceExecutor = splitAsyncExecutor
                     .getExecutor();
             if (Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
@@ -124,39 +120,20 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.segmentFactory = new SegmentFactory<>(directoryFacade,
                     keyTypeDescriptor, valueTypeDescriptor, conf,
                     segmentMaintenanceExecutor);
-            final int registryLifecycleThreads = conf
-                    .getNumberOfRegistryLifecycleThreads().intValue();
-            final AtomicInteger registryLifecycleThreadCx = new AtomicInteger(
-                    1);
-            ExecutorService registryLifecycleExecutor = Executors
-                    .newFixedThreadPool(registryLifecycleThreads, runnable -> {
-                        final Thread thread = new Thread(runnable,
-                                "registry-lifecycle-"
-                                        + registryLifecycleThreadCx
-                                                .getAndIncrement());
-                        thread.setDaemon(true);
-                        return thread;
-                    });
+            ExecutorService registryLifecycleExecutor = this.executorRegistry
+                    .getRegistryMaintenanceExecutor();
             if (Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
                 registryLifecycleExecutor = new IndexNameMdcExecutorService(
                         conf.getIndexName(), registryLifecycleExecutor);
             }
-            final SegmentRegistry<K, V> registry;
-            try {
-                registry = SegmentRegistry.<K, V>builder()
-                        .withDirectoryFacade(directoryFacade)
-                        .withKeyTypeDescriptor(keyTypeDescriptor)
-                        .withValueTypeDescriptor(valueTypeDescriptor)
-                        .withConfiguration(conf)
-                        .withCompactionRequestListener(
-                                stats::incCompactRequestCx)
-                        .withMaintenanceExecutor(segmentMaintenanceExecutor)
-                        .withLifecycleExecutor(registryLifecycleExecutor)
-                        .build();
-            } catch (final RuntimeException e) {
-                registryLifecycleExecutor.shutdownNow();
-                throw e;
-            }
+            final SegmentRegistry<K, V> registry = SegmentRegistry
+                    .<K, V>builder().withDirectoryFacade(directoryFacade)
+                    .withKeyTypeDescriptor(keyTypeDescriptor)
+                    .withValueTypeDescriptor(valueTypeDescriptor)
+                    .withConfiguration(conf)
+                    .withCompactionRequestListener(stats::incCompactRequestCx)
+                    .withMaintenanceExecutor(segmentMaintenanceExecutor)
+                    .withLifecycleExecutor(registryLifecycleExecutor).build();
             this.segmentRegistry = registry;
             final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
                     .newSegmentBuilder(id).openWriterTx();
@@ -368,6 +345,9 @@ abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         if (!splitAsyncExecutor.wasClosed()) {
             splitAsyncExecutor.close();
+        }
+        if (!executorRegistry.wasClosed()) {
+            executorRegistry.close();
         }
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(

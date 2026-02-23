@@ -1,42 +1,26 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Dedicated executor for split maintenance tasks.
+ * Split-maintenance executor facade backed by {@link IndexExecutorRegistry}.
  */
 public final class SplitAsyncExecutor extends AbstractCloseableResource {
 
-    private static final int MIN_QUEUE_CAPACITY = 64;
-    private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
-
-    private final ThreadPoolExecutor executor;
-    private final int queueCapacity;
+    private final IndexExecutorRegistry executorRegistry;
 
     /**
-     * Creates a dedicated executor for split maintenance tasks.
+     * Creates split maintenance executor adapter backed by
+     * {@link IndexExecutorRegistry}.
      *
-     * @param threads number of threads in the pool
-     * @param threadNamePrefix thread name prefix
+     * @param executorRegistry shared index executor registry
      */
-    public SplitAsyncExecutor(final int threads,
-            final String threadNamePrefix) {
-        Vldtn.requireGreaterThanZero(threads, "threads");
-        this.queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
-                threads * QUEUE_CAPACITY_MULTIPLIER);
-        this.executor = new ThreadPoolExecutor(threads, threads, 0L,
-                TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(queueCapacity),
-                namedThreadFactory(threadNamePrefix),
-                new ThreadPoolExecutor.AbortPolicy());
+    public SplitAsyncExecutor(final IndexExecutorRegistry executorRegistry) {
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
     }
 
     /**
@@ -45,55 +29,23 @@ public final class SplitAsyncExecutor extends AbstractCloseableResource {
      * @return executor service
      */
     public ExecutorService getExecutor() {
-        return executor;
+        return executorRegistry.getSegmentExecutor();
     }
 
     int getQueueSize() {
-        return executor.getQueue().size();
+        return executorRegistry.getSegmentExecutorQueueSize();
     }
 
     int getActiveCount() {
-        return executor.getActiveCount();
+        return executorRegistry.getSegmentExecutorActiveCount();
     }
 
     int getQueueCapacity() {
-        return queueCapacity;
+        return executorRegistry.getSegmentExecutorQueueCapacity();
     }
 
     @Override
     protected void doClose() {
-        executor.shutdown();
-        awaitTermination();
-    }
-
-    private void awaitTermination() {
-        boolean interrupted = false;
-        try {
-            while (!executor.isTerminated()) {
-                try {
-                    executor.awaitTermination(1, TimeUnit.SECONDS);
-                } catch (final InterruptedException e) {
-                    interrupted = true;
-                }
-            }
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    private static ThreadFactory namedThreadFactory(final String prefix) {
-        Vldtn.requireNonNull(prefix, "prefix");
-        if (prefix.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Property 'prefix' must not be empty.");
-        }
-        final AtomicInteger counter = new AtomicInteger(1);
-        return runnable -> {
-            final Thread thread = new Thread(runnable);
-            thread.setName(prefix + "-" + counter.getAndIncrement());
-            return thread;
-        };
+        // Executor lifecycle is owned by IndexExecutorRegistry.
     }
 }

@@ -119,9 +119,10 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
+        final IndexConfiguration<Integer, String> conf = buildConf();
         return new IndexInternalConcurrent<>(
                 new MemDirectory(),
-                tdi, tds, buildConf());
+                tdi, tds, conf, new IndexExecutorRegistry(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

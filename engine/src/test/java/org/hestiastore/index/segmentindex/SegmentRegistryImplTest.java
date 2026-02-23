@@ -52,13 +52,14 @@ class SegmentRegistryImplTest {
 
     private SegmentRegistryImpl<Integer, String> registry;
     private SegmentAsyncExecutor maintenanceExecutor;
+    private ExecutorService maintenancePool;
 
     @BeforeEach
     void setUp() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         directoryFacade = new MemDirectory();
-        maintenanceExecutor = new SegmentAsyncExecutor(1,
-                "segment-maintenance");
+        maintenancePool = Executors.newSingleThreadExecutor();
+        maintenanceExecutor = new SegmentAsyncExecutor(maintenancePool);
         registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
@@ -76,6 +77,9 @@ class SegmentRegistryImplTest {
         }
         if (maintenanceExecutor != null && !maintenanceExecutor.wasClosed()) {
             maintenanceExecutor.close();
+        }
+        if (maintenancePool != null) {
+            maintenancePool.shutdownNow();
         }
     }
 
