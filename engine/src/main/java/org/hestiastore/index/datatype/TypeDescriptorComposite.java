@@ -76,45 +76,61 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     @Override
     @SuppressWarnings("unchecked")
     public Comparator<CompositeValue> getComparator() {
-        return (a, b) -> {
-            if (a.size() != elementTypes.size()
-                    || b.size() != elementTypes.size()) {
-                throw new IndexException(
-                        "CompositeValue size does not match expected elementTypes size");
-            }
-
-            for (int i = 0; i < elementTypes.size(); i++) {
-                Object valA = a.get(i);
-                Object valB = b.get(i);
-
-                if (valA == null || valB == null) {
-                    throw new IndexException(
-                            "CompositeValue contains null at index " + i);
-                }
-
-                Class<?> expectedClass = elementTypes.get(i).getClass();
-                if (!expectedClass.isInstance(valA)
-                        || !expectedClass.isInstance(valB)) {
-                    throw new IndexException("Element at index " + i
-                            + " is not of expected type: "
-                            + expectedClass.getName());
-                }
-
-                Comparator<Object> cmp = ((TypeDescriptor<Object>) elementTypes
-                        .get(i)).getComparator();
-                int result = cmp.compare(valA, valB);
-                if (result != 0) {
-                    return result;
-                }
-            }
-
-            return 0;
-        };
+        return this::compareCompositeValues;
     }
 
     @Override
     public CompositeValue getTombstone() {
         return tombstoneValue;
+    }
+
+    private int compareCompositeValues(final CompositeValue a,
+            final CompositeValue b) {
+        validateCompositeSize(a, b);
+        for (int i = 0; i < elementTypes.size(); i++) {
+            final int result = compareElementAt(a, b, i);
+            if (result != 0) {
+                return result;
+            }
+        }
+        return 0;
+    }
+
+    private void validateCompositeSize(final CompositeValue a,
+            final CompositeValue b) {
+        if (a.size() != elementTypes.size() || b.size() != elementTypes.size()) {
+            throw new IndexException(
+                    "CompositeValue size does not match expected elementTypes size");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private int compareElementAt(final CompositeValue a, final CompositeValue b,
+            final int index) {
+        final Object valA = a.get(index);
+        final Object valB = b.get(index);
+        ensureValuesAreNotNull(index, valA, valB);
+        final Class<?> expectedClass = elementTypes.get(index).getClass();
+        ensureValuesHaveExpectedType(index, valA, valB, expectedClass);
+        final Comparator<Object> cmp = ((TypeDescriptor<Object>) elementTypes
+                .get(index)).getComparator();
+        return cmp.compare(valA, valB);
+    }
+
+    private void ensureValuesAreNotNull(final int index, final Object valA,
+            final Object valB) {
+        if (valA == null || valB == null) {
+            throw new IndexException(
+                    "CompositeValue contains null at index " + index);
+        }
+    }
+
+    private void ensureValuesHaveExpectedType(final int index,
+            final Object valA, final Object valB, final Class<?> expectedClass) {
+        if (!expectedClass.isInstance(valA) || !expectedClass.isInstance(valB)) {
+            throw new IndexException("Element at index " + index
+                    + " is not of expected type: " + expectedClass.getName());
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -196,7 +196,6 @@
                                     <th>State</th>
                                     <th>Keys</th>
                                     <th>Delta Keys</th>
-                                    <th>Scarce Keys</th>
                                     <th>Seg Cache Keys</th>
                                     <th>Write Cache Keys</th>
                                     <th>Delta Files</th>
@@ -218,7 +217,6 @@
                                     </td>
                                     <td th:text="${node.formatWholeNumber(segment.numberOfKeysInSegment)}">0</td>
                                     <td th:text="${node.formatWholeNumber(segment.numberOfKeysInDeltaCache)}">0</td>
-                                    <td th:text="${node.formatWholeNumber(segment.numberOfKeysInScarceIndex)}">0</td>
                                     <td th:text="${node.formatWholeNumber(segment.numberOfKeysInSegmentCache)}">0</td>
                                     <td th:text="${node.formatWholeNumber(segment.numberOfKeysInWriteCache)}">0</td>
                                     <td th:text="${node.formatWholeNumber(segment.numberOfDeltaCacheFiles)}">0</td>
