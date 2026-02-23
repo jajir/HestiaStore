@@ -21,7 +21,7 @@ final class SegmentReadPath<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;
-    private final SegmentResources<K, V> segmentResources;
+    private final SegmentResources<K> segmentResources;
     private final SegmentSearcher<K, V> segmentSearcher;
     private final SegmentCache<K, V> segmentCache;
     private final VersionController versionController;
@@ -39,7 +39,7 @@ final class SegmentReadPath<K, V> {
      */
     SegmentReadPath(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
-            final SegmentResources<K, V> segmentResources,
+            final SegmentResources<K> segmentResources,
             final SegmentSearcher<K, V> segmentSearcher,
             final SegmentCache<K, V> segmentCache,
             final VersionController versionController) {

@@ -121,7 +121,6 @@ final class SegmentMaintenanceService {
             } catch (final RuntimeException e) {
                 failureObserver.accept(e);
                 gate.fail();
-                return;
             }
         }
     }

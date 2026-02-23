@@ -18,13 +18,13 @@ final class SegmentMaintenancePath<K, V> {
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentConf segmentConf;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentResources<K, V> segmentResources;
+    private final SegmentResources<K> segmentResources;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
 
     SegmentMaintenancePath(final SegmentFiles<K, V> segmentFiles,
             final SegmentConf segmentConf,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentResources<K, V> segmentResources,
+            final SegmentResources<K> segmentResources,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
         this.segmentConf = Vldtn.requireNonNull(segmentConf, "segmentConf");

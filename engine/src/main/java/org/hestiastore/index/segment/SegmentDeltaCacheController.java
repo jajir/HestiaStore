@@ -14,7 +14,7 @@ final class SegmentDeltaCacheController<K, V> {
 
     private final SegmentFiles<K, V> segmentFiles;
     private final SegmentPropertiesManager segmentPropertiesManager;
-    private final SegmentResources<K, V> segmentCacheDataProvider;
+    private final SegmentResources<K> segmentCacheDataProvider;
     private final int maxNumberOfKeysInSegmentWriteCache;
     private final int maxNumberOfKeysInChunk;
     private SegmentCache<K, V> segmentCache;
@@ -30,7 +30,7 @@ final class SegmentDeltaCacheController<K, V> {
      */
     public SegmentDeltaCacheController(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager segmentPropertiesManager,
-            final SegmentResources<K, V> segmentCacheDataProvider,
+            final SegmentResources<K> segmentCacheDataProvider,
             final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInChunk) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");

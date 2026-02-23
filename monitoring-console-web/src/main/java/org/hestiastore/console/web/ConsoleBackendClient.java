@@ -56,6 +56,14 @@ public class ConsoleBackendClient {
     private static final String API_ACTION_FLUSH = "/api/v1/actions/flush";
     private static final String API_ACTION_COMPACT = "/api/v1/actions/compact";
     private static final String API_CONFIG = "/api/v1/config";
+    private static final String FIELD_CAPTURED_AT = "capturedAt";
+    private static final String FIELD_STATE = "state";
+    private static final String DEFAULT_STATE = "ERROR";
+    private static final String EVENT_NODE_POLL_FAILED = "NODE_POLL_FAILED";
+    private static final String POLL_FAILED = "poll failed";
+    private static final String OPS_PER_SECOND = "ops/s";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String FAILED_SEPARATOR = " failed: ";
     private static final int MAX_HISTORY = 200;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -212,7 +220,16 @@ public class ConsoleBackendClient {
                     parseConfigMap(config.path("current")),
                     parseStringList(config.path("supportedKeys")),
                     Math.max(0L, config.path("revision").asLong(0L)),
-                    asInstantText(config.path("capturedAt"))));
+                    asInstantText(config.path(FIELD_CAPTURED_AT))));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.info("Runtime config poll interrupted: node={} index={}", nodeId,
+                    indexName);
+            addEvent(new EventRow(Instant.now().toString(),
+                    "NODE_CONFIG_POLL_FAILED", nodeId,
+                    e.getMessage() == null ? "config poll failed"
+                            : e.getMessage()));
+            return Optional.empty();
         } catch (final Exception e) {
             logger.info("Runtime config poll failed: node={} index={}", nodeId,
                     indexName);
@@ -262,7 +279,8 @@ public class ConsoleBackendClient {
             final List<RemoteMonitoredIndex> monitoredIndexes = parseMonitoredIndexes(
                     report.path("indexes"));
             final List<IndexRow> indexRows = toIndexRows(node.nodeId(),
-                    monitoredIndexes, asInstantText(report.path("capturedAt")),
+                    monitoredIndexes,
+                    asInstantText(report.path(FIELD_CAPTURED_AT)),
                     nowNanos);
             final String resolvedIndexName = monitoredIndexes.isEmpty()
                     ? node.nodeId()
@@ -428,26 +446,34 @@ public class ConsoleBackendClient {
                     throughput.value(), throughput.unit(),
                     Duration.ofNanos(System.nanoTime() - startedNanos)
                             .toMillis(),
-                    asInstantText(report.path("capturedAt")), "");
+                    asInstantText(report.path(FIELD_CAPTURED_AT)), "");
             return new NodeDetails(nodeRow, indexRows);
         } catch (final HttpTimeoutException e) {
             logger.info("Node poll timed out: {}", node.nodeId());
-            addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
-                    node.nodeId(), e.getMessage() == null ? "poll failed"
+            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
+                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
                             : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
         } catch (final ConnectException e) {
             logger.info("Node poll connect failed: {}", node.nodeId());
-            addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
-                    node.nodeId(), e.getMessage() == null ? "poll failed"
+            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
+                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
+                            : e.getMessage()));
+            return new NodeDetails(
+                    unavailable(node, e.getMessage(), startedNanos), List.of());
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.info("Node poll interrupted: {}", node.nodeId());
+            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
+                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
                             : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
         } catch (final Exception e) {
             logger.warn("Node poll failed: {}", node.nodeId(), e);
-            addEvent(new EventRow(Instant.now().toString(), "NODE_POLL_FAILED",
-                    node.nodeId(), e.getMessage() == null ? "poll failed"
+            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
+                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
                             : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
@@ -474,7 +500,7 @@ public class ConsoleBackendClient {
                 0, 0, 0D,
                 0L, 0L, 0L, 0L,
                 0L, 0L, 0L, 0L, 0L, 0L,
-                0D, "ops/s",
+                0D, OPS_PER_SECOND,
                 Duration.ofNanos(System.nanoTime() - startedNanos).toMillis(),
                 Instant.now().toString(), error == null ? "" : error);
     }
@@ -486,7 +512,7 @@ public class ConsoleBackendClient {
                 .timeout(Duration.ofSeconds(4))
                 .GET();
         if (!node.agentToken().isEmpty()) {
-            builder.header(AUTHORIZATION, "Bearer " + node.agentToken());
+            builder.header(AUTHORIZATION, BEARER_PREFIX + node.agentToken());
         }
         final HttpResponse<String> response = httpClient.send(builder.build(),
                 HttpResponse.BodyHandlers.ofString());
@@ -494,7 +520,7 @@ public class ConsoleBackendClient {
             return mapper.readTree(response.body());
         }
         throw new IllegalStateException(
-                "GET " + path + " failed: " + response.statusCode());
+                "GET " + path + FAILED_SEPARATOR + response.statusCode());
     }
 
     private JsonNode postJson(
@@ -507,7 +533,7 @@ public class ConsoleBackendClient {
                     .header(CONTENT_TYPE, APPLICATION_JSON);
             if (!node.agentToken().isEmpty()) {
                 requestBuilder.header(AUTHORIZATION,
-                        "Bearer " + node.agentToken());
+                        BEARER_PREFIX + node.agentToken());
             }
             final HttpRequest request = requestBuilder
                     .POST(HttpRequest.BodyPublishers
@@ -523,6 +549,9 @@ public class ConsoleBackendClient {
             }
             throw new IllegalStateException(
                     formatHttpError("POST", path, response));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("POST " + path + " failed", e);
         } catch (final Exception e) {
             throw new IllegalStateException("POST " + path + " failed", e);
         }
@@ -538,7 +567,7 @@ public class ConsoleBackendClient {
                     .header(CONTENT_TYPE, APPLICATION_JSON);
             if (!node.agentToken().isEmpty()) {
                 requestBuilder.header(AUTHORIZATION,
-                        "Bearer " + node.agentToken());
+                        BEARER_PREFIX + node.agentToken());
             }
             final HttpRequest request = requestBuilder
                     .method("PATCH", HttpRequest.BodyPublishers
@@ -551,6 +580,9 @@ public class ConsoleBackendClient {
             }
             throw new IllegalStateException(
                     formatHttpError("PATCH", path, response));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("PATCH " + path + " failed", e);
         } catch (final Exception e) {
             throw new IllegalStateException("PATCH " + path + " failed", e);
         }
@@ -561,20 +593,21 @@ public class ConsoleBackendClient {
         final String body = response.body() == null ? ""
                 : response.body().trim();
         if (body.isBlank()) {
-            return method + " " + path + " failed: " + response.statusCode();
+            return method + " " + path + FAILED_SEPARATOR
+                    + response.statusCode();
         }
         try {
             final JsonNode json = mapper.readTree(body);
             final String code = json.path("code").asText("");
             final String message = json.path("message").asText("");
             if (!code.isBlank() || !message.isBlank()) {
-                return method + " " + path + " failed: "
+                return method + " " + path + FAILED_SEPARATOR
                         + response.statusCode() + " " + code + " " + message;
             }
         } catch (final Exception ignore) {
             // Fallback to plain body below.
         }
-        return method + " " + path + " failed: " + response.statusCode()
+        return method + " " + path + FAILED_SEPARATOR + response.statusCode()
                 + " body=" + body;
     }
 
@@ -684,7 +717,7 @@ public class ConsoleBackendClient {
         for (final JsonNode indexNode : indexesNode) {
             parsed.add(new RemoteMonitoredIndex(
                     indexNode.path("indexName").asText("unknown-index"),
-                    parseState(indexNode.path("state").asText("ERROR")),
+                    parseState(indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)),
                     new SegmentIndexMetricsSnapshot(
                             nonNegativeLong(
                                     indexNode.path("getOperationCount").asLong(0L)),
@@ -759,7 +792,8 @@ public class ConsoleBackendClient {
                                     .asLong(0L)),
                             parseSegmentRuntimeSnapshots(
                                     indexNode.path("segmentRuntimeSnapshots")),
-                            parseState(indexNode.path("state").asText("ERROR")))));
+                            parseState(indexNode.path(FIELD_STATE)
+                                    .asText(DEFAULT_STATE)))));
         }
         return List.copyOf(parsed);
     }
@@ -773,7 +807,8 @@ public class ConsoleBackendClient {
         for (final JsonNode snapshotNode : snapshotsNode) {
             parsed.add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
                     snapshotNode.path("segmentId").asText("unknown-segment"),
-                    parseSegmentState(snapshotNode.path("state").asText("ERROR")),
+                    parseSegmentState(snapshotNode.path(FIELD_STATE)
+                            .asText(DEFAULT_STATE)),
                     nonNegativeLong(
                             snapshotNode.path("numberOfKeysInDeltaCache")
                                     .asLong(0L)),
@@ -1276,20 +1311,20 @@ public class ConsoleBackendClient {
     private Throughput computeThroughput(final String nodeId, final long totalOps,
             final long nowNanos) {
         if (nodeId == null || nodeId.isBlank()) {
-            return new Throughput(0D, "ops/s");
+            return new Throughput(0D, OPS_PER_SECOND);
         }
         final ThroughputSample previous = throughputSamples.put(nodeId,
                 new ThroughputSample(totalOps, nowNanos));
         if (previous == null) {
-            return new Throughput(0D, "ops/s");
+            return new Throughput(0D, OPS_PER_SECOND);
         }
         final long deltaOps = totalOps - previous.totalOps();
         final long deltaNanos = nowNanos - previous.atNanos();
         if (deltaOps <= 0L || deltaNanos <= 0L) {
-            return new Throughput(0D, "ops/s");
+            return new Throughput(0D, OPS_PER_SECOND);
         }
         double value = (deltaOps * 1_000_000_000D) / deltaNanos;
-        String unit = "ops/s";
+        String unit = OPS_PER_SECOND;
         if (value >= 10_000D) {
             value /= 1_000D;
             unit = "ops/ms";

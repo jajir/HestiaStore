@@ -16,6 +16,9 @@ import org.hestiastore.index.segment.SegmentId;
 final class KeyToSegmentMapSynchronizedAdapter<K>
         extends AbstractCloseableResource {
 
+    private static final String KEY_MAP_LOCK_HELD = "hestiastore.keyMapLockHeld";
+    private static final String ENFORCE_SPLIT_LOCK_ORDER = "hestiastore.enforceSplitLockOrder";
+
     private final KeyToSegmentMap<K> delegate;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock readLock = lock.readLock();
@@ -55,21 +58,19 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
     <T> T withWriteLock(final java.util.function.Supplier<T> action) {
         Vldtn.requireNonNull(action, "action");
         writeLock.lock();
-        final String previous = System
-                .getProperty("hestiastore.keyMapLockHeld");
-        final boolean enforce = Boolean
-                .getBoolean("hestiastore.enforceSplitLockOrder");
+        final String previous = System.getProperty(KEY_MAP_LOCK_HELD);
+        final boolean enforce = Boolean.getBoolean(ENFORCE_SPLIT_LOCK_ORDER);
         if (enforce) {
-            System.setProperty("hestiastore.keyMapLockHeld", "true");
+            System.setProperty(KEY_MAP_LOCK_HELD, "true");
         }
         try {
             return action.get();
         } finally {
             if (enforce) {
                 if (previous == null) {
-                    System.clearProperty("hestiastore.keyMapLockHeld");
+                    System.clearProperty(KEY_MAP_LOCK_HELD);
                 } else {
-                    System.setProperty("hestiastore.keyMapLockHeld", previous);
+                    System.setProperty(KEY_MAP_LOCK_HELD, previous);
                 }
             }
             writeLock.unlock();
@@ -79,21 +80,19 @@ final class KeyToSegmentMapSynchronizedAdapter<K>
     void withWriteLock(final Runnable action) {
         Vldtn.requireNonNull(action, "action");
         writeLock.lock();
-        final String previous = System
-                .getProperty("hestiastore.keyMapLockHeld");
-        final boolean enforce = Boolean
-                .getBoolean("hestiastore.enforceSplitLockOrder");
+        final String previous = System.getProperty(KEY_MAP_LOCK_HELD);
+        final boolean enforce = Boolean.getBoolean(ENFORCE_SPLIT_LOCK_ORDER);
         if (enforce) {
-            System.setProperty("hestiastore.keyMapLockHeld", "true");
+            System.setProperty(KEY_MAP_LOCK_HELD, "true");
         }
         try {
             action.run();
         } finally {
             if (enforce) {
                 if (previous == null) {
-                    System.clearProperty("hestiastore.keyMapLockHeld");
+                    System.clearProperty(KEY_MAP_LOCK_HELD);
                 } else {
-                    System.setProperty("hestiastore.keyMapLockHeld", previous);
+                    System.setProperty(KEY_MAP_LOCK_HELD, previous);
                 }
             }
             writeLock.unlock();

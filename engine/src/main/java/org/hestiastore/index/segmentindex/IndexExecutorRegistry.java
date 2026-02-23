@@ -190,11 +190,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         boolean interrupted = false;
         try {
             while (!executor.isTerminated()) {
-                try {
-                    executor.awaitTermination(1, TimeUnit.SECONDS);
-                } catch (final InterruptedException e) {
-                    interrupted = true;
-                }
+                interrupted = awaitTerminationStep(executor) || interrupted;
             }
         } catch (final RuntimeException e) {
             if (nextFailure == null) {
@@ -208,6 +204,15 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
             }
         }
         return nextFailure;
+    }
+
+    private boolean awaitTerminationStep(final ExecutorService executor) {
+        try {
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+            return false;
+        } catch (final InterruptedException e) {
+            return true;
+        }
     }
 
     private void checkNotClosed() {

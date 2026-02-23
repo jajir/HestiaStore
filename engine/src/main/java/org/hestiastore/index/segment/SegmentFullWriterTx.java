@@ -19,7 +19,7 @@ public class SegmentFullWriterTx<K, V>
 
     private final SegmentPropertiesManager segmentPropertiesManager;
     private final int maxNumberOfKeysInIndexPage;
-    private final SegmentResources<K, V> segmentDataProvider;
+    private final SegmentResources<K> segmentDataProvider;
     private final SegmentDeltaCacheController<K, V> deltaCacheController;
     private final ChunkEntryFileWriterTx<K, V> chunkPairFileWriterTx;
     private final ScarceIndexWriterTx<K> scarceIndexWriterTx;
@@ -37,7 +37,7 @@ public class SegmentFullWriterTx<K, V>
     SegmentFullWriterTx(final SegmentFiles<K, V> segmentFiles,
             final SegmentPropertiesManager propertiesManager,
             final int maxNumberOfKeysInIndexPage,
-            final SegmentResources<K, V> dataProvider,
+            final SegmentResources<K> dataProvider,
             final SegmentDeltaCacheController<K, V> deltaCacheController) {
         this.segmentPropertiesManager = Vldtn.requireNonNull(propertiesManager,
                 "segmentPropertiesManager");

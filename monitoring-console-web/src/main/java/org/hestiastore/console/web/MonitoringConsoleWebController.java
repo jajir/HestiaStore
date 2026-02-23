@@ -27,6 +27,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Validated
 public class MonitoringConsoleWebController {
 
+    private static final String ATTR_REFRESH_MILLIS = "refreshMillis";
+    private static final String ATTR_MESSAGE = "message";
+    private static final String ATTR_LEVEL = "level";
+    private static final String LEVEL_OK = "ok";
+    private static final String LEVEL_BAD = "bad";
+    private static final String LEVEL_WARN = "warn";
+    private static final String REDIRECT_NODE_PREFIX = "redirect:/nodes/";
+
     private final ConsoleBackendClient backendClient;
     private final MonitoringConsoleWebProperties properties;
 
@@ -53,7 +61,7 @@ public class MonitoringConsoleWebController {
     public String dashboard(final Model model) {
         fillModel(model);
         model.addAttribute("nodeEndpoints", properties.nodes());
-        model.addAttribute("refreshMillis", properties.refreshMillis());
+        model.addAttribute(ATTR_REFRESH_MILLIS, properties.refreshMillis());
         model.addAttribute("refreshMillisDisplay",
                 ConsoleBackendClient.NodeRow
                         .formatWholeNumberValue(properties.refreshMillis()));
@@ -72,7 +80,7 @@ public class MonitoringConsoleWebController {
             @RequestParam(name = "indexName",
                     required = false) final String indexName,
             final Model model) {
-        model.addAttribute("refreshMillis", properties.refreshMillis());
+        model.addAttribute(ATTR_REFRESH_MILLIS, properties.refreshMillis());
         final Optional<ConsoleBackendClient.NodeDetails> nodeDetails = backendClient
                 .fetchNodeDetails(nodeId);
         if (nodeDetails.isEmpty()) {
@@ -112,7 +120,7 @@ public class MonitoringConsoleWebController {
     @GetMapping("/fragments/nodes/{nodeId}/live")
     public String nodeDetailLive(@PathVariable("nodeId") final String nodeId,
             final Model model) {
-        model.addAttribute("refreshMillis", properties.refreshMillis());
+        model.addAttribute(ATTR_REFRESH_MILLIS, properties.refreshMillis());
         final Optional<ConsoleBackendClient.NodeDetails> nodeDetails = backendClient
                 .fetchNodeDetails(nodeId);
         if (nodeDetails.isEmpty()) {
@@ -183,29 +191,25 @@ public class MonitoringConsoleWebController {
         try {
             backendClient.triggerAction(action, nodeId);
             if (htmx) {
-                model.addAttribute("message",
-                        action.toUpperCase() + " accepted for " + nodeId);
-                model.addAttribute("level", "ok");
+                setFlash(model, action.toUpperCase() + " accepted for " + nodeId,
+                        LEVEL_OK);
             } else {
-                redirectAttributes.addFlashAttribute("message",
-                        action.toUpperCase() + " accepted for " + nodeId);
-                redirectAttributes.addFlashAttribute("level", "ok");
+                setFlash(redirectAttributes,
+                        action.toUpperCase() + " accepted for " + nodeId,
+                        LEVEL_OK);
                 if (returnToNode) {
-                    return "redirect:/nodes/" + nodeId;
+                    return REDIRECT_NODE_PREFIX + nodeId;
                 }
                 return "redirect:/";
             }
         } catch (final Exception e) {
             if (htmx) {
-                model.addAttribute("message",
-                        "Action failed: " + e.getMessage());
-                model.addAttribute("level", "bad");
+                setFlash(model, "Action failed: " + e.getMessage(), LEVEL_BAD);
             } else {
-                redirectAttributes.addFlashAttribute("message",
-                        "Action failed: " + e.getMessage());
-                redirectAttributes.addFlashAttribute("level", "bad");
+                setFlash(redirectAttributes, "Action failed: " + e.getMessage(),
+                        LEVEL_BAD);
                 if (returnToNode) {
-                    return "redirect:/nodes/" + nodeId;
+                    return REDIRECT_NODE_PREFIX + nodeId;
                 }
                 return "redirect:/";
             }
@@ -234,27 +238,25 @@ public class MonitoringConsoleWebController {
         final Map<String, String> values = extractConfigValues(
                 requestParameters);
         if (values.isEmpty()) {
-            redirectAttributes.addFlashAttribute("message",
-                    "No editable values provided.");
-            redirectAttributes.addFlashAttribute("level", "warn");
+            setFlash(redirectAttributes, "No editable values provided.",
+                    LEVEL_WARN);
             redirectAttributes.addAttribute("indexName", indexName);
-            return "redirect:/nodes/" + nodeId;
+            return REDIRECT_NODE_PREFIX + nodeId;
         }
         final boolean dryRun = "validate".equalsIgnoreCase(operation);
         try {
             backendClient.patchRuntimeConfig(nodeId, indexName, values, dryRun);
-            redirectAttributes.addFlashAttribute("message",
+            setFlash(redirectAttributes,
                     dryRun
                             ? "Validation succeeded for " + indexName + "."
-                            : "Configuration applied for " + indexName + ".");
-            redirectAttributes.addFlashAttribute("level", "ok");
+                            : "Configuration applied for " + indexName + ".",
+                    LEVEL_OK);
         } catch (final Exception e) {
-            redirectAttributes.addFlashAttribute("message",
-                    "Config update failed: " + rootMessage(e));
-            redirectAttributes.addFlashAttribute("level", "bad");
+            setFlash(redirectAttributes,
+                    "Config update failed: " + rootMessage(e), LEVEL_BAD);
         }
         redirectAttributes.addAttribute("indexName", indexName);
-        return "redirect:/nodes/" + nodeId;
+        return REDIRECT_NODE_PREFIX + nodeId;
     }
 
     private void fillModel(final Model model) {
@@ -362,18 +364,28 @@ public class MonitoringConsoleWebController {
         for (final Map.Entry<String, String> entry : requestParameters
                 .entrySet()) {
             final String rawKey = entry.getKey();
-            if (rawKey == null || !rawKey.startsWith("value.")) {
-                continue;
+            if (rawKey != null && rawKey.startsWith("value.")) {
+                final String key = rawKey.substring("value.".length()).trim();
+                final String value = entry.getValue() == null ? ""
+                        : entry.getValue().trim();
+                if (!key.isEmpty() && !value.isEmpty()) {
+                    values.put(key, value);
+                }
             }
-            final String key = rawKey.substring("value.".length()).trim();
-            final String value = entry.getValue() == null ? ""
-                    : entry.getValue().trim();
-            if (key.isEmpty() || value.isEmpty()) {
-                continue;
-            }
-            values.put(key, value);
         }
         return values;
+    }
+
+    private void setFlash(final Model model, final String message,
+            final String level) {
+        model.addAttribute(ATTR_MESSAGE, message);
+        model.addAttribute(ATTR_LEVEL, level);
+    }
+
+    private void setFlash(final RedirectAttributes redirectAttributes,
+            final String message, final String level) {
+        redirectAttributes.addFlashAttribute(ATTR_MESSAGE, message);
+        redirectAttributes.addFlashAttribute(ATTR_LEVEL, level);
     }
 
     private String rootMessage(final Throwable throwable) {

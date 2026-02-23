@@ -19,7 +19,7 @@ class SegmentDeltaCacheControllerTest {
     private SegmentPropertiesManager segmentPropertiesManager;
 
     @Mock
-    private SegmentResources<Integer, Integer> segmentResources;
+    private SegmentResources<Integer> segmentResources;
 
     @Test
     void clear_evicted_segment_cache() {

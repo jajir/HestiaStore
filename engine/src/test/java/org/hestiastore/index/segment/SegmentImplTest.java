@@ -64,7 +64,7 @@ class SegmentImplTest {
     @Mock
     private SegmentPropertiesManager segmentPropertiesManager;
     @Mock
-    private SegmentResources<Integer, String> segmentDataProvider;
+    private SegmentResources<Integer> segmentDataProvider;
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock

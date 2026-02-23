@@ -105,7 +105,7 @@ final class SegmentCompacter<K, V> {
         final SegmentFiles<K, V> segmentFiles = segment.getSegmentFiles();
         final SegmentFiles<K, V> preparedFiles = segmentFiles
                 .copyWithVersion(plan.nextVersion);
-        final SegmentResources<K, V> preparedResources = new SegmentResourcesImpl<>(
+        final SegmentResources<K> preparedResources = new SegmentResourcesImpl<>(
                 new SegmentDataSupplier<>(preparedFiles,
                         segment.getSegmentConf()));
         final SegmentPropertiesManager propertiesManager = segment

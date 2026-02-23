@@ -19,7 +19,7 @@ final class SegmentBuildContext<K, V> {
     final VersionController versionController;
     final SegmentConf segmentConf;
     final SegmentFiles<K, V> segmentFiles;
-    final SegmentResources<K, V> segmentResources;
+    final SegmentResources<K> segmentResources;
     final SegmentPropertiesManager segmentPropertiesManager;
     final Executor maintenanceExecutor;
 

@@ -38,7 +38,7 @@ class SegmentSearcher<K, V> extends AbstractCloseableResource {
      * @return resolved value or null
      */
     public V get(final K key,
-            final SegmentResources<K, V> segmentDataProvider,
+            final SegmentResources<K> segmentDataProvider,
             final SegmentIndexSearcher<K, V> segmentIndexSearcher) {
         final SegmentSearcherContext<K, V> ctx = SegmentSearcherContext.of(key,
                 segmentDataProvider, segmentIndexSearcher);

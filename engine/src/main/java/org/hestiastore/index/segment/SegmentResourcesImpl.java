@@ -13,7 +13,7 @@ import org.hestiastore.index.scarceindex.ScarceSegmentIndex;
  * @param <V> value type
  */
 public final class SegmentResourcesImpl<K, V>
-        implements SegmentResources<K, V> {
+        implements SegmentResources<K> {
 
     private final SegmentDataSupplier<K, V> segmentDataSupplier;
     private volatile BloomFilter<K> bloomFilter;

@@ -49,11 +49,7 @@ final class SegmentWritePath<K, V> {
     boolean tryPutWithoutWaiting(final K key, final V value) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
-        if (segmentCache.tryPutToWriteCacheWithoutWaiting(
-                Entry.of(key, value))) {
-            return true;
-        }
-        return false;
+        return segmentCache.tryPutToWriteCacheWithoutWaiting(Entry.of(key, value));
     }
 
     /**
