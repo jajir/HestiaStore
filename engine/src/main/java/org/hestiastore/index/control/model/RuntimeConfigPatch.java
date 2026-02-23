@@ -7,17 +7,10 @@ import org.hestiastore.index.Vldtn;
 /**
  * Runtime-only patch request.
  */
-public final class RuntimeConfigPatch {
+public record RuntimeConfigPatch(Map<RuntimeSettingKey, Integer> values,
+        boolean dryRun, Long expectedRevision) {
 
-    private final Map<RuntimeSettingKey, Integer> values;
-    private final boolean dryRun;
-    private final Long expectedRevision;
-
-    /**
-     * Creates validated patch.
-     */
-    public RuntimeConfigPatch(final Map<RuntimeSettingKey, Integer> values,
-            final boolean dryRun, final Long expectedRevision) {
+    public RuntimeConfigPatch {
         final Map<RuntimeSettingKey, Integer> input = Vldtn.requireNotEmptyMap(
                 values, "values");
         for (final Map.Entry<RuntimeSettingKey, Integer> entry : input
@@ -29,9 +22,7 @@ public final class RuntimeConfigPatch {
             Vldtn.requireGreaterThanOrEqualToZero(expectedRevision.longValue(),
                     "expectedRevision");
         }
-        this.values = Map.copyOf(input);
-        this.dryRun = dryRun;
-        this.expectedRevision = expectedRevision;
+        values = Map.copyOf(input);
     }
 
     public Map<RuntimeSettingKey, Integer> getValues() {
@@ -43,21 +34,6 @@ public final class RuntimeConfigPatch {
     }
 
     public Long getExpectedRevision() {
-        return expectedRevision;
-    }
-
-    // Backward-compatible accessor style for existing call sites.
-    public Map<RuntimeSettingKey, Integer> values() {
-        return values;
-    }
-
-    // Backward-compatible accessor style for existing call sites.
-    public boolean dryRun() {
-        return dryRun;
-    }
-
-    // Backward-compatible accessor style for existing call sites.
-    public Long expectedRevision() {
         return expectedRevision;
     }
 }

@@ -3,15 +3,15 @@ package org.hestiastore.index;
 /**
  * A single step in a filter chain.
  *
- * @param <Context> immutable input carried through the chain
- * @param <Result> mutable accumulator updated by each filter
+ * @param <C> immutable input carried through the chain
+ * @param <R> mutable accumulator updated by each filter
  */
-public interface Filter<Context, Result> {
+public interface Filter<C, R> {
 
     /**
      * Applies this filter. Return {@code true} to continue with the next filter,
      * or {@code false} to short-circuit the chain.
      */
-    boolean filter(Context context, Result result);
+    boolean filter(C context, R result);
 
 }

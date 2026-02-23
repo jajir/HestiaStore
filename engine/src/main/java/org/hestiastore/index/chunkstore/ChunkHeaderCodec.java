@@ -58,14 +58,14 @@ final class ChunkHeaderCodec {
     }
 
     private static long readLong(final byte[] data, final int offset) {
-        return ((long) data[offset] & 0xFFL) << 56
-                | ((long) data[offset + 1] & 0xFFL) << 48
-                | ((long) data[offset + 2] & 0xFFL) << 40
-                | ((long) data[offset + 3] & 0xFFL) << 32
-                | ((long) data[offset + 4] & 0xFFL) << 24
-                | ((long) data[offset + 5] & 0xFFL) << 16
-                | ((long) data[offset + 6] & 0xFFL) << 8
-                | ((long) data[offset + 7] & 0xFFL);
+        return (data[offset] & 0xFFL) << 56
+                | (data[offset + 1] & 0xFFL) << 48
+                | (data[offset + 2] & 0xFFL) << 40
+                | (data[offset + 3] & 0xFFL) << 32
+                | (data[offset + 4] & 0xFFL) << 24
+                | (data[offset + 5] & 0xFFL) << 16
+                | (data[offset + 6] & 0xFFL) << 8
+                | (data[offset + 7] & 0xFFL);
     }
 
     private static int readInt(final byte[] data, final int offset) {
