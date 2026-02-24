@@ -73,18 +73,18 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                     "Context logging flag must come from contract defaults");
 
             assertIterableEquals(
-                    toFilterClasses(defaults.getEncodingChunkFilters()),
-                    toFilterClasses(actual.getEncodingChunkFilters()),
+                    toFilterClassNames(defaults.getEncodingChunkFilters()),
+                    toFilterClassNames(actual.getEncodingChunkFilters()),
                     "Encoding filters must come from contract defaults");
             assertIterableEquals(
-                    toFilterClasses(defaults.getDecodingChunkFilters()),
-                    toFilterClasses(actual.getDecodingChunkFilters()),
+                    toFilterClassNames(defaults.getDecodingChunkFilters()),
+                    toFilterClassNames(actual.getDecodingChunkFilters()),
                     "Decoding filters must come from contract defaults");
         }
     }
 
-    private List<Class<? extends ChunkFilter>> toFilterClasses(
+    private List<String> toFilterClassNames(
             final List<ChunkFilter> filters) {
-        return filters.stream().map(ChunkFilter::getClass).toList();
+        return filters.stream().map(filter -> filter.getClass().getName()).toList();
     }
 }
