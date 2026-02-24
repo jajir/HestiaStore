@@ -113,15 +113,14 @@ class SegmentIndexConsistencyCheckerTest {
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(null);
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(SegmentResult.ok(
-                        EntryIterator.make(List.<Entry<Integer, String>>of()
-                                .iterator())));
+                .thenReturn(SegmentResult.ok(EntryIterator
+                        .make(List.<Entry<Integer, String>>of().iterator())));
 
         checker.checkAndRepairConsistency();
 
         verify(segmentRegistry).deleteSegment(SEGMENT_ID);
         verify(keyToSegmentMap).removeSegment(SEGMENT_ID);
-        verify(keyToSegmentMap).optionalyFlush();
+        verify(keyToSegmentMap).optionallyFlush();
     }
 
     @Test
