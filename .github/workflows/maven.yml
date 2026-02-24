@@ -67,9 +67,8 @@ jobs:
       if: always()
       with:
         files: |
-          target/surefire-reports/**/*.xml
-          target/surefire-reports/**/*.trx
-          target/surefire-reports/**/*.json
+          **/target/surefire-reports/**/*.xml
+          **/target/failsafe-reports/**/*.xml
 
     - name: Set badge color
       shell: bash

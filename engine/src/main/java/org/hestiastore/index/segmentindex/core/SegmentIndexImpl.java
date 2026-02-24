@@ -223,7 +223,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return openIteratorWithRetry(segmentId, isolation);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Opens a segment iterator over the provided window using
+     * {@link SegmentIteratorIsolation#FAIL_FAST}.
+     *
+     * @param segmentWindows window selecting segments to iterate
+     * @return iterator over the selected segments
+     */
     @Override
     public EntryIterator<K, V> openSegmentIterator(
             SegmentWindow segmentWindows) {
