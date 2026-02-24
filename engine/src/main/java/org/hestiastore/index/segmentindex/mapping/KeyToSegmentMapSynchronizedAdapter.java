@@ -112,8 +112,7 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
     }
 
     public boolean isMappingValid(final K key,
-            final SegmentId expectedSegmentId,
-            final long expectedVersion) {
+            final SegmentId expectedSegmentId, final long expectedVersion) {
         readLock.lock();
         try {
             return delegate.isMappingValid(key, expectedSegmentId,
@@ -224,7 +223,7 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
      * Flushes the mapping to disk if it has changed.
      */
     public void optionalyFlush() {
-        withWriteLock(delegate::optionalyFlush);
+        withWriteLock(delegate::optionallyFlush);
     }
 
     @Override

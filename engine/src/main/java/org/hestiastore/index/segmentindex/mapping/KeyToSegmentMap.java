@@ -133,8 +133,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public boolean isMappingValid(final K key,
-            final SegmentId expectedSegmentId,
-            final long expectedVersion) {
+            final SegmentId expectedSegmentId, final long expectedVersion) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(expectedSegmentId, "expectedSegmentId");
         return version.get() == expectedVersion;
@@ -224,15 +223,15 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     /**
      * Inserts or updates a mapping for the provided key and segment id.
      *
-     * @param key key to map
+     * @param key       key to map
      * @param segmentId segment id to associate
      */
     public void insertSegment(final K key, final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
         if (list.containsValue(segmentId)) {
-            throw new IllegalArgumentException(String.format(
-                    "Segment id '%s' already exists", segmentId));
+            throw new IllegalArgumentException(
+                    String.format("Segment id '%s' already exists", segmentId));
         }
         list.put(key, segmentId);
         refreshSnapshot();
@@ -321,9 +320,8 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         if (DEBUG_SPLIT_LOSS) {
             logger.warn(
                     "Split debug: map apply oldSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', status='{}', upperSegmentId='{}'.",
-                    oldSegmentId, upperMaxKey, lowerSegmentId,
-                    plan.getMaxKey(), plan.getStatus(),
-                    plan.getUpperSegmentId().orElse(null));
+                    oldSegmentId, upperMaxKey, lowerSegmentId, plan.getMaxKey(),
+                    plan.getStatus(), plan.getUpperSegmentId().orElse(null));
         }
         insertSegment(plan.getMaxKey(), lowerSegmentId);
         if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
@@ -335,19 +333,19 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     private void ensureSplitApplyLockOrder() {
-        final String lockOrder = System.getProperty(
-                "hestiastore.enforceSplitLockOrder");
+        final String lockOrder = System
+                .getProperty("hestiastore.enforceSplitLockOrder");
         if (!"true".equals(lockOrder)) {
             return;
         }
-        final String keyMapLock = System.getProperty(
-                "hestiastore.keyMapLockHeld");
+        final String keyMapLock = System
+                .getProperty("hestiastore.keyMapLockHeld");
         if (!"true".equals(keyMapLock)) {
             throw new IllegalStateException(
                     "Split apply requires key-map lock during map update.");
         }
-        final String registryLock = System.getProperty(
-                "hestiastore.registryLockHeld");
+        final String registryLock = System
+                .getProperty("hestiastore.registryLockHeld");
         if (!"true".equals(registryLock)) {
             throw new IllegalStateException(
                     "Split apply requires registry lock during key-map update.");
@@ -393,7 +391,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
      * Flushes all changes to disk if there are any. This method is
      * automatically called when this cache is closed.
      */
-    public void optionalyFlush() {
+    public void optionallyFlush() {
         ensureOpen();
         flushIfDirty();
     }
@@ -437,8 +435,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         private final TreeMap<K, SegmentId> map;
         private final long version;
 
-        private Snapshot(final TreeMap<K, SegmentId> map,
-                final long version) {
+        private Snapshot(final TreeMap<K, SegmentId> map, final long version) {
             this.map = map;
             this.version = version;
         }

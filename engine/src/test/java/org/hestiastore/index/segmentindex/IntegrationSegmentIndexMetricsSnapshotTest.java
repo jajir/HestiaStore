@@ -105,13 +105,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                     .metricsSnapshot();
             assertTrue(beforeSplit.getCompactRequestCount() > 0L);
 
-            for (int i = 10; i < 30; i++) {
-                index.put(i, "new-" + i);
-            }
-
-            awaitCondition(
-                    () -> index.metricsSnapshot().getSegmentCount() > 1,
-                    10_000L);
+            populateUntilSegmentCountAtLeast(index, 2, 1_000, 20_000L);
             awaitIdle(index);
 
             final SegmentIndexMetricsSnapshot afterSplit = index
@@ -197,6 +191,33 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         assertTrue(snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit(),
                 "Segment count did not exceed cache limit within "
                         + timeoutMillis + " ms.");
+    }
+
+    private static void populateUntilSegmentCountAtLeast(
+            final SegmentIndex<Integer, String> index,
+            final int expectedSegmentCount,
+            final int startingKey,
+            final long timeoutMillis) {
+        int key = startingKey;
+        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+        while (System.nanoTime() < deadline) {
+            for (int i = 0; i < 64; i++) {
+                index.put(key, "new-" + key);
+                key++;
+            }
+            if (index.metricsSnapshot().getSegmentCount() >= expectedSegmentCount) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        final int segmentCount = index.metricsSnapshot().getSegmentCount();
+        assertTrue(segmentCount >= expectedSegmentCount,
+                "Segment count did not reach " + expectedSegmentCount
+                        + " within " + timeoutMillis + " ms. Last count: "
+                        + segmentCount + ".");
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,

@@ -17,8 +17,7 @@ class KeyToSegmentMapLifecycleTest {
     @BeforeEach
     void setUp() {
         final MemDirectory directory = new MemDirectory();
-        keyToSegmentMap = new KeyToSegmentMap<>(
-                directory,
+        keyToSegmentMap = new KeyToSegmentMap<>(directory,
                 new TypeDescriptorInteger());
     }
 
@@ -49,6 +48,6 @@ class KeyToSegmentMapLifecycleTest {
     void optionalyFlushThrowsAfterClose() {
         keyToSegmentMap.close();
         assertThrows(IllegalStateException.class,
-                () -> keyToSegmentMap.optionalyFlush());
+                () -> keyToSegmentMap.optionallyFlush());
     }
 }

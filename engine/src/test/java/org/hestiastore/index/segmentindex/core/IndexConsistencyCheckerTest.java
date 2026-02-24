@@ -60,15 +60,14 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(SegmentResult.ok(iterator));
         when(iterator.hasNext()).thenReturn(false);
         when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(
-                        Entry.of(10, SegmentId.of(1))));
+                .thenReturn(Stream.of(Entry.of(10, SegmentId.of(1))));
         when(segmentRegistry.getSegment(SegmentId.of(1)))
                 .thenReturn(SegmentRegistryResult.ok(segment));
 
         checker.checkAndRepairConsistency();
 
         verify(keyToSegmentMap).removeSegment(SegmentId.of(1));
-        verify(keyToSegmentMap).optionalyFlush();
+        verify(keyToSegmentMap).optionallyFlush();
         verify(segmentRegistry).deleteSegment(SegmentId.of(1));
     }
 }
