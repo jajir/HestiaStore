@@ -1,0 +1,93 @@
+package org.hestiastore.index.segmentindex.config;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+
+import java.util.List;
+
+import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.junit.jupiter.api.Test;
+
+class SegmentIndexConfigurationDefaultsUsageTest {
+
+    @Test
+    void test_indexCreate_appliesContractDefaults() {
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> sparseConfiguration = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withName("defaults-check-index")//
+                .build();
+
+        final IndexConfigurationContract defaults = IndexConfigurationRegistry
+                .get(Integer.class).orElseThrow(() -> new IllegalStateException(
+                        "Missing contract defaults for Integer"));
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory, sparseConfiguration)) {
+            final IndexConfiguration<Integer, String> actual = index
+                    .getConfiguration();
+
+            assertEquals((int) defaults.getMaxNumberOfKeysInSegmentCache(),
+                    actual.getMaxNumberOfKeysInSegmentCache(),
+                    "Segment cache size must come from contract defaults");
+            assertEquals(defaults.getMaxNumberOfKeysInSegmentChunk(),
+                    actual.getMaxNumberOfKeysInSegmentChunk(),
+                    "Segment chunk size must come from contract defaults");
+            assertEquals(defaults.getMaxNumberOfDeltaCacheFiles(),
+                    actual.getMaxNumberOfDeltaCacheFiles(),
+                    "Delta cache file cap must come from contract defaults");
+            assertEquals(defaults.getMaxNumberOfKeysInSegment(),
+                    actual.getMaxNumberOfKeysInSegment(),
+                    "Segment key count must come from contract defaults");
+            assertEquals(defaults.getMaxNumberOfSegmentsInCache(),
+                    actual.getMaxNumberOfSegmentsInCache(),
+                    "Segments in cache must come from contract defaults");
+            assertEquals(defaults.getIndexWorkerThreadCount(),
+                    actual.getIndexWorkerThreadCount(),
+                    "Number of threads must come from contract defaults");
+            assertEquals(defaults.getNumberOfIoThreads(),
+                    actual.getNumberOfIoThreads(),
+                    "Number of IO threads must come from contract defaults");
+            assertEquals(defaults.getNumberOfRegistryLifecycleThreads(),
+                    actual.getNumberOfRegistryLifecycleThreads(),
+                    "Registry lifecycle threads must come from contract defaults");
+            assertEquals(defaults.getDiskIoBufferSizeInBytes(),
+                    actual.getDiskIoBufferSize(),
+                    "Disk IO buffer size must come from contract defaults");
+            assertEquals(defaults.getBloomFilterNumberOfHashFunctions(),
+                    actual.getBloomFilterNumberOfHashFunctions(),
+                    "Bloom hash count must come from contract defaults");
+            assertEquals(defaults.getBloomFilterIndexSizeInBytes(),
+                    actual.getBloomFilterIndexSizeInBytes(),
+                    "Bloom index size must come from contract defaults");
+            assertEquals(
+                    Double.valueOf(defaults
+                            .getBloomFilterProbabilityOfFalsePositive()),
+                    actual.getBloomFilterProbabilityOfFalsePositive(),
+                    "Bloom false-positive probability must come from contract defaults");
+            assertEquals(Boolean.valueOf(defaults.isContextLoggingEnabled()),
+                    actual.isContextLoggingEnabled(),
+                    "Context logging flag must come from contract defaults");
+
+            assertIterableEquals(
+                    toFilterClassNames(defaults.getEncodingChunkFilters()),
+                    toFilterClassNames(actual.getEncodingChunkFilters()),
+                    "Encoding filters must come from contract defaults");
+            assertIterableEquals(
+                    toFilterClassNames(defaults.getDecodingChunkFilters()),
+                    toFilterClassNames(actual.getDecodingChunkFilters()),
+                    "Decoding filters must come from contract defaults");
+        }
+    }
+
+    private List<String> toFilterClassNames(
+            final List<ChunkFilter> filters) {
+        return filters.stream().map(filter -> filter.getClass().getName()).toList();
+    }
+}
