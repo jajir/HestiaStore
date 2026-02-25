@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -27,12 +28,49 @@ class ScarceIndexSnapshotTest {
     }
 
     @Test
+    void test_findSegmentId_betweenKeys_returnsUpperSegmentId() {
+        final ScarceIndexSnapshot<String> snapshot = snapshot(List
+                .of(Entry.of("bbb", 1), Entry.of("ddd", 2), Entry.of("fff", 3)));
+
+        assertEquals(2, snapshot.findSegmentId("ccc"));
+        assertEquals(3, snapshot.findSegmentId("eee"));
+    }
+
+    @Test
     void test_findSegmentId_outOfRange() {
         final ScarceIndexSnapshot<String> snapshot = snapshot(
                 List.of(Entry.of("bbb", 1), Entry.of("ccc", 2)));
 
         assertEquals(1, snapshot.findSegmentId("aaa"));
         assertNull(snapshot.findSegmentId("ddd"));
+    }
+
+    @Test
+    void test_findSegmentId_emptySnapshot() {
+        final ScarceIndexSnapshot<String> snapshot = snapshot(List.of());
+        assertNull(snapshot.findSegmentId("aaa"));
+    }
+
+    @Test
+    void test_findSegmentId_singleEntry() {
+        final ScarceIndexSnapshot<String> snapshot = snapshot(
+                List.of(Entry.of("bbb", 1)));
+
+        assertEquals(1, snapshot.findSegmentId("aaa"));
+        assertEquals(1, snapshot.findSegmentId("bbb"));
+        assertNull(snapshot.findSegmentId("ccc"));
+    }
+
+    @Test
+    void test_findSegmentId_usesProvidedComparator() {
+        final ScarceIndexSnapshot<String> snapshot = new ScarceIndexSnapshot<>(
+                String.CASE_INSENSITIVE_ORDER,
+                List.of(Entry.of("BBB", 1), Entry.of("CCC", 2),
+                        Entry.of("DDD", 3)));
+
+        assertEquals(2, snapshot.findSegmentId("ccc"));
+        assertEquals(1, snapshot.findSegmentId("aaa"));
+        assertNull(snapshot.findSegmentId("zzz"));
     }
 
     @Test
@@ -46,9 +84,32 @@ class ScarceIndexSnapshotTest {
     }
 
     @Test
+    void test_constructor_copiesInputEntries() {
+        final List<Entry<String, Integer>> source = new ArrayList<>();
+        source.add(Entry.of("bbb", 1));
+        source.add(Entry.of("ccc", 2));
+        final ScarceIndexSnapshot<String> snapshot = snapshot(source);
+
+        source.clear();
+        source.add(Entry.of("aaa", 999));
+
+        assertEquals(2, snapshot.getKeyCount());
+        assertEquals("bbb", snapshot.getMinKey());
+        assertEquals("ccc", snapshot.getMaxKey());
+        assertEquals(List.of(Entry.of("bbb", 1), Entry.of("ccc", 2)),
+                snapshot.getSegments().toList());
+    }
+
+    @Test
     void test_constructor_requiresEntries() {
         assertThrows(IllegalArgumentException.class,
                 () -> new ScarceIndexSnapshot<>(COMPARATOR, null));
+    }
+
+    @Test
+    void test_constructor_requiresComparator() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ScarceIndexSnapshot<>(null, List.of()));
     }
 
     @Test
