@@ -19,7 +19,7 @@ class PropertyTransactionTest {
     private Properties target;
 
     @Mock
-    private PropertyStoreimpl store;
+    private PropertyStoreImpl store;
 
     private PropertyTransaction transaction;
 

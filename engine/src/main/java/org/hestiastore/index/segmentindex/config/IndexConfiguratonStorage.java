@@ -10,7 +10,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
-import org.hestiastore.index.properties.PropertyStoreimpl;
+import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
@@ -67,8 +67,8 @@ public class IndexConfiguratonStorage<K, V> {
     }
 
     public IndexConfiguration<K, V> load() {
-        final PropertyStore props = PropertyStoreimpl.fromDirectory(
-                directoryFacade, CONFIGURATION_FILENAME, true);
+        final PropertyStore props = PropertyStoreImpl
+                .fromDirectory(directoryFacade, CONFIGURATION_FILENAME, true);
         SCHEMA.ensure(props);
         final PropertyView propsView = props.snapshot();
         final Class<K> keyClass = toClass(propsView.getString(PROP_KEY_CLASS));
@@ -116,8 +116,8 @@ public class IndexConfiguratonStorage<K, V> {
                         (int) maxNumberOfKeysInSegmentWriteCache)//
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
                         (int) maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)//
-                .withMaxNumberOfKeysInSegmentChunk(
-                        propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
+                .withMaxNumberOfKeysInSegmentChunk(propsView
+                        .getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
                 .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)//
                 .withIndexWorkerThreadCount(getOrDefault(propsView,
                         PROP_INDEX_WORKER_THREAD_COUNT,
@@ -125,30 +125,24 @@ public class IndexConfiguratonStorage<K, V> {
                 .withNumberOfIoThreads(getOrDefault(propsView,
                         PROP_NUMBER_OF_IO_THREADS,
                         IndexConfigurationContract.NUMBER_OF_IO_THREADS))//
-                .withNumberOfSegmentIndexMaintenanceThreads(
-                        getOrDefault(propsView,
-                                PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
-                                IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
-                .withNumberOfIndexMaintenanceThreads(
-                        getOrDefault(propsView,
-                                PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
-                                IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS))//
-                .withNumberOfRegistryLifecycleThreads(
-                        getOrDefault(propsView,
-                                PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
-                                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS))//
-                .withIndexBusyBackoffMillis(
-                        getOrDefault(propsView,
-                                PROP_INDEX_BUSY_BACKOFF_MILLIS,
-                                IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS))//
-                .withIndexBusyTimeoutMillis(
-                        getOrDefault(propsView,
-                                PROP_INDEX_BUSY_TIMEOUT_MILLIS,
-                                IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS))//
-                .withSegmentMaintenanceAutoEnabled(
-                        getOrDefaultBoolean(propsView,
-                                PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
-                                IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED))//
+                .withNumberOfSegmentIndexMaintenanceThreads(getOrDefault(
+                        propsView, PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
+                        IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
+                .withNumberOfIndexMaintenanceThreads(getOrDefault(propsView,
+                        PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
+                        IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS))//
+                .withNumberOfRegistryLifecycleThreads(getOrDefault(propsView,
+                        PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
+                        IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS))//
+                .withIndexBusyBackoffMillis(getOrDefault(propsView,
+                        PROP_INDEX_BUSY_BACKOFF_MILLIS,
+                        IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS))//
+                .withIndexBusyTimeoutMillis(getOrDefault(propsView,
+                        PROP_INDEX_BUSY_TIMEOUT_MILLIS,
+                        IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS))//
+                .withSegmentMaintenanceAutoEnabled(getOrDefaultBoolean(
+                        propsView, PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
+                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(propsView
@@ -159,8 +153,9 @@ public class IndexConfiguratonStorage<K, V> {
 
         if (propsView.getDouble(
                 PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE) != 0) {
-            builder.withBloomFilterProbabilityOfFalsePositive(propsView.getDouble(
-                    PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE));
+            builder.withBloomFilterProbabilityOfFalsePositive(
+                    propsView.getDouble(
+                            PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE));
         }
 
         builder.withKeyTypeDescriptor(
@@ -189,8 +184,8 @@ public class IndexConfiguratonStorage<K, V> {
      * @param indexConfiguration configuration to persist
      */
     public void save(IndexConfiguration<K, V> indexConfiguration) {
-        final PropertyStore props = PropertyStoreimpl.fromDirectory(
-                directoryFacade, CONFIGURATION_FILENAME, false);
+        final PropertyStore props = PropertyStoreImpl
+                .fromDirectory(directoryFacade, CONFIGURATION_FILENAME, false);
         final PropertyTransaction tx = props.beginTransaction();
         final PropertyWriter writer = tx.openPropertyWriter();
         writer.setString(PROP_KEY_CLASS,
@@ -230,13 +225,15 @@ public class IndexConfiguratonStorage<K, V> {
                         : indexConfiguration.getMaxNumberOfDeltaCacheFiles();
         writer.setInt(PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 deltaCacheFileCount);
-        final int threadCount = indexConfiguration.getIndexWorkerThreadCount() == null
-                ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
-                : indexConfiguration.getIndexWorkerThreadCount();
+        final int threadCount = indexConfiguration
+                .getIndexWorkerThreadCount() == null
+                        ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
+                        : indexConfiguration.getIndexWorkerThreadCount();
         writer.setInt(PROP_INDEX_WORKER_THREAD_COUNT, threadCount);
-        final int ioThreadCount = indexConfiguration.getNumberOfIoThreads() == null
-                ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
-                : indexConfiguration.getNumberOfIoThreads();
+        final int ioThreadCount = indexConfiguration
+                .getNumberOfIoThreads() == null
+                        ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
+                        : indexConfiguration.getNumberOfIoThreads();
         writer.setInt(PROP_NUMBER_OF_IO_THREADS, ioThreadCount);
         final int maintenanceThreads = indexConfiguration
                 .getNumberOfSegmentIndexMaintenanceThreads() == null
@@ -248,13 +245,15 @@ public class IndexConfiguratonStorage<K, V> {
         final int indexMaintenanceThreads = indexConfiguration
                 .getNumberOfIndexMaintenanceThreads() == null
                         ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
-                        : indexConfiguration.getNumberOfIndexMaintenanceThreads();
+                        : indexConfiguration
+                                .getNumberOfIndexMaintenanceThreads();
         writer.setInt(PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 indexMaintenanceThreads);
         final int registryLifecycleThreads = indexConfiguration
                 .getNumberOfRegistryLifecycleThreads() == null
                         ? IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS
-                        : indexConfiguration.getNumberOfRegistryLifecycleThreads();
+                        : indexConfiguration
+                                .getNumberOfRegistryLifecycleThreads();
         writer.setInt(PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
                 registryLifecycleThreads);
         final int busyBackoffMillis = indexConfiguration
@@ -267,10 +266,8 @@ public class IndexConfiguratonStorage<K, V> {
                         ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
                         : indexConfiguration.getIndexBusyTimeoutMillis();
         writer.setInt(PROP_INDEX_BUSY_TIMEOUT_MILLIS, busyTimeoutMillis);
-        writer.setBoolean(PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
-                Boolean.TRUE
-                        .equals(indexConfiguration
-                                .isSegmentMaintenanceAutoEnabled()));
+        writer.setBoolean(PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED, Boolean.TRUE
+                .equals(indexConfiguration.isSegmentMaintenanceAutoEnabled()));
         // Segment bloom filter properties
         writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 indexConfiguration.getBloomFilterNumberOfHashFunctions());
@@ -285,11 +282,11 @@ public class IndexConfiguratonStorage<K, V> {
             writer.setDouble(PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                     BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE);
         }
-        writer.setString(PROP_ENCODING_CHUNK_FILTERS, serializeFilters(
-                indexConfiguration.getEncodingChunkFilters()));
+        writer.setString(PROP_ENCODING_CHUNK_FILTERS,
+                serializeFilters(indexConfiguration.getEncodingChunkFilters()));
 
-        writer.setString(PROP_DECODING_CHUNK_FILTERS, serializeFilters(
-                indexConfiguration.getDecodingChunkFilters()));
+        writer.setString(PROP_DECODING_CHUNK_FILTERS,
+                serializeFilters(indexConfiguration.getDecodingChunkFilters()));
         SCHEMA.writeMetadata(writer);
         tx.close();
     }

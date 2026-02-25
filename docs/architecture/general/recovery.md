@@ -53,7 +53,7 @@ Key classes:
 
 - Segment manifest metadata (counts and delta‑file numbering) is persisted via an overwrite (`Directory.Access.OVERWRITE`). It is updated after data files are committed, and is not critical to data correctness. If a crash corrupts or desynchronizes this metadata, the reader logic remains safe (e.g., missing delta file names yield empty reads) and you can re‑establish consistency via the checker below.
 
-Code: `properties/PropertyStoreimpl` and `SegmentPropertiesManager`.
+Code: `properties/PropertyStoreImpl` and `SegmentPropertiesManager`.
 
 ## 💥 Failure Model (Examples)
 

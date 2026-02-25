@@ -17,8 +17,8 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
  * @param <K>
  * @param <V>
  */
-final class SegmentDeltaCacheWriter<K, V>
-        extends AbstractCloseableResource implements EntryWriter<K, V> {
+final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
+        implements EntryWriter<K, V> {
 
     /**
      * Cache will contains data written into this delta file.
@@ -46,7 +46,7 @@ final class SegmentDeltaCacheWriter<K, V>
      * @param maxNumberOfKeysInSegmentWriteCache expected upper bound of keys
      *                                           collected in this delta file;
      *                                           must be greater than 0
-     * @param maxNumberOfKeysInChunk            number of entries stored in a
+     * @param maxNumberOfKeysInChunk             number of entries stored in a
      *                                           single chunk; must be greater
      *                                           than 0
      * @throws IllegalArgumentException when any argument is invalid or the

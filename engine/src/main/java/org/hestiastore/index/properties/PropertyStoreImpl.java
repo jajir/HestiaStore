@@ -15,11 +15,11 @@ import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
- * {@link PropertyStore} backed by the {@link Directory} abstraction. It
- * loads all properties into memory and persists changes atomically through
- * explicit transactions.
+ * {@link PropertyStore} backed by the {@link Directory} abstraction. It loads
+ * all properties into memory and persists changes atomically through explicit
+ * transactions.
  */
-public final class PropertyStoreimpl implements PropertyStore {
+public final class PropertyStoreImpl implements PropertyStore {
 
     private static final String PROPERTIES_HEADER_COMMENT = "HestiaStore metadata. Numeric format: underscore (_) is thousands separator; dot (.) is decimal separator.";
 
@@ -28,7 +28,7 @@ public final class PropertyStoreimpl implements PropertyStore {
     private final Properties properties = new Properties();
     private final PropertyConverters converters = new PropertyConverters();
 
-    public PropertyStoreimpl(final Directory directoryFacade,
+    public PropertyStoreImpl(final Directory directoryFacade,
             final String fileName, final boolean force) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -36,10 +36,10 @@ public final class PropertyStoreimpl implements PropertyStore {
         loadIfPresent(force);
     }
 
-    public static PropertyStoreimpl fromDirectory(
-            final Directory directoryFacade,
-            final String fileName, final boolean force) {
-        return new PropertyStoreimpl(directoryFacade, fileName, force);
+    public static PropertyStoreImpl fromDirectory(
+            final Directory directoryFacade, final String fileName,
+            final boolean force) {
+        return new PropertyStoreImpl(directoryFacade, fileName, force);
     }
 
     private void loadIfPresent(final boolean force) {

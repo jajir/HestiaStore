@@ -7,16 +7,15 @@ import java.util.Properties;
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
 
-public final class PropertyTransaction
-        extends GuardedWriteTransaction<PropertyWriterImpl>
-        implements AutoCloseable {
+public final class PropertyTransaction extends
+        GuardedWriteTransaction<PropertyWriterImpl> implements AutoCloseable {
 
     private final Map<String, String> workingCopy;
     private final Map<String, String> originalCopy;
     private final Properties target;
-    private final PropertyStoreimpl store;
+    private final PropertyStoreImpl store;
 
-    PropertyTransaction(final PropertyStoreimpl store,
+    PropertyTransaction(final PropertyStoreImpl store,
             final Properties target) {
         this.store = Vldtn.requireNonNull(store, "store");
         this.target = Vldtn.requireNonNull(target, "target");
