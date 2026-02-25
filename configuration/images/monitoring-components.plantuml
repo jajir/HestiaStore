@@ -1,0 +1,37 @@
+@startuml monitoring-components
+left to right direction
+skinparam componentStyle rectangle
+
+package "Node JVM #1" {
+  [engine.jar] as ENGINE1
+  [SegmentIndex(0..N)] as INDEXES1
+  [monitoring-rest-json] as AGENT1
+  ENGINE1 --> INDEXES1
+  INDEXES1 --> AGENT1 : addIndex/removeIndex + report/actions
+}
+
+package "Node JVM #2" {
+  [engine.jar] as ENGINE2
+  [SegmentIndex(0..N)] as INDEXES2
+  [monitoring-rest-json] as AGENT2
+  ENGINE2 --> INDEXES2
+  INDEXES2 --> AGENT2 : addIndex/removeIndex + report/actions
+}
+
+package "Node JVM #N" {
+  [engine.jar] as ENGINEN
+  [SegmentIndex(0..N)] as INDEXESN
+  [monitoring-rest-json] as AGENTN
+  ENGINEN --> INDEXESN
+  INDEXESN --> AGENTN : addIndex/removeIndex + report/actions
+}
+
+package "Web JVM" {
+  [monitoring-console-web.jar] as WEB
+}
+
+WEB --> AGENT1 : /api/v1/*
+WEB --> AGENT2 : /api/v1/*
+WEB --> AGENTN : /api/v1/*
+
+@enduml
