@@ -76,8 +76,8 @@ public class SegmentFullWriterTx<K, V>
         segmentFullWriter.commitBloomFilter();
         deltaCacheController.clearPreservingWriteCache();
 
-        segmentPropertiesManager.setKeyCounters(0,
+        segmentPropertiesManager.startTx().setKeyCounters(0,
                 segmentFullWriter.getNumberKeys(),
-                segmentFullWriter.getNumberKeysInScarceIndex());
+                segmentFullWriter.getNumberKeysInScarceIndex()).commit();
     }
 }
