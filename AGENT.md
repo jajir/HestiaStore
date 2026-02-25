@@ -49,6 +49,7 @@
 - In tests, prefer package-private classes/methods over `public` when framework visibility does not require `public`.
 - Frontend: prefer `.dataset` over `getAttribute("data-*")`.
 - Frontend: enforce minimum text/background contrast (WCAG AA), especially for muted/status colors.
+- Try to avoid return `null` from methods. When is't possible allows to throw runtime exception or use null value object.
 
 ## Testing Guidelines
 

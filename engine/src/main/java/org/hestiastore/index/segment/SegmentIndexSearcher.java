@@ -1,6 +1,7 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -16,8 +17,9 @@ import org.hestiastore.index.directory.FileReaderSeekable;
  * at that block and scans forward (up to the configured page size) comparing
  * keys in order until it finds a match or determines absence.
  * <p>
- * The searcher uses a shared {@link FileReaderSeekable} to reuse an
- * underlying channel across lookups.
+ * The searcher obtains a dedicated seekable cursor for each lookup from a
+ * factory. This avoids shared-position races between concurrent requests while
+ * still allowing factory-level resource reuse.
  *
  * @param <K> key type
  * @param <V> value type
@@ -27,7 +29,7 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     private final ChunkEntryFile<K, V> chunkPairFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
-    private final FileReaderSeekable seekableReader;
+    private final Supplier<FileReaderSeekable> seekableReaderSupplier;
 
     /**
      * Creates a searcher bound to an index file and lookup limits.
@@ -37,20 +39,21 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
      *                                   the start position
      * @param keyTypeComparator          comparator used for key ordering in the
      *                                   index
-     * @param seekableReader             shared reader reused across lookups
+     * @param seekableReaderSupplier     supplier creating seekable cursors for
+     *                                   each lookup
      */
     SegmentIndexSearcher(final ChunkEntryFile<K, V> chunkPairFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator,
-            final FileReaderSeekable seekableReader) {
+            final Supplier<FileReaderSeekable> seekableReaderSupplier) {
         this.chunkPairFile = Vldtn.requireNonNull(chunkPairFile,
                 "segmentIndexFile");
         this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
                 maxNumberOfKeysInIndexPage, "maxNumberOfKeysInIndexPage");
         this.keyTypeComparator = Vldtn.requireNonNull(keyTypeComparator,
                 "keyTypeComparator");
-        this.seekableReader = Vldtn.requireNonNull(seekableReader,
-                "seekableReader");
+        this.seekableReaderSupplier = Vldtn.requireNonNull(
+                seekableReaderSupplier, "seekableReaderSupplier");
     }
 
     /**
@@ -58,7 +61,7 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
      */
     @Override
     protected void doClose() {
-        seekableReader.close();
+        // no-op
     }
 
     /**
@@ -69,17 +72,21 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
      * @return value when found, otherwise {@code null}
      */
     public V search(final K key, long startPosition) {
-        try (EntryIterator<K, V> iterator = chunkPairFile
-                .openIteratorAtPosition(startPosition, seekableReader)) {
-            for (int i = 0; iterator.hasNext()
-                    && i < maxNumberOfKeysInIndexPage; i++) {
-                final Entry<K, V> entry = iterator.next();
-                final int cmp = keyTypeComparator.compare(entry.getKey(), key);
-                if (cmp == 0) {
-                    return entry.getValue();
-                }
-                if (cmp > 0) {
-                    return null;
+        try (FileReaderSeekable seekableReader = seekableReaderSupplier
+                .get()) {
+            try (EntryIterator<K, V> iterator = chunkPairFile
+                    .openIteratorAtPosition(startPosition, seekableReader)) {
+                for (int i = 0; iterator.hasNext()
+                        && i < maxNumberOfKeysInIndexPage; i++) {
+                    final Entry<K, V> entry = iterator.next();
+                    final int cmp = keyTypeComparator.compare(entry.getKey(),
+                            key);
+                    if (cmp == 0) {
+                        return entry.getValue();
+                    }
+                    if (cmp > 0) {
+                        return null;
+                    }
                 }
             }
         }

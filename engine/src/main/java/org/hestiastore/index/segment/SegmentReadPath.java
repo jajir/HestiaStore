@@ -1,16 +1,11 @@
 package org.hestiastore.index.segment;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.EntryIteratorWithLock;
 import org.hestiastore.index.OptimisticLock;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileReaderSeekable;
 /**
  * Encapsulates segment read operations and read-time state.
  *
@@ -107,96 +102,12 @@ final class SegmentReadPath<K, V> {
                 segmentFiles.getIndexFile(),
                 segmentConf.getMaxNumberOfKeysInChunk(),
                 segmentFiles.getKeyTypeDescriptor().getComparator(),
-                new LazySeekableReader(segmentFiles.getDirectory(),
-                        segmentFiles.getIndexFileName()));
+                () -> segmentFiles.getDirectory()
+                        .getFileReaderSeekable(segmentFiles.getIndexFileName()));
         if (segmentIndexSearcher.compareAndSet(null, created)) {
             return created;
         }
         return segmentIndexSearcher.get();
-    }
-
-    /**
-     * Lazily opens a seekable file reader and tolerates missing files by
-     * behaving as an empty reader.
-     */
-    private static final class LazySeekableReader extends AbstractCloseableResource
-            implements FileReaderSeekable {
-
-        private final Directory directory;
-        private final String fileName;
-        private final ThreadLocal<FileReaderSeekable> threadReader = new ThreadLocal<>();
-        private final Set<FileReaderSeekable> openedReaders = ConcurrentHashMap
-                .newKeySet();
-
-        LazySeekableReader(final Directory directory, final String fileName) {
-            this.directory = Vldtn.requireNonNull(directory, "directory");
-            this.fileName = Vldtn.requireNonNull(fileName, "fileName");
-        }
-
-        private FileReaderSeekable openForCurrentThread() {
-            final FileReaderSeekable previous = threadReader.get();
-            if (previous != null) {
-                threadReader.remove();
-                if (openedReaders.remove(previous)) {
-                    previous.close();
-                }
-            }
-            if (!directory.isFileExists(fileName)) {
-                return null;
-            }
-            final FileReaderSeekable current;
-            try {
-                current = directory.getFileReaderSeekable(fileName);
-            } catch (final IllegalArgumentException e) {
-                return null;
-            }
-            threadReader.set(current);
-            openedReaders.add(current);
-            return current;
-        }
-
-        @Override
-        public int read() {
-            final FileReaderSeekable current = threadReader.get();
-            if (current == null) {
-                return -1;
-            }
-            return current.read();
-        }
-
-        @Override
-        public int read(final byte[] bytes) {
-            final FileReaderSeekable current = threadReader.get();
-            if (current == null) {
-                return -1;
-            }
-            return current.read(bytes);
-        }
-
-        @Override
-        public void skip(final long position) {
-            final FileReaderSeekable current = threadReader.get();
-            if (current != null) {
-                current.skip(position);
-            }
-        }
-
-        @Override
-        public void seek(final long position) {
-            final FileReaderSeekable current = openForCurrentThread();
-            if (current != null) {
-                current.seek(position);
-            }
-        }
-
-        @Override
-        protected void doClose() {
-            threadReader.remove();
-            for (final FileReaderSeekable reader : openedReaders) {
-                reader.close();
-            }
-            openedReaders.clear();
-        }
     }
 
     /**

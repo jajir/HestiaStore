@@ -7,6 +7,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.function.Supplier;
+
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
@@ -29,18 +31,22 @@ class SegmentIndexSearcherTest {
     @Mock
     private FileReaderSeekable seekableReader;
 
+    @Mock
+    private Supplier<FileReaderSeekable> seekableReaderSupplier;
+
     private SegmentIndexSearcher<String, String> searcher;
 
     @BeforeEach
     void setUp() {
         searcher = new SegmentIndexSearcher<>(chunkEntryFile, 3,
-                String::compareTo, seekableReader);
+                String::compareTo, seekableReaderSupplier);
     }
 
     @Test
-    void search_uses_seekableReader_when_supplier_set() {
+    void search_uses_seekable_reader_from_factory() {
         searcher = new SegmentIndexSearcher<>(chunkEntryFile, 3,
-                String::compareTo, seekableReader);
+                String::compareTo, seekableReaderSupplier);
+        when(seekableReaderSupplier.get()).thenReturn(seekableReader);
         when(chunkEntryFile.openIteratorAtPosition(50L, seekableReader))
                 .thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, false);
@@ -49,13 +55,16 @@ class SegmentIndexSearcherTest {
         final String out = searcher.search("key", 50L);
 
         assertEquals("val", out);
+        verify(seekableReaderSupplier, times(1)).get();
         verify(chunkEntryFile, times(1)).openIteratorAtPosition(50L,
                 seekableReader);
         verify(iterator, times(1)).close();
+        verify(seekableReader, times(1)).close();
     }
 
     @Test
-    void search_uses_seekableReader_and_stops_when_key_greater() {
+    void search_stops_when_key_greater() {
+        when(seekableReaderSupplier.get()).thenReturn(seekableReader);
         when(chunkEntryFile.openIteratorAtPosition(10L, seekableReader))
                 .thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, false);
@@ -64,16 +73,19 @@ class SegmentIndexSearcherTest {
         final String out = searcher.search("a", 10L);
 
         assertNull(out);
+        verify(seekableReaderSupplier, times(1)).get();
         verify(chunkEntryFile, times(1)).openIteratorAtPosition(10L,
                 seekableReader);
         verify(iterator, times(1)).next();
         verify(iterator, times(1)).close();
+        verify(seekableReader, times(1)).close();
     }
 
     @Test
     void search_respects_index_page_limit() {
         searcher = new SegmentIndexSearcher<>(chunkEntryFile, 2,
-                String::compareTo, seekableReader);
+                String::compareTo, seekableReaderSupplier);
+        when(seekableReaderSupplier.get()).thenReturn(seekableReader);
         when(chunkEntryFile.openIteratorAtPosition(0L, seekableReader))
                 .thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
@@ -85,10 +97,12 @@ class SegmentIndexSearcherTest {
         assertNull(out);
         verify(iterator, times(2)).next();
         verify(iterator, times(1)).close();
+        verify(seekableReader, times(1)).close();
     }
 
     @Test
     void search_finds_value_after_scanning() {
+        when(seekableReaderSupplier.get()).thenReturn(seekableReader);
         when(chunkEntryFile.openIteratorAtPosition(5L, seekableReader))
                 .thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, true, false);
@@ -100,14 +114,26 @@ class SegmentIndexSearcherTest {
         assertEquals("v2", out);
         verify(iterator, times(2)).next();
         verify(iterator, times(1)).close();
+        verify(seekableReader, times(1)).close();
     }
 
     @Test
-    void constructor_requires_seekableReader() {
+    void search_propagates_factory_exception() {
+        when(seekableReaderSupplier.get())
+                .thenThrow(new IllegalStateException("open failure"));
+
+        final Exception e = assertThrows(IllegalStateException.class,
+                () -> searcher.search("a", 5L));
+        assertEquals("open failure", e.getMessage());
+    }
+
+    @Test
+    void constructor_requires_seekable_reader_supplier() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexSearcher<>(chunkEntryFile, 3,
                         String::compareTo, null));
-        assertEquals("Property 'seekableReader' must not be null.",
+        assertEquals("Property 'seekableReaderSupplier' must not be null.",
                 e.getMessage());
     }
+
 }
