@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -76,7 +75,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
-    private final IndexExecutorRegistry executorRegistry;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
     private final RuntimeTuningState runtimeTuningState;
@@ -107,47 +105,33 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
-                    "executorRegistry");
+            Vldtn.requireNonNull(executorRegistry, "executorRegistry");
             this.runtimeTuningState = RuntimeTuningState
                     .fromConfiguration(conf);
             final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
                     directoryFacade, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            ExecutorService segmentMaintenanceExecutor = this.executorRegistry
-                    .getSegmentMaintenanceExecutor();
-            ExecutorService splitMaintenanceExecutor = this.executorRegistry
-                    .getSegmentExecutor();
-            if (isContextLoggingEnabled()) {
-                segmentMaintenanceExecutor = new IndexNameMdcExecutorService(
-                        conf.getIndexName(), segmentMaintenanceExecutor);
-                splitMaintenanceExecutor = new IndexNameMdcExecutorService(
-                        conf.getIndexName(), splitMaintenanceExecutor);
-            }
             this.segmentFactory = new SegmentFactory<>(directoryFacade,
                     keyTypeDescriptor, valueTypeDescriptor, conf,
-                    segmentMaintenanceExecutor);
-            ExecutorService registryLifecycleExecutor = this.executorRegistry
-                    .getRegistryMaintenanceExecutor();
-            if (isContextLoggingEnabled()) {
-                registryLifecycleExecutor = new IndexNameMdcExecutorService(
-                        conf.getIndexName(), registryLifecycleExecutor);
-            }
-            final SegmentRegistry<K, V> registry = SegmentRegistry
-                    .<K, V>builder().withDirectoryFacade(directoryFacade)
+                    executorRegistry.getSegmentMaintenanceExecutor());
+            this.segmentRegistry = SegmentRegistry.<K, V>builder()
+                    .withDirectoryFacade(directoryFacade)
                     .withKeyTypeDescriptor(keyTypeDescriptor)
                     .withValueTypeDescriptor(valueTypeDescriptor)
                     .withConfiguration(conf)
-                    .withMaintenanceExecutor(segmentMaintenanceExecutor)
-                    .withLifecycleExecutor(registryLifecycleExecutor).build();
-            this.segmentRegistry = registry;
+                    .withSegmentMaintenanceExecutor(
+                            executorRegistry.getSegmentMaintenanceExecutor())
+                    .withRegistryMaintenanceExecutor(
+                            executorRegistry.getRegistryMaintenanceExecutor())
+                    .build();
             final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
                     .newSegmentBuilder(id).openWriterTx();
             final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
                     conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
             final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
-                    splitCoordinator, splitMaintenanceExecutor);
+                    splitCoordinator,
+                    executorRegistry.getIndexMaintenanceExecutor());
             this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                     conf, keyToSegmentMap, asyncSplitCoordinator);
             this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
@@ -353,9 +337,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             closeResult.getStatus()));
         }
         keyToSegmentMap.optionalyFlush();
-        if (!executorRegistry.wasClosed()) {
-            executorRegistry.close();
-        }
         if (logger.isDebugEnabled()) {
             logger.debug(String.format(
                     "Index is closing, where was %s gets, %s puts and %s deletes.",
@@ -460,9 +441,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.totalSegmentKeys,
                 segmentRuntime.totalSegmentCacheKeys,
                 segmentRuntime.totalWriteCacheKeys,
-                segmentRuntime.totalDeltaCacheFiles,
-                compactRequestCount, flushRequestCount,
-                maintenanceCoordinator.splitScheduledCount(),
+                segmentRuntime.totalDeltaCacheFiles, compactRequestCount,
+                flushRequestCount, maintenanceCoordinator.splitScheduledCount(),
                 maintenanceCoordinator.splitInFlightCount(), 0, 0, 0, 0,
                 stats.getReadLatencyP50Micros(),
                 stats.getReadLatencyP95Micros(),
@@ -765,8 +745,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             segmentRuntime.getNumberOfKeysInWriteCache());
                     aggregate.totalDeltaCacheFiles += Math.max(0,
                             segmentRuntime.getNumberOfDeltaCacheFiles());
-                    aggregate.segmentRuntimeSnapshots
-                            .add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
+                    aggregate.segmentRuntimeSnapshots.add(
+                            new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
                                     segmentRuntime));
                     aggregate.compactRequestCount += Math.max(0L,
                             segmentRuntime.getNumberOfCompacts());

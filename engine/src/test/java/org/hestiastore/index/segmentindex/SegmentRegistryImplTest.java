@@ -52,20 +52,21 @@ class SegmentRegistryImplTest {
     private IndexConfiguration<Integer, String> conf;
 
     private SegmentRegistryImpl<Integer, String> registry;
-    private ExecutorService maintenancePool;
+    private ExecutorService segmentMaintenancePool;
 
     @BeforeEach
     void setUp() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         directoryFacade = new MemDirectory();
-        maintenancePool = Executors.newSingleThreadExecutor();
+        segmentMaintenancePool = Executors.newSingleThreadExecutor();
         registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
-                .withMaintenanceExecutor(maintenancePool)
-                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .withSegmentMaintenanceExecutor(segmentMaintenancePool)
+                .withRegistryMaintenanceExecutor(
+                        Executors.newSingleThreadExecutor())
                 .build();
     }
 
@@ -74,8 +75,8 @@ class SegmentRegistryImplTest {
         if (registry != null) {
             registry.close();
         }
-        if (maintenancePool != null) {
-            maintenancePool.shutdownNow();
+        if (segmentMaintenancePool != null) {
+            segmentMaintenancePool.shutdownNow();
         }
     }
 
@@ -148,8 +149,9 @@ class SegmentRegistryImplTest {
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
-                .withMaintenanceExecutor(maintenancePool)
-                .withLifecycleExecutor(Executors.newSingleThreadExecutor())
+                .withSegmentMaintenanceExecutor(segmentMaintenancePool)
+                .withRegistryMaintenanceExecutor(
+                        Executors.newSingleThreadExecutor())
                 .build();
         stubSegmentConfig();
         final Segment<Integer, String> first = registry.createSegment()

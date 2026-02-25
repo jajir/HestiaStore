@@ -25,7 +25,7 @@ public final class SegmentFactory<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
-    private final ExecutorService maintenanceExecutor;
+    private final ExecutorService segmentMaintenanceExecutor;
     private volatile int runtimeMaxNumberOfKeysInSegmentCache;
     private volatile int runtimeMaxNumberOfKeysInSegmentWriteCache;
     private volatile int runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
@@ -37,13 +37,13 @@ public final class SegmentFactory<K, V> {
      * @param keyTypeDescriptor  key type descriptor
      * @param valueTypeDescriptor value type descriptor
      * @param conf               index configuration
-     * @param maintenanceExecutor executor for segment maintenance tasks
+     * @param segmentMaintenanceExecutor executor for segment maintenance tasks
      */
     public SegmentFactory(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final ExecutorService maintenanceExecutor) {
+            final ExecutorService segmentMaintenanceExecutor) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -51,8 +51,9 @@ public final class SegmentFactory<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
-                "maintenanceExecutor");
+        this.segmentMaintenanceExecutor = Vldtn
+                .requireNonNull(segmentMaintenanceExecutor,
+                        "segmentMaintenanceExecutor");
         this.runtimeMaxNumberOfKeysInSegmentCache = toIntOrZero(
                 conf.getMaxNumberOfKeysInSegmentCache());
         this.runtimeMaxNumberOfKeysInSegmentWriteCache = toIntOrZero(
@@ -109,7 +110,7 @@ public final class SegmentFactory<K, V> {
                 .withId(segmentId)//
                 .withDirectoryLockingEnabled(true)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
-                .withMaintenanceExecutor(maintenanceExecutor)//
+                .withMaintenanceExecutor(segmentMaintenanceExecutor)//
                 .withMaintenancePolicy(maintenancePolicy)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         maxNumberOfKeysInSegmentWriteCache)//
