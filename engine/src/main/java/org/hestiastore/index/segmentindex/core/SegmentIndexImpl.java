@@ -76,7 +76,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentFactory<K, V> segmentFactory;
     private final SegmentMaintenanceCoordinator<K, V> maintenanceCoordinator;
-    private final SplitAsyncExecutor splitAsyncExecutor;
     private final IndexExecutorRegistry executorRegistry;
     private final SegmentIndexCore<K, V> core;
     private final IndexRetryPolicy retryPolicy;
@@ -118,10 +117,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     keyToSegmentMapDelegate);
             ExecutorService segmentMaintenanceExecutor = this.executorRegistry
                     .getSegmentMaintenanceExecutor();
-            this.splitAsyncExecutor = new SplitAsyncExecutor(
-                    this.executorRegistry);
-            ExecutorService splitMaintenanceExecutor = splitAsyncExecutor
-                    .getExecutor();
+            ExecutorService splitMaintenanceExecutor = this.executorRegistry
+                    .getSegmentExecutor();
             if (isContextLoggingEnabled()) {
                 segmentMaintenanceExecutor = new IndexNameMdcExecutorService(
                         conf.getIndexName(), segmentMaintenanceExecutor);
@@ -356,9 +353,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             closeResult.getStatus()));
         }
         keyToSegmentMap.optionalyFlush();
-        if (!splitAsyncExecutor.wasClosed()) {
-            splitAsyncExecutor.close();
-        }
         if (!executorRegistry.wasClosed()) {
             executorRegistry.close();
         }
