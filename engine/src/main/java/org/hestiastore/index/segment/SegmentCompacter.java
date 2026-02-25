@@ -122,7 +122,7 @@ final class SegmentCompacter<K, V> {
     private void finalizeVersionSwitch(final CompactionPlan<K, V> plan) {
         final SegmentPropertiesManager propertiesManager = plan.segment
                 .getSegmentPropertiesManager();
-        propertiesManager.setVersion(plan.nextVersion);
+        propertiesManager.startTx().setVersion(plan.nextVersion).commit();
     }
 
     private void applyVersionSwitch(final CompactionPlan<K, V> plan) {

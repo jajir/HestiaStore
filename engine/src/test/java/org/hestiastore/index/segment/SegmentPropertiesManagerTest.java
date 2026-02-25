@@ -1,11 +1,8 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,15 +32,15 @@ class SegmentPropertiesManagerTest {
 
         // verify that first file is correct
         assertEquals("v01-delta-0000.cache",
-                props.getAndIncreaseDeltaFileName());
+                reserveNextDeltaFileName());
         assertEquals(1, props.getCacheDeltaFileNames().size());
         assertTrue(props.getCacheDeltaFileNames()
                 .contains("v01-delta-0000.cache"));
 
         // Set correct values
-        props.setNumberOfKeysInCache(87);
-        props.setNumberOfKeysInScarceIndex(132);
-        props.setNumberOfKeysInIndex(1023);
+        props.startTx().setNumberOfKeysInCache(87)
+                .setNumberOfKeysInScarceIndex(132)
+                .setNumberOfKeysInIndex(1023).commit();
 
         // verify that data are correctly read
         stats = props.getSegmentStats();
@@ -54,7 +51,7 @@ class SegmentPropertiesManagerTest {
 
         // verify that newly added
         assertEquals("v01-delta-0001.cache",
-                props.getAndIncreaseDeltaFileName());
+                reserveNextDeltaFileName());
         assertEquals(2, props.getCacheDeltaFileNames().size());
         assertTrue(props.getCacheDeltaFileNames()
                 .contains("v01-delta-0000.cache"));
@@ -68,13 +65,13 @@ class SegmentPropertiesManagerTest {
     @Test
     void test_deltaFileNames_are_sorted() {
         assertEquals("v01-delta-0000.cache",
-                props.getAndIncreaseDeltaFileName());
+                reserveNextDeltaFileName());
         assertEquals("v01-delta-0001.cache",
-                props.getAndIncreaseDeltaFileName());
+                reserveNextDeltaFileName());
         assertEquals("v01-delta-0002.cache",
-                props.getAndIncreaseDeltaFileName());
+                reserveNextDeltaFileName());
         assertEquals("v01-delta-0003.cache",
-                props.getAndIncreaseDeltaFileName());
+                reserveNextDeltaFileName());
 
         assertEquals(4, props.getCacheDeltaFileNames().size());
         assertEquals("v01-delta-0000.cache",
@@ -105,32 +102,27 @@ class SegmentPropertiesManagerTest {
         props.incrementNumberOfKeysInCache();
         assertEquals(1, props.getNumberOfKeysInDeltaCache());
 
-        // verify increment by 7
-        props.increaseNumberOfKeysInDeltaCache(7);
-        assertEquals(8, props.getNumberOfKeysInDeltaCache());
-
-        // Verify that negative value is not allowed
-        assertThrows(IllegalArgumentException.class,
-                () -> props.increaseNumberOfKeysInDeltaCache(-2));
-
+        // verify subsequent increments
+        for (int i = 0; i < 7; i++) {
+            props.incrementNumberOfKeysInCache();
+        }
         assertEquals(8, props.getNumberOfKeysInDeltaCache());
     }
 
     @Test
-    void deltaFileNames_are_unique_under_concurrency() throws Exception {
+    void deltaFileCounter_increments_under_concurrency() throws Exception {
         final int threads = 8;
         final int perThread = 50;
         final ExecutorService executor = Executors.newFixedThreadPool(threads);
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch done = new CountDownLatch(threads);
-        final Set<String> names = ConcurrentHashMap.newKeySet();
 
         for (int i = 0; i < threads; i++) {
             executor.execute(() -> {
                 try {
                     start.await();
                     for (int j = 0; j < perThread; j++) {
-                        names.add(props.getAndIncreaseDeltaFileName());
+                        props.incrementDeltaFileNameCounter();
                     }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -144,12 +136,12 @@ class SegmentPropertiesManagerTest {
         assertTrue(done.await(5, TimeUnit.SECONDS));
         executor.shutdownNow();
 
-        assertEquals(threads * perThread, names.size());
         assertEquals(threads * perThread, props.getDeltaFileCount());
+        assertEquals("v01-delta-0400.cache", props.getNextDeltaFileName());
     }
 
     @Test
-    void increaseNumberOfKeysInDeltaCache_is_atomic_under_concurrency()
+    void incrementNumberOfKeysInCache_is_atomic_under_concurrency()
             throws Exception {
         final int threads = 6;
         final int perThread = 100;
@@ -162,7 +154,7 @@ class SegmentPropertiesManagerTest {
                 try {
                     start.await();
                     for (int j = 0; j < perThread; j++) {
-                        props.increaseNumberOfKeysInDeltaCache(1);
+                        props.incrementNumberOfKeysInCache();
                     }
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -182,13 +174,13 @@ class SegmentPropertiesManagerTest {
     @Test
     void version_round_trip() {
         assertEquals(0L, props.getVersion());
-        props.setVersion(3L);
+        props.startTx().setVersion(3L).commit();
         assertEquals(3L, props.getVersion());
     }
 
     @Test
     void switchDirectory_resets_to_new_store() {
-        props.setVersion(5L);
+        props.startTx().setVersion(5L).commit();
         final Directory newDirectory = new MemDirectory();
 
         props.switchDirectory(newDirectory);
@@ -202,6 +194,14 @@ class SegmentPropertiesManagerTest {
         props = new SegmentPropertiesManager(
                 directory,
                 id);
+    }
+
+    private String reserveNextDeltaFileName() {
+        final String next = props.getNextDeltaFileName();
+        props.startTx()
+                .setDeltaFileCount(props.getDeltaFileCount() + 1)
+                .commit();
+        return next;
     }
 
 }

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +34,8 @@ class SegmentDeltaCacheWriterTest {
     private ChunkEntryFileWriterTx<Integer, String> writerTx;
     @Mock
     private ChunkEntryFileWriter<Integer, String> chunkWriter;
+    @Mock
+    private SegmentPropertiesManagerTx propertiesTx;
 
     private void stubWriteTransactionToCaptureWrites(
             final java.util.List<Entry<Integer, String>> sink) {
@@ -104,8 +105,13 @@ class SegmentDeltaCacheWriterTest {
     void close_writes_sorted_unique_entries_and_updates_properties() {
         final java.util.List<Entry<Integer, String>> written = new java.util.ArrayList<>();
         stubWriteTransactionToCaptureWrites(written);
-        when(propertiesManager.getAndIncreaseDeltaFileName())
+        when(propertiesManager.getNextDeltaFileName())
                 .thenReturn("delta-name");
+        when(propertiesManager.getDeltaFileCount()).thenReturn(7);
+        when(propertiesManager.getNumberOfKeysInDeltaCache()).thenReturn(100L);
+        when(propertiesManager.startTx()).thenReturn(propertiesTx);
+        when(propertiesTx.setDeltaFileCount(8)).thenReturn(propertiesTx);
+        when(propertiesTx.setNumberOfKeysInCache(103)).thenReturn(propertiesTx);
 
         final SegmentDeltaCacheWriter<Integer, String> writer = newWriter(10);
         // Unsorted with duplicates: last value wins
@@ -122,8 +128,11 @@ class SegmentDeltaCacheWriterTest {
         assertEquals(Entry.of(5, "E2"), written.get(2));
 
         // properties updated by number of unique keys
-        verify(propertiesManager).getAndIncreaseDeltaFileName();
-        verify(propertiesManager).increaseNumberOfKeysInDeltaCache(3);
+        verify(propertiesManager).getNextDeltaFileName();
+        verify(propertiesManager).startTx();
+        verify(propertiesTx).setDeltaFileCount(8);
+        verify(propertiesTx).setNumberOfKeysInCache(103);
+        verify(propertiesTx).commit();
         verify(chunkWriter, times(1)).flush();
         verify(writerTx).commit();
     }
@@ -135,9 +144,8 @@ class SegmentDeltaCacheWriterTest {
         writer.close();
 
         assertEquals(0, writer.getNumberOfKeys());
-        verify(propertiesManager, never())
-                .increaseNumberOfKeysInDeltaCache(anyInt());
-        verify(propertiesManager, never()).getAndIncreaseDeltaFileName();
+        verify(propertiesManager, never()).getNextDeltaFileName();
+        verify(propertiesManager, never()).startTx();
         verify(segmentFiles, never()).getDeltaCacheChunkEntryFile(any());
     }
 

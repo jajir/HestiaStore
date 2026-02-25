@@ -87,15 +87,12 @@ public class SegmentPropertiesManager {
     }
 
     /**
-     * Sets the active on-disk version for this segment.
+     * Starts a staged metadata transaction for this segment.
      *
-     * @param version active version (0 indicates legacy unversioned files)
+     * @return opened segment-properties transaction
      */
-    public void setVersion(final long version) {
-        synchronized (propertyLock) {
-            updateTransaction("setVersion",
-                    writer -> writer.setLong(SEGMENT_VERSION, version));
-        }
+    public SegmentPropertiesManagerTx startTx() {
+        return new SegmentPropertiesManagerTx(this);
     }
 
     /**
@@ -106,23 +103,6 @@ public class SegmentPropertiesManager {
             updateTransaction("clearCacheDeltaFileNamesCounter",
                     writer -> writer.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES,
                             0));
-        }
-    }
-
-    /**
-     * Returns the next delta file name and increments the counter.
-     *
-     * @return new delta file name
-     */
-    public String getAndIncreaseDeltaFileName() {
-        synchronized (propertyLock) {
-            final PropertyView view = propertyStore.snapshot();
-            final int counter = view
-                    .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-            final long version = view.getLong(SEGMENT_VERSION);
-            updateTransaction("getAndIncreaseDeltaFileName", writer -> writer
-                    .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
-            return getDeltaString(version, counter);
         }
     }
 
@@ -209,104 +189,14 @@ public class SegmentPropertiesManager {
     }
 
     /**
-     * Sets the number of delta files recorded in properties.
-     *
-     * @param count number of delta files
-     */
-    public void setDeltaFileCount(final int count) {
-        synchronized (propertyLock) {
-            updateTransaction("setDeltaFileCount", writer -> writer
-                    .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, count));
-        }
-    }
-
-    /**
-     * Sets the number of keys stored in the delta cache.
-     *
-     * @param numberOfKeysInCache number of keys in cache
-     */
-    public void setNumberOfKeysInCache(final long numberOfKeysInCache) {
-        synchronized (propertyLock) {
-            updateTransaction("setNumberOfKeysInCache",
-                    writer -> writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
-                            numberOfKeysInCache));
-        }
-    }
-
-    /**
-     * Increases the number of keys in the delta cache by the given amount.
-     *
-     * @param howMuchKeys number of keys to add
-     */
-    public void increaseNumberOfKeysInDeltaCache(final int howMuchKeys) {
-        if (howMuchKeys < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Unable to increase numebr of keys in cache about value '%s'",
-                    howMuchKeys));
-        }
-        synchronized (propertyLock) {
-            final long current = propertyStore.snapshot()
-                    .getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE);
-            updateTransaction("increaseNumberOfKeysInDeltaCache",
-                    writer -> writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
-                            current + howMuchKeys));
-        }
-    }
-
-    /**
      * Increments the number of keys in the delta cache by one.
      */
     public void incrementNumberOfKeysInCache() {
-        increaseNumberOfKeysInDeltaCache(1);
-    }
-
-    /**
-     * Sets the number of keys stored in the main index.
-     *
-     * @param numberOfKeysInIndex number of keys in the index
-     */
-    public void setNumberOfKeysInIndex(final long numberOfKeysInIndex) {
         synchronized (propertyLock) {
-            updateTransaction("setNumberOfKeysInIndex",
-                    writer -> writer.setLong(NUMBER_OF_KEYS_IN_MAIN_INDEX,
-                            numberOfKeysInIndex));
-        }
-    }
-
-    /**
-     * Sets the number of keys stored in the scarce index.
-     *
-     * @param numberOfKeysInScarceIndex number of scarce index keys
-     */
-    public void setNumberOfKeysInScarceIndex(
-            final long numberOfKeysInScarceIndex) {
-        synchronized (propertyLock) {
-            updateTransaction("setNumberOfKeysInScarceIndex",
-                    writer -> writer.setLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX,
-                            numberOfKeysInScarceIndex));
-        }
-    }
-
-    /**
-     * Stores all key counters in one transaction to avoid repeated metadata
-     * writes.
-     *
-     * @param numberOfKeysInCache       number of keys in delta cache
-     * @param numberOfKeysInIndex       number of keys in main index
-     * @param numberOfKeysInScarceIndex number of keys in scarce index
-     */
-    public void setKeyCounters(final long numberOfKeysInCache,
-            final long numberOfKeysInIndex,
-            final long numberOfKeysInScarceIndex) {
-        synchronized (propertyLock) {
-            updateTransaction("setKeyCounters", writer -> {
-                writer.setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE,
-                        numberOfKeysInCache);
-                writer.setLong(NUMBER_OF_KEYS_IN_MAIN_INDEX,
-                        numberOfKeysInIndex);
-                writer.setLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX,
-                        numberOfKeysInScarceIndex);
-            });
+            final long current = propertyStore.snapshot()
+                    .getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE);
+            updateTransaction("incrementNumberOfKeysInCache", writer -> writer
+                    .setLong(NUMBER_OF_KEYS_IN_DELTA_CACHE, current + 1));
         }
     }
 
@@ -336,10 +226,19 @@ public class SegmentPropertiesManager {
         }
         if (changed && logger.isDebugEnabled()) {
             logger.debug(
-                    "Segment properties were written: segment='{}' file='{}' reason='{}' thread='{}' manager='{}'",
+                    "Segment properties were written: "
+                            + "segment='{}' file='{}' reason='{}' "
+                            + "thread='{}' manager='{}'",
                     id.getName(), getPropertiesFilename(), reason,
                     Thread.currentThread().getName(),
                     Integer.toHexString(System.identityHashCode(this)));
+        }
+    }
+
+    void commitTx(final String reason, final Consumer<PropertyWriter> updater) {
+        Vldtn.requireNonNull(updater, "updater");
+        synchronized (propertyLock) {
+            updateTransaction(reason, updater);
         }
     }
 

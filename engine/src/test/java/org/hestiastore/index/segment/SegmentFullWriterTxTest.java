@@ -48,6 +48,8 @@ class SegmentFullWriterTxTest {
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
     @Mock
     private SegmentPropertiesManager properties;
+    @Mock
+    private SegmentPropertiesManagerTx propertiesTx;
 
     private SegmentFullWriterTx<Integer, String> subject;
 
@@ -62,6 +64,8 @@ class SegmentFullWriterTxTest {
         when(resources.getBloomFilter()).thenReturn(bloomFilter);
         when(bloomFilter.openWriteTx()).thenReturn(bloomTx);
         when(bloomTx.open()).thenReturn(bloomWriter);
+        when(properties.startTx()).thenReturn(propertiesTx);
+        when(propertiesTx.setKeyCounters(0, 0, 0)).thenReturn(propertiesTx);
         subject = new SegmentFullWriterTx<>(segmentFiles, properties, 2,
                 resources, deltaCacheController);
     }
@@ -82,7 +86,9 @@ class SegmentFullWriterTxTest {
         verify(chunkWriterTx).commit();
         verify(bloomTx).commit();
         verify(deltaCacheController).clearPreservingWriteCache();
-        verify(properties).setKeyCounters(0, 0, 0);
+        verify(properties).startTx();
+        verify(propertiesTx).setKeyCounters(0, 0, 0);
+        verify(propertiesTx).commit();
         verify(scarceWriter).close();
         verify(indexWriter).close();
         verify(bloomWriter).close();

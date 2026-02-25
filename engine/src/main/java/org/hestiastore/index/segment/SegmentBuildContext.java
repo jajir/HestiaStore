@@ -175,7 +175,7 @@ final class SegmentBuildContext<K, V> {
             final long activeVersion) {
         if (activeVersion >= 0
                 && propertiesManager.getVersion() != activeVersion) {
-            propertiesManager.setVersion(activeVersion);
+            propertiesManager.startTx().setVersion(activeVersion).commit();
         }
     }
 

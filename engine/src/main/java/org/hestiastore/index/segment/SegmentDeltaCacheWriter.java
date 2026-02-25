@@ -92,7 +92,7 @@ final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
 
         // store cache
         final String deltaFileName = segmentPropertiesManager
-                .getAndIncreaseDeltaFileName();
+                .getNextDeltaFileName();
         final ChunkEntryFileWriterTx<K, V> writerTx = segmentFiles
                 .getDeltaCacheChunkEntryFile(deltaFileName).openWriterTx();
         try (ChunkEntryFileWriter<K, V> writer = writerTx.openWriter()) {
@@ -110,9 +110,15 @@ final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
             }
         }
         writerTx.commit();
-        // increase number of keys in cache
+        // Update segment metadata in one transaction.
         final int keysInCache = uniqueCache.size();
-        segmentPropertiesManager.increaseNumberOfKeysInDeltaCache(keysInCache);
+        final int nextDeltaFileCount = segmentPropertiesManager
+                .getDeltaFileCount() + 1;
+        final long nextDeltaCacheKeys = segmentPropertiesManager
+                .getNumberOfKeysInDeltaCache() + keysInCache;
+        segmentPropertiesManager.startTx()
+                .setDeltaFileCount(nextDeltaFileCount)
+                .setNumberOfKeysInCache(nextDeltaCacheKeys).commit();
 
         uniqueCache.clear();
     }

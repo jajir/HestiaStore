@@ -286,7 +286,7 @@ class SegmentBuilderTest {
 
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
                 asyncDirectory, segmentId);
-        propertiesManager.setVersion(2L);
+        propertiesManager.startTx().setVersion(2L).commit();
         asyncDirectory.getFileWriter(layout.getIndexFileName(2)).close();
 
         final Segment<Integer, String> segment = Segment
