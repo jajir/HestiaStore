@@ -65,6 +65,8 @@ class SegmentImplTest {
     @Mock
     private SegmentPropertiesManager segmentPropertiesManager;
     @Mock
+    private SegmentPropertiesManagerTx segmentPropertiesManagerTx;
+    @Mock
     private SegmentResources<Integer> segmentDataProvider;
     @Mock
     private SegmentDeltaCacheController<Integer, String> deltaCacheController;
@@ -133,6 +135,12 @@ class SegmentImplTest {
         when(segmentFiles.getDirectory()).thenReturn(
                 directory);
         when(segmentFiles.copyWithVersion(anyLong())).thenReturn(segmentFiles);
+        when(segmentPropertiesManager.startTx())
+                .thenReturn(segmentPropertiesManagerTx);
+        when(segmentPropertiesManagerTx.setKeyCounters(anyLong(), anyLong(),
+                anyLong())).thenReturn(segmentPropertiesManagerTx);
+        when(segmentPropertiesManagerTx.setVersion(anyLong()))
+                .thenReturn(segmentPropertiesManagerTx);
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);
