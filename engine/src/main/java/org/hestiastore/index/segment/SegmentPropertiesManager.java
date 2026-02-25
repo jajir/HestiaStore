@@ -9,7 +9,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyMutationSession;
 import org.hestiastore.index.properties.PropertyStore;
-import org.hestiastore.index.properties.PropertyStoreimpl;
+import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.slf4j.Logger;
@@ -37,7 +37,7 @@ public class SegmentPropertiesManager {
      * Creates a manager for the given segment properties file.
      *
      * @param directoryFacade directory for property storage
-     * @param id segment identifier
+     * @param id              segment identifier
      */
     public SegmentPropertiesManager(final Directory directoryFacade,
             final SegmentId id) {
@@ -48,8 +48,8 @@ public class SegmentPropertiesManager {
     }
 
     private PropertyStore createStore(final Directory directoryFacade) {
-        final PropertyStore store = PropertyStoreimpl.fromDirectory(
-                directoryFacade, getPropertiesFilename(), false);
+        final PropertyStore store = PropertyStoreImpl
+                .fromDirectory(directoryFacade, getPropertiesFilename(), false);
         if (directoryFacade.isFileExists(getPropertiesFilename())) {
             IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
         }
@@ -72,8 +72,7 @@ public class SegmentPropertiesManager {
      */
     public SegmentStats getSegmentStats() {
         final PropertyView view = propertyStore.snapshot();
-        return new SegmentStats(
-                view.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
+        return new SegmentStats(view.getLong(NUMBER_OF_KEYS_IN_DELTA_CACHE),
                 view.getLong(NUMBER_OF_KEYS_IN_MAIN_INDEX),
                 view.getLong(NUMBER_OF_KEYS_IN_SCARCE_INDEX));
     }
@@ -105,8 +104,8 @@ public class SegmentPropertiesManager {
     public void clearCacheDeltaFileNamesCouter() {
         synchronized (propertyLock) {
             updateTransaction("clearCacheDeltaFileNamesCounter",
-                    writer -> writer.setInt(
-                    NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, 0));
+                    writer -> writer.setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES,
+                            0));
         }
     }
 
@@ -121,9 +120,8 @@ public class SegmentPropertiesManager {
             final int counter = view
                     .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
             final long version = view.getLong(SEGMENT_VERSION);
-            updateTransaction("getAndIncreaseDeltaFileName",
-                    writer -> writer.setInt(
-                    NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
+            updateTransaction("getAndIncreaseDeltaFileName", writer -> writer
+                    .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
             return getDeltaString(version, counter);
         }
     }
@@ -150,9 +148,8 @@ public class SegmentPropertiesManager {
         synchronized (propertyLock) {
             final int counter = propertyStore.snapshot()
                     .getInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES);
-            updateTransaction("incrementDeltaFileNameCounter",
-                    writer -> writer.setInt(
-                    NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
+            updateTransaction("incrementDeltaFileNameCounter", writer -> writer
+                    .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, counter + 1));
         }
     }
 
@@ -218,9 +215,8 @@ public class SegmentPropertiesManager {
      */
     public void setDeltaFileCount(final int count) {
         synchronized (propertyLock) {
-            updateTransaction("setDeltaFileCount",
-                    writer -> writer.setInt(
-                            NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, count));
+            updateTransaction("setDeltaFileCount", writer -> writer
+                    .setInt(NUMBER_OF_SEGMENT_CACHE_DELTA_FILES, count));
         }
     }
 
@@ -341,8 +337,7 @@ public class SegmentPropertiesManager {
         if (changed && logger.isDebugEnabled()) {
             logger.debug(
                     "Segment properties were written: segment='{}' file='{}' reason='{}' thread='{}' manager='{}'",
-                    id.getName(), getPropertiesFilename(),
-                    reason,
+                    id.getName(), getPropertiesFilename(), reason,
                     Thread.currentThread().getName(),
                     Integer.toHexString(System.identityHashCode(this)));
         }

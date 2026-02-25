@@ -24,8 +24,7 @@ class DirectoryPropertyStoreTest {
 
     @Test
     void transaction_persists_changes() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(
-                directory,
+        final PropertyStoreImpl store = new PropertyStoreImpl(directory,
                 FILE_NAME, false);
 
         final PropertyTransaction tx = store.beginTransaction();
@@ -34,8 +33,7 @@ class DirectoryPropertyStoreTest {
         tx.close();
 
         // Reload to ensure values are persisted on disk
-        final PropertyStoreimpl reloaded = new PropertyStoreimpl(
-                directory,
+        final PropertyStoreImpl reloaded = new PropertyStoreImpl(directory,
                 FILE_NAME, true);
         final PropertyView reloadedView = reloaded.snapshot();
         assertEquals(7, reloadedView.getInt("alpha"));
@@ -50,22 +48,19 @@ class DirectoryPropertyStoreTest {
 
     @Test
     void transaction_persists_changes_on_close() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(
-                directory,
+        final PropertyStoreImpl store = new PropertyStoreImpl(directory,
                 FILE_NAME, false);
         final PropertyTransaction tx = store.beginTransaction();
         tx.openPropertyWriter().setInt("alpha", 9);
         tx.close();
-        final PropertyStoreimpl reloaded = new PropertyStoreimpl(
-                directory,
+        final PropertyStoreImpl reloaded = new PropertyStoreImpl(directory,
                 FILE_NAME, true);
         assertEquals(9, reloaded.snapshot().getInt("alpha"));
     }
 
     @Test
     void getters_return_zero_when_missing() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(
-                directory,
+        final PropertyStoreImpl store = new PropertyStoreImpl(directory,
                 FILE_NAME, false);
         final PropertyView view = store.snapshot();
         assertEquals(0, view.getInt("missing-int"));
@@ -76,8 +71,7 @@ class DirectoryPropertyStoreTest {
 
     @Test
     void snapshot_returns_read_only_copy() {
-        final PropertyStoreimpl store = new PropertyStoreimpl(
-                directory,
+        final PropertyStoreImpl store = new PropertyStoreImpl(directory,
                 FILE_NAME, false);
         final PropertyTransaction tx = store.beginTransaction();
         tx.openPropertyWriter().setInt("foo", 99).setBoolean("bar", true);

@@ -31,7 +31,7 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void segmentSchemaAddsDefaultsAndMetadata() {
-        final PropertyStore store = PropertyStoreimpl
+        final PropertyStore store = PropertyStoreImpl
                 .fromDirectory(asyncDirectory, "manifest.txt", false);
 
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
@@ -58,7 +58,7 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void indexConfigurationSchemaAddsDefaultsAndMetadata() {
-        final PropertyStore store = PropertyStoreimpl.fromDirectory(
+        final PropertyStore store = PropertyStoreImpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
                 false);
@@ -118,7 +118,7 @@ class IndexPropertiesSchemaTest {
 
     @Test
     void indexConfigurationSchemaRejectsMissingRequiredKeys() {
-        final PropertyStore store = PropertyStoreimpl.fromDirectory(
+        final PropertyStore store = PropertyStoreImpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
                 false);
