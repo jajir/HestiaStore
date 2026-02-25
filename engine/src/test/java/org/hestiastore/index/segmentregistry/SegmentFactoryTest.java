@@ -29,11 +29,11 @@ class SegmentFactoryTest {
     void buildSegment_createsSegmentWithId() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final Directory directory = new MemDirectory();
-        final ExecutorService maintenancePool = Executors
+        final ExecutorService segmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf, maintenancePool);
+                new TypeDescriptorShortString(), conf, segmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
                 .buildSegment(segmentId);
@@ -44,7 +44,7 @@ class SegmentFactoryTest {
             assertEquals(segmentId, segment.getId());
         } finally {
             SegmentTestHelper.closeAndAwait(segment);
-            maintenancePool.shutdownNow();
+            segmentMaintenancePool.shutdownNow();
         }
     }
 
@@ -52,11 +52,11 @@ class SegmentFactoryTest {
     void buildSegment_enablesDirectoryLockingForRegistrySegments() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final Directory directory = new MemDirectory();
-        final ExecutorService maintenancePool = Executors
+        final ExecutorService segmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf, maintenancePool);
+                new TypeDescriptorShortString(), conf, segmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(7);
         final String lockFileName = new SegmentDirectoryLayout(segmentId)
                 .getLockFileName();
@@ -71,7 +71,7 @@ class SegmentFactoryTest {
             assertTrue(segmentDirectory.isFileExists(lockFileName));
         } finally {
             SegmentTestHelper.closeAndAwait(segment);
-            maintenancePool.shutdownNow();
+            segmentMaintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
     }

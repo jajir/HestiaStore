@@ -37,7 +37,7 @@ class IndexExecutorRegistryTest {
         final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         try {
             assertNotNull(registry.getIoExecutor());
-            assertNotNull(registry.getSegmentExecutor());
+            assertNotNull(registry.getIndexMaintenanceExecutor());
             assertNotNull(registry.getSegmentMaintenanceExecutor());
             assertNotNull(registry.getRegistryMaintenanceExecutor());
         } finally {
@@ -57,37 +57,42 @@ class IndexExecutorRegistryTest {
 
     @Test
     void constructorRejectsNonPositiveIoThreads() {
+        final IndexConfiguration<Integer, String> conf = buildConf(0, 1, 1, 1);
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexExecutorRegistry(0));
+                () -> new IndexExecutorRegistry(conf));
         assertEquals("Property 'ioThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
     void constructorRejectsNonPositiveSegmentMaintenanceThreads() {
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 0, 1, 1);
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexExecutorRegistry(1, 0, 1, 1));
+                () -> new IndexExecutorRegistry(conf));
         assertEquals(
                 "Property 'segmentMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
-    void constructorRejectsNonPositiveSegmentThreads() {
+    void constructorRejectsNonPositiveIndexMaintenanceThreads() {
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 0, 1);
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexExecutorRegistry(1, 1, 0, 1));
-        assertEquals("Property 'segmentThreads' must be greater than 0",
+                () -> new IndexExecutorRegistry(conf));
+        assertEquals(
+                "Property 'indexMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
     void constructorRejectsNonPositiveRegistryMaintenanceThreads() {
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1, 0);
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexExecutorRegistry(1, 1, 1, 0));
+                () -> new IndexExecutorRegistry(conf));
         assertEquals(
                 "Property 'registryMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
@@ -95,10 +100,11 @@ class IndexExecutorRegistryTest {
 
     @Test
     void closeShutsDownAllExecutors() {
-        final IndexExecutorRegistry registry = new IndexExecutorRegistry(1, 1,
-                1, 1);
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         final ExecutorService io = registry.getIoExecutor();
-        final ExecutorService segment = registry.getSegmentExecutor();
+        final ExecutorService indexMaintenance = registry
+                .getIndexMaintenanceExecutor();
         final ExecutorService segmentMaintenance = registry
                 .getSegmentMaintenanceExecutor();
         final ExecutorService registryMaintenance = registry
@@ -107,19 +113,20 @@ class IndexExecutorRegistryTest {
         registry.close();
 
         assertTrue(io.isShutdown());
-        assertTrue(segment.isShutdown());
+        assertTrue(indexMaintenance.isShutdown());
         assertTrue(segmentMaintenance.isShutdown());
         assertTrue(registryMaintenance.isShutdown());
     }
 
     @Test
     void gettersRejectCallsAfterClose() {
-        final IndexExecutorRegistry registry = new IndexExecutorRegistry(1, 1,
-                1, 1);
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         registry.close();
 
         assertThrows(IllegalStateException.class, registry::getIoExecutor);
-        assertThrows(IllegalStateException.class, registry::getSegmentExecutor);
+        assertThrows(IllegalStateException.class,
+                registry::getIndexMaintenanceExecutor);
         assertThrows(IllegalStateException.class,
                 registry::getSegmentMaintenanceExecutor);
         assertThrows(IllegalStateException.class,
@@ -128,12 +135,12 @@ class IndexExecutorRegistryTest {
 
     @Test
     void gettersReturnSameExecutorInstances() {
-        final IndexExecutorRegistry registry = new IndexExecutorRegistry(1, 1,
-                1, 1);
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         try {
             assertSame(registry.getIoExecutor(), registry.getIoExecutor());
-            assertSame(registry.getSegmentExecutor(),
-                    registry.getSegmentExecutor());
+            assertSame(registry.getIndexMaintenanceExecutor(),
+                    registry.getIndexMaintenanceExecutor());
             assertSame(registry.getSegmentMaintenanceExecutor(),
                     registry.getSegmentMaintenanceExecutor());
             assertSame(registry.getRegistryMaintenanceExecutor(),
@@ -146,12 +153,13 @@ class IndexExecutorRegistryTest {
     @Test
     void executorsUseExpectedThreadNamesAndDaemonThreads()
             throws InterruptedException, ExecutionException {
-        final IndexExecutorRegistry registry = new IndexExecutorRegistry(1, 1,
-                1, 1);
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         try {
             final String ioName = registry.getIoExecutor()
                     .submit(() -> Thread.currentThread().getName()).get();
-            final String segmentName = registry.getSegmentExecutor()
+            final String indexMaintenanceName = registry
+                    .getIndexMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().getName()).get();
             final String segmentMaintenanceName = registry
                     .getSegmentMaintenanceExecutor()
@@ -162,7 +170,8 @@ class IndexExecutorRegistryTest {
 
             final boolean ioDaemon = registry.getIoExecutor()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
-            final boolean segmentDaemon = registry.getSegmentExecutor()
+            final boolean indexMaintenanceDaemon = registry
+                    .getIndexMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
             final boolean segmentMaintenanceDaemon = registry
                     .getSegmentMaintenanceExecutor()
@@ -172,12 +181,12 @@ class IndexExecutorRegistryTest {
                     .submit(() -> Thread.currentThread().isDaemon()).get();
 
             assertTrue(ioName.startsWith("index-io-"));
-            assertTrue(segmentName.startsWith("segment-"));
+            assertTrue(indexMaintenanceName.startsWith("index-maintenance-"));
             assertTrue(segmentMaintenanceName.startsWith("segment-maintenance-"));
             assertTrue(
                     registryMaintenanceName.startsWith("registry-maintenance-"));
             assertTrue(ioDaemon);
-            assertTrue(segmentDaemon);
+            assertTrue(indexMaintenanceDaemon);
             assertTrue(segmentMaintenanceDaemon);
             assertTrue(registryMaintenanceDaemon);
         } finally {
@@ -188,8 +197,9 @@ class IndexExecutorRegistryTest {
     @Test
     void ioExecutorUsesConfiguredThreadCount() throws Exception {
         final int ioThreads = 4;
-        final IndexExecutorRegistry registry = new IndexExecutorRegistry(
-                ioThreads, 1, 1, 1);
+        final IndexConfiguration<Integer, String> conf = buildConf(ioThreads, 1,
+                1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         final CountDownLatch started = new CountDownLatch(ioThreads);
         final CountDownLatch release = new CountDownLatch(1);
         try {
@@ -226,7 +236,8 @@ class IndexExecutorRegistryTest {
 
     private static IndexConfiguration<Integer, String> buildConf(
             final int ioThreads, final int segmentMaintenanceThreads,
-            final int splitThreads, final int registryMaintenanceThreads) {
+            final int indexMaintenanceThreads,
+            final int registryMaintenanceThreads) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -245,7 +256,8 @@ class IndexExecutorRegistryTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withIndexWorkerThreadCount(1)//
-                .withNumberOfIndexMaintenanceThreads(splitThreads)//
+                .withNumberOfIndexMaintenanceThreads(
+                        indexMaintenanceThreads)//
                 .withNumberOfIoThreads(ioThreads)//
                 .withNumberOfSegmentIndexMaintenanceThreads(
                         segmentMaintenanceThreads)//

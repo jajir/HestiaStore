@@ -38,19 +38,7 @@ class KeyToSegmentMapTest {
                 SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 1, 5,
                 SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
 
-        final String previous = System.getProperty(
-                "hestiastore.enforceSplitLockOrder");
-        System.setProperty("hestiastore.enforceSplitLockOrder", "false");
-        try {
-            assertTrue(cache.applySplitPlan(plan));
-        } finally {
-            if (previous == null) {
-                System.clearProperty("hestiastore.enforceSplitLockOrder");
-            } else {
-                System.setProperty("hestiastore.enforceSplitLockOrder",
-                        previous);
-            }
-        }
+        assertTrue(cache.applySplitPlan(plan));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(4), SegmentId.of(2)),
                 cache.getSegmentIds());
@@ -65,63 +53,10 @@ class KeyToSegmentMapTest {
                 SegmentId.of(1), SegmentId.of(3), null, 1, 10,
                 SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
 
-        final String previous = System.getProperty(
-                "hestiastore.enforceSplitLockOrder");
-        System.setProperty("hestiastore.enforceSplitLockOrder", "false");
-        try {
-            assertTrue(cache.applySplitPlan(plan));
-        } finally {
-            if (previous == null) {
-                System.clearProperty("hestiastore.enforceSplitLockOrder");
-            } else {
-                System.setProperty("hestiastore.enforceSplitLockOrder",
-                        previous);
-            }
-        }
+        assertTrue(cache.applySplitPlan(plan));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(2)),
                 cache.getSegmentIds());
-    }
-
-    @Test
-    void applySplitPlan_requires_registry_lock_when_enforced() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
-                Entry.of(10, SegmentId.of(1))));
-        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
-                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 1, 5,
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
-        final String previousEnforce = System.getProperty(
-                "hestiastore.enforceSplitLockOrder");
-        final String previousRegistry = System.getProperty(
-                "hestiastore.registryLockHeld");
-        final String previousKeyMap = System
-                .getProperty("hestiastore.keyMapLockHeld");
-        System.setProperty("hestiastore.enforceSplitLockOrder", "true");
-        System.setProperty("hestiastore.keyMapLockHeld", "true");
-        System.clearProperty("hestiastore.registryLockHeld");
-        try {
-            assertThrows(IllegalStateException.class,
-                    () -> cache.applySplitPlan(plan));
-        } finally {
-            if (previousEnforce == null) {
-                System.clearProperty("hestiastore.enforceSplitLockOrder");
-            } else {
-                System.setProperty("hestiastore.enforceSplitLockOrder",
-                        previousEnforce);
-            }
-            if (previousRegistry == null) {
-                System.clearProperty("hestiastore.registryLockHeld");
-            } else {
-                System.setProperty("hestiastore.registryLockHeld",
-                        previousRegistry);
-            }
-            if (previousKeyMap == null) {
-                System.clearProperty("hestiastore.keyMapLockHeld");
-            } else {
-                System.setProperty("hestiastore.keyMapLockHeld",
-                        previousKeyMap);
-            }
-        }
     }
 
     @Test

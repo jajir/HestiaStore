@@ -83,12 +83,12 @@ class SegmentIndexImplPutTest {
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
                 .getValue();
         awaitSegmentReady(segment);
-        final ExecutorService maintenancePool = Executors
+        final ExecutorService segmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         try {
             final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                     directory, tdi, tds, index.getConfiguration(),
-                    maintenancePool);
+                    segmentMaintenancePool);
             final SegmentWriterTxFactory<Integer, String> writerTxFactory = id -> segmentFactory
                     .newSegmentBuilder(id).openWriterTx();
             final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
@@ -97,7 +97,7 @@ class SegmentIndexImplPutTest {
             awaitSegmentCount(cache, 2);
             assertEquals(SegmentId.of(1), cache.findSegmentId(1));
         } finally {
-            maintenancePool.shutdownNow();
+            segmentMaintenancePool.shutdownNow();
         }
     }
 

@@ -27,8 +27,8 @@ public final class SegmentRegistryBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private IndexConfiguration<K, V> conf;
-    private ExecutorService maintenanceExecutor;
-    private ExecutorService lifecycleExecutor;
+    private ExecutorService segmentMaintenanceExecutor;
+    private ExecutorService registryMaintenanceExecutor;
 
     SegmentRegistryBuilder() {
     }
@@ -85,28 +85,30 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
-     * Sets the maintenance executor.
+     * Sets the segment maintenance executor.
      *
-     * @param maintenanceExecutor maintenance executor
+     * @param segmentMaintenanceExecutor segment maintenance executor
      * @return this builder
      */
-    public SegmentRegistryBuilder<K, V> withMaintenanceExecutor(
-            final ExecutorService maintenanceExecutor) {
-        this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
-                "maintenanceExecutor");
+    public SegmentRegistryBuilder<K, V> withSegmentMaintenanceExecutor(
+            final ExecutorService segmentMaintenanceExecutor) {
+        this.segmentMaintenanceExecutor = Vldtn
+                .requireNonNull(segmentMaintenanceExecutor,
+                        "segmentMaintenanceExecutor");
         return this;
     }
 
     /**
-     * Sets the registry lifecycle executor used for load/unload operations.
+     * Sets the registry maintenance executor used for load/unload operations.
      *
-     * @param lifecycleExecutor lifecycle executor
+     * @param registryMaintenanceExecutor registry maintenance executor
      * @return this builder
      */
-    public SegmentRegistryBuilder<K, V> withLifecycleExecutor(
-            final ExecutorService lifecycleExecutor) {
-        this.lifecycleExecutor = Vldtn.requireNonNull(lifecycleExecutor,
-                "lifecycleExecutor");
+    public SegmentRegistryBuilder<K, V> withRegistryMaintenanceExecutor(
+            final ExecutorService registryMaintenanceExecutor) {
+        this.registryMaintenanceExecutor = Vldtn
+                .requireNonNull(registryMaintenanceExecutor,
+                        "registryMaintenanceExecutor");
         return this;
     }
 
@@ -124,10 +126,12 @@ public final class SegmentRegistryBuilder<K, V> {
                 valueTypeDescriptor, "valueTypeDescriptor");
         final IndexConfiguration<K, V> resolvedConf = Vldtn.requireNonNull(conf,
                 "conf");
-        final ExecutorService resolvedExecutor = Vldtn.requireNonNull(
-                maintenanceExecutor, "maintenanceExecutor");
-        final ExecutorService resolvedLifecycleExecutor = Vldtn.requireNonNull(
-                lifecycleExecutor, "lifecycleExecutor");
+        final ExecutorService resolvedSegmentMaintenanceExecutor = Vldtn
+                .requireNonNull(segmentMaintenanceExecutor,
+                        "segmentMaintenanceExecutor");
+        final ExecutorService resolvedRegistryMaintenanceExecutor = Vldtn
+                .requireNonNull(registryMaintenanceExecutor,
+                        "registryMaintenanceExecutor");
         final int maxSegments = Vldtn
                 .requireNonNull(resolvedConf.getMaxNumberOfSegmentsInCache(),
                         "maxNumberOfSegmentsInCache")
@@ -142,7 +146,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
-                resolvedValueDescriptor, resolvedConf, resolvedExecutor);
+                resolvedValueDescriptor, resolvedConf,
+                resolvedSegmentMaintenanceExecutor);
         final SegmentIdAllocator resolvedAllocator = new DirectorySegmentIdAllocator(
                 resolvedDirectory);
         final SegmentRegistryFileSystem resolvedFileSystem = new SegmentRegistryFileSystem(
@@ -160,7 +165,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 gate);
         final SegmentRegistryCache<SegmentId, Segment<K, V>> cache = new SegmentRegistryCache<>(
                 maxNumberOfSegmentsInCache, maintenance::loadSegment,
-                maintenance::closeSegmentIfNeeded, resolvedLifecycleExecutor,
+                maintenance::closeSegmentIfNeeded,
+                resolvedRegistryMaintenanceExecutor,
                 segment -> segment != null);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate);

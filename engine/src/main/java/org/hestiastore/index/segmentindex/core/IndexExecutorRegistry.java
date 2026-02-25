@@ -25,22 +25,9 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
     private final ExecutorService ioExecutor;
-    private final ThreadPoolExecutor segmentExecutor;
-    private final ThreadPoolExecutor segmentMaintenanceExecutor;
+    private final ExecutorService indexMaintenanceExecutor;
+    private final ExecutorService segmentMaintenanceExecutor;
     private final ExecutorService registryMaintenanceExecutor;
-
-    /**
-     * Creates a registry with predefined non-IO pool sizes.
-     * <p>
-     * Kept as compatibility constructor for existing call-sites that only
-     * choose IO pool size.
-     * </p>
-     *
-     * @param ioThreads IO pool size
-     */
-    IndexExecutorRegistry(final int ioThreads) {
-        this(ioThreads, 4, 3, 3);
-    }
 
     /**
      * Creates a registry using thread settings from index configuration.
@@ -48,62 +35,16 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
      * @param indexConfiguration index configuration
      */
     IndexExecutorRegistry(final IndexConfiguration<?, ?> indexConfiguration) {
-        this(Vldtn.requireNonNull(indexConfiguration, "indexConfiguration")
-                .getNumberOfIoThreads(),
-                indexConfiguration.getNumberOfSegmentIndexMaintenanceThreads(),
-                indexConfiguration.getNumberOfIndexMaintenanceThreads(),
-                indexConfiguration.getNumberOfRegistryLifecycleThreads());
-    }
-
-    /**
-     * Creates a registry with explicit pool sizes for each executor group.
-     *
-     * @param numberOfIoThreads          IO pool size
-     * @param segmentMaintenanceThreads  segment-maintenance pool size
-     * @param segmentThreads             segment pool size
-     * @param registryMaintenanceThreads registry-maintenance pool size
-     */
-    IndexExecutorRegistry(final int numberOfIoThreads,
-            final int segmentMaintenanceThreads, final int segmentThreads,
-            final int registryMaintenanceThreads) {
-        Vldtn.requireGreaterThanZero(numberOfIoThreads, "ioThreads");
-        Vldtn.requireGreaterThanZero(segmentThreads, "segmentThreads");
-        Vldtn.requireGreaterThanZero(segmentMaintenanceThreads,
-                "segmentMaintenanceThreads");
-        Vldtn.requireGreaterThanZero(registryMaintenanceThreads,
-                "registryMaintenanceThreads");
-        this.ioExecutor = newExecutor(numberOfIoThreads, "index-io-");
-        final int segmentExecutorQueueCapacity = Math.max(MIN_QUEUE_CAPACITY,
-                segmentThreads * QUEUE_CAPACITY_MULTIPLIER);
-        final AtomicInteger segmentThreadCounter = new AtomicInteger(1);
-        this.segmentExecutor = new ThreadPoolExecutor(segmentThreads,
-                segmentThreads, 0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(segmentExecutorQueueCapacity),
-                runnable -> {
-                    final Thread thread = new Thread(runnable, "segment-"
-                            + segmentThreadCounter.getAndIncrement());
-                    thread.setDaemon(true);
-                    return thread;
-                }, new ThreadPoolExecutor.AbortPolicy());
-        final int segmentMaintenanceExecutorQueueCapacity = Math.max(
-                MIN_QUEUE_CAPACITY,
-                segmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
-        final AtomicInteger segmentMaintenanceThreadCounter = new AtomicInteger(
-                1);
-        this.segmentMaintenanceExecutor = new ThreadPoolExecutor(
-                segmentMaintenanceThreads, segmentMaintenanceThreads, 0L,
-                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(
-                        segmentMaintenanceExecutorQueueCapacity),
-                runnable -> {
-                    final Thread thread = new Thread(runnable,
-                            "segment-maintenance-"
-                                    + segmentMaintenanceThreadCounter
-                                            .getAndIncrement());
-                    thread.setDaemon(true);
-                    return thread;
-                }, new ThreadPoolExecutor.CallerRunsPolicy());
-        this.registryMaintenanceExecutor = newExecutor(
-                registryMaintenanceThreads, "registry-maintenance-");
+        final IndexConfiguration<?, ?> conf = Vldtn.requireNonNull(
+                indexConfiguration, "indexConfiguration");
+        this.ioExecutor = wrapWithIndexContextIfEnabled(conf,
+                createIoExecutor(conf));
+        this.indexMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
+                createIndexMaintenanceExecutor(conf));
+        this.segmentMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
+                createSegmentMaintenanceExecutor(conf));
+        this.registryMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
+                createRegistryMaintenanceExecutor(conf));
     }
 
     /**
@@ -129,14 +70,14 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     }
 
     /**
-     * Returns shared segment executor.
+     * Returns shared index-maintenance executor.
      *
-     * @return segment executor service
+     * @return index-maintenance executor service
      * @throws IllegalStateException when registry has already been closed
      */
-    ExecutorService getSegmentExecutor() {
+    ExecutorService getIndexMaintenanceExecutor() {
         checkNotClosed();
-        return segmentExecutor;
+        return indexMaintenanceExecutor;
     }
 
     /**
@@ -150,8 +91,90 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         return registryMaintenanceExecutor;
     }
 
-    private static ExecutorService newExecutor(final int threadCount,
-            final String threadNamePrefix) {
+    private static ExecutorService createIoExecutor(
+            final IndexConfiguration<?, ?> conf) {
+        final int ioThreads = Vldtn.requireGreaterThanZero(
+                Vldtn.requireNonNull(
+                        Vldtn.requireNonNull(conf, "indexConfiguration")
+                                .getNumberOfIoThreads(),
+                        "ioThreads"),
+                "ioThreads");
+        return createFixedDaemonExecutor(ioThreads, "index-io-");
+    }
+
+    private static ExecutorService createIndexMaintenanceExecutor(
+            final IndexConfiguration<?, ?> conf) {
+        final int indexMaintenanceThreads = Vldtn.requireGreaterThanZero(
+                Vldtn.requireNonNull(
+                        Vldtn.requireNonNull(conf, "indexConfiguration")
+                                .getNumberOfIndexMaintenanceThreads(),
+                        "indexMaintenanceThreads"),
+                "indexMaintenanceThreads");
+        final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
+                indexMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        return new ThreadPoolExecutor(indexMaintenanceThreads,
+                indexMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(queueCapacity), runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "index-maintenance-"
+                                    + threadCounter.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }, new ThreadPoolExecutor.AbortPolicy());
+    }
+
+    private static ExecutorService createSegmentMaintenanceExecutor(
+            final IndexConfiguration<?, ?> conf) {
+        final int segmentMaintenanceThreads = Vldtn.requireGreaterThanZero(
+                Vldtn.requireNonNull(
+                        Vldtn.requireNonNull(conf, "indexConfiguration")
+                                .getNumberOfSegmentIndexMaintenanceThreads(),
+                        "segmentMaintenanceThreads"),
+                "segmentMaintenanceThreads");
+        final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
+                segmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        return new ThreadPoolExecutor(segmentMaintenanceThreads,
+                segmentMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(queueCapacity), runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            "segment-maintenance-"
+                                    + threadCounter.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }, new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
+    private static ExecutorService createRegistryMaintenanceExecutor(
+            final IndexConfiguration<?, ?> conf) {
+        final int registryMaintenanceThreads = Vldtn.requireGreaterThanZero(
+                Vldtn.requireNonNull(
+                        Vldtn.requireNonNull(conf, "indexConfiguration")
+                                .getNumberOfRegistryLifecycleThreads(),
+                        "registryMaintenanceThreads"),
+                "registryMaintenanceThreads");
+        return createFixedDaemonExecutor(registryMaintenanceThreads,
+                "registry-maintenance-");
+    }
+
+    private static ExecutorService wrapWithIndexContextIfEnabled(
+            final IndexConfiguration<?, ?> conf,
+            final ExecutorService executor) {
+        final IndexConfiguration<?, ?> configuration = Vldtn
+                .requireNonNull(conf, "indexConfiguration");
+        final ExecutorService delegate = Vldtn.requireNonNull(executor,
+                "executor");
+        if (!Boolean.TRUE.equals(configuration.isContextLoggingEnabled())) {
+            return delegate;
+        }
+        return new IndexNameMdcExecutorService(
+                Vldtn.requireNonNull(configuration.getIndexName(), "indexName"),
+                delegate);
+    }
+
+    private static ExecutorService createFixedDaemonExecutor(
+            final int threadCount, final String threadNamePrefix) {
         final AtomicInteger threadCounter = new AtomicInteger(1);
         return Executors.newFixedThreadPool(threadCount, runnable -> {
             final Thread thread = new Thread(runnable,
@@ -165,7 +188,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     protected void doClose() {
         RuntimeException failure = null;
         failure = shutdownAndAwait(ioExecutor, failure);
-        failure = shutdownAndAwait(segmentExecutor, failure);
+        failure = shutdownAndAwait(indexMaintenanceExecutor, failure);
         failure = shutdownAndAwait(segmentMaintenanceExecutor, failure);
         failure = shutdownAndAwait(registryMaintenanceExecutor, failure);
         if (failure != null) {

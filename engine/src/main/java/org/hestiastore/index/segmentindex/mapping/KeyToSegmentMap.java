@@ -282,7 +282,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         removeSegmentAndReturnMaxKey(segmentId);
     }
 
-    public K removeSegmentAndReturnMaxKey(final SegmentId segmentId) {
+    private K removeSegmentAndReturnMaxKey(final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(segmentId, "segmentId");
         if (list.isEmpty()) {
@@ -309,7 +309,6 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
     }
 
     public boolean applySplitPlan(final SegmentSplitApplyPlan<K> plan) {
-        ensureSplitApplyLockOrder();
         Vldtn.requireNonNull(plan, "plan");
         final SegmentId oldSegmentId = plan.getOldSegmentId();
         final SegmentId lowerSegmentId = plan.getLowerSegmentId();
@@ -330,26 +329,6 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
             insertSegment(upperMaxKey, upperSegmentId);
         }
         return true;
-    }
-
-    private void ensureSplitApplyLockOrder() {
-        final String lockOrder = System
-                .getProperty("hestiastore.enforceSplitLockOrder");
-        if (!"true".equals(lockOrder)) {
-            return;
-        }
-        final String keyMapLock = System
-                .getProperty("hestiastore.keyMapLockHeld");
-        if (!"true".equals(keyMapLock)) {
-            throw new IllegalStateException(
-                    "Split apply requires key-map lock during map update.");
-        }
-        final String registryLock = System
-                .getProperty("hestiastore.registryLockHeld");
-        if (!"true".equals(registryLock)) {
-            throw new IllegalStateException(
-                    "Split apply requires registry lock during key-map update.");
-        }
     }
 
     /**

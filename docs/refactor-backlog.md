@@ -684,11 +684,11 @@
       `keyToSegmentMap.withWriteLock(...)`.
     - `SegmentRegistryImpl.applySplitPlan(...)`: acquire registry freeze first,
       then call `onApplied` which acquires key-map write lock.
-    - Update lock-order enforcement flags to match registry -> key-map.
+    - Update lock-order enforcement to match registry -> key-map.
 [x] 58.3 Split: propagate lock-order flags into key-map adapter (Risk: MEDIUM)
-    - `KeyToSegmentMapSynchronizedAdapter`: set/clear `keyMapLockHeld` around
-      write-lock acquisition when enforcement is enabled.
-    - Ensure registry checks validate `registryLockHeld` before key-map lock.
+    - `KeyToSegmentMapSynchronizedAdapter`: mark key-map write-lock ownership
+      during enforcement checks.
+    - Ensure registry checks validate registry ownership before key-map lock.
 [x] 58.4 Split: finalize apply/cleanup ordering (Risk: MEDIUM)
     - Ensure apply evicts old segment instance and closes it via
       `SegmentRegistryImpl.closeSegmentInstance(...)`.
@@ -740,8 +740,8 @@
 [x] 68 Align split apply with registry FREEZE + lock-order enforcement (Risk: MEDIUM)
     - Expose registry FREEZE in `SegmentRegistryAccess` (or equivalent) so
       split apply can run under FREEZE while holding handler + key-map locks.
-    - While FREEZE is active, set `hestiastore.registryLockHeld=true` so
-      key-map lock order enforcement can be enabled safely.
+    - While FREEZE is active, expose registry lock ownership so key-map lock
+      order enforcement can be enabled safely.
     - Wrap key-map apply + cache eviction inside the FREEZE window.
 
 [x] 69 Separate cache eviction from file deletion in split apply (Risk: MEDIUM)
