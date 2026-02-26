@@ -7,12 +7,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Supplier;
-
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.FileReaderSeekableSupplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +31,7 @@ class SegmentIndexSearcherTest {
     private FileReaderSeekable seekableReader;
 
     @Mock
-    private Supplier<FileReaderSeekable> seekableReaderSupplier;
+    private FileReaderSeekableSupplier seekableReaderSupplier;
 
     private SegmentIndexSearcher<String, String> searcher;
 
@@ -134,6 +133,13 @@ class SegmentIndexSearcherTest {
                         String::compareTo, null));
         assertEquals("Property 'seekableReaderSupplier' must not be null.",
                 e.getMessage());
+    }
+
+    @Test
+    void close_closes_seekable_reader_supplier() {
+        searcher.close();
+
+        verify(seekableReaderSupplier, times(1)).close();
     }
 
 }

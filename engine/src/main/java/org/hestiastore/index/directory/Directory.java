@@ -17,6 +17,25 @@ public interface Directory {
     FileReaderSeekable getFileReaderSeekable(String fileName);
 
     /**
+     * Returns a supplier that creates seekable readers for the given file.
+     *
+     * <p>
+     * Implementations may reuse underlying resources (for example a shared
+     * channel) and release them when the supplier is closed. The default
+     * implementation opens a fresh reader for each request.
+     * </p>
+     *
+     * @param fileName required file name
+     * @return supplier of seekable readers
+     */
+    default FileReaderSeekableSupplier getFileReaderSeekableSupplier(
+            final String fileName) {
+        final String resolvedFileName = Vldtn.requireNonNull(fileName,
+                "fileName");
+        return () -> getFileReaderSeekable(resolvedFileName);
+    }
+
+    /**
      * Opens writer to file. When file already exists than method override it.
      * 
      * @param fileName required file name in this directory

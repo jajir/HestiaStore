@@ -144,6 +144,8 @@ class SegmentImplTest {
         when(directory.isFileExists("segment.index")).thenReturn(true);
         when(directory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);
+        when(directory.getFileReaderSeekableSupplier("segment.index"))
+                .thenReturn(() -> seekableReader);
         when(chunkPairFile.openWriterTx()).thenReturn(chunkEntryWriterTx);
         when(chunkEntryWriterTx.openWriter()).thenReturn(chunkEntryWriter);
         when(chunkEntryWriter.flush()).thenReturn(

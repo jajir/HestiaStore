@@ -1,7 +1,6 @@
 package org.hestiastore.index.segment;
 
 import java.util.Comparator;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -9,6 +8,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.FileReaderSeekableSupplier;
 
 /**
  * Performs point lookups in the on-disk index file for a single segment.
@@ -29,7 +29,7 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     private final ChunkEntryFile<K, V> chunkPairFile;
     private final int maxNumberOfKeysInIndexPage;
     private final Comparator<K> keyTypeComparator;
-    private final Supplier<FileReaderSeekable> seekableReaderSupplier;
+    private final FileReaderSeekableSupplier seekableReaderSupplier;
 
     /**
      * Creates a searcher bound to an index file and lookup limits.
@@ -45,7 +45,7 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     SegmentIndexSearcher(final ChunkEntryFile<K, V> chunkPairFile,
             final int maxNumberOfKeysInIndexPage,
             final Comparator<K> keyTypeComparator,
-            final Supplier<FileReaderSeekable> seekableReaderSupplier) {
+            final FileReaderSeekableSupplier seekableReaderSupplier) {
         this.chunkPairFile = Vldtn.requireNonNull(chunkPairFile,
                 "segmentIndexFile");
         this.maxNumberOfKeysInIndexPage = Vldtn.requireNonNull(
@@ -61,7 +61,7 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
      */
     @Override
     protected void doClose() {
-        // no-op
+        seekableReaderSupplier.close();
     }
 
     /**
