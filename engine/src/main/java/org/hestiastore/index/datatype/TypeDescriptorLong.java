@@ -86,7 +86,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     public TypeReader<Long> getTypeReader() {
         return fileReader -> {
             final byte[] bytes = new byte[8];
-            if (fileReader.read(bytes) == -1) {
+            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
                 return null;
             }
             return load(bytes, 0);

@@ -2,12 +2,14 @@ package org.hestiastore.index.bloomfilter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
 import org.hestiastore.index.datatype.TypeEncoder;
+import org.hestiastore.index.datatype.TestEncoding;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 
@@ -18,21 +20,17 @@ class BloomFilterImplEncodingTest {
     private static final int DISK_IO_BUFFER_SIZE = 1024;
 
     @Test
-    void isNotStored_supportsUnknownLengthEncoder() {
-        final UnknownLengthEncoder encoder = new UnknownLengthEncoder();
+    void isNotStored_rejectsNegativeLengthEncoder() {
+        final NegativeLengthEncoder encoder = new NegativeLengthEncoder();
         final BloomFilterImpl<String> bloomFilter = new BloomFilterImpl<>(
                 new MemDirectory(), "test.bf", HASH_FUNCTIONS,
                 INDEX_SIZE_IN_BYTES, encoder, "segment-001",
                 DISK_IO_BUFFER_SIZE);
-        final Hash hash = new Hash(new BitArray(INDEX_SIZE_IN_BYTES),
-                HASH_FUNCTIONS);
-        final String key = "unknown-length-key";
+        bloomFilter.setNewHash(new Hash(new BitArray(INDEX_SIZE_IN_BYTES),
+                HASH_FUNCTIONS));
 
-        hash.store(TypeEncoder.toByteArray(encoder, key));
-        bloomFilter.setNewHash(hash);
-
-        assertFalse(bloomFilter.isNotStored(key));
-        assertTrue(encoder.invocationCount >= 1);
+        assertThrows(IllegalArgumentException.class,
+                () -> bloomFilter.isNotStored("negative-length-key"));
     }
 
     @Test
@@ -49,7 +47,7 @@ class BloomFilterImplEncodingTest {
                 HASH_FUNCTIONS);
 
         assertEquals(64, reusableBuffer.get().length);
-        hash.store(TypeEncoder.toByteArray(encoder, key));
+        hash.store(TestEncoding.toByteArray(encoder, key));
         bloomFilter.setNewHash(hash);
 
         assertFalse(bloomFilter.isNotStored(key));
@@ -65,10 +63,8 @@ class BloomFilterImplEncodingTest {
         return (ThreadLocal<byte[]>) field.get(bloomFilter);
     }
 
-    private static final class UnknownLengthEncoder
+    private static final class NegativeLengthEncoder
             implements TypeEncoder<String> {
-
-        private int invocationCount = 0;
 
         @Override
         public int bytesLength(final String value) {
@@ -77,14 +73,7 @@ class BloomFilterImplEncodingTest {
 
         @Override
         public int toBytes(final String value, final byte[] destination) {
-            invocationCount++;
-            final byte[] bytes = value.getBytes(StandardCharsets.ISO_8859_1);
-            if (destination.length < bytes.length) {
-                throw new IllegalArgumentException(
-                        "Destination buffer too small.");
-            }
-            System.arraycopy(bytes, 0, destination, 0, bytes.length);
-            return bytes.length;
+            throw new IllegalStateException("must not be called");
         }
     }
 

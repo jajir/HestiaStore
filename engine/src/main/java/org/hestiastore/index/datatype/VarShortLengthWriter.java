@@ -6,20 +6,36 @@ import org.hestiastore.index.directory.FileWriter;
 public class VarShortLengthWriter<T> implements TypeWriter<T> {
 
     private final TypeEncoder<T> convertor;
+    private byte[] payloadBytes;
 
     public VarShortLengthWriter(final TypeEncoder<T> convertor) {
         this.convertor = Vldtn.requireNonNull(convertor, "convertor");
+        this.payloadBytes = new byte[0];
     }
 
     @Override
     public int write(final FileWriter writer, final T object) {
-        final byte[] out = TypeEncoder.toByteArray(convertor, object);
-        if (out.length > 127) {
+        final int payloadLength = Vldtn.requireGreaterThanOrEqualToZero(
+                convertor.bytesLength(object), "payloadLength");
+        if (payloadLength > 127) {
             throw new IllegalArgumentException("Converted type is too big");
         }
-        writer.write((byte) out.length);
-        writer.write(out);
-        return 1 + out.length;
+        ensurePayloadBufferSize(payloadLength);
+        final int writtenBytes = convertor.toBytes(object, payloadBytes);
+        if (writtenBytes != payloadLength) {
+            throw new IllegalStateException(String.format(
+                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
+                    payloadLength));
+        }
+        writer.write((byte) payloadLength);
+        writer.write(payloadBytes);
+        return 1 + payloadLength;
+    }
+
+    private void ensurePayloadBufferSize(final int payloadLength) {
+        if (payloadBytes.length != payloadLength) {
+            payloadBytes = new byte[payloadLength];
+        }
     }
 
 }

@@ -75,8 +75,7 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = F.b64(TypeEncoder.toByteArray(keyTypeEncoder,
-                        key));
+                final String s2 = encodeKeyToBase64(key);
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -84,10 +83,8 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
-                final String s1 = F.b64(
-                        TypeEncoder.toByteArray(keyTypeEncoder, previousKey));
-                final String s2 = F.b64(TypeEncoder.toByteArray(keyTypeEncoder,
-                        key));
+                final String s1 = encodeKeyToBase64(previousKey);
+                final String s2 = encodeKeyToBase64(key);
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -97,6 +94,19 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
             }
         }
         previousKey = key;
+    }
+
+    private String encodeKeyToBase64(final K key) {
+        final int encodedKeyLength = Vldtn.requireGreaterThanOrEqualToZero(
+                keyTypeEncoder.bytesLength(key), "encodedKeyLength");
+        final byte[] keyBytes = new byte[encodedKeyLength];
+        final int writtenBytes = keyTypeEncoder.toBytes(key, keyBytes);
+        if (writtenBytes != encodedKeyLength) {
+            throw new IllegalStateException(String.format(
+                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
+                    encodedKeyLength));
+        }
+        return F.b64(keyBytes);
     }
 
     /**

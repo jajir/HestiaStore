@@ -41,7 +41,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
     public TypeReader<Double> getTypeReader() {
         return fileReader -> {
             final byte[] bytes = new byte[REQUIRED_BYTES];
-            if (fileReader.read(bytes) == -1) {
+            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
                 return null;
             }
             return load(bytes, 0);

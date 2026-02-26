@@ -13,15 +13,15 @@ public class VarShortLengthReader<T> implements TypeReader<T> {
 
     @Override
     public T read(final FileReader reader) {
-        int length = reader.read();
+        final int length = reader.read();
         if (length < 0) {
             return null;
         }
         if (length > 127) {
             throw new IllegalArgumentException("Converted type is too big");
         }
-        byte[] bytes = new byte[length];
-        reader.read(bytes);
+        final byte[] bytes = new byte[length];
+        TypeIo.readFullyRequired(reader, bytes);
         return convertor.decode(bytes);
     }
 

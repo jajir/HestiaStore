@@ -11,18 +11,34 @@ public class VarLengthWriter<T> implements TypeWriter<T> {
 
     private final TypeEncoder<T> convertor;
     private final byte[] lengthBytes;
+    private byte[] payloadBytes;
 
     public VarLengthWriter(final TypeEncoder<T> convertor) {
         this.convertor = Vldtn.requireNonNull(convertor, "convertor");
         this.lengthBytes = new byte[LENGTH_HEADER_BYTES];
+        this.payloadBytes = new byte[0];
     }
 
     @Override
     public int write(final FileWriter writer, final T object) {
-        final byte[] out = TypeEncoder.toByteArray(convertor, object);
-        CONVERTOR_TO_BYTES.toBytes(out.length, lengthBytes);
+        final int payloadLength = Vldtn.requireGreaterThanOrEqualToZero(
+                convertor.bytesLength(object), "payloadLength");
+        ensurePayloadBufferSize(payloadLength);
+        final int writtenBytes = convertor.toBytes(object, payloadBytes);
+        if (writtenBytes != payloadLength) {
+            throw new IllegalStateException(String.format(
+                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
+                    payloadLength));
+        }
+        CONVERTOR_TO_BYTES.toBytes(payloadLength, lengthBytes);
         writer.write(lengthBytes);
-        writer.write(out);
-        return LENGTH_HEADER_BYTES + out.length;
+        writer.write(payloadBytes);
+        return LENGTH_HEADER_BYTES + payloadLength;
+    }
+
+    private void ensurePayloadBufferSize(final int payloadLength) {
+        if (payloadBytes.length != payloadLength) {
+            payloadBytes = new byte[payloadLength];
+        }
     }
 }

@@ -41,7 +41,13 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     @Override
     public TypeReader<Byte> getTypeReader() {
-        return inputStream -> (byte) inputStream.read();
+        return inputStream -> {
+            final int read = inputStream.read();
+            if (read < 0) {
+                return null;
+            }
+            return (byte) read;
+        };
     }
 
     @Override

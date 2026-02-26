@@ -38,7 +38,7 @@ class TypeDescriptorStringConvertorTest {
         VALUES.forEach(value -> {
             final byte[] expected = value.getBytes(StandardCharsets.ISO_8859_1);
             assertArrayEquals(expected,
-                    TypeEncoder.toByteArray(convertor, value));
+                    TestEncoding.toByteArray(convertor, value));
             assertEquals(expected.length, convertor.bytesLength(value));
 
             final byte[] destination = new byte[Math.max(1, expected.length + 2)];

@@ -23,7 +23,7 @@ class TypeDescriptorFixedLengthStringTest {
                 4);
         final String value = "ABCD";
 
-        final byte[] bytes = TypeEncoder.toByteArray(descriptor.getTypeEncoder(),
+        final byte[] bytes = TestEncoding.toByteArray(descriptor.getTypeEncoder(),
                 value);
         final String decoded = descriptor.getTypeDecoder().decode(bytes);
 

@@ -16,6 +16,7 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
     private final Directory directoryFacade;
     private final String fileName;
     private final int diskIoBufferSize;
+    private byte[] encodedKeyBuffer = new byte[0];
 
     BloomFilterWriter(final TypeEncoder<K> convertorToBytes,
             final Hash newHash, final Directory directoryFacade,
@@ -35,7 +36,18 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
     public boolean write(final K key) {
         Vldtn.requireNonNull(key, "key");
-        return hash.store(TypeEncoder.toByteArray(convertorToBytes, key));
+        final int encodedLength = convertorToBytes.bytesLength(key);
+        Vldtn.requireGreaterThanZero(encodedLength, "encodedLength");
+        if (encodedKeyBuffer.length != encodedLength) {
+            encodedKeyBuffer = new byte[encodedLength];
+        }
+        final int writtenBytes = convertorToBytes.toBytes(key, encodedKeyBuffer);
+        if (writtenBytes != encodedLength) {
+            throw new IllegalStateException(String.format(
+                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
+                    encodedLength));
+        }
+        return hash.store(encodedKeyBuffer);
     }
 
     @Override

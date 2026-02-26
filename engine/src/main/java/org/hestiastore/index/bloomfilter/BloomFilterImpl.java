@@ -118,16 +118,18 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private boolean isNotStoredInternal(final K key) {
         final int bytesLength = convertorToBytes.bytesLength(key);
-        if (bytesLength <= 0) {
-            return hash.isNotStored(TypeEncoder.toByteArray(convertorToBytes,
-                    key));
-        }
+        Vldtn.requireGreaterThanZero(bytesLength, "bytesLength");
         byte[] buffer = reusableBytesBuffer.get();
         if (buffer.length < bytesLength) {
             buffer = new byte[bytesLength];
             reusableBytesBuffer.set(buffer);
         }
         final int writtenBytes = convertorToBytes.toBytes(key, buffer);
+        if (writtenBytes != bytesLength) {
+            throw new IllegalStateException(String.format(
+                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
+                    bytesLength));
+        }
         return hash.isNotStored(buffer, writtenBytes);
     }
 

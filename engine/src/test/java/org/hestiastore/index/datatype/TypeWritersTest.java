@@ -3,6 +3,7 @@ package org.hestiastore.index.datatype;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -74,6 +75,77 @@ class TypeWritersTest {
 
         assertEquals(4, writtenBytes);
         assertArrayEquals("ABCD".getBytes(StandardCharsets.ISO_8859_1), data);
+    }
+
+    @Test
+    void varLengthWriter_rejectsNegativeDeclaredLength() {
+        final VarLengthWriter<String> writer = new VarLengthWriter<>(
+                new TypeEncoder<String>() {
+                    @Override
+                    public int bytesLength(final String value) {
+                        return -1;
+                    }
+
+                    @Override
+                    public int toBytes(final String value,
+                            final byte[] destination) {
+                        throw new IllegalStateException("must not be called");
+                    }
+                });
+
+        final IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> writer.write(new CollectingFileWriter(), "abc"));
+        assertTrue(error.getMessage().contains("payloadLength"));
+    }
+
+    @Test
+    void varShortLengthWriter_rejectsDeclaredAndWrittenLengthMismatch() {
+        final VarShortLengthWriter<String> writer = new VarShortLengthWriter<>(
+                new TypeEncoder<String>() {
+                    @Override
+                    public int bytesLength(final String value) {
+                        return 3;
+                    }
+
+                    @Override
+                    public int toBytes(final String value,
+                            final byte[] destination) {
+                        destination[0] = 'a';
+                        destination[1] = 'b';
+                        return 2;
+                    }
+                });
+
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> writer.write(new CollectingFileWriter(), "abc"));
+        assertTrue(error.getMessage().contains("declared"));
+    }
+
+    @Test
+    void fixedLengthWriter_rejectsDeclaredAndWrittenLengthMismatch() {
+        final FixedLengthWriter<String> writer = new FixedLengthWriter<>(
+                new TypeEncoder<String>() {
+                    @Override
+                    public int bytesLength(final String value) {
+                        return 4;
+                    }
+
+                    @Override
+                    public int toBytes(final String value,
+                            final byte[] destination) {
+                        destination[0] = 'A';
+                        destination[1] = 'B';
+                        destination[2] = 'C';
+                        return 3;
+                    }
+                });
+
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> writer.write(new CollectingFileWriter(), "ABCD"));
+        assertTrue(error.getMessage().contains("declared"));
     }
 
     private static final class CollectingFileWriter

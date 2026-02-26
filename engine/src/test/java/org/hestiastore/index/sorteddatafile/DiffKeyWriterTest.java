@@ -123,6 +123,49 @@ class DiffKeyWriterTest {
         assertEquals(0, diffWriter.close());
     }
 
+    @Test
+    void test_write_rejects_negative_declared_length() {
+        final DiffKeyWriter<Integer> diffWriter = new DiffKeyWriter<>(
+                new TypeEncoder<Integer>() {
+                    @Override
+                    public int bytesLength(final Integer value) {
+                        return -1;
+                    }
+
+                    @Override
+                    public int toBytes(final Integer value,
+                            final byte[] destination) {
+                        throw new IllegalStateException("must not be called");
+                    }
+                }, Comparator.naturalOrder());
+
+        final IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class, () -> diffWriter.write(1));
+        assertTrue(error.getMessage().contains("encodedKeyLength"));
+    }
+
+    @Test
+    void test_write_rejects_declared_and_written_length_mismatch() {
+        final DiffKeyWriter<Integer> diffWriter = new DiffKeyWriter<>(
+                new TypeEncoder<Integer>() {
+                    @Override
+                    public int bytesLength(final Integer value) {
+                        return 2;
+                    }
+
+                    @Override
+                    public int toBytes(final Integer value,
+                            final byte[] destination) {
+                        destination[0] = 1;
+                        return 1;
+                    }
+                }, Comparator.naturalOrder());
+
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class, () -> diffWriter.write(1));
+        assertTrue(error.getMessage().contains("declared"));
+    }
+
     private void verifyDiffKey(final int expectedSharedByteLength,
             final int expectedBytesLength, final String expectedString,
             final byte[] bytes) {

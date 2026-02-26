@@ -53,11 +53,11 @@ public class DiffKeyWriter<K> {
      */
     public byte[] write(final K key) {
         Vldtn.requireNonNull(key, "key");
+        final byte[] keyBytes = encodeKey(key);
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = new String(
-                        TypeEncoder.toByteArray(convertorToBytes, key));
+                final String s2 = new String(keyBytes);
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -66,8 +66,7 @@ public class DiffKeyWriter<K> {
             }
             if (cmp > 0) {
                 final String s1 = new String(previousKeyBytes);
-                final String s2 = new String(
-                        TypeEncoder.toByteArray(convertorToBytes, key));
+                final String s2 = new String(keyBytes);
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -76,7 +75,6 @@ public class DiffKeyWriter<K> {
                         s1, s2, keyComapratorClassName));
             }
         }
-        final byte[] keyBytes = TypeEncoder.toByteArray(convertorToBytes, key);
         final int sharedByteLength = ByteTool
                 .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
         final byte[] diffBytes = ByteTool
@@ -90,6 +88,19 @@ public class DiffKeyWriter<K> {
         previousKeyBytes = keyBytes;
         previousKey = key;
         return out;
+    }
+
+    private byte[] encodeKey(final K key) {
+        final int encodedKeyLength = Vldtn.requireGreaterThanOrEqualToZero(
+                convertorToBytes.bytesLength(key), "encodedKeyLength");
+        final byte[] keyBytes = new byte[encodedKeyLength];
+        final int writtenBytes = convertorToBytes.toBytes(key, keyBytes);
+        if (writtenBytes != encodedKeyLength) {
+            throw new IllegalStateException(String.format(
+                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
+                    encodedKeyLength));
+        }
+        return keyBytes;
     }
 
     /**

@@ -43,7 +43,7 @@ class TypeDescriptorPrimitiveConvertorTest {
 
     private <T> void assertInPlaceConvertor(final TypeEncoder<T> convertor,
             final T value, final int expectedLength) {
-        final byte[] expected = TypeEncoder.toByteArray(convertor, value);
+        final byte[] expected = TestEncoding.toByteArray(convertor, value);
         assertEquals(expectedLength, convertor.bytesLength(value));
 
         final byte[] destination = new byte[expectedLength + 2];
