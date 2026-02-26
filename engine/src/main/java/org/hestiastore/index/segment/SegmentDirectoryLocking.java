@@ -58,8 +58,18 @@ final class SegmentDirectoryLocking {
      * Releases the lock acquired by this helper.
      */
     void unlock() {
-        if (fileLock != null && fileLock.isLocked()) {
-            fileLock.unlock();
+        final FileLock lockHandle = fileLock;
+        fileLock = null;
+        if (lockHandle == null) {
+            return;
+        }
+        try {
+            lockHandle.unlock();
+        } catch (final IllegalStateException e) {
+            // Another closer may have released the file just before this call.
+            if (lockHandle.isLocked()) {
+                throw e;
+            }
         }
     }
 

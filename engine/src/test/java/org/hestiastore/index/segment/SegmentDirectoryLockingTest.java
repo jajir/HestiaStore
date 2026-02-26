@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,5 +59,29 @@ class SegmentDirectoryLockingTest {
                 directory, LAYOUT);
 
         assertFalse(locking.tryLock());
+    }
+
+    @Test
+    void unlock_is_idempotent() {
+        final Directory directory = new MemDirectory();
+        final SegmentDirectoryLocking locking = new SegmentDirectoryLocking(
+                directory, LAYOUT);
+
+        assertTrue(locking.tryLock());
+        assertDoesNotThrow(locking::unlock);
+        assertDoesNotThrow(locking::unlock);
+    }
+
+    @Test
+    void unlock_ignores_already_removed_lock_file() {
+        final Directory directory = new MemDirectory();
+        final SegmentDirectoryLocking locking = new SegmentDirectoryLocking(
+                directory, LAYOUT);
+
+        assertTrue(locking.tryLock());
+        directory.deleteFile(LAYOUT.getLockFileName());
+
+        assertDoesNotThrow(locking::unlock);
+        assertFalse(directory.isFileExists(LAYOUT.getLockFileName()));
     }
 }
