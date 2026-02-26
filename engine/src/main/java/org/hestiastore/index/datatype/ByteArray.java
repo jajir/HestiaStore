@@ -11,6 +11,12 @@ public class ByteArray implements Comparable<ByteArray> {
 
     private final byte[] data;
 
+    /**
+     * Creates an immutable byte-array value by copying input bytes.
+     *
+     * @param data source bytes
+     * @return immutable {@link ByteArray}
+     */
     public static ByteArray of(final byte[] data) {
         return new ByteArray(data);
     }
@@ -20,18 +26,41 @@ public class ByteArray implements Comparable<ByteArray> {
         this.data = Arrays.copyOf(data, data.length);
     }
 
+    /**
+     * Returns a defensive copy of wrapped bytes.
+     *
+     * @return copied bytes
+     */
     public byte[] getBytes() {
         return Arrays.copyOf(data, data.length);
     }
 
+    /**
+     * Returns number of bytes in this value.
+     *
+     * @return byte length
+     */
     public int length() {
         return data.length;
     }
 
+    /**
+     * Copies all bytes into destination from offset {@code 0}.
+     *
+     * @param destination destination buffer
+     * @return number of copied bytes
+     */
     public int copyTo(final byte[] destination) {
         return copyTo(destination, 0);
     }
 
+    /**
+     * Copies all bytes into destination at the provided offset.
+     *
+     * @param destination destination buffer
+     * @param destinationOffset destination start offset
+     * @return number of copied bytes
+     */
     public int copyTo(final byte[] destination, final int destinationOffset) {
         Vldtn.requireNonNull(destination, "destination");
         if (destinationOffset < 0 || destinationOffset > destination.length) {
@@ -49,6 +78,12 @@ public class ByteArray implements Comparable<ByteArray> {
         return data.length;
     }
 
+    /**
+     * Compares byte arrays lexicographically using unsigned-byte semantics.
+     *
+     * @param other value to compare
+     * @return negative, zero or positive comparison result
+     */
     @Override
     public int compareTo(final ByteArray other) {
         int len = Math.min(this.data.length, other.data.length);
@@ -61,6 +96,13 @@ public class ByteArray implements Comparable<ByteArray> {
         return this.data.length - other.data.length;
     }
 
+    /**
+     * Returns whether this value contains exactly the same bytes as another
+     * {@link ByteArray}.
+     *
+     * @param o object to compare
+     * @return {@code true} when bytes are equal
+     */
     @Override
     public boolean equals(final Object o) {
         if (this == o)
@@ -71,11 +113,21 @@ public class ByteArray implements Comparable<ByteArray> {
         return Arrays.equals(this.data, that.data);
     }
 
+    /**
+     * Returns hash code derived from underlying bytes.
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         return Arrays.hashCode(data);
     }
 
+    /**
+     * Returns lowercase hexadecimal representation for diagnostics.
+     *
+     * @return string representation
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("ByteArray[");

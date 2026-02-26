@@ -1,5 +1,7 @@
 package org.hestiastore.index.chunkentryfile;
 
+import java.util.Arrays;
+
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.BytesAppender;
@@ -27,7 +29,7 @@ class InMemoryFileWriter extends AbstractCloseableResource
     public void write(final byte[] bytes) {
         Vldtn.requireNonNull(bytes, "bytes");
         ensureOpen();
-        appender.append(bytes);
+        appender.append(Arrays.copyOf(bytes, bytes.length));
     }
 
     @Override

@@ -4,8 +4,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 
 /**
- * TypeDescriptor for String values. It uses ISO_8859_1 encoding. Max length of
- * string is over 2 GB, exactly Integer.MAX_VALUE.
+ * Descriptor for variable-length strings encoded as ISO-8859-1.
  */
 public class TypeDescriptorString implements TypeDescriptor<String> {
 
@@ -17,40 +16,76 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
     private static final TypeEncoder<String> CONVERTOR_TO_BYTES = Iso88591StringConvertor.INSTANCE;
 
     /**
-     * Tombstones value, use can't use it.
+     * Tombstone value reserved for delete semantics.
      */
     public static final String TOMBSTONE_VALUE = "(*&^%$#@!)-1eaa9b2c-3c11-11ee-be56-0242ac120002";
 
+    /**
+     * Returns decoder for ISO-8859-1 strings.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<String> getTypeDecoder() {
         return array -> new String(array, CHARSET_ENCODING);
     }
 
+    /**
+     * Returns encoder for ISO-8859-1 strings.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<String> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
+    /**
+     * Returns variable-length writer for strings.
+     *
+     * @return writer
+     */
     @Override
     public VarLengthWriter<String> getTypeWriter() {
         return new VarLengthWriter<String>(getTypeEncoder());
     }
 
+    /**
+     * Returns variable-length reader for strings.
+     *
+     * @return reader
+     */
     @Override
     public VarLengthReader<String> getTypeReader() {
         return new VarLengthReader<String>(getTypeDecoder());
     }
 
+    /**
+     * Returns natural-order comparator.
+     *
+     * @return comparator
+     */
     @Override
     public Comparator<String> getComparator() {
         return (s1, s2) -> s1.compareTo(s2);
     }
 
+    /**
+     * Returns tombstone marker.
+     *
+     * @return tombstone value
+     */
     @Override
     public String getTombstone() {
         return TOMBSTONE_VALUE;
     }
 
+    /**
+     * Returns whether object is the same descriptor type.
+     *
+     * @param obj object to compare
+     * @return {@code true} when same descriptor type
+     */
     @Override
     public boolean equals(final Object obj) {
         if (this == obj)
@@ -58,6 +93,11 @@ public class TypeDescriptorString implements TypeDescriptor<String> {
         return obj != null && getClass() == obj.getClass();
     }
 
+    /**
+     * Returns stable hash code for descriptor type identity.
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();

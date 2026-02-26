@@ -57,21 +57,41 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         this.tombstoneValue = CompositeValue.of(tmp);
     }
 
+    /**
+     * Returns encoder for composite values.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<CompositeValue> getTypeEncoder() {
         return convertorToBytes;
     }
 
+    /**
+     * Returns decoder for composite values.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<CompositeValue> getTypeDecoder() {
         return this::fromBytes;
     }
 
+    /**
+     * Returns variable-length reader for composite values.
+     *
+     * @return reader
+     */
     @Override
     public TypeReader<CompositeValue> getTypeReader() {
         return varLengthReader::read;
     }
 
+    /**
+     * Returns variable-length writer for composite values.
+     *
+     * @return writer
+     */
     @Override
     public TypeWriter<CompositeValue> getTypeWriter() {
         return varLengthWriter::write;
@@ -95,6 +115,11 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         return this::compareCompositeValues;
     }
 
+    /**
+     * Returns tombstone value composed from element-level tombstones.
+     *
+     * @return tombstone value
+     */
     @Override
     public CompositeValue getTombstone() {
         return tombstoneValue;
@@ -155,6 +180,12 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         }
     }
 
+    /**
+     * Serializes a composite value into a new byte array.
+     *
+     * @param value value to serialize
+     * @return encoded bytes
+     */
     @SuppressWarnings("unchecked")
     public byte[] toBytes(final CompositeValue value) {
         final ByteArrayWriter byteArrayWriter = new ByteArrayWriter();
@@ -162,6 +193,12 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         return byteArrayWriter.toByteArray();
     }
 
+    /**
+     * Deserializes a composite value from byte array.
+     *
+     * @param bytes encoded value
+     * @return decoded {@link CompositeValue}
+     */
     @SuppressWarnings("unchecked")
     public CompositeValue fromBytes(final byte[] bytes) {
         Vldtn.requireNonNull(bytes, "bytes");

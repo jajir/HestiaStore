@@ -2,6 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+/**
+ * Descriptor for {@link Byte} values.
+ */
 public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     private static final int REQUIRED_BYTES = 1;
@@ -25,20 +28,35 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
     };
 
     /**
-     * Thombstone value, use can't use it.
+     * Tombstone value reserved for delete semantics.
      */
     private static final Byte TOMBSTONE_VALUE = Byte.MIN_VALUE;
 
+    /**
+     * Returns byte encoder.
+     *
+     * @return byte encoder
+     */
     @Override
     public TypeEncoder<Byte> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
+    /**
+     * Returns byte decoder.
+     *
+     * @return byte decoder
+     */
     @Override
     public TypeDecoder<Byte> getTypeDecoder() {
         return bytes -> bytes[0];
     }
 
+    /**
+     * Returns reader that reads one byte from input.
+     *
+     * @return byte reader
+     */
     @Override
     public TypeReader<Byte> getTypeReader() {
         return inputStream -> {
@@ -50,6 +68,11 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
         };
     }
 
+    /**
+     * Returns writer that writes one byte to output.
+     *
+     * @return byte writer
+     */
     @Override
     public TypeWriter<Byte> getTypeWriter() {
         return (fileWriter, b) -> {
@@ -58,11 +81,21 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
         };
     }
 
+    /**
+     * Returns comparator for byte values.
+     *
+     * @return byte comparator
+     */
     @Override
     public Comparator<Byte> getComparator() {
         return (i1, i2) -> i2 - i1;
     }
 
+    /**
+     * Returns tombstone marker.
+     *
+     * @return tombstone byte
+     */
     @Override
     public Byte getTombstone() {
         return TOMBSTONE_VALUE;

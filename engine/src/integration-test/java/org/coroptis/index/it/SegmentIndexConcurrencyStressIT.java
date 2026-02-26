@@ -73,7 +73,7 @@ class SegmentIndexConcurrencyStressIT {
         final IndexConfiguration<Integer, Integer> conf = stressConf(indexName);
         final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
                 SegmentIndex.create(directory, conf));
-        final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
+        final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
 
         final int rotations = 3;
         final ExecutorService workers = Executors

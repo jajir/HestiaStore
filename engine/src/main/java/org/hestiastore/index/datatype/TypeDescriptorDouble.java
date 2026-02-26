@@ -2,15 +2,18 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+/**
+ * Descriptor for {@link Double} values.
+ */
 public class TypeDescriptorDouble implements TypeDescriptor<Double> {
 
     /**
-     * Tombstone value, use can't use it.
+     * Tombstone value reserved for delete semantics.
      */
     public static final Double TOMBSTONE_VALUE = Double.MAX_VALUE - 1;
 
     /**
-     * How many bytes is required to store Float.
+     * Number of bytes required to store a double value.
      */
     private static final int REQUIRED_BYTES = 8;
 
@@ -27,16 +30,31 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         }
     };
 
+    /**
+     * Returns fixed-size encoder for doubles.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<Double> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
+    /**
+     * Returns fixed-size decoder for doubles.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<Double> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 
+    /**
+     * Returns stream reader for doubles.
+     *
+     * @return reader
+     */
     @Override
     public TypeReader<Double> getTypeReader() {
         return fileReader -> {
@@ -91,11 +109,21 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         destination[7] = (byte) bits;
     }
 
+    /**
+     * Returns comparator for double values.
+     *
+     * @return comparator
+     */
     @Override
     public Comparator<Double> getComparator() {
         return Double::compareTo;
     }
 
+    /**
+     * Returns stream writer for doubles.
+     *
+     * @return writer
+     */
     @Override
     public TypeWriter<Double> getTypeWriter() {
         return (writer, object) -> {
@@ -104,6 +132,11 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         };
     }
 
+    /**
+     * Returns tombstone marker.
+     *
+     * @return tombstone value
+     */
     @Override
     public Double getTombstone() {
         return TOMBSTONE_VALUE;

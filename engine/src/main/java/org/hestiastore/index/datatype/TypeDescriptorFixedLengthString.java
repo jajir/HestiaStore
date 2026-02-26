@@ -3,6 +3,9 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+/**
+ * Descriptor for fixed-length ISO-8859-1 strings.
+ */
 public final class TypeDescriptorFixedLengthString
         implements TypeDescriptor<String> {
 
@@ -12,7 +15,7 @@ public final class TypeDescriptorFixedLengthString
             .forName(CHARSET_ENCODING_NAME);
 
     /**
-     * Tombstones value, use can't use it.
+     * Default source used to build fixed-length tombstone values.
      */
     private static final String TOMBSTONE_DEFAULT_VALUE = //
             ""//
@@ -27,6 +30,11 @@ public final class TypeDescriptorFixedLengthString
     private final int length;
     private final String tombstone;
 
+    /**
+     * Creates descriptor for strings with exact character length.
+     *
+     * @param length required string length (maximum 127)
+     */
     public TypeDescriptorFixedLengthString(final int length) {
         if (length >= 128) {
             throw new IllegalArgumentException(
@@ -36,6 +44,11 @@ public final class TypeDescriptorFixedLengthString
         tombstone = TOMBSTONE_DEFAULT_VALUE.substring(0, length);
     }
 
+    /**
+     * Returns decoder that expects exact fixed byte length.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<String> getTypeDecoder() {
         return array -> {
@@ -48,6 +61,11 @@ public final class TypeDescriptorFixedLengthString
         };
     }
 
+    /**
+     * Returns encoder that validates fixed string length.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<String> getTypeEncoder() {
         return new TypeEncoder<String>() {
@@ -85,11 +103,21 @@ public final class TypeDescriptorFixedLengthString
         };
     }
 
+    /**
+     * Returns fixed-length writer.
+     *
+     * @return writer
+     */
     @Override
     public TypeWriter<String> getTypeWriter() {
         return new FixedLengthWriter<String>(getTypeEncoder());
     }
 
+    /**
+     * Returns fixed-length reader.
+     *
+     * @return reader
+     */
     @Override
     public TypeReader<String> getTypeReader() {
         return reader -> {
@@ -101,11 +129,21 @@ public final class TypeDescriptorFixedLengthString
         };
     }
 
+    /**
+     * Returns natural-order comparator.
+     *
+     * @return comparator
+     */
     @Override
     public Comparator<String> getComparator() {
         return (s1, s2) -> s1.compareTo(s2);
     }
 
+    /**
+     * Returns tombstone marker with configured fixed length.
+     *
+     * @return tombstone value
+     */
     @Override
     public String getTombstone() {
         return tombstone;
