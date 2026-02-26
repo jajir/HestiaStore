@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 final class BloomFilterImpl<K> extends AbstractCloseableResource
         implements BloomFilter<K> {
 
+    private static final int INITIAL_REUSABLE_BUFFER_SIZE = 64;
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final Directory directoryFacade;
@@ -36,6 +38,9 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final int diskIoBufferSize;
 
+    private final ThreadLocal<byte[]> reusableBytesBuffer = ThreadLocal
+            .withInitial(() -> new byte[INITIAL_REUSABLE_BUFFER_SIZE]);
+
     BloomFilterImpl(final Directory directoryFacade,
             final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
@@ -53,10 +58,8 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
         this.diskIoBufferSize = diskIoBufferSize;
-        if (numberOfHashFunctions <= 0) {
-            throw new IllegalArgumentException(
-                    "Number of hash function cant be '0'");
-        }
+        Vldtn.requireGreaterThanZero(numberOfHashFunctions,
+                "numberOfHashFunctions");
         hash = loadHashIfPresent();
         logger.debug("Opening bloom filter for '{}'", relatedObjectName);
     }
@@ -107,10 +110,24 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
             bloomFilterStats.increment(false);
             return false;
         } else {
-            final boolean out = hash.isNotStored(convertorToBytes.toBytes(key));
+            final boolean out = isNotStoredInternal(key);
             bloomFilterStats.increment(out);
             return out;
         }
+    }
+
+    private boolean isNotStoredInternal(final K key) {
+        final int bytesLength = convertorToBytes.bytesLength(key);
+        if (bytesLength <= 0) {
+            return hash.isNotStored(convertorToBytes.toBytes(key));
+        }
+        byte[] buffer = reusableBytesBuffer.get();
+        if (buffer.length < bytesLength) {
+            buffer = new byte[bytesLength];
+            reusableBytesBuffer.set(buffer);
+        }
+        final int writtenBytes = convertorToBytes.toBytes(key, buffer);
+        return hash.isNotStored(buffer, writtenBytes);
     }
 
     @Override

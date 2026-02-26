@@ -79,7 +79,8 @@ class BloomFilterTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> builder.build());
 
-        assertEquals("Number of hash function cant be '0'", e.getMessage());
+        assertEquals("Property 'numberOfHashFunctions' must be greater than 0",
+                e.getMessage());
     }
 
     @Test
@@ -127,6 +128,15 @@ class BloomFilterTest {
         assertFalse(bf2.isNotStored("znenku"));
         assertFalse(bf2.isNotStored("karle"));
         assertFalse(bf2.isNotStored("kachna"));
+    }
+
+    @Test
+    void test_nonLatin1_key_roundtrip() {
+        final String key = "ahoj-€-🙂";
+        final BloomFilter<String> bf = makeBloomFilter();
+        writeToFilter(bf, List.of(key));
+
+        assertFalse(bf.isNotStored(key));
     }
 
     private BloomFilter<String> makeBloomFilter() {

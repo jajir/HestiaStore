@@ -59,9 +59,27 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
      */
     private static final int BYTE_SHIFT_56 = 56;
 
+    private static final ConvertorToBytes<Long> CONVERTOR_TO_BYTES = new ConvertorToBytes<Long>() {
+        @Override
+        public byte[] toBytes(final Long object) {
+            return getBytes(object);
+        }
+
+        @Override
+        public int bytesLength(final Long object) {
+            return REQUIRED_BYTES;
+        }
+
+        @Override
+        public int toBytes(final Long object, final byte[] destination) {
+            writeBytes(object, destination);
+            return REQUIRED_BYTES;
+        }
+    };
+
     @Override
     public ConvertorToBytes<Long> getConvertorToBytes() {
-        return object -> getBytes(object);
+        return CONVERTOR_TO_BYTES;
     }
 
     @Override
@@ -88,19 +106,28 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
         };
     }
 
-    private byte[] getBytes(final Long value) {
+    private static byte[] getBytes(final Long value) {
+        final byte[] out = new byte[REQUIRED_BYTES];
+        writeBytes(value, out);
+        return out;
+    }
+
+    private static void writeBytes(final Long value, final byte[] destination) {
+        if (destination.length < REQUIRED_BYTES) {
+            throw new IllegalArgumentException(String.format(
+                    "Destination buffer too small. Required '%s' but was '%s'",
+                    REQUIRED_BYTES, destination.length));
+        }
         int pos = 0;
         long v = value.longValue();
-        byte[] out = new byte[REQUIRED_BYTES];
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_56) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_48) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_40) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_32) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
-        out[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
-        return out;
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_56) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_48) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_40) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_32) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
+        destination[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
     }
 
     private Long load(final byte[] data, final int from) {

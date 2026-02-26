@@ -24,6 +24,31 @@ public class ByteArray implements Comparable<ByteArray> {
         return Arrays.copyOf(data, data.length);
     }
 
+    public int length() {
+        return data.length;
+    }
+
+    public int copyTo(final byte[] destination) {
+        return copyTo(destination, 0);
+    }
+
+    public int copyTo(final byte[] destination, final int destinationOffset) {
+        Vldtn.requireNonNull(destination, "destination");
+        if (destinationOffset < 0 || destinationOffset > destination.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Property 'destinationOffset' must be between 0 and %s (inclusive). Got: %s",
+                    destination.length, destinationOffset));
+        }
+        final int available = destination.length - destinationOffset;
+        if (available < data.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Destination buffer too small. Required '%s' but was '%s'",
+                    data.length, available));
+        }
+        System.arraycopy(data, 0, destination, destinationOffset, data.length);
+        return data.length;
+    }
+
     @Override
     public int compareTo(final ByteArray other) {
         int len = Math.min(this.data.length, other.data.length);

@@ -10,6 +10,8 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
     private static final Charset CHARSET_ENCODING = Charset
             .forName(CHARSET_ENCODING_NAME);
 
+    private static final ConvertorToBytes<String> CONVERTOR_TO_BYTES = Iso88591StringConvertor.INSTANCE;
+
     /**
      * Tombstones value, use can't use it.
      */
@@ -22,7 +24,7 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
 
     @Override
     public ConvertorToBytes<String> getConvertorToBytes() {
-        return string -> string.getBytes(CHARSET_ENCODING);
+        return CONVERTOR_TO_BYTES;
     }
 
     @Override

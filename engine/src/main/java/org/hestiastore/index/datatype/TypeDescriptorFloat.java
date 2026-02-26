@@ -14,9 +14,27 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
      */
     private static final int REQUIRED_BYTES = 4;
 
+    private static final ConvertorToBytes<Float> CONVERTOR_TO_BYTES = new ConvertorToBytes<Float>() {
+        @Override
+        public byte[] toBytes(final Float object) {
+            return getBytes(object);
+        }
+
+        @Override
+        public int bytesLength(final Float object) {
+            return REQUIRED_BYTES;
+        }
+
+        @Override
+        public int toBytes(final Float object, final byte[] destination) {
+            writeBytes(object, destination);
+            return REQUIRED_BYTES;
+        }
+    };
+
     @Override
     public ConvertorToBytes<Float> getConvertorToBytes() {
-        return object -> getBytes(object);
+        return CONVERTOR_TO_BYTES;
     }
 
     @Override
@@ -47,17 +65,27 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         return Float.intBitsToFloat(bits);
     }
 
-    byte[] getBytes(Float object) {
+    static byte[] getBytes(Float object) {
+        final byte[] out = new byte[REQUIRED_BYTES];
+        writeBytes(object, out);
+        return out;
+    }
+
+    private static void writeBytes(final Float object,
+            final byte[] destination) {
+        if (destination.length < REQUIRED_BYTES) {
+            throw new IllegalArgumentException(String.format(
+                    "Destination buffer too small. Required '%s' but was '%s'",
+                    REQUIRED_BYTES, destination.length));
+        }
         if (object == null) {
             throw new IllegalArgumentException("Object can't be null");
         }
         int bits = Float.floatToIntBits(object);
-        return new byte[] { //
-                (byte) (bits >> 24), //
-                (byte) (bits >> 16), //
-                (byte) (bits >> 8), //
-                (byte) bits //
-        };
+        destination[0] = (byte) (bits >> 24);
+        destination[1] = (byte) (bits >> 16);
+        destination[2] = (byte) (bits >> 8);
+        destination[3] = (byte) bits;
     }
 
     @Override

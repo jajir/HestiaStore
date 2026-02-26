@@ -44,6 +44,10 @@ class HashTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> hash.isNotStored(new byte[0]));
+        assertThrows(IllegalArgumentException.class,
+                () -> hash.isNotStored(new byte[1], 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> hash.isNotStored(new byte[1], 2));
     }
 
     @Test
@@ -54,6 +58,9 @@ class HashTest {
         hash.store("ahoj".getBytes());
         assertFalse(hash.isNotStored("ahoj".getBytes()));
         assertTrue(hash.isNotStored("kachna".getBytes()));
+
+        final byte[] prefixed = "ahoj___".getBytes();
+        assertFalse(hash.isNotStored(prefixed, 4));
     }
 
     @Test
