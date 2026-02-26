@@ -5,23 +5,24 @@ import org.hestiastore.index.directory.FileWriter;
 
 public class VarLengthWriter<T> implements TypeWriter<T> {
 
-    private static final ConvertorToBytes<Integer> CONVERTOR_TO_BYTES = new TypeDescriptorInteger()
-            .getConvertorToBytes();
+    private static final TypeEncoder<Integer> CONVERTOR_TO_BYTES = new TypeDescriptorInteger()
+            .getTypeEncoder();
+    private static final int LENGTH_HEADER_BYTES = Integer.BYTES;
 
-    private final ConvertorToBytes<T> convertor;
+    private final TypeEncoder<T> convertor;
+    private final byte[] lengthBytes;
 
-    public VarLengthWriter(final ConvertorToBytes<T> convertor) {
+    public VarLengthWriter(final TypeEncoder<T> convertor) {
         this.convertor = Vldtn.requireNonNull(convertor, "convertor");
+        this.lengthBytes = new byte[LENGTH_HEADER_BYTES];
     }
 
     @Override
     public int write(final FileWriter writer, final T object) {
-        final byte[] out = convertor.toBytes(object);
-        if (out.length > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("Converted type is too big");
-        }
-        writer.write(CONVERTOR_TO_BYTES.toBytes(out.length));
+        final byte[] out = TypeEncoder.toByteArray(convertor, object);
+        CONVERTOR_TO_BYTES.toBytes(out.length, lengthBytes);
+        writer.write(lengthBytes);
         writer.write(out);
-        return 1 + out.length;
+        return LENGTH_HEADER_BYTES + out.length;
     }
 }

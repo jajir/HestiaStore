@@ -2,7 +2,7 @@ package org.hestiastore.index.sorteddatafile;
 
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.datatype.ConvertorFromBytes;
+import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.directory.FileReader;
 
@@ -28,7 +28,7 @@ import org.hestiastore.index.directory.FileReader;
  */
 public class DiffKeyReader<K> implements TypeReader<K> {
 
-    private final ConvertorFromBytes<K> keyConvertor;
+    private final TypeDecoder<K> keyConvertor;
 
     private byte[] previousKeyBytes;
 
@@ -40,7 +40,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
      * 
      * @param keyConvertor required converter from bytes to key type
      */
-    public DiffKeyReader(final ConvertorFromBytes<K> keyConvertor) {
+    public DiffKeyReader(final TypeDecoder<K> keyConvertor) {
         this.keyConvertor = keyConvertor;
         previousKeyBytes = null;
     }
@@ -76,7 +76,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
             final byte[] keyBytes = new byte[keyLengthInBytes];
             read(fileReader, keyBytes);
             previousKeyBytes = keyBytes;
-            return keyConvertor.fromBytes(keyBytes);
+            return keyConvertor.decode(keyBytes);
         }
         if (previousKeyBytes == null) {
             throw new IndexException(String
@@ -96,7 +96,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         final byte[] sharedBytes = getBytes(previousKeyBytes, sharedByteLength);
         final byte[] keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
         previousKeyBytes = keyBytes;
-        return keyConvertor.fromBytes(keyBytes);
+        return keyConvertor.decode(keyBytes);
     }
 
     /**

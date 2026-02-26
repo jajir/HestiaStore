@@ -8,8 +8,8 @@ import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeDecoder;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
@@ -234,10 +234,10 @@ public final class TestData {
             .of(Bytes.of(BYTE_ARRAY_1024));
 
     public static final TypeDescriptor<Long> TYPE_DESCRIPTOR_LONG = new TypeDescriptorLong();
-    public static final ConvertorFromBytes<Long> LONG_CONVERTOR_FROM_BYTES = TYPE_DESCRIPTOR_LONG
-            .getConvertorFromBytes();
-    public static final ConvertorToBytes<Long> LONG_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_LONG
-            .getConvertorToBytes();
+    public static final TypeDecoder<Long> LONG_CONVERTOR_FROM_BYTES = TYPE_DESCRIPTOR_LONG
+            .getTypeDecoder();
+    public static final TypeEncoder<Long> LONG_CONVERTOR_TO_BYTES = TYPE_DESCRIPTOR_LONG
+            .getTypeEncoder();
 
     public static final TypeDescriptor<String> TYPE_DESCRIPTOR_STRING = new TypeDescriptorString();
     public static final TypeDescriptor<Integer> TYPE_DESCRIPTOR_INTEGER = new TypeDescriptorInteger();

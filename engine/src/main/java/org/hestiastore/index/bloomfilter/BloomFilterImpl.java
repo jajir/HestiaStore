@@ -2,7 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     private final String bloomFilterFileName;
 
-    private final ConvertorToBytes<K> convertorToBytes;
+    private final TypeEncoder<K> convertorToBytes;
 
     private final BloomFilterStats bloomFilterStats;
 
@@ -44,7 +44,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     BloomFilterImpl(final Directory directoryFacade,
             final String bloomFilterFileName,
             final int numberOfHashFunctions, final int indexSizeInBytes,
-            final ConvertorToBytes<K> convertorToBytes,
+            final TypeEncoder<K> convertorToBytes,
             final String relatedObjectName, final int diskIoBufferSize) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -119,7 +119,8 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     private boolean isNotStoredInternal(final K key) {
         final int bytesLength = convertorToBytes.bytesLength(key);
         if (bytesLength <= 0) {
-            return hash.isNotStored(convertorToBytes.toBytes(key));
+            return hash.isNotStored(TypeEncoder.toByteArray(convertorToBytes,
+                    key));
         }
         byte[] buffer = reusableBytesBuffer.get();
         if (buffer.length < bytesLength) {

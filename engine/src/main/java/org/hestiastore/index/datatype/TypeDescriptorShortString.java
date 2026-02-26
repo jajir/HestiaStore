@@ -10,7 +10,7 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
     private static final Charset CHARSET_ENCODING = Charset
             .forName(CHARSET_ENCODING_NAME);
 
-    private static final ConvertorToBytes<String> CONVERTOR_TO_BYTES = Iso88591StringConvertor.INSTANCE;
+    private static final TypeEncoder<String> CONVERTOR_TO_BYTES = Iso88591StringConvertor.INSTANCE;
 
     /**
      * Tombstones value, use can't use it.
@@ -18,23 +18,23 @@ public class TypeDescriptorShortString implements TypeDescriptor<String> {
     public static final String TOMBSTONE_VALUE = "(*&^%$#@!)-1eaa9b2c-3c11-11ee-be56-0242ac120002";
 
     @Override
-    public ConvertorFromBytes<String> getConvertorFromBytes() {
+    public TypeDecoder<String> getTypeDecoder() {
         return array -> new String(array, CHARSET_ENCODING);
     }
 
     @Override
-    public ConvertorToBytes<String> getConvertorToBytes() {
+    public TypeEncoder<String> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
     public VarShortLengthWriter<String> getTypeWriter() {
-        return new VarShortLengthWriter<String>(getConvertorToBytes());
+        return new VarShortLengthWriter<String>(getTypeEncoder());
     }
 
     @Override
     public VarShortLengthReader<String> getTypeReader() {
-        return new VarShortLengthReader<String>(getConvertorFromBytes());
+        return new VarShortLengthReader<String>(getTypeDecoder());
     }
 
     @Override

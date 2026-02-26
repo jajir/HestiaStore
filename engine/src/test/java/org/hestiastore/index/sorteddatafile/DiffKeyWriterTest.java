@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -18,7 +18,7 @@ class DiffKeyWriterTest {
     private final TypeDescriptor<String> tds = new TypeDescriptorShortString();
 
     private DiffKeyWriter<Integer> makeDiffKeyWriter() {
-        return new DiffKeyWriter<>(tdi.getConvertorToBytes(),
+        return new DiffKeyWriter<>(tdi.getTypeEncoder(),
                 Comparator.naturalOrder());
     }
 
@@ -88,8 +88,8 @@ class DiffKeyWriterTest {
 
     @Test
     void test_constructor_comparator_is_null() {
-        final ConvertorToBytes<Integer> convertorToBytes = tdi
-                .getConvertorToBytes();
+        final TypeEncoder<Integer> convertorToBytes = tdi
+                .getTypeEncoder();
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> new DiffKeyWriter<Integer>(convertorToBytes, null));
 
@@ -101,7 +101,7 @@ class DiffKeyWriterTest {
     void test_write() {
         assertTrue(true);
         DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
-                tds.getConvertorToBytes(), Comparator.naturalOrder());
+                tds.getTypeEncoder(), Comparator.naturalOrder());
 
         byte[] ret = diffWriter.write("aaa");
         verifyDiffKey(0, 3, "aaa", ret);

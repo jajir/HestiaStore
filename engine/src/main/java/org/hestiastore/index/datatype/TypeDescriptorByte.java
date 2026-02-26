@@ -6,14 +6,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     private static final int REQUIRED_BYTES = 1;
 
-    private static final ConvertorToBytes<Byte> CONVERTOR_TO_BYTES = new ConvertorToBytes<Byte>() {
-        @Override
-        public byte[] toBytes(final Byte object) {
-            final byte[] out = new byte[REQUIRED_BYTES];
-            out[0] = object;
-            return out;
-        }
-
+    private static final TypeEncoder<Byte> CONVERTOR_TO_BYTES = new TypeEncoder<Byte>() {
         @Override
         public int bytesLength(final Byte object) {
             return REQUIRED_BYTES;
@@ -37,12 +30,12 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
     private static final Byte TOMBSTONE_VALUE = Byte.MIN_VALUE;
 
     @Override
-    public ConvertorToBytes<Byte> getConvertorToBytes() {
+    public TypeEncoder<Byte> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
-    public ConvertorFromBytes<Byte> getConvertorFromBytes() {
+    public TypeDecoder<Byte> getTypeDecoder() {
         return bytes -> bytes[0];
     }
 

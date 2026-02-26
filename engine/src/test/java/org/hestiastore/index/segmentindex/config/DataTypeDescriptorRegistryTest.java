@@ -31,7 +31,7 @@ class DataTypeDescriptorRegistryTest {
                         "org.hestiastore.index.datatype.TypeDescriptorString");
 
         assertNotNull(ss);
-        assertNotNull(ss.getConvertorFromBytes());
+        assertNotNull(ss.getTypeDecoder());
     }
 
     @Test

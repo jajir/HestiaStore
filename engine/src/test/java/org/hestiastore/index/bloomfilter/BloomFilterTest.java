@@ -69,7 +69,7 @@ class BloomFilterTest {
     void test_zero_hashFuntions() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withTypeEncoder(STD.getTypeEncoder())//
                 .withDirectory(
                         directory)//
                 .withIndexSizeInBytes(0)//
@@ -87,7 +87,7 @@ class BloomFilterTest {
     void test_zero_keys() {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withTypeEncoder(STD.getTypeEncoder())//
                 .withDirectory(
                         directory)//
                 .withIndexSizeInBytes(0)//
@@ -109,7 +109,7 @@ class BloomFilterTest {
     void test_zero_keys_write_keys() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withTypeEncoder(STD.getTypeEncoder())//
                 .withDirectory(
                         directory)//
                 .withIndexSizeInBytes(0)//
@@ -142,7 +142,7 @@ class BloomFilterTest {
     private BloomFilter<String> makeBloomFilter() {
         return BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withTypeEncoder(STD.getTypeEncoder())//
                 .withDirectory(
                         directory)//
                 .withIndexSizeInBytes(100)//

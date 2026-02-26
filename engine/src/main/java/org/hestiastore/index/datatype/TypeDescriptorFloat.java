@@ -14,12 +14,7 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
      */
     private static final int REQUIRED_BYTES = 4;
 
-    private static final ConvertorToBytes<Float> CONVERTOR_TO_BYTES = new ConvertorToBytes<Float>() {
-        @Override
-        public byte[] toBytes(final Float object) {
-            return getBytes(object);
-        }
-
+    private static final TypeEncoder<Float> CONVERTOR_TO_BYTES = new TypeEncoder<Float>() {
         @Override
         public int bytesLength(final Float object) {
             return REQUIRED_BYTES;
@@ -33,12 +28,12 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
     };
 
     @Override
-    public ConvertorToBytes<Float> getConvertorToBytes() {
+    public TypeEncoder<Float> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
-    public ConvertorFromBytes<Float> getConvertorFromBytes() {
+    public TypeDecoder<Float> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 

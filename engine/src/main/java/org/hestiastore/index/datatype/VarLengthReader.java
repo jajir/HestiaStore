@@ -5,12 +5,12 @@ import org.hestiastore.index.directory.FileReader;
 
 public class VarLengthReader<T> implements TypeReader<T> {
 
-    private static final ConvertorFromBytes<Integer> CONVERTOR_FROM_BYTES = new TypeDescriptorInteger()
-            .getConvertorFromBytes();
+    private static final TypeDecoder<Integer> CONVERTOR_FROM_BYTES = new TypeDescriptorInteger()
+            .getTypeDecoder();
 
-    private final ConvertorFromBytes<T> convertor;
+    private final TypeDecoder<T> convertor;
 
-    public VarLengthReader(final ConvertorFromBytes<T> convertor) {
+    public VarLengthReader(final TypeDecoder<T> convertor) {
         this.convertor = Vldtn.requireNonNull(convertor, "convertor");
     }
 
@@ -18,7 +18,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
     public T read(final FileReader reader) {
         byte[] lengthBytes = new byte[4];
         reader.read(lengthBytes);
-        int length = CONVERTOR_FROM_BYTES.fromBytes(lengthBytes);
+        int length = CONVERTOR_FROM_BYTES.decode(lengthBytes);
         if (length < 0) {
             return null;
         }
@@ -27,7 +27,7 @@ public class VarLengthReader<T> implements TypeReader<T> {
         }
         byte[] bytes = new byte[length];
         reader.read(bytes);
-        return convertor.fromBytes(bytes);
+        return convertor.decode(bytes);
     }
 
 }

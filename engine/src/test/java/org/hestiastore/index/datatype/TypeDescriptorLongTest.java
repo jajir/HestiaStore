@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test;
 class TypeDescriptorLongTest {
 
     private final TypeDescriptorLong ti = new TypeDescriptorLong();
-    private final ConvertorToBytes<Long> toBytes = ti.getConvertorToBytes();
-    private final ConvertorFromBytes<Long> fromBytes = ti
-            .getConvertorFromBytes();
+    private final TypeEncoder<Long> toBytes = ti.getTypeEncoder();
+    private final TypeDecoder<Long> fromBytes = ti
+            .getTypeDecoder();
 
     @Test
     void test_convertorto_bytes() {
@@ -26,8 +26,8 @@ class TypeDescriptorLongTest {
     }
 
     private void assertEqualsBytes(Long number) {
-        final byte[] bytes = toBytes.toBytes(number);
-        final Long ret = fromBytes.fromBytes(bytes);
+        final byte[] bytes = TypeEncoder.toByteArray(toBytes, number);
+        final Long ret = fromBytes.decode(bytes);
         assertEquals(number, ret, String
                 .format("Expected '%s' byt returned was '%s'", number, ret));
     }

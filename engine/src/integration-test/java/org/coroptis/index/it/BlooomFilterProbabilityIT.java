@@ -101,7 +101,7 @@ class BlooomFilterProbabilityIT {
     private BloomFilter<Long> makeBloomFilter() {
         return BloomFilter.<Long>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(STD.getConvertorToBytes())//
+                .withTypeEncoder(STD.getTypeEncoder())//
                 .withDirectory(
                         directory)//
                 .withIndexSizeInBytes(BLOOM_FILTER_SIZE_IN_BYTES)//

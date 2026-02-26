@@ -25,10 +25,11 @@ class TypeDescriptorNullTest {
     @Test
     void test_readWrite_tombstone() {
         testReadWrite(TDN, NULL);
-        final byte[] bytes = TDN.getConvertorToBytes().toBytes(TOMBSTONE);
+        final byte[] bytes = TypeEncoder.toByteArray(TDN.getTypeEncoder(),
+                TOMBSTONE);
 
-        final NullValue readValue = TDN.getConvertorFromBytes()
-                .fromBytes(bytes);
+        final NullValue readValue = TDN.getTypeDecoder()
+                .decode(bytes);
 
         assertNotEquals(TOMBSTONE, readValue);
         assertEquals(NULL, readValue);
@@ -37,11 +38,11 @@ class TypeDescriptorNullTest {
     private void testReadWrite(final TypeDescriptor<NullValue> typeDescriptor,
             final NullValue value) {
 
-        final byte[] bytes = typeDescriptor.getConvertorToBytes()
-                .toBytes(value);
+        final byte[] bytes = TypeEncoder.toByteArray(
+                typeDescriptor.getTypeEncoder(), value);
 
-        final NullValue readValue = typeDescriptor.getConvertorFromBytes()
-                .fromBytes(bytes);
+        final NullValue readValue = typeDescriptor.getTypeDecoder()
+                .decode(bytes);
 
         assertEquals(value, readValue);
     }

@@ -17,27 +17,28 @@ class TypeDescriptorStringConvertorTest {
 
     @Test
     void testTypeDescriptorString_convertor_matchesIso88591Encoding() {
-        assertMatchesEncoding(new TypeDescriptorString().getConvertorToBytes());
+        assertMatchesEncoding(new TypeDescriptorString().getTypeEncoder());
     }
 
     @Test
     void testTypeDescriptorShortString_convertor_matchesIso88591Encoding() {
         assertMatchesEncoding(
-                new TypeDescriptorShortString().getConvertorToBytes());
+                new TypeDescriptorShortString().getTypeEncoder());
     }
 
     @Test
     void testDestinationBufferTooSmall() {
-        final ConvertorToBytes<String> convertor = new TypeDescriptorString()
-                .getConvertorToBytes();
+        final TypeEncoder<String> convertor = new TypeDescriptorString()
+                .getTypeEncoder();
         assertThrows(IllegalArgumentException.class,
                 () -> convertor.toBytes("abcd", new byte[3]));
     }
 
-    private void assertMatchesEncoding(final ConvertorToBytes<String> convertor) {
+    private void assertMatchesEncoding(final TypeEncoder<String> convertor) {
         VALUES.forEach(value -> {
             final byte[] expected = value.getBytes(StandardCharsets.ISO_8859_1);
-            assertArrayEquals(expected, convertor.toBytes(value));
+            assertArrayEquals(expected,
+                    TypeEncoder.toByteArray(convertor, value));
             assertEquals(expected.length, convertor.bytesLength(value));
 
             final byte[] destination = new byte[Math.max(1, expected.length + 2)];

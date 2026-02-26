@@ -5,9 +5,9 @@ import org.hestiastore.index.directory.FileReader;
 
 public class VarShortLengthReader<T> implements TypeReader<T> {
 
-    private final ConvertorFromBytes<T> convertor;
+    private final TypeDecoder<T> convertor;
 
-    public VarShortLengthReader(final ConvertorFromBytes<T> convertor) {
+    public VarShortLengthReader(final TypeDecoder<T> convertor) {
         this.convertor = Vldtn.requireNonNull(convertor, "convertor");
     }
 
@@ -22,7 +22,7 @@ public class VarShortLengthReader<T> implements TypeReader<T> {
         }
         byte[] bytes = new byte[length];
         reader.read(bytes);
-        return convertor.fromBytes(bytes);
+        return convertor.decode(bytes);
     }
 
 }

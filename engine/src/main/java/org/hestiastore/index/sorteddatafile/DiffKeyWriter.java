@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,7 @@ public class DiffKeyWriter<K> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final ConvertorToBytes<K> convertorToBytes;
+    private final TypeEncoder<K> convertorToBytes;
 
     private final Comparator<K> keyComparator;
 
@@ -31,7 +31,7 @@ public class DiffKeyWriter<K> {
      * @param convertorToBytes converter from keys to bytes
      * @param keyComparator comparator used to enforce sorted keys
      */
-    public DiffKeyWriter(final ConvertorToBytes<K> convertorToBytes,
+    public DiffKeyWriter(final TypeEncoder<K> convertorToBytes,
             final Comparator<K> keyComparator) {
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
                 "convertorToBytes");
@@ -56,7 +56,8 @@ public class DiffKeyWriter<K> {
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = new String(convertorToBytes.toBytes(key));
+                final String s2 = new String(
+                        TypeEncoder.toByteArray(convertorToBytes, key));
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -65,7 +66,8 @@ public class DiffKeyWriter<K> {
             }
             if (cmp > 0) {
                 final String s1 = new String(previousKeyBytes);
-                final String s2 = new String(convertorToBytes.toBytes(key));
+                final String s2 = new String(
+                        TypeEncoder.toByteArray(convertorToBytes, key));
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -74,7 +76,7 @@ public class DiffKeyWriter<K> {
                         s1, s2, keyComapratorClassName));
             }
         }
-        final byte[] keyBytes = convertorToBytes.toBytes(key);
+        final byte[] keyBytes = TypeEncoder.toByteArray(convertorToBytes, key);
         final int sharedByteLength = ByteTool
                 .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
         final byte[] diffBytes = ByteTool
