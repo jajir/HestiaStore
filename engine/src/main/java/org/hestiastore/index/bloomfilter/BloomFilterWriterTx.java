@@ -2,7 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.GuardedWriteTransaction;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 
 /**
@@ -15,7 +15,7 @@ public final class BloomFilterWriterTx<K>
 
     private final Directory directoryFacade;
     private final String bloomFilterFileName;
-    private final ConvertorToBytes<K> convertorToBytes;
+    private final TypeEncoder<K> convertorToBytes;
     private final int numberOfHashFunctions;
     private final int indexSizeInBytes;
     private final int diskIoBufferSize;
@@ -23,7 +23,7 @@ public final class BloomFilterWriterTx<K>
 
     BloomFilterWriterTx(final Directory directoryFacade,
             final String bloomFilterFileName,
-            final ConvertorToBytes<K> convertorToBytes,
+            final TypeEncoder<K> convertorToBytes,
             final int numberOfHashFunctions, final int indexSizeInBytes,
             final int diskIoBufferSize, final BloomFilter<K> bloomFilter) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,

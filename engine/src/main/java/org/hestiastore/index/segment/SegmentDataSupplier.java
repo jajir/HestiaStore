@@ -37,8 +37,8 @@ public final class SegmentDataSupplier<K, V> {
     public BloomFilter<K> getBloomFilter() {
         final var builder = BloomFilter.<K>builder()
                 .withBloomFilterFileName(segmentFiles.getBloomFilterFileName())
-                .withConvertorToBytes(segmentFiles.getKeyTypeDescriptor()
-                        .getConvertorToBytes())
+                .withTypeEncoder(segmentFiles.getKeyTypeDescriptor()
+                        .getTypeEncoder())
                 .withDirectory(segmentFiles.getDirectory())
                 .withRelatedObjectName(segmentFiles.getSegmentIdName())
                 .withDiskIoBufferSize(segmentConf.getDiskIoBufferSize())

@@ -27,7 +27,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withNumberOfKeys(10001L)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withIndexSizeInBytes(1024)//
@@ -44,7 +44,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withIndexSizeInBytes(1024)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
@@ -59,7 +59,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(2)//
                 .withRelatedObjectName(OBJECT_NAME)//
@@ -74,7 +74,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withIndexSizeInBytes(0)//
                 .withRelatedObjectName(OBJECT_NAME)//
                 .build();
@@ -88,7 +88,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withIndexSizeInBytes(1024)//
                 .withNumberOfHashFunctions(2)//
                 .withProbabilityOfFalsePositive(
@@ -105,7 +105,7 @@ class BloomFilterBuilderTest {
         try (BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withNumberOfKeys(BloomFilterBuilder.UNSET_NUMBER_OF_KEYS)//
                 .withIndexSizeInBytes(
                         BloomFilterBuilder.UNSET_INDEX_SIZE_IN_BYTES)//
@@ -126,7 +126,7 @@ class BloomFilterBuilderTest {
         try (BloomFilter<String> unset = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withNumberOfKeys(10001L)//
                 .withProbabilityOfFalsePositive(
                         BloomFilterBuilder.UNSET_PROBABILITY_OF_FALSE_POSITIVE)//
@@ -135,7 +135,7 @@ class BloomFilterBuilderTest {
                 BloomFilter<String> defaults = BloomFilter.<String>builder()//
                         .withDirectory(directory)//
                         .withBloomFilterFileName(FILE_NAME + ".defaults")//
-                        .withConvertorToBytes(TDS.getConvertorToBytes())//
+                        .withTypeEncoder(TDS.getTypeEncoder())//
                         .withNumberOfKeys(10001L)//
                         .withProbabilityOfFalsePositive(
                                 BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE)//
@@ -153,7 +153,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withNumberOfKeys(1000001L)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withIndexSizeInBytes(1_000_000)//
@@ -169,7 +169,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withNumberOfKeys(1000001L)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withRelatedObjectName(OBJECT_NAME)//
@@ -184,7 +184,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> bf = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withNumberOfKeys(1000001L)//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
@@ -200,7 +200,7 @@ class BloomFilterBuilderTest {
         final BloomFilter<String> filter = BloomFilter.<String>builder()//
                 .withDirectory(directory)//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withProbabilityOfFalsePositive(0.0001)//
                 .withNumberOfHashFunctions(2)//
                 .build();
@@ -214,7 +214,7 @@ class BloomFilterBuilderTest {
     void test_missing_relatedObjectName() {
         final BloomFilterBuilder<String> builder = BloomFilter.<String>builder()//
                 .withBloomFilterFileName(FILE_NAME)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withDirectory(directory)//
                 .withIndexSizeInBytes(0)//
                 .withNumberOfHashFunctions(0)//
@@ -314,7 +314,7 @@ class BloomFilterBuilderTest {
             final double probabilityOfFalsePositive) {
         return BloomFilter.<String>builder()//
                 .withDirectory(directory)//
-                .withConvertorToBytes(TDS.getConvertorToBytes())//
+                .withTypeEncoder(TDS.getTypeEncoder())//
                 .withBloomFilterFileName(FILE_NAME)//
                 .withProbabilityOfFalsePositive(probabilityOfFalsePositive)//
                 .withNumberOfKeys(10001L)//

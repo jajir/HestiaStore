@@ -126,7 +126,7 @@ public class SortedDataFile<K, V> {
         }
         try {
             final DiffKeyReader<K> diffKeyReader = new DiffKeyReader<>(
-                    keyTypeDescriptor.getConvertorFromBytes());
+                    keyTypeDescriptor.getTypeDecoder());
             return new DataFileIterator<>(diffKeyReader,
                     valueTypeDescriptor.getTypeReader(),
                     directoryFacade.getFileReader(fileName, diskIoBufferSize));

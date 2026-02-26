@@ -23,7 +23,7 @@ class DiffKeyReaderTest {
     @Test
     void test_reading_end_of_file() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // header not fully read => reader returns null
         when(fileReader.read(any(byte[].class)))
@@ -35,7 +35,7 @@ class DiffKeyReaderTest {
     @Test
     void test_first_record_expect_previous() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // shared=3, keyLen=5 on the very first key -> invalid (needs previous)
         when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
@@ -60,7 +60,7 @@ class DiffKeyReaderTest {
     @Test
     void test_reading_first_full_record() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // shared=0, keyLen=5 -> full key "prase"
         when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
@@ -83,7 +83,7 @@ class DiffKeyReaderTest {
     @Test
     void test_reading_first_fail_when_just_part_of_data_is_read() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // shared=0, keyLen=5 then partial payload read
         when(fileReader.read(any(byte[].class))).thenAnswer(inv -> {
@@ -104,7 +104,7 @@ class DiffKeyReaderTest {
     @Test
     void test_reading_more_records() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // Use stateful answer to simulate two records
         when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
@@ -145,7 +145,7 @@ class DiffKeyReaderTest {
     @Test
     void test_reading_more_records_with_inconsistency() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // First full key
         when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
@@ -180,7 +180,7 @@ class DiffKeyReaderTest {
     @Test
     void test_reading_more_records_second_reading_load_part_of_bytes() {
         final DiffKeyReader<String> reader = new DiffKeyReader<>(
-                tds.getConvertorFromBytes());
+                tds.getTypeDecoder());
 
         // First full key
         when(fileReader.read(any(byte[].class))).thenAnswer(new org.mockito.stubbing.Answer<Integer>() {

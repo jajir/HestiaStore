@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 
@@ -15,15 +15,30 @@ import org.hestiastore.index.directory.MemDirectory;
 public final class BloomFilterNull<K> extends AbstractCloseableResource
         implements BloomFilter<K> {
 
-    private static final ConvertorToBytes<Object> NO_OP_CONVERTOR = value -> new byte[] {
-            0 };
+    private static final TypeEncoder<Object> NO_OP_CONVERTOR = new TypeEncoder<Object>() {
+        @Override
+        public int bytesLength(final Object value) {
+            return 1;
+        }
+
+        @Override
+        public int toBytes(final Object value, final byte[] destination) {
+            if (destination.length < 1) {
+                throw new IllegalArgumentException(String.format(
+                        "Destination buffer too small. Required '%s' but was '%s'",
+                        1, destination.length));
+            }
+            destination[0] = 0;
+            return 1;
+        }
+    };
 
     private final BloomFilterStats stats = new BloomFilterStats();
 
     @Override
     public BloomFilterWriterTx<K> openWriteTx() {
         @SuppressWarnings("unchecked")
-        final ConvertorToBytes<K> convertor = (ConvertorToBytes<K>) NO_OP_CONVERTOR;
+        final TypeEncoder<K> convertor = (TypeEncoder<K>) NO_OP_CONVERTOR;
         final Directory directory = new MemDirectory();
         return new BloomFilterWriterTx<>(directory, "bloomFilterNull",
                 convertor, 1, 1, 1, this);

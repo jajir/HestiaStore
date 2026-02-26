@@ -39,12 +39,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
      */
     private static final int BYTE_SHIFT_24 = 24;
 
-    private static final ConvertorToBytes<Integer> CONVERTOR_TO_BYTES = new ConvertorToBytes<Integer>() {
-        @Override
-        public byte[] toBytes(final Integer object) {
-            return getBytes(object);
-        }
-
+    private static final TypeEncoder<Integer> CONVERTOR_TO_BYTES = new TypeEncoder<Integer>() {
         @Override
         public int bytesLength(final Integer object) {
             return REQUIRED_BYTES;
@@ -58,12 +53,12 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     };
 
     @Override
-    public ConvertorToBytes<Integer> getConvertorToBytes() {
+    public TypeEncoder<Integer> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
-    public ConvertorFromBytes<Integer> getConvertorFromBytes() {
+    public TypeDecoder<Integer> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 

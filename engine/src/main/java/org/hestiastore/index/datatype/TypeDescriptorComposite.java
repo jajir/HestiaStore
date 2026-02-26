@@ -23,16 +23,7 @@ import org.hestiastore.index.directory.MemFileReader;
  */
 public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
-    private final VarLengthReader<CompositeValue> varLengthReader = new VarLengthReader<>(
-            getConvertorFromBytes());
-    private final VarLengthWriter<CompositeValue> varLengthWriter = new VarLengthWriter<>(
-            this::toBytes);
-    private final ConvertorToBytes<CompositeValue> convertorToBytes = new ConvertorToBytes<CompositeValue>() {
-        @Override
-        public byte[] toBytes(final CompositeValue object) {
-            return TypeDescriptorComposite.this.toBytes(object);
-        }
-
+    private final TypeEncoder<CompositeValue> convertorToBytes = new TypeEncoder<CompositeValue>() {
         @Override
         public int bytesLength(final CompositeValue object) {
             final CountingFileWriter writer = new CountingFileWriter();
@@ -49,6 +40,10 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
             return writer.writtenBytes();
         }
     };
+    private final VarLengthReader<CompositeValue> varLengthReader = new VarLengthReader<>(
+            getTypeDecoder());
+    private final VarLengthWriter<CompositeValue> varLengthWriter = new VarLengthWriter<>(
+            convertorToBytes);
     private final List<TypeDescriptor<?>> elementTypes;
     private final CompositeValue tombstoneValue;
 
@@ -65,12 +60,12 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     }
 
     @Override
-    public ConvertorToBytes<CompositeValue> getConvertorToBytes() {
+    public TypeEncoder<CompositeValue> getTypeEncoder() {
         return convertorToBytes;
     }
 
     @Override
-    public ConvertorFromBytes<CompositeValue> getConvertorFromBytes() {
+    public TypeDecoder<CompositeValue> getTypeDecoder() {
         return this::fromBytes;
     }
 
@@ -134,8 +129,8 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         final Object valA = a.get(index);
         final Object valB = b.get(index);
         ensureValuesAreNotNull(index, valA, valB);
-        final Class<?> expectedClass = elementTypes.get(index).getClass();
-        ensureValuesHaveExpectedType(index, valA, valB, expectedClass);
+        final Object expectedValue = tombstoneValue.get(index);
+        ensureValuesHaveExpectedType(index, valA, valB, expectedValue);
         final Comparator<Object> cmp = ((TypeDescriptor<Object>) elementTypes
                 .get(index)).getComparator();
         return cmp.compare(valA, valB);
@@ -150,8 +145,11 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     }
 
     private void ensureValuesHaveExpectedType(final int index,
-            final Object valA, final Object valB,
-            final Class<?> expectedClass) {
+            final Object valA, final Object valB, final Object expectedValue) {
+        if (expectedValue == null) {
+            return;
+        }
+        final Class<?> expectedClass = expectedValue.getClass();
         if (!expectedClass.isInstance(valA)
                 || !expectedClass.isInstance(valB)) {
             throw new IndexException("Element at index " + index

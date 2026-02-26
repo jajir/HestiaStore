@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 class TypeDescriptorIntegerTest {
 
     private final TypeDescriptorInteger ti = new TypeDescriptorInteger();
-    private final ConvertorToBytes<Integer> toBytes = ti.getConvertorToBytes();
-    private final ConvertorFromBytes<Integer> fromBytes = ti
-            .getConvertorFromBytes();
+    private final TypeEncoder<Integer> toBytes = ti.getTypeEncoder();
+    private final TypeDecoder<Integer> fromBytes = ti
+            .getTypeDecoder();
 
     @Test
     void test_convertorto_bytes() {
@@ -24,8 +24,8 @@ class TypeDescriptorIntegerTest {
     }
 
     private void assertEqualsBytes(Integer number) {
-        final byte[] bytes = toBytes.toBytes(number);
-        final Integer ret = fromBytes.fromBytes(bytes);
+        final byte[] bytes = TypeEncoder.toByteArray(toBytes, number);
+        final Integer ret = fromBytes.decode(bytes);
         assertEquals(number, ret, String
                 .format("Expected '%s' byt returned was '%s'", number, ret));
     }

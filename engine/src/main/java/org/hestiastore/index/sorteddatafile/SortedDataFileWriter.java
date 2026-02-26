@@ -7,7 +7,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.directory.FileWriter;
@@ -28,7 +28,7 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
 
     private final Comparator<K> keyComparator;
 
-    private final ConvertorToBytes<K> keyConvertorToBytes;
+    private final TypeEncoder<K> keyTypeEncoder;
 
     private long position;
 
@@ -51,8 +51,8 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = Vldtn.requireNonNull(
                 keyTypeDescriptor.getComparator(), "keyComparator");
-        this.keyConvertorToBytes = Vldtn.requireNonNull(
-                keyTypeDescriptor.getConvertorToBytes(), "keyConvertorToBytes");
+        this.keyTypeEncoder = Vldtn.requireNonNull(
+                keyTypeDescriptor.getTypeEncoder(), "keyTypeEncoder");
         this.diffKeyWriter = makeDiffKeyWriter();
         position = 0;
     }
@@ -63,7 +63,7 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
      * @return diff-key writer instance
      */
     private DiffKeyWriter<K> makeDiffKeyWriter() {
-        return new DiffKeyWriter<>(keyConvertorToBytes, keyComparator);
+        return new DiffKeyWriter<>(keyTypeEncoder, keyComparator);
     }
 
     /**
@@ -75,7 +75,8 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
         if (previousKey != null) {
             final int cmp = keyComparator.compare(previousKey, key);
             if (cmp == 0) {
-                final String s2 = F.b64(keyConvertorToBytes.toBytes(key));
+                final String s2 = F.b64(TypeEncoder.toByteArray(keyTypeEncoder,
+                        key));
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(
@@ -83,8 +84,10 @@ public class SortedDataFileWriter<K, V> extends AbstractCloseableResource
                         s2, keyComapratorClassName));
             }
             if (cmp > 0) {
-                final String s1 = F.b64(keyConvertorToBytes.toBytes(previousKey));
-                final String s2 = F.b64(keyConvertorToBytes.toBytes(key));
+                final String s1 = F.b64(
+                        TypeEncoder.toByteArray(keyTypeEncoder, previousKey));
+                final String s2 = F.b64(TypeEncoder.toByteArray(keyTypeEncoder,
+                        key));
                 final String keyComapratorClassName = keyComparator.getClass()
                         .getSimpleName();
                 throw new IllegalArgumentException(String.format(

@@ -2,10 +2,10 @@ package org.coroptis.index.it;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 
@@ -35,12 +35,12 @@ abstract class AbstractBlockingTombstoneTypeDescriptorString
     }
 
     @Override
-    public ConvertorFromBytes<String> getConvertorFromBytes() {
-        return delegate.getConvertorFromBytes();
+    public TypeDecoder<String> getTypeDecoder() {
+        return delegate.getTypeDecoder();
     }
 
     @Override
-    public ConvertorToBytes<String> getConvertorToBytes() {
-        return delegate.getConvertorToBytes();
+    public TypeEncoder<String> getTypeEncoder() {
+        return delegate.getTypeEncoder();
     }
 }

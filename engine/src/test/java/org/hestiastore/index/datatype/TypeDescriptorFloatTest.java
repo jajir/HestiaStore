@@ -23,11 +23,11 @@ class TypeDescriptorFloatTest {
     private void testReadWrite(final TypeDescriptor<Float> typeDescriptor,
             final Float value) {
 
-        final byte[] bytes = typeDescriptor.getConvertorToBytes()
-                .toBytes(value);
+        final byte[] bytes = TypeEncoder.toByteArray(
+                typeDescriptor.getTypeEncoder(), value);
 
-        final Float readValue = typeDescriptor.getConvertorFromBytes()
-                .fromBytes(bytes);
+        final Float readValue = typeDescriptor.getTypeDecoder()
+                .decode(bytes);
 
         assertEquals(value, readValue);
     }

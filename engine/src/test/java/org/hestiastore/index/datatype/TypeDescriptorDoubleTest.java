@@ -23,11 +23,11 @@ class TypeDescriptorDoubleTest {
     private void testReadWrite(final TypeDescriptor<Double> typeDescriptor,
             final Double value) {
 
-        final byte[] bytes = typeDescriptor.getConvertorToBytes()
-                .toBytes(value);
+        final byte[] bytes = TypeEncoder.toByteArray(
+                typeDescriptor.getTypeEncoder(), value);
 
-        final Double readValue = typeDescriptor.getConvertorFromBytes()
-                .fromBytes(bytes);
+        final Double readValue = typeDescriptor.getTypeDecoder()
+                .decode(bytes);
 
         assertEquals(value, readValue);
     }

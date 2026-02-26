@@ -45,13 +45,13 @@ class DataBlockWriterImplTest {
             final byte[] longBytes = new byte[8];
             System.arraycopy(blockData, 0, longBytes, 0, 8);
             long magicNumber = TestData.LONG_CONVERTOR_FROM_BYTES
-                    .fromBytes(longBytes);
+                    .decode(longBytes);
             assertEquals(DataBlockHeader.MAGIC_NUMBER, magicNumber);
 
             // Verify the CRC
             final byte[] crcBytes = new byte[8];
             System.arraycopy(blockData, 8, crcBytes, 0, 8);
-            long crc = TestData.LONG_CONVERTOR_FROM_BYTES.fromBytes(crcBytes);
+            long crc = TestData.LONG_CONVERTOR_FROM_BYTES.decode(crcBytes);
             assertEquals(TestData.PAYLOAD_1008.calculateCrc(), crc);
 
             return null;

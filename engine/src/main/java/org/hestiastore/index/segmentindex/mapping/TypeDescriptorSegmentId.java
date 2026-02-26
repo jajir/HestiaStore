@@ -2,8 +2,8 @@ package org.hestiastore.index.segmentindex.mapping;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.datatype.ConvertorFromBytes;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeDecoder;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeReader;
@@ -49,16 +49,27 @@ public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
 
     /** {@inheritDoc} */
     @Override
-    public ConvertorFromBytes<SegmentId> getConvertorFromBytes() {
+    public TypeDecoder<SegmentId> getTypeDecoder() {
         return bytes -> SegmentId
-                .of(tdi.getConvertorFromBytes().fromBytes(bytes));
+                .of(tdi.getTypeDecoder().decode(bytes));
     }
 
     /** {@inheritDoc} */
     @Override
-    public ConvertorToBytes<SegmentId> getConvertorToBytes() {
-        return segmentId -> tdi.getConvertorToBytes()
-                .toBytes(segmentId.getId());
+    public TypeEncoder<SegmentId> getTypeEncoder() {
+        return new TypeEncoder<SegmentId>() {
+            @Override
+            public int bytesLength(final SegmentId segmentId) {
+                return tdi.getTypeEncoder().bytesLength(segmentId.getId());
+            }
+
+            @Override
+            public int toBytes(final SegmentId segmentId,
+                    final byte[] destination) {
+                return tdi.getTypeEncoder().toBytes(segmentId.getId(),
+                        destination);
+            }
+        };
     }
 
     /** {@inheritDoc} */

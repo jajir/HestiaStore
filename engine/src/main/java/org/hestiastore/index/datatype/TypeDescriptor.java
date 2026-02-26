@@ -39,14 +39,14 @@ public interface TypeDescriptor<T> {
      * 
      * @return class of described type
      */
-    ConvertorFromBytes<T> getConvertorFromBytes();
+    TypeDecoder<T> getTypeDecoder();
 
     /**
      * Get class of described type.
      * 
      * @return class of described type
      */
-    ConvertorToBytes<T> getConvertorToBytes();
+    TypeEncoder<T> getTypeEncoder();
 
     /**
      * Simple naive tombstone record implementation. Tombstone is special recrd

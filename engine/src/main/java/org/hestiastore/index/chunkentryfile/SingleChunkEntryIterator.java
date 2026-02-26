@@ -39,7 +39,7 @@ public class SingleChunkEntryIterator<K, V>
         final byte[] data = chunk.getPayload().getBytes().getData();
         final MemFileReader reader = new MemFileReader(data);
         final DiffKeyReader<K> keyReader = new DiffKeyReader<>(
-                keyTypeDescriptor.getConvertorFromBytes());
+                keyTypeDescriptor.getTypeDecoder());
         this.iterator = new DataFileIterator<>(keyReader,
                 valueTypeDescriptor.getTypeReader(), reader);
     }

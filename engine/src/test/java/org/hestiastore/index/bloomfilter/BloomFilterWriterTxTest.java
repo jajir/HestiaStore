@@ -3,7 +3,7 @@ package org.hestiastore.index.bloomfilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +20,7 @@ class BloomFilterWriterTxTest {
     private static final String FILE_NAME = "test.bloom";
 
     @Mock
-    private ConvertorToBytes<String> convertorToBytes;
+    private TypeEncoder<String> convertorToBytes;
 
     @Mock
     private BloomFilter<String> bloomFilter;

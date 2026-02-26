@@ -33,14 +33,23 @@ public class TypeDescriptorNull implements TypeDescriptor<NullValue> {
     }
 
     @Override
-    public ConvertorFromBytes<NullValue> getConvertorFromBytes() {
+    public TypeDecoder<NullValue> getTypeDecoder() {
         return byters -> NULL;
     }
 
     @Override
-    public ConvertorToBytes<NullValue> getConvertorToBytes() {
-        // NullValue is represented by an empty byte array
-        return value -> new byte[0];
+    public TypeEncoder<NullValue> getTypeEncoder() {
+        return new TypeEncoder<NullValue>() {
+            @Override
+            public int bytesLength(final NullValue value) {
+                return 0;
+            }
+
+            @Override
+            public int toBytes(final NullValue value, final byte[] destination) {
+                return 0;
+            }
+        };
     }
 
     @Override

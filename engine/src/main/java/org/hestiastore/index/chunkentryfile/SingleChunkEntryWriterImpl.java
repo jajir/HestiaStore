@@ -34,7 +34,7 @@ public class SingleChunkEntryWriterImpl<K, V>
         Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         this.valueWriter = valueTypeDescriptor.getTypeWriter();
         this.diffKeyWriter = new DiffKeyWriter<>(
-                keyTypeDescriptor.getConvertorToBytes(),
+                keyTypeDescriptor.getTypeEncoder(),
                 keyTypeDescriptor.getComparator());
     }
 

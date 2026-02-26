@@ -37,7 +37,7 @@ public final class TypeDescriptorFixedLengthString
     }
 
     @Override
-    public ConvertorFromBytes<String> getConvertorFromBytes() {
+    public TypeDecoder<String> getTypeDecoder() {
         return array -> {
             if (length != array.length) {
                 throw new IllegalArgumentException(String.format(
@@ -49,20 +49,45 @@ public final class TypeDescriptorFixedLengthString
     }
 
     @Override
-    public ConvertorToBytes<String> getConvertorToBytes() {
-        return string -> {
-            if (length != string.length()) {
-                throw new IllegalArgumentException(String.format(
-                        "String length shoudlld be '%s' but is '%s'", length,
-                        string.length()));
+    public TypeEncoder<String> getTypeEncoder() {
+        return new TypeEncoder<String>() {
+            @Override
+            public int bytesLength(final String string) {
+                validateStringLength(string);
+                return length;
             }
-            return string.getBytes(CHARSET_ENCODING);
+
+            @Override
+            public int toBytes(final String string, final byte[] destination) {
+                validateStringLength(string);
+                if (destination.length < length) {
+                    throw new IllegalArgumentException(String.format(
+                            "Destination buffer too small. Required '%s' but was '%s'",
+                            length, destination.length));
+                }
+                final int written = Iso88591StringConvertor.INSTANCE
+                        .toBytes(string, destination);
+                if (written != length) {
+                    throw new IllegalArgumentException(String.format(
+                            "String should be encoded to '%s' bytes but was '%s'",
+                            length, written));
+                }
+                return written;
+            }
+
+            private void validateStringLength(final String string) {
+                if (length != string.length()) {
+                    throw new IllegalArgumentException(String.format(
+                            "String length shoudlld be '%s' but is '%s'",
+                            length, string.length()));
+                }
+            }
         };
     }
 
     @Override
     public TypeWriter<String> getTypeWriter() {
-        return new FixedLengthWriter<String>(getConvertorToBytes());
+        return new FixedLengthWriter<String>(getTypeEncoder());
     }
 
     @Override
@@ -70,7 +95,7 @@ public final class TypeDescriptorFixedLengthString
         return reader -> {
             final byte[] in = new byte[length];
             reader.read(in);
-            return getConvertorFromBytes().fromBytes(in);
+            return getTypeDecoder().decode(in);
         };
     }
 

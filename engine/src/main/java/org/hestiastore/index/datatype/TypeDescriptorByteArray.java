@@ -17,12 +17,7 @@ public class TypeDescriptorByteArray implements TypeDescriptor<ByteArray> {
             .of("(*&^%$#@!)-1eaa9b2c-3c11-11ee-be56-0242ac120002"
                     .getBytes(CHARSET_ENCODING));
 
-    private static final ConvertorToBytes<ByteArray> CONVERTOR_TO_BYTES = new ConvertorToBytes<ByteArray>() {
-        @Override
-        public byte[] toBytes(final ByteArray object) {
-            return object.getBytes();
-        }
-
+    private static final TypeEncoder<ByteArray> CONVERTOR_TO_BYTES = new TypeEncoder<ByteArray>() {
         @Override
         public int bytesLength(final ByteArray object) {
             return object.length();
@@ -35,23 +30,23 @@ public class TypeDescriptorByteArray implements TypeDescriptor<ByteArray> {
     };
 
     @Override
-    public ConvertorFromBytes<ByteArray> getConvertorFromBytes() {
+    public TypeDecoder<ByteArray> getTypeDecoder() {
         return array -> ByteArray.of(array);
     }
 
     @Override
-    public ConvertorToBytes<ByteArray> getConvertorToBytes() {
+    public TypeEncoder<ByteArray> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
     public VarLengthWriter<ByteArray> getTypeWriter() {
-        return new VarLengthWriter<ByteArray>(getConvertorToBytes());
+        return new VarLengthWriter<ByteArray>(getTypeEncoder());
     }
 
     @Override
     public VarLengthReader<ByteArray> getTypeReader() {
-        return new VarLengthReader<ByteArray>(getConvertorFromBytes());
+        return new VarLengthReader<ByteArray>(getTypeDecoder());
     }
 
     @Override

@@ -59,12 +59,7 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
      */
     private static final int BYTE_SHIFT_56 = 56;
 
-    private static final ConvertorToBytes<Long> CONVERTOR_TO_BYTES = new ConvertorToBytes<Long>() {
-        @Override
-        public byte[] toBytes(final Long object) {
-            return getBytes(object);
-        }
-
+    private static final TypeEncoder<Long> CONVERTOR_TO_BYTES = new TypeEncoder<Long>() {
         @Override
         public int bytesLength(final Long object) {
             return REQUIRED_BYTES;
@@ -78,12 +73,12 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
     };
 
     @Override
-    public ConvertorToBytes<Long> getConvertorToBytes() {
+    public TypeEncoder<Long> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
-    public ConvertorFromBytes<Long> getConvertorFromBytes() {
+    public TypeDecoder<Long> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 

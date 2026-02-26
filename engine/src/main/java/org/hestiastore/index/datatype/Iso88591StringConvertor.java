@@ -5,7 +5,7 @@ import java.nio.charset.Charset;
 /**
  * Converts strings using ISO-8859-1 and supports writing into reusable buffers.
  */
-final class Iso88591StringConvertor implements ConvertorToBytes<String> {
+final class Iso88591StringConvertor implements TypeEncoder<String> {
 
     static final Iso88591StringConvertor INSTANCE = new Iso88591StringConvertor();
     private static final Charset CHARSET_ENCODING = Charset
@@ -13,11 +13,6 @@ final class Iso88591StringConvertor implements ConvertorToBytes<String> {
     private static final byte REPLACEMENT_BYTE = (byte) '?';
 
     private Iso88591StringConvertor() {
-    }
-
-    @Override
-    public byte[] toBytes(final String object) {
-        return object.getBytes(CHARSET_ENCODING);
     }
 
     @Override

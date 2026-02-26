@@ -1,7 +1,7 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datatype.ConvertorToBytes;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 
 /**
@@ -51,7 +51,7 @@ public class BloomFilterBuilder<K> {
 
     private Directory directoryFacade;
     private String bloomFilterFileName;
-    private ConvertorToBytes<K> convertorToBytes;
+    private TypeEncoder<K> convertorToBytes;
     private long numberOfKeys = UNSET_NUMBER_OF_KEYS;
     private int numberOfHashFunctions = UNSET_NUMBER_OF_HASH_FUNCTIONS;
     private int indexSizeInBytes = UNSET_INDEX_SIZE_IN_BYTES;
@@ -128,8 +128,8 @@ public class BloomFilterBuilder<K> {
      * @param convertorToBytes key convertor
      * @return this builder
      */
-    public BloomFilterBuilder<K> withConvertorToBytes(
-            final ConvertorToBytes<K> convertorToBytes) {
+    public BloomFilterBuilder<K> withTypeEncoder(
+            final TypeEncoder<K> convertorToBytes) {
         this.convertorToBytes = convertorToBytes;
         return this;
     }

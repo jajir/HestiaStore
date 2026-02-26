@@ -14,12 +14,7 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
      */
     private static final int REQUIRED_BYTES = 8;
 
-    private static final ConvertorToBytes<Double> CONVERTOR_TO_BYTES = new ConvertorToBytes<Double>() {
-        @Override
-        public byte[] toBytes(final Double object) {
-            return getBytes(object);
-        }
-
+    private static final TypeEncoder<Double> CONVERTOR_TO_BYTES = new TypeEncoder<Double>() {
         @Override
         public int bytesLength(final Double object) {
             return REQUIRED_BYTES;
@@ -33,12 +28,12 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
     };
 
     @Override
-    public ConvertorToBytes<Double> getConvertorToBytes() {
+    public TypeEncoder<Double> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
     @Override
-    public ConvertorFromBytes<Double> getConvertorFromBytes() {
+    public TypeDecoder<Double> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 
