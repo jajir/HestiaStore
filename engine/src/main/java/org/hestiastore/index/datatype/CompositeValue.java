@@ -2,6 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Arrays;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Represents multiple values of different types. It doesn't support compile
  * time data type validation. There is just run time type validation when value
@@ -16,11 +18,12 @@ public class CompositeValue {
     }
 
     public CompositeValue(Object... elements) {
-        this.elements = elements;
+        Vldtn.requireNonNull(elements, "elements");
+        this.elements = Arrays.copyOf(elements, elements.length);
     }
 
     public Object[] getElements() {
-        return elements;
+        return Arrays.copyOf(elements, elements.length);
     }
 
     public Object get(int index) {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,7 +31,7 @@ class TypeDescriptorCompositeTest {
         final TypeEncoder<CompositeValue> convertor = TDC
                 .getTypeEncoder();
         final CompositeValue value = CompositeValue.of("Hello", 1.0D, 42);
-        final byte[] expected = TypeEncoder.toByteArray(convertor, value);
+        final byte[] expected = TestEncoding.toByteArray(convertor, value);
 
         assertEquals(expected.length, convertor.bytesLength(value));
 
@@ -80,11 +81,30 @@ class TypeDescriptorCompositeTest {
                         CompositeValue.of("A", 1.0D, 1)));
     }
 
+    @Test
+    void test_constructor_copiesElementTypesList() {
+        final List<TypeDescriptor<?>> types = new ArrayList<>(
+                List.of(new TypeDescriptorShortString(),
+                        new TypeDescriptorInteger()));
+        final TypeDescriptorComposite descriptor = new TypeDescriptorComposite(
+                types);
+        types.clear();
+        types.add(new TypeDescriptorLong());
+
+        final CompositeValue value = CompositeValue.of("AA", 7);
+        final byte[] bytes = TestEncoding.toByteArray(descriptor.getTypeEncoder(),
+                value);
+        final CompositeValue decoded = descriptor.getTypeDecoder().decode(bytes);
+
+        assertEquals(value, decoded);
+        assertEquals(2, descriptor.getTombstone().size());
+    }
+
     private void testReadWrite(
             final TypeDescriptor<CompositeValue> typeDescriptor,
             final CompositeValue value) {
 
-        final byte[] bytes = TypeEncoder.toByteArray(
+        final byte[] bytes = TestEncoding.toByteArray(
                 typeDescriptor.getTypeEncoder(), value);
 
         final CompositeValue readValue = typeDescriptor.getTypeDecoder()

@@ -23,7 +23,7 @@ class TypeDescriptorByteArrayTest {
     void test_convertor_inPlaceSerialization() {
         final TypeEncoder<ByteArray> convertor = TDBA.getTypeEncoder();
         final ByteArray value = ByteArray.of(new byte[] { 0x0F, 0x00, 0x01 });
-        final byte[] expected = TypeEncoder.toByteArray(convertor, value);
+        final byte[] expected = TestEncoding.toByteArray(convertor, value);
 
         assertEquals(expected.length, convertor.bytesLength(value));
 
@@ -40,7 +40,7 @@ class TypeDescriptorByteArrayTest {
     private void testReadWrite(final TypeDescriptor<ByteArray> typeDescriptor,
             final ByteArray value) {
 
-        final byte[] bytes = TypeEncoder.toByteArray(
+        final byte[] bytes = TestEncoding.toByteArray(
                 typeDescriptor.getTypeEncoder(), value);
 
         final ByteArray readValue = typeDescriptor.getTypeDecoder()

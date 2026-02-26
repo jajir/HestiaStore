@@ -25,7 +25,7 @@ class TypeDescriptorNullTest {
     @Test
     void test_readWrite_tombstone() {
         testReadWrite(TDN, NULL);
-        final byte[] bytes = TypeEncoder.toByteArray(TDN.getTypeEncoder(),
+        final byte[] bytes = TestEncoding.toByteArray(TDN.getTypeEncoder(),
                 TOMBSTONE);
 
         final NullValue readValue = TDN.getTypeDecoder()
@@ -38,7 +38,7 @@ class TypeDescriptorNullTest {
     private void testReadWrite(final TypeDescriptor<NullValue> typeDescriptor,
             final NullValue value) {
 
-        final byte[] bytes = TypeEncoder.toByteArray(
+        final byte[] bytes = TestEncoding.toByteArray(
                 typeDescriptor.getTypeEncoder(), value);
 
         final NullValue readValue = typeDescriptor.getTypeDecoder()

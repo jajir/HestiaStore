@@ -16,17 +16,16 @@ public class VarLengthReader<T> implements TypeReader<T> {
 
     @Override
     public T read(final FileReader reader) {
-        byte[] lengthBytes = new byte[4];
-        reader.read(lengthBytes);
-        int length = CONVERTOR_FROM_BYTES.decode(lengthBytes);
+        final byte[] lengthBytes = new byte[4];
+        if (!TypeIo.readFullyOrNull(reader, lengthBytes)) {
+            return null;
+        }
+        final int length = CONVERTOR_FROM_BYTES.decode(lengthBytes);
         if (length < 0) {
             return null;
         }
-        if (length > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("Converted type is too big");
-        }
-        byte[] bytes = new byte[length];
-        reader.read(bytes);
+        final byte[] bytes = new byte[length];
+        TypeIo.readFullyRequired(reader, bytes);
         return convertor.decode(bytes);
     }
 

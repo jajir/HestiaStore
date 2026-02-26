@@ -94,7 +94,9 @@ public final class TypeDescriptorFixedLengthString
     public TypeReader<String> getTypeReader() {
         return reader -> {
             final byte[] in = new byte[length];
-            reader.read(in);
+            if (!TypeIo.readFullyOrNull(reader, in)) {
+                return null;
+            }
             return getTypeDecoder().decode(in);
         };
     }

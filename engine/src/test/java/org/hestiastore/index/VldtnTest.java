@@ -190,6 +190,10 @@ class VldtnTest {
 
     @Test
     void test_requireGreaterThanOrEqualToZero() {
+        assertEquals(0,
+                Vldtn.requireGreaterThanOrEqualToZero(0, "revision"));
+        assertEquals(7,
+                Vldtn.requireGreaterThanOrEqualToZero(7, "revision"));
         assertEquals(0L,
                 Vldtn.requireGreaterThanOrEqualToZero(0L, "revision"));
         assertEquals(7L,
@@ -198,6 +202,12 @@ class VldtnTest {
 
     @Test
     void test_requireGreaterThanOrEqualToZero_negative() {
+        final Exception intError = assertThrows(IllegalArgumentException.class,
+                () -> Vldtn.requireGreaterThanOrEqualToZero(-1, "revision"));
+        assertEquals(
+                "Property 'revision' must be greater than or equal to 0",
+                intError.getMessage());
+
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> Vldtn.requireGreaterThanOrEqualToZero(-1L, "revision"));
         assertEquals(

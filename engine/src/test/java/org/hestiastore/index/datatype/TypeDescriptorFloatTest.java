@@ -23,7 +23,7 @@ class TypeDescriptorFloatTest {
     private void testReadWrite(final TypeDescriptor<Float> typeDescriptor,
             final Float value) {
 
-        final byte[] bytes = TypeEncoder.toByteArray(
+        final byte[] bytes = TestEncoding.toByteArray(
                 typeDescriptor.getTypeEncoder(), value);
 
         final Float readValue = typeDescriptor.getTypeDecoder()

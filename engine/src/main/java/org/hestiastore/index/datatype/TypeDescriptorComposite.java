@@ -48,10 +48,8 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     private final CompositeValue tombstoneValue;
 
     TypeDescriptorComposite(final List<TypeDescriptor<?>> elementTypes) {
-        this.elementTypes = Vldtn.requireNonNull(elementTypes, "elementTypes");
-        if (elementTypes.isEmpty()) {
-            throw new IllegalArgumentException("Element types cannot be empty");
-        }
+        this.elementTypes = List.copyOf(
+                Vldtn.requireNotEmpty(elementTypes, "elementTypes"));
         final Object[] tmp = new Object[elementTypes.size()];
         for (int i = 0; i < elementTypes.size(); i++) {
             tmp[i] = elementTypes.get(i).getTombstone();

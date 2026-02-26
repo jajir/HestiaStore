@@ -41,7 +41,7 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
     public TypeReader<Float> getTypeReader() {
         return fileReader -> {
             final byte[] bytes = new byte[REQUIRED_BYTES];
-            if (fileReader.read(bytes) == -1) {
+            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
                 return null;
             }
             return load(bytes, 0);

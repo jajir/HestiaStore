@@ -26,7 +26,7 @@ class TypeDescriptorLongTest {
     }
 
     private void assertEqualsBytes(Long number) {
-        final byte[] bytes = TypeEncoder.toByteArray(toBytes, number);
+        final byte[] bytes = TestEncoding.toByteArray(toBytes, number);
         final Long ret = fromBytes.decode(bytes);
         assertEquals(number, ret, String
                 .format("Expected '%s' byt returned was '%s'", number, ret));

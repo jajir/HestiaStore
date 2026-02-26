@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeEncoder;
+import org.hestiastore.index.datatype.TestEncoding;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ class TypeDescriptorSegmentIdTest {
         final TypeDescriptorSegmentId descriptor = new TypeDescriptorSegmentId();
         final SegmentId segmentId = SegmentId.of(5);
 
-        final byte[] bytes = TypeEncoder.toByteArray(descriptor.getTypeEncoder(),
+        final byte[] bytes = TestEncoding.toByteArray(descriptor.getTypeEncoder(),
                 segmentId);
         final SegmentId restored = descriptor.getTypeDecoder()
                 .decode(bytes);

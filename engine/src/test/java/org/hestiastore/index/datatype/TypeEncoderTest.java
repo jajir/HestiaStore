@@ -1,6 +1,5 @@
 package org.hestiastore.index.datatype;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,15 +11,23 @@ import org.junit.jupiter.api.Test;
 class TypeEncoderTest {
 
     @Test
-    void toByteArray_supportsUnknownLength() {
-        final String value = "x".repeat(100);
-        final UnknownLengthEncoder encoder = new UnknownLengthEncoder();
+    void toByteArray_rejectsNegativeDeclaredLength() {
+        final TypeEncoder<String> encoder = new TypeEncoder<String>() {
+            @Override
+            public int bytesLength(final String value) {
+                return -1;
+            }
 
-        final byte[] out = TypeEncoder.toByteArray(encoder, value);
+            @Override
+            public int toBytes(final String value, final byte[] destination) {
+                throw new IllegalStateException("must not be called");
+            }
+        };
 
-        assertArrayEquals(value.getBytes(StandardCharsets.ISO_8859_1), out);
-        assertTrue(encoder.getInvocationCount() >= 2,
-                "Expected at least one retry when initial 64-byte buffer is too small");
+        final IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> TestEncoding.toByteArray(encoder, "abc"));
+        assertTrue(error.getMessage().contains("greater than or equal to 0"));
     }
 
     @Test
@@ -28,7 +35,7 @@ class TypeEncoderTest {
         final TypeEncoder<String> encoder = new TypeEncoder<String>() {
             @Override
             public int bytesLength(final String value) {
-                return -1;
+                return 3;
             }
 
             @Override
@@ -39,7 +46,7 @@ class TypeEncoderTest {
 
         final IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
-                () -> TypeEncoder.toByteArray(encoder, "abc"));
+                () -> TestEncoding.toByteArray(encoder, "abc"));
         assertEquals("bad value", error.getMessage());
     }
 
@@ -61,35 +68,8 @@ class TypeEncoderTest {
 
         final IllegalStateException error = assertThrows(
                 IllegalStateException.class,
-                () -> TypeEncoder.toByteArray(encoder, "abcde"));
+                () -> TestEncoding.toByteArray(encoder, "abcde"));
         assertTrue(error.getMessage().contains("declared"),
                 "Expected mismatch message");
-    }
-
-    private static final class UnknownLengthEncoder
-            implements TypeEncoder<String> {
-
-        private int invocationCount = 0;
-
-        @Override
-        public int bytesLength(final String value) {
-            return -1;
-        }
-
-        @Override
-        public int toBytes(final String value, final byte[] destination) {
-            invocationCount++;
-            final byte[] bytes = value.getBytes(StandardCharsets.ISO_8859_1);
-            if (destination.length < bytes.length) {
-                throw new IllegalArgumentException(
-                        "Destination buffer too small.");
-            }
-            System.arraycopy(bytes, 0, destination, 0, bytes.length);
-            return bytes.length;
-        }
-
-        int getInvocationCount() {
-            return invocationCount;
-        }
     }
 }

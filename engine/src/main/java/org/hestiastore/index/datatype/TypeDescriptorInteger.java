@@ -66,7 +66,7 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
     public TypeReader<Integer> getTypeReader() {
         return fileReader -> {
             final byte[] bytes = new byte[4];
-            if (fileReader.read(bytes) == -1) {
+            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
                 return null;
             }
             return load(bytes, 0);

@@ -24,7 +24,7 @@ public class MemFileReader extends AbstractCloseableResource
     @Override
     public int read() {
         if (position < data.length) {
-            return data[position++];
+            return data[position++] & 0xFF;
         } else {
             return -1;
         }
