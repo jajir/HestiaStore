@@ -85,6 +85,8 @@ class SegmentReadPathTest {
         when(asyncDirectory.isFileExists("segment.index")).thenReturn(false);
         when(asyncDirectory.getFileReaderSeekable("segment.index"))
                 .thenReturn(seekableReader);
+        when(asyncDirectory.getFileReaderSeekableSupplier("segment.index"))
+                .thenReturn(() -> seekableReader);
         when(segmentCache.getAsSortedList()).thenReturn(List.of());
         when(segmentCache.mergedIterator())
                 .thenReturn(List.<Entry<Integer, String>>of().iterator());

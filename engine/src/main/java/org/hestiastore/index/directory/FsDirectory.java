@@ -133,4 +133,10 @@ public final class FsDirectory extends AbstractDirectory {
         return new FsFileReaderSeekable(getFile(fileName));
     }
 
+    @Override
+    public FileReaderSeekableSupplier getFileReaderSeekableSupplier(
+            final String fileName) {
+        return new FsSharedFileReaderSeekableSupplier(getFile(fileName));
+    }
+
 }

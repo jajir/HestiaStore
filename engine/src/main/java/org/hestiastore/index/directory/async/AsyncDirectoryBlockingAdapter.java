@@ -11,6 +11,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileReaderSeekable;
+import org.hestiastore.index.directory.FileReaderSeekableSupplier;
 import org.hestiastore.index.directory.FileWriter;
 
 /**
@@ -58,6 +59,29 @@ public final class AsyncDirectoryBlockingAdapter extends AbstractCloseableResour
                                 Vldtn.requireNonNull(fileName, FILE_NAME)),
                         executor));
         return new AsyncFileReaderSeekableBlockingAdapter(reader);
+    }
+
+    @Override
+    public FileReaderSeekableSupplier getFileReaderSeekableSupplier(
+            final String fileName) {
+        final String resolvedFileName = Vldtn.requireNonNull(fileName,
+                FILE_NAME);
+        final FileReaderSeekableSupplier delegateSupplier = call(
+                () -> delegate.getFileReaderSeekableSupplier(resolvedFileName));
+        return new FileReaderSeekableSupplier() {
+            @Override
+            public FileReaderSeekable get() {
+                final AsyncFileReaderSeekable reader = call(
+                        () -> new AsyncFileReaderSeekableAdapter(
+                                delegateSupplier.get(), executor));
+                return new AsyncFileReaderSeekableBlockingAdapter(reader);
+            }
+
+            @Override
+            public void close() {
+                run(delegateSupplier::close);
+            }
+        };
     }
 
     @Override

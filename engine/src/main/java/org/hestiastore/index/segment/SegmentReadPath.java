@@ -102,8 +102,8 @@ final class SegmentReadPath<K, V> {
                 segmentFiles.getIndexFile(),
                 segmentConf.getMaxNumberOfKeysInChunk(),
                 segmentFiles.getKeyTypeDescriptor().getComparator(),
-                () -> segmentFiles.getDirectory()
-                        .getFileReaderSeekable(segmentFiles.getIndexFileName()));
+                segmentFiles.getDirectory().getFileReaderSeekableSupplier(
+                        segmentFiles.getIndexFileName()));
         if (segmentIndexSearcher.compareAndSet(null, created)) {
             return created;
         }
