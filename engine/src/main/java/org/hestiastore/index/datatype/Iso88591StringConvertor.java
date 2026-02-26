@@ -15,6 +15,12 @@ final class Iso88591StringConvertor implements TypeEncoder<String> {
     private Iso88591StringConvertor() {
     }
 
+    /**
+     * Returns encoded size in bytes for ISO-8859-1 representation.
+     *
+     * @param object source string
+     * @return encoded byte length
+     */
     @Override
     public int bytesLength(final String object) {
         int out = 0;
@@ -33,6 +39,13 @@ final class Iso88591StringConvertor implements TypeEncoder<String> {
         return out;
     }
 
+    /**
+     * Encodes string into destination buffer using ISO-8859-1 compatible mapping.
+     *
+     * @param object source string
+     * @param destination destination byte buffer
+     * @return number of bytes written
+     */
     @Override
     public int toBytes(final String object, final byte[] destination) {
         final int required = bytesLength(object);

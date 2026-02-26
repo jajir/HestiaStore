@@ -7,6 +7,10 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.FileWriter;
 
+/**
+ * In-memory {@link FileWriter} implementation backed by
+ * {@link ByteArrayOutputStream}.
+ */
 public class ByteArrayWriter extends AbstractCloseableResource
         implements FileWriter {
 
@@ -25,11 +29,21 @@ public class ByteArrayWriter extends AbstractCloseableResource
         }
     }
 
+    /**
+     * Writes one byte.
+     *
+     * @param b byte to append
+     */
     @Override
     public void write(byte b) {
         fio.write(b);
     }
 
+    /**
+     * Writes all bytes from the provided array.
+     *
+     * @param bytes bytes to append
+     */
     @Override
     public void write(byte[] bytes) {
         try {
@@ -39,6 +53,11 @@ public class ByteArrayWriter extends AbstractCloseableResource
         }
     }
 
+    /**
+     * Returns all written bytes as a new array.
+     *
+     * @return accumulated bytes
+     */
     byte[] toByteArray() {
         return fio.toByteArray();
     }

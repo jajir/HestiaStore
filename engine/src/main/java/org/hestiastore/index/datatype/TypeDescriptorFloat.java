@@ -2,15 +2,18 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+/**
+ * Descriptor for {@link Float} values.
+ */
 public class TypeDescriptorFloat implements TypeDescriptor<Float> {
 
     /**
-     * Tombstone value, use can't use it.
+     * Tombstone value reserved for delete semantics.
      */
     public static final Float TOMBSTONE_VALUE = Float.MAX_VALUE - 1;
 
     /**
-     * How many bytes is required to store Float.
+     * Number of bytes required to store a float value.
      */
     private static final int REQUIRED_BYTES = 4;
 
@@ -27,16 +30,31 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         }
     };
 
+    /**
+     * Returns fixed-size encoder for floats.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<Float> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
+    /**
+     * Returns fixed-size decoder for floats.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<Float> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 
+    /**
+     * Returns stream reader for floats.
+     *
+     * @return reader
+     */
     @Override
     public TypeReader<Float> getTypeReader() {
         return fileReader -> {
@@ -83,11 +101,21 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         destination[3] = (byte) bits;
     }
 
+    /**
+     * Returns comparator for float values.
+     *
+     * @return comparator
+     */
     @Override
     public Comparator<Float> getComparator() {
         return Float::compareTo;
     }
 
+    /**
+     * Returns stream writer for floats.
+     *
+     * @return writer
+     */
     @Override
     public TypeWriter<Float> getTypeWriter() {
         return (writer, object) -> {
@@ -96,6 +124,11 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
         };
     }
 
+    /**
+     * Returns tombstone marker.
+     *
+     * @return tombstone value
+     */
     @Override
     public Float getTombstone() {
         return TOMBSTONE_VALUE;

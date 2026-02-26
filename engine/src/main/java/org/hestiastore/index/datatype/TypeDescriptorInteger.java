@@ -2,41 +2,29 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+/**
+ * Descriptor for {@link Integer} values.
+ */
 public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
 
     /**
-     * Thombstone value, use can't use it.
+     * Tombstone value reserved for delete semantics.
      */
     public static final Integer TOMBSTONE_VALUE = Integer.MIN_VALUE + 1;
 
     /**
-     * How many bytes is required to store Integer.
+     * Number of bytes required to store one integer.
      */
     static final int REQUIRED_BYTES = 4;
 
     /**
-     * With byte AND allows to select required part of bytes.
+     * Mask used to read/write individual bytes.
      */
     private static final int BYTE_MASK = 0xFF;
 
-    /**
-     * Bite shift for 0 bits.
-     */
     private static final int BYTE_SHIFT_0 = 0;
-
-    /**
-     * Bite shift for 8 bits.
-     */
     private static final int BYTE_SHIFT_8 = 8;
-
-    /**
-     * Bite shift for 16 bits.
-     */
     private static final int BYTE_SHIFT_16 = 16;
-
-    /**
-     * Bite shift for 24 bits.
-     */
     private static final int BYTE_SHIFT_24 = 24;
 
     private static final TypeEncoder<Integer> CONVERTOR_TO_BYTES = new TypeEncoder<Integer>() {
@@ -52,16 +40,31 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
         }
     };
 
+    /**
+     * Returns fixed-size encoder for integers.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<Integer> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
+    /**
+     * Returns fixed-size decoder for integers.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<Integer> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 
+    /**
+     * Returns stream reader for integers.
+     *
+     * @return reader
+     */
     @Override
     public TypeReader<Integer> getTypeReader() {
         return fileReader -> {
@@ -73,6 +76,11 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
         };
     }
 
+    /**
+     * Returns stream writer for integers.
+     *
+     * @return writer
+     */
     @Override
     public TypeWriter<Integer> getTypeWriter() {
         return (writer, object) -> {
@@ -110,11 +118,21 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
                 | (data[pos] & BYTE_MASK);
     }
 
+    /**
+     * Returns comparator for integer values.
+     *
+     * @return comparator
+     */
     @Override
     public Comparator<Integer> getComparator() {
         return (i1, i2) -> i1 - i2;
     }
 
+    /**
+     * Returns tombstone marker.
+     *
+     * @return tombstone value
+     */
     @Override
     public Integer getTombstone() {
         return TOMBSTONE_VALUE;

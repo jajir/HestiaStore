@@ -3,18 +3,18 @@ package org.hestiastore.index.datatype;
 import org.hestiastore.index.directory.FileReader;
 
 /**
- * Read data type instance from file reader.
- * 
- * @param <T> data type of loaded object
+ * Reads values of a specific type from a {@link FileReader}.
+ *
+ * @param <T> loaded value type
  */
 public interface TypeReader<T> {
 
     /**
-     * Read object from given file reader.
-     * 
-     * @param reader required file reader
-     * @return Loaded object when it's possible otherwise return
-     *         <code>null</code>.
+     * Reads one value from the given reader.
+     *
+     * @param reader source reader
+     * @return loaded value; may return {@code null} for end-of-stream depending
+     *         on the concrete implementation
      */
     T read(FileReader reader);
 

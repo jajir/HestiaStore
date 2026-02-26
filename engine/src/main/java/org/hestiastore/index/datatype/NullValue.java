@@ -1,18 +1,24 @@
 package org.hestiastore.index.datatype;
 
 /**
- * Represents a null value in the index data type system. This class serves as a
- * placeholder for null values.
- * 
- * 
- * This is little bit tricky and future problem. Records can't be deleted
- * because NULL value doesn't support tombstones. When user try to store tore
- * tombstone it's converted to NULL value.
- * 
+ * Marker value used by {@link TypeDescriptorNull}.
+ *
+ * <p>
+ * The class exposes two singleton instances:
+ * {@link #NULL} for regular value payloads and {@link #TOMBSTONE} as a delete
+ * sentinel.
+ * </p>
  */
 public class NullValue {
 
+    /**
+     * Singleton instance representing regular null-like value.
+     */
     public static final NullValue NULL = new NullValue();
+
+    /**
+     * Singleton instance representing tombstone marker.
+     */
     public static final NullValue TOMBSTONE = new NullValue() {
         @Override
         public int hashCode() {
@@ -25,6 +31,12 @@ public class NullValue {
         // Use the static instances NULL and TOMBSTONE instead
     }
 
+    /**
+     * Compares by marker semantics implemented via {@link #hashCode()}.
+     *
+     * @param obj object to compare
+     * @return {@code true} when both markers have the same semantic identity
+     */
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof NullValue)) {
@@ -33,11 +45,22 @@ public class NullValue {
         return hashCode() == obj.hashCode();
     }
 
+    /**
+     * Returns hash code used to distinguish {@link #NULL} and
+     * {@link #TOMBSTONE}.
+     *
+     * @return marker hash code
+     */
     @Override
     public int hashCode() {
         return 3;
     }
 
+    /**
+     * Returns marker name.
+     *
+     * @return string representation
+     */
     @Override
     public String toString() {
         return "NullValue";

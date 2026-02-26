@@ -2,61 +2,33 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+/**
+ * Descriptor for {@link Long} values.
+ */
 public class TypeDescriptorLong implements TypeDescriptor<Long> {
 
     /**
-     * Thombstone value, use can't use it.
+     * Tombstone value reserved for delete semantics.
      */
     public static final Long TOMBSTONE_VALUE = Long.MIN_VALUE + 1;
 
     /**
-     * How many bytes is required to store Integer.
+     * Number of bytes required to store one long value.
      */
     static final int REQUIRED_BYTES = 8;
 
     /**
-     * With byte AND allows to select required part of bytes.
+     * Mask used to read/write individual bytes.
      */
     private static final long BYTE_MASK = 0xFFL;
 
-    /**
-     * Bite shift for 0 bits.
-     */
     private static final int BYTE_SHIFT_0 = 0;
-
-    /**
-     * Bite shift for 8 bits.
-     */
     private static final int BYTE_SHIFT_8 = 8;
-
-    /**
-     * Bite shift for 16 bits.
-     */
     private static final int BYTE_SHIFT_16 = 16;
-
-    /**
-     * Bite shift for 24 bits.
-     */
     private static final int BYTE_SHIFT_24 = 24;
-
-    /**
-     * Bite shift for 32 bits.
-     */
     private static final int BYTE_SHIFT_32 = 32;
-
-    /**
-     * Bite shift for 40 bits.
-     */
     private static final int BYTE_SHIFT_40 = 40;
-
-    /**
-     * Bite shift for 48 bits.
-     */
     private static final int BYTE_SHIFT_48 = 48;
-
-    /**
-     * Bite shift for 56 bits.
-     */
     private static final int BYTE_SHIFT_56 = 56;
 
     private static final TypeEncoder<Long> CONVERTOR_TO_BYTES = new TypeEncoder<Long>() {
@@ -72,16 +44,31 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
         }
     };
 
+    /**
+     * Returns fixed-size encoder for long values.
+     *
+     * @return encoder
+     */
     @Override
     public TypeEncoder<Long> getTypeEncoder() {
         return CONVERTOR_TO_BYTES;
     }
 
+    /**
+     * Returns fixed-size decoder for long values.
+     *
+     * @return decoder
+     */
     @Override
     public TypeDecoder<Long> getTypeDecoder() {
         return bytes -> load(bytes, 0);
     }
 
+    /**
+     * Returns stream reader for long values.
+     *
+     * @return reader
+     */
     @Override
     public TypeReader<Long> getTypeReader() {
         return fileReader -> {
@@ -93,6 +80,11 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
         };
     }
 
+    /**
+     * Returns stream writer for long values.
+     *
+     * @return writer
+     */
     @Override
     public TypeWriter<Long> getTypeWriter() {
         return (writer, object) -> {
@@ -127,40 +119,55 @@ public class TypeDescriptorLong implements TypeDescriptor<Long> {
 
     private Long load(final byte[] data, final int from) {
         int pos = from;
-        return ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_56) |
-        /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_48) |
-                /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_40) |
-                /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_32) |
-                /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_24) |
-                /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_16) |
-                /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_8) |
-                /**/
-                ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_0);
+        return ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_56)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_48)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_40)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_32)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_24)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_16)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_8)
+                | ((data[pos++] & BYTE_MASK) << BYTE_SHIFT_0);
     }
 
+    /**
+     * Returns comparator for long values.
+     *
+     * @return comparator
+     */
     @Override
     public Comparator<Long> getComparator() {
         return (i1, i2) -> i1.compareTo(i2);
     }
 
+    /**
+     * Returns tombstone marker.
+     *
+     * @return tombstone value
+     */
     @Override
     public Long getTombstone() {
         return TOMBSTONE_VALUE;
     }
 
+    /**
+     * Returns whether object is the same descriptor type.
+     *
+     * @param obj object to compare
+     * @return {@code true} when same descriptor type
+     */
     @Override
     public boolean equals(final Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
+        }
         return obj != null && obj.getClass() == getClass();
     }
 
+    /**
+     * Returns stable hash code for descriptor type identity.
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         return getClass().hashCode();
