@@ -39,9 +39,27 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
      */
     private static final int BYTE_SHIFT_24 = 24;
 
+    private static final ConvertorToBytes<Integer> CONVERTOR_TO_BYTES = new ConvertorToBytes<Integer>() {
+        @Override
+        public byte[] toBytes(final Integer object) {
+            return getBytes(object);
+        }
+
+        @Override
+        public int bytesLength(final Integer object) {
+            return REQUIRED_BYTES;
+        }
+
+        @Override
+        public int toBytes(final Integer object, final byte[] destination) {
+            writeBytes(object, destination);
+            return REQUIRED_BYTES;
+        }
+    };
+
     @Override
     public ConvertorToBytes<Integer> getConvertorToBytes() {
-        return object -> getBytes(object);
+        return CONVERTOR_TO_BYTES;
     }
 
     @Override
@@ -68,15 +86,25 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
         };
     }
 
-    private byte[] getBytes(final Integer value) {
+    private static byte[] getBytes(final Integer value) {
+        final byte[] out = new byte[REQUIRED_BYTES];
+        writeBytes(value, out);
+        return out;
+    }
+
+    private static void writeBytes(final Integer value,
+            final byte[] destination) {
+        if (destination.length < REQUIRED_BYTES) {
+            throw new IllegalArgumentException(String.format(
+                    "Destination buffer too small. Required '%s' but was '%s'",
+                    REQUIRED_BYTES, destination.length));
+        }
         int pos = 0;
         int v = value.intValue();
-        byte[] out = new byte[REQUIRED_BYTES];
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
-        out[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
-        out[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
-        return out;
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_24) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_16) & BYTE_MASK);
+        destination[pos++] = (byte) ((v >>> BYTE_SHIFT_8) & BYTE_MASK);
+        destination[pos] = (byte) ((v >>> BYTE_SHIFT_0) & BYTE_MASK);
     }
 
     private Integer load(final byte[] data, final int from) {

@@ -14,9 +14,27 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
      */
     private static final int REQUIRED_BYTES = 8;
 
+    private static final ConvertorToBytes<Double> CONVERTOR_TO_BYTES = new ConvertorToBytes<Double>() {
+        @Override
+        public byte[] toBytes(final Double object) {
+            return getBytes(object);
+        }
+
+        @Override
+        public int bytesLength(final Double object) {
+            return REQUIRED_BYTES;
+        }
+
+        @Override
+        public int toBytes(final Double object, final byte[] destination) {
+            writeBytes(object, destination);
+            return REQUIRED_BYTES;
+        }
+    };
+
     @Override
     public ConvertorToBytes<Double> getConvertorToBytes() {
-        return object -> getBytes(object);
+        return CONVERTOR_TO_BYTES;
     }
 
     @Override
@@ -51,22 +69,31 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
         return Double.longBitsToDouble(bits);
     }
 
-    byte[] getBytes(Double object) {
+    static byte[] getBytes(Double object) {
+        final byte[] out = new byte[REQUIRED_BYTES];
+        writeBytes(object, out);
+        return out;
+    }
+
+    private static void writeBytes(final Double object,
+            final byte[] destination) {
+        if (destination.length < REQUIRED_BYTES) {
+            throw new IllegalArgumentException(String.format(
+                    "Destination buffer too small. Required '%s' but was '%s'",
+                    REQUIRED_BYTES, destination.length));
+        }
         if (object == null) {
             throw new IllegalArgumentException("Object can't be null");
         }
-
         long bits = Double.doubleToLongBits(object);
-        return new byte[] { //
-                (byte) (bits >> 56), //
-                (byte) (bits >> 48), //
-                (byte) (bits >> 40), //
-                (byte) (bits >> 32), //
-                (byte) (bits >> 24), //
-                (byte) (bits >> 16), //
-                (byte) (bits >> 8), //
-                (byte) bits //
-        };
+        destination[0] = (byte) (bits >> 56);
+        destination[1] = (byte) (bits >> 48);
+        destination[2] = (byte) (bits >> 40);
+        destination[3] = (byte) (bits >> 32);
+        destination[4] = (byte) (bits >> 24);
+        destination[5] = (byte) (bits >> 16);
+        destination[6] = (byte) (bits >> 8);
+        destination[7] = (byte) bits;
     }
 
     @Override

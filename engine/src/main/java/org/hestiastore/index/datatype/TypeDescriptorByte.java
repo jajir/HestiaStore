@@ -4,6 +4,33 @@ import java.util.Comparator;
 
 public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
+    private static final int REQUIRED_BYTES = 1;
+
+    private static final ConvertorToBytes<Byte> CONVERTOR_TO_BYTES = new ConvertorToBytes<Byte>() {
+        @Override
+        public byte[] toBytes(final Byte object) {
+            final byte[] out = new byte[REQUIRED_BYTES];
+            out[0] = object;
+            return out;
+        }
+
+        @Override
+        public int bytesLength(final Byte object) {
+            return REQUIRED_BYTES;
+        }
+
+        @Override
+        public int toBytes(final Byte object, final byte[] destination) {
+            if (destination.length < REQUIRED_BYTES) {
+                throw new IllegalArgumentException(String.format(
+                        "Destination buffer too small. Required '%s' but was '%s'",
+                        REQUIRED_BYTES, destination.length));
+            }
+            destination[0] = object;
+            return REQUIRED_BYTES;
+        }
+    };
+
     /**
      * Thombstone value, use can't use it.
      */
@@ -11,11 +38,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     @Override
     public ConvertorToBytes<Byte> getConvertorToBytes() {
-        return b -> {
-            final byte[] out = new byte[1];
-            out[0] = b;
-            return out;
-        };
+        return CONVERTOR_TO_BYTES;
     }
 
     @Override
@@ -32,7 +55,7 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
     public TypeWriter<Byte> getTypeWriter() {
         return (fileWriter, b) -> {
             fileWriter.write(b);
-            return 1;
+            return REQUIRED_BYTES;
         };
     }
 

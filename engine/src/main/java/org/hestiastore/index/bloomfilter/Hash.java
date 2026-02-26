@@ -67,21 +67,24 @@ public final class Hash {
         return !isProbablyStored(data);
     }
 
+    public boolean isNotStored(final byte[] data, final int length) {
+        return !isProbablyStored(data, length);
+    }
+
     public boolean isProbablyStored(final byte[] data) {
-        if (data == null) {
-            throw new NullPointerException("No data");
-        }
-        if (data.length == 0) {
-            throw new IllegalArgumentException("Zero size of byte array");
-        }
+        return isProbablyStored(data, validateAndGetLength(data));
+    }
+
+    public boolean isProbablyStored(final byte[] data, final int length) {
+        validateData(data, length);
         long bitSize = bitArray.bitSize();
         if (bitSize == 0) {
             // if there are no bits set, then the data is not stored
             return true;
         }
 
-        int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
-        int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
+        int h1 = MurmurHash3.hash32x86(data, 0, length, 0);
+        int h2 = MurmurHash3.hash32x86(data, 0, length, h1);
 
         for (int i = 1; i <= numHashFunctions; i++) {
             int combinedHash = h1 + (i * h2);
@@ -106,6 +109,30 @@ public final class Hash {
 
     public byte[] getData() {
         return bitArray.getByteArray();
+    }
+
+    private static int validateAndGetLength(final byte[] data) {
+        if (data == null) {
+            throw new NullPointerException("No data");
+        }
+        if (data.length == 0) {
+            throw new IllegalArgumentException("Zero size of byte array");
+        }
+        return data.length;
+    }
+
+    private static void validateData(final byte[] data, final int length) {
+        if (data == null) {
+            throw new NullPointerException("No data");
+        }
+        if (length <= 0) {
+            throw new IllegalArgumentException("Zero size of byte array");
+        }
+        if (length > data.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Length '%s' exceeds data size '%s'", length,
+                    data.length));
+        }
     }
 
 }

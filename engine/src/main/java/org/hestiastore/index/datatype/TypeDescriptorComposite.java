@@ -3,9 +3,11 @@ package org.hestiastore.index.datatype;
 import java.util.Comparator;
 import java.util.List;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemFileReader;
 
 /**
@@ -25,6 +27,28 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
             getConvertorFromBytes());
     private final VarLengthWriter<CompositeValue> varLengthWriter = new VarLengthWriter<>(
             this::toBytes);
+    private final ConvertorToBytes<CompositeValue> convertorToBytes = new ConvertorToBytes<CompositeValue>() {
+        @Override
+        public byte[] toBytes(final CompositeValue object) {
+            return TypeDescriptorComposite.this.toBytes(object);
+        }
+
+        @Override
+        public int bytesLength(final CompositeValue object) {
+            final CountingFileWriter writer = new CountingFileWriter();
+            writeElements(writer, object);
+            return writer.writtenBytes();
+        }
+
+        @Override
+        public int toBytes(final CompositeValue object,
+                final byte[] destination) {
+            final FixedBufferFileWriter writer = new FixedBufferFileWriter(
+                    destination);
+            writeElements(writer, object);
+            return writer.writtenBytes();
+        }
+    };
     private final List<TypeDescriptor<?>> elementTypes;
     private final CompositeValue tombstoneValue;
 
@@ -42,7 +66,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
     @Override
     public ConvertorToBytes<CompositeValue> getConvertorToBytes() {
-        return this::toBytes;
+        return convertorToBytes;
     }
 
     @Override
@@ -138,11 +162,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     @SuppressWarnings("unchecked")
     public byte[] toBytes(final CompositeValue value) {
         final ByteArrayWriter byteArrayWriter = new ByteArrayWriter();
-        for (int i = 0; i < elementTypes.size(); i++) {
-            final TypeWriter<Object> writer = ((TypeDescriptor<Object>) elementTypes
-                    .get(i)).getTypeWriter();
-            writer.write(byteArrayWriter, value.get(i));
-        }
+        writeElements(byteArrayWriter, value);
         return byteArrayWriter.toByteArray();
     }
 
@@ -157,6 +177,91 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
             out[i] = convertor.read(fileReader);
         }
         return new CompositeValue(out);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void writeElements(final FileWriter writer,
+            final CompositeValue value) {
+        for (int i = 0; i < elementTypes.size(); i++) {
+            final TypeWriter<Object> typeWriter = ((TypeDescriptor<Object>) elementTypes
+                    .get(i)).getTypeWriter();
+            typeWriter.write(writer, value.get(i));
+        }
+    }
+
+    private static final class CountingFileWriter
+            extends AbstractCloseableResource implements FileWriter {
+
+        private long bytesWritten = 0L;
+
+        @Override
+        public void write(final byte b) {
+            add(1);
+        }
+
+        @Override
+        public void write(final byte[] bytes) {
+            add(Vldtn.requireNonNull(bytes, "bytes").length);
+        }
+
+        int writtenBytes() {
+            return (int) bytesWritten;
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op
+        }
+
+        private void add(final int value) {
+            bytesWritten += value;
+            if (bytesWritten > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Converted type is too big");
+            }
+        }
+    }
+
+    private static final class FixedBufferFileWriter
+            extends AbstractCloseableResource implements FileWriter {
+
+        private final byte[] destination;
+        private int position = 0;
+
+        FixedBufferFileWriter(final byte[] destination) {
+            this.destination = Vldtn.requireNonNull(destination, "destination");
+        }
+
+        @Override
+        public void write(final byte b) {
+            ensureCapacity(1);
+            destination[position++] = b;
+        }
+
+        @Override
+        public void write(final byte[] bytes) {
+            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            ensureCapacity(in.length);
+            System.arraycopy(in, 0, destination, position, in.length);
+            position += in.length;
+        }
+
+        int writtenBytes() {
+            return position;
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op
+        }
+
+        private void ensureCapacity(final int numberOfBytesToWrite) {
+            final int requiredSize = position + numberOfBytesToWrite;
+            if (requiredSize > destination.length) {
+                throw new IllegalArgumentException(String.format(
+                        "Destination buffer too small. Required '%s' but was '%s'",
+                        requiredSize, destination.length));
+            }
+        }
     }
 
 }
