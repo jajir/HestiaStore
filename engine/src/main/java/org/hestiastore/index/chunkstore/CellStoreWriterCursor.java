@@ -1,9 +1,11 @@
 package org.hestiastore.index.chunkstore;
 
+import java.util.Arrays;
+
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.datablockfile.DataBlockPayload;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.MutableBytes;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriter;
 
@@ -16,7 +18,8 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
     private final DataBlockWriter dataBlockWriter;
     private final int dataBlockPayloadSize;
     private CellPosition currentCellPosition;
-    private Bytes currentDataBlock = null;
+    private final MutableBytes currentDataBlock;
+    private int currentDataBlockPosition = 0;
 
     /**
      * Create a new CellStoreWriterCursor.
@@ -31,34 +34,33 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
         Vldtn.requireNonNull(blockPayloadSize, "blockPayloadSize");
         this.dataBlockPayloadSize = blockPayloadSize.getPayloadSize();
         this.currentCellPosition = CellPosition.of(blockPayloadSize, 0);
+        this.currentDataBlock = MutableBytes.allocate(dataBlockPayloadSize);
     }
 
     /**
      * Write bytes to the current data block. If there is not enough space in
      * the current data block, it will throw an exception.
      *
-     * @param bytes required bytes representings set of cells
+     * @param bytes required bytes sequence representing set of cells
      * @return position where will be written next cells
      */
-    public CellPosition write(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        Vldtn.requireCellSize(bytes.length(), "bytes");
+    public CellPosition writeSequence(final ByteSequence bytes) {
+        final ByteSequence validated = Vldtn.requireNonNull(bytes, "bytes");
+        Vldtn.requireCellSize(validated.length(), "bytes");
 
         final int availableBytes = getAvailableBytes();
-        if (availableBytes < bytes.length()) {
+        if (availableBytes < validated.length()) {
             throw new IllegalStateException(
                     "Not enough space to write to data block");
         }
 
-        appendToCurrentDataBlock(bytes);
-        if (currentDataBlock.length() == dataBlockPayloadSize) {
-            dataBlockWriter.write(DataBlockPayload.of(currentDataBlock));
-            currentDataBlock = null;
-            currentCellPosition = currentCellPosition
-                    .addCellsForBytes(bytes.length());
-        } else {
-            currentCellPosition = currentCellPosition
-                    .addCellsForBytes(bytes.length());
+        currentDataBlock.setBytes(currentDataBlockPosition, validated, 0,
+                validated.length());
+        currentDataBlockPosition += validated.length();
+        currentCellPosition = currentCellPosition
+                .addCellsForBytes(validated.length());
+        if (currentDataBlockPosition == dataBlockPayloadSize) {
+            flushCurrentDataBlock();
         }
 
         return currentCellPosition;
@@ -66,15 +68,9 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
 
     @Override
     protected void doClose() {
-        if (currentDataBlock != null) {
-            if (getAvailableBytes() > 0) {
-                currentDataBlock = Bytes.concat(currentDataBlock,
-                        Bytes.of(new byte[getAvailableBytes()]));
-                dataBlockWriter.write(DataBlockPayload.of(currentDataBlock));
-            } else {
-                throw new IllegalStateException(
-                        "Data block is full, should have been written already");
-            }
+        if (currentDataBlockPosition > 0) {
+            zeroOutRemainingDataBlockBytes();
+            dataBlockWriter.writeSequence(currentDataBlock);
         }
         dataBlockWriter.close();
     }
@@ -97,12 +93,14 @@ public final class CellStoreWriterCursor extends AbstractCloseableResource {
         return currentCellPosition;
     }
 
-    private void appendToCurrentDataBlock(final Bytes bytes) {
-        if (currentDataBlock == null) {
-            currentDataBlock = bytes;
-        } else {
-            currentDataBlock = Bytes.concat(currentDataBlock, bytes);
-        }
+    private void flushCurrentDataBlock() {
+        dataBlockWriter.writeSequence(currentDataBlock);
+        currentDataBlockPosition = 0;
+    }
+
+    private void zeroOutRemainingDataBlockBytes() {
+        Arrays.fill(currentDataBlock.array(), currentDataBlockPosition,
+                dataBlockPayloadSize, (byte) 0);
     }
 
 }

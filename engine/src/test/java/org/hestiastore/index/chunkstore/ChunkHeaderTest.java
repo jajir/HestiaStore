@@ -7,7 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 class ChunkHeaderTest {
@@ -22,8 +23,9 @@ class ChunkHeaderTest {
         final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, PAYLOAD_LENGTH, CRC, flags);
 
-        final byte[] data = header1.getBytes().getData();
-        final ChunkHeader header2 = ChunkHeader.of(data);
+        final byte[] data = header1.getBytesSequence().toByteArrayCopy();
+        final ChunkHeader header2 = ChunkHeader
+                .ofSequence(ByteSequences.wrap(data));
 
         assertEquals(ChunkHeader.MAGIC_NUMBER, header2.getMagicNumber());
         assertEquals(VERSION, header2.getVersion());
@@ -37,7 +39,7 @@ class ChunkHeaderTest {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.of(data));
+                () -> ChunkHeader.ofSequence(ByteSequences.wrap(data)));
 
         assertEquals("Invalid chunk header size '33', expected '32'",
                 e.getMessage());
@@ -48,44 +50,75 @@ class ChunkHeaderTest {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.of(data));
+                () -> ChunkHeader.ofSequence(ByteSequences.wrap(data)));
 
         assertEquals("Invalid chunk magic number '0', "
                 + "expected '8388065835078349409'", e.getMessage());
     }
 
     @Test
-    void test_optionalOf_data_is_null() {
+    void test_optionalOfSequence_data_is_null() {
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(null);
+                .optionalOfSequence(null);
         assertEquals(Optional.empty(), optionalHeader);
     }
 
     @Test
-    void test_optionalOf_invalid_data_size() {
+    void test_optionalOfSequence_invalid_data_size() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(Bytes.of(data));
+                .optionalOfSequence(ByteSequences.wrap(data));
         assertEquals(Optional.empty(), optionalHeader);
     }
 
     @Test
-    void test_optionalOf_invalid_magic() {
+    void test_optionalOfSequence_invalid_magic() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(Bytes.of(data));
+                .optionalOfSequence(ByteSequences.wrap(data));
         assertEquals(Optional.empty(), optionalHeader);
     }
 
     @Test
-    void test_optionalOf() {
+    void test_optionalOfSequence() {
         final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
                 VERSION, PAYLOAD_LENGTH, CRC);
-        final byte[] data = header1.getBytes().getData();
+        final byte[] data = header1.getBytesSequence().toByteArrayCopy();
         final Optional<ChunkHeader> optionalHeader = ChunkHeader
-                .optionalOf(Bytes.of(data));
+                .optionalOfSequence(ByteSequences.wrap(data));
         assertTrue(optionalHeader.isPresent());
         assertEquals(header1, optionalHeader.get());
+    }
+
+    @Test
+    void test_ofSequence() {
+        final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
+                VERSION, PAYLOAD_LENGTH, CRC);
+        final ChunkHeader header2 = ChunkHeader.ofSequence(
+                header1.getBytesSequence());
+
+        assertEquals(header1, header2);
+    }
+
+    @Test
+    void test_optionalOfSequence_present() {
+        final ChunkHeader header1 = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
+                VERSION, PAYLOAD_LENGTH, CRC);
+        final Optional<ChunkHeader> optionalHeader = ChunkHeader
+                .optionalOfSequence(header1.getBytesSequence());
+
+        assertTrue(optionalHeader.isPresent());
+        assertEquals(header1, optionalHeader.get());
+    }
+
+    @Test
+    void test_getBytesSequence() {
+        final ChunkHeader header = ChunkHeader.of(ChunkHeader.MAGIC_NUMBER,
+                VERSION, PAYLOAD_LENGTH, CRC);
+        final ByteSequence sequence = header.getBytesSequence();
+
+        assertEquals(ChunkHeader.HEADER_SIZE, sequence.length());
+        assertEquals(header, ChunkHeader.ofSequence(sequence));
     }
 
     @Test
@@ -108,7 +141,7 @@ class ChunkHeaderTest {
         final byte[] invalidHeader = buffer.array();
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.of(invalidHeader));
+                () -> ChunkHeader.ofSequence(ByteSequences.wrap(invalidHeader)));
         assertEquals("Property 'payloadLength' must be greater than 0",
                 e.getMessage());
     }

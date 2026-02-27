@@ -5,6 +5,7 @@ import java.util.Comparator;
 import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeEncoder;
+import org.hestiastore.index.directory.FileWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,48 +47,22 @@ public class DiffKeyWriter<K> {
     }
 
     /**
-     * Encodes the given key as a diff-key payload.
+     * Encodes and writes the given key directly into the provided writer as
+     * {@code [shared-prefix-len][diff-len][diff-bytes]}.
      *
+     * @param writer target writer
      * @param key required key
-     * @return encoded diff-key bytes
+     * @return number of written bytes
      */
-    public byte[] write(final K key) {
-        Vldtn.requireNonNull(key, "key");
-        final byte[] keyBytes = encodeKey(key);
-        if (previousKey != null) {
-            final int cmp = keyComparator.compare(previousKey, key);
-            if (cmp == 0) {
-                final String s2 = new String(keyBytes);
-                final String keyComapratorClassName = keyComparator.getClass()
-                        .getSimpleName();
-                throw new IllegalArgumentException(String.format(
-                        "Attempt to insers same key as previous. Key '%s' was compared with '%s'",
-                        s2, keyComapratorClassName));
-            }
-            if (cmp > 0) {
-                final String s1 = new String(previousKeyBytes);
-                final String s2 = new String(keyBytes);
-                final String keyComapratorClassName = keyComparator.getClass()
-                        .getSimpleName();
-                throw new IllegalArgumentException(String.format(
-                        "Attempt to insers key in invalid order. "
-                                + "Previous key is '%s', inserted key is '%s' and comparator is '%s'",
-                        s1, s2, keyComapratorClassName));
-            }
-        }
-        final int sharedByteLength = ByteTool
-                .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
-        final byte[] diffBytes = ByteTool
-                .getRemainingBytesAfterIndex(sharedByteLength, keyBytes);
-
-        final byte[] out = new byte[2 + diffBytes.length];
-        out[0] = (byte) (sharedByteLength);
-        out[1] = (byte) (diffBytes.length);
-        System.arraycopy(diffBytes, 0, out, 2, diffBytes.length);
-
-        previousKeyBytes = keyBytes;
-        previousKey = key;
-        return out;
+    public int writeTo(final FileWriter writer, final K key) {
+        final FileWriter validatedWriter = Vldtn.requireNonNull(writer,
+                "writer");
+        final EncodedDiffKey diff = encodeDiffKey(key);
+        validatedWriter.write((byte) diff.sharedByteLength);
+        validatedWriter.write((byte) diff.diffByteLength);
+        validatedWriter.write(diff.keyBytes, diff.sharedByteLength,
+                diff.diffByteLength);
+        return 2 + diff.diffByteLength;
     }
 
     private byte[] encodeKey(final K key) {
@@ -101,6 +76,56 @@ public class DiffKeyWriter<K> {
                     encodedKeyLength));
         }
         return keyBytes;
+    }
+
+    private EncodedDiffKey encodeDiffKey(final K key) {
+        Vldtn.requireNonNull(key, "key");
+        final byte[] keyBytes = encodeKey(key);
+        validateKeyOrder(key, keyBytes);
+        final int sharedByteLength = ByteTool
+                .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
+        final int diffByteLength = keyBytes.length - sharedByteLength;
+        previousKeyBytes = keyBytes;
+        previousKey = key;
+        return new EncodedDiffKey(keyBytes, sharedByteLength, diffByteLength);
+    }
+
+    private void validateKeyOrder(final K key, final byte[] keyBytes) {
+        if (previousKey == null) {
+            return;
+        }
+        final int cmp = keyComparator.compare(previousKey, key);
+        if (cmp == 0) {
+            final String keyAsString = new String(keyBytes);
+            final String keyComparatorClassName = keyComparator.getClass()
+                    .getSimpleName();
+            throw new IllegalArgumentException(String.format(
+                    "Attempt to insers same key as previous. Key '%s' was compared with '%s'",
+                    keyAsString, keyComparatorClassName));
+        }
+        if (cmp > 0) {
+            final String previousKeyAsString = new String(previousKeyBytes);
+            final String keyAsString = new String(keyBytes);
+            final String keyComparatorClassName = keyComparator.getClass()
+                    .getSimpleName();
+            throw new IllegalArgumentException(String.format(
+                    "Attempt to insers key in invalid order. "
+                            + "Previous key is '%s', inserted key is '%s' and comparator is '%s'",
+                    previousKeyAsString, keyAsString, keyComparatorClassName));
+        }
+    }
+
+    private static final class EncodedDiffKey {
+        private final byte[] keyBytes;
+        private final int sharedByteLength;
+        private final int diffByteLength;
+
+        private EncodedDiffKey(final byte[] keyBytes,
+                final int sharedByteLength, final int diffByteLength) {
+            this.keyBytes = keyBytes;
+            this.sharedByteLength = sharedByteLength;
+            this.diffByteLength = diffByteLength;
+        }
     }
 
     /**

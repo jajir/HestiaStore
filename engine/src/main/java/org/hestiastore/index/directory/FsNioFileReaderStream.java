@@ -42,7 +42,12 @@ public final class FsNioFileReaderStream extends AbstractCloseableResource
 
     @Override
     public int read(final byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        return read(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) {
+        ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
         try {
             return channel.read(buffer);
         } catch (IOException e) {

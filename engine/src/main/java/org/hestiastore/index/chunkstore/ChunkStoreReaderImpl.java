@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
 /**
@@ -38,17 +39,33 @@ public class ChunkStoreReaderImpl extends AbstractCloseableResource
 
     @Override
     public Chunk read() {
+        final ChunkData chunkData = readChunkData();
+        if (chunkData == null) {
+            return null;
+        }
+        final ByteSequence payload = chunkData.getPayloadSequence();
+        final ChunkHeader chunkHeader = ChunkHeader.of(
+                chunkData.getMagicNumber(), chunkData.getVersion(),
+                payload.length(), chunkData.getCrc(),
+                chunkData.getFlags());
+        return Chunk.of(chunkHeader, payload);
+    }
+
+    @Override
+    public ByteSequence readPayloadSequence() {
+        final ChunkData chunkData = readChunkData();
+        if (chunkData == null) {
+            return null;
+        }
+        return chunkData.getPayloadSequence();
+    }
+
+    private ChunkData readChunkData() {
         final Optional<ChunkData> optionalChunkData = ChunkData
                 .read(dataBlockByteReader);
         if (optionalChunkData.isEmpty()) {
             return null;
         }
-        final ChunkData chunkData = decodingProcessor
-                .process(optionalChunkData.get());
-        final ChunkHeader chunkHeader = ChunkHeader.of(
-                chunkData.getMagicNumber(), chunkData.getVersion(),
-                chunkData.getPayload().length(), chunkData.getCrc(),
-                chunkData.getFlags());
-        return Chunk.of(chunkHeader, chunkData.getPayload());
+        return decodingProcessor.process(optionalChunkData.get());
     }
 }

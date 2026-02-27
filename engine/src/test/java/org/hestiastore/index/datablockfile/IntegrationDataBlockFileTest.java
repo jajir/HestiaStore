@@ -3,8 +3,10 @@ package org.hestiastore.index.datablockfile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +43,7 @@ class IntegrationDataBlockFileTest {
         // verify write
         DataBlockWriterTx writerTx = dataBlockFile.openWriterTx();
         try (DataBlockWriter writer = writerTx.open()) {
-            writer.write(TestData.PAYLOAD_1008);
+            writer.writeSequence(TestData.PAYLOAD_1008.getBytesSequence());
         }
         writerTx.commit();
 
@@ -58,8 +60,8 @@ class IntegrationDataBlockFileTest {
         // verify write
         DataBlockWriterTx writerTx = dataBlockFile.openWriterTx();
         try (DataBlockWriter writer = writerTx.open()) {
-            writer.write(TestData.PAYLOAD_1008);
-            writer.write(TestData.PAYLOAD_1008_2);
+            writer.writeSequence(TestData.PAYLOAD_1008.getBytesSequence());
+            writer.writeSequence(TestData.PAYLOAD_1008_2.getBytesSequence());
         }
         writerTx.commit();
 
@@ -77,8 +79,8 @@ class IntegrationDataBlockFileTest {
         // verify write
         DataBlockWriterTx writerTx = dataBlockFile.openWriterTx();
         try (DataBlockWriter writer = writerTx.open()) {
-            writer.write(TestData.PAYLOAD_1008);
-            writer.write(TestData.PAYLOAD_1008_2);
+            writer.writeSequence(TestData.PAYLOAD_1008.getBytesSequence());
+            writer.writeSequence(TestData.PAYLOAD_1008_2.getBytesSequence());
         }
         writerTx.commit();
 
@@ -93,8 +95,11 @@ class IntegrationDataBlockFileTest {
     private void verifyBlock(final DataBlock dataBlock,
             DataBlockPayload expectedPayload) {
         assertNotNull(dataBlock);
-        final DataBlockPayload payload = dataBlock.getPayload();
-        assertNotNull(payload);
-        assertEquals(expectedPayload, payload);
+        assertNotNull(dataBlock.getPayloadSequence());
+        assertEquals(expectedPayload.length(),
+                dataBlock.getPayloadSequence().length());
+        assertTrue(ByteSequences.contentEquals(
+                expectedPayload.getBytesSequence(),
+                dataBlock.getPayloadSequence()));
     }
 }

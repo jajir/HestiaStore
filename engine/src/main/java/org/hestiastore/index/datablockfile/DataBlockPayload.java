@@ -1,8 +1,9 @@
 package org.hestiastore.index.datablockfile;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * Represents the payload of a data block, encapsulating the byte data and
@@ -10,30 +11,38 @@ import org.hestiastore.index.Vldtn;
  */
 public class DataBlockPayload {
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     /**
-     * Factory method to create a DataBlockPayload instance from the given
-     * bytes.
+     * Factory method to create a payload from byte sequence.
      *
-     * @param bytes The byte data to be encapsulated in the payload.
-     * @return A new instance of DataBlockPayload containing the provided bytes.
+     * @param bytes payload sequence
+     * @return payload instance
      */
-    public static DataBlockPayload of(final Bytes bytes) {
+    public static DataBlockPayload ofSequence(final ByteSequence bytes) {
         return new DataBlockPayload(bytes);
     }
 
-    private DataBlockPayload(final Bytes bytes) {
+    private DataBlockPayload(final ByteSequence bytes) {
         this.bytes = Vldtn.requireNonNull(bytes, "bytes");
     }
 
     /**
-     * Retrieves the byte data encapsulated in this payload.
+     * Retrieves the byte sequence encapsulated in this payload.
      *
-     * @return The byte data of the payload.
+     * @return payload sequence
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytesSequence() {
         return bytes;
+    }
+
+    /**
+     * Retrieves payload length in bytes.
+     *
+     * @return payload length
+     */
+    public int length() {
+        return bytes.length();
     }
 
     /**
@@ -42,8 +51,8 @@ public class DataBlockPayload {
      * @return The CRC checksum as a long value.
      */
     public long calculateCrc() {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(bytes.getData());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(bytes);
         return crc.getValue();
     }
 
@@ -54,17 +63,17 @@ public class DataBlockPayload {
         if (!(o instanceof DataBlockPayload))
             return false;
         DataBlockPayload that = (DataBlockPayload) o;
-        return bytes.equals(that.bytes);
+        return ByteSequences.contentEquals(bytes, that.bytes);
     }
 
     @Override
     public int hashCode() {
-        return bytes.hashCode();
+        return ByteSequences.contentHashCode(bytes);
     }
 
     @Override
     public String toString() {
-        return "DataBlockPayload{" + "bytes=" + bytes + '}';
+        return "DataBlockPayload{" + "length=" + bytes.length() + '}';
     }
 
 }

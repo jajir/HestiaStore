@@ -3,6 +3,7 @@ package org.hestiastore.index.chunkstore;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * Provides encoding and decoding utilities for {@link ChunkHeader}.
@@ -36,7 +37,35 @@ final class ChunkHeaderCodec {
         return new ChunkHeader(magic, version, payloadLength, crc, flags);
     }
 
+    static ChunkHeader decode(final ByteSequence data) {
+        Vldtn.requireNonNull(data, "data");
+        if (data.length() != ChunkHeader.HEADER_SIZE) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid chunk header size '%d', expected '%d'",
+                    data.length(), ChunkHeader.HEADER_SIZE));
+        }
+
+        final long magic = readLong(data, MAGIC_OFFSET);
+        final int version = readInt(data, VERSION_OFFSET);
+        final int payloadLength = readInt(data, PAYLOAD_LENGTH_OFFSET);
+        final long crc = readLong(data, CRC_OFFSET);
+        final long flags = readLong(data, FLAGS_OFFSET);
+
+        return new ChunkHeader(magic, version, payloadLength, crc, flags);
+    }
+
     static Optional<ChunkHeader> decodeOptional(final byte[] data) {
+        if (data == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(decode(data));
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            return Optional.empty();
+        }
+    }
+
+    static Optional<ChunkHeader> decodeOptional(final ByteSequence data) {
         if (data == null) {
             return Optional.empty();
         }
@@ -73,6 +102,24 @@ final class ChunkHeaderCodec {
                 | (data[offset + 1] & 0xFF) << 16
                 | (data[offset + 2] & 0xFF) << 8
                 | (data[offset + 3] & 0xFF);
+    }
+
+    private static long readLong(final ByteSequence data, final int offset) {
+        return (data.getByte(offset) & 0xFFL) << 56
+                | (data.getByte(offset + 1) & 0xFFL) << 48
+                | (data.getByte(offset + 2) & 0xFFL) << 40
+                | (data.getByte(offset + 3) & 0xFFL) << 32
+                | (data.getByte(offset + 4) & 0xFFL) << 24
+                | (data.getByte(offset + 5) & 0xFFL) << 16
+                | (data.getByte(offset + 6) & 0xFFL) << 8
+                | (data.getByte(offset + 7) & 0xFFL);
+    }
+
+    private static int readInt(final ByteSequence data, final int offset) {
+        return (data.getByte(offset) & 0xFF) << 24
+                | (data.getByte(offset + 1) & 0xFF) << 16
+                | (data.getByte(offset + 2) & 0xFF) << 8
+                | (data.getByte(offset + 3) & 0xFF);
     }
 
     private static void writeLong(final byte[] data, final int offset,

@@ -80,8 +80,13 @@ final class FsSharedFileReaderSeekableSupplier extends AbstractCloseableResource
 
         @Override
         public int read(final byte[] bytes) {
+            return read(bytes, 0, bytes.length);
+        }
+
+        @Override
+        public int read(final byte[] bytes, final int offset, final int length) {
             try {
-                final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
                 final int read = channel.read(buffer, position);
                 if (read > 0) {
                     position += read;

@@ -47,8 +47,13 @@ public final class FsFileReaderStream extends AbstractCloseableResource
 
     @Override
     public int read(final byte[] bytes) {
+        return read(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) {
         try {
-            return bis.read(bytes);
+            return bis.read(bytes, offset, length);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

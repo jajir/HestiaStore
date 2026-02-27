@@ -2,8 +2,8 @@ package org.hestiastore.index.chunkentryfile;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkstore.BytesAppender;
-import org.hestiastore.index.chunkstore.ChunkPayload;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.BytesAppender;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.sorteddatafile.DiffKeyWriter;
@@ -44,19 +44,18 @@ public class SingleChunkEntryWriterImpl<K, V>
         if (closed) {
             throw new IllegalStateException("Chunk writer already closed");
         }
-        // Write diff-encoded key header (2 bytes + diff bytes)
-        final byte[] diffKey = diffKeyWriter.write(entry.getKey());
-        fileWriter.write(diffKey);
+        // Write diff-encoded key directly into the chunk payload writer.
+        diffKeyWriter.writeTo(fileWriter, entry.getKey());
         // Write value payload via type writer
         valueWriter.write(fileWriter, entry.getValue());
     }
 
     @Override
-    public ChunkPayload close() {
+    public ByteSequence closeSequence() {
         if (!closed) {
             closed = true;
         }
-        return ChunkPayload.of(appender.getBytes());
+        return appender.getBytes();
     }
 
 }

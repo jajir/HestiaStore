@@ -53,6 +53,11 @@ public class ByteArrayWriter extends AbstractCloseableResource
         }
     }
 
+    @Override
+    public void write(final byte[] bytes, final int offset, final int length) {
+        fio.write(bytes, offset, length);
+    }
+
     /**
      * Returns all written bytes as a new array.
      *

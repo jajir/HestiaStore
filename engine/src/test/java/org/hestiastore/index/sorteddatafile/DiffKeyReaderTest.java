@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -134,6 +135,22 @@ class DiffKeyReaderTest {
                 return -1;
             }
         });
+        when(fileReader.read(any(byte[].class), anyInt(), anyInt()))
+                .thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+                    @Override
+                    public Integer answer(
+                            org.mockito.invocation.InvocationOnMock inv) {
+                        final byte[] buf = (byte[]) inv.getArguments()[0];
+                        final int offset = (Integer) inv.getArguments()[1];
+                        final int length = (Integer) inv.getArguments()[2];
+                        if (length == 5) {
+                            final byte[] p = "lesni".getBytes();
+                            System.arraycopy(p, 0, buf, offset, p.length);
+                            return 5;
+                        }
+                        return -1;
+                    }
+                });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 
@@ -206,6 +223,18 @@ class DiffKeyReaderTest {
                 return -1;
             }
         });
+        when(fileReader.read(any(byte[].class), anyInt(), anyInt()))
+                .thenAnswer(new org.mockito.stubbing.Answer<Integer>() {
+                    @Override
+                    public Integer answer(
+                            org.mockito.invocation.InvocationOnMock inv) {
+                        final int length = (Integer) inv.getArguments()[2];
+                        if (length == 5) {
+                            return 3; // partial read for diff
+                        }
+                        return -1;
+                    }
+                });
         final String ret1 = reader.read(fileReader);
         assertEquals("prase", ret1);
 

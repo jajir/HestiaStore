@@ -2,6 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileWriter;
+
 /**
  * Descriptor for {@link Float} values.
  */
@@ -57,12 +60,16 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
      */
     @Override
     public TypeReader<Float> getTypeReader() {
-        return fileReader -> {
-            final byte[] bytes = new byte[REQUIRED_BYTES];
-            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
-                return null;
+        return new TypeReader<Float>() {
+            private final byte[] readBuffer = new byte[REQUIRED_BYTES];
+
+            @Override
+            public Float read(final FileReader fileReader) {
+                if (!TypeIo.readFullyOrNull(fileReader, readBuffer)) {
+                    return null;
+                }
+                return load(readBuffer, 0);
             }
-            return load(bytes, 0);
         };
     }
 
@@ -118,9 +125,16 @@ public class TypeDescriptorFloat implements TypeDescriptor<Float> {
      */
     @Override
     public TypeWriter<Float> getTypeWriter() {
-        return (writer, object) -> {
-            writer.write(getBytes(object));
-            return REQUIRED_BYTES;
+        return new TypeWriter<Float>() {
+            private final byte[] payloadBytes = new byte[REQUIRED_BYTES];
+
+            @Override
+            public int write(final FileWriter writer,
+                    final Float object) {
+                writeBytes(object, payloadBytes);
+                writer.write(payloadBytes, 0, REQUIRED_BYTES);
+                return REQUIRED_BYTES;
+            }
         };
     }
 

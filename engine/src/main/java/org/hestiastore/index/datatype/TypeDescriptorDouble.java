@@ -2,6 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileWriter;
+
 /**
  * Descriptor for {@link Double} values.
  */
@@ -57,12 +60,16 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
      */
     @Override
     public TypeReader<Double> getTypeReader() {
-        return fileReader -> {
-            final byte[] bytes = new byte[REQUIRED_BYTES];
-            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
-                return null;
+        return new TypeReader<Double>() {
+            private final byte[] readBuffer = new byte[REQUIRED_BYTES];
+
+            @Override
+            public Double read(final FileReader fileReader) {
+                if (!TypeIo.readFullyOrNull(fileReader, readBuffer)) {
+                    return null;
+                }
+                return load(readBuffer, 0);
             }
-            return load(bytes, 0);
         };
     }
 
@@ -126,9 +133,16 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
      */
     @Override
     public TypeWriter<Double> getTypeWriter() {
-        return (writer, object) -> {
-            writer.write(getBytes(object));
-            return REQUIRED_BYTES;
+        return new TypeWriter<Double>() {
+            private final byte[] payloadBytes = new byte[REQUIRED_BYTES];
+
+            @Override
+            public int write(final FileWriter writer,
+                    final Double object) {
+                writeBytes(object, payloadBytes);
+                writer.write(payloadBytes, 0, REQUIRED_BYTES);
+                return REQUIRED_BYTES;
+            }
         };
     }
 

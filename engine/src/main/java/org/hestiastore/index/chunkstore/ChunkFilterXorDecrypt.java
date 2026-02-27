@@ -1,6 +1,6 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * Reverses {@link ChunkFilterXorEncrypt} transformation.
@@ -13,9 +13,9 @@ public class ChunkFilterXorDecrypt implements ChunkFilter {
             throw new IllegalStateException(
                     "Chunk payload is not marked as encrypted.");
         }
-        final Bytes restored = ChunkFilterXorEncrypt
-                .xorPayload(input.getPayload());
-        return input.withPayload(restored).withFlags(
+        final ByteSequence restored = ChunkFilterXorEncrypt
+                .xorPayload(input.getPayloadSequence());
+        return input.withPayloadSequence(restored).withFlags(
                 input.getFlags() & ~ChunkFilterXorEncrypt.FLAG_ENCRYPTED);
     }
 }

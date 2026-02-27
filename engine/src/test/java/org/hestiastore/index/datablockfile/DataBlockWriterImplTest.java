@@ -56,13 +56,14 @@ class DataBlockWriterImplTest {
 
             return null;
         }).when(fileWriter).write(any(byte[].class));
-        writer.write(TestData.PAYLOAD_1008);
+        writer.writeSequence(TestData.PAYLOAD_1008.getBytesSequence());
     }
 
     @Test
     void test_write_invalidSize() {
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> writer.write(TestData.PAYLOAD_1024));
+                () -> writer.writeSequence(
+                        TestData.PAYLOAD_1024.getBytesSequence()));
 
         assertEquals(
                 "Payload size '1024' does not match expected payload size '1008'",

@@ -43,9 +43,14 @@ public final class FsZipFileReaderStream extends AbstractCloseableResource
 
     @Override
     public int read(final byte[] bytes) {
+        return read(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) {
         try {
-            final int readBytes = bis.read(bytes);
-            return readBytes == bytes.length ? readBytes : -1;
+            final int readBytes = bis.read(bytes, offset, length);
+            return readBytes == length ? readBytes : -1;
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);
         }

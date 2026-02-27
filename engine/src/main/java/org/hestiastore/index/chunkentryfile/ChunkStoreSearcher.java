@@ -42,17 +42,17 @@ public class ChunkStoreSearcher<K, V> {
     }
 
     public EntryIterator<K, V> openIteratorAtPosition(final long position) {
-        return new ChunkEntryFileIterator<>(
+        return ChunkEntryFileIterator.fromPayloads(
                 chunkStoreFile.openReader(
                         CellPosition.of(dataBlockSize, (int) position)),
-                chunk -> new SingleChunkEntryIterator<>(chunk, keyTypeDescriptor,
+                payload -> new SingleChunkEntryIterator<>(payload, keyTypeDescriptor,
                         valueTypeDescriptor));
     }
 
     public EntryIteratorWithCurrent<K, V> openIterator() {
-        return new ChunkEntryFileIterator<>(
+        return ChunkEntryFileIterator.fromPayloads(
                 chunkStoreFile.openReader(CellPosition.of(dataBlockSize, 0)),
-                chunk -> new SingleChunkEntryIterator<>(chunk, keyTypeDescriptor,
+                payload -> new SingleChunkEntryIterator<>(payload, keyTypeDescriptor,
                         valueTypeDescriptor));
     }
 

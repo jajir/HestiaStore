@@ -26,6 +26,24 @@ public final class AsyncFileWriterBlockingAdapter implements FileWriter {
     }
 
     @Override
+    public void write(final byte[] bytes, final int offset, final int length) {
+        final byte[] validated = Vldtn.requireNonNull(bytes, "bytes");
+        final int from = Vldtn.requireGreaterThanOrEqualToZero(offset,
+                "offset");
+        final int len = Vldtn.requireGreaterThanOrEqualToZero(length,
+                "length");
+        if (from > validated.length || from + len > validated.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Offset '%s' and length '%s' exceed source length '%s'",
+                    from, len, validated.length));
+        }
+        if (len == 0) {
+            return;
+        }
+        delegate.writeAsync(validated, from, len).toCompletableFuture().join();
+    }
+
+    @Override
     public boolean wasClosed() {
         return delegate.wasClosed();
     }

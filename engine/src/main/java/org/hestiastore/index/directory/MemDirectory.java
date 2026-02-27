@@ -7,9 +7,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
 public class MemDirectory implements Directory {
 
@@ -37,7 +38,7 @@ public class MemDirectory implements Directory {
         }
     }
 
-    public Bytes getFileBytes(final String fileName) {
+    public ByteSequence getFileSequence(final String fileName) {
         readLock.lock();
         try {
             final byte[] bytes = data.get(fileName);
@@ -45,16 +46,18 @@ public class MemDirectory implements Directory {
                 throw new IndexException(
                         String.format(ERROR_MSG_NO_FILE, fileName));
             }
-            return Bytes.of(bytes);
+            return ByteSequences.wrap(bytes);
         } finally {
             readLock.unlock();
         }
     }
 
-    public void setFileBytes(final String fileName, final Bytes bytes) {
+    public void setFileSequence(final String fileName,
+            final ByteSequence bytes) {
+        final ByteSequence validated = Vldtn.requireNonNull(bytes, "bytes");
         writeLock.lock();
         try {
-            data.put(fileName, bytes.getData());
+            data.put(fileName, validated.toByteArrayCopy());
         } finally {
             writeLock.unlock();
         }

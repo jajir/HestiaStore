@@ -18,17 +18,25 @@ final class TypeIo {
                 "reader");
         final byte[] validatedDestination = Vldtn.requireNonNull(destination,
                 "destination");
-        for (int i = 0; i < validatedDestination.length; i++) {
-            final int readByte = validatedReader.read();
-            if (readByte < 0) {
-                if (i == 0) {
+        int readOffset = 0;
+        final int requiredBytes = validatedDestination.length;
+        while (readOffset < requiredBytes) {
+            final int read = validatedReader.read(validatedDestination,
+                    readOffset, requiredBytes - readOffset);
+            if (read < 0) {
+                if (readOffset == 0) {
                     return false;
                 }
                 throw new IndexException(String.format(
                         "Expected '%s' bytes but reached EOF after '%s' bytes.",
-                        validatedDestination.length, i));
+                        requiredBytes, readOffset));
             }
-            validatedDestination[i] = (byte) readByte;
+            if (read == 0) {
+                throw new IndexException(String.format(
+                        "Expected '%s' bytes but reader returned 0 bytes at offset '%s'.",
+                        requiredBytes, readOffset));
+            }
+            readOffset += read;
         }
         return true;
     }

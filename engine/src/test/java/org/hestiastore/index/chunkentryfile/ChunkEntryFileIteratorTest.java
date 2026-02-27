@@ -11,6 +11,8 @@ import java.util.function.Function;
 
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +31,9 @@ class ChunkEntryFileIteratorTest {
     private Function<Chunk, EntryIteratorWithCurrent<Integer, String>> iteratorFactory;
 
     @Mock
+    private Function<ByteSequence, EntryIteratorWithCurrent<Integer, String>> payloadIteratorFactory;
+
+    @Mock
     private EntryIteratorWithCurrent<Integer, String> chunkIterator1;
 
     @Mock
@@ -43,6 +48,11 @@ class ChunkEntryFileIteratorTest {
 
     private ChunkEntryFileIterator<Integer, String> makeIterator() {
         return new ChunkEntryFileIterator<>(chunkStoreReader, iteratorFactory);
+    }
+
+    private ChunkEntryFileIterator<Integer, String> makePayloadIterator() {
+        return ChunkEntryFileIterator.fromPayloads(chunkStoreReader,
+                payloadIteratorFactory);
     }
 
     @Test
@@ -112,6 +122,25 @@ class ChunkEntryFileIteratorTest {
                 () -> iterator.next());
 
         assertEquals("No more elements", e.getMessage());
+    }
+
+    @Test
+    void test_with_one_payload_stream() {
+        final ByteSequence payload = ByteSequences.wrap(new byte[] { 1, 2, 3 });
+        when(chunkStoreReader.readPayloadSequence()).thenReturn(payload)
+                .thenReturn(null);
+        when(payloadIteratorFactory.apply(payload)).thenReturn(chunkIterator1);
+
+        when(chunkIterator1.hasNext()).thenReturn(true, true, false);
+        when(chunkIterator1.next()).thenReturn(TestData.ENTRY1)
+                .thenReturn(TestData.ENTRY2);
+        iterator = makePayloadIterator();
+
+        assertTrue(iterator.hasNext());
+        assertEquals(TestData.ENTRY1, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(TestData.ENTRY2, iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
 }

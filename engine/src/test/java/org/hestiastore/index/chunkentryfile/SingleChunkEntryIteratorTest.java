@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 
 import org.hestiastore.index.AbstractDataTest;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.directory.MemDirectory;
@@ -48,9 +48,10 @@ class SingleChunkEntryIteratorTest {
             entryList.forEach(writer::write);
         });
 
-        final Bytes fileBytes = directory.getFileBytes(FILE_NAME);
+        final ByteSequence fileBytes = directory.getFileSequence(FILE_NAME);
         return Chunk.of(ChunkHeader.of(ChunkHeader.MAGIC_NUMBER, 1,
-                fileBytes.length(), 321L), fileBytes);
+                fileBytes.length(), 321L),
+                fileBytes);
     }
 
     @Test
@@ -71,6 +72,17 @@ class SingleChunkEntryIteratorTest {
                 () -> makeChunkFromEntryList(TestData.ENTRY_LIST_EMPTY));
         assertEquals("Property 'payloadLength' must be greater than 0",
                 exception.getMessage());
+    }
+
+    @Test
+    void test_simple_from_payload_sequence() {
+        final Chunk chunk = makeChunkFromEntryList(TestData.ENTRY_LIST_3);
+        final ByteSequence payload = chunk.getPayloadSequence();
+        SingleChunkEntryIterator<Integer, String> iterator = new SingleChunkEntryIterator<>(
+                payload, TestData.TYPE_DESCRIPTOR_INTEGER,
+                TestData.TYPE_DESCRIPTOR_STRING);
+
+        AbstractDataTest.verifyIteratorData(TestData.ENTRY_LIST_3, iterator);
     }
 
 }

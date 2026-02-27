@@ -32,20 +32,9 @@ public final class BytesAppender {
      * @return combined sequence
      */
     public ByteSequence getBytes() {
-        int length = 0;
-        for (ByteSequence sequence : parts) {
-            length = Math.addExact(length, sequence.length());
-        }
-        if (length == 0) {
+        if (parts.isEmpty()) {
             return ByteSequence.EMPTY;
         }
-        final byte[] combined = new byte[length];
-        int offset = 0;
-        for (ByteSequence sequence : parts) {
-            final int chunkLength = sequence.length();
-            ByteSequences.copy(sequence, 0, combined, offset, chunkLength);
-            offset += chunkLength;
-        }
-        return ByteSequences.wrap(combined);
+        return ByteSequences.concatNonEmpty(parts);
     }
 }

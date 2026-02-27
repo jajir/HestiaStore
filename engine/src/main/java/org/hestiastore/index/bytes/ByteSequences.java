@@ -1,6 +1,8 @@
 package org.hestiastore.index.bytes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.hestiastore.index.Vldtn;
 
@@ -140,6 +142,84 @@ public final class ByteSequences {
         final int paddedLength = Math.addExact(currentLength,
                 cellSize - remainder);
         return padToLength(validated, paddedLength);
+    }
+
+    /**
+     * Concatenates sequences into a single logical sequence without copying
+     * payload bytes.
+     *
+     * @param sequences input sequences in order
+     * @return concatenated sequence, or {@link ByteSequence#EMPTY} when all
+     *         inputs are empty
+     */
+    public static ByteSequence concat(
+            final Iterable<? extends ByteSequence> sequences) {
+        final Iterable<? extends ByteSequence> validated = Vldtn
+                .requireNonNull(sequences, "sequences");
+        final List<ByteSequence> parts = new ArrayList<>();
+        for (ByteSequence sequence : validated) {
+            final ByteSequence validatedPart = Vldtn.requireNonNull(sequence,
+                    "sequence");
+            if (!validatedPart.isEmpty()) {
+                parts.add(validatedPart);
+            }
+        }
+        if (parts.isEmpty()) {
+            return ByteSequence.EMPTY;
+        }
+        return concatNonEmpty(parts);
+    }
+
+    /**
+     * Concatenates a non-empty list of non-empty sequences without additional
+     * filtering.
+     *
+     * @param sequences non-empty list of non-empty sequences
+     * @return concatenated sequence
+     */
+    public static ByteSequence concatNonEmpty(
+            final List<? extends ByteSequence> sequences) {
+        final List<? extends ByteSequence> validated = Vldtn
+                .requireNonNull(sequences, "sequences");
+        if (validated.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Property 'sequences' must not be empty.");
+        }
+        if (validated.size() == 1) {
+            final ByteSequence only = Vldtn.requireNonNull(validated.get(0),
+                    "sequence");
+            if (only.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Property 'sequences' must not contain empty sequence.");
+            }
+            return only;
+        }
+        for (ByteSequence sequence : validated) {
+            final ByteSequence part = Vldtn.requireNonNull(sequence,
+                    "sequence");
+            if (part.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Property 'sequences' must not contain empty sequence.");
+            }
+        }
+        return concatBalanced(validated, 0, validated.size());
+    }
+
+    private static ByteSequence concatBalanced(
+            final List<? extends ByteSequence> parts,
+            final int fromInclusive, final int toExclusive) {
+        final int size = toExclusive - fromInclusive;
+        if (size == 1) {
+            return parts.get(fromInclusive);
+        }
+        if (size == 2) {
+            return ConcatenatedByteSequence.of(parts.get(fromInclusive),
+                    parts.get(fromInclusive + 1));
+        }
+        final int mid = fromInclusive + (size / 2);
+        return ConcatenatedByteSequence.of(
+                concatBalanced(parts, fromInclusive, mid),
+                concatBalanced(parts, mid, toExclusive));
     }
 
     /**

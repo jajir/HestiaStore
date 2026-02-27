@@ -237,6 +237,22 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
             add(Vldtn.requireNonNull(bytes, "bytes").length);
         }
 
+        @Override
+        public void write(final byte[] bytes, final int offset,
+                final int length) {
+            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final int from = Vldtn.requireGreaterThanOrEqualToZero(offset,
+                    "offset");
+            final int len = Vldtn.requireGreaterThanOrEqualToZero(length,
+                    "length");
+            if (from > in.length || from + len > in.length) {
+                throw new IllegalArgumentException(String.format(
+                        "Offset '%s' and length '%s' exceed source length '%s'",
+                        from, len, in.length));
+            }
+            add(len);
+        }
+
         int writtenBytes() {
             return (int) bytesWritten;
         }
@@ -276,6 +292,24 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
             ensureCapacity(in.length);
             System.arraycopy(in, 0, destination, position, in.length);
             position += in.length;
+        }
+
+        @Override
+        public void write(final byte[] bytes, final int offset,
+                final int length) {
+            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final int from = Vldtn.requireGreaterThanOrEqualToZero(offset,
+                    "offset");
+            final int len = Vldtn.requireGreaterThanOrEqualToZero(length,
+                    "length");
+            if (from > in.length || from + len > in.length) {
+                throw new IllegalArgumentException(String.format(
+                        "Offset '%s' and length '%s' exceed source length '%s'",
+                        from, len, in.length));
+            }
+            ensureCapacity(len);
+            System.arraycopy(in, from, destination, position, len);
+            position += len;
         }
 
         int writtenBytes() {

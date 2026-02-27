@@ -50,12 +50,12 @@ public class VarLengthWriter<T> implements TypeWriter<T> {
         }
         CONVERTOR_TO_BYTES.toBytes(payloadLength, lengthBytes);
         writer.write(lengthBytes);
-        writer.write(payloadBytes);
+        writer.write(payloadBytes, 0, payloadLength);
         return LENGTH_HEADER_BYTES + payloadLength;
     }
 
     private void ensurePayloadBufferSize(final int payloadLength) {
-        if (payloadBytes.length != payloadLength) {
+        if (payloadBytes.length < payloadLength) {
             payloadBytes = new byte[payloadLength];
         }
     }

@@ -34,6 +34,12 @@ class AsyncFileReaderAdapter extends AbstractCloseableResource
     }
 
     @Override
+    public CompletionStage<Integer> readAsync(final byte[] bytes,
+            final int offset, final int length) {
+        return supply(() -> delegate.read(bytes, offset, length));
+    }
+
+    @Override
     public CompletionStage<Void> skipAsync(final long position) {
         return supply(() -> {
             delegate.skip(position);

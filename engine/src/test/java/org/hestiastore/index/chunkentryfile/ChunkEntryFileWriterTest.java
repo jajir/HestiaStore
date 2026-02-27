@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -49,19 +50,21 @@ class ChunkEntryFileWriterTest {
     @Test
     void test_close_without_writing() {
         writer.close();
-        verify(chunkStoreWriter, times(0)).write(any(), anyInt());
+        verify(chunkStoreWriter, times(0)).writeSequence(any(ByteSequence.class),
+                anyInt());
         verify(chunkStoreWriter, times(1)).close();
     }
 
     @Test
     void test_basic_write() {
-        when(chunkStoreWriter.write(any(), anyInt()))
+        when(chunkStoreWriter.writeSequence(any(ByteSequence.class), anyInt()))
                 .thenReturn(CellPosition.of(DATA_BLOCK_SIZE, 2048));
         writer.write(Entry.of("key1", 1L));
         CellPosition ret = writer.flush();
 
         assertEquals(2048, ret.getValue());
-        verify(chunkStoreWriter, times(1)).write(any(), anyInt());
+        verify(chunkStoreWriter, times(1))
+                .writeSequence(any(ByteSequence.class), anyInt());
     }
 
 }

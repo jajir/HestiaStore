@@ -250,7 +250,8 @@ class SegmentIndexConfiguratonStorageTest {
             final String fileName = "manifest.txt";
             if (memDirectory.isFileExists(fileName)) {
                 final String content = new String(
-                        memDirectory.getFileBytes(fileName).getData(),
+                        memDirectory.getFileSequence(fileName)
+                                .toByteArrayCopy(),
                         StandardCharsets.UTF_8);
                 LOGGER.info("{}:{}{}", fileName, System.lineSeparator(),
                         content);

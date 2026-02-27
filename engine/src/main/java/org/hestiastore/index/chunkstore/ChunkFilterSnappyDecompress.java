@@ -2,8 +2,9 @@ package org.hestiastore.index.chunkstore;
 
 import java.io.IOException;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.xerial.snappy.Snappy;
 
 /**
@@ -18,9 +19,9 @@ public class ChunkFilterSnappyDecompress implements ChunkFilter {
                     "Chunk payload is not marked as Snappy compressed.");
         }
         try {
-            final byte[] decompressed = decompressPayload(input.getPayload());
-            final Bytes decompressedBytes = Bytes.of(decompressed);
-            return input.withPayload(decompressedBytes)
+            final ByteSequence payload = input.getPayloadSequence();
+            final byte[] decompressed = decompressPayload(payload);
+            return input.withPayloadSequence(ByteSequences.wrap(decompressed))
                     .withFlags(input.getFlags()
                             & ~ChunkFilterSnappyCompress.FLAG_COMPRESSED);
         } catch (IOException ex) {
@@ -28,7 +29,7 @@ public class ChunkFilterSnappyDecompress implements ChunkFilter {
         }
     }
 
-    byte[] decompressPayload(final Bytes payload) throws IOException {
-        return Snappy.uncompress(payload.getData());
+    byte[] decompressPayload(final ByteSequence payload) throws IOException {
+        return Snappy.uncompress(payload.toByteArrayCopy());
     }
 }

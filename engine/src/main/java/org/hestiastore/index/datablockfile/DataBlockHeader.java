@@ -1,7 +1,8 @@
 package org.hestiastore.index.datablockfile;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * DataBlockHeader represents the header of a data block.It have fixed size of
@@ -26,18 +27,18 @@ public class DataBlockHeader {
     private long crc;
 
     /**
-     * Create DataBlockHeader from bytes. Bytes must be exactly 16 bytes long.
+     * Create DataBlockHeader from byte sequence. Sequence must be at least 16
+     * bytes long.
      *
-     * @param bytes Bytes representing the DataBlockHeader.
+     * @param data byte sequence representing the DataBlockHeader.
      * @return DataBlockHeader
      */
-    public static DataBlockHeader of(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        final byte[] data = bytes.getData();
-        if (data.length < HEADER_SIZE) {
+    public static DataBlockHeader ofSequence(final ByteSequence data) {
+        Vldtn.requireNonNull(data, "data");
+        if (data.length() < HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
                     "Data block header requires at least '%s' bytes, but got '%s'.",
-                    HEADER_SIZE, data.length));
+                    HEADER_SIZE, data.length()));
         }
         return new DataBlockHeader(readLong(data, 0), readLong(data, 8));
     }
@@ -77,26 +78,30 @@ public class DataBlockHeader {
     }
 
     /**
-     * Convert DataBlockHeader to bytes.
+     * Convert this header to byte sequence.
      *
-     * @return Bytes representing the DataBlockHeader.
+     * @return encoded header bytes as sequence
      */
-    public Bytes toBytes() {
+    public ByteSequence toBytesSequence() {
+        return ByteSequences.wrap(encode());
+    }
+
+    private byte[] encode() {
         final byte[] out = new byte[HEADER_SIZE];
         writeLong(out, 0, magicNumber);
         writeLong(out, 8, crc);
-        return Bytes.of(out);
+        return out;
     }
 
-    private static long readLong(final byte[] data, final int offset) {
-        return (data[offset] & 0xFFL) << 56
-                | (data[offset + 1] & 0xFFL) << 48
-                | (data[offset + 2] & 0xFFL) << 40
-                | (data[offset + 3] & 0xFFL) << 32
-                | (data[offset + 4] & 0xFFL) << 24
-                | (data[offset + 5] & 0xFFL) << 16
-                | (data[offset + 6] & 0xFFL) << 8
-                | (data[offset + 7] & 0xFFL);
+    private static long readLong(final ByteSequence data, final int offset) {
+        return (data.getByte(offset) & 0xFFL) << 56
+                | (data.getByte(offset + 1) & 0xFFL) << 48
+                | (data.getByte(offset + 2) & 0xFFL) << 40
+                | (data.getByte(offset + 3) & 0xFFL) << 32
+                | (data.getByte(offset + 4) & 0xFFL) << 24
+                | (data.getByte(offset + 5) & 0xFFL) << 16
+                | (data.getByte(offset + 6) & 0xFFL) << 8
+                | (data.getByte(offset + 7) & 0xFFL);
     }
 
     private static void writeLong(final byte[] data, final int offset,

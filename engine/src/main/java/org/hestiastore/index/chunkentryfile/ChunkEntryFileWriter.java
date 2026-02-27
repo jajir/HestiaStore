@@ -4,8 +4,8 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.CellPosition;
-import org.hestiastore.index.chunkstore.ChunkPayload;
 import org.hestiastore.index.chunkstore.ChunkStoreWriter;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
@@ -56,10 +56,10 @@ public class ChunkEntryFileWriter<K, V> extends AbstractCloseableResource
      * @return The position of the written chunk.
      */
     public CellPosition flush() {
-        final ChunkPayload payload = chunkEntryWriter.close();
+        final ByteSequence payload = chunkEntryWriter.closeSequence();
         chunkEntryWriter = null; // reset for next write
         openNewChunkEntryWriter();
-        return chunkStoreWriter.write(payload, 1);
+        return chunkStoreWriter.writeSequence(payload, 1);
     }
 
     private void openNewChunkEntryWriter() {
@@ -74,7 +74,7 @@ public class ChunkEntryFileWriter<K, V> extends AbstractCloseableResource
     @Override
     protected void doClose() {
         if (chunkEntryWriter != null) {
-            chunkEntryWriter.close();
+            chunkEntryWriter.closeSequence();
             chunkEntryWriter = null;
         }
         chunkStoreWriter.close();

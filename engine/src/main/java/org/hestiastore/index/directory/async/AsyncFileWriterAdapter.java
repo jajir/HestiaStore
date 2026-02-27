@@ -34,6 +34,12 @@ class AsyncFileWriterAdapter extends AbstractCloseableResource
     }
 
     @Override
+    public CompletionStage<Void> writeAsync(final byte[] bytes,
+            final int offset, final int length) {
+        return run(() -> delegate.write(bytes, offset, length));
+    }
+
+    @Override
     protected void doClose() {
         delegate.close();
     }

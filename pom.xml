@@ -17,6 +17,7 @@
         <module>monitoring-rest-json-api</module>
         <module>monitoring-rest-json</module>
         <module>monitoring-console-web</module>
+        <module>benchmarks</module>
     </modules>
 
     <properties>

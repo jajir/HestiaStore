@@ -49,8 +49,9 @@ public final class FsNioFileWriterStream extends AbstractCloseableResource
         write(data, 0, data.length);
     }
 
-    public void write(byte[] data, int offset, int length) {
-        ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
+    @Override
+    public void write(final byte[] data, final int offset, final int length) {
+        final ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
         try {
             channel.write(buffer);
         } catch (IOException e) {
