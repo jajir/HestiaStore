@@ -50,6 +50,26 @@ final class SegmentRegistryBlockingAdapter<K, V> {
         }
     }
 
+    Segment<K, V> awaitSegmentFailFast(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        final long startNanos = retryPolicy.startNanos();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+                    .getSegment(segmentId);
+            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
+                    && loaded.getValue() != null) {
+                return loaded.getValue();
+            }
+            if (loaded.getStatus() != SegmentRegistryResultStatus.BUSY) {
+                return null;
+            }
+            if (attempt == 0) {
+                retryPolicy.backoffOrThrow(startNanos, "getSegment", segmentId);
+            }
+        }
+        return null;
+    }
+
     void awaitDeleteSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final long startNanos = retryPolicy.startNanos();

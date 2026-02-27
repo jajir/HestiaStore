@@ -82,9 +82,20 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
-            final Segment<K, V> segment = segmentRegistryBlockingAdapter
-                    .awaitSegment(segmentId);
+            final Segment<K, V> segment = awaitSegment(segmentId);
+            if (segment == null) {
+                logger.debug(
+                        "Skipping segment '{}' because it is not available in '{}' isolation mode.",
+                        segmentId, isolation);
+                continue;
+            }
             final EntryIterator<K, V> iterator = awaitOpenIterator(segment);
+            if (iterator == null) {
+                logger.debug(
+                        "Skipping segment '{}' because iterator cannot be opened in '{}' isolation mode.",
+                        segmentId, isolation);
+                continue;
+            }
             if (iterator.hasNext()) {
                 currentIterator = iterator;
                 nextEntry = currentIterator.next();
@@ -94,7 +105,43 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         }
     }
 
+    private Segment<K, V> awaitSegment(final SegmentId segmentId) {
+        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            return segmentRegistryBlockingAdapter.awaitSegmentFailFast(segmentId);
+        }
+        return segmentRegistryBlockingAdapter.awaitSegment(segmentId);
+    }
+
     private EntryIterator<K, V> awaitOpenIterator(final Segment<K, V> segment) {
+        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
+            return awaitOpenIteratorFailFast(segment);
+        }
+        return awaitOpenIteratorBlocking(segment);
+    }
+
+    private EntryIterator<K, V> awaitOpenIteratorFailFast(
+            final Segment<K, V> segment) {
+        final long startNanos = retryPolicy.startNanos();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            final SegmentResult<EntryIterator<K, V>> result = segment
+                    .openIterator(isolation);
+            if (result.getStatus() == SegmentResultStatus.OK
+                    && result.getValue() != null) {
+                return result.getValue();
+            }
+            if (result.getStatus() != SegmentResultStatus.BUSY) {
+                return null;
+            }
+            if (attempt == 0) {
+                retryPolicy.backoffOrThrow(startNanos, "openIterator",
+                        segment.getId());
+            }
+        }
+        return null;
+    }
+
+    private EntryIterator<K, V> awaitOpenIteratorBlocking(
+            final Segment<K, V> segment) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentResult<EntryIterator<K, V>> result = segment

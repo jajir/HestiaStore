@@ -1,6 +1,7 @@
 package org.hestiastore.benchmark.sorteddatafile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -144,6 +145,7 @@ public class SortedDataFileWriterBenchmark {
         private final TypeWriter<V> valueWriter;
         private final FileWriter fileWriter;
         private final DiffKeyWriter<K> diffKeyWriter;
+        private final ByteArrayBufferingFileWriter keyBuffer;
 
         private LegacySortedDataWriter(final TypeWriter<V> valueWriter,
                 final FileWriter fileWriter,
@@ -157,6 +159,7 @@ public class SortedDataFileWriterBenchmark {
                             "keyTypeEncoder"),
                     Vldtn.requireNonNull(keyType.getComparator(),
                             "keyComparator"));
+            this.keyBuffer = new ByteArrayBufferingFileWriter();
         }
 
         @Override
@@ -164,7 +167,9 @@ public class SortedDataFileWriterBenchmark {
             Vldtn.requireNonNull(entry, "entry");
             Vldtn.requireNonNull(entry.getKey(), "key");
             Vldtn.requireNonNull(entry.getValue(), "value");
-            final byte[] diffKey = diffKeyWriter.write(entry.getKey());
+            keyBuffer.reset();
+            diffKeyWriter.writeTo(keyBuffer, entry.getKey());
+            final byte[] diffKey = keyBuffer.toByteArrayCopy();
             fileWriter.write(diffKey);
             valueWriter.write(fileWriter, entry.getValue());
         }
@@ -172,6 +177,71 @@ public class SortedDataFileWriterBenchmark {
         @Override
         protected void doClose() {
             fileWriter.close();
+        }
+    }
+
+    private static final class ByteArrayBufferingFileWriter
+            extends AbstractCloseableResource implements FileWriter {
+
+        private byte[] buffer = new byte[64];
+        private int length = 0;
+
+        @Override
+        public void write(final byte b) {
+            ensureCapacity(length + 1);
+            buffer[length++] = b;
+        }
+
+        @Override
+        public void write(final byte[] bytes) {
+            final byte[] validated = Vldtn.requireNonNull(bytes, "bytes");
+            ensureCapacity(length + validated.length);
+            System.arraycopy(validated, 0, buffer, length, validated.length);
+            length += validated.length;
+        }
+
+        @Override
+        public void write(final byte[] bytes, final int offset,
+                final int writeLength) {
+            final byte[] validated = Vldtn.requireNonNull(bytes, "bytes");
+            final int validatedOffset = Vldtn.requireGreaterThanOrEqualToZero(
+                    offset, "offset");
+            final int validatedLength = Vldtn.requireGreaterThanOrEqualToZero(
+                    writeLength, "length");
+            if (validatedOffset > validated.length
+                    || validatedOffset + validatedLength > validated.length) {
+                throw new IllegalArgumentException(String.format(
+                        "Offset '%s' and length '%s' exceed source length '%s'",
+                        validatedOffset, validatedLength, validated.length));
+            }
+            ensureCapacity(length + validatedLength);
+            System.arraycopy(validated, validatedOffset, buffer, length,
+                    validatedLength);
+            length += validatedLength;
+        }
+
+        byte[] toByteArrayCopy() {
+            return Arrays.copyOf(buffer, length);
+        }
+
+        void reset() {
+            length = 0;
+        }
+
+        private void ensureCapacity(final int required) {
+            if (required <= buffer.length) {
+                return;
+            }
+            int newLength = buffer.length;
+            while (newLength < required) {
+                newLength = newLength * 2;
+            }
+            buffer = Arrays.copyOf(buffer, newLength);
+        }
+
+        @Override
+        protected void doClose() {
+            length = 0;
         }
     }
 }
