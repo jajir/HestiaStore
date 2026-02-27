@@ -108,6 +108,22 @@ class SegmentsIteratorTest {
     }
 
     @Test
+    void test_fail_fast_skips_segment_when_registry_stays_busy() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17))
+                .thenReturn(SegmentRegistryResult.busy());
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
+                ids, segmentRegistry)) {
+            assertFalse(iterator.hasNext());
+        }
+
+        verify(segmentRegistry, times(2)).getSegment(SEGMENT_ID_17);
+    }
+
+    @Test
     void test_open_iterator_retries_when_segment_is_busy() {
         when(segmentRegistry.getSegment(SEGMENT_ID_17))
                 .thenReturn(SegmentRegistryResult.ok(segment17));
@@ -124,6 +140,25 @@ class SegmentsIteratorTest {
                 ids, segmentRegistry)) {
             assertTrue(iterator.hasNext());
             iterator.next();
+            assertFalse(iterator.hasNext());
+        }
+
+        verify(segment17, times(2))
+                .openIterator(SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Test
+    void test_fail_fast_skips_segment_when_open_iterator_stays_busy() {
+        when(segmentRegistry.getSegment(SEGMENT_ID_17))
+                .thenReturn(SegmentRegistryResult.ok(segment17));
+        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+                .thenReturn(SegmentResult.busy());
+
+        final ArrayList<SegmentId> ids = new ArrayList<>();
+        ids.add(SEGMENT_ID_17);
+
+        try (SegmentsIterator<String, String> iterator = new SegmentsIterator<>(
+                ids, segmentRegistry)) {
             assertFalse(iterator.hasNext());
         }
 
