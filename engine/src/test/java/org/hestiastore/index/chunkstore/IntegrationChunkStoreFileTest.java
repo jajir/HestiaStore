@@ -2,10 +2,12 @@ package org.hestiastore.index.chunkstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.hestiastore.index.TestData;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -51,7 +53,8 @@ class IntegrationChunkStoreFileTest {
         ChunkStoreWriterTx writerTx = chunkStoreFile.openWriteTx();
         CellPosition position;
         try (ChunkStoreWriter writer = writerTx.open()) {
-            position = writer.write(TestData.CHUNK_PAYLOAD_154, VERSION);
+            position = writer.writeSequence(
+                    TestData.CHUNK_PAYLOAD_154.getBytesSequence(), VERSION);
         }
         writerTx.commit();
         assertEquals(0, position.getValue());
@@ -66,9 +69,12 @@ class IntegrationChunkStoreFileTest {
         ChunkStoreWriterTx writerTx = chunkStoreFile.openWriteTx();
         final CellPosition[] positions = new CellPosition[3];
         try (ChunkStoreWriter writer = writerTx.open()) {
-            positions[0] = writer.write(TestData.CHUNK_PAYLOAD_1008, VERSION);
-            positions[1] = writer.write(TestData.CHUNK_PAYLOAD_1008, VERSION);
-            positions[2] = writer.write(TestData.CHUNK_PAYLOAD_1008, VERSION);
+            positions[0] = writer.writeSequence(
+                    TestData.CHUNK_PAYLOAD_1008.getBytesSequence(), VERSION);
+            positions[1] = writer.writeSequence(
+                    TestData.CHUNK_PAYLOAD_1008.getBytesSequence(), VERSION);
+            positions[2] = writer.writeSequence(
+                    TestData.CHUNK_PAYLOAD_1008.getBytesSequence(), VERSION);
         }
         writerTx.commit();
         assertEquals(0, positions[0].getValue());
@@ -86,9 +92,10 @@ class IntegrationChunkStoreFileTest {
         try (ChunkStoreReader reader = chunkStoreFile.openReader(position)) {
             Chunk chunk = reader.read();
             assertNotNull(chunk);
-            ChunkPayload payload = chunk.getPayload();
-            assertNotNull(payload);
-            assertEquals(expectedPayload, payload);
+            assertNotNull(chunk.getPayloadSequence());
+            assertTrue(ByteSequences.contentEquals(
+                    expectedPayload.getBytesSequence(),
+                    chunk.getPayloadSequence()));
         }
     }
 

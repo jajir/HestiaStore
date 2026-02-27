@@ -64,8 +64,13 @@ public final class FsFileReaderSeekable extends AbstractCloseableResource
      */
     @Override
     public int read(final byte[] bytes) {
+        return read(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) {
         try {
-            final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
             return channel.read(buffer);
         } catch (IOException e) {
             throw new IndexException(e.getMessage(), e);

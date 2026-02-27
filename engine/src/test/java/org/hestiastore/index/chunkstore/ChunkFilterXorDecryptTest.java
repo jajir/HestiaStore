@@ -1,28 +1,31 @@
 package org.hestiastore.index.chunkstore;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterXorDecryptTest {
 
-    private static final Bytes PAYLOAD = Bytes
-            .of(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+    private static final ByteSequence PAYLOAD = ByteSequences
+            .wrap(new byte[] { 0, 1, 2, 3, 4, 5, 6, 7 });
 
     @Test
     void apply_should_decrypt_payload_and_clear_flag() {
-        final Bytes encryptedPayload = ChunkFilterXorEncrypt
+        final ByteSequence encryptedPayload = ChunkFilterXorEncrypt
                 .xorPayload(PAYLOAD);
         final long flags = ChunkFilterXorEncrypt.FLAG_ENCRYPTED | 8L;
-        final ChunkData input = ChunkData.of(flags, 0L,
+        final ChunkData input = ChunkData.ofSequence(flags, 0L,
                 ChunkHeader.MAGIC_NUMBER, 1, encryptedPayload);
         final ChunkFilterXorDecrypt filter = new ChunkFilterXorDecrypt();
 
         final ChunkData result = filter.apply(input);
 
-        assertEquals(PAYLOAD, result.getPayload());
+        assertArrayEquals(PAYLOAD.toByteArrayCopy(),
+                result.getPayloadSequence().toByteArrayCopy());
         assertEquals(flags & ~ChunkFilterXorEncrypt.FLAG_ENCRYPTED,
                 result.getFlags());
         assertEquals(input.getMagicNumber(), result.getMagicNumber());
@@ -32,7 +35,8 @@ class ChunkFilterXorDecryptTest {
 
     @Test
     void apply_should_throw_when_flag_not_set() {
-        final ChunkData input = ChunkData.of(0L, 0L, ChunkHeader.MAGIC_NUMBER,
+        final ChunkData input = ChunkData.ofSequence(0L, 0L,
+                ChunkHeader.MAGIC_NUMBER,
                 1, PAYLOAD);
         final ChunkFilterXorDecrypt filter = new ChunkFilterXorDecrypt();
 

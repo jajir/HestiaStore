@@ -3,8 +3,10 @@ package org.hestiastore.index.chunkstore;
 import java.util.List;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
+import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 
 /**
  * A writer for writing chunks to a chunk store.
@@ -38,22 +40,26 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
     }
 
     @Override
-    public CellPosition write(final ChunkPayload chunkPayload,
+    public CellPosition writeSequence(final ByteSequence chunkPayload,
             final int version) {
-        Vldtn.requireNonNull(chunkPayload, "chunkPayload");
-        ChunkData chunkData = ChunkData.of(DEFAULT_FLAGS, DEFAULT_CRC,
-                ChunkHeader.MAGIC_NUMBER, version, chunkPayload.getBytes());
+        final ByteSequence payload = Vldtn.requireNonNull(chunkPayload,
+                "chunkPayload");
+        ChunkData chunkData = ChunkData.ofSequence(DEFAULT_FLAGS, DEFAULT_CRC,
+                ChunkHeader.MAGIC_NUMBER, version, payload);
         chunkData = encodingProcessor.process(chunkData);
         if (chunkData.getMagicNumber() != ChunkHeader.MAGIC_NUMBER) {
             chunkData = chunkData.withMagicNumber(ChunkHeader.MAGIC_NUMBER);
         }
+        final ByteSequence encodedPayload = chunkData.getPayloadSequence();
         final ChunkHeader header = ChunkHeader.of(chunkData.getMagicNumber(),
-                chunkData.getVersion(), chunkData.getPayload().length(),
+                chunkData.getVersion(), encodedPayload.length(),
                 chunkData.getCrc(), chunkData.getFlags());
-        final Bytes bufferToWrite = Bytes
-                .concat(header.getBytes(), chunkData.getPayload())
-                .paddedToNextCell();
-        return cellStoreWriter.write(bufferToWrite);
+        final ByteSequence headerSequence = header.getBytesSequence();
+        final ByteSequence paddedPayload = ByteSequences
+                .padToCell(encodedPayload, CellPosition.CELL_SIZE);
+        final ByteSequence chunkBytes = ConcatenatedByteSequence
+                .of(headerSequence, paddedPayload);
+        return cellStoreWriter.writeSequence(chunkBytes);
     }
 
 }

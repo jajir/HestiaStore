@@ -1,8 +1,12 @@
 package org.hestiastore.index.datablockfile;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * Implementation of {@link DataBlockByteReader}.
@@ -13,7 +17,7 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
     private final DataBlockReader dataBlockReader;
     private final int dataBlockPayloadSize;
 
-    private DataBlock currentDataBlock = null;
+    private ByteSequence currentBlockPayload = null;
     private int currentBlockPosition = 0;
 
     /**
@@ -49,43 +53,50 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
     }
 
     @Override
-    public Bytes readExactly(final int length) {
+    public ByteSequence readExactlySequence(final int length) {
         Vldtn.requireGreaterThanZero(length, "length");
         int bytesToRead = Vldtn.requireCellSize(length, "length");
         optionalyMoveToNextDataBlock();
-        final byte[] out = new byte[bytesToRead];
-        int outOffset = 0;
+        if (currentBlockPayload == null) {
+            return null;
+        }
+        final int remainingBytesInCurrentBlock = dataBlockPayloadSize
+                - currentBlockPosition;
+        if (remainingBytesInCurrentBlock >= bytesToRead) {
+            final ByteSequence out = currentBlockPayload
+                    .slice(currentBlockPosition, currentBlockPosition
+                            + bytesToRead);
+            currentBlockPosition += bytesToRead;
+            optionalyMoveToNextDataBlock();
+            return out;
+        }
+        final List<ByteSequence> parts = new ArrayList<>(4);
         while (bytesToRead > 0) {
-            if (currentDataBlock == null) {
+            if (currentBlockPayload == null) {
                 return null;
             }
             final int remainingBytesToReadInChunk = dataBlockPayloadSize
                     - currentBlockPosition;
             final int bytesToReadFromCurrentBlock = Math
                     .min(remainingBytesToReadInChunk, bytesToRead);
-            final byte[] currentBlockBytes = currentDataBlock.getBytes()
-                    .getData();
-            final int sourceOffset = DataBlockHeader.HEADER_SIZE
-                    + currentBlockPosition;
-            System.arraycopy(currentBlockBytes, sourceOffset, out, outOffset,
-                    bytesToReadFromCurrentBlock);
-            outOffset += bytesToReadFromCurrentBlock;
+            parts.add(currentBlockPayload.slice(currentBlockPosition,
+                    currentBlockPosition + bytesToReadFromCurrentBlock));
             currentBlockPosition += bytesToReadFromCurrentBlock;
             bytesToRead -= bytesToReadFromCurrentBlock;
             optionalyMoveToNextDataBlock();
         }
-        return Bytes.of(out);
+        return ByteSequences.concatNonEmpty(parts);
     }
 
     private void optionalyMoveToNextDataBlock() {
-        if (currentDataBlock == null
+        if (currentBlockPayload == null
                 || currentBlockPosition >= dataBlockPayloadSize) {
             moveToNextDataBlock();
         }
     }
 
     private void moveToNextDataBlock() {
-        currentDataBlock = dataBlockReader.read();
+        currentBlockPayload = dataBlockReader.readPayloadSequence();
         currentBlockPosition = 0;
     }
 

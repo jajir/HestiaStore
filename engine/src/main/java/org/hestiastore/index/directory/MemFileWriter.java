@@ -48,4 +48,9 @@ public class MemFileWriter extends AbstractCloseableResource implements FileWrit
         }
     }
 
+    @Override
+    public void write(final byte[] bytes, final int offset, final int length) {
+        fio.write(bytes, offset, length);
+    }
+
 }

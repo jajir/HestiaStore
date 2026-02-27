@@ -1,7 +1,7 @@
 package org.hestiastore.index.chunkentryfile;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.chunkstore.ChunkPayload;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * It's interface for in-memmory structure representing one chunk.
@@ -19,8 +19,8 @@ public interface SingleChunkEntryWriter<K, V> {
      * Closes the chunk and returns the payload to be written to the chunk
      * store.
      * 
-     * @return chunk payload
+     * @return chunk payload as byte sequence
      */
-    ChunkPayload close();
+    ByteSequence closeSequence();
 
 }

@@ -2,6 +2,9 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileWriter;
+
 /**
  * Descriptor for {@link Integer} values.
  */
@@ -67,12 +70,16 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
      */
     @Override
     public TypeReader<Integer> getTypeReader() {
-        return fileReader -> {
-            final byte[] bytes = new byte[4];
-            if (!TypeIo.readFullyOrNull(fileReader, bytes)) {
-                return null;
+        return new TypeReader<Integer>() {
+            private final byte[] readBuffer = new byte[REQUIRED_BYTES];
+
+            @Override
+            public Integer read(final FileReader fileReader) {
+                if (!TypeIo.readFullyOrNull(fileReader, readBuffer)) {
+                    return null;
+                }
+                return load(readBuffer, 0);
             }
-            return load(bytes, 0);
         };
     }
 
@@ -83,16 +90,17 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
      */
     @Override
     public TypeWriter<Integer> getTypeWriter() {
-        return (writer, object) -> {
-            writer.write(getBytes(object));
-            return 4;
-        };
-    }
+        return new TypeWriter<Integer>() {
+            private final byte[] payloadBytes = new byte[REQUIRED_BYTES];
 
-    private static byte[] getBytes(final Integer value) {
-        final byte[] out = new byte[REQUIRED_BYTES];
-        writeBytes(value, out);
-        return out;
+            @Override
+            public int write(final FileWriter writer,
+                    final Integer object) {
+                writeBytes(object, payloadBytes);
+                writer.write(payloadBytes, 0, REQUIRED_BYTES);
+                return REQUIRED_BYTES;
+            }
+        };
     }
 
     private static void writeBytes(final Integer value,

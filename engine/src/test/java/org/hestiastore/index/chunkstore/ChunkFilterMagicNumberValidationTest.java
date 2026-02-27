@@ -3,16 +3,18 @@ package org.hestiastore.index.chunkstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterMagicNumberValidationTest {
 
-    private static final Bytes PAYLOAD = Bytes.of(new byte[] { 3, 1, 4, 1 });
+    private static final ByteSequence PAYLOAD = ByteSequences
+            .wrap(new byte[] { 3, 1, 4, 1 });
 
     @Test
     void apply_should_return_input_when_magic_number_matches() {
-        final ChunkData input = ChunkData.of(
+        final ChunkData input = ChunkData.ofSequence(
                 ChunkFilterMagicNumberWriting.FLAG_MASK, 0L,
                 ChunkHeader.MAGIC_NUMBER, 1, PAYLOAD);
         final ChunkFilterMagicNumberValidation filter = new ChunkFilterMagicNumberValidation();
@@ -24,7 +26,7 @@ class ChunkFilterMagicNumberValidationTest {
 
     @Test
     void apply_should_throw_when_magic_number_is_invalid() {
-        final ChunkData input = ChunkData.of(
+        final ChunkData input = ChunkData.ofSequence(
                 ChunkFilterMagicNumberWriting.FLAG_MASK, 0L,
                 ChunkHeader.MAGIC_NUMBER + 17, 1, PAYLOAD);
         final ChunkFilterMagicNumberValidation filter = new ChunkFilterMagicNumberValidation();

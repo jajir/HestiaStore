@@ -1,7 +1,9 @@
 package org.hestiastore.index.chunkstore;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 
 /**
  * Chunk is a data structure that represents a block of data in the chunk store.
@@ -26,63 +28,62 @@ public final class Chunk {
      */
     static final int VERSION_02_00 = 0xff_00_02_00;
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     /**
-     * Create a chunk from raw bytes.
-     * 
-     * @param bytes the raw bytes of the chunk
+     * Create a chunk from raw bytes sequence.
+     *
+     * @param bytes required byte sequence
      * @return new chunk instance
      */
-    public static Chunk of(final Bytes bytes) {
+    public static Chunk ofSequence(final ByteSequence bytes) {
         return new Chunk(bytes);
     }
 
     /**
-     * Create a chunk from header and payload.
-     * 
+     * Create a chunk from header and payload sequence.
+     *
      * @param header  required chunk header
      * @param payload required chunk payload
      * @return new chunk instance
-     * @throws IllegalArgumentException if the chunk is invalid
      */
-    public static Chunk of(final ChunkHeader header, final Bytes payload) {
-        Vldtn.requireNonNull(header, "header");
-        Vldtn.requireNonNull(payload, "payload");
-        final Bytes bytes = Bytes.concat(header.getBytes(), payload);
-        return new Chunk(bytes);
+    public static Chunk of(final ChunkHeader header, final ByteSequence payload) {
+        final ChunkHeader validatedHeader = Vldtn.requireNonNull(header, "header");
+        final ByteSequence validatedPayload = Vldtn.requireNonNull(payload,
+                "payload");
+        final ByteSequence out = ConcatenatedByteSequence.of(
+                validatedHeader.getBytesSequence(),
+                validatedPayload);
+        return new Chunk(out);
     }
 
-    private Chunk(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        final ChunkHeader header = ChunkHeader
-                .of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
+    private Chunk(final ByteSequence bytes) {
+        this.bytes = Vldtn.requireNonNull(bytes, "bytes");
+        final ChunkHeader header = getHeader();
         final int requiredLength = header.getPayloadLength();
         if (bytes.length() != requiredLength + ChunkHeader.HEADER_SIZE) {
             throw new IllegalArgumentException(String.format(
                     "Chunk bytes length '%s' is not equal to required length '%s'",
                     bytes.length(), requiredLength));
         }
-        this.bytes = bytes;
     }
 
     /**
-     * Get the raw bytes of the chunk.
-     * 
-     * @return the raw bytes of the chunk
+     * Get the raw bytes of the chunk as sequence.
+     *
+     * @return raw bytes sequence
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytesSequence() {
         return bytes;
     }
 
     /**
-     * Get the payload of the chunk.
-     * 
-     * @return the payload of the chunk
+     * Get the payload bytes of the chunk as sequence.
+     *
+     * @return payload bytes sequence
      */
-    public ChunkPayload getPayload() {
-        return ChunkPayload
-                .of(bytes.subBytes(ChunkHeader.HEADER_SIZE, bytes.length()));
+    public ByteSequence getPayloadSequence() {
+        return bytes.slice(ChunkHeader.HEADER_SIZE, bytes.length());
     }
 
     /**
@@ -91,7 +92,7 @@ public final class Chunk {
      * @return the header of the chunk
      */
     public ChunkHeader getHeader() {
-        return ChunkHeader.of(bytes.subBytes(0, ChunkHeader.HEADER_SIZE));
+        return ChunkHeader.ofSequence(bytes.slice(0, ChunkHeader.HEADER_SIZE));
     }
 
     /**
@@ -100,6 +101,8 @@ public final class Chunk {
      * @return the CRC of the chunk payload
      */
     public long calculateCrc() {
-        return getPayload().calculateCrc();
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(getPayloadSequence());
+        return crc.getValue();
     }
 }

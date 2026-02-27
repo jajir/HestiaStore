@@ -1,8 +1,8 @@
 package org.hestiastore.index.chunkstore;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
 
 /**
  * Implementation of {@link CellStoreWriter}.
@@ -22,17 +22,19 @@ public class CellStoreWriterImpl extends AbstractCloseableResource
     }
 
     @Override
-    public CellPosition write(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        Vldtn.requireCellSize(bytes.length(), "bytes");
+    public CellPosition writeSequence(final ByteSequence bytes) {
+        final ByteSequence validated = Vldtn.requireNonNull(bytes, "bytes");
+        Vldtn.requireCellSize(validated.length(), "bytes");
         final CellPosition returnPosition = cursor.getNextCellPosition();
-        Bytes bufferToWrite = bytes.paddedToNextCell();
-        while (bufferToWrite != null && bufferToWrite.length() > 0) {
+        int sourceOffset = 0;
+        int bytesRemaining = validated.length();
+        while (bytesRemaining > 0) {
             int availableBytes = cursor.getAvailableBytes();
-            int trimTo = Math.min(availableBytes, bufferToWrite.length());
-            cursor.write(bufferToWrite.subBytes(0, trimTo));
-            bufferToWrite = bufferToWrite.subBytes(trimTo,
-                    bufferToWrite.length());
+            int trimTo = Math.min(availableBytes, bytesRemaining);
+            cursor.writeSequence(
+                    validated.slice(sourceOffset, sourceOffset + trimTo));
+            sourceOffset += trimTo;
+            bytesRemaining -= trimTo;
         }
         return returnPosition;
     }

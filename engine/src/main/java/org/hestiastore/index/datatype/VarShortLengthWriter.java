@@ -46,12 +46,12 @@ public class VarShortLengthWriter<T> implements TypeWriter<T> {
                     payloadLength));
         }
         writer.write((byte) payloadLength);
-        writer.write(payloadBytes);
+        writer.write(payloadBytes, 0, payloadLength);
         return 1 + payloadLength;
     }
 
     private void ensurePayloadBufferSize(final int payloadLength) {
-        if (payloadBytes.length != payloadLength) {
+        if (payloadBytes.length < payloadLength) {
             payloadBytes = new byte[payloadLength];
         }
     }

@@ -110,6 +110,34 @@ class IndexInternalConcurrentTest {
         assertTrue(nextCalls.get() > 0);
     }
 
+    @Test
+    void getStreamFailFastIsLazyAndClosesIterator() {
+        final AtomicInteger hasNextCalls = new AtomicInteger();
+        final AtomicInteger nextCalls = new AtomicInteger();
+        final AtomicInteger closeCalls = new AtomicInteger();
+        final EntryIterator<Integer, String> iterator = new CountingIterator<>(
+                List.of(Entry.of(1, "one"), Entry.of(2, "two")).iterator(),
+                hasNextCalls, nextCalls, closeCalls);
+
+        final RecordingIndex streamingIndex = new RecordingIndex(iterator,
+                buildConf());
+        try (Stream<Entry<Integer, String>> stream = streamingIndex.getStream(
+                SegmentWindow.unbounded(),
+                SegmentIteratorIsolation.FAIL_FAST)) {
+            assertEquals(SegmentIteratorIsolation.FAIL_FAST,
+                    streamingIndex.getLastIsolation());
+            assertEquals(0, hasNextCalls.get());
+            assertEquals(0, nextCalls.get());
+            assertEquals(Entry.of(1, "one"), stream.findFirst().orElseThrow());
+        } finally {
+            streamingIndex.close();
+        }
+
+        assertEquals(1, closeCalls.get());
+        assertTrue(hasNextCalls.get() > 0);
+        assertEquals(1, nextCalls.get());
+    }
+
     private static final class RecordingIndex
             extends IndexInternalConcurrent<Integer, String> {
 

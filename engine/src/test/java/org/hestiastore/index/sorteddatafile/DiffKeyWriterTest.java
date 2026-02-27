@@ -1,15 +1,19 @@
 package org.hestiastore.index.sorteddatafile;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Comparator;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.FileWriter;
 import org.junit.jupiter.api.Test;
 
 class DiffKeyWriterTest {
@@ -25,10 +29,10 @@ class DiffKeyWriterTest {
     @Test
     void test_ordering_of_key() {
         final DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
-        diffWriter.write(1);
-        diffWriter.write(2);
-        diffWriter.write(3);
-        diffWriter.write(4);
+        writeSingle(diffWriter, 1);
+        writeSingle(diffWriter, 2);
+        writeSingle(diffWriter, 3);
+        writeSingle(diffWriter, 4);
 
         // if no exception is thrown, then correct was accepted
         assertTrue(true);
@@ -37,15 +41,15 @@ class DiffKeyWriterTest {
     @Test
     void test_ordering_same_keys_throw_exception() {
         DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
-        diffWriter.write(1);
+        writeSingle(diffWriter, 1);
         diffWriter = makeDiffKeyWriter();
-        diffWriter.write(2);
+        writeSingle(diffWriter, 2);
         diffWriter = makeDiffKeyWriter();
-        diffWriter.write(3);
+        writeSingle(diffWriter, 3);
 
         final DiffKeyWriter<Integer> diffWriter2 = diffWriter;
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> diffWriter2.write(3));
+                () -> writeSingle(diffWriter2, 3));
 
         assertTrue(e.getMessage()
                 .startsWith("Attempt to insers same key as previous. Key"));
@@ -54,26 +58,26 @@ class DiffKeyWriterTest {
     @Test
     void test_ordering_same_keys_throw_full_write_exception() {
         DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
-        diffWriter.write(1);
+        writeSingle(diffWriter, 1);
         diffWriter = makeDiffKeyWriter();
-        diffWriter.write(2);
+        writeSingle(diffWriter, 2);
         diffWriter = makeDiffKeyWriter();
-        diffWriter.write(3);
+        writeSingle(diffWriter, 3);
 
         final DiffKeyWriter<Integer> diffWriter2 = makeDiffKeyWriter();
 
         // nothing is thrown because new class is created
-        diffWriter2.write(3);
+        writeSingle(diffWriter2, 3);
         assertTrue(true);
     }
 
     @Test
     void test_ordering_smaller_key_than_previous_one_throw_exception() {
         DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
-        diffWriter.write(1);
+        writeSingle(diffWriter, 1);
 
         assertThrows(IllegalArgumentException.class,
-                () -> diffWriter.write(-1));
+                () -> writeSingle(diffWriter, -1));
     }
 
     @Test
@@ -103,16 +107,16 @@ class DiffKeyWriterTest {
         DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
                 tds.getTypeEncoder(), Comparator.naturalOrder());
 
-        byte[] ret = diffWriter.write("aaa");
+        byte[] ret = writeSingle(diffWriter, "aaa");
         verifyDiffKey(0, 3, "aaa", ret);
 
-        ret = diffWriter.write("bbb");
+        ret = writeSingle(diffWriter, "bbb");
         verifyDiffKey(0, 3, "bbb", ret);
 
-        ret = diffWriter.write("bbc");
+        ret = writeSingle(diffWriter, "bbc");
         verifyDiffKey(2, 1, "c", ret);
 
-        ret = diffWriter.write("bcc");
+        ret = writeSingle(diffWriter, "bcc");
         verifyDiffKey(1, 2, "cc", ret);
     }
 
@@ -121,6 +125,27 @@ class DiffKeyWriterTest {
         final DiffKeyWriter<Integer> diffWriter = makeDiffKeyWriter();
 
         assertEquals(0, diffWriter.close());
+    }
+
+    @Test
+    void test_writeTo_writes_expected_payload() {
+        final DiffKeyWriter<String> expectedWriter = new DiffKeyWriter<>(
+                tds.getTypeEncoder(), Comparator.naturalOrder());
+        final DiffKeyWriter<String> writerUsingFileWriter = new DiffKeyWriter<>(
+                tds.getTypeEncoder(), Comparator.naturalOrder());
+        final CollectingFileWriter collectingWriter = new CollectingFileWriter();
+
+        final byte[] expectedA = writeSingle(expectedWriter, "aaa");
+        final byte[] expectedB = writeSingle(expectedWriter, "bbc");
+
+        final int writtenA = writerUsingFileWriter.writeTo(collectingWriter,
+                "aaa");
+        final int writtenB = writerUsingFileWriter.writeTo(collectingWriter,
+                "bbc");
+
+        final byte[] expected = concat(expectedA, expectedB);
+        assertEquals(expected.length, writtenA + writtenB);
+        assertArrayEquals(expected, collectingWriter.toByteArray());
     }
 
     @Test
@@ -140,7 +165,8 @@ class DiffKeyWriterTest {
                 }, Comparator.naturalOrder());
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> diffWriter.write(1));
+                IllegalArgumentException.class,
+                () -> writeSingle(diffWriter, 1));
         assertTrue(error.getMessage().contains("encodedKeyLength"));
     }
 
@@ -162,8 +188,18 @@ class DiffKeyWriterTest {
                 }, Comparator.naturalOrder());
 
         final IllegalStateException error = assertThrows(
-                IllegalStateException.class, () -> diffWriter.write(1));
+                IllegalStateException.class,
+                () -> writeSingle(diffWriter, 1));
         assertTrue(error.getMessage().contains("declared"));
+    }
+
+    private static <K> byte[] writeSingle(final DiffKeyWriter<K> writer,
+            final K key) {
+        final CollectingFileWriter collectingWriter = new CollectingFileWriter();
+        final int written = writer.writeTo(collectingWriter, key);
+        final byte[] encoded = collectingWriter.toByteArray();
+        assertEquals(encoded.length, written);
+        return encoded;
     }
 
     private void verifyDiffKey(final int expectedSharedByteLength,
@@ -176,6 +212,44 @@ class DiffKeyWriterTest {
         System.arraycopy(bytes, 2, b, 0, b.length);
         String str = new String(b);
         assertEquals(expectedString, str, "string");
+    }
+
+    private static byte[] concat(final byte[] first, final byte[] second) {
+        final byte[] out = new byte[first.length + second.length];
+        System.arraycopy(first, 0, out, 0, first.length);
+        System.arraycopy(second, 0, out, first.length, second.length);
+        return out;
+    }
+
+    private static final class CollectingFileWriter
+            extends AbstractCloseableResource implements FileWriter {
+
+        private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        @Override
+        public void write(final byte b) {
+            out.write(b);
+        }
+
+        @Override
+        public void write(final byte[] bytes) {
+            out.write(bytes, 0, bytes.length);
+        }
+
+        @Override
+        public void write(final byte[] bytes, final int offset,
+                final int length) {
+            out.write(bytes, offset, length);
+        }
+
+        byte[] toByteArray() {
+            return out.toByteArray();
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op
+        }
     }
 
 }

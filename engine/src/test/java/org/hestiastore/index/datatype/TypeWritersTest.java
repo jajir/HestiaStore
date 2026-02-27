@@ -100,6 +100,110 @@ class TypeWritersTest {
     }
 
     @Test
+    void varLengthWriter_writesPayloadViaRangeWrite() {
+        final VarLengthWriter<String> writer = new VarLengthWriter<>(
+                new TypeDescriptorString().getTypeEncoder());
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = writer.write(fileWriter, "abcdef");
+
+        assertEquals(10, writtenBytes);
+        assertEquals(1, fileWriter.arrayWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(4, fileWriter.lastArrayLength);
+        assertEquals(0, fileWriter.lastRangeOffset);
+        assertEquals(6, fileWriter.lastRangeLength);
+    }
+
+    @Test
+    void varShortLengthWriter_writesPayloadViaRangeWrite() {
+        final VarShortLengthWriter<String> writer = new VarShortLengthWriter<>(
+                new TypeDescriptorShortString().getTypeEncoder());
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = writer.write(fileWriter, "abc");
+
+        assertEquals(4, writtenBytes);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(1, fileWriter.byteWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(0, fileWriter.lastRangeOffset);
+        assertEquals(3, fileWriter.lastRangeLength);
+    }
+
+    @Test
+    void fixedLengthWriter_writesPayloadViaRangeWrite() {
+        final FixedLengthWriter<String> writer = new FixedLengthWriter<>(
+                new TypeDescriptorFixedLengthString(4).getTypeEncoder());
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = writer.write(fileWriter, "ABCD");
+
+        assertEquals(4, writtenBytes);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(0, fileWriter.byteWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(0, fileWriter.lastRangeOffset);
+        assertEquals(4, fileWriter.lastRangeLength);
+    }
+
+    @Test
+    void integerTypeWriter_writesViaRangeWrite() {
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = new TypeDescriptorInteger().getTypeWriter()
+                .write(fileWriter, 123);
+
+        assertEquals(4, writtenBytes);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(0, fileWriter.byteWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(4, fileWriter.lastRangeLength);
+    }
+
+    @Test
+    void longTypeWriter_writesViaRangeWrite() {
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = new TypeDescriptorLong().getTypeWriter()
+                .write(fileWriter, 123L);
+
+        assertEquals(8, writtenBytes);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(0, fileWriter.byteWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(8, fileWriter.lastRangeLength);
+    }
+
+    @Test
+    void floatTypeWriter_writesViaRangeWrite() {
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = new TypeDescriptorFloat().getTypeWriter()
+                .write(fileWriter, 1.25f);
+
+        assertEquals(4, writtenBytes);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(0, fileWriter.byteWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(4, fileWriter.lastRangeLength);
+    }
+
+    @Test
+    void doubleTypeWriter_writesViaRangeWrite() {
+        final ProbeFileWriter fileWriter = new ProbeFileWriter();
+
+        final int writtenBytes = new TypeDescriptorDouble().getTypeWriter()
+                .write(fileWriter, 1.25d);
+
+        assertEquals(8, writtenBytes);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(0, fileWriter.byteWrites);
+        assertEquals(1, fileWriter.rangeWrites);
+        assertEquals(8, fileWriter.lastRangeLength);
+    }
+
+    @Test
     void varShortLengthWriter_rejectsDeclaredAndWrittenLengthMismatch() {
         final VarShortLengthWriter<String> writer = new VarShortLengthWriter<>(
                 new TypeEncoder<String>() {
@@ -165,6 +269,41 @@ class TypeWritersTest {
 
         byte[] toByteArray() {
             return out.toByteArray();
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op
+        }
+    }
+
+    private static final class ProbeFileWriter
+            extends AbstractCloseableResource implements FileWriter {
+
+        private int byteWrites = 0;
+        private int arrayWrites = 0;
+        private int rangeWrites = 0;
+        private int lastArrayLength = -1;
+        private int lastRangeOffset = -1;
+        private int lastRangeLength = -1;
+
+        @Override
+        public void write(final byte b) {
+            byteWrites++;
+        }
+
+        @Override
+        public void write(final byte[] bytes) {
+            arrayWrites++;
+            lastArrayLength = bytes.length;
+        }
+
+        @Override
+        public void write(final byte[] bytes, final int offset,
+                final int length) {
+            rangeWrites++;
+            lastRangeOffset = offset;
+            lastRangeLength = length;
         }
 
         @Override

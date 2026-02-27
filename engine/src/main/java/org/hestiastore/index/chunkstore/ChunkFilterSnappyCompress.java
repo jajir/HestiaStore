@@ -2,8 +2,9 @@ package org.hestiastore.index.chunkstore;
 
 import java.io.IOException;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.Snappy;
@@ -20,7 +21,7 @@ public class ChunkFilterSnappyCompress implements ChunkFilter {
     @Override
     public ChunkData apply(final ChunkData input) {
         try {
-            final Bytes payload = input.getPayload();
+            final ByteSequence payload = input.getPayloadSequence();
             final int originalSize = payload.length();
             final byte[] compressed = compressPayload(payload);
             final int compressedSize = compressed.length;
@@ -32,15 +33,14 @@ public class ChunkFilterSnappyCompress implements ChunkFilter {
                         originalSize, compressedSize,
                         String.format("%.2f", savings));
             }
-            final Bytes compressedBytes = Bytes.of(compressed);
-            return input.withPayload(compressedBytes)
+            return input.withPayloadSequence(ByteSequences.wrap(compressed))
                     .withFlags(input.getFlags() | FLAG_COMPRESSED);
         } catch (IOException ex) {
             throw new IndexException("Unable to compress chunk payload", ex);
         }
     }
 
-    byte[] compressPayload(final Bytes payload) throws IOException {
-        return Snappy.compress(payload.getData());
+    byte[] compressPayload(final ByteSequence payload) throws IOException {
+        return Snappy.compress(payload.toByteArrayCopy());
     }
 }

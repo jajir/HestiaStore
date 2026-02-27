@@ -1,8 +1,8 @@
 package org.hestiastore.index.datablockfile;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
 
 /**
  * Represents a block of data in the block data file. All blocks have a fixed
@@ -10,16 +10,23 @@ import org.hestiastore.index.Vldtn;
  */
 public final class DataBlock {
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     private final DataBlockPosition position;
 
-    public static DataBlock of(final Bytes bytes,
+    /**
+     * Creates a data block from byte sequence.
+     *
+     * @param bytes    full data block bytes (header + payload)
+     * @param position data block position
+     * @return data block instance
+     */
+    public static DataBlock ofSequence(final ByteSequence bytes,
             final DataBlockPosition position) {
         return new DataBlock(bytes, position);
     }
 
-    DataBlock(final Bytes bytes, final DataBlockPosition position) {
+    DataBlock(final ByteSequence bytes, final DataBlockPosition position) {
         this.bytes = Vldtn.requireNonNull(bytes, "bytes");
         this.position = Vldtn.requireNonNull(position, "position");
         final DataBlockHeader header = getHeader();
@@ -34,13 +41,12 @@ public final class DataBlock {
     }
 
     /**
-     * Get the payload of this data block.
-     * 
-     * @return the payload of this data block
+     * Get the payload bytes of this data block as sequence.
+     *
+     * @return payload bytes sequence
      */
-    public DataBlockPayload getPayload() {
-        return DataBlockPayload.of(
-                bytes.subBytes(DataBlockHeader.HEADER_SIZE, bytes.length()));
+    public ByteSequence getPayloadSequence() {
+        return bytes.slice(DataBlockHeader.HEADER_SIZE, bytes.length());
     }
 
     /**
@@ -49,15 +55,15 @@ public final class DataBlock {
      * @return the header of this data block
      */
     public DataBlockHeader getHeader() {
-        return DataBlockHeader.of(bytes);
+        return DataBlockHeader.ofSequence(bytes);
     }
 
     /**
-     * Get the raw bytes of this data block.
-     * 
-     * @return the raw bytes of this data block
+     * Get raw bytes as byte sequence.
+     *
+     * @return full data block bytes sequence
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytesSequence() {
         return bytes;
     }
 
@@ -94,10 +100,8 @@ public final class DataBlock {
      * @return the CRC of the payload of this data block
      */
     long calculateCrc() {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        final byte[] data = bytes.getData();
-        crc.update(data, DataBlockHeader.HEADER_SIZE,
-                data.length - DataBlockHeader.HEADER_SIZE);
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(bytes.slice(DataBlockHeader.HEADER_SIZE, bytes.length()));
         return crc.getValue();
     }
 

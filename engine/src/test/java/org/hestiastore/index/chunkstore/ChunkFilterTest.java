@@ -1,21 +1,25 @@
 package org.hestiastore.index.chunkstore;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.Bytes;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ChunkFilterTest {
 
-    private static final Bytes PAYLOAD = Bytes.of(new byte[] { 1, 2, 3, 4, 5 });
+    private static final ByteSequence PAYLOAD = ByteSequences
+            .wrap(new byte[] { 1, 2, 3, 4, 5 });
 
     private ChunkData baseData;
 
     @BeforeEach
     void setUp() {
-        baseData = ChunkData.of(ChunkFilterSnappyCompress.FLAG_COMPRESSED, 0L,
+        baseData = ChunkData.ofSequence(ChunkFilterSnappyCompress.FLAG_COMPRESSED,
+                0L,
                 0L, 1, PAYLOAD);
     }
 
@@ -27,7 +31,7 @@ class ChunkFilterTest {
         validateFilter.apply(withCrc); // should not throw
 
         final ChunkData broken = withCrc
-                .withPayload(Bytes.of(new byte[] { 42 }));
+                .withPayloadSequence(ByteSequences.wrap(new byte[] { 42 }));
         assertThrows(IllegalStateException.class,
                 () -> validateFilter.apply(broken));
     }
@@ -38,7 +42,8 @@ class ChunkFilterTest {
         final ChunkData compressed = compressor.apply(baseData);
         final ChunkFilter decompressor = new ChunkFilterSnappyDecompress();
         final ChunkData decompressed = decompressor.apply(compressed);
-        assertEquals(PAYLOAD, decompressed.getPayload());
+        assertArrayEquals(PAYLOAD.toByteArrayCopy(),
+                decompressed.getPayloadSequence().toByteArrayCopy());
         // decompressing twice is invalid
         assertThrows(IllegalStateException.class,
                 () -> decompressor.apply(decompressed));
@@ -65,7 +70,8 @@ class ChunkFilterTest {
         final ChunkData encrypted = encrypt.apply(baseData);
         final ChunkFilter decrypt = new ChunkFilterXorDecrypt();
         final ChunkData decrypted = decrypt.apply(encrypted);
-        assertEquals(PAYLOAD, decrypted.getPayload());
+        assertArrayEquals(PAYLOAD.toByteArrayCopy(),
+                decrypted.getPayloadSequence().toByteArrayCopy());
         assertEquals(24, encrypted.getFlags());
         assertEquals(8, decrypted.getFlags());
         assertThrows(IllegalStateException.class,

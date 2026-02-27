@@ -3,8 +3,9 @@ package org.hestiastore.index.chunkstore;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * if (bytes == null) { return Optional.empty(); } return
@@ -81,38 +82,25 @@ public final class ChunkHeader {
     private final long flags;
 
     /**
-     * Creates a chunk header from the given byte array.
-     * 
-     * @param data required byte array, must be exactly 32 bytes long
+     * Creates a chunk header from the given byte sequence.
+     *
+     * @param bytes required byte sequence, must be exactly 32 bytes long
      * @return the chunk header
      */
-    public static ChunkHeader of(final byte[] data) {
-        return ChunkHeaderCodec.decode(data);
+    public static ChunkHeader ofSequence(final ByteSequence bytes) {
+        return ChunkHeaderCodec.decode(bytes);
     }
 
     /**
-     * Creates a chunk header from the given bytes.
-     * 
-     * @param bytes required bytes, must be exactly 32 bytes long
-     * @return the chunk header
+     * Creates an optional chunk header from the given byte sequence.
+     *
+     * @param bytes sequence to create the chunk header from, can be null
+     * @return optional chunk header, empty if the given sequence is null, or
+     *         not exactly 32 bytes long, or the magic number is invalid
      */
-    public static ChunkHeader of(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        return ChunkHeaderCodec.decode(bytes.getData());
-    }
-
-    /**
-     * Creates an optional chunk header from the given bytes.
-     * 
-     * @param bytes bytes to create the chunk header from, can be null
-     * @return optional chunk header, empty if the given bytes are null, or not
-     *         exactly 32 bytes long, or the magic number is invalid
-     */
-    public static Optional<ChunkHeader> optionalOf(final Bytes bytes) {
-        if (bytes == null) {
-            return Optional.empty();
-        }
-        return ChunkHeaderCodec.decodeOptional(bytes.getData());
+    public static Optional<ChunkHeader> optionalOfSequence(
+            final ByteSequence bytes) {
+        return ChunkHeaderCodec.decodeOptional(bytes);
     }
 
     /**
@@ -168,12 +156,12 @@ public final class ChunkHeader {
     }
 
     /**
-     * Returns the byte array representing the chunk header.
-     * 
-     * @return the byte array representing the chunk header
+     * Returns the chunk header as byte sequence.
+     *
+     * @return encoded chunk header bytes
      */
-    public Bytes getBytes() {
-        return Bytes.of(ChunkHeaderCodec.encode(this));
+    public ByteSequence getBytesSequence() {
+        return ByteSequences.wrap(ChunkHeaderCodec.encode(this));
     }
 
     /**

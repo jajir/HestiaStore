@@ -57,4 +57,13 @@ public final class FsZipFileWriterStream extends AbstractCloseableResource
         }
     }
 
+    @Override
+    public void write(final byte[] bytes, final int offset, final int length) {
+        try {
+            fio.write(bytes, offset, length);
+        } catch (IOException e) {
+            throw new IndexException(e.getMessage(), e);
+        }
+    }
+
 }

@@ -1,6 +1,5 @@
 package org.hestiastore.index.sorteddatafile;
 
-import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeReader;
@@ -74,7 +73,7 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         final int keyLengthInBytes = header[1]; // number of suffix bytes
         if (sharedByteLength == 0) {
             final byte[] keyBytes = new byte[keyLengthInBytes];
-            read(fileReader, keyBytes);
+            read(fileReader, keyBytes, 0, keyLengthInBytes);
             previousKeyBytes = keyBytes;
             return keyConvertor.decode(keyBytes);
         }
@@ -91,10 +90,10 @@ public class DiffKeyReader<K> implements TypeReader<K> {
                             + "Current key should share '%s' with previous key.",
                     s1, previousKeyBytes.length, sharedByteLength));
         }
-        final byte[] diffBytes = new byte[keyLengthInBytes];
-        read(fileReader, diffBytes);
-        final byte[] sharedBytes = getBytes(previousKeyBytes, sharedByteLength);
-        final byte[] keyBytes = ByteTool.concatenate(sharedBytes, diffBytes);
+        final int totalKeyLength = sharedByteLength + keyLengthInBytes;
+        final byte[] keyBytes = new byte[totalKeyLength];
+        System.arraycopy(previousKeyBytes, 0, keyBytes, 0, sharedByteLength);
+        read(fileReader, keyBytes, sharedByteLength, keyLengthInBytes);
         previousKeyBytes = keyBytes;
         return keyConvertor.decode(keyBytes);
     }
@@ -105,26 +104,28 @@ public class DiffKeyReader<K> implements TypeReader<K> {
      * @param fileReader source reader
      * @param bytes destination buffer
      */
-    private void read(final FileReader fileReader, final byte[] bytes) {
-        int read = fileReader.read(bytes);
-        if (read != bytes.length) {
-            throw new IndexException(String.format(
-                    "Reading of '%s' bytes failed just '%s' was read.",
-                    bytes.length, read));
+    private void read(final FileReader fileReader, final byte[] bytes,
+            final int offset, final int length) {
+        if (length == 0) {
+            return;
         }
-    }
-
-    /**
-     * Copies the first {@code howMany} bytes into a new array.
-     *
-     * @param bytes source bytes
-     * @param howMany number of bytes to copy
-     * @return copied bytes
-     */
-    private byte[] getBytes(final byte[] bytes, final int howMany) {
-        final byte[] out = new byte[howMany];
-        System.arraycopy(bytes, 0, out, 0, howMany);
-        return out;
+        int currentOffset = offset;
+        int remaining = length;
+        while (remaining > 0) {
+            final int read;
+            if (currentOffset == 0 && remaining == bytes.length) {
+                read = fileReader.read(bytes);
+            } else {
+                read = fileReader.read(bytes, currentOffset, remaining);
+            }
+            if (read <= 0) {
+                throw new IndexException(String.format(
+                        "Reading of '%s' bytes failed just '%s' was read.",
+                        length, length - remaining));
+            }
+            currentOffset += read;
+            remaining -= read;
+        }
     }
 
 }

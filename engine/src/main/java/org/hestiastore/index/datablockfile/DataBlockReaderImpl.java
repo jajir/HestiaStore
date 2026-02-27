@@ -1,9 +1,11 @@
 package org.hestiastore.index.datablockfile;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
@@ -22,8 +24,9 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
             final DataBlockSize blockSize,
             final boolean closeReaderOnClose) {
         this.fileReader = Vldtn.requireNonNull(fileReader, "fileReader");
-        this.blockSize = blockSize;
-        this.position = blockPosition.getValue();
+        this.blockSize = Vldtn.requireNonNull(blockSize, "blockSize");
+        this.position = Vldtn.requireNonNull(blockPosition, "blockPosition")
+                .getValue();
         this.closeReaderOnClose = closeReaderOnClose;
     }
 
@@ -36,17 +39,68 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
 
     @Override
     public DataBlock read() {
-        final byte[] buffer = new byte[blockSize.getDataBlockSize()];
-        final int bytesRead = fileReader.read(buffer);
-        if (bytesRead < 0) {
-            return null; // End of file reached
+        final byte[] buffer = readFullBlockData();
+        if (buffer == null) {
+            return null;
         }
-        if (bytesRead != blockSize.getDataBlockSize()) {
-            throw new IndexException("Unable to read full block");
-        }
-        DataBlockPosition blockPosition = DataBlockPosition.of(position);
+        final DataBlockPosition blockPosition = DataBlockPosition.of(position);
+        final DataBlock dataBlock = DataBlock.ofSequence(ByteSequences.wrap(buffer),
+                blockPosition);
         position += blockSize.getDataBlockSize();
-        return new DataBlock(Bytes.of(buffer), blockPosition);
+        return dataBlock;
+    }
+
+    @Override
+    public ByteSequence readPayloadSequence() {
+        final byte[] buffer = readFullBlockData();
+        if (buffer == null) {
+            return null;
+        }
+        validateBlockData(buffer);
+        position += blockSize.getDataBlockSize();
+        return ByteSequences.viewOf(buffer, DataBlockHeader.HEADER_SIZE,
+                buffer.length);
+    }
+
+    private byte[] readFullBlockData() {
+        final int blockDataSize = blockSize.getDataBlockSize();
+        final byte[] buffer = new byte[blockDataSize];
+        int offset = 0;
+        while (offset < blockDataSize) {
+            final int bytesRead = fileReader.read(buffer, offset,
+                    blockDataSize - offset);
+            if (bytesRead < 0) {
+                if (offset == 0) {
+                    return null; // End of file reached before reading block.
+                }
+                throw new IndexException("Unable to read full block");
+            }
+            if (bytesRead == 0) {
+                throw new IndexException("Unable to read full block");
+            }
+            offset += bytesRead;
+        }
+        return buffer;
+    }
+
+    private void validateBlockData(final byte[] blockData) {
+        final DataBlockHeader header = DataBlockHeader
+                .ofSequence(ByteSequences.wrap(blockData));
+        if (header.getMagicNumber() != DataBlockHeader.MAGIC_NUMBER) {
+            throw new IllegalArgumentException(
+                    "Invalid magic number in data block header");
+        }
+        if (header.getCrc() != calculatePayloadCrc(blockData)) {
+            throw new IllegalArgumentException(
+                    "CRC mismatch in data block header");
+        }
+    }
+
+    private long calculatePayloadCrc(final byte[] blockData) {
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(ByteSequences.viewOf(blockData, DataBlockHeader.HEADER_SIZE,
+                blockData.length));
+        return crc.getValue();
     }
 
 }

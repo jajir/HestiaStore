@@ -2,18 +2,28 @@ package org.hestiastore.index.directory;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 
 public class MemFileReader extends AbstractCloseableResource
         implements FileReader {
 
-    private final byte[] data;
+    private final ByteSequence data;
 
     private int position;
 
     public MemFileReader(final byte[] data) {
-        Vldtn.requireNonNull(data, "data");
-        this.data = data;
-        position = 0;
+        this(ByteSequences.wrap(Vldtn.requireNonNull(data, "data")));
+    }
+
+    /**
+     * Creates an in-memory reader over a byte sequence.
+     *
+     * @param data required byte sequence
+     */
+    public MemFileReader(final ByteSequence data) {
+        this.data = Vldtn.requireNonNull(data, "data");
+        this.position = 0;
     }
 
     @Override
@@ -23,8 +33,8 @@ public class MemFileReader extends AbstractCloseableResource
 
     @Override
     public int read() {
-        if (position < data.length) {
-            return data[position++] & 0xFF;
+        if (position < data.length()) {
+            return data.getByte(position++) & 0xFF;
         } else {
             return -1;
         }
@@ -32,14 +42,29 @@ public class MemFileReader extends AbstractCloseableResource
 
     @Override
     public int read(final byte[] bytes) {
-        if (position < data.length) {
+        return read(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        if (offset < 0 || length < 0 || offset > bytes.length
+                || offset + length > bytes.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Range [%d, %d) exceeds array length %d", offset,
+                    offset + length, bytes.length));
+        }
+        if (length == 0) {
+            return 0;
+        }
+        if (position < data.length()) {
             // at least one byte will be read
-            int newPosition = position + bytes.length;
-            if (newPosition > data.length) {
-                newPosition = data.length;
+            int newPosition = position + length;
+            if (newPosition > data.length()) {
+                newPosition = data.length();
             }
             final int toReadBytes = newPosition - position;
-            System.arraycopy(data, position, bytes, 0, toReadBytes);
+            ByteSequences.copy(data, position, bytes, offset, toReadBytes);
             position = newPosition;
             return toReadBytes;
         } else {
@@ -48,7 +73,7 @@ public class MemFileReader extends AbstractCloseableResource
     }
 
     protected int getDataLength() {
-        return data.length;
+        return data.length();
     }
 
     protected void setPosition(final long position) {

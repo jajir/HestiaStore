@@ -40,7 +40,7 @@ class DirectoryPropertyStoreTest {
         assertEquals(42L, reloadedView.getLong("beta"));
         assertTrue(reloadedView.getBoolean("gamma"));
         final String fileContent = new String(
-                directory.getFileBytes(FILE_NAME).getData(),
+                directory.getFileSequence(FILE_NAME).toByteArrayCopy(),
                 StandardCharsets.UTF_8);
         assertTrue(fileContent.contains(
                 "Numeric format: underscore (_) is thousands separator; dot (.) is decimal separator."));

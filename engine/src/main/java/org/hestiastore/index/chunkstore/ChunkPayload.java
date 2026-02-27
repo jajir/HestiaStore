@@ -1,8 +1,9 @@
 package org.hestiastore.index.chunkstore;
 
-import org.apache.commons.codec.digest.PureJavaCrc32;
-import org.hestiastore.index.Bytes;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequenceCrc32;
+import org.hestiastore.index.bytes.ByteSequences;
 
 /**
  * Represents the payload of a chunk in the chunk store. It encapsulates the
@@ -11,29 +12,28 @@ import org.hestiastore.index.Vldtn;
  */
 public class ChunkPayload {
 
-    private final Bytes bytes;
+    private final ByteSequence bytes;
 
     /**
-     * Factory method to create a ChunkPayload instance from the given bytes.
+     * Factory method to create a ChunkPayload from a byte sequence.
      *
-     * @param bytes required byte data for the chunk payload
-     * @throws IllegalArgumentException if bytes is null
+     * @param bytes required byte sequence
+     * @return created chunk payload
      */
-    public static ChunkPayload of(final Bytes bytes) {
+    public static ChunkPayload ofSequence(final ByteSequence bytes) {
         return new ChunkPayload(bytes);
     }
 
-    private ChunkPayload(final Bytes bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
-        this.bytes = bytes;
+    private ChunkPayload(final ByteSequence bytes) {
+        this.bytes = Vldtn.requireNonNull(bytes, "bytes");
     }
 
     /**
-     * Get the raw bytes of the chunk payload.
-     * 
-     * @return the raw bytes of the chunk payload
+     * Get the raw bytes of the chunk payload as sequence.
+     *
+     * @return payload byte sequence
      */
-    public Bytes getBytes() {
+    public ByteSequence getBytesSequence() {
         return bytes;
     }
 
@@ -52,14 +52,14 @@ public class ChunkPayload {
      * @return the CRC of the chunk payload
      */
     public long calculateCrc() {
-        final PureJavaCrc32 crc = new PureJavaCrc32();
-        crc.update(bytes.getData());
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        crc.update(bytes);
         return crc.getValue();
     }
 
     @Override
     public int hashCode() {
-        return bytes.hashCode();
+        return ByteSequences.contentHashCode(bytes);
     }
 
     @Override
@@ -71,11 +71,11 @@ public class ChunkPayload {
             return false;
         }
         final ChunkPayload other = (ChunkPayload) obj;
-        return bytes.equals(other.bytes);
+        return ByteSequences.contentEquals(bytes, other.bytes);
     }
 
     @Override
     public String toString() {
-        return "ChunkPayload{" + "bytes=" + bytes + '}';
+        return "ChunkPayload{" + "length=" + bytes.length() + '}';
     }
 }

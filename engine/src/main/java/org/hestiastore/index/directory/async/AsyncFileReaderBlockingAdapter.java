@@ -26,6 +26,22 @@ public final class AsyncFileReaderBlockingAdapter implements FileReader {
     }
 
     @Override
+    public int read(final byte[] bytes, final int offset, final int length) {
+        Vldtn.requireNonNull(bytes, "bytes");
+        if (offset < 0 || length < 0 || offset > bytes.length
+                || offset + length > bytes.length) {
+            throw new IllegalArgumentException(String.format(
+                    "Range [%d, %d) exceeds array length %d", offset,
+                    offset + length, bytes.length));
+        }
+        if (length == 0) {
+            return 0;
+        }
+        return delegate.readAsync(bytes, offset, length).toCompletableFuture()
+                .join();
+    }
+
+    @Override
     public void skip(final long position) {
         delegate.skipAsync(position).toCompletableFuture().join();
     }

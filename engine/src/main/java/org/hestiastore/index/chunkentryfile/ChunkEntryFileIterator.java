@@ -8,6 +8,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkStoreReader;
 
@@ -23,7 +24,8 @@ public class ChunkEntryFileIterator<K, V>
         extends AbstractCloseableResource implements EntryIteratorWithCurrent<K, V> {
 
     private final ChunkStoreReader chunkStoreReader;
-    private final Function<Chunk, EntryIteratorWithCurrent<K, V>> iteratorFactory;
+    private final Function<Chunk, EntryIteratorWithCurrent<K, V>> chunkIteratorFactory;
+    private final Function<ByteSequence, EntryIteratorWithCurrent<K, V>> payloadIteratorFactory;
 
     private EntryIteratorWithCurrent<K, V> iterator;
 
@@ -35,10 +37,34 @@ public class ChunkEntryFileIterator<K, V>
      */
     public ChunkEntryFileIterator(ChunkStoreReader chunkStoreReader,
             final Function<Chunk, EntryIteratorWithCurrent<K, V>> iteratorFactory) {
+        this(chunkStoreReader, Vldtn.requireNonNull(iteratorFactory,
+                "iteratorFactory"), null);
+    }
+
+    /**
+     * Creates an iterator that consumes chunk payload sequences directly,
+     * bypassing temporary {@link Chunk} wrappers.
+     *
+     * @param chunkStoreReader       required reader of chunks
+     * @param payloadIteratorFactory required factory of entry iterators for
+     *                               payload sequences
+     * @return configured chunk entry iterator
+     */
+    public static <K, V> ChunkEntryFileIterator<K, V> fromPayloads(
+            final ChunkStoreReader chunkStoreReader,
+            final Function<ByteSequence, EntryIteratorWithCurrent<K, V>> payloadIteratorFactory) {
+        return new ChunkEntryFileIterator<>(chunkStoreReader, null,
+                Vldtn.requireNonNull(payloadIteratorFactory,
+                        "payloadIteratorFactory"));
+    }
+
+    private ChunkEntryFileIterator(final ChunkStoreReader chunkStoreReader,
+            final Function<Chunk, EntryIteratorWithCurrent<K, V>> chunkIteratorFactory,
+            final Function<ByteSequence, EntryIteratorWithCurrent<K, V>> payloadIteratorFactory) {
         this.chunkStoreReader = Vldtn.requireNonNull(chunkStoreReader,
                 "chunkStoreReader");
-        this.iteratorFactory = Vldtn.requireNonNull(iteratorFactory,
-                "iteratorFactory");
+        this.chunkIteratorFactory = chunkIteratorFactory;
+        this.payloadIteratorFactory = payloadIteratorFactory;
         moveToNextChunk();
     }
 
@@ -78,12 +104,21 @@ public class ChunkEntryFileIterator<K, V>
 
     private void moveToNextChunk() {
         if (iterator == null || !iterator.hasNext()) {
-            Chunk chunk = chunkStoreReader.read();
-            if (chunk != null) {
-                iterator = iteratorFactory.apply(chunk);
-            } else {
-                iterator = null;
+            if (payloadIteratorFactory != null) {
+                ByteSequence payload = chunkStoreReader.readPayloadSequence();
+                if (payload != null) {
+                    iterator = payloadIteratorFactory.apply(payload);
+                } else {
+                    iterator = null;
+                }
+                return;
             }
+            Chunk chunk = chunkStoreReader.read();
+            if (chunk == null) {
+                iterator = null;
+                return;
+            }
+            iterator = chunkIteratorFactory.apply(chunk);
         }
     }
 

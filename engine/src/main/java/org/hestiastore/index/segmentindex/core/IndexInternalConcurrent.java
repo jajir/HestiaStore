@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -56,19 +54,6 @@ class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
             final SegmentIteratorIsolation isolation) {
         getIndexState().tryPerformOperation();
         awaitSplitsIdle();
-        if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
-            final EntryIterator<K, V> iterator = openSegmentIterator(
-                    segmentWindow, isolation);
-            try {
-                final List<Entry<K, V>> snapshot = new ArrayList<>();
-                while (iterator.hasNext()) {
-                    snapshot.add(iterator.next());
-                }
-                return snapshot.stream();
-            } finally {
-                iterator.close();
-            }
-        }
         final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow,
                 isolation);
         final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(

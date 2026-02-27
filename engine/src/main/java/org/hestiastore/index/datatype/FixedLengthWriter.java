@@ -41,12 +41,12 @@ public class FixedLengthWriter<T> implements TypeWriter<T> {
                     "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
                     payloadLength));
         }
-        writer.write(payloadBytes);
+        writer.write(payloadBytes, 0, payloadLength);
         return payloadLength;
     }
 
     private void ensurePayloadBufferSize(final int payloadLength) {
-        if (payloadBytes.length != payloadLength) {
+        if (payloadBytes.length < payloadLength) {
             payloadBytes = new byte[payloadLength];
         }
     }

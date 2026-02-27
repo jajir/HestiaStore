@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 class ByteSequencesTest {
@@ -98,5 +101,62 @@ class ByteSequencesTest {
         assertEquals(ByteSequences.contentHashCode(first),
                 ByteSequences.contentHashCode(second));
         assertFalse(ByteSequences.contentEquals(first, third));
+    }
+
+    @Test
+    void test_concat_empty_and_single() {
+        assertSame(ByteSequence.EMPTY, ByteSequences.concat(List.of()));
+
+        final ByteSequence only = ByteSequences.wrap(new byte[] { 1, 2 });
+        assertSame(only, ByteSequences.concat(List.of(only, ByteSequence.EMPTY)));
+    }
+
+    @Test
+    void test_concat_multiple_sequences_without_copy() {
+        final ByteSequence first = ByteSequences.wrap(new byte[] { 1, 2 });
+        final ByteSequence second = ByteSequences.wrap(new byte[] { 3, 4, 5 });
+        final ByteSequence third = ByteSequences.wrap(new byte[] { 6 });
+
+        final ByteSequence joined = ByteSequences
+                .concat(List.of(first, ByteSequence.EMPTY, second, third));
+
+        assertEquals(6, joined.length());
+        assertArrayEquals(new byte[] { 1, 2, 3, 4, 5, 6 },
+                joined.toByteArrayCopy());
+        assertEquals(5, joined.getByte(4));
+    }
+
+    @Test
+    void test_concat_validates_null_inputs() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.concat(null));
+        final List<ByteSequence> withNull = new ArrayList<>();
+        withNull.add(ByteSequence.EMPTY);
+        withNull.add(null);
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.concat(withNull));
+    }
+
+    @Test
+    void test_concatNonEmpty_validates_input() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.concatNonEmpty(null));
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.concatNonEmpty(List.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> ByteSequences.concatNonEmpty(List.of(ByteSequence.EMPTY)));
+    }
+
+    @Test
+    void test_concatNonEmpty_single_and_multiple() {
+        final ByteSequence single = ByteSequences.wrap(new byte[] { 7 });
+        assertSame(single, ByteSequences.concatNonEmpty(List.of(single)));
+
+        final ByteSequence multi = ByteSequences.concatNonEmpty(
+                List.of(ByteSequences.wrap(new byte[] { 1, 2 }),
+                        ByteSequences.wrap(new byte[] { 3 }),
+                        ByteSequences.wrap(new byte[] { 4, 5 })));
+        assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 },
+                multi.toByteArrayCopy());
     }
 }
