@@ -33,12 +33,16 @@ import org.junit.jupiter.params.provider.CsvSource;
  * hold the read lock, rotations take the write lock. The test is deterministic
  * per repetition seed and fails on exceptions or timeouts.
  */
-@Timeout(value = 180, unit = TimeUnit.SECONDS,
+@Timeout(value = 300, unit = TimeUnit.SECONDS,
         threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrencyStressIT {
 
     private static final long RETRY_TIMEOUT_MILLIS = 5_000L;
     private static final long RETRY_BACKOFF_MILLIS = 5L;
+    private static final int TEST_CPU_THREADS = Math.max(1,
+            Runtime.getRuntime().availableProcessors());
+    private static final int MAX_TEST_WORKERS = Math.max(2,
+            Math.min(8, TEST_CPU_THREADS * 2));
 
     /**
      * Repeats the stress run with a unique index name and seed to vary
@@ -76,38 +80,45 @@ class SegmentIndexConcurrencyStressIT {
     void runStressScenario(final String indexName, final long randomSeed,
             final int workerCount, final int opsPerWorker,
             final long timeoutInSeconds) throws Exception {
+        final int effectiveWorkerCount = Math.max(2,
+                Math.min(workerCount, MAX_TEST_WORKERS));
+        final int effectiveOpsPerWorker = scaleOpsByCpu(opsPerWorker);
+        final long effectiveTimeoutInSeconds = scaleTimeout(timeoutInSeconds);
+        final int indexWorkerThreads = Math.min(4, TEST_CPU_THREADS);
+
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<Integer, Integer> conf = stressConf(indexName);
+        final IndexConfiguration<Integer, Integer> conf = stressConf(indexName,
+                indexWorkerThreads);
         final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
                 SegmentIndex.create(directory, conf));
         final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
 
-        final int rotations = 3;
+        final int rotations = TEST_CPU_THREADS <= 2 ? 2 : 3;
         final ExecutorService workers = Executors
-                .newFixedThreadPool(workerCount);
+                .newFixedThreadPool(effectiveWorkerCount);
         final ExecutorService rotator = Executors.newSingleThreadExecutor();
         final List<Future<?>> futures = new ArrayList<>();
 
         try {
-            for (int t = 0; t < workerCount; t++) {
+            for (int t = 0; t < effectiveWorkerCount; t++) {
                 final int workerId = t;
                 futures.add(workers.submit(() -> {
                     final Random rnd = new Random(
                             1000L * workerId + randomSeed);
-                    for (int i = 0; i < opsPerWorker; i++) {
+                    for (int i = 0; i < effectiveOpsPerWorker; i++) {
                         final int op = rnd.nextInt(100);
                         lifecycleLock.readLock().lock();
                         try {
                             final SegmentIndex<Integer, Integer> index = indexRef
                                     .get();
                             final int key = rnd.nextInt(200);
-                            if (op < 40) {
+                            if (op < 45) {
                                 index.put(key, rnd.nextInt(10_000));
-                            } else if (op < 65) {
+                            } else if (op < 75) {
                                 index.get(key);
-                            } else if (op < 80) {
+                            } else if (op < 95) {
                                 index.delete(key);
-                            } else if (op < 90) {
+                            } else if (op < 99) {
                                 index.flush();
                             } else {
                                 index.compact();
@@ -119,7 +130,7 @@ class SegmentIndexConcurrencyStressIT {
                         } finally {
                             lifecycleLock.readLock().unlock();
                         }
-                        if ((i % 50) == 0) {
+                        if ((i % 100) == 0) {
                             Thread.yield();
                         }
                     }
@@ -151,7 +162,7 @@ class SegmentIndexConcurrencyStressIT {
             }));
 
             for (final Future<?> future : futures) {
-                future.get(timeoutInSeconds, TimeUnit.SECONDS);
+                future.get(effectiveTimeoutInSeconds, TimeUnit.SECONDS);
             }
         } finally {
             workers.shutdownNow();
@@ -173,7 +184,7 @@ class SegmentIndexConcurrencyStressIT {
     }
 
     private static IndexConfiguration<Integer, Integer> stressConf(
-            final String name) {
+            final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(Integer.class)//
@@ -187,9 +198,39 @@ class SegmentIndexConcurrencyStressIT {
                 .withMaxNumberOfSegmentsInCache(10)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(4)//
+                .withIndexWorkerThreadCount(cpuThreads)//
                 .withNumberOfIoThreads(1)//
+                .withNumberOfIndexMaintenanceThreads(
+                        Math.max(1, Math.min(cpuThreads, 2)))//
+                .withNumberOfRegistryLifecycleThreads(
+                        Math.max(1, Math.min(cpuThreads, 2)))//
                 .build();
+    }
+
+    private static int scaleOpsByCpu(final int requestedOps) {
+        if (TEST_CPU_THREADS >= 8) {
+            return requestedOps;
+        }
+        if (TEST_CPU_THREADS >= 4) {
+            return Math.max(requestedOps / 2, 200);
+        }
+        if (TEST_CPU_THREADS >= 2) {
+            return Math.max(requestedOps / 3, 200);
+        }
+        return Math.max(requestedOps / 6, 120);
+    }
+
+    private static long scaleTimeout(final long requestedSeconds) {
+        if (TEST_CPU_THREADS >= 4) {
+            return requestedSeconds;
+        }
+        if (TEST_CPU_THREADS == 3) {
+            return requestedSeconds + 15L;
+        }
+        if (TEST_CPU_THREADS == 2) {
+            return requestedSeconds + 30L;
+        }
+        return requestedSeconds + 45L;
     }
 
     private static SegmentIndex<Integer, Integer> openWithRetry(

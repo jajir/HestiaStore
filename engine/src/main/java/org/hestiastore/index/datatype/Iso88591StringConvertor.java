@@ -1,15 +1,11 @@
 package org.hestiastore.index.datatype;
 
-import java.nio.charset.Charset;
-
 /**
  * Converts strings using ISO-8859-1 and supports writing into reusable buffers.
  */
 final class Iso88591StringConvertor implements TypeEncoder<String> {
 
     static final Iso88591StringConvertor INSTANCE = new Iso88591StringConvertor();
-    private static final Charset CHARSET_ENCODING = Charset
-            .forName("ISO_8859_1");
     private static final byte REPLACEMENT_BYTE = (byte) '?';
 
     private Iso88591StringConvertor() {
@@ -40,9 +36,10 @@ final class Iso88591StringConvertor implements TypeEncoder<String> {
     }
 
     /**
-     * Encodes string into destination buffer using ISO-8859-1 compatible mapping.
+     * Encodes string into destination buffer using ISO-8859-1 compatible
+     * mapping.
      *
-     * @param object source string
+     * @param object      source string
      * @param destination destination byte buffer
      * @return number of bytes written
      */

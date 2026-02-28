@@ -13,7 +13,7 @@ class BloomFilterWriterEncodingTest {
 
     @Test
     void write_rejectsNonPositiveDeclaredLength() {
-        final BloomFilterWriter<String> writer = new BloomFilterWriter<>(
+        try (final BloomFilterWriter<String> writer = new BloomFilterWriter<>(
                 new TypeEncoder<String>() {
                     @Override
                     public int bytesLength(final String value) {
@@ -25,17 +25,17 @@ class BloomFilterWriterEncodingTest {
                             final byte[] destination) {
                         return 0;
                     }
-                }, new Hash(new BitArray(16), 2), new MemDirectory(),
-                "test.bf", DISK_IO_BUFFER_SIZE);
-
-        final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> writer.write("k"));
-        assertTrue(error.getMessage().contains("encodedLength"));
+                }, new Hash(new BitArray(16), 2), new MemDirectory(), "test.bf",
+                DISK_IO_BUFFER_SIZE)) {
+            final IllegalArgumentException error = assertThrows(
+                    IllegalArgumentException.class, () -> writer.write("k"));
+            assertTrue(error.getMessage().contains("encodedLength"));
+        }
     }
 
     @Test
     void write_rejectsDeclaredAndWrittenLengthMismatch() {
-        final BloomFilterWriter<String> writer = new BloomFilterWriter<>(
+        try (final BloomFilterWriter<String> writer = new BloomFilterWriter<>(
                 new TypeEncoder<String>() {
                     @Override
                     public int bytesLength(final String value) {
@@ -49,11 +49,11 @@ class BloomFilterWriterEncodingTest {
                         destination[1] = 'b';
                         return 2;
                     }
-                }, new Hash(new BitArray(16), 2), new MemDirectory(),
-                "test.bf", DISK_IO_BUFFER_SIZE);
-
-        final IllegalStateException error = assertThrows(
-                IllegalStateException.class, () -> writer.write("abc"));
-        assertTrue(error.getMessage().contains("declared"));
+                }, new Hash(new BitArray(16), 2), new MemDirectory(), "test.bf",
+                DISK_IO_BUFFER_SIZE)) {
+            final IllegalStateException error = assertThrows(
+                    IllegalStateException.class, () -> writer.write("abc"));
+            assertTrue(error.getMessage().contains("declared"));
+        }
     }
 }

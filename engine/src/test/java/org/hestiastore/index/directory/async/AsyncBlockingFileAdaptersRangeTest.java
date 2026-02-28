@@ -15,49 +15,52 @@ class AsyncBlockingFileAdaptersRangeTest {
     @Test
     void readerBlockingAdapter_usesDelegateRangeRead() {
         final RecordingAsyncFileReader delegate = new RecordingAsyncFileReader();
-        final AsyncFileReaderBlockingAdapter adapter = new AsyncFileReaderBlockingAdapter(
-                delegate);
         final byte[] target = new byte[] { 0, 0, 0, 0, 0 };
 
-        final int read = adapter.read(target, 1, 3);
+        try (final AsyncFileReaderBlockingAdapter adapter =
+                new AsyncFileReaderBlockingAdapter(delegate)) {
+            final int read = adapter.read(target, 1, 3);
 
-        assertEquals(3, read);
-        assertSame(target, delegate.lastReadBytes);
-        assertEquals(1, delegate.lastReadOffset);
-        assertEquals(3, delegate.lastReadLength);
-        assertArrayEquals(new byte[] { 0, 11, 12, 13, 0 }, target);
+            assertEquals(3, read);
+            assertSame(target, delegate.lastReadBytes);
+            assertEquals(1, delegate.lastReadOffset);
+            assertEquals(3, delegate.lastReadLength);
+            assertArrayEquals(new byte[] { 0, 11, 12, 13, 0 }, target);
+        }
     }
 
     @Test
     void seekableReaderBlockingAdapter_usesDelegateRangeRead() {
         final RecordingAsyncFileReaderSeekable delegate =
                 new RecordingAsyncFileReaderSeekable();
-        final AsyncFileReaderSeekableBlockingAdapter adapter =
-                new AsyncFileReaderSeekableBlockingAdapter(delegate);
         final byte[] target = new byte[] { 9, 9, 9, 9 };
 
-        final int read = adapter.read(target, 0, 2);
+        try (final AsyncFileReaderSeekableBlockingAdapter adapter =
+                new AsyncFileReaderSeekableBlockingAdapter(delegate)) {
+            final int read = adapter.read(target, 0, 2);
 
-        assertEquals(2, read);
-        assertSame(target, delegate.lastReadBytes);
-        assertEquals(0, delegate.lastReadOffset);
-        assertEquals(2, delegate.lastReadLength);
-        assertArrayEquals(new byte[] { 11, 12, 9, 9 }, target);
+            assertEquals(2, read);
+            assertSame(target, delegate.lastReadBytes);
+            assertEquals(0, delegate.lastReadOffset);
+            assertEquals(2, delegate.lastReadLength);
+            assertArrayEquals(new byte[] { 11, 12, 9, 9 }, target);
+        }
     }
 
     @Test
     void writerBlockingAdapter_usesDelegateRangeWrite() {
         final RecordingAsyncFileWriter delegate = new RecordingAsyncFileWriter();
-        final AsyncFileWriterBlockingAdapter adapter = new AsyncFileWriterBlockingAdapter(
-                delegate);
         final byte[] source = new byte[] { 1, 2, 3, 4, 5 };
 
-        adapter.write(source, 2, 2);
+        try (final AsyncFileWriterBlockingAdapter adapter =
+                new AsyncFileWriterBlockingAdapter(delegate)) {
+            adapter.write(source, 2, 2);
 
-        assertSame(source, delegate.lastWriteBytes);
-        assertEquals(2, delegate.lastWriteOffset);
-        assertEquals(2, delegate.lastWriteLength);
-        assertFalse(delegate.wroteWholeArray);
+            assertSame(source, delegate.lastWriteBytes);
+            assertEquals(2, delegate.lastWriteOffset);
+            assertEquals(2, delegate.lastWriteLength);
+            assertFalse(delegate.wroteWholeArray);
+        }
     }
 
     private static class RecordingAsyncFileReader implements AsyncFileReader {

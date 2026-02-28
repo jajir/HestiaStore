@@ -22,36 +22,38 @@ class BloomFilterImplEncodingTest {
     @Test
     void isNotStored_rejectsNegativeLengthEncoder() {
         final NegativeLengthEncoder encoder = new NegativeLengthEncoder();
-        final BloomFilterImpl<String> bloomFilter = new BloomFilterImpl<>(
+        try (final BloomFilterImpl<String> bloomFilter = new BloomFilterImpl<>(
                 new MemDirectory(), "test.bf", HASH_FUNCTIONS,
                 INDEX_SIZE_IN_BYTES, encoder, "segment-001",
-                DISK_IO_BUFFER_SIZE);
-        bloomFilter.setNewHash(new Hash(new BitArray(INDEX_SIZE_IN_BYTES),
-                HASH_FUNCTIONS));
+                DISK_IO_BUFFER_SIZE)) {
+            bloomFilter.setNewHash(new Hash(new BitArray(INDEX_SIZE_IN_BYTES),
+                    HASH_FUNCTIONS));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> bloomFilter.isNotStored("negative-length-key"));
+            assertThrows(IllegalArgumentException.class,
+                    () -> bloomFilter.isNotStored("negative-length-key"));
+        }
     }
 
     @Test
     void isNotStored_resizesReusableBufferForLargeKey() throws Exception {
         final String key = "x".repeat(128);
         final FixedAsciiEncoder encoder = new FixedAsciiEncoder();
-        final BloomFilterImpl<String> bloomFilter = new BloomFilterImpl<>(
+        try (final BloomFilterImpl<String> bloomFilter = new BloomFilterImpl<>(
                 new MemDirectory(), "test.bf", HASH_FUNCTIONS,
                 INDEX_SIZE_IN_BYTES, encoder, "segment-001",
-                DISK_IO_BUFFER_SIZE);
-        final ThreadLocal<byte[]> reusableBuffer = getReusableBuffer(
-                bloomFilter);
-        final Hash hash = new Hash(new BitArray(INDEX_SIZE_IN_BYTES),
-                HASH_FUNCTIONS);
+                DISK_IO_BUFFER_SIZE)) {
+            final ThreadLocal<byte[]> reusableBuffer = getReusableBuffer(
+                    bloomFilter);
+            final Hash hash = new Hash(new BitArray(INDEX_SIZE_IN_BYTES),
+                    HASH_FUNCTIONS);
 
-        assertEquals(64, reusableBuffer.get().length);
-        hash.store(TestEncoding.toByteArray(encoder, key));
-        bloomFilter.setNewHash(hash);
+            assertEquals(64, reusableBuffer.get().length);
+            hash.store(TestEncoding.toByteArray(encoder, key));
+            bloomFilter.setNewHash(hash);
 
-        assertFalse(bloomFilter.isNotStored(key));
-        assertTrue(reusableBuffer.get().length >= key.length());
+            assertFalse(bloomFilter.isNotStored(key));
+            assertTrue(reusableBuffer.get().length >= key.length());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -77,7 +79,8 @@ class BloomFilterImplEncodingTest {
         }
     }
 
-    private static final class FixedAsciiEncoder implements TypeEncoder<String> {
+    private static final class FixedAsciiEncoder
+            implements TypeEncoder<String> {
 
         @Override
         public int bytesLength(final String value) {

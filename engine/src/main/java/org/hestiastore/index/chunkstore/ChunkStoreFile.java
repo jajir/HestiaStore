@@ -1,12 +1,15 @@
 package org.hestiastore.index.chunkstore;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 import org.hestiastore.index.datablockfile.DataBlockByteReaderImpl;
 import org.hestiastore.index.datablockfile.DataBlockFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
+import org.hestiastore.index.datablockfile.Reader;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
@@ -61,6 +64,43 @@ public class ChunkStoreFile {
                 dataBlockSize, chunkPosition.getCellIndex());
         return new ChunkStoreReaderImpl(dataBlockByteReader,
                 decodingChunkFilters);
+    }
+
+    /**
+     * Opens a non-closeable payload reader for point lookups using an externally
+     * owned seekable reader.
+     *
+     * <p>
+     * The caller owns {@code seekableReader} lifecycle. Returned reader is
+     * intentionally lightweight and does not cascade close operations.
+     * </p>
+     *
+     * @param chunkPosition required starting chunk position
+     * @param seekableReader required externally-managed seekable reader
+     * @return reader of decoded chunk payload sequences
+     */
+    public Reader<ByteSequence> openPayloadReader(final CellPosition chunkPosition,
+            final FileReaderSeekable seekableReader) {
+        final CellPosition resolvedChunkPosition = Vldtn
+                .requireNonNull(chunkPosition, "chunkPosition");
+        final FileReaderSeekable resolvedSeekableReader = Vldtn
+                .requireNonNull(seekableReader, "seekableReader");
+        final DataBlockByteReader dataBlockByteReader = new DataBlockByteReaderImpl(
+                dataBlockFile.openReader(
+                        resolvedChunkPosition.getDataBlockStartPosition(),
+                        resolvedSeekableReader),
+                dataBlockSize, resolvedChunkPosition.getCellIndex());
+        final ChunkProcessor decodingProcessor = new ChunkProcessor(
+                decodingChunkFilters);
+        return () -> {
+            final Optional<ChunkData> optionalChunkData = ChunkData
+                    .read(dataBlockByteReader);
+            if (optionalChunkData.isEmpty()) {
+                return null;
+            }
+            return decodingProcessor.process(optionalChunkData.get())
+                    .getPayloadSequence();
+        };
     }
 
     /**
