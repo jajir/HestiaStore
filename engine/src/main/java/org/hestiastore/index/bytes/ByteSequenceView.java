@@ -1,7 +1,5 @@
 package org.hestiastore.index.bytes;
 
-import java.util.Arrays;
-
 import org.hestiastore.index.Vldtn;
 
 /**

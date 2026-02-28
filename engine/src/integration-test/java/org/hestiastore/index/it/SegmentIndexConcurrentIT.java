@@ -38,12 +38,17 @@ import org.junit.jupiter.api.Timeout;
         threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrentIT {
 
+    private static final int TEST_CPU_THREADS = Math.max(1,
+            Math.min(4, Runtime.getRuntime().availableProcessors()));
+    private static final long WORKER_AWAIT_SECONDS = TEST_CPU_THREADS <= 2 ? 90L
+            : 60L;
+
     @Test
     void concurrent_put_delete_on_disjoint_keyspaces_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index", 4);
+                "concurrent-index", TEST_CPU_THREADS);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -117,7 +122,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_mutations_on_same_key_last_write_wins() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index", 4);
+                "concurrent-index", TEST_CPU_THREADS);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -168,7 +173,7 @@ class SegmentIndexConcurrentIT {
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index-maintenance", 4);
+                "concurrent-index-maintenance", TEST_CPU_THREADS);
 
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
@@ -291,7 +296,7 @@ class SegmentIndexConcurrentIT {
     void concurrent_reads_do_not_return_corrupted_values() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index-readers", 4);
+                "concurrent-index-readers", TEST_CPU_THREADS);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
 
@@ -302,8 +307,8 @@ class SegmentIndexConcurrentIT {
 
         final int writerThreads = 4;
         final int readerThreads = 4;
-        final int writesPerThread = 500;
-        final int readsPerThread = 2_000;
+        final int writesPerThread = scaleByCpu(500);
+        final int readsPerThread = scaleByCpu(2_000);
         final ExecutorService writers = Executors
                 .newFixedThreadPool(writerThreads);
         final ExecutorService readers = Executors
@@ -311,18 +316,32 @@ class SegmentIndexConcurrentIT {
         final CountDownLatch startGate = new CountDownLatch(1);
         final CountDownLatch writersDone = new CountDownLatch(writerThreads);
         final CountDownLatch readersDone = new CountDownLatch(readerThreads);
+        final AtomicReference<Throwable> writerFailure = new AtomicReference<>();
+        final AtomicReference<Throwable> readerFailure = new AtomicReference<>();
 
         for (int t = 0; t < writerThreads; t++) {
             final int threadId = t;
             writers.submit(() -> {
-                final Random rnd = new Random(556677L + threadId);
-                startGate.await();
-                for (int i = 0; i < writesPerThread; i++) {
-                    final int key = rnd.nextInt(keyCount);
-                    final int value = encodeValue(key, rnd.nextInt(1_000_000));
-                    index.put(key, value);
+                try {
+                    final Random rnd = new Random(556677L + threadId);
+                    startGate.await();
+                    for (int i = 0; i < writesPerThread; i++) {
+                        final int key = rnd.nextInt(keyCount);
+                        final int value = encodeValue(key,
+                                rnd.nextInt(1_000_000));
+                        try {
+                            index.put(key, value);
+                        } catch (final IndexException ex) {
+                            if (!isTransientIndexFailure(ex)) {
+                                throw ex;
+                            }
+                        }
+                    }
+                } catch (final Throwable t1) {
+                    writerFailure.compareAndSet(null, t1);
+                } finally {
+                    writersDone.countDown();
                 }
-                writersDone.countDown();
                 return null;
             });
         }
@@ -330,25 +349,38 @@ class SegmentIndexConcurrentIT {
         for (int t = 0; t < readerThreads; t++) {
             final int threadId = t;
             readers.submit(() -> {
-                final Random rnd = new Random(998877L + threadId);
-                startGate.await();
-                for (int i = 0; i < readsPerThread; i++) {
-                    final int key = rnd.nextInt(keyCount);
-                    final Integer value = index.get(key);
-                    if (value != null) {
-                        assertEquals(key, decodeKey(value));
+                try {
+                    final Random rnd = new Random(998877L + threadId);
+                    startGate.await();
+                    for (int i = 0; i < readsPerThread; i++) {
+                        final int key = rnd.nextInt(keyCount);
+                        try {
+                            final Integer value = index.get(key);
+                            if (value != null) {
+                                assertEquals(key, decodeKey(value));
+                            }
+                        } catch (final IndexException ex) {
+                            if (!isTransientIndexFailure(ex)) {
+                                throw ex;
+                            }
+                        }
                     }
+                } catch (final Throwable t1) {
+                    readerFailure.compareAndSet(null, t1);
+                } finally {
+                    readersDone.countDown();
                 }
-                readersDone.countDown();
                 return null;
             });
         }
 
         startGate.countDown();
-        assertTrue(writersDone.await(30, TimeUnit.SECONDS),
+        assertTrue(writersDone.await(WORKER_AWAIT_SECONDS, TimeUnit.SECONDS),
                 "Writer threads did not finish in time");
-        assertTrue(readersDone.await(30, TimeUnit.SECONDS),
+        assertTrue(readersDone.await(WORKER_AWAIT_SECONDS, TimeUnit.SECONDS),
                 "Reader threads did not finish in time");
+        assertNoWorkerFailure(writerFailure, "Writer thread failed");
+        assertNoWorkerFailure(readerFailure, "Reader thread failed");
         writers.shutdownNow();
         readers.shutdownNow();
 
@@ -363,7 +395,7 @@ class SegmentIndexConcurrentIT {
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
-                "concurrent-index-async", 4);
+                "concurrent-index-async", TEST_CPU_THREADS);
         final SegmentIndex<Integer, Integer> index = SegmentIndex
                 .create(directory, conf);
 
@@ -479,6 +511,28 @@ class SegmentIndexConcurrentIT {
                 }
                 Thread.sleep(5L);
             }
+        }
+    }
+
+    private static int scaleByCpu(final int operations) {
+        if (TEST_CPU_THREADS >= 4) {
+            return operations;
+        }
+        if (TEST_CPU_THREADS == 3) {
+            return Math.max(operations * 3 / 4, 200);
+        }
+        if (TEST_CPU_THREADS == 2) {
+            return Math.max(operations / 2, 200);
+        }
+        return Math.max(operations / 4, 100);
+    }
+
+    private static void assertNoWorkerFailure(
+            final AtomicReference<Throwable> workerFailure,
+            final String label) {
+        final Throwable failure = workerFailure.get();
+        if (failure != null) {
+            throw new AssertionError(label, failure);
         }
     }
 

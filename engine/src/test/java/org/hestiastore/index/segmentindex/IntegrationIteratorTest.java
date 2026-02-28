@@ -46,7 +46,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
         index = SegmentIndex.<String, Integer>create(directory, conf);
 
         writeEntries(index, indexFile);
-        index.compact();
+        index.compactAndWait();
     }
 
     @Test

@@ -38,8 +38,9 @@ class BloomFilterWriterTxTest {
 
     @Test
     void cannotOpenWriterTwice() {
-        tx.open();
-        assertThrows(IllegalStateException.class, tx::open);
+        try (final BloomFilterWriter<String> writer = tx.open()) {
+            assertThrows(IllegalStateException.class, tx::open);
+        }
     }
 
     @Test

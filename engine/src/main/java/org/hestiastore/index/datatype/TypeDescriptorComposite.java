@@ -48,8 +48,8 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
     private final CompositeValue tombstoneValue;
 
     TypeDescriptorComposite(final List<TypeDescriptor<?>> elementTypes) {
-        this.elementTypes = List.copyOf(
-                Vldtn.requireNotEmpty(elementTypes, "elementTypes"));
+        this.elementTypes = List
+                .copyOf(Vldtn.requireNotEmpty(elementTypes, "elementTypes"));
         final Object[] tmp = new Object[elementTypes.size()];
         for (int i = 0; i < elementTypes.size(); i++) {
             tmp[i] = elementTypes.get(i).getTombstone();
@@ -186,7 +186,6 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      * @param value value to serialize
      * @return encoded bytes
      */
-    @SuppressWarnings("unchecked")
     public byte[] toBytes(final CompositeValue value) {
         final ByteArrayWriter byteArrayWriter = new ByteArrayWriter();
         writeElements(byteArrayWriter, value);

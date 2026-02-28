@@ -3,8 +3,6 @@ package org.hestiastore.index.segment;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.directory.FileReaderSeekable;
@@ -74,23 +72,10 @@ class SegmentIndexSearcher<K, V> extends AbstractCloseableResource {
     public V search(final K key, long startPosition) {
         try (FileReaderSeekable seekableReader = seekableReaderSupplier
                 .get()) {
-            try (EntryIterator<K, V> iterator = chunkPairFile
-                    .openIteratorAtPosition(startPosition, seekableReader)) {
-                for (int i = 0; iterator.hasNext()
-                        && i < maxNumberOfKeysInIndexPage; i++) {
-                    final Entry<K, V> entry = iterator.next();
-                    final int cmp = keyTypeComparator.compare(entry.getKey(),
-                            key);
-                    if (cmp == 0) {
-                        return entry.getValue();
-                    }
-                    if (cmp > 0) {
-                        return null;
-                    }
-                }
-            }
+            return chunkPairFile.searchAtPosition(key, startPosition,
+                    maxNumberOfKeysInIndexPage, keyTypeComparator,
+                    seekableReader);
         }
-        return null;
     }
 
 }

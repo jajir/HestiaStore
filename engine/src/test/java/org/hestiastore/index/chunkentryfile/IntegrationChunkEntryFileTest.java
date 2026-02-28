@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkentryfile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
@@ -15,6 +16,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,6 +82,35 @@ class IntegrationChunkEntryFileTest {
         entry = iterator.next();
         assertEquals(TestData.ENTRY3, entry);
         assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    void search_at_position_uses_lookup_lane() {
+        final ChunkEntryFileWriterTx<Integer, String> writerTx = chunkPairFile
+                .openWriterTx();
+        CellPosition position = null;
+        try (ChunkEntryFileWriter<Integer, String> writer = writerTx
+                .openWriter()) {
+            writer.write(TestData.ENTRY1);
+            writer.write(TestData.ENTRY2);
+            writer.write(TestData.ENTRY3);
+            position = writer.flush();
+        }
+        writerTx.commit();
+
+        try (FileReaderSeekable seekableReader = directory
+                .getFileReaderSeekable(FILE_NAME)) {
+            assertEquals(TestData.ENTRY2.getValue(),
+                    chunkPairFile.searchAtPosition(TestData.ENTRY2.getKey(),
+                            position.getValue(), 3, Integer::compareTo,
+                            seekableReader));
+        }
+
+        try (FileReaderSeekable seekableReader = directory
+                .getFileReaderSeekable(FILE_NAME)) {
+            assertNull(chunkPairFile.searchAtPosition(999, position.getValue(),
+                    3, Integer::compareTo, seekableReader));
+        }
     }
 
 }

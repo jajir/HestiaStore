@@ -3,12 +3,13 @@ package org.hestiastore.index.segment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.directory.FileReaderSeekable;
 import org.hestiastore.index.directory.FileReaderSeekableSupplier;
@@ -23,9 +24,6 @@ class SegmentIndexSearcherTest {
 
     @Mock
     private ChunkEntryFile<String, String> chunkEntryFile;
-
-    @Mock
-    private EntryIteratorWithCurrent<String, String> iterator;
 
     @Mock
     private FileReaderSeekable seekableReader;
@@ -46,37 +44,30 @@ class SegmentIndexSearcherTest {
         searcher = new SegmentIndexSearcher<>(chunkEntryFile, 3,
                 String::compareTo, seekableReaderSupplier);
         when(seekableReaderSupplier.get()).thenReturn(seekableReader);
-        when(chunkEntryFile.openIteratorAtPosition(50L, seekableReader))
-                .thenReturn(iterator);
-        when(iterator.hasNext()).thenReturn(true, false);
-        when(iterator.next()).thenReturn(Entry.of("key", "val"));
+        when(chunkEntryFile.searchAtPosition(eq("key"), eq(50L), eq(3), any(),
+                same(seekableReader))).thenReturn("val");
 
         final String out = searcher.search("key", 50L);
 
         assertEquals("val", out);
         verify(seekableReaderSupplier, times(1)).get();
-        verify(chunkEntryFile, times(1)).openIteratorAtPosition(50L,
-                seekableReader);
-        verify(iterator, times(1)).close();
+        verify(chunkEntryFile, times(1)).searchAtPosition(eq("key"), eq(50L),
+                eq(3), any(), same(seekableReader));
         verify(seekableReader, times(1)).close();
     }
 
     @Test
     void search_stops_when_key_greater() {
         when(seekableReaderSupplier.get()).thenReturn(seekableReader);
-        when(chunkEntryFile.openIteratorAtPosition(10L, seekableReader))
-                .thenReturn(iterator);
-        when(iterator.hasNext()).thenReturn(true, false);
-        when(iterator.next()).thenReturn(Entry.of("b", "val"));
+        when(chunkEntryFile.searchAtPosition(eq("a"), eq(10L), eq(3), any(),
+                same(seekableReader))).thenReturn(null);
 
         final String out = searcher.search("a", 10L);
 
         assertNull(out);
         verify(seekableReaderSupplier, times(1)).get();
-        verify(chunkEntryFile, times(1)).openIteratorAtPosition(10L,
-                seekableReader);
-        verify(iterator, times(1)).next();
-        verify(iterator, times(1)).close();
+        verify(chunkEntryFile, times(1)).searchAtPosition(eq("a"), eq(10L),
+                eq(3), any(), same(seekableReader));
         verify(seekableReader, times(1)).close();
     }
 
@@ -85,34 +76,28 @@ class SegmentIndexSearcherTest {
         searcher = new SegmentIndexSearcher<>(chunkEntryFile, 2,
                 String::compareTo, seekableReaderSupplier);
         when(seekableReaderSupplier.get()).thenReturn(seekableReader);
-        when(chunkEntryFile.openIteratorAtPosition(0L, seekableReader))
-                .thenReturn(iterator);
-        when(iterator.hasNext()).thenReturn(true, true, true, false);
-        when(iterator.next()).thenReturn(Entry.of("a", "v1"))
-                .thenReturn(Entry.of("b", "v2")).thenReturn(Entry.of("c", "v3"));
+        when(chunkEntryFile.searchAtPosition(eq("c"), eq(0L), eq(2), any(),
+                same(seekableReader))).thenReturn(null);
 
         final String out = searcher.search("c", 0L);
 
         assertNull(out);
-        verify(iterator, times(2)).next();
-        verify(iterator, times(1)).close();
+        verify(chunkEntryFile, times(1)).searchAtPosition(eq("c"), eq(0L),
+                eq(2), any(), same(seekableReader));
         verify(seekableReader, times(1)).close();
     }
 
     @Test
     void search_finds_value_after_scanning() {
         when(seekableReaderSupplier.get()).thenReturn(seekableReader);
-        when(chunkEntryFile.openIteratorAtPosition(5L, seekableReader))
-                .thenReturn(iterator);
-        when(iterator.hasNext()).thenReturn(true, true, false);
-        when(iterator.next()).thenReturn(Entry.of("a", "v1"))
-                .thenReturn(Entry.of("b", "v2"));
+        when(chunkEntryFile.searchAtPosition(eq("b"), eq(5L), eq(3), any(),
+                same(seekableReader))).thenReturn("v2");
 
         final String out = searcher.search("b", 5L);
 
         assertEquals("v2", out);
-        verify(iterator, times(2)).next();
-        verify(iterator, times(1)).close();
+        verify(chunkEntryFile, times(1)).searchAtPosition(eq("b"), eq(5L),
+                eq(3), any(), same(seekableReader));
         verify(seekableReader, times(1)).close();
     }
 
