@@ -1,4 +1,4 @@
-package org.coroptis.index.it;
+package org.hestiastore.index.it;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;

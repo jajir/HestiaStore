@@ -1,4 +1,4 @@
-package org.coroptis.index.it;
+package org.hestiastore.index.it;
 
 import java.util.Random;
 

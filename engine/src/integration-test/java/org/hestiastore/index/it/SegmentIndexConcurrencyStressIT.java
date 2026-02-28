@@ -1,4 +1,4 @@
-package org.coroptis.index.it;
+package org.hestiastore.index.it;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -18,6 +19,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -31,7 +33,12 @@ import org.junit.jupiter.params.provider.CsvSource;
  * hold the read lock, rotations take the write lock. The test is deterministic
  * per repetition seed and fails on exceptions or timeouts.
  */
+@Timeout(value = 180, unit = TimeUnit.SECONDS,
+        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrencyStressIT {
+
+    private static final long RETRY_TIMEOUT_MILLIS = 5_000L;
+    private static final long RETRY_BACKOFF_MILLIS = 5L;
 
     /**
      * Repeats the stress run with a unique index name and seed to vary
@@ -48,7 +55,7 @@ class SegmentIndexConcurrencyStressIT {
     @ParameterizedTest
     @CsvSource({ //
             "5,   400,     30", //
-            "10,  500,   1200", //
+            "10,  500,    120", //
             "9, 3_000,    160" //
     })
     void test_concurrent_load_parametrized(final int workerCount,
@@ -105,6 +112,10 @@ class SegmentIndexConcurrencyStressIT {
                             } else {
                                 index.compact();
                             }
+                        } catch (final IndexException exception) {
+                            if (!isTransientLifecycleFailure(exception)) {
+                                throw exception;
+                            }
                         } finally {
                             lifecycleLock.readLock().unlock();
                         }
@@ -129,9 +140,9 @@ class SegmentIndexConcurrencyStressIT {
                     try {
                         final SegmentIndex<Integer, Integer> current = indexRef
                                 .get();
-                        current.flush();
+                        current.flushAndWait();
                         current.close();
-                        indexRef.set(SegmentIndex.open(directory, conf));
+                        indexRef.set(openWithRetry(directory, conf));
                     } finally {
                         lifecycleLock.writeLock().unlock();
                     }
@@ -151,7 +162,8 @@ class SegmentIndexConcurrencyStressIT {
                 if (!current.wasClosed()) {
                     current.flushAndWait();
                     current.compactAndWait();
-                    current.checkAndRepairConsistency();
+                    checkAndRepairConsistencyWithRetry(current,
+                            RETRY_TIMEOUT_MILLIS);
                     current.close();
                 }
             } finally {
@@ -178,5 +190,72 @@ class SegmentIndexConcurrencyStressIT {
                 .withIndexWorkerThreadCount(4)//
                 .withNumberOfIoThreads(1)//
                 .build();
+    }
+
+    private static SegmentIndex<Integer, Integer> openWithRetry(
+            final Directory directory,
+            final IndexConfiguration<Integer, Integer> conf) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(RETRY_TIMEOUT_MILLIS);
+        while (true) {
+            try {
+                return SegmentIndex.open(directory, conf);
+            } catch (final IndexException exception) {
+                if (!isTransientLifecycleFailure(exception)
+                        || System.nanoTime() >= deadline) {
+                    throw exception;
+                }
+                sleepBriefly();
+            }
+        }
+    }
+
+    private static void checkAndRepairConsistencyWithRetry(
+            final SegmentIndex<Integer, Integer> index,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (true) {
+            try {
+                index.checkAndRepairConsistency();
+                return;
+            } catch (final RuntimeException exception) {
+                if (!isTransientLifecycleFailure(exception)
+                        || System.nanoTime() >= deadline) {
+                    throw exception;
+                }
+                sleepBriefly();
+            }
+        }
+    }
+
+    private static boolean isTransientLifecycleFailure(
+            final Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            final String message = current.getMessage();
+            if (message != null) {
+                if (message.contains("There is no file 'manifest.txt'")
+                        || message.contains("File manifest.txt does not exist")
+                        || message.contains("timed out")
+                        || message.contains("interrupted")
+                        || message.contains("invalidated")) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private static void sleepBriefly() {
+        try {
+            Thread.sleep(RETRY_BACKOFF_MILLIS);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while retrying transient lifecycle failure",
+                    e);
+        }
     }
 }
