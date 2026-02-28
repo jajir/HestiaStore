@@ -113,6 +113,14 @@ public final class ConcatenatedByteSequence extends ByteSequenceCaching {
         }
     }
 
+    ByteSequence firstPart() {
+        return first;
+    }
+
+    ByteSequence secondPart() {
+        return second;
+    }
+
     @Override
     public int hashCode() {
         return ByteSequences.contentHashCode(this);

@@ -3,6 +3,7 @@ package org.hestiastore.index.bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import java.util.zip.CRC32;
 
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class ByteSequenceCrc32Test {
     }
 
     @Test
-    void test_crc_matches_jdk_crc32_for_byte_sequence_slice_update() {
+    void test_crc_matches_jdk_crc32_for_slice_update() {
         final byte[] data = new byte[] { 11, 12, 13, 14, 15, 16 };
         final ByteSequence sequence = ByteSequences.viewOf(data, 1, 5);
         final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
@@ -56,6 +57,22 @@ class ByteSequenceCrc32Test {
 
         crc.update(sequence);
         expected.update(data, 0, data.length);
+
+        assertEquals(expected.getValue(), crc.getValue());
+    }
+
+    @Test
+    void test_crc_matches_jdk_crc32_for_concatenated_sequence_update() {
+        final byte[] part1 = new byte[] { 1, 2 };
+        final byte[] part2 = new byte[] { 3, 4, 5 };
+        final ByteSequence sequence = ByteSequences.concatNonEmpty(List.of(
+                ByteSequences.wrap(part1), ByteSequences.wrap(part2)));
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        final CRC32 expected = new CRC32();
+
+        crc.update(sequence);
+        expected.update(part1, 0, part1.length);
+        expected.update(part2, 0, part2.length);
 
         assertEquals(expected.getValue(), crc.getValue());
     }
