@@ -35,6 +35,32 @@ class ByteSequenceCrc32Test {
     }
 
     @Test
+    void test_crc_matches_jdk_crc32_for_byte_sequence_slice_update() {
+        final byte[] data = new byte[] { 11, 12, 13, 14, 15, 16 };
+        final ByteSequence sequence = ByteSequences.viewOf(data, 1, 5);
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        final CRC32 expected = new CRC32();
+
+        crc.update(sequence);
+        expected.update(data, 1, 4);
+
+        assertEquals(expected.getValue(), crc.getValue());
+    }
+
+    @Test
+    void test_crc_matches_jdk_crc32_for_mutable_bytes_update() {
+        final byte[] data = new byte[] { 4, 3, 2, 1, 0 };
+        final MutableBytes sequence = MutableBytes.wrap(data);
+        final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
+        final CRC32 expected = new CRC32();
+
+        crc.update(sequence);
+        expected.update(data, 0, data.length);
+
+        assertEquals(expected.getValue(), crc.getValue());
+    }
+
+    @Test
     void test_update_validates_input() {
         final ByteSequenceCrc32 crc = new ByteSequenceCrc32();
 

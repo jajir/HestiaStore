@@ -138,7 +138,6 @@ public class SortedDataFileWriterBenchmark {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static final class LegacySortedDataWriter<K, V>
             extends AbstractCloseableResource implements EntryWriter<K, V> {
 
@@ -204,10 +203,10 @@ public class SortedDataFileWriterBenchmark {
         public void write(final byte[] bytes, final int offset,
                 final int writeLength) {
             final byte[] validated = Vldtn.requireNonNull(bytes, "bytes");
-            final int validatedOffset = Vldtn.requireGreaterThanOrEqualToZero(
-                    offset, "offset");
-            final int validatedLength = Vldtn.requireGreaterThanOrEqualToZero(
-                    writeLength, "length");
+            final int validatedOffset = Vldtn
+                    .requireGreaterThanOrEqualToZero(offset, "offset");
+            final int validatedLength = Vldtn
+                    .requireGreaterThanOrEqualToZero(writeLength, "length");
             if (validatedOffset > validated.length
                     || validatedOffset + validatedLength > validated.length) {
                 throw new IllegalArgumentException(String.format(
