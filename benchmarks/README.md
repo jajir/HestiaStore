@@ -30,6 +30,7 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreSteadyWriteB
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DataBlockByteReaderBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryIteratorBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SortedDataFileWriterBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Benchmark
 ```
 
 Compare both modes in one run (recommended):

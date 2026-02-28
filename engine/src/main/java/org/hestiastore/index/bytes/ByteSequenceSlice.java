@@ -23,6 +23,14 @@ public final class ByteSequenceSlice extends ByteSequenceCaching {
         this.length = length;
     }
 
+    byte[] rawArray() {
+        return data;
+    }
+
+    int rawOffset() {
+        return offset;
+    }
+
     @Override
     public int length() {
         return length;

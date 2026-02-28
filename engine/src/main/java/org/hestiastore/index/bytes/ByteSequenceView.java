@@ -34,6 +34,10 @@ public final class ByteSequenceView implements ByteSequence {
         this.data = data;
     }
 
+    byte[] rawArray() {
+        return data;
+    }
+
     @Override
     public byte[] toByteArray() {
         if (data.length == 0) {

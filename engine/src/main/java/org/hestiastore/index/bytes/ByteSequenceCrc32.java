@@ -44,11 +44,7 @@ public final class ByteSequenceCrc32 implements Checksum {
                     "Range [%d, %d) exceeds array length %d", off, rangeEnd,
                     validated.length));
         }
-        int c = crc;
-        for (int i = off; i < off + len; i++) {
-            c = CRC_TABLE[(c ^ validated[i]) & 0xFF] ^ (c >>> 8);
-        }
-        crc = c;
+        crc = updateArrayRange(crc, validated, off, len);
     }
 
     /**
@@ -59,12 +55,93 @@ public final class ByteSequenceCrc32 implements Checksum {
     public void update(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
                 "sequence");
-        int c = crc;
-        final int length = validated.length();
-        for (int i = 0; i < length; i++) {
-            c = CRC_TABLE[(c ^ validated.getByte(i)) & 0xFF] ^ (c >>> 8);
+        if (validated instanceof ByteSequenceView) {
+            final ByteSequenceView view = (ByteSequenceView) validated;
+            crc = updateArrayRange(crc, view.rawArray(), 0, view.length());
+            return;
         }
-        crc = c;
+        if (validated instanceof ByteSequenceSlice) {
+            final ByteSequenceSlice slice = (ByteSequenceSlice) validated;
+            crc = updateArrayRange(crc, slice.rawArray(), slice.rawOffset(),
+                    slice.length());
+            return;
+        }
+        if (validated instanceof MutableBytes) {
+            final MutableBytes mutable = (MutableBytes) validated;
+            crc = updateArrayRange(crc, mutable.array(), 0, mutable.length());
+            return;
+        }
+        crc = updateSequenceRange(crc, validated);
+    }
+
+    private static int updateArrayRange(int crcValue, final byte[] data,
+            final int offset, final int length) {
+        final int[] table = CRC_TABLE;
+        final int end = offset + length;
+        final int unrolledEnd = end - 7;
+        int index = offset;
+
+        while (index < unrolledEnd) {
+            crcValue = table[(crcValue ^ data[index]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 1]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 2]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 3]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 4]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 5]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 6]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ data[index + 7]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            index += 8;
+        }
+
+        while (index < end) {
+            crcValue = table[(crcValue ^ data[index]) & 0xFF]
+                    ^ (crcValue >>> 8);
+            index++;
+        }
+        return crcValue;
+    }
+
+    private static int updateSequenceRange(int crcValue,
+            final ByteSequence sequence) {
+        final int[] table = CRC_TABLE;
+        final int end = sequence.length();
+        final int unrolledEnd = end - 7;
+        int index = 0;
+
+        while (index < unrolledEnd) {
+            crcValue = table[(crcValue ^ sequence.getByte(index)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 1)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 2)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 3)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 4)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 5)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 6)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            crcValue = table[(crcValue ^ sequence.getByte(index + 7)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            index += 8;
+        }
+
+        while (index < end) {
+            crcValue = table[(crcValue ^ sequence.getByte(index)) & 0xFF]
+                    ^ (crcValue >>> 8);
+            index++;
+        }
+        return crcValue;
     }
 
     @Override
