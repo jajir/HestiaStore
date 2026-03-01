@@ -330,6 +330,108 @@ class WalRuntimeTest {
     }
 
     @Test
+    void openFailsWhenFormatMarkerHasNonNumericChecksum() {
+        final MemDirectory root = new MemDirectory();
+        final Directory walDirectory = root.openSubDirectory("wal");
+        try (org.hestiastore.index.directory.FileWriter writer = walDirectory
+                .getFileWriter("format.meta", Directory.Access.OVERWRITE)) {
+            writer.write("version=1\nchecksum=NaN\n"
+                    .getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        }
+        final Wal wal = Wal.builder().withEnabled(true).build();
+
+        assertThrows(IndexException.class, () -> WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR));
+    }
+
+    @Test
+    void recoverIgnoresNonWalFilesInWalDirectory() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+            runtime.appendPut("k2", "v2");
+        }
+        final Directory walDirectory = root.openSubDirectory("wal");
+        walDirectory.touch("notes.txt");
+        walDirectory.touch("00000000000000000001.wal.bak");
+        walDirectory.touch("checkpoint.meta.tmp");
+        walDirectory.mkdir("archived");
+
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertFalse(result.truncatedTail());
+            assertEquals(2L, result.maxLsn());
+        }
+        replayed.sort(Comparator.comparingLong(WalRuntime.ReplayRecord::getLsn));
+        assertEquals(2, replayed.size());
+        assertEquals(1L, replayed.get(0).getLsn());
+        assertEquals(2L, replayed.get(1).getLsn());
+    }
+
+    @Test
+    void recoverOrdersSegmentsByNumericBaseLsn() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+            runtime.appendPut("k2", "v2");
+        }
+
+        final MemDirectory walDirectory = (MemDirectory) root
+                .openSubDirectory("wal");
+        final String originalSegment = singleWalSegmentName(walDirectory);
+        final byte[] segmentBytes = walDirectory.getFileSequence(originalSegment)
+                .toByteArrayCopy();
+        final int firstBodyLength = WalRuntime.readInt(segmentBytes, 0);
+        final int firstRecordLength = 4 + firstBodyLength;
+        final int secondBodyLength = WalRuntime.readInt(segmentBytes,
+                firstRecordLength);
+        final int secondRecordLength = 4 + secondBodyLength;
+        assertTrue(firstRecordLength + secondRecordLength <= segmentBytes.length);
+        walDirectory.setFileSequence("2.wal", ByteSequences
+                .wrap(Arrays.copyOfRange(segmentBytes, 0, firstRecordLength)));
+        walDirectory.setFileSequence("10.wal",
+                ByteSequences.wrap(Arrays.copyOfRange(segmentBytes,
+                        firstRecordLength,
+                        firstRecordLength + secondRecordLength)));
+        walDirectory.deleteFile(originalSegment);
+
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertFalse(result.truncatedTail());
+            assertEquals(2L, result.maxLsn());
+        }
+        replayed.sort(Comparator.comparingLong(WalRuntime.ReplayRecord::getLsn));
+        assertEquals(2, replayed.size());
+        assertEquals(1L, replayed.get(0).getLsn());
+        assertEquals(2L, replayed.get(1).getLsn());
+    }
+
+    @Test
+    void recoverRejectsInvalidWalSegmentName() {
+        final MemDirectory root = new MemDirectory();
+        final Directory walDirectory = root.openSubDirectory("wal");
+        walDirectory.touch("invalid-segment.wal");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
     void recoverFailsWhenCheckpointMetadataIsNonNumeric() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder().withEnabled(true).build();

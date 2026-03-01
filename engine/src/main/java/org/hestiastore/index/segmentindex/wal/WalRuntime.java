@@ -980,15 +980,25 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             final String key = parts[0].trim();
             final String value = parts[1].trim();
             if ("version".equals(key)) {
-                version = Integer.valueOf(value);
+                version = parseFormatInt(key, value);
             } else if ("checksum".equals(key)) {
-                checksum = Integer.valueOf(value);
+                checksum = parseFormatInt(key, value);
             }
         }
         if (version == null || checksum == null) {
             throw new IndexException("Invalid WAL format metadata.");
         }
         return new FormatMeta(version.intValue(), checksum.intValue());
+    }
+
+    private int parseFormatInt(final String key, final String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (RuntimeException ex) {
+            throw new IndexException(String.format(
+                    "Invalid WAL format metadata value for key '%s': '%s'.",
+                    key, value), ex);
+        }
     }
 
     private int readFullyAllowEof(final String fileName, final long position,
