@@ -11,6 +11,7 @@ import java.util.Set;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.Wal;
 
 /**
  * Shared properties schema metadata and migration helpers for index files.
@@ -70,6 +71,14 @@ public final class IndexPropertiesSchema {
         public static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = "diskIoBufferSizeInBytes";
         public static final String PROP_ENCODING_CHUNK_FILTERS = "encodingChunkFilters";
         public static final String PROP_DECODING_CHUNK_FILTERS = "decodingChunkFilters";
+        public static final String PROP_WAL_ENABLED = "wal.enabled";
+        public static final String PROP_WAL_DURABILITY_MODE = "wal.durabilityMode";
+        public static final String PROP_WAL_SEGMENT_SIZE_BYTES = "wal.segmentSizeBytes";
+        public static final String PROP_WAL_GROUP_SYNC_DELAY_MILLIS = "wal.groupSyncDelayMillis";
+        public static final String PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES = "wal.groupSyncMaxBatchBytes";
+        public static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = "wal.maxBytesBeforeForcedCheckpoint";
+        public static final String PROP_WAL_CORRUPTION_POLICY = "wal.corruptionPolicy";
+        public static final String PROP_WAL_EPOCH_SUPPORT = "wal.epochSupport";
 
         public static final String CONFIGURATION_FILENAME = "manifest.txt";
 
@@ -268,6 +277,7 @@ public final class IndexPropertiesSchema {
         addThreadingDefaults(defaults);
         addBloomAndIoDefaults(defaults);
         addChunkFilterDefaults(defaults);
+        addWalDefaults(defaults);
 
         final Set<String> requiredKeys = new LinkedHashSet<>();
         requiredKeys.add(IndexConfigurationKeys.PROP_KEY_CLASS);
@@ -375,6 +385,29 @@ public final class IndexPropertiesSchema {
                 view -> "");
         defaults.put(IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS,
                 view -> "");
+    }
+
+    private static void addWalDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
+        defaults.put(IndexConfigurationKeys.PROP_WAL_ENABLED,
+                view -> Boolean.FALSE.toString());
+        defaults.put(IndexConfigurationKeys.PROP_WAL_DURABILITY_MODE,
+                view -> Wal.DEFAULT_DURABILITY_MODE.name());
+        defaults.put(IndexConfigurationKeys.PROP_WAL_SEGMENT_SIZE_BYTES,
+                view -> String.valueOf(Wal.DEFAULT_SEGMENT_SIZE_BYTES));
+        defaults.put(IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
+                view -> String.valueOf(Wal.DEFAULT_GROUP_SYNC_DELAY_MILLIS));
+        defaults.put(IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
+                view -> String
+                        .valueOf(Wal.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES));
+        defaults.put(
+                IndexConfigurationKeys.PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+                view -> String.valueOf(
+                        Wal.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT));
+        defaults.put(IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY,
+                view -> Wal.DEFAULT_CORRUPTION_POLICY.name());
+        defaults.put(IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT,
+                view -> Boolean.FALSE.toString());
     }
 
     private static String resolveLegacyOrDefaultWorkerThreads(

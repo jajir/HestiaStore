@@ -17,6 +17,9 @@ import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.WalDurabilityMode;
 
 /**
  * Persists {@link IndexConfiguration} instances to the index configuration
@@ -56,6 +59,14 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_DISK_IO_BUFFER_SIZE_IN_BYTES;
     private static final String PROP_ENCODING_CHUNK_FILTERS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS;
     private static final String PROP_DECODING_CHUNK_FILTERS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS;
+    private static final String PROP_WAL_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_ENABLED;
+    private static final String PROP_WAL_DURABILITY_MODE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_DURABILITY_MODE;
+    private static final String PROP_WAL_SEGMENT_SIZE_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_SEGMENT_SIZE_BYTES;
+    private static final String PROP_WAL_GROUP_SYNC_DELAY_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_DELAY_MILLIS;
+    private static final String PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES;
+    private static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT;
+    private static final String PROP_WAL_CORRUPTION_POLICY = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY;
+    private static final String PROP_WAL_EPOCH_SUPPORT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT;
 
     private static final String CONFIGURATION_FILENAME = IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
 
@@ -175,6 +186,39 @@ public class IndexConfiguratonStorage<K, V> {
             builder.withDecodingFilters(parseFilterList(decodingFilters));
         }
 
+        final boolean walEnabled = getOrDefaultBoolean(propsView,
+                PROP_WAL_ENABLED, false);
+        if (walEnabled) {
+            builder.withWal(Wal.builder()//
+                    .withEnabled(true)//
+                    .withDurabilityMode(resolveEnum(propsView,
+                            PROP_WAL_DURABILITY_MODE,
+                            Wal.DEFAULT_DURABILITY_MODE,
+                            WalDurabilityMode.class))//
+                    .withSegmentSizeBytes(getOrDefaultLong(propsView,
+                            PROP_WAL_SEGMENT_SIZE_BYTES,
+                            Wal.DEFAULT_SEGMENT_SIZE_BYTES))//
+                    .withGroupSyncDelayMillis(getOrDefault(propsView,
+                            PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
+                            Wal.DEFAULT_GROUP_SYNC_DELAY_MILLIS))//
+                    .withGroupSyncMaxBatchBytes(getOrDefault(propsView,
+                            PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
+                            Wal.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES))//
+                    .withMaxBytesBeforeForcedCheckpoint(getOrDefaultLong(
+                            propsView,
+                            PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+                            Wal.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT))//
+                    .withCorruptionPolicy(resolveEnum(propsView,
+                            PROP_WAL_CORRUPTION_POLICY,
+                            Wal.DEFAULT_CORRUPTION_POLICY,
+                            WalCorruptionPolicy.class))//
+                    .withEpochSupport(getOrDefaultBoolean(propsView,
+                            PROP_WAL_EPOCH_SUPPORT, false))//
+                    .build());
+        } else {
+            builder.withWal(Wal.EMPTY);
+        }
+
         return builder.build();
     }
 
@@ -287,6 +331,20 @@ public class IndexConfiguratonStorage<K, V> {
 
         writer.setString(PROP_DECODING_CHUNK_FILTERS,
                 serializeFilters(indexConfiguration.getDecodingChunkFilters()));
+        final Wal wal = Wal.orEmpty(indexConfiguration.getWal());
+        writer.setBoolean(PROP_WAL_ENABLED, wal.isEnabled());
+        writer.setString(PROP_WAL_DURABILITY_MODE,
+                wal.getDurabilityMode().name());
+        writer.setLong(PROP_WAL_SEGMENT_SIZE_BYTES, wal.getSegmentSizeBytes());
+        writer.setInt(PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
+                wal.getGroupSyncDelayMillis());
+        writer.setInt(PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
+                wal.getGroupSyncMaxBatchBytes());
+        writer.setLong(PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+                wal.getMaxBytesBeforeForcedCheckpoint());
+        writer.setString(PROP_WAL_CORRUPTION_POLICY,
+                wal.getCorruptionPolicy().name());
+        writer.setBoolean(PROP_WAL_EPOCH_SUPPORT, wal.isEpochSupport());
         SCHEMA.writeMetadata(writer);
         tx.close();
     }
@@ -365,6 +423,19 @@ public class IndexConfiguratonStorage<K, V> {
             return defaultValue;
         }
         return Boolean.parseBoolean(value);
+    }
+
+    private <T extends Enum<T>> T resolveEnum(final PropertyView propsView,
+            final String key, final T defaultValue, final Class<T> enumClass) {
+        final String value = propsView.getString(key);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Enum.valueOf(enumClass, value.trim());
+        } catch (final IllegalArgumentException ex) {
+            return defaultValue;
+        }
     }
 
 }

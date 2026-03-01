@@ -9,6 +9,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.Wal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,6 +114,9 @@ public class IndexConfigurationManager<K, V> {
         if (conf.isSegmentMaintenanceAutoEnabled() == null) {
             builder.withSegmentMaintenanceAutoEnabled(
                     defaults.isSegmentMaintenanceAutoEnabled());
+        }
+        if (conf.getWal() == null) {
+            builder.withWal(defaults.getWal());
         }
         if (conf.getMaxNumberOfKeysInSegment() == null) {
             builder.withMaxNumberOfKeysInSegment(
@@ -467,6 +471,9 @@ public class IndexConfigurationManager<K, V> {
                         storedConf.getDecodingChunkFilters()),
                 "DecodingChunkFilters", storedConf.getDecodingChunkFilters(),
                 indexConf.getDecodingChunkFilters());
+        validateThatWasntChanged(
+                isChanged(indexConf.getWal(), storedConf.getWal()), "Wal",
+                storedConf.getWal(), indexConf.getWal());
     }
 
     static final Comparator<ChunkFilter> chunkFilterCmp = (f1, f2) -> f1
@@ -530,7 +537,31 @@ public class IndexConfigurationManager<K, V> {
         validateBusyPolicy(conf);
         Vldtn.requireNonNull(conf.isSegmentMaintenanceAutoEnabled(),
                 "segmentMaintenanceAutoEnabled");
+        Vldtn.requireNonNull(conf.getWal(), "wal");
+        validateWal(conf.getWal());
         return conf;
+    }
+
+    private void validateWal(final Wal wal) {
+        if (!wal.isEnabled()) {
+            return;
+        }
+        if (wal.getSegmentSizeBytes() <= 0L) {
+            throw new IllegalArgumentException(
+                    "Wal segment size must be greater than zero.");
+        }
+        if (wal.getGroupSyncDelayMillis() < 0) {
+            throw new IllegalArgumentException(
+                    "Wal group sync delay must be greater than or equal to zero.");
+        }
+        if (wal.getGroupSyncMaxBatchBytes() <= 0) {
+            throw new IllegalArgumentException(
+                    "Wal group sync max batch bytes must be greater than zero.");
+        }
+        if (wal.getMaxBytesBeforeForcedCheckpoint() <= 0L) {
+            throw new IllegalArgumentException(
+                    "Wal max bytes before forced checkpoint must be greater than zero.");
+        }
     }
 
     private void validateMandatoryFields(final IndexConfiguration<K, V> conf) {
@@ -694,6 +725,7 @@ public class IndexConfigurationManager<K, V> {
                 .withIndexBusyTimeoutMillis(conf.getIndexBusyTimeoutMillis())//
                 .withSegmentMaintenanceAutoEnabled(
                         conf.isSegmentMaintenanceAutoEnabled())//
+                .withWal(conf.getWal())//
                 .withName(conf.getIndexName())//
 
                 // SegmentIndex runtime properties
