@@ -122,6 +122,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private static final String CHECKPOINT_FILE = "checkpoint.meta";
     private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
     private static final String FORMAT_FILE_TMP = "format.meta.tmp";
+    private static final String CHECKPOINT_KEY_LSN = "lsn";
+    private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
     private static final String SEGMENT_SUFFIX = ".wal";
     private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String SEGMENT_FILE_FORMAT = "%020d" + SEGMENT_SUFFIX;
@@ -956,13 +958,19 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     private long parseCheckpointMetadata(final byte[] data) {
+        final String text = new String(data, StandardCharsets.US_ASCII).trim();
+        if (text.isEmpty()) {
+            return 0L;
+        }
+        if (!text.contains("=")) {
+            return parseLegacyCheckpointMetadata(text);
+        }
+        return parseChecksummedCheckpointMetadata(text);
+    }
+
+    private long parseLegacyCheckpointMetadata(final String text) {
         try {
-            final String value = new String(data, StandardCharsets.US_ASCII)
-                    .trim();
-            if (value.isEmpty()) {
-                return 0L;
-            }
-            final long parsed = Long.parseLong(value);
+            final long parsed = Long.parseLong(text);
             if (parsed < 0L) {
                 throw new IndexException(String.format(
                         "Invalid WAL checkpoint metadata: negative LSN '%s'.",
@@ -976,14 +984,65 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
     }
 
+    private long parseChecksummedCheckpointMetadata(final String text) {
+        Long lsn = null;
+        Integer checksum = null;
+        for (final String line : text.split("\\R")) {
+            final String[] parts = line.split("=", 2);
+            if (parts.length != 2) {
+                continue;
+            }
+            final String key = parts[0].trim();
+            final String value = parts[1].trim();
+            try {
+                if (CHECKPOINT_KEY_LSN.equals(key)) {
+                    lsn = Long.valueOf(value);
+                } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
+                    checksum = Integer.valueOf(value);
+                }
+            } catch (RuntimeException ex) {
+                throw new IndexException("Invalid WAL checkpoint metadata.",
+                        ex);
+            }
+        }
+        if (lsn == null || checksum == null) {
+            throw new IndexException("Invalid WAL checkpoint metadata.");
+        }
+        if (lsn.longValue() < 0L) {
+            throw new IndexException(String.format(
+                    "Invalid WAL checkpoint metadata: negative LSN '%s'.",
+                    lsn));
+        }
+        final byte[] payload = checkpointPayload(lsn.longValue());
+        final int expectedChecksum = computeCrc32(payload, 0, payload.length);
+        if (checksum.intValue() != expectedChecksum) {
+            throw new IndexException(String.format(
+                    "Invalid WAL checkpoint metadata checksum: expected=%s actual=%s.",
+                    expectedChecksum, checksum));
+        }
+        return lsn.longValue();
+    }
+
     private void writeCheckpointLsnAtomic(final long checkpointLsn) {
-        final byte[] data = String.valueOf(checkpointLsn)
-                .getBytes(StandardCharsets.US_ASCII);
+        final byte[] data = checkpointMetadata(checkpointLsn);
         storage.overwrite(CHECKPOINT_FILE_TMP, data, 0, data.length);
         storage.sync(CHECKPOINT_FILE_TMP);
         storage.rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE);
         storage.sync(CHECKPOINT_FILE);
         storage.syncMetadata();
+    }
+
+    private byte[] checkpointMetadata(final long checkpointLsn) {
+        final byte[] payload = checkpointPayload(checkpointLsn);
+        final int checksum = computeCrc32(payload, 0, payload.length);
+        final String text = CHECKPOINT_KEY_LSN + "=" + checkpointLsn + "\n"
+                + CHECKPOINT_KEY_CHECKSUM + "=" + checksum + "\n";
+        return text.getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private byte[] checkpointPayload(final long checkpointLsn) {
+        return (CHECKPOINT_KEY_LSN + "=" + checkpointLsn + "\n")
+                .getBytes(StandardCharsets.US_ASCII);
     }
 
     private void ensureFormatMarker() {
