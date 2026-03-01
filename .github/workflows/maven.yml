@@ -49,6 +49,35 @@ jobs:
     - name: Build with Maven
       run: mvn -e -B verify --file pom.xml
 
+    - name: Smoke test WAL tools distribution
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        WAL_TOOLS_ZIP="$(ls wal-tools/target/wal-tools-*.zip | head -n1)"
+        TMP_DIR="$(mktemp -d)"
+        trap 'rm -rf "${TMP_DIR}"' EXIT
+
+        unzip -q "${WAL_TOOLS_ZIP}" -d "${TMP_DIR}"
+        DIST_DIR="$(find "${TMP_DIR}" -maxdepth 1 -mindepth 1 -type d -name 'wal-tools-*' | head -n1)"
+
+        set +e
+        "${DIST_DIR}/bin/wal_verify" >"${TMP_DIR}/verify-no-args.out" 2>&1
+        VERIFY_NO_ARGS_EXIT=$?
+        "${DIST_DIR}/bin/wal_dump" >"${TMP_DIR}/dump-no-args.out" 2>&1
+        DUMP_NO_ARGS_EXIT=$?
+        "${DIST_DIR}/bin/wal_verify" /tmp/hestia-missing-wal >"${TMP_DIR}/verify-missing-dir.out" 2>&1
+        VERIFY_MISSING_DIR_EXIT=$?
+        set -e
+
+        test "${VERIFY_NO_ARGS_EXIT}" -eq 1
+        test "${DUMP_NO_ARGS_EXIT}" -eq 1
+        test "${VERIFY_MISSING_DIR_EXIT}" -eq 1
+
+        grep -q "Usage: wal_verify" "${TMP_DIR}/verify-no-args.out"
+        grep -q "Usage: wal_dump" "${TMP_DIR}/dump-no-args.out"
+        grep -q "WAL directory does not exist" "${TMP_DIR}/verify-missing-dir.out"
+
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
       uses: advanced-security/maven-dependency-submission-action@v4
