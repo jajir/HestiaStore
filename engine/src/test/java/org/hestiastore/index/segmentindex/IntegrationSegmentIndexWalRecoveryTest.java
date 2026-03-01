@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -75,6 +76,36 @@ class IntegrationSegmentIndexWalRecoveryTest {
         appendGarbageWalTail(directory);
 
         assertThrows(RuntimeException.class, () -> SegmentIndex.open(directory));
+    }
+
+    @Test
+    void reopenFailFastDoesNotMutateWalAcrossAttempts() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<String, String> conf = IndexConfiguration
+                .<String, String>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(String.class)//
+                .withName("wal-recovery-fail-fast-immutability-it")//
+                .withWal(Wal.builder().withEnabled(true)
+                        .withSegmentSizeBytes(96L)
+                        .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                        .build())//
+                .build();
+        try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
+                conf)) {
+            for (int i = 0; i < 40; i++) {
+                index.put("k-" + i, "v-" + i);
+            }
+            index.flushAndWait();
+        }
+        appendGarbageWalTail(directory);
+        final Map<String, byte[]> expectedSnapshot = walSegmentSnapshot(directory);
+
+        assertThrows(RuntimeException.class, () -> SegmentIndex.open(directory));
+        assertWalSnapshotsEqual(expectedSnapshot, walSegmentSnapshot(directory));
+
+        assertThrows(RuntimeException.class, () -> SegmentIndex.open(directory));
+        assertWalSnapshotsEqual(expectedSnapshot, walSegmentSnapshot(directory));
     }
 
     @Test
@@ -214,6 +245,27 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (org.hestiastore.index.directory.FileWriter writer = walDirectory
                 .getFileWriter(segmentName, Directory.Access.APPEND)) {
             writer.write(new byte[] { 0x01, 0x02, 0x03 });
+        }
+    }
+
+    private static Map<String, byte[]> walSegmentSnapshot(
+            final MemDirectory directory) {
+        final MemDirectory walDirectory = (MemDirectory) directory
+                .openSubDirectory("wal");
+        final Map<String, byte[]> snapshot = new HashMap<>();
+        walDirectory.getFileNames().filter(name -> name.endsWith(".wal"))
+                .forEach(name -> snapshot.put(name,
+                        walDirectory.getFileSequence(name).toByteArrayCopy()));
+        return snapshot;
+    }
+
+    private static void assertWalSnapshotsEqual(final Map<String, byte[]> expected,
+            final Map<String, byte[]> actual) {
+        assertEquals(expected.keySet(), actual.keySet());
+        for (final Map.Entry<String, byte[]> entry : expected.entrySet()) {
+            final byte[] actualBytes = actual.get(entry.getKey());
+            assertTrue(Arrays.equals(entry.getValue(), actualBytes),
+                    "WAL segment bytes changed for " + entry.getKey());
         }
     }
 
