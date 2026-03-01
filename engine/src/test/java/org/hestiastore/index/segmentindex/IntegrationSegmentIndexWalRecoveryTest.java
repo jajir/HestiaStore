@@ -11,9 +11,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FsDirectory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -274,6 +283,40 @@ class IntegrationSegmentIndexWalRecoveryTest {
         }
     }
 
+    @Test
+    void walRetentionPressureWarningIsThrottled() {
+        final TestLogAppender appender = TestLogAppender.attachWarnRootAppender();
+        try {
+            final MemDirectory directory = new MemDirectory();
+            final Wal wal = Wal.builder()//
+                    .withEnabled(true)//
+                    .withSegmentSizeBytes(96L)//
+                    .withMaxBytesBeforeForcedCheckpoint(192L)//
+                    .build();
+            final IndexConfiguration<String, String> conf = IndexConfiguration
+                    .<String, String>builder()//
+                    .withKeyClass(String.class)//
+                    .withValueClass(String.class)//
+                    .withName("wal-retention-pressure-log-throttle-it")//
+                    .withWal(wal)//
+                    .build();
+
+            try (SegmentIndex<String, String> index = SegmentIndex
+                    .create(directory, conf)) {
+                for (int i = 0; i < 300; i++) {
+                    index.put("throttle-" + i, "value-" + i);
+                }
+            }
+
+            final long warningCount = appender.countMessageContaining(
+                    "WAL retention pressure detected");
+            assertEquals(1L, warningCount,
+                    "Expected only one retention-pressure warning within throttle interval.");
+        } finally {
+            appender.detach();
+        }
+    }
+
     private static void deleteRecursively(final Path root) throws IOException {
         if (!Files.exists(root)) {
             return;
@@ -291,6 +334,56 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 throw ioException;
             }
             throw e;
+        }
+    }
+
+    private static final class TestLogAppender extends AbstractAppender {
+
+        private final LoggerContext loggerContext;
+        private final List<LogEvent> events = new java.util.ArrayList<>();
+
+        private TestLogAppender(final String name,
+                final LoggerContext loggerContext) {
+            super(name, null, PatternLayout.createDefaultLayout(), true,
+                    Property.EMPTY_ARRAY);
+            this.loggerContext = loggerContext;
+        }
+
+        static TestLogAppender attachWarnRootAppender() {
+            final LoggerContext context = (LoggerContext) LogManager
+                    .getContext(false);
+            final Configuration configuration = context.getConfiguration();
+            final String name = "wal-retention-pressure-test-appender-"
+                    + System.nanoTime();
+            final TestLogAppender appender = new TestLogAppender(name, context);
+            appender.start();
+            configuration.getRootLogger().addAppender(appender, Level.WARN,
+                    null);
+            context.updateLoggers();
+            return appender;
+        }
+
+        void detach() {
+            final Configuration configuration = loggerContext
+                    .getConfiguration();
+            configuration.getRootLogger().removeAppender(getName());
+            stop();
+            loggerContext.updateLoggers();
+        }
+
+        long countMessageContaining(final String fragment) {
+            synchronized (events) {
+                return events.stream()
+                        .map(event -> event.getMessage().getFormattedMessage())
+                        .filter(message -> message.contains(fragment)).count();
+            }
+        }
+
+        @Override
+        public void append(final LogEvent event) {
+            synchronized (events) {
+                events.add(event.toImmutable());
+            }
         }
     }
 }
