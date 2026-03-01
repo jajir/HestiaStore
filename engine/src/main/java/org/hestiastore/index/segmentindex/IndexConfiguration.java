@@ -56,6 +56,7 @@ public class IndexConfiguration<K, V> {
 
     private final Integer diskIoBufferSize;
     private final Boolean contextLoggingEnabled;
+    private final Wal wal;
 
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
@@ -94,6 +95,7 @@ public class IndexConfiguration<K, V> {
             final Integer indexBusyBackoffMillis,
             final Integer indexBusyTimeoutMillis,
             final Boolean segmentMaintenanceAutoEnabled,
+            final Wal wal,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -116,6 +118,7 @@ public class IndexConfiguration<K, V> {
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
         this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
+        this.wal = Wal.orEmpty(wal);
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -318,6 +321,15 @@ public class IndexConfiguration<K, V> {
      */
     public Boolean isContextLoggingEnabled() {
         return contextLoggingEnabled;
+    }
+
+    /**
+     * Returns WAL configuration for this index.
+     *
+     * @return non-null WAL configuration
+     */
+    public Wal getWal() {
+        return wal;
     }
 
     /**

@@ -44,6 +44,7 @@ public class IndexConfigurationBuilder<K, V> {
     private String keyTypeDescriptor;
     private String valueTypeDescriptor;
     private Boolean contextLoggingEnabled;
+    private Wal wal = Wal.EMPTY;
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
 
@@ -279,6 +280,18 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withContextLoggingEnabled(
             final Boolean enabled) {
         this.contextLoggingEnabled = enabled;
+        return this;
+    }
+
+    /**
+     * Sets WAL configuration. {@code null} is normalized to
+     * {@link Wal#EMPTY}.
+     *
+     * @param wal WAL configuration
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withWal(final Wal wal) {
+        this.wal = Wal.orEmpty(wal);
         return this;
     }
 
@@ -541,6 +554,7 @@ public class IndexConfigurationBuilder<K, V> {
                 effectiveIndexBusyBackoffMillis,
                 effectiveIndexBusyTimeoutMillis,
                 effectiveSegmentMaintenanceAutoEnabled,
+                Wal.orEmpty(wal),
                 encodingChunkFilters, decodingChunkFilters);
     }
 

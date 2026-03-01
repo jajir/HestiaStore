@@ -225,6 +225,15 @@ public interface IndexConfigurationContract {
     }
 
     /**
+     * Returns default WAL configuration.
+     *
+     * @return default WAL settings
+     */
+    default Wal getWal() {
+        return Wal.EMPTY;
+    }
+
+    /**
      * Returns the default encoding chunk filter chain.
      *
      * @return default encoding filters
