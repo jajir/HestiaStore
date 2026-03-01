@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.wal;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -26,6 +27,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.WalReplicationMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +99,29 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
         public V getValue() {
             return value;
+        }
+    }
+
+    /**
+     * Encoded WAL record used by log-shipping APIs.
+     */
+    public static final class ReplicatedRecord {
+        private final long lsn;
+        private final byte[] encodedRecord;
+
+        ReplicatedRecord(final long lsn, final byte[] encodedRecord) {
+            this.lsn = lsn;
+            this.encodedRecord = Arrays.copyOf(
+                    Vldtn.requireNonNull(encodedRecord, "encodedRecord"),
+                    encodedRecord.length);
+        }
+
+        public long getLsn() {
+            return lsn;
+        }
+
+        public byte[] getEncodedRecord() {
+            return Arrays.copyOf(encodedRecord, encodedRecord.length);
         }
     }
 
@@ -390,6 +415,134 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     /**
+     * Fetches encoded WAL records after the given LSN.
+     *
+     * @param fromExclusiveLsn fetch records with LSN strictly greater than this
+     *                         value
+     * @param maxBytes maximum total encoded bytes to return
+     * @return fetched replicated records ordered by LSN
+     */
+    public List<ReplicatedRecord> fetchRecords(final long fromExclusiveLsn,
+            final int maxBytes) {
+        if (!enabled) {
+            return List.of();
+        }
+        Vldtn.requireGreaterThanOrEqualToZero(fromExclusiveLsn,
+                "fromExclusiveLsn");
+        Vldtn.requireGreaterThanZero(maxBytes, "maxBytes");
+        synchronized (monitor) {
+            checkSyncFailure();
+            ensureOpen();
+            final List<ReplicatedRecord> fetched = new ArrayList<>();
+            int fetchedBytes = 0;
+            long previousLsn = 0L;
+            for (final SegmentInfo segment : segments) {
+                if (segment.maxLsn() <= fromExclusiveLsn) {
+                    continue;
+                }
+                long offset = 0L;
+                while (true) {
+                    final byte[] lenBytes = new byte[4];
+                    final int lenRead = readFullyAllowEof(segment.name(), offset,
+                            lenBytes, 0, 4);
+                    if (lenRead == -1) {
+                        break;
+                    }
+                    if (lenRead != 4) {
+                        throw new IndexException(String.format(
+                                "Invalid WAL stream in segment '%s' at offset %s: partial length prefix.",
+                                segment.name(), offset));
+                    }
+                    final int bodyLen = readInt(lenBytes, 0);
+                    if (bodyLen < MIN_RECORD_BODY_SIZE
+                            || bodyLen > MAX_RECORD_BODY_SIZE) {
+                        throw new IndexException(String.format(
+                                "Invalid WAL stream in segment '%s' at offset %s: invalid record body length '%s'.",
+                                segment.name(), offset, bodyLen));
+                    }
+                    final byte[] encoded = new byte[4 + bodyLen];
+                    System.arraycopy(lenBytes, 0, encoded, 0, 4);
+                    if (!readFully(segment.name(), offset + 4L, encoded, 4,
+                            bodyLen)) {
+                        throw new IndexException(String.format(
+                                "Invalid WAL stream in segment '%s' at offset %s: truncated record body.",
+                                segment.name(), offset));
+                    }
+                    final ParsedEncodedRecord parsed = parseEncodedRecord(
+                            encoded);
+                    if (parsed.lsn() <= previousLsn) {
+                        throw new IndexException(String.format(
+                                "Invalid WAL stream in segment '%s' at offset %s: non-monotonic LSN '%s' after '%s'.",
+                                segment.name(), offset, parsed.lsn(),
+                                previousLsn));
+                    }
+                    previousLsn = parsed.lsn();
+                    if (parsed.lsn() > fromExclusiveLsn) {
+                        if (!fetched.isEmpty()
+                                && fetchedBytes + encoded.length > maxBytes) {
+                            return List.copyOf(fetched);
+                        }
+                        fetched.add(new ReplicatedRecord(parsed.lsn(), encoded));
+                        fetchedBytes += encoded.length;
+                        if (fetchedBytes >= maxBytes) {
+                            return List.copyOf(fetched);
+                        }
+                    }
+                    offset += encoded.length;
+                }
+            }
+            return List.copyOf(fetched);
+        }
+    }
+
+    /**
+     * Appends replicated encoded WAL records.
+     *
+     * <p>
+     * Records must be valid and contiguous with local WAL tail.
+     * </p>
+     *
+     * @param encodedRecords replicated encoded records
+     * @param expectedEpoch active leader epoch
+     * @param sourceNodeId source node id
+     * @return last appended LSN
+     */
+    public long appendReplicated(final List<byte[]> encodedRecords,
+            final long expectedEpoch, final String sourceNodeId) {
+        if (!enabled) {
+            return 0L;
+        }
+        final List<byte[]> records = Vldtn.requireNotEmpty(encodedRecords,
+                "encodedRecords");
+        final String normalizedSourceNodeId = Vldtn.requireNotBlank(sourceNodeId,
+                "sourceNodeId");
+        synchronized (monitor) {
+            checkSyncFailure();
+            ensureOpen();
+            ensureReplicationFollowerAppendAllowed(normalizedSourceNodeId);
+            validateAppendEpochLocked(Long.valueOf(expectedEpoch));
+            long expectedNextLsn = nextLsn;
+            long lastAppendedLsn = 0L;
+            for (int i = 0; i < records.size(); i++) {
+                final byte[] encoded = Vldtn.requireNonNull(records.get(i),
+                        "encodedRecords[" + i + "]");
+                final ParsedEncodedRecord parsed = parseEncodedRecord(encoded);
+                if (parsed.lsn() != expectedNextLsn) {
+                    throw new IndexException(String.format(
+                            "Replicated WAL stream is not contiguous. Expected LSN '%s' but got '%s'.",
+                            expectedNextLsn, parsed.lsn()));
+                }
+                appendRawRecordLocked(parsed.lsn(),
+                        Arrays.copyOf(encoded, encoded.length));
+                expectedNextLsn++;
+                lastAppendedLsn = parsed.lsn();
+            }
+            finalizeDurabilityAfterAppendLocked(lastAppendedLsn);
+            return lastAppendedLsn;
+        }
+    }
+
+    /**
      * Returns currently persisted epoch value.
      *
      * @return current epoch
@@ -547,34 +700,42 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             validateAppendEpochLocked(expectedEpoch);
             final long lsn = nextLsn;
             final byte[] recordBytes = encodeRecord(operation, lsn, key, value);
-            ensureActiveSegmentFor(recordBytes.length);
-            final SegmentInfo activeSegment = segments.get(segments.size() - 1);
-            storage.append(activeSegment.name(), recordBytes, 0,
-                    recordBytes.length);
-            activeSegment.grow(recordBytes.length, lsn);
-            retainedBytes += recordBytes.length;
-            appendCount.increment();
-            appendBytes.add(recordBytes.length);
-            nextLsn = lsn + 1L;
-
-            if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
-                return lsn;
-            }
-
-            pendingSyncHighLsn = Math.max(pendingSyncHighLsn, lsn);
-            pendingSyncBytes += recordBytes.length;
-            pendingSyncSegmentNames.add(activeSegment.name());
-
-            if (wal.getDurabilityMode() == WalDurabilityMode.SYNC
-                    || wal.getGroupSyncDelayMillis() <= 0
-                    || pendingSyncBytes >= wal.getGroupSyncMaxBatchBytes()) {
-                syncGroupPendingLocked();
-            }
-
-            if (wal.getDurabilityMode() == WalDurabilityMode.GROUP_SYNC) {
-                waitUntilDurableLocked(lsn);
-            }
+            appendRawRecordLocked(lsn, recordBytes);
+            finalizeDurabilityAfterAppendLocked(lsn);
             return lsn;
+        }
+    }
+
+    private void appendRawRecordLocked(final long lsn,
+            final byte[] encodedRecord) {
+        ensureActiveSegmentFor(encodedRecord.length);
+        final SegmentInfo activeSegment = segments.get(segments.size() - 1);
+        storage.append(activeSegment.name(), encodedRecord, 0,
+                encodedRecord.length);
+        activeSegment.grow(encodedRecord.length, lsn);
+        retainedBytes += encodedRecord.length;
+        appendCount.increment();
+        appendBytes.add(encodedRecord.length);
+        nextLsn = lsn + 1L;
+        if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
+            return;
+        }
+        pendingSyncHighLsn = Math.max(pendingSyncHighLsn, lsn);
+        pendingSyncBytes += encodedRecord.length;
+        pendingSyncSegmentNames.add(activeSegment.name());
+    }
+
+    private void finalizeDurabilityAfterAppendLocked(final long lsn) {
+        if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
+            return;
+        }
+        if (wal.getDurabilityMode() == WalDurabilityMode.SYNC
+                || wal.getGroupSyncDelayMillis() <= 0
+                || pendingSyncBytes >= wal.getGroupSyncMaxBatchBytes()) {
+            syncGroupPendingLocked();
+        }
+        if (wal.getDurabilityMode() == WalDurabilityMode.GROUP_SYNC) {
+            waitUntilDurableLocked(lsn);
         }
     }
 
@@ -902,6 +1063,73 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
     }
 
+    private void ensureReplicationFollowerAppendAllowed(
+            final String sourceNodeId) {
+        if (!wal.isReplicationEnabled()) {
+            throw new IndexException(
+                    "Replicated WAL append rejected because replication mode is disabled.");
+        }
+        if (wal.getReplicationMode() != WalReplicationMode.FOLLOWER) {
+            throw new IndexException(String.format(
+                    "Replicated WAL append is only supported in FOLLOWER mode. Actual mode is %s.",
+                    wal.getReplicationMode().name()));
+        }
+        if (!wal.getSourceNodeId().equals(sourceNodeId)) {
+            throw new IndexException(String.format(
+                    "Replicated WAL append rejected for source '%s'. Expected source '%s'.",
+                    sourceNodeId, wal.getSourceNodeId()));
+        }
+    }
+
+    private ParsedEncodedRecord parseEncodedRecord(final byte[] encodedRecord) {
+        if (encodedRecord.length < 4) {
+            throw new IndexException("Replicated WAL record is too short.");
+        }
+        final int bodyLen = readInt(encodedRecord, 0);
+        if (bodyLen < MIN_RECORD_BODY_SIZE || bodyLen > MAX_RECORD_BODY_SIZE) {
+            throw new IndexException(String.format(
+                    "Replicated WAL record has invalid body length '%s'.",
+                    bodyLen));
+        }
+        if (encodedRecord.length != 4 + bodyLen) {
+            throw new IndexException(String.format(
+                    "Replicated WAL record frame mismatch. Expected '%s' bytes but got '%s'.",
+                    4 + bodyLen, encodedRecord.length));
+        }
+        final int storedCrc = readInt(encodedRecord, 4);
+        final int computedCrc = computeCrc32(encodedRecord, 8, bodyLen - 4);
+        if (storedCrc != computedCrc) {
+            throw new IndexException("Replicated WAL record CRC mismatch.");
+        }
+        int position = 8;
+        final long lsn = readLong(encodedRecord, position);
+        position += 8;
+        final Operation operation = Operation
+                .fromCode(encodedRecord[position++]);
+        if (operation == null) {
+            throw new IndexException(
+                    "Replicated WAL record has invalid operation code.");
+        }
+        final int keyLen = readInt(encodedRecord, position);
+        position += 4;
+        final int valueLen = readInt(encodedRecord, position);
+        position += 4;
+        if (keyLen <= 0 || valueLen < 0
+                || position + keyLen + valueLen != encodedRecord.length) {
+            throw new IndexException(
+                    "Replicated WAL record has invalid key/value lengths.");
+        }
+        if (operation == Operation.DELETE && valueLen != 0) {
+            throw new IndexException(
+                    "Replicated WAL DELETE record must have zero value length.");
+        }
+        if (lsn <= 0L) {
+            throw new IndexException(
+                    "Replicated WAL record has invalid non-positive LSN.");
+        }
+        return new ParsedEncodedRecord(lsn);
+    }
+
     private List<SegmentInfo> discoverSegmentsStrict() {
         final List<String> segmentNames;
         try (StreamCloseable names = new StreamCloseable(storage.listFileNames())) {
@@ -1211,6 +1439,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
     private record ScanResult(long validBytes, long maxLsn, long lastReplayedLsn,
             long lastSeenLsn, boolean invalidTail) {
+    }
+
+    private record ParsedEncodedRecord(long lsn) {
     }
 
     private record FormatMeta(int version, int checksum) {
