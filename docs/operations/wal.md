@@ -56,6 +56,12 @@ java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool ve
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool verify /path/to/index/wal --json
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal --json
+
+# wrapper commands (first run auto-compiles engine classes if needed)
+./scripts/wal_verify /path/to/index/wal
+./scripts/wal_dump /path/to/index/wal
+./scripts/wal_verify /path/to/index/wal --json
+./scripts/wal_dump /path/to/index/wal --json
 ```
 
 `verify` output fields:
