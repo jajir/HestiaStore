@@ -99,7 +99,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withValueTypeDescriptor(valueDescriptor) //
                 .withMaxNumberOfKeysInSegment(64) //
                 .withName("metrics_wal_enabled_test_index") //
-                .withWal(Wal.builder().withEnabled(true).build()) //
+                .withWal(Wal.builder().build()) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,

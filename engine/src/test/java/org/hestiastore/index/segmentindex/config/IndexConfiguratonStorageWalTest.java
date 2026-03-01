@@ -27,7 +27,6 @@ class IndexConfiguratonStorageWalTest {
                 directory);
         final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withDurabilityMode(WalDurabilityMode.SYNC)//
                 .withSegmentSizeBytes(2048L)//
                 .withGroupSyncDelayMillis(7)//

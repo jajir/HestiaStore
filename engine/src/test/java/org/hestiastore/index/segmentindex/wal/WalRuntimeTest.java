@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,7 @@ import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.WalBuilder;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
@@ -50,7 +53,6 @@ class WalRuntimeTest {
     void recoverTruncatesInvalidTailAndReplaysValidPrefix() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withSegmentSizeBytes(1024L)//
@@ -90,7 +92,6 @@ class WalRuntimeTest {
     void recoverFailFastThrowsWhenTailIsCorrupted() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
                 .withSegmentSizeBytes(1024L)//
                 .build();
@@ -112,7 +113,6 @@ class WalRuntimeTest {
     void recoverTruncatesPartiallyWrittenLastRecord() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withSegmentSizeBytes(4096L)//
@@ -143,7 +143,6 @@ class WalRuntimeTest {
     void recoverDetectsInvalidOperationCodeEvenWithValidCrc() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withSegmentSizeBytes(4096L)//
@@ -170,7 +169,6 @@ class WalRuntimeTest {
     void recoverFailFastOnInvalidOperationCodeWhenConfigured() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
                 .withSegmentSizeBytes(4096L)//
                 .build();
@@ -194,7 +192,6 @@ class WalRuntimeTest {
     void recoverRepairIsIdempotentWithinSameRuntime() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withSegmentSizeBytes(1024L)//
@@ -238,7 +235,6 @@ class WalRuntimeTest {
     void checkpointDeletesSealedSegmentsAfterRotation() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withSegmentSizeBytes(96L)//
                 .build();
         long lastLsn = 0L;
@@ -257,7 +253,6 @@ class WalRuntimeTest {
     void checkpointCleanupIsIdempotentForRepeatedCheckpointLsn() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withSegmentSizeBytes(96L)//
                 .build();
         long checkpointLsn = 0L;
@@ -290,7 +285,6 @@ class WalRuntimeTest {
         try {
             final MemDirectory root = new MemDirectory();
             final Wal wal = Wal.builder()//
-                    .withEnabled(true)//
                     .withSegmentSizeBytes(96L)//
                     .build();
             try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
@@ -316,7 +310,6 @@ class WalRuntimeTest {
     void retentionPressureClearsAfterCheckpointCleanup() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withSegmentSizeBytes(96L)//
                 .withMaxBytesBeforeForcedCheckpoint(200L)//
                 .build();
@@ -336,7 +329,6 @@ class WalRuntimeTest {
     void retentionPressureIgnoredWhenOnlyActiveSegmentExceedsLimit() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withSegmentSizeBytes(4096L)//
                 .withMaxBytesBeforeForcedCheckpoint(1L)//
                 .build();
@@ -350,11 +342,76 @@ class WalRuntimeTest {
     @Test
     void openCreatesFormatMarker() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> ignored = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final Directory walDirectory = root.openSubDirectory("wal");
             assertTrue(walDirectory.isFileExists("format.meta"));
+        }
+    }
+
+    @Test
+    void openFailsWhenFormatMarkerTempSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "format.meta.tmp".equals(name), attempt -> false);
+
+        assertThrows(IndexException.class, () -> WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR));
+    }
+
+    @Test
+    void openFailsWhenFormatMarkerSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "format.meta".equals(name), attempt -> false);
+
+        assertThrows(IndexException.class, () -> WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR));
+    }
+
+    @Test
+    void openFailsWhenFormatTempCleanupMetadataSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> ignored = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            // format.meta created
+        }
+        storage.overwrite("format.meta.tmp",
+                "version=999\nchecksum=1\n"
+                        .getBytes(java.nio.charset.StandardCharsets.US_ASCII),
+                0, "version=999\nchecksum=1\n".length());
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> false, attempt -> attempt == 1);
+
+        assertThrows(IndexException.class, () -> WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR));
+    }
+
+    @Test
+    void openKeepsFormatMetadataWhenTempPromotionSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        final byte[] payload = "version=1\n"
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        final int checksum = WalRuntime.computeCrc32(payload, 0, payload.length);
+        final byte[] formatMeta = ("version=1\nchecksum=" + checksum + "\n")
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        storage.overwrite("format.meta.tmp", formatMeta, 0, formatMeta.length);
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "format.meta".equals(name), attempt -> false);
+
+        try (WalRuntime<String, String> ignored = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertTrue(storage.exists("format.meta"));
+            assertFalse(storage.exists("format.meta.tmp"));
         }
     }
 
@@ -367,7 +424,7 @@ class WalRuntimeTest {
             writer.write("version=999\nchecksum=1\n"
                     .getBytes(java.nio.charset.StandardCharsets.US_ASCII));
         }
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
 
         assertThrows(IndexException.class, () -> WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR));
@@ -382,7 +439,7 @@ class WalRuntimeTest {
             writer.write("version=1\nchecksum=NaN\n"
                     .getBytes(java.nio.charset.StandardCharsets.US_ASCII));
         }
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
 
         assertThrows(IndexException.class, () -> WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR));
@@ -399,7 +456,7 @@ class WalRuntimeTest {
                 "version=1\nchecksum=" + checksum + "\n");
         assertFalse(walDirectory.isFileExists("format.meta"));
 
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> ignored = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertTrue(walDirectory.isFileExists("format.meta"));
@@ -418,7 +475,7 @@ class WalRuntimeTest {
                 + "\n");
         writeWalMetadata(root, "format.meta.tmp", "version=999\nchecksum=1\n");
 
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> ignored = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertTrue(walDirectory.isFileExists("format.meta"));
@@ -429,7 +486,7 @@ class WalRuntimeTest {
     @Test
     void recoverPromotesValidCheckpointTempMetadataWhenMainMissing() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         final long lsn;
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -456,7 +513,7 @@ class WalRuntimeTest {
     @Test
     void recoverDropsInvalidCheckpointTempMetadataWhenMainMissing() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             runtime.appendPut("k1", "v1");
@@ -481,7 +538,7 @@ class WalRuntimeTest {
     @Test
     void recoverIgnoresNonWalFilesInWalDirectory() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             runtime.appendPut("k1", "v1");
@@ -510,7 +567,7 @@ class WalRuntimeTest {
     @Test
     void recoverOrdersSegmentsByNumericBaseLsn() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             runtime.appendPut("k1", "v1");
@@ -555,7 +612,7 @@ class WalRuntimeTest {
         final MemDirectory root = new MemDirectory();
         final Directory walDirectory = root.openSubDirectory("wal");
         walDirectory.touch("invalid-segment.wal");
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
 
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -570,7 +627,7 @@ class WalRuntimeTest {
         final MemDirectory root = new MemDirectory();
         final Directory walDirectory = root.openSubDirectory("wal");
         walDirectory.mkdir("00000000000000000001.wal");
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
 
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -581,9 +638,32 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverRejectsDuplicateWalSegmentBaseLsnEntries() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final String duplicatedSegment = walSegmentNames(storage).stream()
+                .findFirst().orElseThrow();
+        final WalStorage duplicateListing = new DuplicateListingStorage(storage,
+                duplicatedSegment);
+
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                duplicateListing, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final IndexException exception = assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+            assertTrue(exception.getMessage()
+                    .contains("Duplicate WAL segment base LSN"));
+        }
+    }
+
+    @Test
     void recoverClampsCheckpointMetadataAndCapsLastReplayedLsn() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withSegmentSizeBytes(4096L).build();
         final long firstLsn;
         final long secondLsn;
@@ -629,7 +709,7 @@ class WalRuntimeTest {
     @Test
     void recoverFailsWhenCheckpointMetadataIsNonNumeric() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             runtime.appendPut("k1", "v1");
@@ -647,7 +727,7 @@ class WalRuntimeTest {
     @Test
     void recoverFailsWhenCheckpointMetadataIsNegative() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             runtime.appendPut("k1", "v1");
@@ -665,7 +745,7 @@ class WalRuntimeTest {
     @Test
     void recoverFailsWhenCheckpointMetadataChecksumIsInvalid() {
         final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             runtime.appendPut("k1", "v1");
@@ -683,7 +763,7 @@ class WalRuntimeTest {
 
     @Test
     void recoverFailsWhenStorageReadFails() {
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -702,8 +782,59 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverFailsWhenCheckpointClampCheckpointTempSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final byte[] staleCheckpoint = "5"
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        storage.overwrite("checkpoint.meta", staleCheckpoint, 0,
+                staleCheckpoint.length);
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "checkpoint.meta.tmp".equals(name), attempt -> false);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
+    void recoverKeepsCheckpointMetadataWhenTempPromotionSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final long lsn = runtime.appendPut("k1", "v1");
+            runtime.onCheckpoint(lsn);
+        }
+        final byte[] checkpoint = storage.readAll("checkpoint.meta");
+        storage.overwrite("checkpoint.meta.tmp", checkpoint, 0,
+                checkpoint.length);
+        storage.delete("checkpoint.meta");
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "checkpoint.meta".equals(name), attempt -> false);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertEquals(1L, result.maxLsn());
+            assertEquals(1L, runtime.statsSnapshot().checkpointLsn());
+        }
+        assertTrue(storage.exists("checkpoint.meta"));
+        assertFalse(storage.exists("checkpoint.meta.tmp"));
+    }
+
+    @Test
     void checkpointFailsWhenStorageRenameFails() {
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalStorage failingStorage = new FailingStorage(storage,
                 name -> false, name -> false,
@@ -717,8 +848,135 @@ class WalRuntimeTest {
     }
 
     @Test
+    void checkpointFailsWhenCheckpointTempSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "checkpoint.meta.tmp".equals(name), attempt -> false);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class, () -> runtime.onCheckpoint(1L));
+        }
+    }
+
+    @Test
+    void checkpointFailsWhenCheckpointFileSyncFails() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> "checkpoint.meta".equals(name), attempt -> false);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class, () -> runtime.onCheckpoint(1L));
+        }
+    }
+
+    @Test
+    void checkpointFailsWhenMetadataSyncFailsAfterRename() {
+        final Wal wal = Wal.builder().build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> false, attempt -> attempt == 1);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class, () -> runtime.onCheckpoint(1L));
+        }
+    }
+
+    @Test
+    void recoverFailsWhenTailTruncateSyncFails() {
+        final Wal wal = Wal.builder()
+                .withCorruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)
+                .build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final String segmentName = walSegmentNames(storage).get(0);
+        storage.append(segmentName, new byte[] { 0x01, 0x02, 0x03, 0x04 }, 0,
+                4);
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> segmentName.equals(name), attempt -> false);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
+    void recoverFailsWhenTailDeleteMetadataSyncFails() {
+        final Wal wal = Wal.builder()
+                .withCorruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)
+                .build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final String segmentName = walSegmentNames(storage).get(0);
+        storage.overwrite(segmentName, new byte[] { 0x01, 0x02, 0x03, 0x04 }, 0,
+                4);
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> false, attempt -> attempt == 1);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
+    void checkpointCleanupFailsWhenMetadataSyncFailsAfterDelete() {
+        final Wal wal = Wal.builder()
+                .withSegmentSizeBytes(96L).build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        long lastLsn = 0L;
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (runtime.statsSnapshot().segmentCount() < 3 && i < 256) {
+                lastLsn = runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+            assertTrue(runtime.statsSnapshot().segmentCount() >= 3);
+        }
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> false, attempt -> attempt == 2);
+        final long checkpointLsn = lastLsn;
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.recover(record -> {
+            });
+            assertThrows(IndexException.class,
+                    () -> runtime.onCheckpoint(checkpointLsn));
+        }
+    }
+
+    @Test
     void checkpointCleanupFailsWhenStorageDeleteFails() {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withSegmentSizeBytes(96L).build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         long lastLsn = 0L;
@@ -749,7 +1007,7 @@ class WalRuntimeTest {
         final MemDirectory root = new MemDirectory();
         final Directory walDirectory = root.openSubDirectory("wal");
         walDirectory.touch("1.wal");
-        final Wal wal = Wal.builder().withEnabled(true).build();
+        final Wal wal = Wal.builder().build();
 
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -765,7 +1023,6 @@ class WalRuntimeTest {
     void recoverDeletesStaleSegmentsAfterCorruptionAndPersistsRepair() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withSegmentSizeBytes(96L)//
@@ -809,9 +1066,39 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverFailsWhenDroppingNewerSegmentsMetadataSyncFails() {
+        final Wal wal = Wal.builder()//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (walSegmentNames(storage).size() < 3 && i < 256) {
+                runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+        }
+        final List<String> segments = walSegmentNames(storage);
+        assertTrue(segments.size() >= 3);
+        storage.append(segments.get(1), new byte[] { 0x01, 0x02, 0x03, 0x04 }, 0,
+                4);
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false, (source, target) -> false,
+                name -> false, attempt -> attempt == 1);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
     void recoverPersistsDeletedSegmentsAcrossCrashAfterRepair() {
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withDurabilityMode(WalDurabilityMode.SYNC)//
@@ -863,7 +1150,6 @@ class WalRuntimeTest {
     void recoverTruncatesWhenSegmentLsnRegressesAcrossBoundary() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(
                         WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
                 .withSegmentSizeBytes(96L)//
@@ -904,7 +1190,6 @@ class WalRuntimeTest {
     void recoverFailFastWhenSegmentLsnRegressesAcrossBoundary() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
                 .withSegmentSizeBytes(96L)//
                 .build();
@@ -935,7 +1220,6 @@ class WalRuntimeTest {
     void recoverFailFastDoesNotMutateWalFilesAcrossAttempts() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
                 .withSegmentSizeBytes(96L)//
                 .build();
@@ -971,7 +1255,7 @@ class WalRuntimeTest {
 
     @Test
     void syncFailureFailsCurrentAndFollowingWrites() {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.SYNC).build();
         final WalStorage failingStorage = new SyncObservingStorage(
                 new WalStorageMem(new MemDirectory()), true);
@@ -985,8 +1269,29 @@ class WalRuntimeTest {
     }
 
     @Test
+    void syncFailureEmitsStructuredLogEvent() {
+        final TestLogAppender appender = TestLogAppender.attachToLogger(
+                WalRuntime.class.getName(), Level.ERROR);
+        try {
+            final Wal wal = Wal.builder()
+                    .withDurabilityMode(WalDurabilityMode.SYNC).build();
+            final WalStorage failingStorage = new SyncObservingStorage(
+                    new WalStorageMem(new MemDirectory()), true);
+            try (WalRuntime<String, String> runtime = WalRuntime.openForTests(
+                    wal, failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+                assertThrows(IndexException.class,
+                        () -> runtime.appendPut("k1", "v1"));
+            }
+            assertTrue(appender.countMessageContaining("event=wal_sync_failure")
+                    >= 1L);
+        } finally {
+            appender.detach();
+        }
+    }
+
+    @Test
     void asyncModeMayLoseUnsyncedWritesAfterCrash() {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.ASYNC).build();
         CrashSimulatingStorage storage = new CrashSimulatingStorage();
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
@@ -1007,7 +1312,7 @@ class WalRuntimeTest {
 
     @Test
     void syncModePersistsAcknowledgedWritesAfterCrash() {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.SYNC).build();
         CrashSimulatingStorage storage = new CrashSimulatingStorage();
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
@@ -1030,7 +1335,7 @@ class WalRuntimeTest {
 
     @Test
     void groupSyncModePersistsAcknowledgedWritesAfterCrash() {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
                 .withGroupSyncDelayMillis(1).build();
         CrashSimulatingStorage storage = new CrashSimulatingStorage();
@@ -1053,8 +1358,14 @@ class WalRuntimeTest {
     }
 
     @Test
+    void randomCrashRecoveryCyclesRemainDeterministicForDurableModes() {
+        runRandomCrashRecoveryHarness(WalDurabilityMode.SYNC, 17L);
+        runRandomCrashRecoveryHarness(WalDurabilityMode.GROUP_SYNC, 19L);
+    }
+
+    @Test
     void groupSyncSyncsAllPendingRotatedSegments() throws Exception {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
                 .withGroupSyncDelayMillis(500)
                 .withGroupSyncMaxBatchBytes(16 * 1024 * 1024)
@@ -1283,6 +1594,73 @@ class WalRuntimeTest {
         }
     }
 
+    private static void runRandomCrashRecoveryHarness(
+            final WalDurabilityMode durabilityMode, final long seed) {
+        final WalBuilder walBuilder = Wal.builder()
+                .withDurabilityMode(durabilityMode).withSegmentSizeBytes(128L);
+        if (durabilityMode == WalDurabilityMode.GROUP_SYNC) {
+            walBuilder.withGroupSyncDelayMillis(1)
+                    .withGroupSyncMaxBatchBytes(256);
+        }
+        final Wal wal = walBuilder.build();
+        final Random random = new Random(seed);
+        final int keySpace = 16;
+        final int cycles = 14;
+        final int operationsPerCycle = 48;
+        final Map<String, String> expectedState = new LinkedHashMap<>();
+        CrashSimulatingStorage storage = new CrashSimulatingStorage();
+        long expectedMaxLsn = 0L;
+
+        for (int cycle = 0; cycle < cycles; cycle++) {
+            final Map<String, String> recoveredState = new LinkedHashMap<>();
+            try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                    storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+                final WalRuntime.RecoveryResult recovery = runtime
+                        .recover(record -> applyReplayRecord(recoveredState,
+                                record));
+                assertEquals(expectedState, recoveredState);
+                assertEquals(expectedMaxLsn, recovery.maxLsn());
+                long cycleMaxLsn = expectedMaxLsn;
+
+                for (int i = 0; i < operationsPerCycle; i++) {
+                    final String key = "rk-" + random.nextInt(keySpace);
+                    final boolean delete = random.nextInt(5) == 0;
+                    final long lsn;
+                    if (delete) {
+                        lsn = runtime.appendDelete(key);
+                        expectedState.remove(key);
+                    } else {
+                        final String value = "rv-" + cycle + "-" + i + "-"
+                                + random.nextInt(10_000);
+                        lsn = runtime.appendPut(key, value);
+                        expectedState.put(key, value);
+                    }
+                    cycleMaxLsn = Math.max(cycleMaxLsn, lsn);
+                }
+                expectedMaxLsn = cycleMaxLsn;
+            }
+            storage = storage.crashRecover();
+        }
+
+        final Map<String, String> finalRecovered = new LinkedHashMap<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult recovery = runtime
+                    .recover(record -> applyReplayRecord(finalRecovered, record));
+            assertEquals(expectedState, finalRecovered);
+            assertEquals(expectedMaxLsn, recovery.maxLsn());
+        }
+    }
+
+    private static void applyReplayRecord(final Map<String, String> state,
+            final WalRuntime.ReplayRecord<String, String> record) {
+        if (record.getOperation() == WalRuntime.Operation.DELETE) {
+            state.remove(record.getKey());
+            return;
+        }
+        state.put(record.getKey(), record.getValue());
+    }
+
     private static final class TestLogAppender extends AbstractAppender {
 
         private final LoggerContext loggerContext;
@@ -1347,15 +1725,31 @@ class WalRuntimeTest {
         private final Predicate<String> failRead;
         private final Predicate<String> failDelete;
         private final BiPredicate<String, String> failRename;
+        private final Predicate<String> failSync;
+        private final IntPredicate failSyncMetadataAttempt;
+        private int syncMetadataAttempts;
 
         private FailingStorage(final WalStorage delegate,
                 final Predicate<String> failRead,
                 final Predicate<String> failDelete,
                 final BiPredicate<String, String> failRename) {
+            this(delegate, failRead, failDelete, failRename, name -> false,
+                    attempt -> false);
+        }
+
+        private FailingStorage(final WalStorage delegate,
+                final Predicate<String> failRead,
+                final Predicate<String> failDelete,
+                final BiPredicate<String, String> failRename,
+                final Predicate<String> failSync,
+                final IntPredicate failSyncMetadataAttempt) {
             this.delegate = delegate;
             this.failRead = failRead;
             this.failDelete = failDelete;
             this.failRename = failRename;
+            this.failSync = failSync;
+            this.failSyncMetadataAttempt = failSyncMetadataAttempt;
+            this.syncMetadataAttempts = 0;
         }
 
         @Override
@@ -1425,6 +1819,96 @@ class WalRuntimeTest {
         @Override
         public java.util.stream.Stream<String> listFileNames() {
             return delegate.listFileNames();
+        }
+
+        @Override
+        public void sync(final String fileName) {
+            if (failSync.test(fileName)) {
+                throw new IndexException("simulated sync failure");
+            }
+            delegate.sync(fileName);
+        }
+
+        @Override
+        public void syncMetadata() {
+            syncMetadataAttempts++;
+            if (failSyncMetadataAttempt.test(syncMetadataAttempts)) {
+                throw new IndexException("simulated metadata sync failure");
+            }
+            delegate.syncMetadata();
+        }
+    }
+
+    private static final class DuplicateListingStorage implements WalStorage {
+
+        private final WalStorage delegate;
+        private final String duplicateFileName;
+
+        private DuplicateListingStorage(final WalStorage delegate,
+                final String duplicateFileName) {
+            this.delegate = delegate;
+            this.duplicateFileName = duplicateFileName;
+        }
+
+        @Override
+        public boolean exists(final String fileName) {
+            return delegate.exists(fileName);
+        }
+
+        @Override
+        public void touch(final String fileName) {
+            delegate.touch(fileName);
+        }
+
+        @Override
+        public long size(final String fileName) {
+            return delegate.size(fileName);
+        }
+
+        @Override
+        public void append(final String fileName, final byte[] bytes,
+                final int offset, final int length) {
+            delegate.append(fileName, bytes, offset, length);
+        }
+
+        @Override
+        public void overwrite(final String fileName, final byte[] bytes,
+                final int offset, final int length) {
+            delegate.overwrite(fileName, bytes, offset, length);
+        }
+
+        @Override
+        public byte[] readAll(final String fileName) {
+            return delegate.readAll(fileName);
+        }
+
+        @Override
+        public int read(final String fileName, final long position,
+                final byte[] destination, final int offset, final int length) {
+            return delegate.read(fileName, position, destination, offset,
+                    length);
+        }
+
+        @Override
+        public void truncate(final String fileName, final long sizeBytes) {
+            delegate.truncate(fileName, sizeBytes);
+        }
+
+        @Override
+        public boolean delete(final String fileName) {
+            return delegate.delete(fileName);
+        }
+
+        @Override
+        public void rename(final String currentFileName,
+                final String newFileName) {
+            delegate.rename(currentFileName, newFileName);
+        }
+
+        @Override
+        public java.util.stream.Stream<String> listFileNames() {
+            return java.util.stream.Stream.concat(delegate.listFileNames(),
+                    java.util.stream.Stream.of(duplicateFileName));
         }
 
         @Override

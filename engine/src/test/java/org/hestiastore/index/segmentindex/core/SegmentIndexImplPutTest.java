@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +116,7 @@ class SegmentIndexImplPutTest {
 
     @Test
     void walSyncFailureTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder().withEnabled(true)
+        resetIndex(10, 1, Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.SYNC).build());
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
 
@@ -132,7 +133,7 @@ class SegmentIndexImplPutTest {
 
     @Test
     void walSyncFailureDuringCheckpointTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder().withEnabled(true)
+        resetIndex(10, 1, Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.SYNC).build());
         index.put(1, "one");
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
@@ -149,8 +150,66 @@ class SegmentIndexImplPutTest {
     }
 
     @Test
+    void walSyncFailureOnDeleteTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        index.put(1, "one");
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> index.delete(1));
+            assertTrue(exception.getMessage().contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walSyncFailureOnPutAsyncTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final CompletionException exception = assertThrows(
+                    CompletionException.class,
+                    () -> index.putAsync(1, "one").toCompletableFuture()
+                            .join());
+            assertTrue(exception.getCause().getMessage()
+                    .contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walSyncFailureOnDeleteAsyncTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        index.put(1, "one");
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final CompletionException exception = assertThrows(
+                    CompletionException.class,
+                    () -> index.deleteAsync(1).toCompletableFuture().join());
+            assertTrue(exception.getCause().getMessage()
+                    .contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
     void walRetentionBackpressureSkipsUnsatisfiableSingleActiveSegmentCase() {
-        final Wal wal = Wal.builder().withEnabled(true)
+        final Wal wal = Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.ASYNC)
                 .withSegmentSizeBytes(64L * 1024L)
                 .withMaxBytesBeforeForcedCheckpoint(1L).build();

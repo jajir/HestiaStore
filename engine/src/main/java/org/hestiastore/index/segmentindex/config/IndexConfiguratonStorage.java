@@ -190,7 +190,6 @@ public class IndexConfiguratonStorage<K, V> {
                 PROP_WAL_ENABLED, false);
         if (walEnabled) {
             builder.withWal(Wal.builder()//
-                    .withEnabled(true)//
                     .withDurabilityMode(resolveEnum(propsView,
                             PROP_WAL_DURABILITY_MODE,
                             Wal.DEFAULT_DURABILITY_MODE,

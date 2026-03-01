@@ -833,7 +833,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             syncFailure = ex;
         }
         syncFailureCount.increment();
-        logger.error("WAL sync failure", ex);
+        logger.error(
+                "event=wal_sync_failure durableLsn={} pendingHighLsn={} pendingSyncBytes={} segmentCount={} syncFailureCount={}",
+                durableLsn.get(), pendingSyncHighLsn, pendingSyncBytes,
+                segments.size(), syncFailureCount.sum(), ex);
         monitor.notifyAll();
     }
 
