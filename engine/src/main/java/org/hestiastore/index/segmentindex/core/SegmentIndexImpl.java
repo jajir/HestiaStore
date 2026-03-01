@@ -488,6 +488,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 walStats.retainedBytes(), walStats.segmentCount(),
                 walStats.durableLsn(), walStats.checkpointLsn(),
                 walStats.pendingSyncBytes(), lastAppliedWalLsn.get(),
+                walStats.syncTotalNanos(), walStats.syncMaxNanos(),
+                walStats.syncBatchBytesTotal(), walStats.syncBatchBytesMax(),
                 segmentRuntime.segmentRuntimeSnapshots, getState());
     }
 
