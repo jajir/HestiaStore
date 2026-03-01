@@ -67,10 +67,10 @@ public final class WalTool {
         if (formatResult != null) {
             return formatResult;
         }
-        final VerifyResult checkpointResult = verifyCheckpointMetadata(
+        final CheckpointValidation checkpointValidation = readCheckpointMetadata(
                 walDirectory);
-        if (checkpointResult != null) {
-            return checkpointResult;
+        if (checkpointValidation.error() != null) {
+            return checkpointValidation.error();
         }
         final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
         if (segmentDiscovery.error() != null) {
@@ -144,6 +144,12 @@ public final class WalTool {
                 records++;
                 offset += 4L + bodyLen;
             }
+        }
+        if (checkpointValidation.checkpointLsn() != null
+                && checkpointValidation.checkpointLsn().longValue() > maxLsn) {
+            return new VerifyResult(false, files.size(), records, maxLsn,
+                    CHECKPOINT_FILE, -1L,
+                    "Checkpoint LSN is ahead of max WAL LSN.");
         }
         return new VerifyResult(true, files.size(), records, maxLsn, null, -1L,
                 null);
@@ -371,27 +377,28 @@ public final class WalTool {
         return null;
     }
 
-    private static VerifyResult verifyCheckpointMetadata(
+    private static CheckpointValidation readCheckpointMetadata(
             final Path walDirectory) {
         final Path checkpointFile = walDirectory.resolve(CHECKPOINT_FILE);
         if (!Files.exists(checkpointFile)) {
-            return null;
+            return new CheckpointValidation(null, null);
         }
         final String text = new String(readAll(checkpointFile),
                 StandardCharsets.US_ASCII).trim();
         if (text.isEmpty()) {
-            return null;
+            return new CheckpointValidation(null, null);
         }
         try {
             final long checkpointLsn = Long.parseLong(text);
             if (checkpointLsn < 0L) {
-                return new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
-                        "Negative checkpoint LSN.");
+                return new CheckpointValidation(null,
+                        new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE,
+                                -1L, "Negative checkpoint LSN."));
             }
-            return null;
+            return new CheckpointValidation(Long.valueOf(checkpointLsn), null);
         } catch (RuntimeException e) {
-            return new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
-                    "Invalid checkpoint metadata.");
+            return new CheckpointValidation(null, new VerifyResult(false, 0, 0L,
+                    0L, CHECKPOINT_FILE, -1L, "Invalid checkpoint metadata."));
         }
     }
 
@@ -403,5 +410,8 @@ public final class WalTool {
     }
 
     record SegmentDiscovery(List<Path> files, VerifyResult error) {
+    }
+
+    record CheckpointValidation(Long checkpointLsn, VerifyResult error) {
     }
 }

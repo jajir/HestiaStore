@@ -44,8 +44,8 @@ Inside index directory:
 
 `WalTool` supports:
 
-- `verify` - checksum/structure validation and first-error location
-- `dump` - per-segment summaries
+- `verify` - validates format/checkpoint metadata, strict segment naming, checksum/record structure, global LSN monotonicity, and checkpoint <= max WAL LSN
+- `dump` - prints per-record metadata, invalid-tail markers, and per-segment summary
 
 Usage:
 
@@ -53,6 +53,11 @@ Usage:
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool verify /path/to/index/wal
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal
 ```
+
+`verify` output fields:
+
+- `verify.ok`, `verify.files`, `verify.records`, `verify.maxLsn`
+- On failure: `verify.errorFile`, `verify.errorOffset`, `verify.errorMessage`
 
 ## Operational Signals
 
