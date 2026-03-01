@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -190,7 +191,8 @@ class WalToolTest {
             runtime.appendPut("a", "1");
             runtime.appendDelete("a");
         }
-        final String output = captureStdout(() -> WalTool.dump(root.resolve("wal")));
+        final String output = captureStdout(
+                out -> WalTool.dump(root.resolve("wal"), out));
         assertTrue(output.contains("record file="));
         assertTrue(output.contains("op=PUT"));
         assertTrue(output.contains("op=DELETE"));
@@ -212,9 +214,55 @@ class WalToolTest {
         Files.write(segment, new byte[] { 0x01, 0x02, 0x03 },
                 StandardOpenOption.APPEND);
 
-        final String output = captureStdout(() -> WalTool.dump(walDir));
+        final String output = captureStdout(out -> WalTool.dump(walDir, out));
         assertTrue(output.contains("invalid file="));
         assertTrue(output.contains("reason="));
+    }
+
+    @Test
+    void runReturnsExitCodeTwoWhenVerifyFails() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-run-verify-fails-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.writeString(walDir.resolve("checkpoint.meta"), "999",
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+
+        final CommandRunResult result = runWalTool("verify",
+                walDir.toString());
+        assertEquals(2, result.exitCode());
+        assertTrue(result.stdout().contains("verify.ok=false"));
+        assertTrue(result.stdout().contains("verify.errorMessage="));
+    }
+
+    @Test
+    void runReturnsExitCodeZeroWhenVerifyPasses() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-run-verify-passes-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final CommandRunResult result = runWalTool("verify",
+                root.resolve("wal").toString());
+        assertEquals(0, result.exitCode());
+        assertTrue(result.stdout().contains("verify.ok=true"));
+    }
+
+    @Test
+    void runReturnsExitCodeOneForInvalidArgs() {
+        final CommandRunResult result = runWalTool();
+        assertEquals(1, result.exitCode());
+        assertTrue(result.stdout().contains("Usage: WalTool"));
     }
 
     private static Path findFirstSegment(final Path walDir) throws IOException {
@@ -237,18 +285,37 @@ class WalToolTest {
         }
     }
 
-    private static String captureStdout(final Runnable runnable) {
-        final PrintStream originalOut = System.out;
+    private static String captureStdout(
+            final java.util.function.Consumer<PrintStream> action) {
         final ByteArrayOutputStream captured = new ByteArrayOutputStream();
         final PrintStream captureStream = new PrintStream(captured, true,
                 StandardCharsets.UTF_8);
         try {
-            System.setOut(captureStream);
-            runnable.run();
+            action.accept(captureStream);
         } finally {
-            System.setOut(originalOut);
             captureStream.close();
         }
         return captured.toString(StandardCharsets.UTF_8);
+    }
+
+    private static CommandRunResult runWalTool(final String... args) {
+        final ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
+        final ByteArrayOutputStream errBytes = new ByteArrayOutputStream();
+        final PrintStream out = new PrintStream(outBytes, true,
+                StandardCharsets.UTF_8);
+        final PrintStream err = new PrintStream(errBytes, true,
+                StandardCharsets.UTF_8);
+        try {
+            final int exitCode = WalTool.run(args, out, err);
+            return new CommandRunResult(exitCode,
+                    outBytes.toString(StandardCharsets.UTF_8),
+                    errBytes.toString(StandardCharsets.UTF_8));
+        } finally {
+            out.close();
+            err.close();
+        }
+    }
+
+    private record CommandRunResult(int exitCode, String stdout, String stderr) {
     }
 }
