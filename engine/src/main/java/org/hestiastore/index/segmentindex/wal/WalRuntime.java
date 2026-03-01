@@ -121,6 +121,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private static final String FORMAT_FILE = "format.meta";
     private static final String CHECKPOINT_FILE = "checkpoint.meta";
     private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
+    private static final String EPOCH_FILE = "epoch.meta";
+    private static final String EPOCH_FILE_TMP = "epoch.meta.tmp";
     private static final String FORMAT_FILE_TMP = "format.meta.tmp";
     private static final String SEGMENT_SUFFIX = ".wal";
     private static final String SEGMENT_FILE_FORMAT = "%020d" + SEGMENT_SUFFIX;
@@ -155,6 +157,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private long nextLsn = 1L;
     private long checkpointLsn = 0L;
     private long retainedBytes = 0L;
+    private long currentEpoch = 0L;
     private long pendingSyncHighLsn = 0L;
     private long pendingSyncBytes = 0L;
     private final Set<String> pendingSyncSegmentNames = new LinkedHashSet<>();
@@ -213,6 +216,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         final WalRuntime<K, V> runtime = new WalRuntime<>(resolvedWal, storage,
                 keyDescriptor, valueDescriptor);
         runtime.ensureFormatMarker();
+        runtime.ensureEpochMarker();
         return runtime;
     }
 
@@ -224,6 +228,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 valueDescriptor);
         if (runtime.enabled) {
             runtime.ensureFormatMarker();
+            runtime.ensureEpochMarker();
         }
         return runtime;
     }
@@ -248,6 +253,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             checkSyncFailure();
             ensureOpen();
             ensureFormatMarker();
+            ensureEpochMarker();
             checkpointLsn = readCheckpointLsn();
             retainedBytes = 0L;
             pendingSyncBytes = 0L;
@@ -344,7 +350,20 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @return assigned LSN
      */
     public long appendPut(final K key, final V value) {
-        return append(Operation.PUT, key, value);
+        return append(Operation.PUT, key, value, null);
+    }
+
+    /**
+     * Appends a PUT record with explicit expected epoch and returns assigned LSN.
+     *
+     * @param expectedEpoch epoch expected by caller
+     * @param key key
+     * @param value value
+     * @return assigned LSN
+     */
+    public long appendPutWithEpoch(final long expectedEpoch, final K key,
+            final V value) {
+        return append(Operation.PUT, key, value, Long.valueOf(expectedEpoch));
     }
 
     /**
@@ -354,7 +373,61 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @return assigned LSN
      */
     public long appendDelete(final K key) {
-        return append(Operation.DELETE, key, null);
+        return append(Operation.DELETE, key, null, null);
+    }
+
+    /**
+     * Appends a DELETE record with explicit expected epoch and returns assigned
+     * LSN.
+     *
+     * @param expectedEpoch epoch expected by caller
+     * @param key key
+     * @return assigned LSN
+     */
+    public long appendDeleteWithEpoch(final long expectedEpoch, final K key) {
+        return append(Operation.DELETE, key, null,
+                Long.valueOf(expectedEpoch));
+    }
+
+    /**
+     * Returns currently persisted epoch value.
+     *
+     * @return current epoch
+     */
+    public long currentEpoch() {
+        if (!enabled || !wal.isEpochSupport()) {
+            return 0L;
+        }
+        synchronized (monitor) {
+            return currentEpoch;
+        }
+    }
+
+    /**
+     * Persists and sets a new epoch, rejecting non-monotonic updates.
+     *
+     * @param newEpoch new epoch to activate
+     * @return active epoch after update
+     */
+    public long bumpEpoch(final long newEpoch) {
+        if (!enabled || !wal.isEpochSupport()) {
+            return 0L;
+        }
+        synchronized (monitor) {
+            checkSyncFailure();
+            ensureOpen();
+            if (newEpoch <= currentEpoch) {
+                throw new IllegalArgumentException(String.format(
+                        "WAL epoch bump must be monotonic: current=%s requested=%s",
+                        currentEpoch, newEpoch));
+            }
+            final long previousEpoch = currentEpoch;
+            writeEpochAtomic(newEpoch);
+            currentEpoch = newEpoch;
+            logger.info("event=wal_epoch_bump previousEpoch={} newEpoch={}",
+                    previousEpoch, newEpoch);
+            return currentEpoch;
+        }
     }
 
     /**
@@ -459,7 +532,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
     }
 
-    private long append(final Operation operation, final K key, final V value) {
+    private long append(final Operation operation, final K key, final V value,
+            final Long expectedEpoch) {
         if (!enabled) {
             return 0L;
         }
@@ -470,6 +544,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         synchronized (monitor) {
             checkSyncFailure();
             ensureOpen();
+            validateAppendEpochLocked(expectedEpoch);
             final long lsn = nextLsn;
             final byte[] recordBytes = encodeRecord(operation, lsn, key, value);
             ensureActiveSegmentFor(recordBytes.length);
@@ -816,6 +891,17 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
     }
 
+    private void validateAppendEpochLocked(final Long expectedEpoch) {
+        if (!wal.isEpochSupport() || expectedEpoch == null) {
+            return;
+        }
+        if (expectedEpoch.longValue() != currentEpoch) {
+            throw new IndexException(String.format(
+                    "WAL append rejected for epoch %s. Active epoch is %s.",
+                    expectedEpoch, currentEpoch));
+        }
+    }
+
     private List<SegmentInfo> discoverSegmentsStrict() {
         final List<String> segmentNames;
         try (StreamCloseable names = new StreamCloseable(storage.listFileNames())) {
@@ -900,6 +986,43 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         storage.sync(CHECKPOINT_FILE);
     }
 
+    private long readEpoch() {
+        if (!storage.exists(EPOCH_FILE)) {
+            return 0L;
+        }
+        final byte[] data = storage.readAll(EPOCH_FILE);
+        if (data.length == 0) {
+            return 0L;
+        }
+        try {
+            final String value = new String(data, StandardCharsets.US_ASCII)
+                    .trim();
+            if (value.isEmpty()) {
+                return 0L;
+            }
+            final long parsed = Long.parseLong(value);
+            if (parsed < 0L) {
+                throw new IndexException(String.format(
+                        "Invalid WAL epoch metadata: negative epoch '%s'.",
+                        parsed));
+            }
+            return parsed;
+        } catch (IndexException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw new IndexException("Invalid WAL epoch metadata.", ex);
+        }
+    }
+
+    private void writeEpochAtomic(final long epoch) {
+        final byte[] data = String.valueOf(epoch)
+                .getBytes(StandardCharsets.US_ASCII);
+        storage.overwrite(EPOCH_FILE_TMP, data, 0, data.length);
+        storage.sync(EPOCH_FILE_TMP);
+        storage.rename(EPOCH_FILE_TMP, EPOCH_FILE);
+        storage.sync(EPOCH_FILE);
+    }
+
     private void ensureFormatMarker() {
         if (!enabled) {
             return;
@@ -918,6 +1041,17 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                     meta.version(), meta.checksum(), FORMAT_VERSION,
                     expectedChecksum));
         }
+    }
+
+    private void ensureEpochMarker() {
+        if (!enabled || !wal.isEpochSupport()) {
+            currentEpoch = 0L;
+            return;
+        }
+        if (!storage.exists(EPOCH_FILE)) {
+            writeEpochAtomic(0L);
+        }
+        currentEpoch = readEpoch();
     }
 
     private void writeFormatMarker(final byte[] payload) {
