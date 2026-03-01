@@ -142,6 +142,26 @@ class WalToolTest {
     }
 
     @Test
+    void verifyFailsForWalDirectoryEntry() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-segment-directory-entry-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.createDirectory(walDir.resolve("00000000000000000002.wal"));
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertFalse(result.ok());
+        assertTrue("00000000000000000002.wal".equals(result.errorFile()));
+        assertTrue(result.errorMessage() != null
+                && result.errorMessage().contains("not a regular file"));
+    }
+
+    @Test
     void verifyFailsForNonCanonicalSegmentFileName() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-non-canonical-segment-name-");
