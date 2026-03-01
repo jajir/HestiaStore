@@ -180,8 +180,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             throw new IllegalArgumentException(String.format(
                     "Can't insert thombstone value '%s' into index", value));
         }
-        enforceWalRetentionPressureIfNeeded();
-        final long walLsn = walRuntime.appendPut(key, value);
+        final long walLsn = appendWalPutWithFailureHandling(key, value);
 
         final IndexResult<Void> result = retryWhileBusyWithSplitWait(
                 () -> core.put(key, value), "put", key, true);
@@ -308,8 +307,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
-        enforceWalRetentionPressureIfNeeded();
-        final long walLsn = walRuntime.appendDelete(key);
+        final long walLsn = appendWalDeleteWithFailureHandling(key);
         final IndexResult<Void> result = retryWhileBusyWithSplitWait(
                 () -> core.put(key, valueTypeDescriptor.getTombstone()),
                 "delete", key, true);
@@ -556,13 +554,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (!walRuntime.isEnabled()) {
             return;
         }
-        walRuntime.onCheckpoint(lastAppliedWalLsn.get());
-        if (logger.isDebugEnabled()) {
-            final var walStats = walRuntime.statsSnapshot();
-            logger.debug(
-                    "WAL checkpoint: durableLsn={}, checkpointLsn={}, retainedBytes={}, segments={}",
-                    walStats.durableLsn(), walStats.checkpointLsn(),
-                    walStats.retainedBytes(), walStats.segmentCount());
+        try {
+            walRuntime.onCheckpoint(lastAppliedWalLsn.get());
+            if (logger.isDebugEnabled()) {
+                final var walStats = walRuntime.statsSnapshot();
+                logger.debug(
+                        "WAL checkpoint: durableLsn={}, checkpointLsn={}, retainedBytes={}, segments={}",
+                        walStats.durableLsn(), walStats.checkpointLsn(),
+                        walStats.retainedBytes(), walStats.segmentCount());
+            }
+        } catch (final RuntimeException failure) {
+            handleWalRuntimeFailure(failure);
+            throw failure;
         }
     }
 
@@ -584,6 +587,47 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             retryPolicy.backoffOrThrow(startNanos, "walBackpressure", null);
         }
+    }
+
+    private long appendWalPutWithFailureHandling(final K key, final V value) {
+        if (!walRuntime.isEnabled()) {
+            return 0L;
+        }
+        try {
+            enforceWalRetentionPressureIfNeeded();
+            return walRuntime.appendPut(key, value);
+        } catch (final RuntimeException failure) {
+            handleWalRuntimeFailure(failure);
+            throw failure;
+        }
+    }
+
+    private long appendWalDeleteWithFailureHandling(final K key) {
+        if (!walRuntime.isEnabled()) {
+            return 0L;
+        }
+        try {
+            enforceWalRetentionPressureIfNeeded();
+            return walRuntime.appendDelete(key);
+        } catch (final RuntimeException failure) {
+            handleWalRuntimeFailure(failure);
+            throw failure;
+        }
+    }
+
+    private void handleWalRuntimeFailure(final RuntimeException failure) {
+        if (!walRuntime.isEnabled() || !walRuntime.hasSyncFailure()) {
+            return;
+        }
+        final SegmentIndexState state = getState();
+        if (state == SegmentIndexState.CLOSED
+                || state == SegmentIndexState.ERROR) {
+            return;
+        }
+        logger.error(
+                "WAL sync failure detected. Transitioning index to ERROR state.",
+                failure);
+        failWithError(failure);
     }
 
     private void flushSegments(final boolean waitForCompletion) {

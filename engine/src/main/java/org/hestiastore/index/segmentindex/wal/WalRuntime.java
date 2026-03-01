@@ -373,6 +373,15 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         return durableLsn.get();
     }
 
+    public boolean hasSyncFailure() {
+        if (!enabled) {
+            return false;
+        }
+        synchronized (monitor) {
+            return syncFailure != null;
+        }
+    }
+
     public WalStats statsSnapshot() {
         if (!enabled) {
             return new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L);
@@ -402,7 +411,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             groupSyncExecutor.shutdownNow();
         }
         synchronized (monitor) {
-            if (wal.getDurabilityMode() != WalDurabilityMode.ASYNC) {
+            if (wal.getDurabilityMode() != WalDurabilityMode.ASYNC
+                    && syncFailure == null) {
                 try {
                     syncGroupPendingLocked();
                 } catch (RuntimeException ex) {
@@ -660,6 +670,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         if (!enabled || wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
             return;
         }
+        checkSyncFailure();
         if (pendingSyncHighLsn <= durableLsn.get()) {
             pendingSyncBytes = 0L;
             pendingSyncSegmentNames.clear();
@@ -668,20 +679,25 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         if (pendingSyncSegmentNames.isEmpty()) {
             return;
         }
-        final Set<String> remaining = new HashSet<>(pendingSyncSegmentNames);
-        for (final SegmentInfo segment : segments) {
-            if (remaining.remove(segment.name())) {
-                storage.sync(segment.name());
+        try {
+            final Set<String> remaining = new HashSet<>(pendingSyncSegmentNames);
+            for (final SegmentInfo segment : segments) {
+                if (remaining.remove(segment.name())) {
+                    storage.sync(segment.name());
+                }
             }
+            for (final String segmentName : remaining) {
+                storage.sync(segmentName);
+            }
+            durableLsn.set(pendingSyncHighLsn);
+            pendingSyncBytes = 0L;
+            pendingSyncSegmentNames.clear();
+            syncCount.increment();
+            monitor.notifyAll();
+        } catch (RuntimeException ex) {
+            markSyncFailure(ex);
+            checkSyncFailure();
         }
-        for (final String segmentName : remaining) {
-            storage.sync(segmentName);
-        }
-        durableLsn.set(pendingSyncHighLsn);
-        pendingSyncBytes = 0L;
-        pendingSyncSegmentNames.clear();
-        syncCount.increment();
-        monitor.notifyAll();
     }
 
     private void waitUntilDurableLocked(final long lsn) {
