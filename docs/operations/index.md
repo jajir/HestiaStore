@@ -37,3 +37,4 @@ Notes:
 - WAL is optional and disabled by default (`Wal.EMPTY`). When enabled, recovery replays WAL and can truncate invalid tails.
 - If you keep running without compaction, reads remain correct; compaction improves locality and space usage.
 - See [WAL Operations](wal.md) for durability modes, corruption handling, and WAL verification tooling.
+- Use [WAL Canary Runbook](wal-canary-runbook.md) for staged enablement, alert thresholds, and rollback to `Wal.EMPTY`.
