@@ -260,6 +260,42 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverFailsWhenCheckpointMetadataIsNonNumeric() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        writeCheckpointMetadata(root, "not-a-number");
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
+    void recoverFailsWhenCheckpointMetadataIsNegative() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        writeCheckpointMetadata(root, "-1");
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
     void recoverRejectsDuplicateSegmentBaseLsn() {
         final MemDirectory root = new MemDirectory();
         final Directory walDirectory = root.openSubDirectory("wal");
@@ -619,6 +655,15 @@ class WalRuntimeTest {
     private static String singleWalSegmentName(final MemDirectory walDirectory) {
         return walDirectory.getFileNames().filter(name -> name.endsWith(".wal"))
                 .findFirst().orElseThrow();
+    }
+
+    private static void writeCheckpointMetadata(final MemDirectory root,
+            final String value) {
+        final Directory walDirectory = root.openSubDirectory("wal");
+        try (org.hestiastore.index.directory.FileWriter writer = walDirectory
+                .getFileWriter("checkpoint.meta", Directory.Access.OVERWRITE)) {
+            writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        }
     }
 
     private static final class SyncObservingStorage implements WalStorage {
