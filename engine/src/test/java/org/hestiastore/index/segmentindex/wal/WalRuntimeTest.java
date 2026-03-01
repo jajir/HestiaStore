@@ -31,7 +31,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
-import org.hestiastore.index.segmentindex.WalReplicationMode;
 import org.junit.jupiter.api.Test;
 
 class WalRuntimeTest {
@@ -312,174 +311,6 @@ class WalRuntimeTest {
                     () -> runtime.bumpEpoch(2L));
             assertThrows(IllegalArgumentException.class,
                     () -> runtime.bumpEpoch(1L));
-        }
-    }
-
-    @Test
-    void fetchRecordsReturnsWindowAfterLsnWithByteLimit() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            for (int i = 1; i <= 5; i++) {
-                runtime.appendPut("k" + i, "v" + i);
-            }
-            final List<WalRuntime.ReplicatedRecord> all = runtime.fetchRecords(0L,
-                    1024 * 1024);
-            assertEquals(5, all.size());
-            assertEquals(1L, all.get(0).getLsn());
-            assertEquals(5L, all.get(4).getLsn());
-
-            final int firstRecordBytes = all.get(0).getEncodedRecord().length;
-            final List<WalRuntime.ReplicatedRecord> limited = runtime
-                    .fetchRecords(0L, firstRecordBytes);
-            assertEquals(1, limited.size());
-            assertEquals(1L, limited.get(0).getLsn());
-
-            final List<WalRuntime.ReplicatedRecord> afterTwo = runtime
-                    .fetchRecords(2L, 1024 * 1024);
-            assertEquals(3, afterTwo.size());
-            assertEquals(3L, afterTwo.get(0).getLsn());
-            assertEquals(5L, afterTwo.get(2).getLsn());
-        }
-    }
-
-    @Test
-    void appendReplicatedOnFollowerAcceptsContiguousRecords() {
-        final MemDirectory leaderRoot = new MemDirectory();
-        final Wal leaderWal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.LEADER)
-                .withSourceNodeId("node-leader")
-                .build();
-        final List<WalRuntime.ReplicatedRecord> shipped;
-        try (WalRuntime<String, String> leader = WalRuntime.open(leaderRoot,
-                leaderWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            leader.bumpEpoch(7L);
-            leader.appendPutWithEpoch(7L, "k1", "v1");
-            leader.appendDeleteWithEpoch(7L, "k2");
-            leader.appendPutWithEpoch(7L, "k3", "v3");
-            shipped = leader.fetchRecords(0L, 1024 * 1024);
-        }
-        assertEquals(3, shipped.size());
-
-        final MemDirectory followerRoot = new MemDirectory();
-        final Wal followerWal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.FOLLOWER)
-                .withSourceNodeId("node-leader")
-                .build();
-        final long lastReplicatedLsn;
-        try (WalRuntime<String, String> follower = WalRuntime.open(followerRoot,
-                followerWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            follower.bumpEpoch(7L);
-            lastReplicatedLsn = follower.appendReplicated(
-                    toEncodedRecords(shipped), 7L, "node-leader");
-        }
-        assertEquals(shipped.get(shipped.size() - 1).getLsn(),
-                lastReplicatedLsn);
-
-        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
-        try (WalRuntime<String, String> follower = WalRuntime.open(followerRoot,
-                followerWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            follower.recover(replayed::add);
-        }
-        assertEquals(3, replayed.size());
-        assertEquals(WalRuntime.Operation.PUT, replayed.get(0).getOperation());
-        assertEquals("k1", replayed.get(0).getKey());
-        assertEquals("v1", replayed.get(0).getValue());
-        assertEquals(WalRuntime.Operation.DELETE,
-                replayed.get(1).getOperation());
-        assertEquals("k2", replayed.get(1).getKey());
-        assertEquals(WalRuntime.Operation.PUT, replayed.get(2).getOperation());
-        assertEquals("k3", replayed.get(2).getKey());
-        assertEquals("v3", replayed.get(2).getValue());
-    }
-
-    @Test
-    void appendReplicatedRejectsNonContiguousStream() {
-        final MemDirectory leaderRoot = new MemDirectory();
-        final Wal leaderWal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.LEADER)
-                .withSourceNodeId("node-leader")
-                .build();
-        final List<WalRuntime.ReplicatedRecord> shipped;
-        try (WalRuntime<String, String> leader = WalRuntime.open(leaderRoot,
-                leaderWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            leader.bumpEpoch(11L);
-            leader.appendPutWithEpoch(11L, "k1", "v1");
-            leader.appendPutWithEpoch(11L, "k2", "v2");
-            shipped = leader.fetchRecords(0L, 1024 * 1024);
-        }
-        final List<byte[]> malformed = new ArrayList<>(
-                toEncodedRecords(shipped));
-        final long firstLsn = shipped.get(0).getLsn();
-        malformed.set(1, withEncodedRecordLsn(malformed.get(1), firstLsn + 2));
-
-        final MemDirectory followerRoot = new MemDirectory();
-        final Wal followerWal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.FOLLOWER)
-                .withSourceNodeId("node-leader")
-                .build();
-        try (WalRuntime<String, String> follower = WalRuntime.open(followerRoot,
-                followerWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            follower.bumpEpoch(11L);
-            assertThrows(IndexException.class, () -> follower.appendReplicated(
-                    malformed, 11L, "node-leader"));
-        }
-    }
-
-    @Test
-    void appendReplicatedRejectsWrongSourceOrEpoch() {
-        final MemDirectory leaderRoot = new MemDirectory();
-        final Wal leaderWal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.LEADER)
-                .withSourceNodeId("node-leader")
-                .build();
-        final List<byte[]> shipped;
-        try (WalRuntime<String, String> leader = WalRuntime.open(leaderRoot,
-                leaderWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            leader.bumpEpoch(15L);
-            leader.appendPutWithEpoch(15L, "k1", "v1");
-            shipped = toEncodedRecords(leader.fetchRecords(0L, 1024 * 1024));
-        }
-
-        final MemDirectory followerRoot = new MemDirectory();
-        final Wal followerWal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.FOLLOWER)
-                .withSourceNodeId("node-leader")
-                .build();
-        try (WalRuntime<String, String> follower = WalRuntime.open(followerRoot,
-                followerWal, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            follower.bumpEpoch(15L);
-            assertThrows(IndexException.class, () -> follower.appendReplicated(
-                    shipped, 15L, "node-other"));
-            assertThrows(IndexException.class, () -> follower.appendReplicated(
-                    shipped, 14L, "node-leader"));
-        }
-    }
-
-    @Test
-    void appendReplicatedRejectsWhenModeIsNotFollower() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true)
-                .withEpochSupport(true)
-                .withReplicationMode(WalReplicationMode.LEADER)
-                .withSourceNodeId("node-leader")
-                .build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.bumpEpoch(21L);
-            runtime.appendPutWithEpoch(21L, "k1", "v1");
-            final byte[] encoded = runtime.fetchRecords(0L, 1024 * 1024).get(0)
-                    .getEncodedRecord();
-            assertThrows(IndexException.class,
-                    () -> runtime.appendReplicated(List.of(encoded), 21L,
-                            "node-leader"));
         }
     }
 
@@ -990,22 +821,6 @@ class WalRuntimeTest {
                 .getFileWriter("epoch.meta", Directory.Access.OVERWRITE)) {
             writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
         }
-    }
-
-    private static List<byte[]> toEncodedRecords(
-            final List<WalRuntime.ReplicatedRecord> records) {
-        return records.stream().map(WalRuntime.ReplicatedRecord::getEncodedRecord)
-                .toList();
-    }
-
-    private static byte[] withEncodedRecordLsn(final byte[] encodedRecord,
-            final long lsn) {
-        final byte[] updated = Arrays.copyOf(encodedRecord, encodedRecord.length);
-        final int bodyLen = WalRuntime.readInt(updated, 0);
-        WalRuntime.putLong(updated, 8, lsn);
-        final int crc = WalRuntime.computeCrc32(updated, 8, bodyLen - 4);
-        WalRuntime.putInt(updated, 4, crc);
-        return updated;
     }
 
     private static final class FailingStorage implements WalStorage {
