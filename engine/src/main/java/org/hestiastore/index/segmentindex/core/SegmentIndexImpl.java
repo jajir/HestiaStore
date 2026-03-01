@@ -442,6 +442,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final SegmentRegistryCacheStats cacheStats = segmentRegistry
                 .metricsSnapshot();
         final SegmentRuntimeAggregate segmentRuntime = collectSegmentRuntime();
+        final var walStats = walRuntime.statsSnapshot();
         final long compactRequestCount = Math.max(stats.getCompactRequestCx(),
                 updateHighWaterMark(compactRequestHighWaterMark,
                         segmentRuntime.compactRequestCount));
@@ -482,7 +483,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.bloomFilterRequestCount,
                 segmentRuntime.bloomFilterRefusedCount,
                 segmentRuntime.bloomFilterPositiveCount,
-                segmentRuntime.bloomFilterFalsePositiveCount,
+                segmentRuntime.bloomFilterFalsePositiveCount, walRuntime.isEnabled(),
+                walStats.appendCount(), walStats.appendBytes(),
+                walStats.syncCount(), walStats.syncFailureCount(),
+                walStats.corruptionCount(), walStats.truncationCount(),
+                walStats.retainedBytes(), walStats.segmentCount(),
+                walStats.durableLsn(), walStats.checkpointLsn(),
+                walStats.pendingSyncBytes(),
                 segmentRuntime.segmentRuntimeSnapshots, getState());
     }
 

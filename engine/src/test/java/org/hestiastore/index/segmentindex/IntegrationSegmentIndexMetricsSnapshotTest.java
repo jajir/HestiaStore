@@ -60,9 +60,59 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getBloomFilterRefusedCount() >= 0L);
             assertTrue(snapshot.getBloomFilterPositiveCount() >= 0L);
             assertTrue(snapshot.getBloomFilterFalsePositiveCount() >= 0L);
+            assertEquals(false, snapshot.isWalEnabled());
+            assertEquals(0L, snapshot.getWalAppendCount());
+            assertEquals(0L, snapshot.getWalAppendBytes());
+            assertEquals(0L, snapshot.getWalSyncCount());
+            assertEquals(0L, snapshot.getWalSyncFailureCount());
+            assertEquals(0L, snapshot.getWalCorruptionCount());
+            assertEquals(0L, snapshot.getWalTruncationCount());
+            assertEquals(0L, snapshot.getWalRetainedBytes());
+            assertEquals(0, snapshot.getWalSegmentCount());
+            assertEquals(0L, snapshot.getWalDurableLsn());
+            assertEquals(0L, snapshot.getWalCheckpointLsn());
+            assertEquals(0L, snapshot.getWalPendingSyncBytes());
             assertTrue(snapshot.getSegmentRuntimeSnapshots()
                     .size() <= snapshot.getSegmentCount());
             assertEquals(SegmentIndexState.READY, snapshot.getState());
+        }
+    }
+
+    @Test
+    void metricsSnapshotExposesWalStatsWhenEnabled() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegment(64) //
+                .withName("metrics_wal_enabled_test_index") //
+                .withWal(Wal.builder().withEnabled(true).build()) //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            index.put(1, "a");
+            index.put(2, "b");
+            index.delete(1);
+            index.flushAndWait();
+
+            final SegmentIndexMetricsSnapshot snapshot = index
+                    .metricsSnapshot();
+            assertTrue(snapshot.isWalEnabled());
+            assertTrue(snapshot.getWalAppendCount() >= 3L);
+            assertTrue(snapshot.getWalAppendBytes() > 0L);
+            assertTrue(snapshot.getWalSyncCount() >= 1L);
+            assertEquals(0L, snapshot.getWalSyncFailureCount());
+            assertEquals(0L, snapshot.getWalCorruptionCount());
+            assertEquals(0L, snapshot.getWalTruncationCount());
+            assertTrue(snapshot.getWalSegmentCount() >= 1);
+            assertTrue(snapshot.getWalDurableLsn() >= 3L);
+            assertTrue(snapshot.getWalCheckpointLsn() >= 3L);
         }
     }
 

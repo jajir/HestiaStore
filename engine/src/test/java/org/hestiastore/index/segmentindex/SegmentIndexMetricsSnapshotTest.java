@@ -29,6 +29,18 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(0L, snapshot.getRegistryCacheEvictionCount());
         assertEquals(0, snapshot.getRegistryCacheSize());
         assertEquals(0, snapshot.getRegistryCacheLimit());
+        assertEquals(false, snapshot.isWalEnabled());
+        assertEquals(0L, snapshot.getWalAppendCount());
+        assertEquals(0L, snapshot.getWalAppendBytes());
+        assertEquals(0L, snapshot.getWalSyncCount());
+        assertEquals(0L, snapshot.getWalSyncFailureCount());
+        assertEquals(0L, snapshot.getWalCorruptionCount());
+        assertEquals(0L, snapshot.getWalTruncationCount());
+        assertEquals(0L, snapshot.getWalRetainedBytes());
+        assertEquals(0, snapshot.getWalSegmentCount());
+        assertEquals(0L, snapshot.getWalDurableLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLsn());
+        assertEquals(0L, snapshot.getWalPendingSyncBytes());
         assertTrue(snapshot.getSegmentRuntimeSnapshots().isEmpty());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
@@ -50,6 +62,28 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(14L, snapshot.getRegistryCacheEvictionCount());
         assertEquals(2, snapshot.getRegistryCacheSize());
         assertEquals(64, snapshot.getRegistryCacheLimit());
+    }
+
+    @Test
+    void fullConstructorStoresWalMetricsValues() {
+        final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L,
+                0L, 0, 0, 0D, 0L, 0L, 0L, 0L, true, 10L, 100L, 20L, 1L, 2L, 3L,
+                4L, 5, 6L, 7L, 8L, List.of(), SegmentIndexState.READY);
+
+        assertTrue(snapshot.isWalEnabled());
+        assertEquals(10L, snapshot.getWalAppendCount());
+        assertEquals(100L, snapshot.getWalAppendBytes());
+        assertEquals(20L, snapshot.getWalSyncCount());
+        assertEquals(1L, snapshot.getWalSyncFailureCount());
+        assertEquals(2L, snapshot.getWalCorruptionCount());
+        assertEquals(3L, snapshot.getWalTruncationCount());
+        assertEquals(4L, snapshot.getWalRetainedBytes());
+        assertEquals(5, snapshot.getWalSegmentCount());
+        assertEquals(6L, snapshot.getWalDurableLsn());
+        assertEquals(7L, snapshot.getWalCheckpointLsn());
+        assertEquals(8L, snapshot.getWalPendingSyncBytes());
     }
 
     @Test
