@@ -142,9 +142,9 @@ class WalToolTest {
     }
 
     @Test
-    void verifyFailsForDuplicateSegmentBaseLsn() throws IOException {
+    void verifyFailsForNonCanonicalSegmentFileName() throws IOException {
         final Path root = Files
-                .createTempDirectory("hestia-wal-tool-duplicate-segment-base-");
+                .createTempDirectory("hestia-wal-tool-non-canonical-segment-name-");
         final Wal wal = Wal.builder().withEnabled(true).build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
@@ -158,6 +158,8 @@ class WalToolTest {
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
         assertTrue("1.wal".equals(result.errorFile()));
+        assertTrue(result.errorMessage() != null
+                && result.errorMessage().contains("Expected 20 numeric digits"));
     }
 
     @Test

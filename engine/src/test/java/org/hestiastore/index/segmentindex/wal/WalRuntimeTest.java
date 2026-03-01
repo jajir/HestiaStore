@@ -484,9 +484,9 @@ class WalRuntimeTest {
                 firstRecordLength);
         final int secondRecordLength = 4 + secondBodyLength;
         assertTrue(firstRecordLength + secondRecordLength <= segmentBytes.length);
-        walDirectory.setFileSequence("2.wal", ByteSequences
+        walDirectory.setFileSequence("00000000000000000002.wal", ByteSequences
                 .wrap(Arrays.copyOfRange(segmentBytes, 0, firstRecordLength)));
-        walDirectory.setFileSequence("10.wal",
+        walDirectory.setFileSequence("00000000000000000010.wal",
                 ByteSequences.wrap(Arrays.copyOfRange(segmentBytes,
                         firstRecordLength,
                         firstRecordLength + secondRecordLength)));
@@ -682,18 +682,19 @@ class WalRuntimeTest {
     }
 
     @Test
-    void recoverRejectsDuplicateSegmentBaseLsn() {
+    void recoverRejectsNonCanonicalSegmentName() {
         final MemDirectory root = new MemDirectory();
         final Directory walDirectory = root.openSubDirectory("wal");
-        walDirectory.touch("00000000000000000001.wal");
         walDirectory.touch("1.wal");
         final Wal wal = Wal.builder().withEnabled(true).build();
 
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            assertThrows(IndexException.class,
+            final IndexException ex = assertThrows(IndexException.class,
                     () -> runtime.recover(record -> {
                     }));
+            assertTrue(ex.getMessage() != null
+                    && ex.getMessage().contains("Invalid WAL segment name"));
         }
     }
 
