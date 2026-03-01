@@ -74,7 +74,7 @@ Durability & Fit
 
 | Engine | Durability | Compression | Runtime Deps | Typical Fit |
 |:--|:--|:--|:--|:--|
-| HestiaStore | File-backed; commit on close | Snappy | Pure Java (JAR-only) | Embedded KV with simple ops, large datasets |
+| HestiaStore | File-backed; optional WAL (opt-in) + flush/close boundaries | Snappy | Pure Java (JAR-only) | Embedded KV with predictable local durability/recovery |
 | RocksDB | WAL + checkpoints (optional transactions) | Snappy/Zstd/LZ4 | Native library | High write throughput, low-latency reads |
 | LevelDB | File-backed; no transactions | Snappy | JAR-only port/native bindings | Lightweight LSM, smaller footprints |
 | MapDB | File-backed; optional TX | None/limited | Pure Java (JAR-only) | Simple embedded maps/sets |
@@ -84,7 +84,7 @@ Durability & Fit
 Notes
 
 - “Concurrency” describes the general access model; specifics depend on configuration and workload.
-- HestiaStore focuses on predictable file I/O with configurable buffering; WAL/transactions are on the roadmap.
+- HestiaStore supports opt-in WAL for local crash recovery; cross-key ACID transactions and replication are not part of current scope.
 
 ## 🤝 Contributing
 

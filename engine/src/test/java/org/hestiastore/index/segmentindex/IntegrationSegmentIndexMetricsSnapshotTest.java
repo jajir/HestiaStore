@@ -72,6 +72,14 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(0L, snapshot.getWalDurableLsn());
             assertEquals(0L, snapshot.getWalCheckpointLsn());
             assertEquals(0L, snapshot.getWalPendingSyncBytes());
+            assertEquals(0L, snapshot.getWalAppliedLsn());
+            assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+            assertEquals(0L, snapshot.getWalSyncTotalNanos());
+            assertEquals(0L, snapshot.getWalSyncMaxNanos());
+            assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
+            assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
+            assertEquals(0L, snapshot.getWalSyncAvgNanos());
+            assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
             assertTrue(snapshot.getSegmentRuntimeSnapshots()
                     .size() <= snapshot.getSegmentCount());
             assertEquals(SegmentIndexState.READY, snapshot.getState());
@@ -113,6 +121,16 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getWalSegmentCount() >= 1);
             assertTrue(snapshot.getWalDurableLsn() >= 3L);
             assertTrue(snapshot.getWalCheckpointLsn() >= 3L);
+            assertTrue(snapshot.getWalAppliedLsn() >= 3L);
+            assertTrue(snapshot.getWalCheckpointLagLsn() >= 0L);
+            assertTrue(snapshot.getWalSyncTotalNanos() >= 0L);
+            assertTrue(snapshot.getWalSyncMaxNanos() >= 0L);
+            assertTrue(snapshot.getWalSyncBatchBytesTotal() > 0L);
+            assertTrue(snapshot.getWalSyncBatchBytesMax() > 0L);
+            assertTrue(snapshot.getWalSyncBatchBytesTotal() >= snapshot
+                    .getWalSyncBatchBytesMax());
+            assertTrue(snapshot.getWalSyncAvgNanos() >= 0L);
+            assertTrue(snapshot.getWalSyncAvgBatchBytes() > 0L);
         }
     }
 
