@@ -276,6 +276,53 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverDeletesStaleSegmentsAfterCorruptionAndPersistsRepair() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (countWalSegments(root) < 3 && i < 256) {
+                runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+        }
+        final List<String> beforeCorruption = walSegmentNames(root);
+        assertTrue(beforeCorruption.size() >= 3);
+        final String corruptedSegment = beforeCorruption.get(1);
+        final Set<String> expectedDeleted = new HashSet<>(
+                beforeCorruption.subList(2, beforeCorruption.size()));
+        appendGarbageTail(root, corruptedSegment);
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertTrue(result.truncatedTail());
+        }
+        final Set<String> afterFirstRecovery = new HashSet<>(
+                walSegmentNames(root));
+        for (final String deleted : expectedDeleted) {
+            assertFalse(afterFirstRecovery.contains(deleted));
+        }
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertFalse(result.truncatedTail());
+        }
+        assertEquals(afterFirstRecovery, new HashSet<>(walSegmentNames(root)));
+    }
+
+    @Test
     void syncFailureFailsCurrentAndFollowingWrites() {
         final Wal wal = Wal.builder().withEnabled(true)
                 .withDurabilityMode(WalDurabilityMode.SYNC).build();
@@ -411,10 +458,22 @@ class WalRuntimeTest {
         final String segmentName = walDirectory.getFileNames()
                 .filter(name -> name.endsWith(".wal")).findFirst()
                 .orElseThrow();
+        appendGarbageTail(root, segmentName);
+    }
+
+    private static void appendGarbageTail(final MemDirectory root,
+            final String segmentName) {
+        final Directory walDirectory = root.openSubDirectory("wal");
         try (org.hestiastore.index.directory.FileWriter writer = walDirectory
                 .getFileWriter(segmentName, Directory.Access.APPEND)) {
             writer.write(new byte[] { 0x01, 0x02, 0x03, 0x04 });
         }
+    }
+
+    private static List<String> walSegmentNames(final MemDirectory root) {
+        final Directory walDirectory = root.openSubDirectory("wal");
+        return walDirectory.getFileNames().filter(name -> name.endsWith(".wal"))
+                .sorted().toList();
     }
 
     private static void truncateWalTailBy(final MemDirectory root,
