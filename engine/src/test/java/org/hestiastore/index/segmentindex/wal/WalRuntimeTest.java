@@ -191,6 +191,50 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverRepairIsIdempotentWithinSameRuntime() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withSegmentSizeBytes(1024L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+            runtime.appendPut("k2", "v2");
+        }
+        appendGarbageTail(root);
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final List<WalRuntime.ReplayRecord<String, String>> firstReplay = new ArrayList<>();
+            final WalRuntime.RecoveryResult first = runtime
+                    .recover(firstReplay::add);
+            assertTrue(first.truncatedTail());
+            assertEquals(2L, first.maxLsn());
+
+            final List<WalRuntime.ReplayRecord<String, String>> secondReplay = new ArrayList<>();
+            final WalRuntime.RecoveryResult second = runtime
+                    .recover(secondReplay::add);
+            assertFalse(second.truncatedTail());
+            assertEquals(first.maxLsn(), second.maxLsn());
+            assertEquals(first.lastReplayedLsn(), second.lastReplayedLsn());
+            assertEquals(firstReplay.size(), secondReplay.size());
+            for (int i = 0; i < firstReplay.size(); i++) {
+                assertEquals(firstReplay.get(i).getLsn(),
+                        secondReplay.get(i).getLsn());
+                assertEquals(firstReplay.get(i).getOperation(),
+                        secondReplay.get(i).getOperation());
+                assertEquals(firstReplay.get(i).getKey(),
+                        secondReplay.get(i).getKey());
+                assertEquals(firstReplay.get(i).getValue(),
+                        secondReplay.get(i).getValue());
+            }
+        }
+    }
+
+    @Test
     void checkpointDeletesSealedSegmentsAfterRotation() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
@@ -818,6 +862,44 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverFailFastDoesNotMutateWalFilesAcrossAttempts() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (countWalSegments(root) < 3 && i < 256) {
+                runtime.appendPut("ff-k-" + i, "ff-v-" + i);
+                i++;
+            }
+        }
+        final List<String> segments = walSegmentNames(root);
+        assertTrue(segments.size() >= 3);
+        appendGarbageTail(root, segments.get(1));
+        final Map<String, byte[]> expectedSnapshot = walSegmentSnapshot(root);
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+        assertWalSnapshotsEqual(expectedSnapshot, walSegmentSnapshot(root));
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+        assertWalSnapshotsEqual(expectedSnapshot, walSegmentSnapshot(root));
+    }
+
+    @Test
     void syncFailureFailsCurrentAndFollowingWrites() {
         final Wal wal = Wal.builder().withEnabled(true)
                 .withDurabilityMode(WalDurabilityMode.SYNC).build();
@@ -969,6 +1051,26 @@ class WalRuntimeTest {
         final Directory walDirectory = root.openSubDirectory("wal");
         return walDirectory.getFileNames().filter(name -> name.endsWith(".wal"))
                 .sorted().toList();
+    }
+
+    private static Map<String, byte[]> walSegmentSnapshot(final MemDirectory root) {
+        final MemDirectory walDirectory = (MemDirectory) root
+                .openSubDirectory("wal");
+        final Map<String, byte[]> snapshot = new LinkedHashMap<>();
+        for (final String name : walSegmentNames(root)) {
+            snapshot.put(name, walDirectory.getFileSequence(name).toByteArrayCopy());
+        }
+        return snapshot;
+    }
+
+    private static void assertWalSnapshotsEqual(final Map<String, byte[]> expected,
+            final Map<String, byte[]> actual) {
+        assertEquals(expected.keySet(), actual.keySet());
+        for (final Map.Entry<String, byte[]> entry : expected.entrySet()) {
+            final byte[] actualBytes = actual.get(entry.getKey());
+            assertTrue(Arrays.equals(entry.getValue(), actualBytes),
+                    "WAL segment bytes changed for " + entry.getKey());
+        }
     }
 
     private static void truncateWalTailBy(final MemDirectory root,
