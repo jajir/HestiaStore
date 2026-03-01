@@ -54,12 +54,23 @@ Usage:
 ```bash
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool verify /path/to/index/wal
 java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal
+java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool verify /path/to/index/wal --json
+java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal --json
 ```
 
 `verify` output fields:
 
 - `verify.ok`, `verify.files`, `verify.records`, `verify.maxLsn`
 - On failure: `verify.errorFile`, `verify.errorOffset`, `verify.errorMessage`
+
+`--json` output:
+
+- `verify` prints one JSON object with stable fields:
+  - `type`, `ok`, `files`, `records`, `maxLsn`, `errorFile`, `errorOffset`, `errorMessage`
+- `dump` prints JSON lines with:
+  - `type=record`: `file`, `offset`, `lsn`, `op`, `keyLen`, `valueLen`, `bodyLen`
+  - `type=invalid_tail`: `file`, `offset`, `reason`
+  - `type=summary`: `file`, `size`, `records`, `firstLsn`, `lastLsn`
 
 `WalTool` exit codes:
 
