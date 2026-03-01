@@ -22,6 +22,15 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.bytes.ByteSequences;
@@ -227,6 +236,35 @@ class WalRuntimeTest {
             assertEquals(afterFirst.retainedBytes(), afterRepeat.retainedBytes());
             assertEquals(afterFirst.checkpointLsn(), afterRepeat.checkpointLsn());
             assertFalse(runtime.isRetentionPressure());
+        }
+    }
+
+    @Test
+    void checkpointCleanupLogsAreThrottled() {
+        final TestLogAppender appender = TestLogAppender.attachToLogger(
+                WalRuntime.class.getName(), Level.INFO);
+        try {
+            final MemDirectory root = new MemDirectory();
+            final Wal wal = Wal.builder()//
+                    .withEnabled(true)//
+                    .withSegmentSizeBytes(96L)//
+                    .build();
+            try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                    STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+                for (int i = 0; i < 200; i++) {
+                    final long lsn = runtime.appendPut("log-k-" + i,
+                            "log-v-" + i);
+                    runtime.onCheckpoint(lsn);
+                }
+            }
+            final long cleanupLogCount = appender
+                    .countMessageContaining("event=wal_checkpoint_cleanup");
+            assertTrue(cleanupLogCount >= 1L);
+            assertTrue(cleanupLogCount <= 2L,
+                    "Expected throttled wal_checkpoint_cleanup logs, actual count="
+                            + cleanupLogCount);
+        } finally {
+            appender.detach();
         }
     }
 
@@ -758,6 +796,64 @@ class WalRuntimeTest {
         try (org.hestiastore.index.directory.FileWriter writer = walDirectory
                 .getFileWriter("checkpoint.meta", Directory.Access.OVERWRITE)) {
             writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        }
+    }
+
+    private static final class TestLogAppender extends AbstractAppender {
+
+        private final LoggerContext loggerContext;
+        private final String loggerConfigName;
+        private final List<LogEvent> events = new ArrayList<>();
+
+        private TestLogAppender(final String name,
+                final LoggerContext loggerContext,
+                final String loggerConfigName) {
+            super(name, null, PatternLayout.createDefaultLayout(), true,
+                    Property.EMPTY_ARRAY);
+            this.loggerContext = loggerContext;
+            this.loggerConfigName = loggerConfigName;
+        }
+
+        static TestLogAppender attachToLogger(final String loggerName,
+                final Level level) {
+            final LoggerContext context = (LoggerContext) LogManager
+                    .getContext(false);
+            final Configuration configuration = context.getConfiguration();
+            final LoggerConfig loggerConfig = configuration
+                    .getLoggerConfig(loggerName);
+            final String appenderName = "wal-runtime-test-appender-"
+                    + System.nanoTime();
+            final TestLogAppender appender = new TestLogAppender(appenderName,
+                    context, loggerConfig.getName());
+            appender.start();
+            loggerConfig.addAppender(appender, level, null);
+            context.updateLoggers();
+            return appender;
+        }
+
+        void detach() {
+            final Configuration configuration = loggerContext
+                    .getConfiguration();
+            final LoggerConfig loggerConfig = configuration
+                    .getLoggerConfig(loggerConfigName);
+            loggerConfig.removeAppender(getName());
+            stop();
+            loggerContext.updateLoggers();
+        }
+
+        long countMessageContaining(final String fragment) {
+            synchronized (events) {
+                return events.stream()
+                        .map(event -> event.getMessage().getFormattedMessage())
+                        .filter(message -> message.contains(fragment)).count();
+            }
+        }
+
+        @Override
+        public void append(final LogEvent event) {
+            synchronized (events) {
+                events.add(event.toImmutable());
+            }
         }
     }
 

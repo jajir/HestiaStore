@@ -128,6 +128,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
     private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
     private static final int BUFFER_SIZE = 8 * 1024;
+    private static final long CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS
+            .toNanos(5L);
 
     private final boolean enabled;
     private final Wal wal;
@@ -157,6 +159,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private long retainedBytes = 0L;
     private long pendingSyncHighLsn = 0L;
     private long pendingSyncBytes = 0L;
+    private long checkpointCleanupLastLogNanos = 0L;
+    private long checkpointCleanupSuppressedEvents = 0L;
+    private long checkpointCleanupSuppressedDeletedSegments = 0L;
+    private long checkpointCleanupSuppressedDeletedBytes = 0L;
     private final Set<String> pendingSyncSegmentNames = new LinkedHashSet<>();
     private RuntimeException syncFailure;
     private boolean closed;
@@ -700,12 +706,35 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         if (retainedBytes < 0L) {
             retainedBytes = 0L;
         }
-        if (deletedCount > 0) {
-            logger.info(
-                    "event=wal_checkpoint_cleanup checkpointLsn={} deletedSegments={} deletedBytes={} retainedSegments={} retainedBytes={}",
-                    checkpointLsn, deletedCount, deletedBytes, segments.size(),
-                    retainedBytes);
+        logCheckpointCleanupIfNeeded(deletedCount, deletedBytes);
+    }
+
+    private void logCheckpointCleanupIfNeeded(final int deletedCount,
+            final long deletedBytes) {
+        if (deletedCount <= 0) {
+            return;
         }
+        final long nowNanos = System.nanoTime();
+        if (checkpointCleanupLastLogNanos != 0L
+                && nowNanos
+                        - checkpointCleanupLastLogNanos < CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS) {
+            checkpointCleanupSuppressedEvents++;
+            checkpointCleanupSuppressedDeletedSegments += deletedCount;
+            checkpointCleanupSuppressedDeletedBytes += deletedBytes;
+            return;
+        }
+        final long suppressedEvents = checkpointCleanupSuppressedEvents;
+        final long suppressedDeletedSegments = checkpointCleanupSuppressedDeletedSegments;
+        final long suppressedDeletedBytes = checkpointCleanupSuppressedDeletedBytes;
+        checkpointCleanupSuppressedEvents = 0L;
+        checkpointCleanupSuppressedDeletedSegments = 0L;
+        checkpointCleanupSuppressedDeletedBytes = 0L;
+        checkpointCleanupLastLogNanos = nowNanos;
+        logger.info(
+                "event=wal_checkpoint_cleanup checkpointLsn={} deletedSegments={} deletedBytes={} retainedSegments={} retainedBytes={} suppressedEvents={} suppressedDeletedSegments={} suppressedDeletedBytes={}",
+                checkpointLsn, deletedCount, deletedBytes, segments.size(),
+                retainedBytes, suppressedEvents, suppressedDeletedSegments,
+                suppressedDeletedBytes);
     }
 
     private void syncGroupPendingSafely() {
