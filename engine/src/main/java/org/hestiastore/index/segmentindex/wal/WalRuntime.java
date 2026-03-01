@@ -837,9 +837,16 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 return 0L;
             }
             final long parsed = Long.parseLong(value);
-            return Math.max(0L, parsed);
+            if (parsed < 0L) {
+                throw new IndexException(String.format(
+                        "Invalid WAL checkpoint metadata: negative LSN '%s'.",
+                        parsed));
+            }
+            return parsed;
+        } catch (IndexException ex) {
+            throw ex;
         } catch (RuntimeException ex) {
-            return 0L;
+            throw new IndexException("Invalid WAL checkpoint metadata.", ex);
         }
     }
 

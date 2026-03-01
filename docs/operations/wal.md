@@ -32,6 +32,7 @@ Default is disabled (`Wal.EMPTY`).
 - `TRUNCATE_INVALID_TAIL`: startup truncates broken tail and continues.
 - `FAIL_FAST`: startup aborts when corruption is detected.
 - Recovery validates strict LSN monotonicity across the whole WAL stream (including segment boundaries); regressions are treated as corruption.
+- Invalid `wal/checkpoint.meta` content (non-numeric or negative LSN) aborts recovery.
 
 ## WAL Files
 
