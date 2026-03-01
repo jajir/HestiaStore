@@ -323,6 +323,78 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverTruncatesWhenSegmentLsnRegressesAcrossBoundary() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (countWalSegments(root) < 3 && i < 256) {
+                runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+        }
+        final List<String> segmentNames = walSegmentNames(root);
+        assertTrue(segmentNames.size() >= 2);
+        final String firstSegment = segmentNames.get(0);
+        final String secondSegment = segmentNames.get(1);
+        final long firstSegmentMaxLsn = maxLsnInSegment(root, firstSegment);
+        assertTrue(firstSegmentMaxLsn > 0L);
+        rewriteFirstRecordLsn(root, secondSegment,
+                Math.max(1L, firstSegmentMaxLsn - 1L));
+
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertTrue(result.truncatedTail());
+            assertEquals(firstSegmentMaxLsn, result.maxLsn());
+        }
+
+        assertEquals(List.of(firstSegment), walSegmentNames(root));
+        final long replayedMaxLsn = replayed.stream()
+                .mapToLong(WalRuntime.ReplayRecord::getLsn).max().orElse(0L);
+        assertEquals(firstSegmentMaxLsn, replayedMaxLsn);
+    }
+
+    @Test
+    void recoverFailFastWhenSegmentLsnRegressesAcrossBoundary() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (countWalSegments(root) < 3 && i < 256) {
+                runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+        }
+        final List<String> before = walSegmentNames(root);
+        assertTrue(before.size() >= 2);
+        final long firstSegmentMaxLsn = maxLsnInSegment(root, before.get(0));
+        rewriteFirstRecordLsn(root, before.get(1),
+                Math.max(1L, firstSegmentMaxLsn - 1L));
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+        assertEquals(before, walSegmentNames(root));
+    }
+
+    @Test
     void syncFailureFailsCurrentAndFollowingWrites() {
         final Wal wal = Wal.builder().withEnabled(true)
                 .withDurabilityMode(WalDurabilityMode.SYNC).build();
@@ -493,6 +565,21 @@ class WalRuntimeTest {
         final MemDirectory walDirectory = (MemDirectory) root
                 .openSubDirectory("wal");
         final String segmentName = singleWalSegmentName(walDirectory);
+        rewriteFirstRecordBody(walDirectory, segmentName, bodyMutator);
+    }
+
+    private static void rewriteFirstRecordLsn(final MemDirectory root,
+            final String segmentName, final long newLsn) {
+        final MemDirectory walDirectory = (MemDirectory) root
+                .openSubDirectory("wal");
+        rewriteFirstRecordBody(walDirectory, segmentName, body -> {
+            WalRuntime.putLong(body, 4, newLsn);
+        });
+    }
+
+    private static void rewriteFirstRecordBody(final MemDirectory walDirectory,
+            final String segmentName,
+            final java.util.function.Consumer<byte[]> bodyMutator) {
         final ByteSequence sequence = walDirectory.getFileSequence(segmentName);
         final byte[] segmentBytes = sequence.toByteArrayCopy();
         final int bodyLength = WalRuntime.readInt(segmentBytes, 0);
@@ -505,6 +592,28 @@ class WalRuntimeTest {
         System.arraycopy(body, 0, segmentBytes, 4, body.length);
         walDirectory.setFileSequence(segmentName,
                 ByteSequences.wrap(segmentBytes));
+    }
+
+    private static long maxLsnInSegment(final MemDirectory root,
+            final String segmentName) {
+        final MemDirectory walDirectory = (MemDirectory) root
+                .openSubDirectory("wal");
+        final byte[] bytes = walDirectory.getFileSequence(segmentName)
+                .toByteArrayCopy();
+        long offset = 0L;
+        long maxLsn = 0L;
+        while (offset + 4L <= bytes.length) {
+            final int bodyLength = WalRuntime.readInt(bytes, (int) offset);
+            if (bodyLength <= 0 || offset + 4L + bodyLength > bytes.length) {
+                break;
+            }
+            final long lsn = WalRuntime.readLong(bytes, (int) offset + 8);
+            if (lsn > maxLsn) {
+                maxLsn = lsn;
+            }
+            offset += 4L + bodyLength;
+        }
+        return maxLsn;
     }
 
     private static String singleWalSegmentName(final MemDirectory walDirectory) {

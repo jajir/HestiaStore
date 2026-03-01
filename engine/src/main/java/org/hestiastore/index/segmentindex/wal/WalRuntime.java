@@ -257,15 +257,19 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             boolean truncatedTail = false;
             long maxLsn = checkpointLsn;
             long lastReplayedLsn = checkpointLsn;
+            long lastSeenLsn = 0L;
             for (int i = 0; i < discoveredSegments.size(); i++) {
                 final SegmentInfo current = discoveredSegments.get(i);
                 final ScanResult scan = scanAndReplaySegment(current.name(),
-                        checkpointLsn, replayConsumer);
+                        checkpointLsn, lastSeenLsn, replayConsumer);
                 if (scan.maxLsn() > maxLsn) {
                     maxLsn = scan.maxLsn();
                 }
                 if (scan.lastReplayedLsn() > lastReplayedLsn) {
                     lastReplayedLsn = scan.lastReplayedLsn();
+                }
+                if (scan.lastSeenLsn() > lastSeenLsn) {
+                    lastSeenLsn = scan.lastSeenLsn();
                 }
                 if (scan.invalidTail()) {
                     truncatedTail = true;
@@ -529,12 +533,13 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
     private ScanResult scanAndReplaySegment(final String fileName,
             final long replayAfterLsn,
+            final long minimumLsnExclusive,
             final ReplayConsumer<K, V> replayConsumer) {
         long offset = 0L;
         long validOffset = 0L;
         long maxLsn = 0L;
         long lastReplayedLsn = replayAfterLsn;
-        long previousLsn = 0L;
+        long previousLsn = minimumLsnExclusive;
         while (true) {
             final byte[] lenBytes = new byte[4];
             final int lenRead = readFullyAllowEof(fileName, offset, lenBytes, 0,
@@ -544,23 +549,23 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             }
             if (lenRead != 4) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             final int bodyLen = readInt(lenBytes, 0);
             if (bodyLen < MIN_RECORD_BODY_SIZE || bodyLen > MAX_RECORD_BODY_SIZE) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             final byte[] body = new byte[bodyLen];
             if (!readFully(fileName, offset + 4L, body, 0, bodyLen)) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             final int storedCrc = readInt(body, 0);
             final int computedCrc = computeCrc32(body, 4, bodyLen - 4);
             if (storedCrc != computedCrc) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             int position = 4;
             final long lsn = readLong(body, position);
@@ -568,7 +573,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             final Operation operation = Operation.fromCode(body[position++]);
             if (operation == null) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             final int keyLen = readInt(body, position);
             position += 4;
@@ -577,11 +582,11 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             if (keyLen <= 0 || valueLen < 0
                     || position + keyLen + valueLen != body.length) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
-            if (lsn <= 0L || (previousLsn > 0L && lsn <= previousLsn)) {
+            if (lsn <= 0L || lsn <= previousLsn) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             final byte[] keyBytes = new byte[keyLen];
             System.arraycopy(body, position, keyBytes, 0, keyLen);
@@ -595,7 +600,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                     : null;
             if (operation == Operation.DELETE && valueLen != 0) {
                 return new ScanResult(validOffset, maxLsn, lastReplayedLsn,
-                        true);
+                        previousLsn, true);
             }
             offset += 4L + bodyLen;
             validOffset = offset;
@@ -611,7 +616,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 }
             }
         }
-        return new ScanResult(validOffset, maxLsn, lastReplayedLsn, false);
+        return new ScanResult(validOffset, maxLsn, lastReplayedLsn, previousLsn,
+                false);
     }
 
     private void handleInvalidTail(final String fileName, final long validBytes) {
@@ -1022,7 +1028,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     private record ScanResult(long validBytes, long maxLsn, long lastReplayedLsn,
-            boolean invalidTail) {
+            long lastSeenLsn, boolean invalidTail) {
     }
 
     private record FormatMeta(int version, int checksum) {
