@@ -14,4 +14,5 @@ This page links development-focused documentation.
 - [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
 - [Rollout Quality Gates](rollout-quality-gates.md)
 - [Rollout Rollback Runbook](rollout-rollback-runbook.md)
+- [WAL Replication and Fencing Design](wal-replication-fencing-design.md)
 - [Refactor Backlog](../refactor-backlog.md)

@@ -81,6 +81,7 @@ nav:
             - Upgrade Notes: development/upgrade-notes-multimodule.md
             - Rollout Quality Gates: development/rollout-quality-gates.md
             - Rollback Runbook: development/rollout-rollback-runbook.md
+            - WAL Replication & Fencing Design: development/wal-replication-fencing-design.md
             - Refactor Backlog: refactor-backlog.md
         - Release Process: development/release.md
         - Contributing: CONTRIBUTING.md
