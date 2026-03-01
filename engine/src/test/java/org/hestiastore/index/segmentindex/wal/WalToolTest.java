@@ -3,7 +3,10 @@ package org.hestiastore.index.segmentindex.wal;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -154,6 +157,43 @@ class WalToolTest {
                 && result.errorMessage().contains("Non-monotonic"));
     }
 
+    @Test
+    void dumpPrintsRecordMetadataAndSummary() throws IOException {
+        final Path root = Files.createTempDirectory("hestia-wal-tool-dump-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+            runtime.appendDelete("a");
+        }
+        final String output = captureStdout(() -> WalTool.dump(root.resolve("wal")));
+        assertTrue(output.contains("record file="));
+        assertTrue(output.contains("op=PUT"));
+        assertTrue(output.contains("op=DELETE"));
+        assertTrue(output.contains("summary file="));
+    }
+
+    @Test
+    void dumpPrintsInvalidTailDetails() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-dump-invalid-tail-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        final Path segment = findFirstSegment(walDir);
+        Files.write(segment, new byte[] { 0x01, 0x02, 0x03 },
+                StandardOpenOption.APPEND);
+
+        final String output = captureStdout(() -> WalTool.dump(walDir));
+        assertTrue(output.contains("invalid file="));
+        assertTrue(output.contains("reason="));
+    }
+
     private static Path findFirstSegment(final Path walDir) throws IOException {
         try (java.util.stream.Stream<Path> listing = Files.list(walDir)) {
             return listing
@@ -172,5 +212,20 @@ class WalToolTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String captureStdout(final Runnable runnable) {
+        final PrintStream originalOut = System.out;
+        final ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        final PrintStream captureStream = new PrintStream(captured, true,
+                StandardCharsets.UTF_8);
+        try {
+            System.setOut(captureStream);
+            runnable.run();
+        } finally {
+            System.setOut(originalOut);
+            captureStream.close();
+        }
+        return captured.toString(StandardCharsets.UTF_8);
     }
 }
