@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +42,28 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("v1", reopened.get("k1"));
             assertEquals("v2", reopened.get("k2"));
         }
+    }
+
+    @Test
+    void reopenFailsFastWhenWalTailIsCorruptedAndPolicyIsFailFast() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<String, String> conf = IndexConfiguration
+                .<String, String>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(String.class)//
+                .withName("wal-recovery-fail-fast-it")//
+                .withWal(Wal.builder().withEnabled(true)
+                        .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                        .build())//
+                .build();
+        try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
+                conf)) {
+            index.put("k1", "v1");
+            index.flushAndWait();
+        }
+        appendGarbageWalTail(directory);
+
+        assertThrows(RuntimeException.class, () -> SegmentIndex.open(directory));
     }
 
     @Test
