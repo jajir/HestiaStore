@@ -131,6 +131,24 @@ class SegmentIndexImplPutTest {
     }
 
     @Test
+    void walSyncFailureDuringCheckpointTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder().withEnabled(true)
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        index.put(1, "one");
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> index.flushAndWait());
+            assertTrue(exception.getMessage().contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
     void walRetentionBackpressureSkipsUnsatisfiableSingleActiveSegmentCase() {
         final Wal wal = Wal.builder().withEnabled(true)
                 .withDurabilityMode(WalDurabilityMode.ASYNC)
