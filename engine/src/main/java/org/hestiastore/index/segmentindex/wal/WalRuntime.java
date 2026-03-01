@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -152,6 +153,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private long retainedBytes = 0L;
     private long pendingSyncHighLsn = 0L;
     private long pendingSyncBytes = 0L;
+    private final Set<String> pendingSyncSegmentNames = new LinkedHashSet<>();
     private RuntimeException syncFailure;
     private boolean closed;
 
@@ -245,6 +247,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             checkpointLsn = readCheckpointLsn();
             retainedBytes = 0L;
             pendingSyncBytes = 0L;
+            pendingSyncSegmentNames.clear();
             segments.clear();
             final List<SegmentInfo> discoveredSegments = discoverSegmentsStrict();
             boolean truncatedTail = false;
@@ -438,6 +441,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
             pendingSyncHighLsn = Math.max(pendingSyncHighLsn, lsn);
             pendingSyncBytes += recordBytes.length;
+            pendingSyncSegmentNames.add(activeSegment.name());
 
             if (wal.getDurabilityMode() == WalDurabilityMode.SYNC
                     || wal.getGroupSyncDelayMillis() <= 0
@@ -658,15 +662,24 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
         if (pendingSyncHighLsn <= durableLsn.get()) {
             pendingSyncBytes = 0L;
+            pendingSyncSegmentNames.clear();
             return;
         }
-        if (segments.isEmpty()) {
+        if (pendingSyncSegmentNames.isEmpty()) {
             return;
         }
-        final SegmentInfo active = segments.get(segments.size() - 1);
-        storage.sync(active.name());
+        final Set<String> remaining = new HashSet<>(pendingSyncSegmentNames);
+        for (final SegmentInfo segment : segments) {
+            if (remaining.remove(segment.name())) {
+                storage.sync(segment.name());
+            }
+        }
+        for (final String segmentName : remaining) {
+            storage.sync(segmentName);
+        }
         durableLsn.set(pendingSyncHighLsn);
         pendingSyncBytes = 0L;
+        pendingSyncSegmentNames.clear();
         syncCount.increment();
         monitor.notifyAll();
     }
