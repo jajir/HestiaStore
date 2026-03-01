@@ -20,6 +20,7 @@ import org.hestiastore.index.IndexException;
 public final class WalTool {
 
     private static final String SEGMENT_SUFFIX = ".wal";
+    private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String FORMAT_FILE = "format.meta";
     private static final String CHECKPOINT_FILE = "checkpoint.meta";
     private static final int FORMAT_VERSION = 1;
@@ -311,7 +312,7 @@ public final class WalTool {
             if (baseLsn < 0L) {
                 return new SegmentDiscovery(List.of(),
                         new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
-                                "Invalid WAL segment file name."));
+                                "Invalid WAL segment file name. Expected 20 numeric digits plus '.wal'."));
             }
             if (!uniqueBaseLsns.add(baseLsn)) {
                 return new SegmentDiscovery(List.of(),
@@ -329,7 +330,7 @@ public final class WalTool {
     private static long parseSegmentBaseLsn(final String fileName) {
         final String raw = fileName.substring(0,
                 fileName.length() - SEGMENT_SUFFIX.length());
-        if (raw.isBlank()) {
+        if (raw.length() != SEGMENT_FILE_DIGITS) {
             return -1L;
         }
         for (int i = 0; i < raw.length(); i++) {

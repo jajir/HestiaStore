@@ -123,6 +123,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
     private static final String FORMAT_FILE_TMP = "format.meta.tmp";
     private static final String SEGMENT_SUFFIX = ".wal";
+    private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String SEGMENT_FILE_FORMAT = "%020d" + SEGMENT_SUFFIX;
     private static final int FORMAT_VERSION = 1;
     private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
@@ -882,7 +883,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private long parseSegmentBaseLsn(final String fileName) {
         final String raw = fileName.substring(0,
                 fileName.length() - SEGMENT_SUFFIX.length());
-        if (raw.isBlank()) {
+        if (raw.length() != SEGMENT_FILE_DIGITS) {
             return -1L;
         }
         for (int i = 0; i < raw.length(); i++) {

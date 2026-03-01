@@ -45,7 +45,7 @@ Inside index directory:
 
 - `wal/format.meta` - WAL format marker and checksum
 - `wal/checkpoint.meta` - monotonic checkpoint LSN
-- `wal/*.wal` - WAL segments
+- `wal/*.wal` - WAL segments named as `<20-digit-base-lsn>.wal`
 
 ## Tooling
 
