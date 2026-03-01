@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.io.PrintStream;
 
 import org.hestiastore.index.IndexException;
 
@@ -29,36 +30,44 @@ public final class WalTool {
     }
 
     public static void main(final String[] args) {
+        final int exitCode = run(args, System.out, System.err);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
+    }
+
+    static int run(final String[] args, final PrintStream out,
+            final PrintStream err) {
         if (args == null || args.length < 2) {
-            printUsage();
-            return;
+            printUsage(out);
+            return 1;
         }
         final String command = args[0];
         final Path walDirectory = Path.of(args[1]);
         try {
             if ("verify".equals(command)) {
                 final VerifyResult result = verify(walDirectory);
-                System.out.println("verify.ok=" + result.ok());
-                System.out.println("verify.files=" + result.fileCount());
-                System.out.println("verify.records=" + result.recordCount());
-                System.out.println("verify.maxLsn=" + result.maxLsn());
+                out.println("verify.ok=" + result.ok());
+                out.println("verify.files=" + result.fileCount());
+                out.println("verify.records=" + result.recordCount());
+                out.println("verify.maxLsn=" + result.maxLsn());
                 if (!result.ok()) {
-                    System.out.println("verify.errorFile=" + result.errorFile());
-                    System.out.println(
-                            "verify.errorOffset=" + result.errorOffset());
-                    System.out.println(
-                            "verify.errorMessage=" + result.errorMessage());
+                    out.println("verify.errorFile=" + result.errorFile());
+                    out.println("verify.errorOffset=" + result.errorOffset());
+                    out.println("verify.errorMessage=" + result.errorMessage());
+                    return 2;
                 }
-                return;
+                return 0;
             }
             if ("dump".equals(command)) {
-                dump(walDirectory);
-                return;
+                dump(walDirectory, out);
+                return 0;
             }
-            printUsage();
+            printUsage(out);
+            return 1;
         } catch (RuntimeException e) {
-            System.err.println("WAL tool failed: " + e.getMessage());
-            System.exit(1);
+            err.println("WAL tool failed: " + e.getMessage());
+            return 1;
         }
     }
 
@@ -156,6 +165,10 @@ public final class WalTool {
     }
 
     static void dump(final Path walDirectory) {
+        dump(walDirectory, System.out);
+    }
+
+    static void dump(final Path walDirectory, final PrintStream out) {
         final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
         if (segmentDiscovery.error() != null) {
             throw new IndexException(segmentDiscovery.error().errorMessage());
@@ -229,7 +242,7 @@ public final class WalTool {
                     invalidOffset = offset;
                     break;
                 }
-                System.out.println("record file=" + file.getFileName() + " offset="
+                out.println("record file=" + file.getFileName() + " offset="
                         + offset + " lsn=" + lsn + " op=" + operation
                         + " keyLen=" + keyLen + " valueLen=" + valueLen
                         + " bodyLen=" + bodyLen);
@@ -241,11 +254,11 @@ public final class WalTool {
                 offset += 4L + bodyLen;
             }
             if (invalidTail) {
-                System.out.println("invalid file=" + file.getFileName()
+                out.println("invalid file=" + file.getFileName()
                         + " offset=" + invalidOffset + " reason="
                         + invalidReason);
             }
-            System.out.println("summary file=" + file.getFileName() + " size="
+            out.println("summary file=" + file.getFileName() + " size="
                     + bytes.length + " records=" + records + " firstLsn="
                     + firstLsn + " lastLsn=" + lastLsn);
         }
@@ -325,8 +338,8 @@ public final class WalTool {
         }
     }
 
-    private static void printUsage() {
-        System.out.println("Usage: WalTool <verify|dump> <walDirectoryPath>");
+    private static void printUsage(final PrintStream out) {
+        out.println("Usage: WalTool <verify|dump> <walDirectoryPath>");
     }
 
     private static VerifyResult verifyFormatMetadata(final Path walDirectory) {
