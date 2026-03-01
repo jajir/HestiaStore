@@ -201,6 +201,36 @@ class WalRuntimeTest {
     }
 
     @Test
+    void checkpointCleanupIsIdempotentForRepeatedCheckpointLsn() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        long checkpointLsn = 0L;
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            for (int i = 0; i < 30; i++) {
+                checkpointLsn = runtime.appendPut("idem-k-" + i, "idem-v-" + i);
+            }
+            assertTrue(runtime.statsSnapshot().segmentCount() > 1);
+
+            runtime.onCheckpoint(checkpointLsn);
+            final WalStats afterFirst = runtime.statsSnapshot();
+            assertTrue(afterFirst.segmentCount() <= 1);
+
+            runtime.onCheckpoint(checkpointLsn);
+            runtime.onCheckpoint(checkpointLsn - 1L);
+            final WalStats afterRepeat = runtime.statsSnapshot();
+
+            assertEquals(afterFirst.segmentCount(), afterRepeat.segmentCount());
+            assertEquals(afterFirst.retainedBytes(), afterRepeat.retainedBytes());
+            assertEquals(afterFirst.checkpointLsn(), afterRepeat.checkpointLsn());
+            assertFalse(runtime.isRetentionPressure());
+        }
+    }
+
+    @Test
     void retentionPressureClearsAfterCheckpointCleanup() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
