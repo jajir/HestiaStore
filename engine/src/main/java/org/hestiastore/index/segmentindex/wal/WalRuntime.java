@@ -360,7 +360,12 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             return false;
         }
         synchronized (monitor) {
-            return retainedBytes > wal.getMaxBytesBeforeForcedCheckpoint();
+            if (retainedBytes <= wal.getMaxBytesBeforeForcedCheckpoint()) {
+                return false;
+            }
+            // A single active segment cannot be checkpoint-deleted; do not
+            // enter forced-checkpoint backpressure in this unsatisfiable state.
+            return segments.size() > 1;
         }
     }
 
