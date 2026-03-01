@@ -2,6 +2,9 @@
 
 HestiaStore supports opt-in Write-Ahead Logging (WAL) per index.
 
+For staged production rollout, use the dedicated
+[WAL Canary Runbook](wal-canary-runbook.md).
+
 ## Enabling WAL
 
 ```java
