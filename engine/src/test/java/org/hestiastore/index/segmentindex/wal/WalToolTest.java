@@ -265,6 +265,17 @@ class WalToolTest {
         assertTrue(result.stdout().contains("Usage: WalTool"));
     }
 
+    @Test
+    void runReturnsExitCodeOneWhenWalDirectoryIsMissing() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-missing-dir-");
+        final Path missingWalDir = root.resolve("missing-wal");
+        final CommandRunResult result = runWalTool("verify",
+                missingWalDir.toString());
+        assertEquals(1, result.exitCode());
+        assertTrue(result.stderr().contains("does not exist"));
+    }
+
     private static Path findFirstSegment(final Path walDir) throws IOException {
         try (java.util.stream.Stream<Path> listing = Files.list(walDir)) {
             return listing
