@@ -1,37 +1,21 @@
 package org.hestiastore.index.bytes;
 
 import java.util.zip.Checksum;
+import java.util.zip.CRC32;
 
 import org.hestiastore.index.Vldtn;
 
 /**
- * CRC32 implementation derived from Apache Commons' {@code PureJavaCrc32} that
- * can consume {@link ByteSequence} instances without first materialising a
- * temporary array.
+ * CRC32 adapter that can consume {@link ByteSequence} instances without forcing
+ * callers to convert manually.
  */
 public final class ByteSequenceCrc32 implements Checksum {
 
-    private static final int[] CRC_TABLE = new int[256];
-
-    static {
-        for (int n = 0; n < 256; n++) {
-            int c = n;
-            for (int k = 8; --k >= 0;) {
-                if ((c & 1) != 0) {
-                    c = 0xEDB88320 ^ (c >>> 1);
-                } else {
-                    c = c >>> 1;
-                }
-            }
-            CRC_TABLE[n] = c;
-        }
-    }
-
-    private int crc = 0xFFFFFFFF;
+    private final CRC32 delegate = new CRC32();
 
     @Override
     public void update(final int b) {
-        crc = CRC_TABLE[(crc ^ b) & 0xFF] ^ (crc >>> 8);
+        delegate.update(b);
     }
 
     @Override
@@ -44,7 +28,7 @@ public final class ByteSequenceCrc32 implements Checksum {
                     "Range [%d, %d) exceeds array length %d", off, rangeEnd,
                     validated.length));
         }
-        crc = updateArrayRange(crc, validated, off, len);
+        delegate.update(validated, off, len);
     }
 
     /**
@@ -53,104 +37,49 @@ public final class ByteSequenceCrc32 implements Checksum {
      * @param sequence the byte sequence to consume
      */
     public void update(final ByteSequence sequence) {
-        final ByteSequence validated = Vldtn.requireNonNull(sequence,
-                "sequence");
-        if (validated instanceof ByteSequenceView) {
-            final ByteSequenceView view = (ByteSequenceView) validated;
-            crc = updateArrayRange(crc, view.rawArray(), 0, view.length());
-            return;
-        }
-        if (validated instanceof ByteSequenceSlice) {
-            final ByteSequenceSlice slice = (ByteSequenceSlice) validated;
-            crc = updateArrayRange(crc, slice.rawArray(), slice.rawOffset(),
-                    slice.length());
-            return;
-        }
-        if (validated instanceof MutableBytes) {
-            final MutableBytes mutable = (MutableBytes) validated;
-            crc = updateArrayRange(crc, mutable.array(), 0, mutable.length());
-            return;
-        }
-        crc = updateSequenceRange(crc, validated);
+        updateInternal(Vldtn.requireNonNull(sequence, "sequence"));
     }
 
-    private static int updateArrayRange(int crcValue, final byte[] data,
-            final int offset, final int length) {
-        final int[] table = CRC_TABLE;
-        final int end = offset + length;
-        final int unrolledEnd = end - 7;
-        int index = offset;
-
-        while (index < unrolledEnd) {
-            crcValue = table[(crcValue ^ data[index]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 1]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 2]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 3]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 4]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 5]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 6]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ data[index + 7]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            index += 8;
+    private void updateInternal(final ByteSequence sequence) {
+        final int length = sequence.length();
+        if (length == 0) {
+            return;
         }
-
-        while (index < end) {
-            crcValue = table[(crcValue ^ data[index]) & 0xFF]
-                    ^ (crcValue >>> 8);
-            index++;
+        if (sequence instanceof ConcatenatedByteSequence) {
+            final ConcatenatedByteSequence concatenated =
+                    (ConcatenatedByteSequence) sequence;
+            updateInternal(concatenated.firstPart());
+            updateInternal(concatenated.secondPart());
+            return;
         }
-        return crcValue;
-    }
-
-    private static int updateSequenceRange(int crcValue,
-            final ByteSequence sequence) {
-        final int[] table = CRC_TABLE;
-        final int end = sequence.length();
-        final int unrolledEnd = end - 7;
-        int index = 0;
-
-        while (index < unrolledEnd) {
-            crcValue = table[(crcValue ^ sequence.getByte(index)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 1)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 2)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 3)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 4)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 5)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 6)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            crcValue = table[(crcValue ^ sequence.getByte(index + 7)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            index += 8;
+        if (sequence instanceof ByteSequenceView) {
+            final byte[] bytes = sequence.toByteArray();
+            delegate.update(bytes, 0, bytes.length);
+            return;
         }
-
-        while (index < end) {
-            crcValue = table[(crcValue ^ sequence.getByte(index)) & 0xFF]
-                    ^ (crcValue >>> 8);
-            index++;
+        if (sequence instanceof ByteSequenceSlice) {
+            final ByteSequenceSlice slice = (ByteSequenceSlice) sequence;
+            delegate.update(slice.backingArray(), slice.backingOffset(),
+                    length);
+            return;
         }
-        return crcValue;
+        if (sequence instanceof MutableBytes) {
+            final MutableBytes mutable = (MutableBytes) sequence;
+            delegate.update(mutable.array(), 0, length);
+            return;
+        }
+        for (int i = 0; i < length; i++) {
+            delegate.update(sequence.getByte(i));
+        }
     }
 
     @Override
     public long getValue() {
-        return (crc ^ 0xFFFFFFFFL) & 0xFFFFFFFFL;
+        return delegate.getValue();
     }
 
     @Override
     public void reset() {
-        crc = 0xFFFFFFFF;
+        delegate.reset();
     }
 }
