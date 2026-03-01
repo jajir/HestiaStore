@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FsDirectory;
@@ -109,6 +110,52 @@ class IntegrationSegmentIndexWalRecoveryTest {
         }
     }
 
+    @Test
+    void longRunCrashReopenCyclesWithRandomMutationsRemainDeterministic() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<String, String> conf = IndexConfiguration
+                .<String, String>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(String.class)//
+                .withName("wal-recovery-random-cycle-it")//
+                .withWal(Wal.builder().withEnabled(true).build())//
+                .build();
+        final Map<String, String> expected = new HashMap<>();
+        final Random random = new Random(42L);
+        final int keySpace = 32;
+        final int cycles = 20;
+
+        for (int cycle = 0; cycle < cycles; cycle++) {
+            if (cycle == 0) {
+                try (SegmentIndex<String, String> index = SegmentIndex
+                        .create(directory, conf)) {
+                    applyRandomCycleMutations(index, expected, random, cycle,
+                            keySpace, 40);
+                }
+            } else {
+                try (SegmentIndex<String, String> index = SegmentIndex
+                        .open(directory)) {
+                    applyRandomCycleMutations(index, expected, random, cycle,
+                            keySpace, 40);
+                }
+            }
+            appendGarbageWalTail(directory);
+        }
+
+        try (SegmentIndex<String, String> reopened = SegmentIndex
+                .open(directory)) {
+            for (int i = 0; i < keySpace; i++) {
+                final String key = "rk-" + i;
+                final String expectedValue = expected.get(key);
+                if (expectedValue == null) {
+                    assertNull(reopened.get(key));
+                } else {
+                    assertEquals(expectedValue, reopened.get(key));
+                }
+            }
+        }
+    }
+
     private static void applyCycleMutations(final SegmentIndex<String, String> index,
             final Map<String, String> expected, final int cycle,
             final int keySpace) {
@@ -125,6 +172,27 @@ class IntegrationSegmentIndexWalRecoveryTest {
         }
         if ((cycle & 1) == 0) {
             index.flushAndWait();
+        }
+    }
+
+    private static void applyRandomCycleMutations(
+            final SegmentIndex<String, String> index,
+            final Map<String, String> expected, final Random random,
+            final int cycle, final int keySpace, final int operationsPerCycle) {
+        for (int i = 0; i < operationsPerCycle; i++) {
+            final String key = "rk-" + random.nextInt(keySpace);
+            if (random.nextInt(6) == 0) {
+                index.delete(key);
+                expected.remove(key);
+            } else {
+                final String value = "rv-" + cycle + "-" + i + "-"
+                        + random.nextInt(1000);
+                index.put(key, value);
+                expected.put(key, value);
+            }
+            if (random.nextInt(11) == 0) {
+                index.flushAndWait();
+            }
         }
     }
 
