@@ -86,6 +86,14 @@ public final class ByteSequenceSlice extends ByteSequenceCaching {
                 length);
     }
 
+    byte[] backingArray() {
+        return data;
+    }
+
+    int backingOffset() {
+        return offset;
+    }
+
     @Override
     public int hashCode() {
         return ByteSequences.contentHashCode(this);
