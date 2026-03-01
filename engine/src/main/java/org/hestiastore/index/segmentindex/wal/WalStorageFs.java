@@ -26,7 +26,7 @@ final class WalStorageFs implements WalStorage {
 
     @Override
     public boolean exists(final String fileName) {
-        return Files.exists(resolve(fileName));
+        return Files.isRegularFile(resolve(fileName));
     }
 
     @Override

@@ -322,13 +322,17 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                             name);
                 }
             }
-            if (checkpointLsn > maxLsn) {
+            if (lastSeenLsn > 0L && checkpointLsn > lastSeenLsn) {
                 final long previousCheckpointLsn = checkpointLsn;
-                checkpointLsn = maxLsn;
+                checkpointLsn = lastSeenLsn;
                 writeCheckpointLsnAtomic(checkpointLsn);
+                maxLsn = lastSeenLsn;
                 logger.warn(
                         "event=wal_recovery_checkpoint_clamp previousCheckpointLsn={} clampedCheckpointLsn={} maxLsn={}",
                         previousCheckpointLsn, checkpointLsn, maxLsn);
+            }
+            if (lastReplayedLsn > maxLsn) {
+                lastReplayedLsn = maxLsn;
             }
             durableLsn.set(maxLsn);
             pendingSyncHighLsn = maxLsn;
@@ -858,6 +862,11 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             if (baseLsn < 0L) {
                 throw new IndexException(String.format(
                         "Invalid WAL segment name '%s'.", name));
+            }
+            if (!storage.exists(name)) {
+                throw new IndexException(String.format(
+                        "WAL segment entry '%s' is not a regular file.",
+                        name));
             }
             if (!uniqueBaseLsns.add(baseLsn)) {
                 throw new IndexException(String.format(
