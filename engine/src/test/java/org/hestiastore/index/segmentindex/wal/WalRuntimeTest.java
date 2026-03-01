@@ -217,6 +217,21 @@ class WalRuntimeTest {
     }
 
     @Test
+    void retentionPressureIgnoredWhenOnlyActiveSegmentExceedsLimit() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withSegmentSizeBytes(4096L)//
+                .withMaxBytesBeforeForcedCheckpoint(1L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("single-segment-key", "single-segment-value");
+            assertFalse(runtime.isRetentionPressure());
+        }
+    }
+
+    @Test
     void openCreatesFormatMarker() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder().withEnabled(true).build();

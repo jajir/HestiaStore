@@ -130,6 +130,48 @@ class SegmentIndexImplPutTest {
         }
     }
 
+    @Test
+    void walRetentionBackpressureSkipsUnsatisfiableSingleActiveSegmentCase() {
+        final Wal wal = Wal.builder().withEnabled(true)
+                .withDurabilityMode(WalDurabilityMode.ASYNC)
+                .withSegmentSizeBytes(64L * 1024L)
+                .withMaxBytesBeforeForcedCheckpoint(1L).build();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .withName("wal-retention-single-segment-test")//
+                .withMaxNumberOfKeysInSegmentCache(4)//
+                .withMaxNumberOfKeysInSegmentWriteCache(1)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaxNumberOfKeysInSegment(10)//
+                .withMaxNumberOfSegmentsInCache(3)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withContextLoggingEnabled(false)//
+                .withIndexBusyBackoffMillis(1)//
+                .withIndexBusyTimeoutMillis(200)//
+                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withWal(wal)//
+                .build();
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+        directory = new MemDirectory();
+        index = new TestIndex<>(directory, tdi, tds, conf);
+
+        index.put(1, "one");
+        index.put(2, "two");
+        assertEquals("one", index.get(1));
+        assertEquals("two", index.get(2));
+        assertEquals(SegmentIndexState.READY, index.getState());
+    }
+
     private void resetIndex(final int maxKeysInSegment,
             final int maxNumberOfKeysInSegmentWriteCache) {
         resetIndex(maxKeysInSegment, maxNumberOfKeysInSegmentWriteCache,
