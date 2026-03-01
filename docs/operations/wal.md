@@ -58,6 +58,11 @@ java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool du
 
 When retention pressure exceeds `maxBytesBeforeForcedCheckpoint`, write path triggers forced checkpoint and backpressure until retained WAL drops under threshold.
 
+Notes:
+
+- Backpressure applies only when WAL contains more than one segment (active + at least one sealed segment).
+- A single active segment is never deleted by checkpoint; this avoids an unsatisfiable backpressure loop when thresholds are configured below active-segment footprint.
+
 ## Metrics
 
 `SegmentIndex.metricsSnapshot()` exposes WAL runtime counters and gauges:
