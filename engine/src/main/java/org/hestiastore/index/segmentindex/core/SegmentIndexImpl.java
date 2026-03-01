@@ -47,6 +47,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAda
 import org.hestiastore.index.segmentindex.split.SegmentAsyncSplitCoordinator;
 import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
 import org.hestiastore.index.segmentindex.split.SegmentWriterTxFactory;
+import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -79,6 +80,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexRetryPolicy retryPolicy;
     private final RuntimeTuningState runtimeTuningState;
     private final IndexControlPlane controlPlane;
+    private final WalRuntime<K, V> walRuntime;
     private final Stats stats = new Stats();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
@@ -86,6 +88,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private int asyncInFlight = 0;
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
+    private final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
     private volatile IndexState<K, V> indexState;
     private volatile SegmentIndexState segmentIndexState = SegmentIndexState.OPENING;
 
@@ -140,6 +143,17 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     conf.getIndexBusyBackoffMillis(),
                     conf.getIndexBusyTimeoutMillis());
             this.controlPlane = new IndexControlPlaneImpl();
+            this.walRuntime = WalRuntime.open(directoryFacade, conf.getWal(),
+                    keyTypeDescriptor, valueTypeDescriptor);
+            if (walRuntime.isEnabled()) {
+                final WalRuntime.RecoveryResult recoveryResult = walRuntime
+                        .recover(this::replayWalRecord);
+                if (recoveryResult.maxLsn() > 0L) {
+                    lastAppliedWalLsn
+                            .set(Math.max(lastAppliedWalLsn.get(),
+                                    recoveryResult.maxLsn()));
+                }
+            }
             getIndexState().onReady(this);
             setSegmentIndexState(SegmentIndexState.READY);
             if (openingState.wasStaleLockRecovered()) {
@@ -166,10 +180,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             throw new IllegalArgumentException(String.format(
                     "Can't insert thombstone value '%s' into index", value));
         }
+        enforceWalRetentionPressureIfNeeded();
+        final long walLsn = walRuntime.appendPut(key, value);
 
         final IndexResult<Void> result = retryWhileBusyWithSplitWait(
                 () -> core.put(key, value), "put", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
+            recordAppliedWalLsn(walLsn);
             stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
             return;
         }
@@ -291,10 +308,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
+        enforceWalRetentionPressureIfNeeded();
+        final long walLsn = walRuntime.appendDelete(key);
         final IndexResult<Void> result = retryWhileBusyWithSplitWait(
                 () -> core.put(key, valueTypeDescriptor.getTombstone()),
                 "delete", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
+            recordAppliedWalLsn(walLsn);
             stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
             return;
         }
@@ -324,24 +344,30 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        getIndexState().onClose(this);
-        setSegmentIndexState(SegmentIndexState.CLOSED);
-        awaitAsyncOperations();
-        flushSegments(true);
-        final SegmentRegistryResult<Void> closeResult = segmentRegistry.close();
-        if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
-                && closeResult
-                        .getStatus() != SegmentRegistryResultStatus.CLOSED) {
-            throw new IndexException(
-                    String.format("Index operation '%s' failed: %s", "close",
-                            closeResult.getStatus()));
-        }
-        keyToSegmentMap.optionalyFlush();
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format(
-                    "Index is closing, where was %s gets, %s puts and %s deletes.",
-                    F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
-                    F.fmt(stats.getDeleteCx())));
+        try {
+            getIndexState().onClose(this);
+            setSegmentIndexState(SegmentIndexState.CLOSED);
+            awaitAsyncOperations();
+            flushSegments(true);
+            final SegmentRegistryResult<Void> closeResult = segmentRegistry
+                    .close();
+            if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
+                    && closeResult
+                            .getStatus() != SegmentRegistryResultStatus.CLOSED) {
+                throw new IndexException(
+                        String.format("Index operation '%s' failed: %s", "close",
+                                closeResult.getStatus()));
+            }
+            keyToSegmentMap.optionalyFlush();
+            checkpointWal();
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format(
+                        "Index is closing, where was %s gets, %s puts and %s deletes.",
+                        F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
+                        F.fmt(stats.getDeleteCx())));
+            }
+        } finally {
+            walRuntime.close();
         }
     }
 
@@ -488,6 +514,69 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void flushAndWait() {
         flushSegments(true);
         keyToSegmentMap.optionalyFlush();
+        checkpointWal();
+    }
+
+    private void replayWalRecord(final WalRuntime.ReplayRecord<K, V> record) {
+        final V value = record.getOperation() == WalRuntime.Operation.PUT
+                ? record.getValue()
+                : valueTypeDescriptor.getTombstone();
+        final IndexResult<Void> result = retryWhileBusyWithSplitWait(
+                () -> core.put(record.getKey(), value), "walReplay",
+                record.getKey(), true);
+        if (result.getStatus() != IndexResultStatus.OK) {
+            throw newIndexException("walReplay", null, result.getStatus());
+        }
+        recordAppliedWalLsn(record.getLsn());
+    }
+
+    private void recordAppliedWalLsn(final long walLsn) {
+        if (walLsn <= 0L || !walRuntime.isEnabled()) {
+            return;
+        }
+        while (true) {
+            final long current = lastAppliedWalLsn.get();
+            if (walLsn <= current) {
+                return;
+            }
+            if (lastAppliedWalLsn.compareAndSet(current, walLsn)) {
+                return;
+            }
+        }
+    }
+
+    private void checkpointWal() {
+        if (!walRuntime.isEnabled()) {
+            return;
+        }
+        walRuntime.onCheckpoint(lastAppliedWalLsn.get());
+        if (logger.isDebugEnabled()) {
+            final var walStats = walRuntime.statsSnapshot();
+            logger.debug(
+                    "WAL checkpoint: durableLsn={}, checkpointLsn={}, retainedBytes={}, segments={}",
+                    walStats.durableLsn(), walStats.checkpointLsn(),
+                    walStats.retainedBytes(), walStats.segmentCount());
+        }
+    }
+
+    private void enforceWalRetentionPressureIfNeeded() {
+        if (!walRuntime.isEnabled() || !walRuntime.isRetentionPressure()) {
+            return;
+        }
+        logger.warn(
+                "WAL retention pressure detected: retainedBytes={} threshold={}. Starting forced checkpoint/backpressure.",
+                walRuntime.retainedBytes(),
+                conf.getWal().getMaxBytesBeforeForcedCheckpoint());
+        final long startNanos = retryPolicy.startNanos();
+        while (walRuntime.isRetentionPressure()) {
+            flushSegments(true);
+            keyToSegmentMap.optionalyFlush();
+            checkpointWal();
+            if (!walRuntime.isRetentionPressure()) {
+                return;
+            }
+            retryPolicy.backoffOrThrow(startNanos, "walBackpressure", null);
+        }
     }
 
     private void flushSegments(final boolean waitForCompletion) {
