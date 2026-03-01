@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -88,6 +91,88 @@ class WalRuntimeTest {
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
                     () -> runtime.recover(r -> {
+                    }));
+        }
+    }
+
+    @Test
+    void recoverTruncatesPartiallyWrittenLastRecord() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withSegmentSizeBytes(4096L)//
+                .build();
+        final long firstLsn;
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            firstLsn = runtime.appendPut("k1", "v1");
+            runtime.appendPut("k2", "v2");
+        }
+        truncateWalTailBy(root, 1);
+
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertTrue(result.truncatedTail());
+            assertEquals(firstLsn, result.maxLsn());
+        }
+
+        assertEquals(1, replayed.size());
+        assertEquals(firstLsn, replayed.get(0).getLsn());
+        assertEquals("k1", replayed.get(0).getKey());
+    }
+
+    @Test
+    void recoverDetectsInvalidOperationCodeEvenWithValidCrc() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withSegmentSizeBytes(4096L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        rewriteFirstRecordBody(root, body -> {
+            body[12] = (byte) 99;
+        });
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertTrue(result.truncatedTail());
+            assertEquals(0L, result.maxLsn());
+        }
+    }
+
+    @Test
+    void recoverFailFastOnInvalidOperationCodeWhenConfigured() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
+                .withSegmentSizeBytes(4096L)//
+                .build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        rewriteFirstRecordBody(root, body -> {
+            body[12] = (byte) 99;
+        });
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
                     }));
         }
     }
@@ -245,6 +330,42 @@ class WalRuntimeTest {
                 .getFileWriter(segmentName, Directory.Access.APPEND)) {
             writer.write(new byte[] { 0x01, 0x02, 0x03, 0x04 });
         }
+    }
+
+    private static void truncateWalTailBy(final MemDirectory root,
+            final int bytesToTrim) {
+        final MemDirectory walDirectory = (MemDirectory) root
+                .openSubDirectory("wal");
+        final String segmentName = singleWalSegmentName(walDirectory);
+        final byte[] bytes = walDirectory.getFileSequence(segmentName)
+                .toByteArrayCopy();
+        final int newLength = Math.max(0, bytes.length - bytesToTrim);
+        walDirectory.setFileSequence(segmentName,
+                ByteSequences.wrap(Arrays.copyOf(bytes, newLength)));
+    }
+
+    private static void rewriteFirstRecordBody(final MemDirectory root,
+            final java.util.function.Consumer<byte[]> bodyMutator) {
+        final MemDirectory walDirectory = (MemDirectory) root
+                .openSubDirectory("wal");
+        final String segmentName = singleWalSegmentName(walDirectory);
+        final ByteSequence sequence = walDirectory.getFileSequence(segmentName);
+        final byte[] segmentBytes = sequence.toByteArrayCopy();
+        final int bodyLength = WalRuntime.readInt(segmentBytes, 0);
+        final byte[] body = Arrays.copyOfRange(segmentBytes, 4,
+                4 + bodyLength);
+        bodyMutator.accept(body);
+        final int updatedCrc = WalRuntime.computeCrc32(body, 4,
+                body.length - 4);
+        WalRuntime.putInt(body, 0, updatedCrc);
+        System.arraycopy(body, 0, segmentBytes, 4, body.length);
+        walDirectory.setFileSequence(segmentName,
+                ByteSequences.wrap(segmentBytes));
+    }
+
+    private static String singleWalSegmentName(final MemDirectory walDirectory) {
+        return walDirectory.getFileNames().filter(name -> name.endsWith(".wal"))
+                .findFirst().orElseThrow();
     }
 
     private static final class SyncObservingStorage implements WalStorage {
