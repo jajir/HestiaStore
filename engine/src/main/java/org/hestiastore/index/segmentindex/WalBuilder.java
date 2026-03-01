@@ -7,7 +7,6 @@ import org.hestiastore.index.Vldtn;
  */
 public final class WalBuilder {
 
-    private Boolean enabled;
     private WalDurabilityMode durabilityMode;
     private Long segmentSizeBytes;
     private Integer groupSyncDelayMillis;
@@ -17,17 +16,6 @@ public final class WalBuilder {
     private Boolean epochSupport;
 
     WalBuilder() {
-    }
-
-    /**
-     * Enables or disables WAL.
-     *
-     * @param value desired enabled flag
-     * @return this builder
-     */
-    public WalBuilder withEnabled(final boolean value) {
-        this.enabled = value;
-        return this;
     }
 
     /**
@@ -111,14 +99,9 @@ public final class WalBuilder {
     /**
      * Builds immutable WAL settings.
      *
-     * @return built WAL settings, or {@link Wal#EMPTY} when disabled
+     * @return built WAL settings
      */
     public Wal build() {
-        final boolean effectiveEnabled = enabled == null ? true
-                : enabled.booleanValue();
-        if (!effectiveEnabled) {
-            return Wal.EMPTY;
-        }
         final WalDurabilityMode effectiveDurabilityMode = durabilityMode == null
                 ? Wal.DEFAULT_DURABILITY_MODE
                 : durabilityMode;

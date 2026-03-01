@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -88,6 +89,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
     private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
             0L);
+    private final AtomicBoolean walRetentionPressureWarnActive = new AtomicBoolean(
+            false);
     private final Object asyncMonitor = new Object();
     private int asyncInFlight = 0;
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
@@ -579,20 +582,24 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (!walRuntime.isEnabled() || !walRuntime.isRetentionPressure()) {
             return;
         }
-        logWalRetentionPressureIfNeeded();
+        logWalRetentionPressureStartIfNeeded();
         final long startNanos = retryPolicy.startNanos();
+        int checkpointAttempts = 0;
         while (walRuntime.isRetentionPressure()) {
+            checkpointAttempts++;
             flushSegments(true);
             keyToSegmentMap.optionalyFlush();
             checkpointWal();
             if (!walRuntime.isRetentionPressure()) {
+                logWalRetentionPressureCleared(startNanos, checkpointAttempts);
                 return;
             }
             retryPolicy.backoffOrThrow(startNanos, "walBackpressure", null);
         }
+        logWalRetentionPressureCleared(startNanos, checkpointAttempts);
     }
 
-    private void logWalRetentionPressureIfNeeded() {
+    private void logWalRetentionPressureStartIfNeeded() {
         final long nowNanos = System.nanoTime();
         while (true) {
             final long previousWarnNanos = walRetentionPressureLastWarnNanos
@@ -603,13 +610,28 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             if (walRetentionPressureLastWarnNanos.compareAndSet(
                     previousWarnNanos, nowNanos)) {
+                walRetentionPressureWarnActive.set(true);
                 logger.warn(
-                        "WAL retention pressure detected: retainedBytes={} threshold={}. Starting forced checkpoint/backpressure.",
+                        "event=wal_retention_pressure_start retainedBytes={} threshold={} action=force_checkpoint_backpressure",
                         walRuntime.retainedBytes(),
                         conf.getWal().getMaxBytesBeforeForcedCheckpoint());
                 return;
             }
         }
+    }
+
+    private void logWalRetentionPressureCleared(final long startNanos,
+            final int checkpointAttempts) {
+        if (!walRetentionPressureWarnActive.compareAndSet(true, false)) {
+            return;
+        }
+        final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(
+                Math.max(0L, System.nanoTime() - startNanos));
+        logger.info(
+                "event=wal_retention_pressure_cleared retainedBytes={} threshold={} checkpointAttempts={} elapsedMillis={}",
+                walRuntime.retainedBytes(),
+                conf.getWal().getMaxBytesBeforeForcedCheckpoint(),
+                Math.max(0, checkpointAttempts), Math.max(0L, elapsedMillis));
     }
 
     private long appendWalPutWithFailureHandling(final K key, final V value) {
@@ -648,7 +670,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return;
         }
         logger.error(
-                "WAL sync failure detected. Transitioning index to ERROR state.",
+                "event=wal_sync_failure_transition state={} action=transition_to_error reason=wal_sync_failure",
+                state,
                 failure);
         failWithError(failure);
     }

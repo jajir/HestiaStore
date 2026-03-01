@@ -39,7 +39,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
                 .withName("wal-recovery-it")//
-                .withWal(Wal.builder().withEnabled(true).build())//
+                .withWal(Wal.builder().build())//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
@@ -64,7 +64,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
                 .withName("wal-recovery-fail-fast-it")//
-                .withWal(Wal.builder().withEnabled(true)
+                .withWal(Wal.builder()
                         .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
                         .build())//
                 .build();
@@ -86,7 +86,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
                 .withName("wal-recovery-fail-fast-immutability-it")//
-                .withWal(Wal.builder().withEnabled(true)
+                .withWal(Wal.builder()
                         .withSegmentSizeBytes(96L)
                         .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
                         .build())//
@@ -116,7 +116,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
                 .withName("wal-recovery-cycle-it")//
-                .withWal(Wal.builder().withEnabled(true).build())//
+                .withWal(Wal.builder().build())//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final int keySpace = 12;
@@ -159,7 +159,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .withKeyClass(String.class)//
                 .withValueClass(String.class)//
                 .withName("wal-recovery-random-cycle-it")//
-                .withWal(Wal.builder().withEnabled(true).build())//
+                .withWal(Wal.builder().build())//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final Random random = new Random(42L);
@@ -304,7 +304,6 @@ class IntegrationSegmentIndexWalRecoveryTest {
     void walRetentionPressureForcesCheckpointAndWritesKeepProgressing() {
         final MemDirectory directory = new MemDirectory();
         final Wal wal = Wal.builder()//
-                .withEnabled(true)//
                 .withSegmentSizeBytes(96L)//
                 .withMaxBytesBeforeForcedCheckpoint(192L)//
                 .build();
@@ -341,7 +340,6 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try {
             final MemDirectory directory = new MemDirectory();
             final Wal wal = Wal.builder()//
-                    .withEnabled(true)//
                     .withSegmentSizeBytes(96L)//
                     .withMaxBytesBeforeForcedCheckpoint(192L)//
                     .build();
@@ -361,9 +359,43 @@ class IntegrationSegmentIndexWalRecoveryTest {
             }
 
             final long warningCount = appender.countMessageContaining(
-                    "WAL retention pressure detected");
+                    "event=wal_retention_pressure_start");
             assertEquals(1L, warningCount,
                     "Expected only one retention-pressure warning within throttle interval.");
+        } finally {
+            appender.detach();
+        }
+    }
+
+    @Test
+    void walRetentionPressureEmitsStructuredStartAndClearedEvents() {
+        final TestLogAppender appender = TestLogAppender
+                .attachRootAppender(Level.INFO);
+        try {
+            final MemDirectory directory = new MemDirectory();
+            final Wal wal = Wal.builder()//
+                    .withSegmentSizeBytes(96L)//
+                    .withMaxBytesBeforeForcedCheckpoint(192L)//
+                    .build();
+            final IndexConfiguration<String, String> conf = IndexConfiguration
+                    .<String, String>builder()//
+                    .withKeyClass(String.class)//
+                    .withValueClass(String.class)//
+                    .withName("wal-retention-pressure-structured-events-it")//
+                    .withWal(wal)//
+                    .build();
+
+            try (SegmentIndex<String, String> index = SegmentIndex
+                    .create(directory, conf)) {
+                for (int i = 0; i < 300; i++) {
+                    index.put("structured-" + i, "value-" + i);
+                }
+            }
+
+            assertTrue(appender.countMessageContaining(
+                    "event=wal_retention_pressure_start") >= 1L);
+            assertTrue(appender.countMessageContaining(
+                    "event=wal_retention_pressure_cleared") >= 1L);
         } finally {
             appender.detach();
         }
@@ -402,6 +434,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         }
 
         static TestLogAppender attachWarnRootAppender() {
+            return attachRootAppender(Level.WARN);
+        }
+
+        static TestLogAppender attachRootAppender(final Level level) {
             final LoggerContext context = (LoggerContext) LogManager
                     .getContext(false);
             final Configuration configuration = context.getConfiguration();
@@ -409,8 +445,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                     + System.nanoTime();
             final TestLogAppender appender = new TestLogAppender(name, context);
             appender.start();
-            configuration.getRootLogger().addAppender(appender, Level.WARN,
-                    null);
+            configuration.getRootLogger().addAppender(appender, level, null);
             context.updateLoggers();
             return appender;
         }

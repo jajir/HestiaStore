@@ -39,8 +39,60 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
 
+    - name: Smoke test WAL tools scripts
+      run: |
+        mvn -B -pl wal-tools -am \
+          -Dtest=org.hestiastore.waltools.WalToolsScriptsTest \
+          -Dsurefire.failIfNoSpecifiedTests=false \
+          test --file pom.xml
+
     - name: Build WAL tools distribution
       run: mvn -B -pl wal-tools -am -DskipTests package --file pom.xml
+
+    - name: Smoke test packaged WAL tool scripts
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ZIP_PATH="$(ls wal-tools/target/wal-tools-*.zip | head -n1)"
+        TMP_DIR="$(mktemp -d)"
+        unzip -q "${ZIP_PATH}" -d "${TMP_DIR}"
+
+        DIST_DIR="$(find "${TMP_DIR}" -maxdepth 1 -type d -name 'wal-tools-*' | head -n1)"
+        if [[ -z "${DIST_DIR}" ]]; then
+          echo "Unable to locate extracted wal-tools distribution directory."
+          exit 1
+        fi
+
+        MISSING_WAL_DIR="${TMP_DIR}/missing-wal-dir"
+
+        set +e
+        "${DIST_DIR}/bin/wal_verify" "${MISSING_WAL_DIR}" >"${TMP_DIR}/verify.out" 2>&1
+        VERIFY_EXIT=$?
+        "${DIST_DIR}/bin/wal_dump" "${MISSING_WAL_DIR}" >"${TMP_DIR}/dump.out" 2>&1
+        DUMP_EXIT=$?
+        set -e
+
+        if [[ ${VERIFY_EXIT} -ne 1 ]]; then
+          echo "Expected wal_verify missing-path exit code 1, got ${VERIFY_EXIT}."
+          cat "${TMP_DIR}/verify.out"
+          exit 1
+        fi
+        if [[ ${DUMP_EXIT} -ne 1 ]]; then
+          echo "Expected wal_dump missing-path exit code 1, got ${DUMP_EXIT}."
+          cat "${TMP_DIR}/dump.out"
+          exit 1
+        fi
+        if ! grep -q "WAL directory does not exist" "${TMP_DIR}/verify.out"; then
+          echo "wal_verify output did not include missing-directory error."
+          cat "${TMP_DIR}/verify.out"
+          exit 1
+        fi
+        if ! grep -q "WAL directory does not exist" "${TMP_DIR}/dump.out"; then
+          echo "wal_dump output did not include missing-directory error."
+          cat "${TMP_DIR}/dump.out"
+          exit 1
+        fi
 
     - name: Generate SHA256 checksum
       id: assets

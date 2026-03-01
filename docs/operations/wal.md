@@ -11,7 +11,6 @@ For end-game distributed durability planning, see
 
 ```java
 Wal wal = Wal.builder()
-    .withEnabled(true)
     .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
     .build();
 
@@ -107,6 +106,10 @@ Notes:
   - `event=wal_recovery_checkpoint_clamp`
   - `event=wal_recovery_complete`
   - `event=wal_checkpoint_cleanup`
+  - `event=wal_retention_pressure_start`
+  - `event=wal_retention_pressure_cleared`
+  - `event=wal_sync_failure`
+  - `event=wal_sync_failure_transition`
 
 ## Metrics
 

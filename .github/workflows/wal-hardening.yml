@@ -1,0 +1,43 @@
+name: WAL Hardening
+
+on:
+  push:
+    branches: [ "main", "develop", "devel" ]
+  pull_request:
+    branches: [ "main", "develop", "devel" ]
+  workflow_dispatch:
+
+concurrency:
+  group: wal-hardening-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wal-hardening:
+    name: WAL hardening test suite
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Xmx1024m
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Cache local Maven repository
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Run WAL hardening tests
+      run: |
+        mvn -B -pl engine \
+          -Dtest=org.hestiastore.index.segmentindex.wal.WalRuntimeTest,org.hestiastore.index.segmentindex.wal.WalToolTest,org.hestiastore.index.segmentindex.IntegrationSegmentIndexWalRecoveryTest,org.hestiastore.index.segmentindex.IntegrationSegmentIndexMetricsSnapshotTest,org.hestiastore.index.segmentindex.core.SegmentIndexImplPutTest \
+          test --file pom.xml

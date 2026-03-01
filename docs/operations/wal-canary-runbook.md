@@ -46,7 +46,6 @@ Use explicit WAL config:
 
 ```java
 Wal wal = Wal.builder()
-    .withEnabled(true)
     .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
     .withSegmentSizeBytes(64L * 1024L * 1024L)
     .withGroupSyncDelayMillis(5L)
