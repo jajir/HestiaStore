@@ -79,6 +79,8 @@ public final class IndexPropertiesSchema {
         public static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = "wal.maxBytesBeforeForcedCheckpoint";
         public static final String PROP_WAL_CORRUPTION_POLICY = "wal.corruptionPolicy";
         public static final String PROP_WAL_EPOCH_SUPPORT = "wal.epochSupport";
+        public static final String PROP_WAL_REPLICATION_MODE = "wal.replicationMode";
+        public static final String PROP_WAL_SOURCE_NODE_ID = "wal.sourceNodeId";
 
         public static final String CONFIGURATION_FILENAME = "manifest.txt";
 
@@ -288,7 +290,8 @@ public final class IndexPropertiesSchema {
         requiredKeys.addAll(defaults.keySet());
         final Set<String> blankAllowed = Set.of(
                 IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS,
-                IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS);
+                IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS,
+                IndexConfigurationKeys.PROP_WAL_SOURCE_NODE_ID);
         return new IndexPropertiesSchema("index-configuration", requiredKeys,
                 defaults, blankAllowed);
     }
@@ -408,6 +411,10 @@ public final class IndexPropertiesSchema {
                 view -> Wal.DEFAULT_CORRUPTION_POLICY.name());
         defaults.put(IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT,
                 view -> Boolean.FALSE.toString());
+        defaults.put(IndexConfigurationKeys.PROP_WAL_REPLICATION_MODE,
+                view -> Wal.DEFAULT_REPLICATION_MODE.name());
+        defaults.put(IndexConfigurationKeys.PROP_WAL_SOURCE_NODE_ID,
+                view -> Wal.DEFAULT_SOURCE_NODE_ID);
     }
 
     private static String resolveLegacyOrDefaultWorkerThreads(

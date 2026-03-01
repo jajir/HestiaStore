@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.Wal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,6 +110,11 @@ class IndexPropertiesSchemaTest {
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS));
         assertEquals("", view.getString(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS));
+        assertEquals(Wal.DEFAULT_REPLICATION_MODE.name(),
+                view.getString(
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_REPLICATION_MODE));
+        assertEquals(Wal.DEFAULT_SOURCE_NODE_ID, view.getString(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_SOURCE_NODE_ID));
         final String requiredKeys = view
                 .getString(IndexPropertiesSchema.REQUIRED_KEYS_KEY);
         assertNotNull(requiredKeys);
