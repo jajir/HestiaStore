@@ -247,19 +247,6 @@ class WalRuntimeTest {
     }
 
     @Test
-    void openCreatesEpochMarkerWhenEpochSupportEnabled() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).withEpochSupport(true)
-                .build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            final Directory walDirectory = root.openSubDirectory("wal");
-            assertTrue(walDirectory.isFileExists("epoch.meta"));
-            assertEquals(0L, runtime.currentEpoch());
-        }
-    }
-
-    @Test
     void openFailsWhenFormatMarkerIsCorrupted() {
         final MemDirectory root = new MemDirectory();
         final Directory walDirectory = root.openSubDirectory("wal");
@@ -272,46 +259,6 @@ class WalRuntimeTest {
 
         assertThrows(IndexException.class, () -> WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR));
-    }
-
-    @Test
-    void bumpEpochPersistsAcrossRestartAndFencesStaleAppends() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).withEpochSupport(true)
-                .build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.bumpEpoch(5L);
-            runtime.appendPutWithEpoch(5L, "k1", "v1");
-            assertThrows(IndexException.class,
-                    () -> runtime.appendPutWithEpoch(4L, "k2", "v2"));
-        }
-
-        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.recover(replayed::add);
-            assertEquals(5L, runtime.currentEpoch());
-            runtime.appendPutWithEpoch(5L, "k3", "v3");
-        }
-        assertEquals(1, replayed.size());
-        assertEquals("k1", replayed.get(0).getKey());
-        assertEquals("v1", replayed.get(0).getValue());
-    }
-
-    @Test
-    void bumpEpochRejectsNonMonotonicValue() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).withEpochSupport(true)
-                .build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.bumpEpoch(2L);
-            assertThrows(IllegalArgumentException.class,
-                    () -> runtime.bumpEpoch(2L));
-            assertThrows(IllegalArgumentException.class,
-                    () -> runtime.bumpEpoch(1L));
-        }
     }
 
     @Test
@@ -333,21 +280,6 @@ class WalRuntimeTest {
     }
 
     @Test
-    void recoverFailsWhenEpochMetadataIsNonNumeric() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).withEpochSupport(true)
-                .build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.appendPut("k1", "v1");
-        }
-        writeEpochMetadata(root, "not-a-number");
-
-        assertThrows(IndexException.class, () -> WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR));
-    }
-
-    @Test
     void recoverFailsWhenCheckpointMetadataIsNegative() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder().withEnabled(true).build();
@@ -363,21 +295,6 @@ class WalRuntimeTest {
                     () -> runtime.recover(record -> {
                     }));
         }
-    }
-
-    @Test
-    void recoverFailsWhenEpochMetadataIsNegative() {
-        final MemDirectory root = new MemDirectory();
-        final Wal wal = Wal.builder().withEnabled(true).withEpochSupport(true)
-                .build();
-        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.appendPut("k1", "v1");
-        }
-        writeEpochMetadata(root, "-1");
-
-        assertThrows(IndexException.class, () -> WalRuntime.open(root, wal,
-                STRING_DESCRIPTOR, STRING_DESCRIPTOR));
     }
 
     @Test
@@ -810,15 +727,6 @@ class WalRuntimeTest {
         final Directory walDirectory = root.openSubDirectory("wal");
         try (org.hestiastore.index.directory.FileWriter writer = walDirectory
                 .getFileWriter("checkpoint.meta", Directory.Access.OVERWRITE)) {
-            writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
-        }
-    }
-
-    private static void writeEpochMetadata(final MemDirectory root,
-            final String value) {
-        final Directory walDirectory = root.openSubDirectory("wal");
-        try (org.hestiastore.index.directory.FileWriter writer = walDirectory
-                .getFileWriter("epoch.meta", Directory.Access.OVERWRITE)) {
             writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
         }
     }
