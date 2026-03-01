@@ -345,6 +345,96 @@ class WalRuntimeTest {
     }
 
     @Test
+    void openPromotesValidFormatTempMarkerWhenMainMissing() {
+        final MemDirectory root = new MemDirectory();
+        final Directory walDirectory = root.openSubDirectory("wal");
+        final byte[] payload = "version=1\n"
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        final int checksum = WalRuntime.computeCrc32(payload, 0, payload.length);
+        writeWalMetadata(root, "format.meta.tmp",
+                "version=1\nchecksum=" + checksum + "\n");
+        assertFalse(walDirectory.isFileExists("format.meta"));
+
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> ignored = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertTrue(walDirectory.isFileExists("format.meta"));
+            assertFalse(walDirectory.isFileExists("format.meta.tmp"));
+        }
+    }
+
+    @Test
+    void openDropsStaleFormatTempMarkerWhenMainExists() {
+        final MemDirectory root = new MemDirectory();
+        final Directory walDirectory = root.openSubDirectory("wal");
+        final byte[] payload = "version=1\n"
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        final int checksum = WalRuntime.computeCrc32(payload, 0, payload.length);
+        writeWalMetadata(root, "format.meta", "version=1\nchecksum=" + checksum
+                + "\n");
+        writeWalMetadata(root, "format.meta.tmp", "version=999\nchecksum=1\n");
+
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> ignored = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertTrue(walDirectory.isFileExists("format.meta"));
+            assertFalse(walDirectory.isFileExists("format.meta.tmp"));
+        }
+    }
+
+    @Test
+    void recoverPromotesValidCheckpointTempMetadataWhenMainMissing() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        final long lsn;
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            lsn = runtime.appendPut("k1", "v1");
+        }
+        final Directory walDirectory = root.openSubDirectory("wal");
+        walDirectory.deleteFile("checkpoint.meta");
+        writeWalMetadata(root, "checkpoint.meta.tmp", String.valueOf(lsn));
+        assertFalse(walDirectory.isFileExists("checkpoint.meta"));
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertEquals(lsn, result.maxLsn());
+            assertEquals(lsn, runtime.statsSnapshot().checkpointLsn());
+            assertTrue(walDirectory.isFileExists("checkpoint.meta"));
+            assertFalse(walDirectory.isFileExists("checkpoint.meta.tmp"));
+            assertEquals(String.valueOf(lsn), readCheckpointMetadata(root));
+        }
+    }
+
+    @Test
+    void recoverDropsInvalidCheckpointTempMetadataWhenMainMissing() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+        final Directory walDirectory = root.openSubDirectory("wal");
+        walDirectory.deleteFile("checkpoint.meta");
+        writeWalMetadata(root, "checkpoint.meta.tmp", "invalid-checkpoint");
+
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertEquals(1L, result.maxLsn());
+            assertEquals(0L, runtime.statsSnapshot().checkpointLsn());
+            assertFalse(walDirectory.isFileExists("checkpoint.meta.tmp"));
+        }
+        assertEquals(1, replayed.size());
+        assertEquals(1L, replayed.get(0).getLsn());
+    }
+
+    @Test
     void recoverIgnoresNonWalFilesInWalDirectory() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder().withEnabled(true).build();
@@ -972,6 +1062,15 @@ class WalRuntimeTest {
                 .toByteArrayCopy();
         return new String(bytes, java.nio.charset.StandardCharsets.US_ASCII)
                 .trim();
+    }
+
+    private static void writeWalMetadata(final MemDirectory root,
+            final String fileName, final String value) {
+        final Directory walDirectory = root.openSubDirectory("wal");
+        try (org.hestiastore.index.directory.FileWriter writer = walDirectory
+                .getFileWriter(fileName, Directory.Access.OVERWRITE)) {
+            writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        }
     }
 
     private static final class TestLogAppender extends AbstractAppender {
