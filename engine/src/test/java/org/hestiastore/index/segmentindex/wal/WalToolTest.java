@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.datatype.TypeDescriptorString;
@@ -79,6 +80,46 @@ class WalToolTest {
     }
 
     @Test
+    void verifyPassesWhenFormatMetadataIsPresentOnlyInTempFile()
+            throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-format-tmp-only-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.move(walDir.resolve("format.meta"), walDir.resolve("format.meta.tmp"),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertTrue(result.ok());
+    }
+
+    @Test
+    void verifyIgnoresInvalidFormatTempWhenMainFormatExists()
+            throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-format-stale-tmp-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.writeString(walDir.resolve("format.meta.tmp"), "broken",
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertTrue(result.ok());
+    }
+
+    @Test
     void verifyFailsForInvalidCheckpointMetadata() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-invalid-checkpoint-");
@@ -121,6 +162,48 @@ class WalToolTest {
         assertTrue("checkpoint.meta".equals(result.errorFile()));
         assertTrue(result.errorMessage() != null
                 && result.errorMessage().contains("checksum"));
+    }
+
+    @Test
+    void verifyUsesCheckpointTempMetadataWhenMainCheckpointIsMissing()
+            throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-checkpoint-tmp-only-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+            runtime.onCheckpoint(1L);
+        }
+        final Path walDir = root.resolve("wal");
+        Files.move(walDir.resolve("checkpoint.meta"),
+                walDir.resolve("checkpoint.meta.tmp"),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertTrue(result.ok());
+    }
+
+    @Test
+    void verifyIgnoresInvalidCheckpointTempWhenMainCheckpointIsMissing()
+            throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-checkpoint-invalid-tmp-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.writeString(walDir.resolve("checkpoint.meta.tmp"), "broken",
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertTrue(result.ok());
     }
 
     @Test
@@ -263,6 +346,25 @@ class WalToolTest {
         final String output = captureStdout(out -> WalTool.dump(walDir, out));
         assertTrue(output.contains("invalid file="));
         assertTrue(output.contains("reason="));
+    }
+
+    @Test
+    void dumpPassesWhenFormatMetadataIsPresentOnlyInTempFile()
+            throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-dump-format-tmp-only-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.move(walDir.resolve("format.meta"), walDir.resolve("format.meta.tmp"),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        final String output = captureStdout(out -> WalTool.dump(walDir, out));
+        assertTrue(output.contains("summary file="));
     }
 
     @Test
