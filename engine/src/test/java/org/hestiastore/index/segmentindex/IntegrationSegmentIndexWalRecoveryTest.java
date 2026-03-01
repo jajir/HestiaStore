@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -235,6 +236,41 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertFalse(Files.exists(tempDir.resolve("wal")));
         } finally {
             deleteRecursively(tempDir);
+        }
+    }
+
+    @Test
+    void walRetentionPressureForcesCheckpointAndWritesKeepProgressing() {
+        final MemDirectory directory = new MemDirectory();
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withSegmentSizeBytes(96L)//
+                .withMaxBytesBeforeForcedCheckpoint(192L)//
+                .build();
+        final IndexConfiguration<String, String> conf = IndexConfiguration
+                .<String, String>builder()//
+                .withKeyClass(String.class)//
+                .withValueClass(String.class)//
+                .withName("wal-retention-pressure-it")//
+                .withWal(wal)//
+                .build();
+
+        try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
+                conf)) {
+            for (int i = 0; i < 300; i++) {
+                index.put("bp-" + i, "value-" + i);
+            }
+            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            assertTrue(snapshot.isWalEnabled());
+            assertTrue(snapshot.getWalAppendCount() >= 300L);
+            assertTrue(snapshot.getWalCheckpointLsn() > 0L,
+                    "Expected forced checkpoint under retention pressure.");
+            assertTrue(snapshot.getWalDurableLsn() >= snapshot.getWalCheckpointLsn());
+            assertEquals(0L, snapshot.getWalSyncFailureCount());
+            assertTrue(snapshot.getWalRetainedBytes() <= wal
+                    .getMaxBytesBeforeForcedCheckpoint()
+                    + wal.getSegmentSizeBytes());
+            assertEquals("value-299", index.get("bp-299"));
         }
     }
 
