@@ -6,5 +6,7 @@ package org.hestiastore.index.segmentindex.wal;
 public record WalStats(long appendCount, long appendBytes, long syncCount,
         long syncFailureCount, long corruptionCount, long truncationCount,
         long retainedBytes, int segmentCount, long durableLsn,
-        long checkpointLsn, long pendingSyncBytes) {
+        long checkpointLsn, long pendingSyncBytes, long syncTotalNanos,
+        long syncMaxNanos, long syncBatchBytesTotal,
+        long syncBatchBytesMax) {
 }

@@ -43,6 +43,12 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(0L, snapshot.getWalPendingSyncBytes());
         assertEquals(0L, snapshot.getWalAppliedLsn());
         assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+        assertEquals(0L, snapshot.getWalSyncTotalNanos());
+        assertEquals(0L, snapshot.getWalSyncMaxNanos());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
+        assertEquals(0L, snapshot.getWalSyncAvgNanos());
+        assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
         assertTrue(snapshot.getSegmentRuntimeSnapshots().isEmpty());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
@@ -88,6 +94,27 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(8L, snapshot.getWalPendingSyncBytes());
         assertEquals(6L, snapshot.getWalAppliedLsn());
         assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+        assertEquals(0L, snapshot.getWalSyncTotalNanos());
+        assertEquals(0L, snapshot.getWalSyncMaxNanos());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
+    }
+
+    @Test
+    void fullConstructorStoresWalSyncMetricsValues() {
+        final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L,
+                0L, 0, 0, 0D, 0L, 0L, 0L, 0L, true, 10L, 100L, 4L, 1L, 2L, 3L,
+                4L, 5, 6L, 7L, 8L, 11L, 1_000L, 500L, 4_096L, 2_048L, List.of(),
+                SegmentIndexState.READY);
+
+        assertEquals(1_000L, snapshot.getWalSyncTotalNanos());
+        assertEquals(500L, snapshot.getWalSyncMaxNanos());
+        assertEquals(4_096L, snapshot.getWalSyncBatchBytesTotal());
+        assertEquals(2_048L, snapshot.getWalSyncBatchBytesMax());
+        assertEquals(250L, snapshot.getWalSyncAvgNanos());
+        assertEquals(1_024L, snapshot.getWalSyncAvgBatchBytes());
     }
 
     @Test

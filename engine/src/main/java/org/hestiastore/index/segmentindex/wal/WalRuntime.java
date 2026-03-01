@@ -144,9 +144,13 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private final LongAdder appendCount = new LongAdder();
     private final LongAdder appendBytes = new LongAdder();
     private final LongAdder syncCount = new LongAdder();
+    private final LongAdder syncTotalNanos = new LongAdder();
+    private final LongAdder syncBatchBytesTotal = new LongAdder();
     private final LongAdder syncFailureCount = new LongAdder();
     private final LongAdder corruptionCount = new LongAdder();
     private final LongAdder truncationCount = new LongAdder();
+    private final AtomicLong syncMaxNanos = new AtomicLong(0L);
+    private final AtomicLong syncBatchBytesMax = new AtomicLong(0L);
 
     private long nextLsn = 1L;
     private long checkpointLsn = 0L;
@@ -384,14 +388,16 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
     public WalStats statsSnapshot() {
         if (!enabled) {
-            return new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L);
+            return new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L,
+                    0L, 0L, 0L);
         }
         synchronized (monitor) {
             return new WalStats(appendCount.sum(), appendBytes.sum(),
                     syncCount.sum(), syncFailureCount.sum(),
                     corruptionCount.sum(), truncationCount.sum(), retainedBytes,
                     segments.size(), durableLsn.get(), checkpointLsn,
-                    pendingSyncBytes);
+                    pendingSyncBytes, syncTotalNanos.sum(), syncMaxNanos.get(),
+                    syncBatchBytesTotal.sum(), syncBatchBytesMax.get());
         }
     }
 
@@ -679,6 +685,8 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         if (pendingSyncSegmentNames.isEmpty()) {
             return;
         }
+        final long batchBytes = pendingSyncBytes;
+        final long startedNanos = System.nanoTime();
         try {
             final Set<String> remaining = new HashSet<>(pendingSyncSegmentNames);
             for (final SegmentInfo segment : segments) {
@@ -693,6 +701,12 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             pendingSyncBytes = 0L;
             pendingSyncSegmentNames.clear();
             syncCount.increment();
+            final long elapsedNanos = Math.max(0L,
+                    System.nanoTime() - startedNanos);
+            syncTotalNanos.add(elapsedNanos);
+            syncBatchBytesTotal.add(Math.max(0L, batchBytes));
+            updateMax(syncMaxNanos, elapsedNanos);
+            updateMax(syncBatchBytesMax, Math.max(0L, batchBytes));
             monitor.notifyAll();
         } catch (RuntimeException ex) {
             markSyncFailure(ex);
@@ -729,6 +743,18 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private void checkSyncFailure() {
         if (syncFailure != null) {
             throw new IndexException("WAL sync failure", syncFailure);
+        }
+    }
+
+    private static void updateMax(final AtomicLong target, final long candidate) {
+        while (true) {
+            final long current = target.get();
+            if (candidate <= current) {
+                return;
+            }
+            if (target.compareAndSet(current, candidate)) {
+                return;
+            }
         }
     }
 
