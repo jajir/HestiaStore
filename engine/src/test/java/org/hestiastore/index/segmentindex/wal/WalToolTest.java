@@ -259,6 +259,88 @@ class WalToolTest {
     }
 
     @Test
+    void runVerifyWithJsonOutputsMachineReadableFields() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-run-verify-json-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+            runtime.appendDelete("a");
+        }
+        final CommandRunResult result = runWalTool("verify",
+                root.resolve("wal").toString(), "--json");
+        assertEquals(0, result.exitCode());
+        assertTrue(result.stdout().contains("\"type\":\"verify\""));
+        assertTrue(result.stdout().contains("\"ok\":true"));
+        assertTrue(result.stdout().contains("\"records\":"));
+        assertTrue(result.stdout().contains("\"errorFile\":null"));
+    }
+
+    @Test
+    void runVerifyWithJsonReturnsExitCodeTwoWhenInvalid() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-run-verify-json-fail-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        Files.writeString(walDir.resolve("checkpoint.meta"), "999",
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+
+        final CommandRunResult result = runWalTool("verify",
+                walDir.toString(), "--json");
+        assertEquals(2, result.exitCode());
+        assertTrue(result.stdout().contains("\"type\":\"verify\""));
+        assertTrue(result.stdout().contains("\"ok\":false"));
+        assertTrue(result.stdout().contains("\"errorFile\":\"checkpoint.meta\""));
+        assertTrue(result.stdout().contains("\"errorMessage\":"));
+    }
+
+    @Test
+    void runDumpWithJsonOutputsStructuredLines() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-run-dump-json-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+            runtime.appendDelete("a");
+        }
+
+        final CommandRunResult result = runWalTool("dump",
+                root.resolve("wal").toString(), "--json");
+        assertEquals(0, result.exitCode());
+        assertTrue(result.stdout().contains("\"type\":\"record\""));
+        assertTrue(result.stdout().contains("\"op\":\"PUT\""));
+        assertTrue(result.stdout().contains("\"op\":\"DELETE\""));
+        assertTrue(result.stdout().contains("\"type\":\"summary\""));
+    }
+
+    @Test
+    void runReturnsExitCodeOneForUnsupportedOption() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-invalid-option-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final CommandRunResult result = runWalTool("verify",
+                root.resolve("wal").toString(), "--yaml");
+        assertEquals(1, result.exitCode());
+        assertTrue(result.stdout().contains("Usage: WalTool"));
+    }
+
+    @Test
     void runReturnsExitCodeOneForInvalidArgs() {
         final CommandRunResult result = runWalTool();
         assertEquals(1, result.exitCode());

@@ -26,6 +26,11 @@ public final class WalTool {
     private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
     private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
 
+    private enum OutputMode {
+        TEXT,
+        JSON
+    }
+
     private WalTool() {
     }
 
@@ -42,6 +47,10 @@ public final class WalTool {
             printUsage(out);
             return 1;
         }
+        final OutputMode outputMode = parseOutputMode(args, out);
+        if (outputMode == null) {
+            return 1;
+        }
         final String command = args[0];
         final Path walDirectory = Path.of(args[1]);
         if (!Files.isDirectory(walDirectory)) {
@@ -52,20 +61,11 @@ public final class WalTool {
         try {
             if ("verify".equals(command)) {
                 final VerifyResult result = verify(walDirectory);
-                out.println("verify.ok=" + result.ok());
-                out.println("verify.files=" + result.fileCount());
-                out.println("verify.records=" + result.recordCount());
-                out.println("verify.maxLsn=" + result.maxLsn());
-                if (!result.ok()) {
-                    out.println("verify.errorFile=" + result.errorFile());
-                    out.println("verify.errorOffset=" + result.errorOffset());
-                    out.println("verify.errorMessage=" + result.errorMessage());
-                    return 2;
-                }
-                return 0;
+                printVerifyResult(result, out, outputMode);
+                return result.ok() ? 0 : 2;
             }
             if ("dump".equals(command)) {
-                dump(walDirectory, out);
+                dump(walDirectory, out, outputMode);
                 return 0;
             }
             printUsage(out);
@@ -174,6 +174,11 @@ public final class WalTool {
     }
 
     static void dump(final Path walDirectory, final PrintStream out) {
+        dump(walDirectory, out, OutputMode.TEXT);
+    }
+
+    static void dump(final Path walDirectory, final PrintStream out,
+            final OutputMode outputMode) {
         final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
         if (segmentDiscovery.error() != null) {
             throw new IndexException(segmentDiscovery.error().errorMessage());
@@ -247,10 +252,15 @@ public final class WalTool {
                     invalidOffset = offset;
                     break;
                 }
-                out.println("record file=" + file.getFileName() + " offset="
-                        + offset + " lsn=" + lsn + " op=" + operation
-                        + " keyLen=" + keyLen + " valueLen=" + valueLen
-                        + " bodyLen=" + bodyLen);
+                if (outputMode == OutputMode.JSON) {
+                    out.println(jsonRecord(file.getFileName().toString(), offset,
+                            lsn, operation, keyLen, valueLen, bodyLen));
+                } else {
+                    out.println("record file=" + file.getFileName() + " offset="
+                            + offset + " lsn=" + lsn + " op=" + operation
+                            + " keyLen=" + keyLen + " valueLen=" + valueLen
+                            + " bodyLen=" + bodyLen);
+                }
                 if (records == 0L) {
                     firstLsn = lsn;
                 }
@@ -259,13 +269,23 @@ public final class WalTool {
                 offset += 4L + bodyLen;
             }
             if (invalidTail) {
-                out.println("invalid file=" + file.getFileName()
-                        + " offset=" + invalidOffset + " reason="
-                        + invalidReason);
+                if (outputMode == OutputMode.JSON) {
+                    out.println(jsonInvalidTail(file.getFileName().toString(),
+                            invalidOffset, invalidReason));
+                } else {
+                    out.println("invalid file=" + file.getFileName()
+                            + " offset=" + invalidOffset + " reason="
+                            + invalidReason);
+                }
             }
-            out.println("summary file=" + file.getFileName() + " size="
-                    + bytes.length + " records=" + records + " firstLsn="
-                    + firstLsn + " lastLsn=" + lastLsn);
+            if (outputMode == OutputMode.JSON) {
+                out.println(jsonSummary(file.getFileName().toString(),
+                        bytes.length, records, firstLsn, lastLsn));
+            } else {
+                out.println("summary file=" + file.getFileName() + " size="
+                        + bytes.length + " records=" + records + " firstLsn="
+                        + firstLsn + " lastLsn=" + lastLsn);
+            }
         }
     }
 
@@ -344,7 +364,107 @@ public final class WalTool {
     }
 
     private static void printUsage(final PrintStream out) {
-        out.println("Usage: WalTool <verify|dump> <walDirectoryPath>");
+        out.println("Usage: WalTool <verify|dump> <walDirectoryPath> [--json]");
+    }
+
+    private static OutputMode parseOutputMode(final String[] args,
+            final PrintStream out) {
+        if (args.length == 2) {
+            return OutputMode.TEXT;
+        }
+        if (args.length == 3 && "--json".equals(args[2])) {
+            return OutputMode.JSON;
+        }
+        printUsage(out);
+        return null;
+    }
+
+    private static void printVerifyResult(final VerifyResult result,
+            final PrintStream out, final OutputMode outputMode) {
+        if (outputMode == OutputMode.JSON) {
+            out.println(jsonVerifyResult(result));
+            return;
+        }
+        out.println("verify.ok=" + result.ok());
+        out.println("verify.files=" + result.fileCount());
+        out.println("verify.records=" + result.recordCount());
+        out.println("verify.maxLsn=" + result.maxLsn());
+        if (!result.ok()) {
+            out.println("verify.errorFile=" + result.errorFile());
+            out.println("verify.errorOffset=" + result.errorOffset());
+            out.println("verify.errorMessage=" + result.errorMessage());
+        }
+    }
+
+    private static String jsonVerifyResult(final VerifyResult result) {
+        return "{\"type\":\"verify\","
+                + "\"ok\":" + result.ok() + ","
+                + "\"files\":" + result.fileCount() + ","
+                + "\"records\":" + result.recordCount() + ","
+                + "\"maxLsn\":" + result.maxLsn() + ","
+                + "\"errorFile\":" + toJsonString(result.errorFile()) + ","
+                + "\"errorOffset\":" + result.errorOffset() + ","
+                + "\"errorMessage\":" + toJsonString(result.errorMessage()) + "}";
+    }
+
+    private static String jsonRecord(final String fileName, final long offset,
+            final long lsn, final String operation, final int keyLen,
+            final int valueLen, final int bodyLen) {
+        return "{\"type\":\"record\","
+                + "\"file\":" + toJsonString(fileName) + ","
+                + "\"offset\":" + offset + ","
+                + "\"lsn\":" + lsn + ","
+                + "\"op\":" + toJsonString(operation) + ","
+                + "\"keyLen\":" + keyLen + ","
+                + "\"valueLen\":" + valueLen + ","
+                + "\"bodyLen\":" + bodyLen + "}";
+    }
+
+    private static String jsonInvalidTail(final String fileName,
+            final long invalidOffset, final String reason) {
+        return "{\"type\":\"invalid_tail\","
+                + "\"file\":" + toJsonString(fileName) + ","
+                + "\"offset\":" + invalidOffset + ","
+                + "\"reason\":" + toJsonString(reason) + "}";
+    }
+
+    private static String jsonSummary(final String fileName, final long size,
+            final long records, final long firstLsn, final long lastLsn) {
+        return "{\"type\":\"summary\","
+                + "\"file\":" + toJsonString(fileName) + ","
+                + "\"size\":" + size + ","
+                + "\"records\":" + records + ","
+                + "\"firstLsn\":" + firstLsn + ","
+                + "\"lastLsn\":" + lastLsn + "}";
+    }
+
+    private static String toJsonString(final String value) {
+        if (value == null) {
+            return "null";
+        }
+        return "\"" + escapeJson(value) + "\"";
+    }
+
+    private static String escapeJson(final String value) {
+        final StringBuilder escaped = new StringBuilder(value.length() + 8);
+        for (int i = 0; i < value.length(); i++) {
+            final char ch = value.charAt(i);
+            switch (ch) {
+            case '\\' -> escaped.append("\\\\");
+            case '"' -> escaped.append("\\\"");
+            case '\n' -> escaped.append("\\n");
+            case '\r' -> escaped.append("\\r");
+            case '\t' -> escaped.append("\\t");
+            default -> {
+                if (ch < 0x20) {
+                    escaped.append(String.format("\\u%04x", (int) ch));
+                } else {
+                    escaped.append(ch);
+                }
+            }
+            }
+        }
+        return escaped.toString();
     }
 
     private static VerifyResult verifyFormatMetadata(final Path walDirectory) {
