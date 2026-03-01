@@ -95,6 +95,74 @@ class WalToolTest {
         assertTrue("checkpoint.meta".equals(result.errorFile()));
     }
 
+    @Test
+    void verifyFailsForInvalidSegmentFileName() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-invalid-segment-name-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        final Path sourceSegment = findFirstSegment(walDir);
+        Files.copy(sourceSegment, walDir.resolve("invalid-segment.wal"));
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertFalse(result.ok());
+        assertTrue("invalid-segment.wal".equals(result.errorFile()));
+    }
+
+    @Test
+    void verifyFailsForDuplicateSegmentBaseLsn() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-duplicate-segment-base-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        final Path sourceSegment = findFirstSegment(walDir);
+        Files.copy(sourceSegment, walDir.resolve("1.wal"));
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertFalse(result.ok());
+        assertTrue("1.wal".equals(result.errorFile()));
+    }
+
+    @Test
+    void verifyFailsForNonMonotonicLsnAcrossSegments() throws IOException {
+        final Path root = Files
+                .createTempDirectory("hestia-wal-tool-non-monotonic-lsn-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+        }
+        final Path walDir = root.resolve("wal");
+        final Path sourceSegment = findFirstSegment(walDir);
+        Files.copy(sourceSegment, walDir.resolve("00000000000000000002.wal"));
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertFalse(result.ok());
+        assertTrue("00000000000000000002.wal".equals(result.errorFile()));
+        assertTrue(result.errorMessage() != null
+                && result.errorMessage().contains("Non-monotonic"));
+    }
+
+    private static Path findFirstSegment(final Path walDir) throws IOException {
+        try (java.util.stream.Stream<Path> listing = Files.list(walDir)) {
+            return listing
+                    .filter(path -> path.getFileName().toString()
+                            .endsWith(".wal"))
+                    .findFirst().orElseThrow();
+        }
+    }
+
     private static Path createTempWalDirectoryWithoutFormat() {
         try {
             final Path root = Files

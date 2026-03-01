@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.IndexException;
@@ -69,13 +72,17 @@ public final class WalTool {
         if (checkpointResult != null) {
             return checkpointResult;
         }
-        final List<Path> files = listSegmentFiles(walDirectory);
+        final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
+        if (segmentDiscovery.error() != null) {
+            return segmentDiscovery.error();
+        }
+        final List<Path> files = segmentDiscovery.files();
         long records = 0L;
         long maxLsn = 0L;
+        long previousLsn = 0L;
         for (final Path file : files) {
             final byte[] bytes = readAll(file);
             long offset = 0L;
-            long previousLsn = 0L;
             while (offset < bytes.length) {
                 if (bytes.length - offset < 4) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
@@ -143,7 +150,11 @@ public final class WalTool {
     }
 
     static void dump(final Path walDirectory) {
-        final List<Path> files = listSegmentFiles(walDirectory);
+        final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
+        if (segmentDiscovery.error() != null) {
+            throw new IndexException(segmentDiscovery.error().errorMessage());
+        }
+        final List<Path> files = segmentDiscovery.files();
         for (final Path file : files) {
             final byte[] bytes = readAll(file);
             long offset = 0L;
@@ -172,9 +183,10 @@ public final class WalTool {
         }
     }
 
-    private static List<Path> listSegmentFiles(final Path walDirectory) {
+    private static SegmentDiscovery discoverSegments(final Path walDirectory) {
+        final List<Path> candidates;
         try (Stream<Path> listing = Files.list(walDirectory)) {
-            return listing
+            candidates = listing
                     .filter(path -> path.getFileName().toString()
                             .endsWith(SEGMENT_SUFFIX))
                     .sorted(Comparator.comparing(Path::getFileName)).toList();
@@ -183,6 +195,46 @@ public final class WalTool {
                     String.format("Unable to list WAL directory '%s'.",
                             walDirectory),
                     e);
+        }
+
+        final List<SegmentFile> discovered = new ArrayList<>(candidates.size());
+        final Set<Long> uniqueBaseLsns = new HashSet<>();
+        for (final Path file : candidates) {
+            final String fileName = file.getFileName().toString();
+            final long baseLsn = parseSegmentBaseLsn(fileName);
+            if (baseLsn < 0L) {
+                return new SegmentDiscovery(List.of(),
+                        new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
+                                "Invalid WAL segment file name."));
+            }
+            if (!uniqueBaseLsns.add(baseLsn)) {
+                return new SegmentDiscovery(List.of(),
+                        new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
+                                "Duplicate WAL segment base LSN."));
+            }
+            discovered.add(new SegmentFile(file, baseLsn));
+        }
+        discovered.sort(Comparator.comparingLong(SegmentFile::baseLsn));
+        final List<Path> files = discovered.stream().map(SegmentFile::path)
+                .toList();
+        return new SegmentDiscovery(files, null);
+    }
+
+    private static long parseSegmentBaseLsn(final String fileName) {
+        final String raw = fileName.substring(0,
+                fileName.length() - SEGMENT_SUFFIX.length());
+        if (raw.isBlank()) {
+            return -1L;
+        }
+        for (int i = 0; i < raw.length(); i++) {
+            if (!Character.isDigit(raw.charAt(i))) {
+                return -1L;
+            }
+        }
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException ex) {
+            return -1L;
         }
     }
 
@@ -273,5 +325,11 @@ public final class WalTool {
 
     record VerifyResult(boolean ok, int fileCount, long recordCount, long maxLsn,
             String errorFile, long errorOffset, String errorMessage) {
+    }
+
+    record SegmentFile(Path path, long baseLsn) {
+    }
+
+    record SegmentDiscovery(List<Path> files, VerifyResult error) {
     }
 }
