@@ -187,6 +187,18 @@ final class WalStorageFs implements WalStorage {
         }
     }
 
+    @Override
+    public void syncMetadata() {
+        try (FileChannel channel = FileChannel.open(walDirectory,
+                StandardOpenOption.READ)) {
+            channel.force(true);
+        } catch (IOException e) {
+            throw new IndexException(String.format(
+                    "Unable to sync WAL directory metadata '%s'.",
+                    walDirectory), e);
+        }
+    }
+
     private void write(final String fileName, final byte[] bytes,
             final int offset, final int length, final boolean append) {
         Vldtn.requireNonNull(bytes, "bytes");

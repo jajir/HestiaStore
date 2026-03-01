@@ -318,6 +318,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 } else {
                     final String name = current.name();
                     storage.delete(name);
+                    storage.syncMetadata();
                     logger.info(
                             "event=wal_recovery_drop_empty_segment segment={}",
                             name);
@@ -665,6 +666,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         truncationCount.increment();
         if (validBytes <= 0L) {
             storage.delete(fileName);
+            storage.syncMetadata();
             logger.warn(
                     "event=wal_recovery_tail_repair action=delete_segment segment={} validBytes={}",
                     fileName, validBytes);
@@ -683,6 +685,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         for (int i = startIndex; i < discoveredSegments.size(); i++) {
             storage.delete(discoveredSegments.get(i).name());
             deletedCount++;
+        }
+        if (deletedCount > 0) {
+            storage.syncMetadata();
         }
         return deletedCount;
     }
@@ -708,6 +713,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
         segments.clear();
         segments.addAll(retained);
+        if (deletedCount > 0) {
+            storage.syncMetadata();
+        }
         if (retainedBytes < 0L) {
             retainedBytes = 0L;
         }
@@ -783,6 +791,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             for (final String segmentName : remaining) {
                 storage.sync(segmentName);
             }
+            storage.syncMetadata();
             durableLsn.set(pendingSyncHighLsn);
             pendingSyncBytes = 0L;
             pendingSyncSegmentNames.clear();
@@ -920,17 +929,20 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
         if (storage.exists(CHECKPOINT_FILE)) {
             storage.delete(CHECKPOINT_FILE_TMP);
+            storage.syncMetadata();
             return;
         }
         final byte[] temporary = storage.readAll(CHECKPOINT_FILE_TMP);
         if (temporary.length == 0) {
             storage.delete(CHECKPOINT_FILE_TMP);
+            storage.syncMetadata();
             return;
         }
         try {
             final long parsed = parseCheckpointMetadata(temporary);
             storage.rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE);
             storage.sync(CHECKPOINT_FILE);
+            storage.syncMetadata();
             logger.info(
                     "event=wal_checkpoint_metadata_tmp_recovered checkpointLsn={}",
                     parsed);
@@ -939,6 +951,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                     "event=wal_checkpoint_metadata_tmp_dropped reason=invalid error={}",
                     ex.getMessage());
             storage.delete(CHECKPOINT_FILE_TMP);
+            storage.syncMetadata();
         }
     }
 
@@ -970,6 +983,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         storage.sync(CHECKPOINT_FILE_TMP);
         storage.rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE);
         storage.sync(CHECKPOINT_FILE);
+        storage.syncMetadata();
     }
 
     private void ensureFormatMarker() {
@@ -999,6 +1013,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
         if (storage.exists(FORMAT_FILE)) {
             storage.delete(FORMAT_FILE_TMP);
+            storage.syncMetadata();
             return;
         }
         final int expectedChecksum = computeCrc32(payload, 0, payload.length);
@@ -1009,6 +1024,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                     && meta.checksum() == expectedChecksum) {
                 storage.rename(FORMAT_FILE_TMP, FORMAT_FILE);
                 storage.sync(FORMAT_FILE);
+                storage.syncMetadata();
                 logger.info(
                         "event=wal_format_metadata_tmp_recovered version={} checksum={}",
                         meta.version(), meta.checksum());
@@ -1024,6 +1040,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                     ex.getMessage());
         }
         storage.delete(FORMAT_FILE_TMP);
+        storage.syncMetadata();
     }
 
     private void writeFormatMarker(final byte[] payload) {
@@ -1034,6 +1051,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         storage.sync(FORMAT_FILE_TMP);
         storage.rename(FORMAT_FILE_TMP, FORMAT_FILE);
         storage.sync(FORMAT_FILE);
+        storage.syncMetadata();
     }
 
     private byte[] formatPayload() {

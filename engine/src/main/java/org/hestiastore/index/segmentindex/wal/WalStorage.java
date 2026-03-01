@@ -41,4 +41,15 @@ interface WalStorage {
      * @param fileName file to sync
      */
     void sync(String fileName);
+
+    /**
+     * Persists WAL directory metadata changes (create/rename/delete) to stable
+     * storage.
+     *
+     * <p>
+     * Implementations that cannot provide metadata fsync semantics should
+     * implement this as a no-op.
+     * </p>
+     */
+    void syncMetadata();
 }

@@ -111,4 +111,9 @@ final class WalStorageMem implements WalStorage {
     public void sync(final String fileName) {
         // No-op for in-memory storage.
     }
+
+    @Override
+    public void syncMetadata() {
+        // No-op for in-memory storage.
+    }
 }

@@ -130,4 +130,9 @@ final class WalStorageDirectory implements WalStorage {
     public void sync(final String fileName) {
         // No-op: generic directory abstraction does not expose fsync.
     }
+
+    @Override
+    public void syncMetadata() {
+        // No-op: generic directory abstraction does not expose fsync.
+    }
 }
