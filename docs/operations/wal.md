@@ -59,6 +59,12 @@ java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool du
 - `verify.ok`, `verify.files`, `verify.records`, `verify.maxLsn`
 - On failure: `verify.errorFile`, `verify.errorOffset`, `verify.errorMessage`
 
+`WalTool` exit codes:
+
+- `0` - command succeeded (`verify.ok=true` for verify)
+- `1` - usage/runtime failure
+- `2` - verify completed but detected WAL issues (`verify.ok=false`)
+
 ## Operational Signals
 
 When retention pressure exceeds `maxBytesBeforeForcedCheckpoint`, write path triggers forced checkpoint and backpressure until retained WAL drops under threshold.
