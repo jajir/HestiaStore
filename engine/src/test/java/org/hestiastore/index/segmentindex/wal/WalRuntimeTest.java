@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -289,6 +291,74 @@ class WalRuntimeTest {
     }
 
     @Test
+    void asyncModeMayLoseUnsyncedWritesAfterCrash() {
+        final Wal wal = Wal.builder().withEnabled(true)
+                .withDurabilityMode(WalDurabilityMode.ASYNC).build();
+        CrashSimulatingStorage storage = new CrashSimulatingStorage();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+
+        storage = storage.crashRecover();
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertEquals(0L, result.maxLsn());
+        }
+        assertTrue(replayed.isEmpty());
+    }
+
+    @Test
+    void syncModePersistsAcknowledgedWritesAfterCrash() {
+        final Wal wal = Wal.builder().withEnabled(true)
+                .withDurabilityMode(WalDurabilityMode.SYNC).build();
+        CrashSimulatingStorage storage = new CrashSimulatingStorage();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+
+        storage = storage.crashRecover();
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertEquals(1L, result.maxLsn());
+        }
+        assertEquals(1, replayed.size());
+        assertEquals("k1", replayed.get(0).getKey());
+        assertEquals("v1", replayed.get(0).getValue());
+    }
+
+    @Test
+    void groupSyncModePersistsAcknowledgedWritesAfterCrash() {
+        final Wal wal = Wal.builder().withEnabled(true)
+                .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
+                .withGroupSyncDelayMillis(1).build();
+        CrashSimulatingStorage storage = new CrashSimulatingStorage();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+
+        storage = storage.crashRecover();
+        final List<WalRuntime.ReplayRecord<String, String>> replayed = new ArrayList<>();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(replayed::add);
+            assertEquals(1L, result.maxLsn());
+        }
+        assertEquals(1, replayed.size());
+        assertEquals("k1", replayed.get(0).getKey());
+        assertEquals("v1", replayed.get(0).getValue());
+    }
+
+    @Test
     void groupSyncSyncsAllPendingRotatedSegments() throws Exception {
         final Wal wal = Wal.builder().withEnabled(true)
                 .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
@@ -468,6 +538,139 @@ class WalRuntimeTest {
                 }
             }
             delegate.sync(fileName);
+        }
+    }
+
+    private static final class CrashSimulatingStorage implements WalStorage {
+
+        private final Map<String, byte[]> workingFiles;
+        private final Map<String, byte[]> durableFiles;
+
+        private CrashSimulatingStorage() {
+            this(new LinkedHashMap<>(), new LinkedHashMap<>());
+        }
+
+        private CrashSimulatingStorage(final Map<String, byte[]> workingFiles,
+                final Map<String, byte[]> durableFiles) {
+            this.workingFiles = workingFiles;
+            this.durableFiles = durableFiles;
+        }
+
+        private synchronized CrashSimulatingStorage crashRecover() {
+            final Map<String, byte[]> recovered = deepCopy(durableFiles);
+            return new CrashSimulatingStorage(recovered, deepCopy(recovered));
+        }
+
+        @Override
+        public synchronized boolean exists(final String fileName) {
+            return workingFiles.containsKey(fileName);
+        }
+
+        @Override
+        public synchronized void touch(final String fileName) {
+            workingFiles.putIfAbsent(fileName, new byte[0]);
+        }
+
+        @Override
+        public synchronized long size(final String fileName) {
+            final byte[] bytes = workingFiles.get(fileName);
+            return bytes == null ? 0L : bytes.length;
+        }
+
+        @Override
+        public synchronized void append(final String fileName, final byte[] bytes,
+                final int offset, final int length) {
+            final byte[] current = workingFiles.get(fileName);
+            if (current == null) {
+                throw new IndexException(
+                        String.format("Missing WAL file '%s'.", fileName));
+            }
+            final byte[] appended = Arrays.copyOf(current,
+                    current.length + length);
+            System.arraycopy(bytes, offset, appended, current.length, length);
+            workingFiles.put(fileName, appended);
+        }
+
+        @Override
+        public synchronized void overwrite(final String fileName,
+                final byte[] bytes, final int offset, final int length) {
+            final byte[] overwritten = new byte[length];
+            System.arraycopy(bytes, offset, overwritten, 0, length);
+            workingFiles.put(fileName, overwritten);
+        }
+
+        @Override
+        public synchronized byte[] readAll(final String fileName) {
+            final byte[] bytes = workingFiles.get(fileName);
+            return bytes == null ? new byte[0] : Arrays.copyOf(bytes, bytes.length);
+        }
+
+        @Override
+        public synchronized int read(final String fileName, final long position,
+                final byte[] destination, final int offset, final int length) {
+            final byte[] data = workingFiles.get(fileName);
+            if (data == null || position >= data.length) {
+                return -1;
+            }
+            final int available = (int) Math.min(length, data.length - position);
+            if (available <= 0) {
+                return -1;
+            }
+            System.arraycopy(data, (int) position, destination, offset, available);
+            return available;
+        }
+
+        @Override
+        public synchronized void truncate(final String fileName,
+                final long sizeBytes) {
+            final byte[] current = workingFiles.get(fileName);
+            if (current == null) {
+                return;
+            }
+            final int targetSize = (int) Math.max(0L,
+                    Math.min(sizeBytes, current.length));
+            workingFiles.put(fileName, Arrays.copyOf(current, targetSize));
+        }
+
+        @Override
+        public synchronized boolean delete(final String fileName) {
+            return workingFiles.remove(fileName) != null;
+        }
+
+        @Override
+        public synchronized void rename(final String currentFileName,
+                final String newFileName) {
+            final byte[] bytes = workingFiles.remove(currentFileName);
+            if (bytes == null) {
+                throw new IndexException(String.format(
+                        "Unable to rename missing WAL file '%s'.",
+                        currentFileName));
+            }
+            workingFiles.put(newFileName, bytes);
+        }
+
+        @Override
+        public synchronized java.util.stream.Stream<String> listFileNames() {
+            return workingFiles.keySet().stream().sorted();
+        }
+
+        @Override
+        public synchronized void sync(final String fileName) {
+            final byte[] bytes = workingFiles.get(fileName);
+            if (bytes == null) {
+                return;
+            }
+            durableFiles.put(fileName, Arrays.copyOf(bytes, bytes.length));
+        }
+
+        private static Map<String, byte[]> deepCopy(
+                final Map<String, byte[]> source) {
+            final Map<String, byte[]> copy = new LinkedHashMap<>();
+            for (final Map.Entry<String, byte[]> entry : source.entrySet()) {
+                copy.put(entry.getKey(),
+                        Arrays.copyOf(entry.getValue(), entry.getValue().length));
+            }
+            return copy;
         }
     }
 }
