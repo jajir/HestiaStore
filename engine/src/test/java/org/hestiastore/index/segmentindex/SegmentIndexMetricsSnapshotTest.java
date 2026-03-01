@@ -41,6 +41,8 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(0L, snapshot.getWalDurableLsn());
         assertEquals(0L, snapshot.getWalCheckpointLsn());
         assertEquals(0L, snapshot.getWalPendingSyncBytes());
+        assertEquals(0L, snapshot.getWalAppliedLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLagLsn());
         assertTrue(snapshot.getSegmentRuntimeSnapshots().isEmpty());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
@@ -84,6 +86,20 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(6L, snapshot.getWalDurableLsn());
         assertEquals(7L, snapshot.getWalCheckpointLsn());
         assertEquals(8L, snapshot.getWalPendingSyncBytes());
+        assertEquals(6L, snapshot.getWalAppliedLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+    }
+
+    @Test
+    void checkpointLagUsesAppliedLsnWhenProvided() {
+        final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L,
+                0L, 0, 0, 0D, 0L, 0L, 0L, 0L, true, 10L, 100L, 20L, 1L, 2L, 3L,
+                4L, 5, 6L, 7L, 8L, 11L, List.of(), SegmentIndexState.READY);
+
+        assertEquals(11L, snapshot.getWalAppliedLsn());
+        assertEquals(4L, snapshot.getWalCheckpointLagLsn());
     }
 
     @Test
