@@ -1,0 +1,107 @@
+name: WAL Crash and Fault Stress
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - "engine/**"
+      - "pom.xml"
+      - ".github/workflows/wal-stress.yml"
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - "engine/**"
+      - "pom.xml"
+      - ".github/workflows/wal-stress.yml"
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: wal-stress-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wal-stress-current-ref:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Cache local Maven repository
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Run WAL stress test set
+      run: |
+        mvn -B -pl engine -am \
+          -Dtest=org.hestiastore.index.segmentindex.wal.WalRuntimeTest,org.hestiastore.index.segmentindex.wal.WalToolTest,org.hestiastore.index.segmentindex.IntegrationSegmentIndexWalRecoveryTest \
+          test --file pom.xml
+
+    - name: Upload WAL stress reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: wal-stress-reports-current-ref-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          engine/target/surefire-reports/**
+          engine/target/failsafe-reports/**
+        if-no-files-found: warn
+
+  wal-stress-scheduled-branches:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [ "main", "develop" ]
+    steps:
+    - name: Checkout repository branch
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ matrix.branch }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Cache local Maven repository
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Run WAL stress test set
+      run: |
+        mvn -B -pl engine -am \
+          -Dtest=org.hestiastore.index.segmentindex.wal.WalRuntimeTest,org.hestiastore.index.segmentindex.wal.WalToolTest,org.hestiastore.index.segmentindex.IntegrationSegmentIndexWalRecoveryTest \
+          test --file pom.xml
+
+    - name: Upload WAL stress reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: wal-stress-reports-${{ matrix.branch }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          engine/target/surefire-reports/**
+          engine/target/failsafe-reports/**
+        if-no-files-found: warn
