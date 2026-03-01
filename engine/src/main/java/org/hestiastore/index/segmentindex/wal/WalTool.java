@@ -308,6 +308,11 @@ public final class WalTool {
         final Set<Long> uniqueBaseLsns = new HashSet<>();
         for (final Path file : candidates) {
             final String fileName = file.getFileName().toString();
+            if (!Files.isRegularFile(file)) {
+                return new SegmentDiscovery(List.of(),
+                        new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
+                                "WAL segment entry is not a regular file."));
+            }
             final long baseLsn = parseSegmentBaseLsn(fileName);
             if (baseLsn < 0L) {
                 return new SegmentDiscovery(List.of(),
