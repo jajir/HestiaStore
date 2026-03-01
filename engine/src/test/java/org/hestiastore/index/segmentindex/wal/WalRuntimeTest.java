@@ -790,6 +790,57 @@ class WalRuntimeTest {
     }
 
     @Test
+    void recoverPersistsDeletedSegmentsAcrossCrashAfterRepair() {
+        final Wal wal = Wal.builder()//
+                .withEnabled(true)//
+                .withCorruptionPolicy(
+                        WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)//
+                .withDurabilityMode(WalDurabilityMode.SYNC)//
+                .withSegmentSizeBytes(96L)//
+                .build();
+        CrashSimulatingStorage storage = new CrashSimulatingStorage();
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (walSegmentNames(storage).size() < 3 && i < 256) {
+                runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+        }
+        final List<String> beforeCorruption = walSegmentNames(storage);
+        assertTrue(beforeCorruption.size() >= 3);
+        final String corruptedSegment = beforeCorruption.get(1);
+        final Set<String> expectedDeleted = new HashSet<>(
+                beforeCorruption.subList(2, beforeCorruption.size()));
+        storage.append(corruptedSegment, new byte[] { 0x01, 0x02, 0x03, 0x04 },
+                0, 4);
+        storage.sync(corruptedSegment);
+
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertTrue(result.truncatedTail());
+        }
+
+        storage = storage.crashRecover();
+        final List<String> segmentsAfterCrash = walSegmentNames(storage);
+        for (final String deleted : expectedDeleted) {
+            assertFalse(segmentsAfterCrash.contains(deleted),
+                    "Deleted segment resurrected after crash: " + deleted);
+        }
+
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final WalRuntime.RecoveryResult result = runtime
+                    .recover(record -> {
+                    });
+            assertFalse(result.truncatedTail());
+        }
+    }
+
+    @Test
     void recoverTruncatesWhenSegmentLsnRegressesAcrossBoundary() {
         final MemDirectory root = new MemDirectory();
         final Wal wal = Wal.builder()//
@@ -1051,6 +1102,12 @@ class WalRuntimeTest {
         final Directory walDirectory = root.openSubDirectory("wal");
         return walDirectory.getFileNames().filter(name -> name.endsWith(".wal"))
                 .sorted().toList();
+    }
+
+    private static List<String> walSegmentNames(final WalStorage storage) {
+        try (java.util.stream.Stream<String> names = storage.listFileNames()) {
+            return names.filter(name -> name.endsWith(".wal")).sorted().toList();
+        }
     }
 
     private static Map<String, byte[]> walSegmentSnapshot(final MemDirectory root) {
@@ -1324,6 +1381,11 @@ class WalRuntimeTest {
         public void sync(final String fileName) {
             delegate.sync(fileName);
         }
+
+        @Override
+        public void syncMetadata() {
+            delegate.syncMetadata();
+        }
     }
 
     private static final class SyncObservingStorage implements WalStorage {
@@ -1411,6 +1473,11 @@ class WalRuntimeTest {
                 }
             }
             delegate.sync(fileName);
+        }
+
+        @Override
+        public void syncMetadata() {
+            delegate.syncMetadata();
         }
     }
 
@@ -1534,6 +1601,22 @@ class WalRuntimeTest {
                 return;
             }
             durableFiles.put(fileName, Arrays.copyOf(bytes, bytes.length));
+        }
+
+        @Override
+        public synchronized void syncMetadata() {
+            final Map<String, byte[]> synced = new LinkedHashMap<>();
+            for (final Map.Entry<String, byte[]> entry : workingFiles.entrySet()) {
+                final byte[] durable = durableFiles.get(entry.getKey());
+                if (durable != null) {
+                    synced.put(entry.getKey(),
+                            Arrays.copyOf(durable, durable.length));
+                } else {
+                    synced.put(entry.getKey(), new byte[0]);
+                }
+            }
+            durableFiles.clear();
+            durableFiles.putAll(synced);
         }
 
         private static Map<String, byte[]> deepCopy(
