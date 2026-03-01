@@ -7,7 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorString;
@@ -169,8 +177,8 @@ class WalRuntimeTest {
     void syncFailureFailsCurrentAndFollowingWrites() {
         final Wal wal = Wal.builder().withEnabled(true)
                 .withDurabilityMode(WalDurabilityMode.SYNC).build();
-        final WalStorage failingStorage = new FailingSyncStorage(
-                new WalStorageMem(new MemDirectory()));
+        final WalStorage failingStorage = new SyncObservingStorage(
+                new WalStorageMem(new MemDirectory()), true);
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
@@ -178,6 +186,48 @@ class WalRuntimeTest {
             assertThrows(IndexException.class,
                     () -> runtime.appendPut("k2", "v2"));
         }
+    }
+
+    @Test
+    void groupSyncSyncsAllPendingRotatedSegments() throws Exception {
+        final Wal wal = Wal.builder().withEnabled(true)
+                .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
+                .withGroupSyncDelayMillis(500)
+                .withGroupSyncMaxBatchBytes(16 * 1024 * 1024)
+                .withSegmentSizeBytes(96L).build();
+        final SyncObservingStorage storage = new SyncObservingStorage(
+                new WalStorageMem(new MemDirectory()), false);
+        final int writers = 24;
+        final ExecutorService executor = Executors.newFixedThreadPool(writers);
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch readyLatch = new CountDownLatch(writers);
+        final List<Future<Long>> writes = new ArrayList<>(writers);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            for (int i = 0; i < writers; i++) {
+                final int value = i;
+                writes.add(executor.submit(() -> {
+                    readyLatch.countDown();
+                    startLatch.await();
+                    return runtime.appendPut("k-" + value,
+                            "v-" + value + "-payload");
+                }));
+            }
+            assertTrue(readyLatch.await(5, TimeUnit.SECONDS));
+            startLatch.countDown();
+            for (final Future<Long> write : writes) {
+                write.get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+        final Set<String> walFiles = storage.listFileNames()
+                .filter(name -> name.endsWith(".wal"))
+                .collect(Collectors.toSet());
+        assertTrue(walFiles.size() > 1);
+        assertTrue(storage.syncedWalSegments().containsAll(walFiles),
+                "Expected synced WAL segments " + walFiles + " but got "
+                        + storage.syncedWalSegments());
     }
 
     private static int countWalSegments(final MemDirectory root) {
@@ -197,12 +247,20 @@ class WalRuntimeTest {
         }
     }
 
-    private static final class FailingSyncStorage implements WalStorage {
+    private static final class SyncObservingStorage implements WalStorage {
 
         private final WalStorage delegate;
+        private final boolean failOnWalSync;
+        private final Set<String> syncedWalSegments = new HashSet<>();
 
-        private FailingSyncStorage(final WalStorage delegate) {
+        private SyncObservingStorage(final WalStorage delegate,
+                final boolean failOnWalSync) {
             this.delegate = delegate;
+            this.failOnWalSync = failOnWalSync;
+        }
+
+        private Set<String> syncedWalSegments() {
+            return Set.copyOf(syncedWalSegments);
         }
 
         @Override
@@ -268,7 +326,10 @@ class WalRuntimeTest {
         @Override
         public void sync(final String fileName) {
             if (fileName != null && fileName.endsWith(".wal")) {
-                throw new IndexException("simulated sync failure");
+                syncedWalSegments.add(fileName);
+                if (failOnWalSync) {
+                    throw new IndexException("simulated sync failure");
+                }
             }
             delegate.sync(fileName);
         }
