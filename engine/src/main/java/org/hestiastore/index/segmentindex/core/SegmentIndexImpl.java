@@ -68,6 +68,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private static final String OPERATION_COMPACT = "compact";
     private static final String OPERATION_FLUSH = "flush";
+    private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
+            .toNanos(5L);
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
@@ -84,6 +86,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final Stats stats = new Stats();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
+    private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
+            0L);
     private final Object asyncMonitor = new Object();
     private int asyncInFlight = 0;
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
@@ -575,10 +579,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (!walRuntime.isEnabled() || !walRuntime.isRetentionPressure()) {
             return;
         }
-        logger.warn(
-                "WAL retention pressure detected: retainedBytes={} threshold={}. Starting forced checkpoint/backpressure.",
-                walRuntime.retainedBytes(),
-                conf.getWal().getMaxBytesBeforeForcedCheckpoint());
+        logWalRetentionPressureIfNeeded();
         final long startNanos = retryPolicy.startNanos();
         while (walRuntime.isRetentionPressure()) {
             flushSegments(true);
@@ -588,6 +589,26 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 return;
             }
             retryPolicy.backoffOrThrow(startNanos, "walBackpressure", null);
+        }
+    }
+
+    private void logWalRetentionPressureIfNeeded() {
+        final long nowNanos = System.nanoTime();
+        while (true) {
+            final long previousWarnNanos = walRetentionPressureLastWarnNanos
+                    .get();
+            if (previousWarnNanos != 0L
+                    && nowNanos - previousWarnNanos < WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS) {
+                return;
+            }
+            if (walRetentionPressureLastWarnNanos.compareAndSet(
+                    previousWarnNanos, nowNanos)) {
+                logger.warn(
+                        "WAL retention pressure detected: retainedBytes={} threshold={}. Starting forced checkpoint/backpressure.",
+                        walRuntime.retainedBytes(),
+                        conf.getWal().getMaxBytesBeforeForcedCheckpoint());
+                return;
+            }
         }
     }
 
