@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.wal;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -15,6 +16,9 @@ import org.hestiastore.index.IndexException;
 public final class WalTool {
 
     private static final String SEGMENT_SUFFIX = ".wal";
+    private static final String FORMAT_FILE = "format.meta";
+    private static final String CHECKPOINT_FILE = "checkpoint.meta";
+    private static final int FORMAT_VERSION = 1;
     private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
     private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
 
@@ -39,6 +43,8 @@ public final class WalTool {
                     System.out.println("verify.errorFile=" + result.errorFile());
                     System.out.println(
                             "verify.errorOffset=" + result.errorOffset());
+                    System.out.println(
+                            "verify.errorMessage=" + result.errorMessage());
                 }
                 return;
             }
@@ -54,6 +60,15 @@ public final class WalTool {
     }
 
     static VerifyResult verify(final Path walDirectory) {
+        final VerifyResult formatResult = verifyFormatMetadata(walDirectory);
+        if (formatResult != null) {
+            return formatResult;
+        }
+        final VerifyResult checkpointResult = verifyCheckpointMetadata(
+                walDirectory);
+        if (checkpointResult != null) {
+            return checkpointResult;
+        }
         final List<Path> files = listSegmentFiles(walDirectory);
         long records = 0L;
         long maxLsn = 0L;
@@ -64,17 +79,20 @@ public final class WalTool {
             while (offset < bytes.length) {
                 if (bytes.length - offset < 4) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "Partial record length prefix.");
                 }
                 final int bodyLen = WalRuntime.readInt(bytes, (int) offset);
                 if (bodyLen < MIN_RECORD_BODY_SIZE
                         || bodyLen > MAX_RECORD_BODY_SIZE) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "Invalid WAL record body length.");
                 }
                 if (offset + 4L + bodyLen > bytes.length) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "Truncated WAL record body.");
                 }
                 final int bodyOffset = (int) (offset + 4L);
                 final int storedCrc = WalRuntime.readInt(bytes, bodyOffset);
@@ -82,7 +100,8 @@ public final class WalTool {
                         bodyOffset + 4, bodyLen - 4);
                 if (storedCrc != computedCrc) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "CRC mismatch.");
                 }
                 int p = bodyOffset + 4;
                 final long lsn = WalRuntime.readLong(bytes, p);
@@ -90,7 +109,8 @@ public final class WalTool {
                 final byte opCode = bytes[p++];
                 if (opCode != 1 && opCode != 2) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "Invalid WAL operation code.");
                 }
                 final int keyLen = WalRuntime.readInt(bytes, p);
                 p += 4;
@@ -99,15 +119,18 @@ public final class WalTool {
                 if (keyLen <= 0 || valueLen < 0
                         || p + keyLen + valueLen != bodyOffset + bodyLen) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "Invalid key/value frame lengths.");
                 }
                 if (opCode == 2 && valueLen != 0) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "DELETE record must have zero value length.");
                 }
                 if (lsn <= 0L || (previousLsn > 0L && lsn <= previousLsn)) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset);
+                            file.getFileName().toString(), offset,
+                            "Non-monotonic or invalid LSN.");
                 }
                 previousLsn = lsn;
                 maxLsn = Math.max(maxLsn, lsn);
@@ -115,7 +138,8 @@ public final class WalTool {
                 offset += 4L + bodyLen;
             }
         }
-        return new VerifyResult(true, files.size(), records, maxLsn, null, -1L);
+        return new VerifyResult(true, files.size(), records, maxLsn, null, -1L,
+                null);
     }
 
     static void dump(final Path walDirectory) {
@@ -175,7 +199,79 @@ public final class WalTool {
         System.out.println("Usage: WalTool <verify|dump> <walDirectoryPath>");
     }
 
+    private static VerifyResult verifyFormatMetadata(final Path walDirectory) {
+        final Path formatFile = walDirectory.resolve(FORMAT_FILE);
+        if (!Files.exists(formatFile)) {
+            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                    "Missing WAL format metadata.");
+        }
+        final byte[] bytes = readAll(formatFile);
+        final String text = new String(bytes, StandardCharsets.US_ASCII).trim();
+        if (text.isEmpty()) {
+            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                    "Empty WAL format metadata.");
+        }
+        Integer version = null;
+        Integer checksum = null;
+        for (final String line : text.split("\\R")) {
+            final String[] parts = line.split("=", 2);
+            if (parts.length != 2) {
+                continue;
+            }
+            final String key = parts[0].trim();
+            final String value = parts[1].trim();
+            try {
+                if ("version".equals(key)) {
+                    version = Integer.valueOf(value);
+                } else if ("checksum".equals(key)) {
+                    checksum = Integer.valueOf(value);
+                }
+            } catch (RuntimeException e) {
+                return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                        "Invalid numeric value in WAL format metadata.");
+            }
+        }
+        if (version == null || checksum == null) {
+            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                    "Missing version/checksum in WAL format metadata.");
+        }
+        final byte[] payload = ("version=" + FORMAT_VERSION + "\n")
+                .getBytes(StandardCharsets.US_ASCII);
+        final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
+                payload.length);
+        if (version.intValue() != FORMAT_VERSION
+                || checksum.intValue() != expectedChecksum) {
+            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                    "Unsupported or corrupted WAL format metadata.");
+        }
+        return null;
+    }
+
+    private static VerifyResult verifyCheckpointMetadata(
+            final Path walDirectory) {
+        final Path checkpointFile = walDirectory.resolve(CHECKPOINT_FILE);
+        if (!Files.exists(checkpointFile)) {
+            return null;
+        }
+        final String text = new String(readAll(checkpointFile),
+                StandardCharsets.US_ASCII).trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        try {
+            final long checkpointLsn = Long.parseLong(text);
+            if (checkpointLsn < 0L) {
+                return new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
+                        "Negative checkpoint LSN.");
+            }
+            return null;
+        } catch (RuntimeException e) {
+            return new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
+                    "Invalid checkpoint metadata.");
+        }
+    }
+
     record VerifyResult(boolean ok, int fileCount, long recordCount, long maxLsn,
-            String errorFile, long errorOffset) {
+            String errorFile, long errorOffset, String errorMessage) {
     }
 }
