@@ -449,7 +449,7 @@ class WalRuntimeTest {
             assertEquals(lsn, runtime.statsSnapshot().checkpointLsn());
             assertTrue(walDirectory.isFileExists("checkpoint.meta"));
             assertFalse(walDirectory.isFileExists("checkpoint.meta.tmp"));
-            assertEquals(String.valueOf(lsn), readCheckpointMetadata(root));
+            assertEquals(lsn, readCheckpointMetadataLsn(root));
         }
     }
 
@@ -613,7 +613,7 @@ class WalRuntimeTest {
             assertEquals(firstLsn, result.lastReplayedLsn());
             assertEquals(firstLsn, runtime.statsSnapshot().checkpointLsn());
         }
-        assertEquals(String.valueOf(firstLsn), readCheckpointMetadata(root));
+        assertEquals(firstLsn, readCheckpointMetadataLsn(root));
 
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -653,6 +653,25 @@ class WalRuntimeTest {
             runtime.appendPut("k1", "v1");
         }
         writeCheckpointMetadata(root, "-1");
+
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
+    void recoverFailsWhenCheckpointMetadataChecksumIsInvalid() {
+        final MemDirectory root = new MemDirectory();
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
+                STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+            runtime.onCheckpoint(1L);
+        }
+        writeCheckpointMetadata(root, "lsn=1\nchecksum=0\n");
 
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
@@ -1212,16 +1231,47 @@ class WalRuntimeTest {
         }
     }
 
-    private static String readCheckpointMetadata(final MemDirectory root) {
+    private static long readCheckpointMetadataLsn(final MemDirectory root) {
         final MemDirectory walDirectory = (MemDirectory) root
                 .openSubDirectory("wal");
         if (!walDirectory.isFileExists("checkpoint.meta")) {
-            return "";
+            return 0L;
         }
-        final byte[] bytes = walDirectory.getFileSequence("checkpoint.meta")
-                .toByteArrayCopy();
-        return new String(bytes, java.nio.charset.StandardCharsets.US_ASCII)
-                .trim();
+        final String text = new String(
+                walDirectory.getFileSequence("checkpoint.meta").toByteArrayCopy(),
+                java.nio.charset.StandardCharsets.US_ASCII).trim();
+        if (text.isEmpty()) {
+            return 0L;
+        }
+        if (!text.contains("=")) {
+            return Long.parseLong(text);
+        }
+        Long lsn = null;
+        Integer checksum = null;
+        for (final String line : text.split("\\R")) {
+            final String[] parts = line.split("=", 2);
+            if (parts.length != 2) {
+                continue;
+            }
+            final String key = parts[0].trim();
+            final String value = parts[1].trim();
+            if ("lsn".equals(key)) {
+                lsn = Long.valueOf(value);
+            } else if ("checksum".equals(key)) {
+                checksum = Integer.valueOf(value);
+            }
+        }
+        if (lsn == null || checksum == null) {
+            throw new IllegalStateException("Invalid checkpoint metadata.");
+        }
+        final byte[] payload = ("lsn=" + lsn + "\n")
+                .getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
+                payload.length);
+        if (checksum.intValue() != expectedChecksum) {
+            throw new IllegalStateException("Invalid checkpoint checksum.");
+        }
+        return lsn.longValue();
     }
 
     private static void writeWalMetadata(final MemDirectory root,

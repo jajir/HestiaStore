@@ -100,6 +100,30 @@ class WalToolTest {
     }
 
     @Test
+    void verifyFailsForInvalidCheckpointMetadataChecksum() throws IOException {
+        final Path root = Files.createTempDirectory(
+                "hestia-wal-tool-invalid-checkpoint-checksum-");
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        try (WalRuntime<String, String> runtime = WalRuntime
+                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                        STRING_DESCRIPTOR)) {
+            runtime.appendPut("a", "1");
+            runtime.onCheckpoint(1L);
+        }
+        final Path walDir = root.resolve("wal");
+        Files.writeString(walDir.resolve("checkpoint.meta"), "lsn=1\nchecksum=0\n",
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE);
+
+        final WalTool.VerifyResult result = WalTool.verify(walDir);
+        assertFalse(result.ok());
+        assertTrue("checkpoint.meta".equals(result.errorFile()));
+        assertTrue(result.errorMessage() != null
+                && result.errorMessage().contains("checksum"));
+    }
+
+    @Test
     void verifyFailsWhenCheckpointLsnIsAheadOfWalMaxLsn() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-checkpoint-ahead-");

@@ -23,6 +23,8 @@ public final class WalTool {
     private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String FORMAT_FILE = "format.meta";
     private static final String CHECKPOINT_FILE = "checkpoint.meta";
+    private static final String CHECKPOINT_KEY_LSN = "lsn";
+    private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
     private static final int FORMAT_VERSION = 1;
     private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
     private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
@@ -532,18 +534,63 @@ public final class WalTool {
         if (text.isEmpty()) {
             return new CheckpointValidation(null, null);
         }
-        try {
-            final long checkpointLsn = Long.parseLong(text);
-            if (checkpointLsn < 0L) {
+        if (!text.contains("=")) {
+            try {
+                final long checkpointLsn = Long.parseLong(text);
+                if (checkpointLsn < 0L) {
+                    return new CheckpointValidation(null,
+                            new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE,
+                                    -1L, "Negative checkpoint LSN."));
+                }
+                return new CheckpointValidation(Long.valueOf(checkpointLsn),
+                        null);
+            } catch (RuntimeException e) {
                 return new CheckpointValidation(null,
                         new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE,
-                                -1L, "Negative checkpoint LSN."));
+                                -1L, "Invalid checkpoint metadata."));
             }
-            return new CheckpointValidation(Long.valueOf(checkpointLsn), null);
-        } catch (RuntimeException e) {
-            return new CheckpointValidation(null, new VerifyResult(false, 0, 0L,
-                    0L, CHECKPOINT_FILE, -1L, "Invalid checkpoint metadata."));
         }
+        Long lsn = null;
+        Integer checksum = null;
+        try {
+            for (final String line : text.split("\\R")) {
+                final String[] parts = line.split("=", 2);
+                if (parts.length != 2) {
+                    continue;
+                }
+                final String key = parts[0].trim();
+                final String value = parts[1].trim();
+                if (CHECKPOINT_KEY_LSN.equals(key)) {
+                    lsn = Long.valueOf(value);
+                } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
+                    checksum = Integer.valueOf(value);
+                }
+            }
+        } catch (RuntimeException e) {
+            return new CheckpointValidation(null,
+                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
+                            "Invalid checkpoint metadata."));
+        }
+        if (lsn == null || checksum == null) {
+            return new CheckpointValidation(null,
+                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
+                            "Invalid checkpoint metadata."));
+        }
+        if (lsn.longValue() < 0L) {
+            return new CheckpointValidation(null,
+                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
+                            "Negative checkpoint LSN."));
+        }
+        final byte[] payload = (CHECKPOINT_KEY_LSN + "=" + lsn + "\n")
+                .getBytes(StandardCharsets.US_ASCII);
+        final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
+                payload.length);
+        if (checksum.intValue() != expectedChecksum) {
+            return new CheckpointValidation(null,
+                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
+                            "Invalid checkpoint metadata checksum."));
+        }
+        return new CheckpointValidation(lsn, null);
     }
 
     record VerifyResult(boolean ok, int fileCount, long recordCount, long maxLsn,
