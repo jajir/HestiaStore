@@ -254,6 +254,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             pendingSyncSegmentNames.clear();
             segments.clear();
             final List<SegmentInfo> discoveredSegments = discoverSegmentsStrict();
+            logger.info(
+                    "event=wal_recovery_start checkpointLsn={} segmentCount={} corruptionPolicy={}",
+                    checkpointLsn, discoveredSegments.size(),
+                    wal.getCorruptionPolicy());
             boolean truncatedTail = false;
             long maxLsn = checkpointLsn;
             long lastReplayedLsn = checkpointLsn;
@@ -273,8 +277,18 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 }
                 if (scan.invalidTail()) {
                     truncatedTail = true;
+                    logger.warn(
+                            "event=wal_recovery_invalid_tail segment={} validBytes={} observedMaxLsn={} policy={}",
+                            current.name(), scan.validBytes(), scan.maxLsn(),
+                            wal.getCorruptionPolicy());
                     handleInvalidTail(current.name(), scan.validBytes());
-                    deleteSegmentsAfter(discoveredSegments, i + 1);
+                    final int deletedAfterCorruption = deleteSegmentsAfter(
+                            discoveredSegments, i + 1);
+                    if (deletedAfterCorruption > 0) {
+                        logger.warn(
+                                "event=wal_recovery_drop_newer_segments deletedSegments={} fromSegmentIndex={}",
+                                deletedAfterCorruption, i + 1);
+                    }
                     if (scan.validBytes() > 0L) {
                         final long segmentMaxLsn = scan.maxLsn() > 0L
                                 ? scan.maxLsn()
@@ -295,19 +309,27 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                             segmentMaxLsn));
                     retainedBytes += scan.validBytes();
                 } else {
-                    storage.delete(current.name());
+                    final String name = current.name();
+                    storage.delete(name);
+                    logger.info(
+                            "event=wal_recovery_drop_empty_segment segment={}",
+                            name);
                 }
             }
             if (checkpointLsn > maxLsn) {
+                final long previousCheckpointLsn = checkpointLsn;
                 checkpointLsn = maxLsn;
                 writeCheckpointLsnAtomic(checkpointLsn);
+                logger.warn(
+                        "event=wal_recovery_checkpoint_clamp previousCheckpointLsn={} clampedCheckpointLsn={} maxLsn={}",
+                        previousCheckpointLsn, checkpointLsn, maxLsn);
             }
             durableLsn.set(maxLsn);
             pendingSyncHighLsn = maxLsn;
             nextLsn = Math.max(1L, maxLsn + 1L);
             syncFailure = null;
             logger.info(
-                    "WAL recovery finished: maxLsn={}, checkpointLsn={}, replayedLsn={}, truncatedTail={}, segments={}",
+                    "event=wal_recovery_complete maxLsn={} checkpointLsn={} lastReplayedLsn={} truncatedTail={} segmentCount={}",
                     maxLsn, checkpointLsn, lastReplayedLsn, truncatedTail,
                     segments.size());
             return new RecoveryResult(lastReplayedLsn, maxLsn, truncatedTail);
@@ -623,26 +645,35 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private void handleInvalidTail(final String fileName, final long validBytes) {
         corruptionCount.increment();
         if (wal.getCorruptionPolicy() == WalCorruptionPolicy.FAIL_FAST) {
+            logger.error(
+                    "event=wal_recovery_tail_repair action=fail_fast segment={} validBytes={}",
+                    fileName, validBytes);
             throw new IndexException(
                     String.format("WAL corruption detected in '%s'.", fileName));
         }
         truncationCount.increment();
         if (validBytes <= 0L) {
             storage.delete(fileName);
-            logger.warn("WAL tail corruption: deleted file '{}'.", fileName);
+            logger.warn(
+                    "event=wal_recovery_tail_repair action=delete_segment segment={} validBytes={}",
+                    fileName, validBytes);
             return;
         }
         storage.truncate(fileName, validBytes);
         storage.sync(fileName);
-        logger.warn("WAL tail corruption: truncated '{}' to {} bytes.", fileName,
-                validBytes);
+        logger.warn(
+                "event=wal_recovery_tail_repair action=truncate_segment segment={} validBytes={}",
+                fileName, validBytes);
     }
 
-    private void deleteSegmentsAfter(final List<SegmentInfo> discoveredSegments,
+    private int deleteSegmentsAfter(final List<SegmentInfo> discoveredSegments,
             final int startIndex) {
+        int deletedCount = 0;
         for (int i = startIndex; i < discoveredSegments.size(); i++) {
             storage.delete(discoveredSegments.get(i).name());
+            deletedCount++;
         }
+        return deletedCount;
     }
 
     private void cleanupEligibleSegments() {
@@ -650,12 +681,16 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             return;
         }
         final List<SegmentInfo> retained = new ArrayList<>(segments.size());
+        int deletedCount = 0;
+        long deletedBytes = 0L;
         for (int i = 0; i < segments.size(); i++) {
             final SegmentInfo segment = segments.get(i);
             final boolean active = i == segments.size() - 1;
             if (!active && segment.maxLsn() <= checkpointLsn) {
                 storage.delete(segment.name());
                 retainedBytes -= segment.sizeBytes();
+                deletedBytes += segment.sizeBytes();
+                deletedCount++;
             } else {
                 retained.add(segment);
             }
@@ -664,6 +699,12 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         segments.addAll(retained);
         if (retainedBytes < 0L) {
             retainedBytes = 0L;
+        }
+        if (deletedCount > 0) {
+            logger.info(
+                    "event=wal_checkpoint_cleanup checkpointLsn={} deletedSegments={} deletedBytes={} retainedSegments={} retainedBytes={}",
+                    checkpointLsn, deletedCount, deletedBytes, segments.size(),
+                    retainedBytes);
         }
     }
 

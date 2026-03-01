@@ -18,6 +18,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.IndexException;
@@ -292,6 +294,69 @@ class WalRuntimeTest {
             assertThrows(IndexException.class,
                     () -> runtime.recover(record -> {
                     }));
+        }
+    }
+
+    @Test
+    void recoverFailsWhenStorageReadFails() {
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.appendPut("k1", "v1");
+        }
+
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> name.endsWith(".wal"), name -> false,
+                (source, target) -> false);
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            assertThrows(IndexException.class,
+                    () -> runtime.recover(record -> {
+                    }));
+        }
+    }
+
+    @Test
+    void checkpointFailsWhenStorageRenameFails() {
+        final Wal wal = Wal.builder().withEnabled(true).build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> false,
+                (source, target) -> "checkpoint.meta.tmp".equals(source)
+                        && "checkpoint.meta".equals(target));
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            final long lsn = runtime.appendPut("k1", "v1");
+            assertThrows(IndexException.class, () -> runtime.onCheckpoint(lsn));
+        }
+    }
+
+    @Test
+    void checkpointCleanupFailsWhenStorageDeleteFails() {
+        final Wal wal = Wal.builder().withEnabled(true)
+                .withSegmentSizeBytes(96L).build();
+        final WalStorageMem storage = new WalStorageMem(new MemDirectory());
+        long lastLsn = 0L;
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            int i = 0;
+            while (runtime.statsSnapshot().segmentCount() < 3 && i < 256) {
+                lastLsn = runtime.appendPut("k-" + i, "v-" + i);
+                i++;
+            }
+            assertTrue(runtime.statsSnapshot().segmentCount() >= 3);
+        }
+        final WalStorage failingStorage = new FailingStorage(storage,
+                name -> false, name -> name.endsWith(".wal"),
+                (source, target) -> false);
+        final long checkpointLsn = lastLsn;
+        try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
+                failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
+            runtime.recover(record -> {
+            });
+            assertThrows(IndexException.class,
+                    () -> runtime.onCheckpoint(checkpointLsn));
         }
     }
 
@@ -663,6 +728,98 @@ class WalRuntimeTest {
         try (org.hestiastore.index.directory.FileWriter writer = walDirectory
                 .getFileWriter("checkpoint.meta", Directory.Access.OVERWRITE)) {
             writer.write(value.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+        }
+    }
+
+    private static final class FailingStorage implements WalStorage {
+
+        private final WalStorage delegate;
+        private final Predicate<String> failRead;
+        private final Predicate<String> failDelete;
+        private final BiPredicate<String, String> failRename;
+
+        private FailingStorage(final WalStorage delegate,
+                final Predicate<String> failRead,
+                final Predicate<String> failDelete,
+                final BiPredicate<String, String> failRename) {
+            this.delegate = delegate;
+            this.failRead = failRead;
+            this.failDelete = failDelete;
+            this.failRename = failRename;
+        }
+
+        @Override
+        public boolean exists(final String fileName) {
+            return delegate.exists(fileName);
+        }
+
+        @Override
+        public void touch(final String fileName) {
+            delegate.touch(fileName);
+        }
+
+        @Override
+        public long size(final String fileName) {
+            return delegate.size(fileName);
+        }
+
+        @Override
+        public void append(final String fileName, final byte[] bytes,
+                final int offset, final int length) {
+            delegate.append(fileName, bytes, offset, length);
+        }
+
+        @Override
+        public void overwrite(final String fileName, final byte[] bytes,
+                final int offset, final int length) {
+            delegate.overwrite(fileName, bytes, offset, length);
+        }
+
+        @Override
+        public byte[] readAll(final String fileName) {
+            return delegate.readAll(fileName);
+        }
+
+        @Override
+        public int read(final String fileName, final long position,
+                final byte[] destination, final int offset, final int length) {
+            if (failRead.test(fileName)) {
+                throw new IndexException("simulated read failure");
+            }
+            return delegate.read(fileName, position, destination, offset,
+                    length);
+        }
+
+        @Override
+        public void truncate(final String fileName, final long sizeBytes) {
+            delegate.truncate(fileName, sizeBytes);
+        }
+
+        @Override
+        public boolean delete(final String fileName) {
+            if (failDelete.test(fileName)) {
+                throw new IndexException("simulated delete failure");
+            }
+            return delegate.delete(fileName);
+        }
+
+        @Override
+        public void rename(final String currentFileName,
+                final String newFileName) {
+            if (failRename.test(currentFileName, newFileName)) {
+                throw new IndexException("simulated rename failure");
+            }
+            delegate.rename(currentFileName, newFileName);
+        }
+
+        @Override
+        public java.util.stream.Stream<String> listFileNames() {
+            return delegate.listFileNames();
+        }
+
+        @Override
+        public void sync(final String fileName) {
+            delegate.sync(fileName);
         }
     }
 

@@ -75,6 +75,14 @@ Notes:
 
 - Backpressure applies only when WAL contains more than one segment (active + at least one sealed segment).
 - A single active segment is never deleted by checkpoint; this avoids an unsatisfiable backpressure loop when thresholds are configured below active-segment footprint.
+- Recovery/cleanup emits stable structured log events for parsing:
+  - `event=wal_recovery_start`
+  - `event=wal_recovery_invalid_tail`
+  - `event=wal_recovery_tail_repair`
+  - `event=wal_recovery_drop_newer_segments`
+  - `event=wal_recovery_checkpoint_clamp`
+  - `event=wal_recovery_complete`
+  - `event=wal_checkpoint_cleanup`
 
 ## Metrics
 
