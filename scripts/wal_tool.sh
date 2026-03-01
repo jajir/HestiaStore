@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Functionality:
+# - Shared launcher for WAL tooling commands (`verify` and `dump`).
+# - Ensures engine classes are compiled before invoking WalTool.
+# - Delegates to `org.hestiastore.index.segmentindex.wal.WalTool` with
+#   passthrough CLI arguments.
+
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 readonly ENGINE_DIR="${REPO_ROOT}/engine"

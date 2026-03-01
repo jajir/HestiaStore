@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Functionality:
+# - Operator shortcut for WAL verification.
+# - Forwards arguments to `wal_tool.sh verify` (including `--json`).
+
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ $# -lt 1 ]]; then

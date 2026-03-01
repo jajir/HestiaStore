@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Functionality:
+# - Operator shortcut for WAL dump/inspection output.
+# - Forwards arguments to `wal_tool.sh dump` (including `--json`).
+
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ $# -lt 1 ]]; then
