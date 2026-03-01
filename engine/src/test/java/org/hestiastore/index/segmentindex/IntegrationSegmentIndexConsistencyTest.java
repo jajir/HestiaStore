@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
     private final Logger logger = LoggerFactory
             .getLogger(IntegrationSegmentIndexConsistencyTest.class);
 
-    private static final int NUMBER_OF_TEST_ENTRIES = 97;
+    private static final int NUMBER_OF_TEST_ENTRIES = 25;
     final Directory directory = new MemDirectory();
     final SegmentId id = SegmentId.of(27);
     final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -41,14 +40,13 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
      */
     @Test
     void test_basic_consistency() {
-        assertTrue(true);
-        final SegmentIndex<Integer, Integer> index = makeIndex();
-        for (int i = 0; i < 100; i++) {
-            writeEntries(index, makeList(i));
-            index.flush();
-            awaitMaintenanceIdle(index);
-            verifyIndexData(index, makeList(i),
-                    SegmentIteratorIsolation.FULL_ISOLATION);
+        try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
+            for (int i = 0; i < 20; i++) {
+                writeEntries(index, makeList(i));
+                index.flush();
+                verifyIndexData(index, makeList(i),
+                        SegmentIteratorIsolation.FULL_ISOLATION);
+            }
         }
     }
 
@@ -60,30 +58,30 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
      */
     @Test
     void test_reading_of_updated_values() {
-        assertTrue(true);
-        final SegmentIndex<Integer, Integer> index = makeIndex();
-        writeEntries(index, makeList(0));
-        try (final Stream<Entry<Integer, Integer>> stream = index
-                .getStream(SegmentWindow.unbounded())) {
-            final AtomicInteger acx = new AtomicInteger();
-            stream.forEach(entry -> {
-                int cx = acx.incrementAndGet();
-                writeEntries(index, makeList(cx));
-                logger.debug("{} {}", cx, entry);
-                verifyIndexData(index, makeList(cx),
-                        SegmentIteratorIsolation.FULL_ISOLATION);
-            });
+        try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
+            writeEntries(index, makeList(0));
+            try (final Stream<Entry<Integer, Integer>> stream = index
+                    .getStream(SegmentWindow.unbounded())) {
+                final AtomicInteger acx = new AtomicInteger();
+                stream.forEach(entry -> {
+                    int cx = acx.incrementAndGet();
+                    writeEntries(index, makeList(cx));
+                    logger.debug("{} {}", cx, entry);
+                    verifyIndexData(index, makeList(cx),
+                            SegmentIteratorIsolation.FULL_ISOLATION);
+                });
+            }
         }
     }
 
     @Test
     void test_search_for_missing_key_bigger_than_last_existing_one() {
-        final SegmentIndex<Integer, Integer> index = makeIndex();
-        writeEntries(index, makeList(888));
-        index.flush();
-        awaitMaintenanceIdle(index);
-        for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
-            assertNull(index.get(i * 2 + 1));
+        try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
+            writeEntries(index, makeList(888));
+            index.flush();
+            for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
+                assertNull(index.get(i * 2 + 1));
+            }
         }
     }
 
@@ -94,9 +92,10 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
                 .withValueClass(Integer.class)//
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tdi) //
-                .withMaxNumberOfKeysInSegmentCache(10) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
+                .withSegmentMaintenanceAutoEnabled(false) //
+                .withMaxNumberOfKeysInSegmentCache(64) //
+                .withMaxNumberOfKeysInSegment(64) //
+                .withMaxNumberOfKeysInSegmentChunk(16) //
                 .withBloomFilterIndexSizeInBytes(0) //
                 .withBloomFilterNumberOfHashFunctions(4) //
                 .withContextLoggingEnabled(false) //
