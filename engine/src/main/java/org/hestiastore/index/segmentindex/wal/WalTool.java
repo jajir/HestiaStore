@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.wal;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.io.PrintStream;
 
 import org.hestiastore.index.IndexException;
 
@@ -22,7 +22,9 @@ public final class WalTool {
     private static final String SEGMENT_SUFFIX = ".wal";
     private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String FORMAT_FILE = "format.meta";
+    private static final String FORMAT_FILE_TMP = "format.meta.tmp";
     private static final String CHECKPOINT_FILE = "checkpoint.meta";
+    private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
     private static final String CHECKPOINT_KEY_LSN = "lsn";
     private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
     private static final int FORMAT_VERSION = 1;
@@ -182,6 +184,15 @@ public final class WalTool {
 
     static void dump(final Path walDirectory, final PrintStream out,
             final OutputMode outputMode) {
+        final VerifyResult formatResult = verifyFormatMetadata(walDirectory);
+        if (formatResult != null) {
+            throw metadataError(formatResult);
+        }
+        final CheckpointValidation checkpointValidation = readCheckpointMetadata(
+                walDirectory);
+        if (checkpointValidation.error() != null) {
+            throw metadataError(checkpointValidation.error());
+        }
         final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
         if (segmentDiscovery.error() != null) {
             throw new IndexException(segmentDiscovery.error().errorMessage());
@@ -477,14 +488,23 @@ public final class WalTool {
 
     private static VerifyResult verifyFormatMetadata(final Path walDirectory) {
         final Path formatFile = walDirectory.resolve(FORMAT_FILE);
-        if (!Files.exists(formatFile)) {
-            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
-                    "Missing WAL format metadata.");
+        if (Files.exists(formatFile)) {
+            return verifyFormatMetadataFile(formatFile, FORMAT_FILE);
         }
-        final byte[] bytes = readAll(formatFile);
+        final Path formatTmpFile = walDirectory.resolve(FORMAT_FILE_TMP);
+        if (Files.exists(formatTmpFile)) {
+            return verifyFormatMetadataFile(formatTmpFile, FORMAT_FILE_TMP);
+        }
+        return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                "Missing WAL format metadata.");
+    }
+
+    private static VerifyResult verifyFormatMetadataFile(final Path path,
+            final String errorFile) {
+        final byte[] bytes = readAll(path);
         final String text = new String(bytes, StandardCharsets.US_ASCII).trim();
         if (text.isEmpty()) {
-            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+            return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
                     "Empty WAL format metadata.");
         }
         Integer version = null;
@@ -503,12 +523,12 @@ public final class WalTool {
                     checksum = Integer.valueOf(value);
                 }
             } catch (RuntimeException e) {
-                return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+                return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
                         "Invalid numeric value in WAL format metadata.");
             }
         }
         if (version == null || checksum == null) {
-            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+            return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
                     "Missing version/checksum in WAL format metadata.");
         }
         final byte[] payload = ("version=" + FORMAT_VERSION + "\n")
@@ -517,7 +537,7 @@ public final class WalTool {
                 payload.length);
         if (version.intValue() != FORMAT_VERSION
                 || checksum.intValue() != expectedChecksum) {
-            return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
+            return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
                     "Unsupported or corrupted WAL format metadata.");
         }
         return null;
@@ -526,11 +546,23 @@ public final class WalTool {
     private static CheckpointValidation readCheckpointMetadata(
             final Path walDirectory) {
         final Path checkpointFile = walDirectory.resolve(CHECKPOINT_FILE);
-        if (!Files.exists(checkpointFile)) {
-            return new CheckpointValidation(null, null);
+        if (Files.exists(checkpointFile)) {
+            return parseCheckpointMetadataFile(checkpointFile, CHECKPOINT_FILE,
+                    true);
         }
-        final String text = new String(readAll(checkpointFile),
-                StandardCharsets.US_ASCII).trim();
+        final Path checkpointTmpFile = walDirectory.resolve(CHECKPOINT_FILE_TMP);
+        if (Files.exists(checkpointTmpFile)) {
+            return parseCheckpointMetadataFile(checkpointTmpFile,
+                    CHECKPOINT_FILE_TMP, false);
+        }
+        return new CheckpointValidation(null, null);
+    }
+
+    private static CheckpointValidation parseCheckpointMetadataFile(
+            final Path path, final String errorFile,
+            final boolean failOnInvalidMetadata) {
+        final String text = new String(readAll(path), StandardCharsets.US_ASCII)
+                .trim();
         if (text.isEmpty()) {
             return new CheckpointValidation(null, null);
         }
@@ -538,16 +570,16 @@ public final class WalTool {
             try {
                 final long checkpointLsn = Long.parseLong(text);
                 if (checkpointLsn < 0L) {
-                    return new CheckpointValidation(null,
-                            new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE,
-                                    -1L, "Negative checkpoint LSN."));
+                    return checkpointValidationError(errorFile,
+                            "Negative checkpoint LSN.",
+                            failOnInvalidMetadata);
                 }
                 return new CheckpointValidation(Long.valueOf(checkpointLsn),
                         null);
             } catch (RuntimeException e) {
-                return new CheckpointValidation(null,
-                        new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE,
-                                -1L, "Invalid checkpoint metadata."));
+                return checkpointValidationError(errorFile,
+                        "Invalid checkpoint metadata.",
+                        failOnInvalidMetadata);
             }
         }
         Long lsn = null;
@@ -567,30 +599,42 @@ public final class WalTool {
                 }
             }
         } catch (RuntimeException e) {
-            return new CheckpointValidation(null,
-                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
-                            "Invalid checkpoint metadata."));
+            return checkpointValidationError(errorFile,
+                    "Invalid checkpoint metadata.", failOnInvalidMetadata);
         }
         if (lsn == null || checksum == null) {
-            return new CheckpointValidation(null,
-                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
-                            "Invalid checkpoint metadata."));
+            return checkpointValidationError(errorFile,
+                    "Invalid checkpoint metadata.", failOnInvalidMetadata);
         }
         if (lsn.longValue() < 0L) {
-            return new CheckpointValidation(null,
-                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
-                            "Negative checkpoint LSN."));
+            return checkpointValidationError(errorFile,
+                    "Negative checkpoint LSN.", failOnInvalidMetadata);
         }
         final byte[] payload = (CHECKPOINT_KEY_LSN + "=" + lsn + "\n")
                 .getBytes(StandardCharsets.US_ASCII);
         final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
                 payload.length);
         if (checksum.intValue() != expectedChecksum) {
-            return new CheckpointValidation(null,
-                    new VerifyResult(false, 0, 0L, 0L, CHECKPOINT_FILE, -1L,
-                            "Invalid checkpoint metadata checksum."));
+            return checkpointValidationError(errorFile,
+                    "Invalid checkpoint metadata checksum.",
+                    failOnInvalidMetadata);
         }
         return new CheckpointValidation(lsn, null);
+    }
+
+    private static CheckpointValidation checkpointValidationError(
+            final String errorFile, final String message,
+            final boolean failOnInvalidMetadata) {
+        if (!failOnInvalidMetadata) {
+            return new CheckpointValidation(null, null);
+        }
+        return new CheckpointValidation(null,
+                new VerifyResult(false, 0, 0L, 0L, errorFile, -1L, message));
+    }
+
+    private static IndexException metadataError(final VerifyResult error) {
+        return new IndexException(String.format("%s (%s)", error.errorMessage(),
+                error.errorFile()));
     }
 
     record VerifyResult(boolean ok, int fileCount, long recordCount, long maxLsn,
