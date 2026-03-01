@@ -44,6 +44,11 @@ public final class WalTool {
         }
         final String command = args[0];
         final Path walDirectory = Path.of(args[1]);
+        if (!Files.isDirectory(walDirectory)) {
+            err.println("WAL tool failed: WAL directory does not exist: "
+                    + walDirectory);
+            return 1;
+        }
         try {
             if ("verify".equals(command)) {
                 final VerifyResult result = verify(walDirectory);
