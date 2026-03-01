@@ -161,15 +161,72 @@ public final class WalTool {
             long records = 0L;
             long firstLsn = 0L;
             long lastLsn = 0L;
-            while (offset + 4L <= bytes.length) {
+            boolean invalidTail = false;
+            String invalidReason = null;
+            long invalidOffset = -1L;
+            while (offset < bytes.length) {
+                if (bytes.length - offset < 4L) {
+                    invalidTail = true;
+                    invalidReason = "Partial record length prefix.";
+                    invalidOffset = offset;
+                    break;
+                }
                 final int bodyLen = WalRuntime.readInt(bytes, (int) offset);
                 if (bodyLen < MIN_RECORD_BODY_SIZE
-                        || bodyLen > MAX_RECORD_BODY_SIZE
-                        || offset + 4L + bodyLen > bytes.length) {
+                        || bodyLen > MAX_RECORD_BODY_SIZE) {
+                    invalidTail = true;
+                    invalidReason = "Invalid WAL record body length.";
+                    invalidOffset = offset;
+                    break;
+                }
+                if (offset + 4L + bodyLen > bytes.length) {
+                    invalidTail = true;
+                    invalidReason = "Truncated WAL record body.";
+                    invalidOffset = offset;
                     break;
                 }
                 final int bodyOffset = (int) (offset + 4L);
-                final long lsn = WalRuntime.readLong(bytes, bodyOffset + 4);
+                final int storedCrc = WalRuntime.readInt(bytes, bodyOffset);
+                final int computedCrc = WalRuntime.computeCrc32(bytes,
+                        bodyOffset + 4, bodyLen - 4);
+                if (storedCrc != computedCrc) {
+                    invalidTail = true;
+                    invalidReason = "CRC mismatch.";
+                    invalidOffset = offset;
+                    break;
+                }
+                int p = bodyOffset + 4;
+                final long lsn = WalRuntime.readLong(bytes, p);
+                p += 8;
+                final byte opCode = bytes[p++];
+                final String operation = toOperationName(opCode);
+                if (operation == null) {
+                    invalidTail = true;
+                    invalidReason = "Invalid WAL operation code.";
+                    invalidOffset = offset;
+                    break;
+                }
+                final int keyLen = WalRuntime.readInt(bytes, p);
+                p += 4;
+                final int valueLen = WalRuntime.readInt(bytes, p);
+                p += 4;
+                if (keyLen <= 0 || valueLen < 0
+                        || p + keyLen + valueLen != bodyOffset + bodyLen) {
+                    invalidTail = true;
+                    invalidReason = "Invalid key/value frame lengths.";
+                    invalidOffset = offset;
+                    break;
+                }
+                if ("DELETE".equals(operation) && valueLen != 0) {
+                    invalidTail = true;
+                    invalidReason = "DELETE record must have zero value length.";
+                    invalidOffset = offset;
+                    break;
+                }
+                System.out.println("record file=" + file.getFileName() + " offset="
+                        + offset + " lsn=" + lsn + " op=" + operation
+                        + " keyLen=" + keyLen + " valueLen=" + valueLen
+                        + " bodyLen=" + bodyLen);
                 if (records == 0L) {
                     firstLsn = lsn;
                 }
@@ -177,7 +234,12 @@ public final class WalTool {
                 records++;
                 offset += 4L + bodyLen;
             }
-            System.out.println("file=" + file.getFileName() + " size="
+            if (invalidTail) {
+                System.out.println("invalid file=" + file.getFileName()
+                        + " offset=" + invalidOffset + " reason="
+                        + invalidReason);
+            }
+            System.out.println("summary file=" + file.getFileName() + " size="
                     + bytes.length + " records=" + records + " firstLsn="
                     + firstLsn + " lastLsn=" + lastLsn);
         }
@@ -236,6 +298,16 @@ public final class WalTool {
         } catch (NumberFormatException ex) {
             return -1L;
         }
+    }
+
+    private static String toOperationName(final byte opCode) {
+        if (opCode == 1) {
+            return "PUT";
+        }
+        if (opCode == 2) {
+            return "DELETE";
+        }
+        return null;
     }
 
     private static byte[] readAll(final Path file) {
