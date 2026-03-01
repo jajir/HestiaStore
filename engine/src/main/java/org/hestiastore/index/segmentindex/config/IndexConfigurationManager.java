@@ -562,6 +562,17 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Wal max bytes before forced checkpoint must be greater than zero.");
         }
+        if (wal.isReplicationEnabled() && !wal.isEpochSupport()) {
+            throw new IllegalArgumentException(String.format(
+                    "Wal epochSupport must be enabled when replication mode is %s.",
+                    wal.getReplicationMode().name()));
+        }
+        if (wal.isReplicationEnabled()
+                && wal.getSourceNodeId().isBlank()) {
+            throw new IllegalArgumentException(String.format(
+                    "Wal source node id must be non-blank when replication mode is %s.",
+                    wal.getReplicationMode().name()));
+        }
     }
 
     private void validateMandatoryFields(final IndexConfiguration<K, V> conf) {

@@ -20,6 +20,7 @@ import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.WalReplicationMode;
 
 /**
  * Persists {@link IndexConfiguration} instances to the index configuration
@@ -67,6 +68,8 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT;
     private static final String PROP_WAL_CORRUPTION_POLICY = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY;
     private static final String PROP_WAL_EPOCH_SUPPORT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT;
+    private static final String PROP_WAL_REPLICATION_MODE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_REPLICATION_MODE;
+    private static final String PROP_WAL_SOURCE_NODE_ID = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_SOURCE_NODE_ID;
 
     private static final String CONFIGURATION_FILENAME = IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
 
@@ -214,6 +217,13 @@ public class IndexConfiguratonStorage<K, V> {
                             WalCorruptionPolicy.class))//
                     .withEpochSupport(getOrDefaultBoolean(propsView,
                             PROP_WAL_EPOCH_SUPPORT, false))//
+                    .withReplicationMode(resolveEnum(propsView,
+                            PROP_WAL_REPLICATION_MODE,
+                            Wal.DEFAULT_REPLICATION_MODE,
+                            WalReplicationMode.class))//
+                    .withSourceNodeId(getOrDefaultString(propsView,
+                            PROP_WAL_SOURCE_NODE_ID,
+                            Wal.DEFAULT_SOURCE_NODE_ID))//
                     .build());
         } else {
             builder.withWal(Wal.EMPTY);
@@ -345,6 +355,9 @@ public class IndexConfiguratonStorage<K, V> {
         writer.setString(PROP_WAL_CORRUPTION_POLICY,
                 wal.getCorruptionPolicy().name());
         writer.setBoolean(PROP_WAL_EPOCH_SUPPORT, wal.isEpochSupport());
+        writer.setString(PROP_WAL_REPLICATION_MODE,
+                wal.getReplicationMode().name());
+        writer.setString(PROP_WAL_SOURCE_NODE_ID, wal.getSourceNodeId());
         SCHEMA.writeMetadata(writer);
         tx.close();
     }
@@ -423,6 +436,15 @@ public class IndexConfiguratonStorage<K, V> {
             return defaultValue;
         }
         return Boolean.parseBoolean(value);
+    }
+
+    private String getOrDefaultString(final PropertyView propsView,
+            final String key, final String defaultValue) {
+        final String value = propsView.getString(key);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value;
     }
 
     private <T extends Enum<T>> T resolveEnum(final PropertyView propsView,

@@ -15,6 +15,8 @@ public final class WalBuilder {
     private Long maxBytesBeforeForcedCheckpoint;
     private WalCorruptionPolicy corruptionPolicy;
     private Boolean epochSupport;
+    private WalReplicationMode replicationMode;
+    private String sourceNodeId;
 
     WalBuilder() {
     }
@@ -109,6 +111,28 @@ public final class WalBuilder {
     }
 
     /**
+     * Sets replication mode.
+     *
+     * @param value replication mode
+     * @return this builder
+     */
+    public WalBuilder withReplicationMode(final WalReplicationMode value) {
+        this.replicationMode = value;
+        return this;
+    }
+
+    /**
+     * Sets source node id used for replicated records.
+     *
+     * @param value source node id
+     * @return this builder
+     */
+    public WalBuilder withSourceNodeId(final String value) {
+        this.sourceNodeId = value;
+        return this;
+    }
+
+    /**
      * Builds immutable WAL settings.
      *
      * @return built WAL settings, or {@link Wal#EMPTY} when disabled
@@ -139,6 +163,12 @@ public final class WalBuilder {
                 : corruptionPolicy;
         final boolean effectiveEpochSupport = epochSupport == null ? false
                 : epochSupport.booleanValue();
+        final WalReplicationMode effectiveReplicationMode = replicationMode == null
+                ? Wal.DEFAULT_REPLICATION_MODE
+                : replicationMode;
+        final String effectiveSourceNodeId = sourceNodeId == null
+                ? Wal.DEFAULT_SOURCE_NODE_ID
+                : sourceNodeId.trim();
         Vldtn.requireTrue(effectiveSegmentSizeBytes > 0L,
                 "segmentSizeBytes must be greater than 0");
         Vldtn.requireTrue(effectiveMaxBytesBeforeForcedCheckpoint > 0L,
@@ -153,6 +183,9 @@ public final class WalBuilder {
                 effectiveMaxBytesBeforeForcedCheckpoint,
                 Vldtn.requireNonNull(effectiveCorruptionPolicy,
                         "corruptionPolicy"),
-                effectiveEpochSupport);
+                effectiveEpochSupport,
+                Vldtn.requireNonNull(effectiveReplicationMode,
+                        "replicationMode"),
+                effectiveSourceNodeId);
     }
 }

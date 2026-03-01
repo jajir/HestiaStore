@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
@@ -20,5 +21,13 @@ class WalConfigurationTest {
                 .<Integer, String>builder().withWal(null).build();
 
         assertSame(Wal.EMPTY, conf.getWal());
+    }
+
+    @Test
+    void walBuilderDefaultsToLocalReplicationDisabled() {
+        final Wal wal = Wal.builder().withEnabled(true).build();
+
+        assertEquals(WalReplicationMode.DISABLED, wal.getReplicationMode());
+        assertEquals("", wal.getSourceNodeId());
     }
 }
