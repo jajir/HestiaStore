@@ -57,3 +57,16 @@ java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool du
 ## Operational Signals
 
 When retention pressure exceeds `maxBytesBeforeForcedCheckpoint`, write path triggers forced checkpoint and backpressure until retained WAL drops under threshold.
+
+## Metrics
+
+`SegmentIndex.metricsSnapshot()` exposes WAL runtime counters and gauges:
+
+- Throughput: `getWalAppendCount()`, `getWalAppendBytes()`
+- Durability: `getWalSyncCount()`, `getWalSyncFailureCount()`, `getWalDurableLsn()`
+- Recovery/corruption: `getWalCorruptionCount()`, `getWalTruncationCount()`
+- Retention/checkpoint: `getWalRetainedBytes()`, `getWalSegmentCount()`, `getWalCheckpointLsn()`, `getWalCheckpointLagLsn()`
+- Pending work: `getWalPendingSyncBytes()`, `getWalAppliedLsn()`
+- Sync latency and batch sizing:
+  - `getWalSyncTotalNanos()`, `getWalSyncMaxNanos()`, `getWalSyncAvgNanos()`
+  - `getWalSyncBatchBytesTotal()`, `getWalSyncBatchBytesMax()`, `getWalSyncAvgBatchBytes()`
