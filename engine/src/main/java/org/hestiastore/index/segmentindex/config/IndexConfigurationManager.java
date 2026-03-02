@@ -12,6 +12,7 @@ import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.Wal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Loads, merges, and validates index configuration values.
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
  */
 public class IndexConfigurationManager<K, V> {
 
+    private static final String INDEX_NAME_MDC_KEY = "index.name";
     private final IndexConfiguratonStorage<K, V> confStorage;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -49,7 +51,8 @@ public class IndexConfigurationManager<K, V> {
         final Optional<IndexConfigurationContract> oDefaults = IndexConfigurationRegistry
                 .get(conf.getKeyClass());
         if (oDefaults.isEmpty()) {
-            logger.debug("There is no default configuration for key class '{}'",
+            debugWithIndexContext(conf,
+                    "There is no default configuration for key class '{}'",
                     conf.getKeyClass());
             return validate(builder.build());
         }
@@ -565,9 +568,6 @@ public class IndexConfigurationManager<K, V> {
     }
 
     private void validateMandatoryFields(final IndexConfiguration<K, V> conf) {
-        Vldtn.requireNonNull(conf.getKeyTypeDescriptor(), "keyTypeDescriptor");
-        Vldtn.requireNonNull(conf.getValueTypeDescriptor(),
-                "valueTypeDescriptor");
         Vldtn.requireNonNull(conf.isContextLoggingEnabled(),
                 "isContextLoggingEnabled");
     }
@@ -698,10 +698,10 @@ public class IndexConfigurationManager<K, V> {
         if (conf.getValueClass() == null) {
             throw new IllegalArgumentException("Value class wasn't specified");
         }
-        if (conf.getIndexName() == null) {
-            throw new IllegalArgumentException("Index name is null.");
-        }
-
+        Vldtn.requireNotBlank(conf.getIndexName(), "indexName");
+        Vldtn.requireNotBlank(conf.getKeyTypeDescriptor(), "keyTypeDescriptor");
+        Vldtn.requireNotBlank(conf.getValueTypeDescriptor(),
+                "valueTypeDescriptor");
     }
 
     private IndexConfigurationBuilder<K, V> makeBuilder(
@@ -758,6 +758,52 @@ public class IndexConfigurationManager<K, V> {
         conf.getEncodingChunkFilters().forEach(builder::addEncodingFilter);
         conf.getDecodingChunkFilters().forEach(builder::addDecodingFilter);
         return builder;
+    }
+
+    private void debugWithIndexContext(final IndexConfiguration<K, V> conf,
+            final String message, final Object arg) {
+        if (!logger.isDebugEnabled()) {
+            return;
+        }
+        final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
+        final boolean contextApplied = applyIndexContext(conf);
+        try {
+            logger.debug(message, arg);
+        } finally {
+            if (contextApplied) {
+                restorePreviousIndexName(previousIndexName);
+            }
+        }
+    }
+
+    private static <K, V> boolean applyIndexContext(
+            final IndexConfiguration<K, V> conf) {
+        if (!Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
+            return false;
+        }
+        final String indexName = normalizeIndexName(conf.getIndexName());
+        if (indexName == null) {
+            return false;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, indexName);
+        return true;
+    }
+
+    private static String normalizeIndexName(final String indexName) {
+        if (indexName == null) {
+            return null;
+        }
+        final String normalized = indexName.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static void restorePreviousIndexName(
+            final String previousIndexName) {
+        if (previousIndexName == null) {
+            MDC.remove(INDEX_NAME_MDC_KEY);
+            return;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 
 }

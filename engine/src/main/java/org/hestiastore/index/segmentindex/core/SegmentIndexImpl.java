@@ -57,6 +57,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Base implementation of the segment index that manages segments, mappings, and
@@ -70,6 +71,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private static final String OPERATION_COMPACT = "compact";
     private static final String OPERATION_FLUSH = "flush";
+    private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -120,65 +122,74 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            logger.debug("Opening index '{}'.", conf.getIndexName());
-            Vldtn.requireNonNull(executorRegistry, "executorRegistry");
-            this.runtimeTuningState = RuntimeTuningState
-                    .fromConfiguration(conf);
-            final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
-                    nonNullDirectory, keyTypeDescriptor);
-            this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
-                    keyToSegmentMapDelegate);
-            this.segmentFactory = new SegmentFactory<>(nonNullDirectory,
-                    keyTypeDescriptor, valueTypeDescriptor, conf,
-                    executorRegistry.getSegmentMaintenanceExecutor());
-            this.segmentRegistry = SegmentRegistry.<K, V>builder()
-                    .withDirectoryFacade(nonNullDirectory)
-                    .withKeyTypeDescriptor(keyTypeDescriptor)
-                    .withValueTypeDescriptor(valueTypeDescriptor)
-                    .withConfiguration(conf)
-                    .withSegmentMaintenanceExecutor(
-                            executorRegistry.getSegmentMaintenanceExecutor())
-                    .withRegistryMaintenanceExecutor(
-                            executorRegistry.getRegistryMaintenanceExecutor())
-                    .build();
-            final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
-                    .newSegmentBuilder(id).openWriterTx();
-            final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
-                    conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
-            final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
-                    splitCoordinator,
-                    executorRegistry.getIndexMaintenanceExecutor());
-            this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                    conf, keyToSegmentMap, asyncSplitCoordinator);
-            this.core = new SegmentIndexCore<>(keyToSegmentMap, segmentRegistry,
-                    maintenanceCoordinator);
-            this.retryPolicy = new IndexRetryPolicy(
-                    conf.getIndexBusyBackoffMillis(),
-                    conf.getIndexBusyTimeoutMillis());
-            this.controlPlane = new IndexControlPlaneImpl();
-            this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
-                    keyTypeDescriptor, valueTypeDescriptor);
-            if (walRuntime.isEnabled()) {
-                final WalRuntime.RecoveryResult recoveryResult = walRuntime
-                        .recover(this::replayWalRecord);
-                if (recoveryResult.maxLsn() > 0L) {
-                    lastAppliedWalLsn.set(Math.max(lastAppliedWalLsn.get(),
-                            recoveryResult.maxLsn()));
+            final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
+            final boolean contextApplied = applyIndexContext(this.conf);
+            try {
+                logger.debug("Opening index '{}'.", conf.getIndexName());
+                Vldtn.requireNonNull(executorRegistry, "executorRegistry");
+                this.runtimeTuningState = RuntimeTuningState
+                        .fromConfiguration(conf);
+                final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
+                        nonNullDirectory, keyTypeDescriptor);
+                this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                        keyToSegmentMapDelegate);
+                this.segmentFactory = new SegmentFactory<>(nonNullDirectory,
+                        keyTypeDescriptor, valueTypeDescriptor, conf,
+                        executorRegistry.getSegmentMaintenanceExecutor());
+                this.segmentRegistry = SegmentRegistry.<K, V>builder()
+                        .withDirectoryFacade(nonNullDirectory)
+                        .withKeyTypeDescriptor(keyTypeDescriptor)
+                        .withValueTypeDescriptor(valueTypeDescriptor)
+                        .withConfiguration(conf)
+                        .withSegmentMaintenanceExecutor(
+                                executorRegistry.getSegmentMaintenanceExecutor())
+                        .withRegistryMaintenanceExecutor(
+                                executorRegistry.getRegistryMaintenanceExecutor())
+                        .build();
+                final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
+                        .newSegmentBuilder(id).openWriterTx();
+                final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
+                        conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
+                final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
+                        splitCoordinator,
+                        executorRegistry.getIndexMaintenanceExecutor());
+                this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
+                        conf, keyToSegmentMap, asyncSplitCoordinator);
+                this.core = new SegmentIndexCore<>(keyToSegmentMap,
+                        segmentRegistry,
+                        maintenanceCoordinator);
+                this.retryPolicy = new IndexRetryPolicy(
+                        conf.getIndexBusyBackoffMillis(),
+                        conf.getIndexBusyTimeoutMillis());
+                this.controlPlane = new IndexControlPlaneImpl();
+                this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
+                        keyTypeDescriptor, valueTypeDescriptor);
+                if (walRuntime.isEnabled()) {
+                    final WalRuntime.RecoveryResult recoveryResult = walRuntime
+                            .recover(this::replayWalRecord);
+                    if (recoveryResult.maxLsn() > 0L) {
+                        lastAppliedWalLsn.set(Math.max(lastAppliedWalLsn.get(),
+                                recoveryResult.maxLsn()));
+                    }
+                }
+                getIndexState().onReady(this);
+                setSegmentIndexState(SegmentIndexState.READY);
+                if (openingState.wasStaleLockRecovered()) {
+                    logger.info(
+                            "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.");
+                    startupConsistencyCheckForStaleSegmentLocks = true;
+                    try {
+                        checkAndRepairConsistency();
+                    } finally {
+                        startupConsistencyCheckForStaleSegmentLocks = false;
+                    }
+                }
+                logger.debug("Index '{}' opened.", conf.getIndexName());
+            } finally {
+                if (contextApplied) {
+                    restorePreviousIndexName(previousIndexName);
                 }
             }
-            getIndexState().onReady(this);
-            setSegmentIndexState(SegmentIndexState.READY);
-            if (openingState.wasStaleLockRecovered()) {
-                logger.info(
-                        "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.");
-                startupConsistencyCheckForStaleSegmentLocks = true;
-                try {
-                    checkAndRepairConsistency();
-                } finally {
-                    startupConsistencyCheckForStaleSegmentLocks = false;
-                }
-            }
-            logger.debug("Index '{}' opened.", conf.getIndexName());
         } catch (final RuntimeException e) {
             failWithError(e);
             throw e;
@@ -938,6 +949,36 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected void awaitSplitsIdle() {
         maintenanceCoordinator
                 .awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
+    }
+
+    private static boolean applyIndexContext(
+            final IndexConfiguration<?, ?> conf) {
+        if (!Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
+            return false;
+        }
+        final String indexName = normalizeIndexName(conf.getIndexName());
+        if (indexName == null) {
+            return false;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, indexName);
+        return true;
+    }
+
+    private static String normalizeIndexName(final String indexName) {
+        if (indexName == null) {
+            return null;
+        }
+        final String normalized = indexName.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static void restorePreviousIndexName(
+            final String previousIndexName) {
+        if (previousIndexName == null) {
+            MDC.remove(INDEX_NAME_MDC_KEY);
+            return;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 
     private void awaitSplitCompletionForKey(final K key,

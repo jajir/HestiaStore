@@ -99,6 +99,41 @@ class IndexExecutorRegistryTest {
     }
 
     @Test
+    void constructorRejectsBlankIndexNameWhenContextLoggingEnabled() {
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                .withValueTypeDescriptor(new TypeDescriptorShortString())//
+                .withName("  ")//
+                .withContextLoggingEnabled(true)//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaxNumberOfKeysInSegment(100)//
+                .withMaxNumberOfSegmentsInCache(3)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withIndexWorkerThreadCount(1)//
+                .withNumberOfIndexMaintenanceThreads(1)//
+                .withNumberOfIoThreads(1)//
+                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfRegistryLifecycleThreads(1)//
+                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .build();
+        final IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new IndexExecutorRegistry(conf));
+        assertEquals("Property 'indexName' must not be blank.",
+                ex.getMessage());
+    }
+
+    @Test
     void closeShutsDownAllExecutors() {
         final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1, 1);
         final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);

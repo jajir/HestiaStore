@@ -127,6 +127,7 @@ public final class SegmentIndexFactory {
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
                 indexConf, lifecycle.getManagedExecutorRegistry());
         if (Boolean.TRUE.equals(indexConf.isContextLoggingEnabled())) {
+            Vldtn.requireNotBlank(indexConf.getIndexName(), "indexName");
             index = new IndexContextLoggingAdapter<>(indexConf, index);
         }
         index = new IndexAsyncAdapter<>(index);

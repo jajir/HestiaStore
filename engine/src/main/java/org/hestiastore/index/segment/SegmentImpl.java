@@ -240,12 +240,6 @@ class SegmentImpl<K, V> implements Segment<K, V> {
         final int deltaFileCount = core.getDeltaCacheFileCount();
         final int maxDeltaFileCount = core.getSegmentConf()
                 .getMaxNumberOfDeltaCacheFiles();
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "Flush requested: segment='{}' state='{}' deltaFiles='{}' maxDeltaFiles='{}' writeCacheKeys='{}'",
-                    core.getId(), gate.getState(), deltaFileCount,
-                    maxDeltaFileCount, core.getNumberOfKeysInWriteCache());
-        }
         if (deltaFileCount >= maxDeltaFileCount) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
@@ -261,9 +255,12 @@ class SegmentImpl<K, V> implements Segment<K, V> {
                             core::flushFrozenWriteCacheToDeltaFile,
                             core::applyFrozenWriteCacheAfterFlush);
                 }, this::scheduleMaintenanceIfNeeded);
-        if (logger.isDebugEnabled()) {
-            logger.debug("Flush scheduling finished: segment='{}' status='{}'",
-                    core.getId(), result.getStatus());
+        if (logger.isDebugEnabled()
+                && result.getStatus() == SegmentResultStatus.OK) {
+            logger.debug(
+                    "Flush started: segment='{}' state='{}' deltaFiles='{}' maxDeltaFiles='{}' writeCacheKeys='{}'",
+                    core.getId(), gate.getState(), deltaFileCount,
+                    maxDeltaFileCount, core.getNumberOfKeysInWriteCache());
         }
         return result;
     }

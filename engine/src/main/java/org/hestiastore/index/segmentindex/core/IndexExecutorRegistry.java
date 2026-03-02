@@ -184,7 +184,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         if (!Boolean.TRUE.equals(configuration.isContextLoggingEnabled())) {
             return delegate;
         }
-        return new IndexNameMdcExecutorService(Vldtn.requireNonNull(
+        return new IndexNameMdcExecutorService(Vldtn.requireNotBlank(
                 configuration.getIndexName(), ARG_INDEX_NAME), delegate);
     }
 
