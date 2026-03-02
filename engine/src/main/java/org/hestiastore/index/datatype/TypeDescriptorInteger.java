@@ -2,6 +2,7 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -32,14 +33,16 @@ public class TypeDescriptorInteger implements TypeDescriptor<Integer> {
 
     private static final TypeEncoder<Integer> CONVERTOR_TO_BYTES = new TypeEncoder<Integer>() {
         @Override
-        public int bytesLength(final Integer object) {
-            return REQUIRED_BYTES;
-        }
-
-        @Override
-        public int toBytes(final Integer object, final byte[] destination) {
-            writeBytes(object, destination);
-            return REQUIRED_BYTES;
+        public EncodedBytes encode(final Integer object,
+                final byte[] reusableBuffer) {
+            final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                    "reusableBuffer");
+            byte[] output = validatedBuffer;
+            if (output.length < REQUIRED_BYTES) {
+                output = new byte[REQUIRED_BYTES];
+            }
+            writeBytes(object, output);
+            return new EncodedBytes(output, REQUIRED_BYTES);
         }
     };
 

@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.mapping;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -59,15 +60,10 @@ public class TypeDescriptorSegmentId implements TypeDescriptor<SegmentId> {
     public TypeEncoder<SegmentId> getTypeEncoder() {
         return new TypeEncoder<SegmentId>() {
             @Override
-            public int bytesLength(final SegmentId segmentId) {
-                return tdi.getTypeEncoder().bytesLength(segmentId.getId());
-            }
-
-            @Override
-            public int toBytes(final SegmentId segmentId,
-                    final byte[] destination) {
-                return tdi.getTypeEncoder().toBytes(segmentId.getId(),
-                        destination);
+            public EncodedBytes encode(final SegmentId segmentId,
+                    final byte[] reusableBuffer) {
+                return tdi.getTypeEncoder().encode(segmentId.getId(),
+                        reusableBuffer);
             }
         };
     }

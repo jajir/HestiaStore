@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,6 +20,7 @@ import java.util.zip.CRC32;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeEncoder;
@@ -1197,27 +1199,25 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     private byte[] encodeKey(final K key) {
-        final int length = keyEncoder.bytesLength(key);
-        final byte[] encoded = new byte[length];
-        final int written = keyEncoder.toBytes(key, encoded);
-        if (written != encoded.length) {
-            throw new IllegalStateException(String.format(
-                    "Unexpected key encoding length. expected=%s actual=%s",
-                    encoded.length, written));
-        }
-        return encoded;
+        final EncodedBytes encoded = keyEncoder.encode(key, new byte[0]);
+        return toExactArray(encoded, "key");
     }
 
     private byte[] encodeValue(final V value) {
-        final int length = valueEncoder.bytesLength(value);
-        final byte[] encoded = new byte[length];
-        final int written = valueEncoder.toBytes(value, encoded);
-        if (written != encoded.length) {
-            throw new IllegalStateException(String.format(
-                    "Unexpected value encoding length. expected=%s actual=%s",
-                    encoded.length, written));
+        final EncodedBytes encoded = valueEncoder.encode(value, new byte[0]);
+        return toExactArray(encoded, "value");
+    }
+
+    private byte[] toExactArray(final EncodedBytes encoded,
+            final String fieldName) {
+        final EncodedBytes validated = Vldtn.requireNonNull(encoded, "encoded");
+        final int length = Vldtn.requireGreaterThanOrEqualToZero(
+                validated.getLength(), fieldName + "Length");
+        final byte[] bytes = validated.getBytes();
+        if (bytes.length == length) {
+            return bytes;
         }
-        return encoded;
+        return Arrays.copyOf(bytes, length);
     }
 
     private K decodeKey(final byte[] keyBytes) {

@@ -5,27 +5,32 @@ title Data types - Class Diagram
 
 package data-types {
     
-    interface ConvertorToBytes<T> {
-        +byte[] toBytes(T)
+    class EncodedBytes {
+        +byte[] bytes
+        +int length
+    }
+
+    interface TypeEncoder<T> {
+        +EncodedBytes encode(T, byte[])
     }
 
     interface ConvertorFromBytes<T> {
         +T fromBytes(byte[])
     }
     
-    class IntegerConvertorToBytes{
-        +byte[] toBytes(Integer)
+    class IntegerTypeEncoder{
+        +EncodedBytes encode(Integer, byte[])
     }
     
     class IntegerConvertorFromBytes{
         +Integer fromBytes(byte[])
     }
     
-    ConvertorToBytes <|-- IntegerConvertorToBytes 
+    TypeEncoder <|-- IntegerTypeEncoder 
     ConvertorFromBytes <|-- IntegerConvertorFromBytes 
     
-    note "Converted type instance use all bytes of byte field." as N1
-    ConvertorToBytes ... N1
+    note "EncodedBytes.length determines effective payload size." as N1
+    TypeEncoder ... N1
     ConvertorFromBytes ... N1
 
     
@@ -38,16 +43,16 @@ package data-types {
         +T read(FileReader)
     }
     }
-
+    
     class FixedLengthWriter<T> {
         -int length
-        -ConvertorToBytes<T> convertor
+        -TypeEncoder<T> convertor
         +write(FileWriter, T)
     }
     
     
     class VarLengthWriter<T> {
-        -ConvertToBytes<T> convertor
+        -TypeEncoder<T> convertor
         +write(FileWriter, T)
     }
     

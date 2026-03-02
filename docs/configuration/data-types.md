@@ -27,8 +27,49 @@ HestiaStore allows advanced users to define custom `TypeDescriptor` implementati
 
 To create a new data type:
 
-1. Implement the `TypeDescriptor<T>` interface. It's just a collection of simple interfaces which allows store data type to bytes and restore it from byte array
+1. Implement the `TypeDescriptor<T>` interface. It groups encoder/decoder/reader/writer/comparator contracts for your type.
 2. Optionallly register it using `org.hestiastore.index.segmentindex.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
+
+### 🔁 TypeEncoder Contract (0.0.6+)
+
+Starting with `0.0.6`, `TypeEncoder` uses a single method:
+
+```java
+EncodedBytes encode(T value, byte[] reusableBuffer)
+```
+
+Notes:
+
+* `reusableBuffer` is provided by the caller to reduce allocations.
+* Encoder should reuse it when possible, otherwise allocate a larger buffer.
+* Returned `EncodedBytes` contains:
+  * `bytes`: buffer holding encoded payload
+  * `length`: effective encoded byte count (can be smaller than `bytes.length`)
+
+Example skeleton:
+
+```java
+public final class TypeDescriptorMyType implements TypeDescriptor<MyType> {
+    @Override
+    public TypeEncoder<MyType> getTypeEncoder() {
+        return (value, reusableBuffer) -> {
+            byte[] out = reusableBuffer;
+            int required = /* compute max/required length */;
+            if (out.length < required) {
+                out = new byte[required];
+            }
+            int written = /* encode value to out */;
+            return new EncodedBytes(out, written);
+        };
+    }
+}
+```
+
+Migration from older API:
+
+* Remove old `bytesLength(...)`/`toBytes(...)` implementations.
+* Move length validation and write validation directly into `encode(...)`.
+* Return exact written length via `EncodedBytes`.
 
 ### 💡 Why Register Your Custom Type Descriptor
 

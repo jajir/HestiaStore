@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -149,48 +150,37 @@ class DiffKeyWriterTest {
     }
 
     @Test
-    void test_write_rejects_negative_declared_length() {
+    void test_write_propagatesEncoderValidationErrors() {
         final DiffKeyWriter<Integer> diffWriter = new DiffKeyWriter<>(
                 new TypeEncoder<Integer>() {
                     @Override
-                    public int bytesLength(final Integer value) {
-                        return -1;
-                    }
-
-                    @Override
-                    public int toBytes(final Integer value,
-                            final byte[] destination) {
-                        throw new IllegalStateException("must not be called");
+                    public EncodedBytes encode(final Integer value,
+                            final byte[] reusableBuffer) {
+                        throw new IllegalArgumentException("bad diff key");
                     }
                 }, Comparator.naturalOrder());
 
         final IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
                 () -> writeSingle(diffWriter, 1));
-        assertTrue(error.getMessage().contains("encodedKeyLength"));
+        assertEquals("bad diff key", error.getMessage());
     }
 
     @Test
-    void test_write_rejects_declared_and_written_length_mismatch() {
+    void test_write_propagatesEncoderIllegalState() {
         final DiffKeyWriter<Integer> diffWriter = new DiffKeyWriter<>(
                 new TypeEncoder<Integer>() {
                     @Override
-                    public int bytesLength(final Integer value) {
-                        return 2;
-                    }
-
-                    @Override
-                    public int toBytes(final Integer value,
-                            final byte[] destination) {
-                        destination[0] = 1;
-                        return 1;
+                    public EncodedBytes encode(final Integer value,
+                            final byte[] reusableBuffer) {
+                        throw new IllegalStateException("inconsistent key");
                     }
                 }, Comparator.naturalOrder());
 
         final IllegalStateException error = assertThrows(
                 IllegalStateException.class,
                 () -> writeSingle(diffWriter, 1));
-        assertTrue(error.getMessage().contains("declared"));
+        assertEquals("inconsistent key", error.getMessage());
     }
 
     private static <K> byte[] writeSingle(final DiffKeyWriter<K> writer,

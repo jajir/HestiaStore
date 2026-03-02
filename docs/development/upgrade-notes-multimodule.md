@@ -24,6 +24,16 @@ multi-module distribution.
 - Package names for core APIs are preserved.
 - Management contracts are versioned under `/api/v1/...`.
 - DTO compatibility is guarded by contract tests.
+- `TypeEncoder` API changed in `0.0.6`:
+  - removed: `bytesLength(T)` and `toBytes(T, byte[])`
+  - required: `EncodedBytes encode(T value, byte[] reusableBuffer)`
+
+### TypeEncoder migration checklist (0.0.6+)
+
+1. Replace old two-step encoding with `encode(...)` implementation.
+1. Reuse caller-provided buffer when possible; allocate only when too small.
+1. Return exact written byte count in `EncodedBytes.length`.
+1. Update tests and custom integrations to call `encode(...)` only.
 
 ## Recommended upgrade sequence
 

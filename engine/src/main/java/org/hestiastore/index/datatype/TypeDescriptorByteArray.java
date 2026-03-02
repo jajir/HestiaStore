@@ -3,6 +3,8 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Descriptor for {@link ByteArray} values.
  */
@@ -22,13 +24,24 @@ public class TypeDescriptorByteArray implements TypeDescriptor<ByteArray> {
 
     private static final TypeEncoder<ByteArray> CONVERTOR_TO_BYTES = new TypeEncoder<ByteArray>() {
         @Override
-        public int bytesLength(final ByteArray object) {
-            return object.length();
-        }
-
-        @Override
-        public int toBytes(final ByteArray object, final byte[] destination) {
-            return object.copyTo(destination);
+        public EncodedBytes encode(final ByteArray object,
+                final byte[] reusableBuffer) {
+            final ByteArray validatedObject = Vldtn.requireNonNull(object,
+                    "object");
+            final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                    "reusableBuffer");
+            final int requiredLength = validatedObject.length();
+            byte[] output = validatedBuffer;
+            if (output.length < requiredLength) {
+                output = new byte[requiredLength];
+            }
+            final int written = validatedObject.copyTo(output);
+            if (written != requiredLength) {
+                throw new IllegalStateException(String.format(
+                        "Encoder wrote '%s' bytes but declared '%s'", written,
+                        requiredLength));
+            }
+            return new EncodedBytes(output, written);
         }
     };
 
