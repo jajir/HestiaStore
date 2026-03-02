@@ -10,8 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.hestiastore.index.datatype.EncodedBytes;
-import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TestEncoding;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
 

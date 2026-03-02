@@ -1,8 +1,8 @@
 package org.hestiastore.index.segmentindex.wal;
 
-import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;

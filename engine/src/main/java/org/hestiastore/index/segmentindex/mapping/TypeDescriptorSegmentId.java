@@ -4,9 +4,9 @@ import java.util.Comparator;
 
 import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDecoder;
-import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeReader;
 import org.hestiastore.index.datatype.TypeWriter;
 import org.hestiastore.index.segment.SegmentId;

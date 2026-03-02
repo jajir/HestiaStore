@@ -57,9 +57,8 @@ final class WalStorageFs implements WalStorage {
         try {
             return Files.size(path);
         } catch (IOException e) {
-            throw new IndexException(String
-                    .format("Unable to read size for WAL file '%s'.", fileName),
-                    e);
+            throw new IndexException(String.format(
+                    "Unable to read size for WAL file '%s'.", fileName), e);
         }
     }
 
@@ -147,23 +146,24 @@ final class WalStorageFs implements WalStorage {
         final Path target = resolve(newFileName);
         try {
             if (!Files.exists(source)) {
-                throw new IndexException(String.format(
-                        "Unable to rename missing WAL file '%s'.",
-                        currentFileName));
+                throw new IndexException(
+                        String.format("Unable to rename missing WAL file '%s'.",
+                                currentFileName));
             }
-            Files.move(source, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+            Files.move(source, target,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
                     java.nio.file.StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
-            throw new IndexException(String.format(
-                    "Unable to rename WAL file '%s' to '%s'.",
-                    currentFileName, newFileName), e);
+            throw new IndexException(
+                    String.format("Unable to rename WAL file '%s' to '%s'.",
+                            currentFileName, newFileName),
+                    e);
         }
     }
 
     @Override
     public Stream<String> listFileNames() {
-        try {
-            final Stream<Path> listing = Files.list(walDirectory);
+        try (final Stream<Path> listing = Files.list(walDirectory)) {
             return listing.sorted(Comparator.comparing(Path::getFileName))
                     .map(path -> path.getFileName().toString());
         } catch (IOException e) {
@@ -193,9 +193,10 @@ final class WalStorageFs implements WalStorage {
                 StandardOpenOption.READ)) {
             channel.force(true);
         } catch (IOException e) {
-            throw new IndexException(String.format(
-                    "Unable to sync WAL directory metadata '%s'.",
-                    walDirectory), e);
+            throw new IndexException(
+                    String.format("Unable to sync WAL directory metadata '%s'.",
+                            walDirectory),
+                    e);
         }
     }
 
@@ -206,12 +207,14 @@ final class WalStorageFs implements WalStorage {
         try {
             final StandardOpenOption[] options = append
                     ? new StandardOpenOption[] { StandardOpenOption.CREATE,
-                            StandardOpenOption.WRITE, StandardOpenOption.APPEND }
+                            StandardOpenOption.WRITE,
+                            StandardOpenOption.APPEND }
                     : new StandardOpenOption[] { StandardOpenOption.CREATE,
                             StandardOpenOption.WRITE,
                             StandardOpenOption.TRUNCATE_EXISTING };
             try (FileChannel channel = FileChannel.open(path, options)) {
-                final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes, offset,
+                        length);
                 while (buffer.hasRemaining()) {
                     channel.write(buffer);
                 }

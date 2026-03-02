@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreImpl;

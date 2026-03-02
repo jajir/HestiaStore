@@ -3,7 +3,6 @@ package org.hestiastore.index.datatype;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -30,9 +29,8 @@ class TypeWritersTest {
         final int lengthPrefix = new TypeDescriptorInteger().getTypeDecoder()
                 .decode(Arrays.copyOfRange(data, 0, 4));
         assertEquals(3, lengthPrefix);
-        assertEquals("abc",
-                new String(Arrays.copyOfRange(data, 4, 7),
-                        StandardCharsets.ISO_8859_1));
+        assertEquals("abc", new String(Arrays.copyOfRange(data, 4, 7),
+                StandardCharsets.ISO_8859_1));
     }
 
     @Test
@@ -56,9 +54,8 @@ class TypeWritersTest {
                 new TypeDescriptorString().getTypeEncoder());
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class,
-                () -> writer.write(new CollectingFileWriter(),
-                        "a".repeat(128)));
+                IllegalArgumentException.class, () -> writer
+                        .write(new CollectingFileWriter(), "a".repeat(128)));
         assertEquals("Converted type is too big", error.getMessage());
     }
 
@@ -256,8 +253,8 @@ class TypeWritersTest {
         }
     }
 
-    private static final class ProbeFileWriter
-            extends AbstractCloseableResource implements FileWriter {
+    private static final class ProbeFileWriter extends AbstractCloseableResource
+            implements FileWriter {
 
         private int byteWrites = 0;
         private int arrayWrites = 0;

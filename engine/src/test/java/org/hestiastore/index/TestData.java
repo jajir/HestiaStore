@@ -3,19 +3,19 @@ package org.hestiastore.index;
 import java.util.Collections;
 import java.util.List;
 
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.chunkstore.Chunk;
 import org.hestiastore.index.chunkstore.ChunkHeader;
 import org.hestiastore.index.chunkstore.ChunkPayload;
-import org.hestiastore.index.bytes.ByteSequence;
-import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datablockfile.DataBlockPayload;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDecoder;
-import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorString;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
