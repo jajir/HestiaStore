@@ -33,6 +33,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
@@ -72,6 +73,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Directory directoryFacade;
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -96,6 +98,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
             .withInitial(() -> Boolean.FALSE);
     private final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
+    private boolean startupConsistencyCheckForStaleSegmentLocks;
     private volatile IndexState<K, V> indexState;
     private volatile SegmentIndexState segmentIndexState = SegmentIndexState.OPENING;
 
@@ -104,9 +107,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexExecutorRegistry executorRegistry) {
-        Vldtn.requireNonNull(directoryFacade, "directoryFacade");
+        final Directory nonNullDirectory = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
+        this.directoryFacade = nonNullDirectory;
         final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
-                directoryFacade);
+                nonNullDirectory);
         setIndexState(openingState);
         setSegmentIndexState(SegmentIndexState.OPENING);
         try {
@@ -119,14 +124,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.runtimeTuningState = RuntimeTuningState
                     .fromConfiguration(conf);
             final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
-                    directoryFacade, keyTypeDescriptor);
+                    nonNullDirectory, keyTypeDescriptor);
             this.keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
-            this.segmentFactory = new SegmentFactory<>(directoryFacade,
+            this.segmentFactory = new SegmentFactory<>(nonNullDirectory,
                     keyTypeDescriptor, valueTypeDescriptor, conf,
                     executorRegistry.getSegmentMaintenanceExecutor());
             this.segmentRegistry = SegmentRegistry.<K, V>builder()
-                    .withDirectoryFacade(directoryFacade)
+                    .withDirectoryFacade(nonNullDirectory)
                     .withKeyTypeDescriptor(keyTypeDescriptor)
                     .withValueTypeDescriptor(valueTypeDescriptor)
                     .withConfiguration(conf)
@@ -150,7 +155,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     conf.getIndexBusyBackoffMillis(),
                     conf.getIndexBusyTimeoutMillis());
             this.controlPlane = new IndexControlPlaneImpl();
-            this.walRuntime = WalRuntime.open(directoryFacade, conf.getWal(),
+            this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
                     keyTypeDescriptor, valueTypeDescriptor);
             if (walRuntime.isEnabled()) {
                 final WalRuntime.RecoveryResult recoveryResult = walRuntime
@@ -166,7 +171,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             if (openingState.wasStaleLockRecovered()) {
                 logger.info(
                         "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.");
-                checkAndRepairConsistency();
+                startupConsistencyCheckForStaleSegmentLocks = true;
+                try {
+                    checkAndRepairConsistency();
+                } finally {
+                    startupConsistencyCheckForStaleSegmentLocks = false;
+                }
             }
         } catch (final RuntimeException e) {
             failWithError(e);
@@ -342,8 +352,25 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         keyToSegmentMap.checkUniqueSegmentIds();
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
-                keyToSegmentMap, segmentRegistry, keyTypeDescriptor);
+                keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
+                startupConsistencyCheckForStaleSegmentLocks
+                        ? this::hasSegmentLockFile
+                        : segmentId -> true);
         checker.checkAndRepairConsistency();
+    }
+
+    private boolean hasSegmentLockFile(final SegmentId segmentId) {
+        final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
+                "segmentId");
+        final String segmentDirectoryName = nonNullSegmentId.getName();
+        if (!directoryFacade.isFileExists(segmentDirectoryName)) {
+            return false;
+        }
+        final Directory segmentDirectory = directoryFacade
+                .openSubDirectory(segmentDirectoryName);
+        final String lockFileName = new SegmentDirectoryLayout(nonNullSegmentId)
+                .getLockFileName();
+        return segmentDirectory.isFileExists(lockFileName);
     }
 
     /** {@inheritDoc} */
