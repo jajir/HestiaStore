@@ -7,6 +7,7 @@ import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,18 +30,22 @@ class SegmentSplitter<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Segment<K, V> segment;
     private final SegmentWriterTxFactory<K, V> writerTxFactory;
+    private final IndexRetryPolicy retryPolicy;
 
     /**
      * Creates a splitter for the provided segment.
      *
      * @param segment segment to split
      * @param writerTxFactory transaction factory used during the split
+     * @param retryPolicy retry policy for BUSY segment operations
      */
     SegmentSplitter(final Segment<K, V> segment,
-            final SegmentWriterTxFactory<K, V> writerTxFactory) {
+            final SegmentWriterTxFactory<K, V> writerTxFactory,
+            final IndexRetryPolicy retryPolicy) {
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.writerTxFactory = Vldtn.requireNonNull(writerTxFactory,
                 "writerTxFactory");
+        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
     /**
@@ -82,7 +87,7 @@ class SegmentSplitter<K, V> {
                 plan, lowerSegmentId, upperSegmentId, writerTxFactory);
         final SegmentSplitPipeline<K, V> pipeline = new SegmentSplitPipeline<>(
                 List.of(new SegmentSplitStepValidateFeasibility<>(),
-                        new SegmentSplitStepOpenIterator<>(),
+                        new SegmentSplitStepOpenIterator<>(retryPolicy),
                         new SegmentSplitStepCreateLowerSegment<>(),
                         new SegmentSplitStepFillLowerUntilTarget<>(),
                         new SegmentSplitStepEnsureLowerNotEmpty<>(),

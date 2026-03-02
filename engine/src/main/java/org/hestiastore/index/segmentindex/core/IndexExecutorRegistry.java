@@ -23,6 +23,18 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
+    private static final String ARG_INDEX_CONFIGURATION = "indexConfiguration";
+    private static final String ARG_IO_THREADS = "ioThreads";
+    private static final String ARG_INDEX_MAINTENANCE_THREADS = "indexMaintenanceThreads";
+    private static final String ARG_SEGMENT_MAINTENANCE_THREADS = "segmentMaintenanceThreads";
+    private static final String ARG_REGISTRY_MAINTENANCE_THREADS = "registryMaintenanceThreads";
+    private static final String ARG_EXECUTOR = "executor";
+    private static final String ARG_INDEX_NAME = "indexName";
+    private static final String THREAD_NAME_PREFIX_IO = "index-io-";
+    private static final String THREAD_NAME_PREFIX_INDEX_MAINTENANCE = "index-maintenance-";
+    private static final String THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE = "segment-maintenance-";
+    private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
+    private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
 
     private final ExecutorService ioExecutor;
     private final ExecutorService indexMaintenanceExecutor;
@@ -35,8 +47,8 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
      * @param indexConfiguration index configuration
      */
     IndexExecutorRegistry(final IndexConfiguration<?, ?> indexConfiguration) {
-        final IndexConfiguration<?, ?> conf = Vldtn.requireNonNull(
-                indexConfiguration, "indexConfiguration");
+        final IndexConfiguration<?, ?> conf = Vldtn
+                .requireNonNull(indexConfiguration, ARG_INDEX_CONFIGURATION);
         this.ioExecutor = wrapWithIndexContextIfEnabled(conf,
                 createIoExecutor(conf));
         this.indexMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
@@ -95,21 +107,23 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
             final IndexConfiguration<?, ?> conf) {
         final int ioThreads = Vldtn.requireGreaterThanZero(
                 Vldtn.requireNonNull(
-                        Vldtn.requireNonNull(conf, "indexConfiguration")
+                        Vldtn.requireNonNull(conf, ARG_INDEX_CONFIGURATION)
                                 .getNumberOfIoThreads(),
-                        "ioThreads"),
-                "ioThreads");
-        return createFixedDaemonExecutor(ioThreads, "index-io-");
+                        ARG_IO_THREADS),
+                ARG_IO_THREADS);
+        return createFixedDaemonExecutor(ioThreads, THREAD_NAME_PREFIX_IO);
     }
 
     private static ExecutorService createIndexMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
-        final int indexMaintenanceThreads = Vldtn.requireGreaterThanZero(
-                Vldtn.requireNonNull(
-                        Vldtn.requireNonNull(conf, "indexConfiguration")
-                                .getNumberOfIndexMaintenanceThreads(),
-                        "indexMaintenanceThreads"),
-                "indexMaintenanceThreads");
+        final int indexMaintenanceThreads = Vldtn
+                .requireGreaterThanZero(
+                        Vldtn.requireNonNull(
+                                Vldtn.requireNonNull(conf,
+                                        ARG_INDEX_CONFIGURATION)
+                                        .getNumberOfIndexMaintenanceThreads(),
+                                ARG_INDEX_MAINTENANCE_THREADS),
+                        ARG_INDEX_MAINTENANCE_THREADS);
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 indexMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         final AtomicInteger threadCounter = new AtomicInteger(1);
@@ -117,7 +131,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 indexMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity), runnable -> {
                     final Thread thread = new Thread(runnable,
-                            "index-maintenance-"
+                            THREAD_NAME_PREFIX_INDEX_MAINTENANCE
                                     + threadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
@@ -128,10 +142,10 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
             final IndexConfiguration<?, ?> conf) {
         final int segmentMaintenanceThreads = Vldtn.requireGreaterThanZero(
                 Vldtn.requireNonNull(
-                        Vldtn.requireNonNull(conf, "indexConfiguration")
+                        Vldtn.requireNonNull(conf, ARG_INDEX_CONFIGURATION)
                                 .getNumberOfSegmentIndexMaintenanceThreads(),
-                        "segmentMaintenanceThreads"),
-                "segmentMaintenanceThreads");
+                        ARG_SEGMENT_MAINTENANCE_THREADS),
+                ARG_SEGMENT_MAINTENANCE_THREADS);
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 segmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         final AtomicInteger threadCounter = new AtomicInteger(1);
@@ -139,7 +153,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 segmentMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity), runnable -> {
                     final Thread thread = new Thread(runnable,
-                            "segment-maintenance-"
+                            THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE
                                     + threadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
@@ -148,29 +162,30 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     private static ExecutorService createRegistryMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
-        final int registryMaintenanceThreads = Vldtn.requireGreaterThanZero(
-                Vldtn.requireNonNull(
-                        Vldtn.requireNonNull(conf, "indexConfiguration")
-                                .getNumberOfRegistryLifecycleThreads(),
-                        "registryMaintenanceThreads"),
-                "registryMaintenanceThreads");
+        final int registryMaintenanceThreads = Vldtn
+                .requireGreaterThanZero(
+                        Vldtn.requireNonNull(
+                                Vldtn.requireNonNull(conf,
+                                        ARG_INDEX_CONFIGURATION)
+                                        .getNumberOfRegistryLifecycleThreads(),
+                                ARG_REGISTRY_MAINTENANCE_THREADS),
+                        ARG_REGISTRY_MAINTENANCE_THREADS);
         return createFixedDaemonExecutor(registryMaintenanceThreads,
-                "registry-maintenance-");
+                THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE);
     }
 
     private static ExecutorService wrapWithIndexContextIfEnabled(
             final IndexConfiguration<?, ?> conf,
             final ExecutorService executor) {
         final IndexConfiguration<?, ?> configuration = Vldtn
-                .requireNonNull(conf, "indexConfiguration");
+                .requireNonNull(conf, ARG_INDEX_CONFIGURATION);
         final ExecutorService delegate = Vldtn.requireNonNull(executor,
-                "executor");
+                ARG_EXECUTOR);
         if (!Boolean.TRUE.equals(configuration.isContextLoggingEnabled())) {
             return delegate;
         }
-        return new IndexNameMdcExecutorService(
-                Vldtn.requireNonNull(configuration.getIndexName(), "indexName"),
-                delegate);
+        return new IndexNameMdcExecutorService(Vldtn.requireNonNull(
+                configuration.getIndexName(), ARG_INDEX_NAME), delegate);
     }
 
     private static ExecutorService createFixedDaemonExecutor(
@@ -240,8 +255,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     private void checkNotClosed() {
         if (wasClosed()) {
-            throw new IllegalStateException(
-                    "IndexExecutorRegistry already closed");
+            throw new IllegalStateException(MESSAGE_ALREADY_CLOSED);
         }
     }
 }

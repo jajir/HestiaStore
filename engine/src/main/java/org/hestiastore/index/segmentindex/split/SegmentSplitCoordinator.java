@@ -145,7 +145,7 @@ public class SegmentSplitCoordinator<K, V> {
             return false;
         }
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
-                writerTxFactory);
+                writerTxFactory, retryPolicy);
         final SegmentSplitApplyPlan<K> applyPlan;
         final boolean applyResult;
         boolean applied = false;
