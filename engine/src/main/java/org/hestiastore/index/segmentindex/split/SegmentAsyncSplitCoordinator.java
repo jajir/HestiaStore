@@ -16,12 +16,16 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Schedules segment splits on the async maintenance queue.
  */
 public final class SegmentAsyncSplitCoordinator<K, V> {
 
+    private static final Logger logger = LoggerFactory
+            .getLogger(SegmentAsyncSplitCoordinator.class);
     private final SegmentSplitCoordinator<K, V> splitCoordinator;
     private final Executor splitExecutor;
     private final Map<SegmentId, SplitInFlight> inFlightSplits = new ConcurrentHashMap<>();
@@ -86,9 +90,20 @@ public final class SegmentAsyncSplitCoordinator<K, V> {
                     // observes all running work and callers do not race on
                     // stale instances.
                     if (existing != null) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug(
+                                    "Split request joined existing in-flight split: segment='{}'",
+                                    segmentId);
+                        }
                         return existing;
                     }
                     scheduledCount.increment();
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Split scheduled: segment='{}' maxKeysInSegment='{}' inFlightBeforeSchedule='{}'",
+                                segmentId, maxNumberOfKeysInSegment,
+                                inFlightSplits.size());
+                    }
                     return scheduleSplit(segment, maxNumberOfKeysInSegment,
                             segmentId);
                 });
@@ -102,15 +117,32 @@ public final class SegmentAsyncSplitCoordinator<K, V> {
         try {
             splitExecutor.execute(() -> {
                 handle.markStarted();
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Split execution started: segment='{}' maxKeysInSegment='{}'",
+                            segmentId, maxNumberOfKeysInSegment);
+                }
                 try {
                     final boolean split = splitCoordinator
                             .optionallySplit(segment, maxNumberOfKeysInSegment);
                     handle.complete(split);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Split execution finished: segment='{}' splitApplied='{}'",
+                                segmentId, split);
+                    }
                 } catch (final Exception e) {
+                    logger.warn("Split execution failed for segment '{}'",
+                            segmentId, e);
                     handle.completeExceptionally(e);
                 } finally {
                     completedCount.increment();
                     inFlightSplits.remove(segmentId, inFlight);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Split execution cleaned up: segment='{}' inFlightAfterCleanup='{}'",
+                                segmentId, inFlightSplits.size());
+                    }
                 }
             });
         } catch (final RuntimeException e) {

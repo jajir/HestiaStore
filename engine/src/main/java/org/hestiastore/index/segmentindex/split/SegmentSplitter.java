@@ -80,7 +80,10 @@ class SegmentSplitter<K, V> {
         Vldtn.requireNonNull(lowerSegmentId, "lowerSegmentId");
         Vldtn.requireNonNull(upperSegmentId, "upperSegmentId");
         Vldtn.requireNonNull(plan, "plan");
-        logger.debug("Splitting of '{}' started", segment.getId());
+        logger.debug(
+                "Split pipeline started: segment='{}' lowerSegmentId='{}' upperSegmentId='{}' estimatedKeys='{}' lowerTarget='{}'",
+                segment.getId(), lowerSegmentId, upperSegmentId,
+                plan.getEstimatedNumberOfKeys(), plan.getHalf());
         segment.invalidateIterators();
 
         final SegmentSplitContext<K, V> ctx = new SegmentSplitContext<>(segment,
@@ -98,8 +101,10 @@ class SegmentSplitter<K, V> {
 
         if (logger.isDebugEnabled()) {
             logger.debug(
-                    "Splitting of '{}' finished, '{}' was created. Estimated number of keys was '{}'",
-                    segment.getId(), result.getSegmentId(),
+                    "Split pipeline finished: segment='{}' status='{}' lowerSegmentId='{}' lowerCount='{}' upperCount='{}' minKey='{}' maxKey='{}' estimatedKeys='{}'",
+                    segment.getId(), result.getStatus(), result.getSegmentId(),
+                    plan.getLowerCount(), plan.getHigherCount(),
+                    result.getMinKey(), result.getMaxKey(),
                     F.fmt(plan.getEstimatedNumberOfKeys()));
         }
         return new SplitExecution<>(result, state.getIterator());

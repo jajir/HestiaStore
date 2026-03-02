@@ -75,7 +75,8 @@ final class SegmentBuildContext<K, V> {
         final SegmentDirectoryLayout resolvedLayout = Vldtn.requireNonNull(
                 layout, "layout");
         final SegmentPropertiesManager propertiesManager = new SegmentPropertiesManager(
-                directoryFacade, resolvedId);
+                directoryFacade, resolvedId,
+                builder.getLoggingContextIndexName());
         final long activeVersion = resolveActiveVersion(directoryFacade,
                 resolvedLayout, propertiesManager);
         segmentFiles = new SegmentFiles<>(directoryFacade, resolvedLayout,

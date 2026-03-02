@@ -14,6 +14,7 @@ import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Manages segment metadata stored in the properties file.
@@ -28,8 +29,10 @@ public class SegmentPropertiesManager {
     private static final String NUMBER_OF_KEYS_IN_SCARCE_INDEX = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_SCARCE_INDEX;
     private static final String NUMBER_OF_SEGMENT_CACHE_DELTA_FILES = IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES;
     private static final String SEGMENT_VERSION = IndexPropertiesSchema.SegmentKeys.SEGMENT_VERSION;
+    private static final String INDEX_NAME_MDC_KEY = "index.name";
     private final SegmentId id;
     private final SegmentDirectoryLayout layout;
+    private final String loggingContextIndexName;
     private volatile PropertyStore propertyStore;
     private final Object propertyLock = new Object();
 
@@ -41,10 +44,33 @@ public class SegmentPropertiesManager {
      */
     public SegmentPropertiesManager(final Directory directoryFacade,
             final SegmentId id) {
+        this(directoryFacade, id, null);
+    }
+
+    /**
+     * Creates a manager for the given segment properties file.
+     *
+     * @param directoryFacade         directory for property storage
+     * @param id                      segment identifier
+     * @param loggingContextIndexName optional index name used for MDC logging
+     *                                context
+     */
+    public SegmentPropertiesManager(final Directory directoryFacade,
+            final SegmentId id, final String loggingContextIndexName) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         this.id = Vldtn.requireNonNull(id, "segmentId");
         this.layout = new SegmentDirectoryLayout(id);
+        this.loggingContextIndexName = normalizeIndexNameForMdc(
+                loggingContextIndexName);
         this.propertyStore = createStore(directoryFacade);
+    }
+
+    private static String normalizeIndexNameForMdc(final String indexName) {
+        if (indexName == null) {
+            return null;
+        }
+        final String normalized = indexName.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private PropertyStore createStore(final Directory directoryFacade) {
@@ -217,22 +243,42 @@ public class SegmentPropertiesManager {
     private void updateTransaction(final String reason,
             final Consumer<PropertyWriter> updater) {
         Vldtn.requireNonNull(reason, "reason");
-        IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
-        boolean changed = false;
-        try (PropertyMutationSession session = propertyStore
-                .openMutationSession()) {
-            updater.accept(session.writer());
-            changed = session.hasChanges();
+        final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
+        final boolean contextApplied = loggingContextIndexName != null;
+        if (contextApplied) {
+            MDC.put(INDEX_NAME_MDC_KEY, loggingContextIndexName);
         }
-        if (changed && logger.isDebugEnabled()) {
-            logger.debug(
-                    "Segment properties were written: "
-                            + "segment='{}' file='{}' reason='{}' "
-                            + "thread='{}' manager='{}'",
-                    id.getName(), getPropertiesFilename(), reason,
-                    Thread.currentThread().getName(),
-                    Integer.toHexString(System.identityHashCode(this)));
+        try {
+            IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(propertyStore);
+            boolean changed = false;
+            try (PropertyMutationSession session = propertyStore
+                    .openMutationSession()) {
+                updater.accept(session.writer());
+                changed = session.hasChanges();
+            }
+            if (changed && logger.isDebugEnabled()) {
+                logger.debug(
+                        "Segment properties were written: "
+                                + "segment='{}' file='{}' reason='{}' "
+                                + "thread='{}' manager='{}'",
+                        id.getName(), getPropertiesFilename(), reason,
+                        Thread.currentThread().getName(),
+                        Integer.toHexString(System.identityHashCode(this)));
+            }
+        } finally {
+            if (contextApplied) {
+                restorePreviousIndexName(previousIndexName);
+            }
         }
+    }
+
+    private static void restorePreviousIndexName(
+            final String previousIndexName) {
+        if (previousIndexName == null) {
+            MDC.remove(INDEX_NAME_MDC_KEY);
+            return;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 
     void commitTx(final String reason, final Consumer<PropertyWriter> updater) {
