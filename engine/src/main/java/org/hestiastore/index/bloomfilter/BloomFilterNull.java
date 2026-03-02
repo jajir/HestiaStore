@@ -1,6 +1,8 @@
 package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -17,19 +19,16 @@ public final class BloomFilterNull<K> extends AbstractCloseableResource
 
     private static final TypeEncoder<Object> NO_OP_CONVERTOR = new TypeEncoder<Object>() {
         @Override
-        public int bytesLength(final Object value) {
-            return 1;
-        }
-
-        @Override
-        public int toBytes(final Object value, final byte[] destination) {
-            if (destination.length < 1) {
-                throw new IllegalArgumentException(String.format(
-                        "Destination buffer too small. Required '%s' but was '%s'",
-                        1, destination.length));
+        public EncodedBytes encode(final Object value,
+                final byte[] reusableBuffer) {
+            final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                    "reusableBuffer");
+            byte[] output = validatedBuffer;
+            if (output.length < 1) {
+                output = new byte[1];
             }
-            destination[0] = 0;
-            return 1;
+            output[0] = 0;
+            return new EncodedBytes(output, 1);
         }
     };
 

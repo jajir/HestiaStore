@@ -25,19 +25,27 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
     private final TypeEncoder<CompositeValue> convertorToBytes = new TypeEncoder<CompositeValue>() {
         @Override
-        public int bytesLength(final CompositeValue object) {
+        public EncodedBytes encode(final CompositeValue object,
+                final byte[] reusableBuffer) {
+            final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                    "reusableBuffer");
             final CountingFileWriter writer = new CountingFileWriter();
             writeElements(writer, object);
-            return writer.writtenBytes();
-        }
-
-        @Override
-        public int toBytes(final CompositeValue object,
-                final byte[] destination) {
-            final FixedBufferFileWriter writer = new FixedBufferFileWriter(
-                    destination);
-            writeElements(writer, object);
-            return writer.writtenBytes();
+            final int encodedLength = writer.writtenBytes();
+            byte[] output = validatedBuffer;
+            if (output.length < encodedLength) {
+                output = new byte[encodedLength];
+            }
+            final FixedBufferFileWriter contentWriter = new FixedBufferFileWriter(
+                    output);
+            writeElements(contentWriter, object);
+            final int written = contentWriter.writtenBytes();
+            if (written != encodedLength) {
+                throw new IllegalStateException(String.format(
+                        "Encoder wrote '%s' bytes but declared '%s'", written,
+                        encodedLength));
+            }
+            return new EncodedBytes(output, written);
         }
     };
     private final VarLengthReader<CompositeValue> varLengthReader = new VarLengthReader<>(

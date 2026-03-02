@@ -31,6 +31,7 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DataBlockByteReaderBen
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryIteratorBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SortedDataFileWriterBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Benchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
 ```
 
 Compare both modes in one run (recommended):
@@ -45,6 +46,7 @@ Read-path only (recommended for byte-slice migration checks):
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
 ```
 
 Quick smoke run:

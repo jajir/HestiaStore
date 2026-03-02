@@ -130,6 +130,7 @@ git push
 1. From the drop-down box `Choose a tag` enter `release-0.0.12` and click `Create new tag: release ...`. Now in the repo, the tag clearly signals the new release.
 1. Release title should be `Release 0.0.3` and in the `Write` field, use the text generated from the template below:
 1. Press `Publish release`.
+1. If the release contains breaking changes, add a dedicated `Breaking changes` section in the GitHub release body and include migration steps. For `0.0.6`, include the `TypeEncoder` migration (`encode(...)` only).
 
 Text template:
 

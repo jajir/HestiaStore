@@ -2,7 +2,6 @@ package org.hestiastore.index.datatype;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -27,25 +26,40 @@ class TypeDescriptorStringConvertorTest {
     }
 
     @Test
-    void testDestinationBufferTooSmall() {
+    void testSurrogatePairFitsIntoSingleDestinationByte() {
         final TypeEncoder<String> convertor = new TypeDescriptorString()
                 .getTypeEncoder();
-        assertThrows(IllegalArgumentException.class,
-                () -> convertor.toBytes("abcd", new byte[3]));
+        final EncodedBytes encoded = convertor.encode("🙂", new byte[1]);
+
+        assertEquals(1, encoded.getLength());
+        assertArrayEquals(new byte[] { '?' },
+                Arrays.copyOf(encoded.getBytes(), encoded.getLength()));
+    }
+
+    @Test
+    void testEncodeResizesSmallReusableBuffer() {
+        final TypeEncoder<String> convertor = new TypeDescriptorString()
+                .getTypeEncoder();
+        final String value = "Ahoj-€-🙂";
+        final byte[] expected = value.getBytes(StandardCharsets.ISO_8859_1);
+
+        final EncodedBytes encoded = convertor.encode(value, new byte[2]);
+
+        assertEquals(expected.length, encoded.getLength());
+        assertArrayEquals(expected, Arrays.copyOf(encoded.getBytes(),
+                encoded.getLength()));
     }
 
     private void assertMatchesEncoding(final TypeEncoder<String> convertor) {
         VALUES.forEach(value -> {
             final byte[] expected = value.getBytes(StandardCharsets.ISO_8859_1);
+            final EncodedBytes encoded = convertor.encode(value,
+                    new byte[Math.max(1, expected.length + 2)]);
+            assertEquals(expected.length, encoded.getLength());
+            assertArrayEquals(expected, Arrays.copyOf(encoded.getBytes(),
+                    encoded.getLength()));
             assertArrayEquals(expected,
                     TestEncoding.toByteArray(convertor, value));
-            assertEquals(expected.length, convertor.bytesLength(value));
-
-            final byte[] destination = new byte[Math.max(1, expected.length + 2)];
-            Arrays.fill(destination, (byte) 0x7F);
-            final int written = convertor.toBytes(value, destination);
-            assertEquals(expected.length, written);
-            assertArrayEquals(expected, Arrays.copyOf(destination, written));
         });
     }
 }

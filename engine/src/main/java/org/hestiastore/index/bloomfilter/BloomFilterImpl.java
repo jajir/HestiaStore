@@ -2,6 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
@@ -117,20 +118,16 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isNotStoredInternal(final K key) {
-        final int bytesLength = convertorToBytes.bytesLength(key);
-        Vldtn.requireGreaterThanZero(bytesLength, "bytesLength");
-        byte[] buffer = reusableBytesBuffer.get();
-        if (buffer.length < bytesLength) {
-            buffer = new byte[bytesLength];
-            reusableBytesBuffer.set(buffer);
+        final byte[] reusableBuffer = reusableBytesBuffer.get();
+        final EncodedBytes encoded = convertorToBytes.encode(key,
+                reusableBuffer);
+        final int bytesLength = Vldtn.requireGreaterThanZero(
+                encoded.getLength(), "bytesLength");
+        final byte[] encodedBytes = encoded.getBytes();
+        if (encodedBytes != reusableBuffer) {
+            reusableBytesBuffer.set(encodedBytes);
         }
-        final int writtenBytes = convertorToBytes.toBytes(key, buffer);
-        if (writtenBytes != bytesLength) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
-                    bytesLength));
-        }
-        return hash.isNotStored(buffer, writtenBytes);
+        return hash.isNotStored(encodedBytes, bytesLength);
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 
@@ -68,16 +69,15 @@ final class WalStorageMem implements WalStorage {
         if (!exists(fileName)) {
             return -1;
         }
-        final byte[] data = walDirectory.getFileSequence(fileName)
-                .toByteArrayCopy();
-        if (position >= data.length) {
+        final ByteSequence data = walDirectory.getFileSequence(fileName);
+        if (position >= data.length()) {
             return -1;
         }
-        final int available = (int) Math.min(length, data.length - position);
+        final int available = (int) Math.min(length, data.length() - position);
         if (available <= 0) {
             return -1;
         }
-        System.arraycopy(data, (int) position, destination, offset, available);
+        ByteSequences.copy(data, (int) position, destination, offset, available);
         return available;
     }
 

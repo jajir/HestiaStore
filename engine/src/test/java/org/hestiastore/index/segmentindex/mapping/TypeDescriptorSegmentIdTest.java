@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TestEncoding;
@@ -51,10 +52,12 @@ class TypeDescriptorSegmentIdTest {
         final TypeEncoder<SegmentId> encoder = descriptor.getTypeEncoder();
         final SegmentId segmentId = SegmentId.of(9);
 
-        assertEquals(Integer.BYTES, encoder.bytesLength(segmentId));
-        final byte[] destination = new byte[Integer.BYTES];
-        assertEquals(Integer.BYTES, encoder.toBytes(segmentId, destination));
-        assertThrows(IllegalArgumentException.class,
-                () -> encoder.toBytes(segmentId, new byte[Integer.BYTES - 1]));
+        final EncodedBytes encoded = encoder.encode(segmentId,
+                new byte[Integer.BYTES]);
+        assertEquals(Integer.BYTES, encoded.getLength());
+
+        final EncodedBytes resized = encoder.encode(segmentId,
+                new byte[Integer.BYTES - 1]);
+        assertEquals(Integer.BYTES, resized.getLength());
     }
 }

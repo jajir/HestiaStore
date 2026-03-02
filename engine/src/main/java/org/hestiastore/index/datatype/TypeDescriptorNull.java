@@ -5,6 +5,8 @@ import static org.hestiastore.index.datatype.NullValue.TOMBSTONE;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Descriptor for {@link NullValue} markers.
  */
@@ -59,13 +61,11 @@ public class TypeDescriptorNull implements TypeDescriptor<NullValue> {
     public TypeEncoder<NullValue> getTypeEncoder() {
         return new TypeEncoder<NullValue>() {
             @Override
-            public int bytesLength(final NullValue value) {
-                return 0;
-            }
-
-            @Override
-            public int toBytes(final NullValue value, final byte[] destination) {
-                return 0;
+            public EncodedBytes encode(final NullValue value,
+                    final byte[] reusableBuffer) {
+                return new EncodedBytes(
+                        Vldtn.requireNonNull(reusableBuffer, "reusableBuffer"),
+                        0);
             }
         };
     }

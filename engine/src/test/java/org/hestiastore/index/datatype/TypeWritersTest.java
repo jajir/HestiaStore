@@ -78,25 +78,20 @@ class TypeWritersTest {
     }
 
     @Test
-    void varLengthWriter_rejectsNegativeDeclaredLength() {
+    void varLengthWriter_propagatesEncoderValidationErrors() {
         final VarLengthWriter<String> writer = new VarLengthWriter<>(
                 new TypeEncoder<String>() {
                     @Override
-                    public int bytesLength(final String value) {
-                        return -1;
-                    }
-
-                    @Override
-                    public int toBytes(final String value,
-                            final byte[] destination) {
-                        throw new IllegalStateException("must not be called");
+                    public EncodedBytes encode(final String value,
+                            final byte[] reusableBuffer) {
+                        throw new IllegalArgumentException("bad payload");
                     }
                 });
 
         final IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
                 () -> writer.write(new CollectingFileWriter(), "abc"));
-        assertTrue(error.getMessage().contains("payloadLength"));
+        assertEquals("bad payload", error.getMessage());
     }
 
     @Test
@@ -108,9 +103,8 @@ class TypeWritersTest {
         final int writtenBytes = writer.write(fileWriter, "abcdef");
 
         assertEquals(10, writtenBytes);
-        assertEquals(1, fileWriter.arrayWrites);
-        assertEquals(1, fileWriter.rangeWrites);
-        assertEquals(4, fileWriter.lastArrayLength);
+        assertEquals(0, fileWriter.arrayWrites);
+        assertEquals(2, fileWriter.rangeWrites);
         assertEquals(0, fileWriter.lastRangeOffset);
         assertEquals(6, fileWriter.lastRangeLength);
     }
@@ -204,52 +198,37 @@ class TypeWritersTest {
     }
 
     @Test
-    void varShortLengthWriter_rejectsDeclaredAndWrittenLengthMismatch() {
+    void varShortLengthWriter_propagatesEncoderValidationErrors() {
         final VarShortLengthWriter<String> writer = new VarShortLengthWriter<>(
                 new TypeEncoder<String>() {
                     @Override
-                    public int bytesLength(final String value) {
-                        return 3;
-                    }
-
-                    @Override
-                    public int toBytes(final String value,
-                            final byte[] destination) {
-                        destination[0] = 'a';
-                        destination[1] = 'b';
-                        return 2;
+                    public EncodedBytes encode(final String value,
+                            final byte[] reusableBuffer) {
+                        throw new IllegalArgumentException("bad short payload");
                     }
                 });
 
-        final IllegalStateException error = assertThrows(
-                IllegalStateException.class,
+        final IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
                 () -> writer.write(new CollectingFileWriter(), "abc"));
-        assertTrue(error.getMessage().contains("declared"));
+        assertEquals("bad short payload", error.getMessage());
     }
 
     @Test
-    void fixedLengthWriter_rejectsDeclaredAndWrittenLengthMismatch() {
+    void fixedLengthWriter_propagatesEncoderValidationErrors() {
         final FixedLengthWriter<String> writer = new FixedLengthWriter<>(
                 new TypeEncoder<String>() {
                     @Override
-                    public int bytesLength(final String value) {
-                        return 4;
-                    }
-
-                    @Override
-                    public int toBytes(final String value,
-                            final byte[] destination) {
-                        destination[0] = 'A';
-                        destination[1] = 'B';
-                        destination[2] = 'C';
-                        return 3;
+                    public EncodedBytes encode(final String value,
+                            final byte[] reusableBuffer) {
+                        throw new IllegalArgumentException("bad fixed payload");
                     }
                 });
 
-        final IllegalStateException error = assertThrows(
-                IllegalStateException.class,
+        final IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
                 () -> writer.write(new CollectingFileWriter(), "ABCD"));
-        assertTrue(error.getMessage().contains("declared"));
+        assertEquals("bad fixed payload", error.getMessage());
     }
 
     private static final class CollectingFileWriter

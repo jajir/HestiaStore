@@ -2,7 +2,6 @@ package org.hestiastore.index.datatype;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 
@@ -44,16 +43,16 @@ class TypeDescriptorPrimitiveConvertorTest {
     private <T> void assertInPlaceConvertor(final TypeEncoder<T> convertor,
             final T value, final int expectedLength) {
         final byte[] expected = TestEncoding.toByteArray(convertor, value);
-        assertEquals(expectedLength, convertor.bytesLength(value));
+        final EncodedBytes encoded = convertor.encode(value,
+                new byte[expectedLength + 2]);
+        assertEquals(expectedLength, encoded.getLength());
+        assertArrayEquals(expected,
+                Arrays.copyOf(encoded.getBytes(), encoded.getLength()));
 
-        final byte[] destination = new byte[expectedLength + 2];
-        Arrays.fill(destination, (byte) 0x5A);
-        final int written = convertor.toBytes(value, destination);
-        assertEquals(expectedLength, written);
-        assertArrayEquals(expected, Arrays.copyOf(destination, written));
-
-        assertThrows(IllegalArgumentException.class,
-                () -> convertor.toBytes(value,
-                        new byte[Math.max(0, expectedLength - 1)]));
+        final EncodedBytes resized = convertor.encode(value,
+                new byte[Math.max(0, expectedLength - 1)]);
+        assertEquals(expectedLength, resized.getLength());
+        assertArrayEquals(expected, Arrays.copyOf(resized.getBytes(),
+                resized.getLength()));
     }
 }

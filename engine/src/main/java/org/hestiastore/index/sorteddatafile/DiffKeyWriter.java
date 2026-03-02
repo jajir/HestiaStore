@@ -2,8 +2,11 @@ package org.hestiastore.index.sorteddatafile;
 
 import java.util.Comparator;
 
-import org.hestiastore.index.ByteTool;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.bytes.ByteSequences;
+import org.hestiastore.index.bytes.ByteTool;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.FileWriter;
 import org.slf4j.Logger;
@@ -22,7 +25,7 @@ public class DiffKeyWriter<K> {
 
     private final Comparator<K> keyComparator;
 
-    private byte[] previousKeyBytes;
+    private ByteSequence previousKeyBytes;
 
     private K previousKey;
 
@@ -38,7 +41,7 @@ public class DiffKeyWriter<K> {
                 "convertorToBytes");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
                 "keyComparator");
-        previousKeyBytes = new byte[0];
+        previousKeyBytes = ByteSequence.EMPTY;
         previousKey = null;
         logger.trace(
                 "Initilizing with conventor to bytes '{}' and comparator '{}'",
@@ -60,43 +63,42 @@ public class DiffKeyWriter<K> {
         final EncodedDiffKey diff = encodeDiffKey(key);
         validatedWriter.write((byte) diff.sharedByteLength);
         validatedWriter.write((byte) diff.diffByteLength);
-        validatedWriter.write(diff.keyBytes, diff.sharedByteLength,
+        final byte[] keyBytes = diff.keyBytes.toByteArray();
+        validatedWriter.write(keyBytes, diff.sharedByteLength,
                 diff.diffByteLength);
         return 2 + diff.diffByteLength;
     }
 
-    private byte[] encodeKey(final K key) {
+    private ByteSequence encodeKey(final K key) {
+        final EncodedBytes encoded = convertorToBytes.encode(key, new byte[0]);
         final int encodedKeyLength = Vldtn.requireGreaterThanOrEqualToZero(
-                convertorToBytes.bytesLength(key), "encodedKeyLength");
-        final byte[] keyBytes = new byte[encodedKeyLength];
-        final int writtenBytes = convertorToBytes.toBytes(key, keyBytes);
-        if (writtenBytes != encodedKeyLength) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
-                    encodedKeyLength));
+                encoded.getLength(), "encodedKeyLength");
+        final byte[] keyBytes = encoded.getBytes();
+        if (keyBytes.length == encodedKeyLength) {
+            return ByteSequences.wrap(keyBytes);
         }
-        return keyBytes;
+        return ByteSequences.viewOf(keyBytes, 0, encodedKeyLength);
     }
 
     private EncodedDiffKey encodeDiffKey(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final byte[] keyBytes = encodeKey(key);
+        final ByteSequence keyBytes = encodeKey(key);
         validateKeyOrder(key, keyBytes);
         final int sharedByteLength = ByteTool
                 .countMatchingPrefixBytes(previousKeyBytes, keyBytes);
-        final int diffByteLength = keyBytes.length - sharedByteLength;
+        final int diffByteLength = keyBytes.length() - sharedByteLength;
         previousKeyBytes = keyBytes;
         previousKey = key;
         return new EncodedDiffKey(keyBytes, sharedByteLength, diffByteLength);
     }
 
-    private void validateKeyOrder(final K key, final byte[] keyBytes) {
+    private void validateKeyOrder(final K key, final ByteSequence keyBytes) {
         if (previousKey == null) {
             return;
         }
         final int cmp = keyComparator.compare(previousKey, key);
         if (cmp == 0) {
-            final String keyAsString = new String(keyBytes);
+            final String keyAsString = new String(keyBytes.toByteArray());
             final String keyComparatorClassName = keyComparator.getClass()
                     .getSimpleName();
             throw new IllegalArgumentException(String.format(
@@ -104,8 +106,9 @@ public class DiffKeyWriter<K> {
                     keyAsString, keyComparatorClassName));
         }
         if (cmp > 0) {
-            final String previousKeyAsString = new String(previousKeyBytes);
-            final String keyAsString = new String(keyBytes);
+            final String previousKeyAsString = new String(
+                    previousKeyBytes.toByteArray());
+            final String keyAsString = new String(keyBytes.toByteArray());
             final String keyComparatorClassName = keyComparator.getClass()
                     .getSimpleName();
             throw new IllegalArgumentException(String.format(
@@ -116,11 +119,11 @@ public class DiffKeyWriter<K> {
     }
 
     private static final class EncodedDiffKey {
-        private final byte[] keyBytes;
+        private final ByteSequence keyBytes;
         private final int sharedByteLength;
         private final int diffByteLength;
 
-        private EncodedDiffKey(final byte[] keyBytes,
+        private EncodedDiffKey(final ByteSequence keyBytes,
                 final int sharedByteLength, final int diffByteLength) {
             this.keyBytes = keyBytes;
             this.sharedByteLength = sharedByteLength;

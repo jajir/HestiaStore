@@ -3,6 +3,8 @@ package org.hestiastore.index.datatype;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Descriptor for fixed-length ISO-8859-1 strings.
  */
@@ -70,34 +72,31 @@ public final class TypeDescriptorFixedLengthString
     public TypeEncoder<String> getTypeEncoder() {
         return new TypeEncoder<String>() {
             @Override
-            public int bytesLength(final String string) {
+            public EncodedBytes encode(final String string,
+                    final byte[] reusableBuffer) {
                 validateStringLength(string);
-                return length;
-            }
-
-            @Override
-            public int toBytes(final String string, final byte[] destination) {
-                validateStringLength(string);
-                if (destination.length < length) {
-                    throw new IllegalArgumentException(String.format(
-                            "Destination buffer too small. Required '%s' but was '%s'",
-                            length, destination.length));
+                final byte[] validatedBuffer = Vldtn.requireNonNull(
+                        reusableBuffer, "reusableBuffer");
+                byte[] output = validatedBuffer;
+                if (output.length < length) {
+                    output = new byte[length];
                 }
-                final int written = Iso88591StringConvertor.INSTANCE
-                        .toBytes(string, destination);
-                if (written != length) {
+                final EncodedBytes encoded = Iso88591StringConvertor.INSTANCE
+                        .encode(string, output);
+                if (encoded.getLength() != length) {
                     throw new IllegalArgumentException(String.format(
                             "String should be encoded to '%s' bytes but was '%s'",
-                            length, written));
+                            length, encoded.getLength()));
                 }
-                return written;
+                return encoded;
             }
 
             private void validateStringLength(final String string) {
-                if (length != string.length()) {
+                final String validated = Vldtn.requireNonNull(string, "string");
+                if (length != validated.length()) {
                     throw new IllegalArgumentException(String.format(
                             "String length shoudlld be '%s' but is '%s'",
-                            length, string.length()));
+                            length, validated.length()));
                 }
             }
         };
