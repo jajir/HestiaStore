@@ -102,7 +102,24 @@ class SegmentIndexConfigurationManagerTest {
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
 
-        assertEquals("Index name is null.", ex.getMessage());
+        assertEquals("Property 'indexName' must not be null.",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_save_index_name_is_blank() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withName("   ")//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Property 'indexName' must not be blank.",
+                ex.getMessage());
     }
 
     @Test
@@ -119,6 +136,42 @@ class SegmentIndexConfigurationManagerTest {
                 () -> manager.save(config));
 
         assertEquals("Property 'keyTypeDescriptor' must not be null.",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_save_key_type_descriptor_is_empty() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor("")//
+                .withValueTypeDescriptor(TD_STRING)//
+                .withName("test_index")//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Property 'keyTypeDescriptor' must not be blank.",
+                ex.getMessage());
+    }
+
+    @Test
+    void test_save_value_type_descriptor_is_empty() {
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()//
+                .withKeyClass(Long.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(TD_LONG)//
+                .withValueTypeDescriptor("")//
+                .withName("test_index")//
+                .build();
+
+        final Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> manager.save(config));
+
+        assertEquals("Property 'valueTypeDescriptor' must not be blank.",
                 ex.getMessage());
     }
 

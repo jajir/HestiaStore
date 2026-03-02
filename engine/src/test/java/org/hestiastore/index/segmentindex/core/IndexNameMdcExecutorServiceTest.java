@@ -35,6 +35,13 @@ class IndexNameMdcExecutorServiceTest {
     }
 
     @Test
+    void constructorRejectsBlankIndexName() {
+        delegate = Executors.newSingleThreadExecutor();
+        assertThrows(IllegalArgumentException.class,
+                () -> new IndexNameMdcExecutorService("   ", delegate));
+    }
+
+    @Test
     void setsIndexNameForTaskAndRestoresPreviousValue()
             throws InterruptedException, ExecutionException {
         delegate = Executors.newSingleThreadExecutor();
