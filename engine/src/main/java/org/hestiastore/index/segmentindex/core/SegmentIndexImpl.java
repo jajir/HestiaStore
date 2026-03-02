@@ -120,6 +120,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
+            logger.info("Opening index '{}'.", conf.getIndexName());
             Vldtn.requireNonNull(executorRegistry, "executorRegistry");
             this.runtimeTuningState = RuntimeTuningState
                     .fromConfiguration(conf);
@@ -178,6 +179,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     startupConsistencyCheckForStaleSegmentLocks = false;
                 }
             }
+            logger.info("Index '{}' opened.", conf.getIndexName());
         } catch (final RuntimeException e) {
             failWithError(e);
             throw e;
@@ -376,6 +378,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
+        logger.info("Closing index '{}'.", conf.getIndexName());
         try {
             getIndexState().onClose(this);
             setSegmentIndexState(SegmentIndexState.CLOSED);
@@ -398,6 +401,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
                         F.fmt(stats.getDeleteCx())));
             }
+            logger.info("Index '{}' closed.", conf.getIndexName());
         } finally {
             walRuntime.close();
         }

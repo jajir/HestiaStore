@@ -47,7 +47,7 @@ final class SegmentCore<K, V> {
             final SegmentWritePath<K, V> writePath,
             final SegmentMaintenancePath<K, V> maintenancePath) {
         this.segmentFiles = Vldtn.requireNonNull(segmentFiles, "segmentFiles");
-        logger.debug("Initializing segment '{}'", segmentFiles.getId());
+        logger.debug("Opening segment '{}'", segmentFiles.getId());
         this.versionController = Vldtn.requireNonNull(versionController,
                 "versionController");
         this.segmentPropertiesManager = Vldtn.requireNonNull(
