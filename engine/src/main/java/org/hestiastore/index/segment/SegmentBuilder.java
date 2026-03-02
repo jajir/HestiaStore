@@ -43,6 +43,7 @@ public final class SegmentBuilder<K, V> {
     private Executor maintenanceExecutor;
     private SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private boolean directoryLockingEnabled = true;
+    private String loggingContextIndexName;
 
     /**
      * Creates a new builder with the required segment directory.
@@ -233,6 +234,18 @@ public final class SegmentBuilder<K, V> {
     public SegmentBuilder<K, V> withMaintenanceExecutor(
             final Executor maintenanceExecutor) {
         this.maintenanceExecutor = maintenanceExecutor;
+        return this;
+    }
+
+    /**
+     * Sets optional index name used for MDC logging context in segment internals.
+     *
+     * @param indexName index name used as MDC context
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withLoggingContextIndexName(
+            final String indexName) {
+        this.loggingContextIndexName = indexName;
         return this;
     }
 
@@ -462,6 +475,10 @@ public final class SegmentBuilder<K, V> {
 
     Executor getMaintenanceExecutor() {
         return maintenanceExecutor;
+    }
+
+    String getLoggingContextIndexName() {
+        return loggingContextIndexName;
     }
 
     List<ChunkFilter> getEncodingChunkFilters() {

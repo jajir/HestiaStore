@@ -120,7 +120,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            logger.info("Opening index '{}'.", conf.getIndexName());
+            logger.debug("Opening index '{}'.", conf.getIndexName());
             Vldtn.requireNonNull(executorRegistry, "executorRegistry");
             this.runtimeTuningState = RuntimeTuningState
                     .fromConfiguration(conf);
@@ -162,9 +162,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 final WalRuntime.RecoveryResult recoveryResult = walRuntime
                         .recover(this::replayWalRecord);
                 if (recoveryResult.maxLsn() > 0L) {
-                    lastAppliedWalLsn
-                            .set(Math.max(lastAppliedWalLsn.get(),
-                                    recoveryResult.maxLsn()));
+                    lastAppliedWalLsn.set(Math.max(lastAppliedWalLsn.get(),
+                            recoveryResult.maxLsn()));
                 }
             }
             getIndexState().onReady(this);
@@ -179,7 +178,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     startupConsistencyCheckForStaleSegmentLocks = false;
                 }
             }
-            logger.info("Index '{}' opened.", conf.getIndexName());
+            logger.debug("Index '{}' opened.", conf.getIndexName());
         } catch (final RuntimeException e) {
             failWithError(e);
             throw e;
@@ -378,7 +377,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        logger.info("Closing index '{}'.", conf.getIndexName());
+        logger.debug("Closing index '{}'.", conf.getIndexName());
         try {
             getIndexState().onClose(this);
             setSegmentIndexState(SegmentIndexState.CLOSED);
@@ -390,8 +389,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     && closeResult
                             .getStatus() != SegmentRegistryResultStatus.CLOSED) {
                 throw new IndexException(
-                        String.format("Index operation '%s' failed: %s", "close",
-                                closeResult.getStatus()));
+                        String.format("Index operation '%s' failed: %s",
+                                "close", closeResult.getStatus()));
             }
             keyToSegmentMap.optionalyFlush();
             checkpointWal();
@@ -401,7 +400,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
                         F.fmt(stats.getDeleteCx())));
             }
-            logger.info("Index '{}' closed.", conf.getIndexName());
+            logger.debug("Index '{}' closed.", conf.getIndexName());
         } finally {
             walRuntime.close();
         }
@@ -519,15 +518,16 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.bloomFilterRequestCount,
                 segmentRuntime.bloomFilterRefusedCount,
                 segmentRuntime.bloomFilterPositiveCount,
-                segmentRuntime.bloomFilterFalsePositiveCount, walRuntime.isEnabled(),
-                walStats.appendCount(), walStats.appendBytes(),
-                walStats.syncCount(), walStats.syncFailureCount(),
-                walStats.corruptionCount(), walStats.truncationCount(),
-                walStats.retainedBytes(), walStats.segmentCount(),
-                walStats.durableLsn(), walStats.checkpointLsn(),
-                walStats.pendingSyncBytes(), lastAppliedWalLsn.get(),
-                walStats.syncTotalNanos(), walStats.syncMaxNanos(),
-                walStats.syncBatchBytesTotal(), walStats.syncBatchBytesMax(),
+                segmentRuntime.bloomFilterFalsePositiveCount,
+                walRuntime.isEnabled(), walStats.appendCount(),
+                walStats.appendBytes(), walStats.syncCount(),
+                walStats.syncFailureCount(), walStats.corruptionCount(),
+                walStats.truncationCount(), walStats.retainedBytes(),
+                walStats.segmentCount(), walStats.durableLsn(),
+                walStats.checkpointLsn(), walStats.pendingSyncBytes(),
+                lastAppliedWalLsn.get(), walStats.syncTotalNanos(),
+                walStats.syncMaxNanos(), walStats.syncBatchBytesTotal(),
+                walStats.syncBatchBytesMax(),
                 segmentRuntime.segmentRuntimeSnapshots, getState());
     }
 
@@ -635,12 +635,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         while (true) {
             final long previousWarnNanos = walRetentionPressureLastWarnNanos
                     .get();
-            if (previousWarnNanos != 0L
-                    && nowNanos - previousWarnNanos < WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS) {
+            if (previousWarnNanos != 0L && nowNanos
+                    - previousWarnNanos < WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS) {
                 return;
             }
-            if (walRetentionPressureLastWarnNanos.compareAndSet(
-                    previousWarnNanos, nowNanos)) {
+            if (walRetentionPressureLastWarnNanos
+                    .compareAndSet(previousWarnNanos, nowNanos)) {
                 walRetentionPressureWarnActive.set(true);
                 logger.warn(
                         "event=wal_retention_pressure_start retainedBytes={} threshold={} action=force_checkpoint_backpressure",
@@ -656,8 +656,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (!walRetentionPressureWarnActive.compareAndSet(true, false)) {
             return;
         }
-        final long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(
-                Math.max(0L, System.nanoTime() - startNanos));
+        final long elapsedMillis = TimeUnit.NANOSECONDS
+                .toMillis(Math.max(0L, System.nanoTime() - startNanos));
         logger.info(
                 "event=wal_retention_pressure_cleared retainedBytes={} threshold={} checkpointAttempts={} elapsedMillis={}",
                 walRuntime.retainedBytes(),
@@ -702,8 +702,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         logger.error(
                 "event=wal_sync_failure_transition state={} action=transition_to_error reason=wal_sync_failure",
-                state,
-                failure);
+                state, failure);
         failWithError(failure);
     }
 
@@ -714,11 +713,22 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Compact attempt started: segment='{}' wait='{}'",
+                    segmentId, waitForCompletion);
+        }
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final IndexResult<Segment<K, V>> result = core.compact(segmentId);
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.OK) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Compact accepted: segment='{}' wait='{}' state='{}'",
+                            segmentId, waitForCompletion,
+                            result.getValue() == null ? null
+                                    : result.getValue().getState());
+                }
                 if (waitForCompletion) {
                     final Segment<K, V> segment = result.getValue();
                     if (segment != null) {
@@ -726,14 +736,32 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                                 segment);
                     }
                 }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Compact completed: segment='{}' wait='{}'",
+                            segmentId, waitForCompletion);
+                }
                 return;
             }
             if (status == IndexResultStatus.CLOSED) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Compact skipped because segment is closed: segment='{}'",
+                            segmentId);
+                }
                 return;
             }
             if (status == IndexResultStatus.BUSY) {
                 if (!isSegmentStillMapped(segmentId)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Compact aborted because segment is no longer mapped: segment='{}'",
+                                segmentId);
+                    }
                     return;
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Compact busy, retrying: segment='{}'",
+                            segmentId);
                 }
                 retryPolicy.backoffOrThrow(startNanos, OPERATION_COMPACT,
                         segmentId);
@@ -741,6 +769,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             if (status == IndexResultStatus.ERROR
                     && !isSegmentStillMapped(segmentId)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Compact ignored error because segment is no longer mapped: segment='{}'",
+                            segmentId);
+                }
                 return;
             }
             throw newIndexException(OPERATION_COMPACT, segmentId, status);
@@ -750,25 +783,54 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private void flushSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         stats.incFlushRequestCx();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Flush attempt started: segment='{}' wait='{}'",
+                    segmentId, waitForCompletion);
+        }
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final IndexResult<Segment<K, V>> result = core.flush(segmentId);
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.OK) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Flush accepted: segment='{}' wait='{}' state='{}'",
+                            segmentId, waitForCompletion,
+                            result.getValue() == null ? null
+                                    : result.getValue().getState());
+                }
                 if (waitForCompletion) {
                     final Segment<K, V> segment = result.getValue();
                     if (segment != null) {
                         awaitSegmentReady(segmentId, OPERATION_FLUSH, segment);
                     }
                 }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Flush completed: segment='{}' wait='{}'",
+                            segmentId, waitForCompletion);
+                }
                 return;
             }
             if (status == IndexResultStatus.CLOSED) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Flush skipped because segment is closed: segment='{}'",
+                            segmentId);
+                }
                 return;
             }
             if (status == IndexResultStatus.BUSY) {
                 if (!isSegmentStillMapped(segmentId)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Flush aborted because segment is no longer mapped: segment='{}'",
+                                segmentId);
+                    }
                     return;
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Flush busy, retrying: segment='{}'",
+                            segmentId);
                 }
                 retryPolicy.backoffOrThrow(startNanos, OPERATION_FLUSH,
                         segmentId);
@@ -776,6 +838,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             if (status == IndexResultStatus.ERROR
                     && !isSegmentStillMapped(segmentId)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Flush ignored error because segment is no longer mapped: segment='{}'",
+                            segmentId);
+                }
                 return;
             }
             throw newIndexException(OPERATION_FLUSH, segmentId, status);

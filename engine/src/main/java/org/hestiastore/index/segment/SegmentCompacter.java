@@ -43,6 +43,16 @@ final class SegmentCompacter<K, V> {
         final long currentVersion = Math.max(0,
                 segment.getSegmentFiles().getActiveVersion());
         final long nextVersion = currentVersion + 1;
+        if (logger.isDebugEnabled()) {
+            final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
+                    segment.getId());
+            logger.debug(
+                    "Compaction plan prepared: segment='{}' previousVersion='{}' nextVersion='{}' currentIndexFile='{}' nextIndexFile='{}' nextDeltaPrefix='{}'",
+                    segment.getId(), currentVersion, nextVersion,
+                    segment.getSegmentFiles().getIndexFileName(),
+                    layout.getIndexFileName(nextVersion),
+                    layout.getDeltaCachePrefix(nextVersion));
+        }
         return new CompactionPlan<>(segment, currentVersion,
                 nextVersion);
     }
@@ -74,6 +84,12 @@ final class SegmentCompacter<K, V> {
 
     void writeCompaction(final CompactionPlan<K, V> plan) {
         Vldtn.requireNonNull(plan, "plan");
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Compaction write started: segment='{}' previousVersion='{}' nextVersion='{}'",
+                    plan.segment.getId(), plan.previousVersion,
+                    plan.nextVersion);
+        }
         SegmentFullWriterTx<K, V> writerTx = plan.writerTx;
         if (writerTx == null) {
             writerTx = prepareVersionSwitch(plan);
@@ -81,6 +97,11 @@ final class SegmentCompacter<K, V> {
         writeCompaction(plan.segment, writerTx);
         writerTx.commit();
         finalizeVersionSwitch(plan);
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Compaction write committed: segment='{}' persistedVersion='{}'",
+                    plan.segment.getId(), plan.nextVersion);
+        }
     }
 
     /**
@@ -115,6 +136,14 @@ final class SegmentCompacter<K, V> {
                 preparedFiles, propertiesManager,
                 segment.getSegmentConf().getMaxNumberOfKeysInChunk(),
                 preparedResources, segment.getDeltaCacheController());
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Compaction target prepared: segment='{}' nextVersion='{}' targetIndexFile='{}' targetScarceFile='{}' targetBloomFile='{}'",
+                    segment.getId(), plan.nextVersion,
+                    preparedFiles.getIndexFileName(),
+                    preparedFiles.getScarceFileName(),
+                    preparedFiles.getBloomFilterFileName());
+        }
         plan.writerTx = writerTx;
         return writerTx;
     }
@@ -148,6 +177,14 @@ final class SegmentCompacter<K, V> {
         if (cleanup == null) {
             return;
         }
+        if (logger.isDebugEnabled()) {
+            final SegmentDirectoryLayout layout = new SegmentDirectoryLayout(
+                    plan.segment.getId());
+            logger.debug(
+                    "Compaction cleanup scheduled: segment='{}' previousVersion='{}' deltaPrefix='{}'",
+                    plan.segment.getId(), plan.previousVersion,
+                    layout.getDeltaCachePrefix(plan.previousVersion));
+        }
         try {
             executor.execute(cleanup);
         } catch (final RuntimeException e) {
@@ -160,6 +197,15 @@ final class SegmentCompacter<K, V> {
             final SegmentDirectoryLayout layout, final long version) {
         if (version < 0) {
             return;
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Compaction cleanup started: segment='{}' cleanupVersion='{}' indexFile='{}' scarceFile='{}' bloomFile='{}' deltaPrefix='{}'",
+                    layout.getSegmentId(), version,
+                    layout.getIndexFileName(version),
+                    layout.getScarceFileName(version),
+                    layout.getBloomFilterFileName(version),
+                    layout.getDeltaCachePrefix(version));
         }
         deleteFile(directory, layout.getIndexFileName(version));
         deleteFile(directory, layout.getScarceFileName(version));
