@@ -10,10 +10,10 @@ import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.datatype.EncodedBytes;
-import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.FileWriter;
 import org.junit.jupiter.api.Test;
 

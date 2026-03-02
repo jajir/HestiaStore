@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.datatype.EncodedBytes;
+import org.hestiastore.index.datatype.TestEncoding;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeEncoder;
-import org.hestiastore.index.datatype.TestEncoding;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 
