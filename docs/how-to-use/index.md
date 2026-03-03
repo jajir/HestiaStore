@@ -7,6 +7,7 @@ HestiaStore is a Java library distributed as a JAR. To get started quickly:
 - [Install](install.md) — add the dependency via Maven/Gradle.
 - [Quick Start](quick-start.md) — minimal in‑memory and filesystem examples.
 - [Troubleshooting](troubleshooting.md) — common issues, .lock files, and how to get help.
+- [WAL Operations](../operations/wal.md) — optional write-ahead logging is implemented and can be enabled per index.
 
 ## 💡 Use Cases
 

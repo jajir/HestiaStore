@@ -41,7 +41,7 @@ package "Application JVM" {
 ## Sections
 
 - [General](general/index.md) — cross-cutting format, integrity, recovery,
-  limits, package boundaries, and glossary.
+  limits, package layout, and glossary.
 - [Monitoring](monitoring/index.md) — runtime monitoring bridge and management
   API contracts.
 - [SegmentIndex](segmentindex/index.md) — top-level index orchestration:
