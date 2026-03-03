@@ -81,11 +81,11 @@ public class ConsoleBackendClient {
      *
      * @param properties web app properties
      */
-    public ConsoleBackendClient(final MonitoringConsoleWebProperties properties) {
+    public ConsoleBackendClient(
+            final MonitoringConsoleWebProperties properties) {
         this.properties = properties;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .build();
+                .connectTimeout(Duration.ofSeconds(3)).build();
         this.mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         for (final MonitoringConsoleWebProperties.NodeEndpoint node : properties
                 .nodes()) {
@@ -178,7 +178,8 @@ public class ConsoleBackendClient {
         } else if ("compact".equalsIgnoreCase(actionType)) {
             path = API_ACTION_COMPACT;
         } else {
-            throw new IllegalArgumentException("Unsupported action: " + actionType);
+            throw new IllegalArgumentException(
+                    "Unsupported action: " + actionType);
         }
         final String requestId = "web-" + UUID.randomUUID();
         final JsonNode response = postJson(node, path,
@@ -223,8 +224,8 @@ public class ConsoleBackendClient {
                     asInstantText(config.path(FIELD_CAPTURED_AT))));
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.info("Runtime config poll interrupted: node={} index={}", nodeId,
-                    indexName);
+            logger.info("Runtime config poll interrupted: node={} index={}",
+                    nodeId, indexName);
             addEvent(new EventRow(Instant.now().toString(),
                     "NODE_CONFIG_POLL_FAILED", nodeId,
                     e.getMessage() == null ? "config poll failed"
@@ -260,7 +261,8 @@ public class ConsoleBackendClient {
             throw new IllegalArgumentException("indexName is required");
         }
         if (values == null || values.isEmpty()) {
-            throw new IllegalArgumentException("No configuration values provided");
+            throw new IllegalArgumentException(
+                    "No configuration values provided");
         }
         final String encodedIndexName = URLEncoder.encode(indexName.trim(),
                 StandardCharsets.UTF_8);
@@ -280,8 +282,7 @@ public class ConsoleBackendClient {
                     report.path("indexes"));
             final List<IndexRow> indexRows = toIndexRows(node.nodeId(),
                     monitoredIndexes,
-                    asInstantText(report.path(FIELD_CAPTURED_AT)),
-                    nowNanos);
+                    asInstantText(report.path(FIELD_CAPTURED_AT)), nowNanos);
             final String resolvedIndexName = monitoredIndexes.isEmpty()
                     ? node.nodeId()
                     : monitoredIndexes.stream().map(MonitoredIndex::indexName)
@@ -295,111 +296,131 @@ public class ConsoleBackendClient {
             final long putOps = monitoredIndexes.stream()
                     .mapToLong(i -> i.metricsSnapshot().getPutOperationCount())
                     .sum();
-            final long deleteOps = monitoredIndexes.stream().mapToLong(
-                    i -> i.metricsSnapshot().getDeleteOperationCount()).sum();
+            final long deleteOps = monitoredIndexes.stream()
+                    .mapToLong(
+                            i -> i.metricsSnapshot().getDeleteOperationCount())
+                    .sum();
             final long compactRequestCount = monitoredIndexes.stream()
-                    .mapToLong(i -> i.metricsSnapshot().getCompactRequestCount())
+                    .mapToLong(
+                            i -> i.metricsSnapshot().getCompactRequestCount())
                     .sum();
             final long flushRequestCount = monitoredIndexes.stream()
                     .mapToLong(i -> i.metricsSnapshot().getFlushRequestCount())
                     .sum();
-            final long splitScheduleCount = monitoredIndexes.stream().mapToLong(
-                    i -> i.metricsSnapshot().getSplitScheduleCount()).sum();
+            final long splitScheduleCount = monitoredIndexes.stream()
+                    .mapToLong(i -> i.metricsSnapshot().getSplitScheduleCount())
+                    .sum();
             final long totalOps = Math.max(0L, getOps) + Math.max(0L, putOps)
                     + Math.max(0L, deleteOps);
             final Throughput throughput = computeThroughput(node.nodeId(),
                     totalOps, nowNanos);
             final CounterRate compactRate = computeCounterRate(
-                    node.nodeId() + ":compact", compactRequestCount,
-                    nowNanos);
+                    node.nodeId() + ":compact", compactRequestCount, nowNanos);
             final CounterRate flushRate = computeCounterRate(
                     node.nodeId() + ":flush", flushRequestCount, nowNanos);
             final CounterRate splitRate = computeCounterRate(
                     node.nodeId() + ":split", splitScheduleCount, nowNanos);
-            final NodeRow nodeRow = new NodeRow(node.nodeId(),
-                    resolvedNodeName,
-                    resolvedIndexName,
-                    summarizeNodeState(monitoredIndexes),
+            final NodeRow nodeRow = new NodeRow(node.nodeId(), resolvedNodeName,
+                    resolvedIndexName, summarizeNodeState(monitoredIndexes),
                     true,
-                    !monitoredIndexes.isEmpty()
-                            && monitoredIndexes.stream()
-                                    .allMatch(MonitoredIndex::ready),
-                    node.baseUrl(),
-                    getOps,
-                    putOps,
-                    deleteOps,
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getRegistryCacheHitCount())
+                    !monitoredIndexes.isEmpty() && monitoredIndexes.stream()
+                            .allMatch(MonitoredIndex::ready),
+                    node.baseUrl(), getOps, putOps, deleteOps,
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getRegistryCacheHitCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getRegistryCacheMissCount())
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getRegistryCacheMissCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getRegistryCacheLoadCount())
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getRegistryCacheLoadCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot()
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
                                     .getRegistryCacheEvictionCount())
                             .sum(),
                     monitoredIndexes.stream()
-                            .mapToInt(i -> i.metricsSnapshot().getRegistryCacheSize())
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getRegistryCacheSize())
                             .sum(),
-                    monitoredIndexes.stream().mapToInt(
-                            i -> i.metricsSnapshot().getRegistryCacheLimit())
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getRegistryCacheLimit())
                             .sum(),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getSegmentCacheKeyLimitPerSegment()).sum(),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getMaxNumberOfKeysInSegmentWriteCache()).sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSegmentCacheKeyLimitPerSegment())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getMaxNumberOfKeysInSegmentWriteCache())
+                            .sum(),
                     monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
                             .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
                             .sum(),
                     monitoredIndexes.stream()
-                            .mapToInt(i -> i.metricsSnapshot().getSegmentCount())
+                            .mapToInt(
+                                    i -> i.metricsSnapshot().getSegmentCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToInt(
-                            i -> i.metricsSnapshot().getSegmentReadyCount())
-                            .sum(),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getSegmentMaintenanceCount()).sum(),
                     monitoredIndexes.stream()
-                            .mapToInt(i -> i.metricsSnapshot().getSegmentErrorCount())
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSegmentReadyCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToInt(
-                            i -> i.metricsSnapshot().getSegmentClosedCount())
-                            .sum(),
-                    monitoredIndexes.stream().mapToInt(
-                            i -> i.metricsSnapshot().getSegmentBusyCount()).sum(),
                     monitoredIndexes.stream()
-                            .mapToLong(i -> i.metricsSnapshot().getTotalSegmentKeys())
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSegmentMaintenanceCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getTotalSegmentCacheKeys())
-                            .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getTotalWriteCacheKeys())
-                            .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getTotalDeltaCacheFiles())
-                            .sum(),
-                    compactRequestCount,
-                    flushRequestCount,
-                    splitScheduleCount,
-                    compactRate.value(), compactRate.unit(),
-                    flushRate.value(), flushRate.unit(),
-                    splitRate.value(), splitRate.unit(),
-                    monitoredIndexes.stream().mapToInt(
-                            i -> i.metricsSnapshot().getSplitInFlightCount())
-                            .sum(),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getMaintenanceQueueSize()).sum(),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getMaintenanceQueueCapacity()).sum(),
                     monitoredIndexes.stream()
-                            .mapToInt(i -> i.metricsSnapshot().getSplitQueueSize())
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSegmentErrorCount())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSegmentClosedCount())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSegmentBusyCount())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getTotalSegmentKeys())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getTotalSegmentCacheKeys())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getTotalWriteCacheKeys())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getTotalDeltaCacheFiles())
+                            .sum(),
+                    compactRequestCount, flushRequestCount, splitScheduleCount,
+                    compactRate.value(), compactRate.unit(), flushRate.value(),
+                    flushRate.unit(), splitRate.value(), splitRate.unit(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSplitInFlightCount())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getMaintenanceQueueSize())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getMaintenanceQueueCapacity())
                             .sum(),
                     monitoredIndexes.stream().mapToInt(
-                            i -> i.metricsSnapshot().getSplitQueueCapacity())
+                            i -> i.metricsSnapshot().getSplitQueueSize()).sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getSplitQueueCapacity())
                             .sum(),
                     monitoredIndexes.stream().mapToLong(
                             i -> i.metricsSnapshot().getReadLatencyP50Micros())
@@ -419,24 +440,34 @@ public class ConsoleBackendClient {
                     monitoredIndexes.stream().mapToLong(
                             i -> i.metricsSnapshot().getWriteLatencyP99Micros())
                             .max().orElse(0L),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getBloomFilterHashFunctions()).max().orElse(0),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getBloomFilterIndexSizeInBytes()).sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getBloomFilterHashFunctions())
+                            .max().orElse(0),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getBloomFilterIndexSizeInBytes())
+                            .sum(),
                     monitoredIndexes.stream()
                             .mapToDouble(i -> i.metricsSnapshot()
                                     .getBloomFilterProbabilityOfFalsePositive())
                             .max().orElse(0D),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getBloomFilterRequestCount())
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getBloomFilterRequestCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToLong(
-                            i -> i.metricsSnapshot().getBloomFilterRefusedCount())
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getBloomFilterRefusedCount())
                             .sum(),
-                    monitoredIndexes.stream().mapToLong(i -> i.metricsSnapshot()
-                            .getBloomFilterPositiveCount()).sum(),
-                    monitoredIndexes.stream().mapToLong(i -> i.metricsSnapshot()
-                            .getBloomFilterFalsePositiveCount()).sum(),
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getBloomFilterPositiveCount())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToLong(i -> i.metricsSnapshot()
+                                    .getBloomFilterFalsePositiveCount())
+                            .sum(),
                     Math.max(0L, jvm.path("heapUsedBytes").asLong(0L)),
                     Math.max(0L, jvm.path("heapCommittedBytes").asLong(0L)),
                     Math.max(0L, jvm.path("heapMaxBytes").asLong(0L)),
@@ -450,31 +481,31 @@ public class ConsoleBackendClient {
             return new NodeDetails(nodeRow, indexRows);
         } catch (final HttpTimeoutException e) {
             logger.info("Node poll timed out: {}", node.nodeId());
-            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
-                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
-                            : e.getMessage()));
+            addEvent(new EventRow(Instant.now().toString(),
+                    EVENT_NODE_POLL_FAILED, node.nodeId(),
+                    e.getMessage() == null ? POLL_FAILED : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
         } catch (final ConnectException e) {
             logger.info("Node poll connect failed: {}", node.nodeId());
-            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
-                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
-                            : e.getMessage()));
+            addEvent(new EventRow(Instant.now().toString(),
+                    EVENT_NODE_POLL_FAILED, node.nodeId(),
+                    e.getMessage() == null ? POLL_FAILED : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.info("Node poll interrupted: {}", node.nodeId());
-            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
-                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
-                            : e.getMessage()));
+            addEvent(new EventRow(Instant.now().toString(),
+                    EVENT_NODE_POLL_FAILED, node.nodeId(),
+                    e.getMessage() == null ? POLL_FAILED : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
         } catch (final Exception e) {
             logger.warn("Node poll failed: {}", node.nodeId(), e);
-            addEvent(new EventRow(Instant.now().toString(), EVENT_NODE_POLL_FAILED,
-                    node.nodeId(), e.getMessage() == null ? POLL_FAILED
-                            : e.getMessage()));
+            addEvent(new EventRow(Instant.now().toString(),
+                    EVENT_NODE_POLL_FAILED, node.nodeId(),
+                    e.getMessage() == null ? POLL_FAILED : e.getMessage()));
             return new NodeDetails(
                     unavailable(node, e.getMessage(), startedNanos), List.of());
         }
@@ -483,34 +514,21 @@ public class ConsoleBackendClient {
     private NodeRow unavailable(
             final MonitoringConsoleWebProperties.NodeEndpoint node,
             final String error, final long startedNanos) {
-        return new NodeRow(node.nodeId(), node.nodeName(), "",
-                "UNAVAILABLE", false,
-                false, node.baseUrl(), 0L, 0L, 0L,
-                0L, 0L, 0L, 0L,
-                0, 0, 0,
-                0, 0,
-                0, 0, 0, 0, 0,
-                0,
-                0L, 0L, 0L, 0L,
-                0L, 0L, 0L,
-                0D, "/s", 0D, "/s", 0D, "/s",
-                0,
-                0, 0, 0, 0,
-                0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0, 0D,
-                0L, 0L, 0L, 0L,
-                0L, 0L, 0L, 0L, 0L, 0L,
-                0D, OPS_PER_SECOND,
+        return new NodeRow(node.nodeId(), node.nodeName(), "", "UNAVAILABLE",
+                false, false, node.baseUrl(), 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0D, "/s",
+                0D, "/s", 0D, "/s", 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
+                0D, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0D, OPS_PER_SECOND,
                 Duration.ofNanos(System.nanoTime() - startedNanos).toMillis(),
                 Instant.now().toString(), error == null ? "" : error);
     }
 
-    private JsonNode getJson(final MonitoringConsoleWebProperties.NodeEndpoint node,
+    private JsonNode getJson(
+            final MonitoringConsoleWebProperties.NodeEndpoint node,
             final String path) throws IOException, InterruptedException {
         final HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(node.baseUrl() + path))
-                .timeout(Duration.ofSeconds(4))
-                .GET();
+                .timeout(Duration.ofSeconds(4)).GET();
         if (!node.agentToken().isEmpty()) {
             builder.header(AUTHORIZATION, BEARER_PREFIX + node.agentToken());
         }
@@ -570,8 +588,9 @@ public class ConsoleBackendClient {
                         BEARER_PREFIX + node.agentToken());
             }
             final HttpRequest request = requestBuilder
-                    .method("PATCH", HttpRequest.BodyPublishers
-                            .ofString(mapper.writeValueAsString(body)))
+                    .method("PATCH",
+                            HttpRequest.BodyPublishers
+                                    .ofString(mapper.writeValueAsString(body)))
                     .build();
             final HttpResponse<String> response = httpClient.send(request,
                     HttpResponse.BodyHandlers.ofString());
@@ -631,7 +650,8 @@ public class ConsoleBackendClient {
         for (final RemoteMonitoredIndex monitoredIndex : monitoredIndexes) {
             final SegmentIndexMetricsSnapshot snapshot = monitoredIndex
                     .metricsSnapshot();
-            final long totalOps = nonNegativeLong(snapshot.getGetOperationCount())
+            final long totalOps = nonNegativeLong(
+                    snapshot.getGetOperationCount())
                     + nonNegativeLong(snapshot.getPutOperationCount())
                     + nonNegativeLong(snapshot.getDeleteOperationCount());
             final Throughput throughput = computeThroughput(
@@ -646,10 +666,8 @@ public class ConsoleBackendClient {
             final CounterRate splitRate = computeCounterRate(
                     nodeId + ":" + monitoredIndex.indexName() + ":split",
                     snapshot.getSplitScheduleCount(), nowNanos);
-            rows.add(new IndexRow(
-                    monitoredIndex.indexName(),
-                    monitoredIndex.state().name(),
-                    monitoredIndex.ready(),
+            rows.add(new IndexRow(monitoredIndex.indexName(),
+                    monitoredIndex.state().name(), monitoredIndex.ready(),
                     snapshot.getGetOperationCount(),
                     snapshot.getPutOperationCount(),
                     snapshot.getDeleteOperationCount(),
@@ -662,8 +680,7 @@ public class ConsoleBackendClient {
                     snapshot.getSegmentCacheKeyLimitPerSegment(),
                     snapshot.getMaxNumberOfKeysInSegmentWriteCache(),
                     snapshot.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
-                    snapshot.getSegmentCount(),
-                    snapshot.getSegmentReadyCount(),
+                    snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                     snapshot.getSegmentMaintenanceCount(),
                     snapshot.getSegmentErrorCount(),
                     snapshot.getSegmentClosedCount(),
@@ -692,16 +709,10 @@ public class ConsoleBackendClient {
                     snapshot.getMaintenanceQueueSize(),
                     snapshot.getMaintenanceQueueCapacity(),
                     snapshot.getSplitQueueSize(),
-                    snapshot.getSplitQueueCapacity(),
-                    throughput.value(),
-                    throughput.unit(),
-                    compactRate.value(),
-                    compactRate.unit(),
-                    flushRate.value(),
-                    flushRate.unit(),
-                    splitRate.value(),
-                    splitRate.unit(),
-                    capturedAt,
+                    snapshot.getSplitQueueCapacity(), throughput.value(),
+                    throughput.unit(), compactRate.value(), compactRate.unit(),
+                    flushRate.value(), flushRate.unit(), splitRate.value(),
+                    splitRate.unit(), capturedAt,
                     toSegmentRows(snapshot.getSegmentRuntimeSnapshots())));
         }
         rows.sort(Comparator.comparing(IndexRow::indexName));
@@ -717,78 +728,104 @@ public class ConsoleBackendClient {
         for (final JsonNode indexNode : indexesNode) {
             parsed.add(new RemoteMonitoredIndex(
                     indexNode.path("indexName").asText("unknown-index"),
-                    parseState(indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)),
+                    parseState(
+                            indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)),
                     new SegmentIndexMetricsSnapshot(
+                            nonNegativeLong(indexNode.path("getOperationCount")
+                                    .asLong(0L)),
+                            nonNegativeLong(indexNode.path("putOperationCount")
+                                    .asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("deleteOperationCount").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("registryCacheHitCount").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("registryCacheMissCount").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("registryCacheLoadCount").asLong(0L)),
                             nonNegativeLong(
-                                    indexNode.path("getOperationCount").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("putOperationCount").asLong(0L)),
-                            nonNegativeLong(indexNode.path("deleteOperationCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode.path("registryCacheHitCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode.path("registryCacheMissCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode.path("registryCacheLoadCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode.path("registryCacheEvictionCount")
-                                    .asLong(0L)),
-                            nonNegativeInt(indexNode.path("registryCacheSize").asInt(0)),
-                            nonNegativeInt(indexNode.path("registryCacheLimit").asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentCacheKeyLimitPerSegment")
+                                    indexNode.path("registryCacheEvictionCount")
+                                            .asLong(0L)),
+                            nonNegativeInt(indexNode.path("registryCacheSize")
                                     .asInt(0)),
-                            nonNegativeInt(indexNode.path("maxNumberOfKeysInSegmentWriteCache")
+                            nonNegativeInt(indexNode.path("registryCacheLimit")
                                     .asInt(0)),
                             nonNegativeInt(indexNode
-                                    .path(
-                                            "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance")
+                                    .path("segmentCacheKeyLimitPerSegment")
                                     .asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentCount").asInt(0)),
-                            nonNegativeInt(
-                                    indexNode.path("segmentReadyCount").asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentMaintenanceCount")
+                            nonNegativeInt(indexNode
+                                    .path("maxNumberOfKeysInSegmentWriteCache")
                                     .asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentErrorCount").asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentClosedCount").asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentBusyCount").asInt(0)),
-                            nonNegativeLong(indexNode.path("totalSegmentKeys").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("totalSegmentCacheKeys").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("totalWriteCacheKeys").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("totalDeltaCacheFiles").asLong(0L)),
-                            nonNegativeLong(indexNode.path("compactRequestCount").asLong(0L)),
-                            nonNegativeLong(indexNode.path("flushRequestCount").asLong(0L)),
-                            nonNegativeLong(indexNode.path("splitScheduleCount").asLong(0L)),
-                            nonNegativeInt(indexNode.path("splitInFlightCount").asInt(0)),
-                            nonNegativeInt(indexNode.path("maintenanceQueueSize").asInt(0)),
+                            nonNegativeInt(indexNode.path(
+                                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance")
+                                    .asInt(0)),
                             nonNegativeInt(
-                                    indexNode.path("maintenanceQueueCapacity").asInt(0)),
-                            nonNegativeInt(indexNode.path("splitQueueSize").asInt(0)),
-                            nonNegativeInt(indexNode.path("splitQueueCapacity").asInt(0)),
-                            nonNegativeLong(indexNode.path("readLatencyP50Micros").asLong(0L)),
-                            nonNegativeLong(indexNode.path("readLatencyP95Micros").asLong(0L)),
-                            nonNegativeLong(indexNode.path("readLatencyP99Micros").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("writeLatencyP50Micros").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("writeLatencyP95Micros").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("writeLatencyP99Micros").asLong(0L)),
-                            nonNegativeInt(indexNode.path("bloomFilterHashFunctions").asInt(0)),
+                                    indexNode.path("segmentCount").asInt(0)),
+                            nonNegativeInt(indexNode.path("segmentReadyCount")
+                                    .asInt(0)),
+                            nonNegativeInt(indexNode
+                                    .path("segmentMaintenanceCount").asInt(0)),
+                            nonNegativeInt(indexNode.path("segmentErrorCount")
+                                    .asInt(0)),
+                            nonNegativeInt(indexNode.path("segmentClosedCount")
+                                    .asInt(0)),
+                            nonNegativeInt(indexNode.path("segmentBusyCount")
+                                    .asInt(0)),
+                            nonNegativeLong(indexNode.path("totalSegmentKeys")
+                                    .asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("totalSegmentCacheKeys").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("totalWriteCacheKeys").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("totalDeltaCacheFiles").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("compactRequestCount").asLong(0L)),
+                            nonNegativeLong(indexNode.path("flushRequestCount")
+                                    .asLong(0L)),
+                            nonNegativeLong(indexNode.path("splitScheduleCount")
+                                    .asLong(0L)),
+                            nonNegativeInt(indexNode.path("splitInFlightCount")
+                                    .asInt(0)),
+                            nonNegativeInt(indexNode
+                                    .path("maintenanceQueueSize").asInt(0)),
+                            nonNegativeInt(indexNode
+                                    .path("maintenanceQueueCapacity").asInt(0)),
                             nonNegativeInt(
-                                    indexNode.path("bloomFilterIndexSizeInBytes").asInt(0)),
-                            Math.max(0D, indexNode
-                                    .path("bloomFilterProbabilityOfFalsePositive")
+                                    indexNode.path("splitQueueSize").asInt(0)),
+                            nonNegativeInt(indexNode.path("splitQueueCapacity")
+                                    .asInt(0)),
+                            nonNegativeLong(indexNode
+                                    .path("readLatencyP50Micros").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("readLatencyP95Micros").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("readLatencyP99Micros").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("writeLatencyP50Micros").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("writeLatencyP95Micros").asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("writeLatencyP99Micros").asLong(0L)),
+                            nonNegativeInt(indexNode
+                                    .path("bloomFilterHashFunctions").asInt(0)),
+                            nonNegativeInt(indexNode
+                                    .path("bloomFilterIndexSizeInBytes")
+                                    .asInt(0)),
+                            Math.max(0D, indexNode.path(
+                                    "bloomFilterProbabilityOfFalsePositive")
                                     .asDouble(0D)),
                             nonNegativeLong(
-                                    indexNode.path("bloomFilterRequestCount").asLong(0L)),
+                                    indexNode.path("bloomFilterRequestCount")
+                                            .asLong(0L)),
                             nonNegativeLong(
-                                    indexNode.path("bloomFilterRefusedCount").asLong(0L)),
+                                    indexNode.path("bloomFilterRefusedCount")
+                                            .asLong(0L)),
                             nonNegativeLong(
-                                    indexNode.path("bloomFilterPositiveCount").asLong(0L)),
-                            nonNegativeLong(indexNode.path("bloomFilterFalsePositiveCount")
+                                    indexNode.path("bloomFilterPositiveCount")
+                                            .asLong(0L)),
+                            nonNegativeLong(indexNode
+                                    .path("bloomFilterFalsePositiveCount")
                                     .asLong(0L)),
                             parseSegmentRuntimeSnapshots(
                                     indexNode.path("segmentRuntimeSnapshots")),
@@ -809,31 +846,31 @@ public class ConsoleBackendClient {
                     snapshotNode.path("segmentId").asText("unknown-segment"),
                     parseSegmentState(snapshotNode.path(FIELD_STATE)
                             .asText(DEFAULT_STATE)),
-                    nonNegativeLong(
-                            snapshotNode.path("numberOfKeysInDeltaCache")
-                                    .asLong(0L)),
+                    nonNegativeLong(snapshotNode
+                            .path("numberOfKeysInDeltaCache").asLong(0L)),
                     nonNegativeLong(snapshotNode.path("numberOfKeysInSegment")
                             .asLong(0L)),
-                    nonNegativeLong(snapshotNode.path("numberOfKeysInScarceIndex")
-                            .asLong(0L)),
-                    nonNegativeLong(snapshotNode.path("numberOfKeysInSegmentCache")
-                            .asLong(0L)),
+                    nonNegativeLong(snapshotNode
+                            .path("numberOfKeysInScarceIndex").asLong(0L)),
+                    nonNegativeLong(snapshotNode
+                            .path("numberOfKeysInSegmentCache").asLong(0L)),
                     nonNegativeInt(snapshotNode.path("numberOfKeysInWriteCache")
                             .asInt(0)),
                     nonNegativeInt(snapshotNode.path("numberOfDeltaCacheFiles")
                             .asInt(0)),
                     nonNegativeLong(snapshotNode.path("compactRequestCount")
                             .asLong(0L)),
-                    nonNegativeLong(snapshotNode.path("flushRequestCount")
-                            .asLong(0L)),
+                    nonNegativeLong(
+                            snapshotNode.path("flushRequestCount").asLong(0L)),
                     nonNegativeLong(snapshotNode.path("bloomFilterRequestCount")
                             .asLong(0L)),
                     nonNegativeLong(snapshotNode.path("bloomFilterRefusedCount")
                             .asLong(0L)),
-                    nonNegativeLong(snapshotNode.path("bloomFilterPositiveCount")
-                            .asLong(0L)),
-                    nonNegativeLong(snapshotNode.path("bloomFilterFalsePositiveCount")
-                            .asLong(0L))));
+                    nonNegativeLong(snapshotNode
+                            .path("bloomFilterPositiveCount").asLong(0L)),
+                    nonNegativeLong(
+                            snapshotNode.path("bloomFilterFalsePositiveCount")
+                                    .asLong(0L))));
         }
         return List.copyOf(parsed);
     }
@@ -880,20 +917,23 @@ public class ConsoleBackendClient {
             return SegmentIndexState.ERROR;
         }
         try {
-            return SegmentIndexState.valueOf(state.trim().toUpperCase(Locale.ROOT));
+            return SegmentIndexState
+                    .valueOf(state.trim().toUpperCase(Locale.ROOT));
         } catch (final IllegalArgumentException e) {
             return SegmentIndexState.ERROR;
         }
     }
 
-    private String summarizeNodeState(final List<RemoteMonitoredIndex> indexes) {
+    private String summarizeNodeState(
+            final List<RemoteMonitoredIndex> indexes) {
         if (indexes.isEmpty()) {
             return "UNAVAILABLE";
         }
         if (indexes.stream().allMatch(MonitoredIndex::ready)) {
             return SegmentIndexState.READY.name();
         }
-        if (indexes.stream().anyMatch(i -> i.state() == SegmentIndexState.ERROR)) {
+        if (indexes.stream()
+                .anyMatch(i -> i.state() == SegmentIndexState.ERROR)) {
             return SegmentIndexState.ERROR.name();
         }
         if (indexes.stream()
@@ -963,23 +1003,21 @@ public class ConsoleBackendClient {
      * Dashboard row model.
      */
     public record NodeRow(String nodeId, String nodeName, String indexName,
-            String state,
-            boolean reachable, boolean ready, String baseUrl, long getOps,
-            long putOps, long deleteOps, long cacheHitCount,
+            String state, boolean reachable, boolean ready, String baseUrl,
+            long getOps, long putOps, long deleteOps, long cacheHitCount,
             long cacheMissCount, long cacheLoadCount, long cacheEvictionCount,
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
             int maxNumberOfKeysInSegmentWriteCache,
             int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-            int segmentCount,
-            int segmentReadyCount, int segmentMaintenanceCount,
-            int segmentErrorCount, int segmentClosedCount, int segmentBusyCount,
-            long totalSegmentKeys, long totalSegmentCacheKeys,
-            long totalWriteCacheKeys, long totalDeltaCacheFiles,
-            long compactRequestCount, long flushRequestCount,
-            long splitScheduleCount, double compactRateValue,
-            String compactRateUnit, double flushRateValue,
-            String flushRateUnit, double splitRateValue, String splitRateUnit,
-            int splitInFlightCount,
+            int segmentCount, int segmentReadyCount,
+            int segmentMaintenanceCount, int segmentErrorCount,
+            int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
+            long totalSegmentCacheKeys, long totalWriteCacheKeys,
+            long totalDeltaCacheFiles, long compactRequestCount,
+            long flushRequestCount, long splitScheduleCount,
+            double compactRateValue, String compactRateUnit,
+            double flushRateValue, String flushRateUnit, double splitRateValue,
+            String splitRateUnit, int splitInFlightCount,
             int maintenanceQueueSize, int maintenanceQueueCapacity,
             int splitQueueSize, int splitQueueCapacity,
             long readLatencyP50Micros, long readLatencyP95Micros,
@@ -991,15 +1029,15 @@ public class ConsoleBackendClient {
             long bloomFilterPositiveCount, long bloomFilterFalsePositiveCount,
             long jvmHeapUsedBytes, long jvmHeapCommittedBytes,
             long jvmHeapMaxBytes, long jvmNonHeapUsedBytes, long jvmGcCount,
-            long jvmGcTimeMillis,
-            double currentThroughputValue, String currentThroughputUnit,
-            long latencyMs, String capturedAt, String error) {
+            long jvmGcTimeMillis, double currentThroughputValue,
+            String currentThroughputUnit, long latencyMs, String capturedAt,
+            String error) {
         private static final Locale NUMBER_LOCALE = Locale.US;
         private static final char THOUSANDS_SEPARATOR = ',';
         private static final char DECIMAL_SEPARATOR = '.';
-        private static final String NUMBER_SEPARATOR_NOTE =
-                "Numeric separators: thousands '" + THOUSANDS_SEPARATOR
-                        + "', decimal '" + DECIMAL_SEPARATOR + "'.";
+        private static final String NUMBER_SEPARATOR_NOTE = "Numeric separators: thousands '"
+                + THOUSANDS_SEPARATOR + "', decimal '" + DECIMAL_SEPARATOR
+                + "'.";
         private static final double BYTES_PER_GIB = 1024D * 1024D * 1024D;
         private static final String[] SIZE_UNITS = { "B", "KB", "MB", "GB",
                 "TB", "PB" };
@@ -1169,8 +1207,8 @@ public class ConsoleBackendClient {
             if (limit <= 0L) {
                 return 0L;
             }
-            return Math.round((Math.max(0L, totalSegmentCacheKeys) * 100D)
-                    / limit);
+            return Math.round(
+                    (Math.max(0L, totalSegmentCacheKeys) * 100D) / limit);
         }
 
         /**
@@ -1275,12 +1313,13 @@ public class ConsoleBackendClient {
         }
 
         private static String format4Significant(final double value) {
-            if (value <= 0D || Double.isNaN(value) || Double.isInfinite(value)) {
+            if (value <= 0D || Double.isNaN(value)
+                    || Double.isInfinite(value)) {
                 return "0";
             }
-            final BigDecimal rounded = BigDecimal.valueOf(value).round(
-                    new MathContext(4, RoundingMode.HALF_UP))
-                            .stripTrailingZeros();
+            final BigDecimal rounded = BigDecimal.valueOf(value)
+                    .round(new MathContext(4, RoundingMode.HALF_UP))
+                    .stripTrailingZeros();
             final int maxFraction = Math.max(0, Math.min(12, rounded.scale()));
             return formatDecimal(rounded.doubleValue(), 0, maxFraction);
         }
@@ -1296,20 +1335,21 @@ public class ConsoleBackendClient {
                     symbols);
             format.setGroupingUsed(true);
             format.setMinimumFractionDigits(Math.max(0, minFractionDigits));
-            format.setMaximumFractionDigits(Math.max(minFractionDigits,
-                    maxFractionDigits));
+            format.setMaximumFractionDigits(
+                    Math.max(minFractionDigits, maxFractionDigits));
             return format.format(value);
         }
 
     }
 
-    private record RemoteMonitoredIndex(String indexName, SegmentIndexState state,
+    private record RemoteMonitoredIndex(String indexName,
+            SegmentIndexState state,
             SegmentIndexMetricsSnapshot metricsSnapshot)
             implements MonitoredIndex {
     }
 
-    private Throughput computeThroughput(final String nodeId, final long totalOps,
-            final long nowNanos) {
+    private Throughput computeThroughput(final String nodeId,
+            final long totalOps, final long nowNanos) {
         if (nodeId == null || nodeId.isBlank()) {
             return new Throughput(0D, OPS_PER_SECOND);
         }
@@ -1392,13 +1432,13 @@ public class ConsoleBackendClient {
             int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
-            int segmentClosedCount, int segmentBusyCount,
-            long totalSegmentKeys, long totalSegmentCacheKeys,
-            long totalWriteCacheKeys, long totalDeltaCacheFiles,
-            long readLatencyP50Micros, long readLatencyP95Micros,
-            long readLatencyP99Micros, long writeLatencyP50Micros,
-            long writeLatencyP95Micros, long writeLatencyP99Micros,
-            int bloomFilterHashFunctions, int bloomFilterIndexSizeInBytes,
+            int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
+            long totalSegmentCacheKeys, long totalWriteCacheKeys,
+            long totalDeltaCacheFiles, long readLatencyP50Micros,
+            long readLatencyP95Micros, long readLatencyP99Micros,
+            long writeLatencyP50Micros, long writeLatencyP95Micros,
+            long writeLatencyP99Micros, int bloomFilterHashFunctions,
+            int bloomFilterIndexSizeInBytes,
             double bloomFilterProbabilityOfFalsePositive,
             long bloomFilterRequestCount, long bloomFilterRefusedCount,
             long bloomFilterPositiveCount, long bloomFilterFalsePositiveCount,
@@ -1409,8 +1449,8 @@ public class ConsoleBackendClient {
             double currentThroughputValue, String currentThroughputUnit,
             double compactRateValue, String compactRateUnit,
             double flushRateValue, String flushRateUnit, double splitRateValue,
-            String splitRateUnit,
-            String capturedAt, List<SegmentRow> segmentRuntimeSnapshots) {
+            String splitRateUnit, String capturedAt,
+            List<SegmentRow> segmentRuntimeSnapshots) {
 
         /**
          * Total operations count.
@@ -1441,8 +1481,8 @@ public class ConsoleBackendClient {
             if (limit <= 0L) {
                 return 0L;
             }
-            return Math.round((Math.max(0L, totalSegmentCacheKeys) * 100D)
-                    / limit);
+            return Math.round(
+                    (Math.max(0L, totalSegmentCacheKeys) * 100D) / limit);
         }
 
         /**
@@ -1455,7 +1495,7 @@ public class ConsoleBackendClient {
                 return "0";
             }
             final double average = ((double) totalDeltaCacheFiles)
-                    / ((double) segmentCount);
+                    / ((double) segmentReadyCount);
             return format4Significant(average);
         }
 
@@ -1524,8 +1564,8 @@ public class ConsoleBackendClient {
         /**
          * Measured Bloom false-positive probability from runtime counters.
          *
-         * This is computed as falsePositives / (falsePositives + refusedByBloom),
-         * where refusedByBloom corresponds to Bloom negatives.
+         * This is computed as falsePositives / (falsePositives +
+         * refusedByBloom), where refusedByBloom corresponds to Bloom negatives.
          *
          * @return measured false-positive probability in range [0..1]
          */
@@ -1551,12 +1591,13 @@ public class ConsoleBackendClient {
         }
 
         private static String format4Significant(final double value) {
-            if (value <= 0D || Double.isNaN(value) || Double.isInfinite(value)) {
+            if (value <= 0D || Double.isNaN(value)
+                    || Double.isInfinite(value)) {
                 return "0";
             }
-            final BigDecimal rounded = BigDecimal.valueOf(value).round(
-                    new MathContext(4, RoundingMode.HALF_UP))
-                            .stripTrailingZeros();
+            final BigDecimal rounded = BigDecimal.valueOf(value)
+                    .round(new MathContext(4, RoundingMode.HALF_UP))
+                    .stripTrailingZeros();
             final int maxFraction = Math.max(0, Math.min(12, rounded.scale()));
             return formatDecimal(rounded.doubleValue(), 0, maxFraction);
         }
@@ -1572,8 +1613,8 @@ public class ConsoleBackendClient {
                     symbols);
             format.setGroupingUsed(true);
             format.setMinimumFractionDigits(Math.max(0, minFractionDigits));
-            format.setMaximumFractionDigits(Math.max(minFractionDigits,
-                    maxFractionDigits));
+            format.setMaximumFractionDigits(
+                    Math.max(minFractionDigits, maxFractionDigits));
             return format.format(value);
         }
     }
@@ -1600,14 +1641,15 @@ public class ConsoleBackendClient {
     /**
      * Event row model.
      */
-    public record EventRow(String at, String type, String nodeId, String detail) {
+    public record EventRow(String at, String type, String nodeId,
+            String detail) {
     }
 
     /**
      * Runtime configuration snapshot shown in node detail editor.
      */
-    public record RuntimeConfigView(String indexName, Map<String, Integer> original,
-            Map<String, Integer> current, List<String> supportedKeys,
-            long revision, String capturedAt) {
+    public record RuntimeConfigView(String indexName,
+            Map<String, Integer> original, Map<String, Integer> current,
+            List<String> supportedKeys, long revision, String capturedAt) {
     }
 }
