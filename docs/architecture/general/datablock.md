@@ -5,6 +5,8 @@ This document describes the structure and purpose of `Block` and `Chunk` objects
 
 ![Data block and chunk class diagram](images/datablock.png)
 
+Source: [datablock.plantuml](images/datablock.plantuml)
+
 ---
 
 ## 🧱 Block

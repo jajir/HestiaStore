@@ -2,7 +2,7 @@
 
 ## ⚙️ Prerequisites
 
-- Java 11 or higher (Java 17 recommended)
+- Java 17 or higher (recommended baseline; compatible with newer/current JDK releases)
 - Maven 3.6+ or Gradle 6+
 
 HestiaStore is distributed via Maven Central: <https://central.sonatype.com/artifact/org.hestiastore.index/core>
