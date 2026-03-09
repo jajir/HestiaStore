@@ -51,6 +51,7 @@ nav:
             - Write Path: architecture/segmentindex/write-path.md
             - Read Path: architecture/segmentindex/read-path.md
             - Range-Partitioned Ingest: architecture/segmentindex/range-partitioned-ingest.md
+            - Range-Partitioned Ingest Implementation Notes: architecture/segmentindex/range-partitioned-ingest-implementation.md
             - Caching Strategy: architecture/segmentindex/caching.md
             - Cache LRU: architecture/segmentindex/cache-lru.md
             - Performance Model & Sizing: architecture/segmentindex/performance.md

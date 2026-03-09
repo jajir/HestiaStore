@@ -78,6 +78,7 @@ class SegmentIndexImplPutTest {
         index.put(3, "c");
         index.put(4, "d");
         index.put(5, "e");
+        index.flushAndWait();
 
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);

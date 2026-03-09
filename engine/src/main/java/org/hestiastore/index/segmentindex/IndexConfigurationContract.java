@@ -20,6 +20,7 @@ public interface IndexConfigurationContract {
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
     int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
     int MAX_NUMBER_OF_DELTA_CACHE_FILES = 10;
+    int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
 
     int BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 3;
     int BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 5_000_000;
@@ -51,7 +52,7 @@ public interface IndexConfigurationContract {
      * @return default max keys in segment write cache
      */
     default int getMaxNumberOfKeysInSegmentWriteCache() {
-        return getMaxNumberOfKeysInSegmentCache() / 2;
+        return getMaxNumberOfKeysInActivePartition();
     }
 
     /**
@@ -61,9 +62,7 @@ public interface IndexConfigurationContract {
      * @return default max buffered keys during maintenance
      */
     default int getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
-        return Math.max(getMaxNumberOfKeysInSegmentWriteCache() + 1,
-                (int) Math.ceil(getMaxNumberOfKeysInSegmentWriteCache()
-                        * 1.4));
+        return getMaxNumberOfKeysInPartitionBuffer();
     }
 
     /**
@@ -91,6 +90,55 @@ public interface IndexConfigurationContract {
      * @return default max keys per segment
      */
     default int getMaxNumberOfKeysInSegment() {
+        return getMaxNumberOfKeysInPartitionBeforeSplit();
+    }
+
+    /**
+     * Returns the default maximum number of keys accepted into the active
+     * partition before it is rotated to an immutable run.
+     *
+     * @return default active partition key count
+     */
+    default int getMaxNumberOfKeysInActivePartition() {
+        return getMaxNumberOfKeysInSegmentCache() / 2;
+    }
+
+    /**
+     * Returns the default immutable run queue depth per partition.
+     *
+     * @return default immutable run count
+     */
+    default int getMaxNumberOfImmutableRunsPerPartition() {
+        return DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION;
+    }
+
+    /**
+     * Returns the default buffered key limit inside one partition.
+     *
+     * @return default buffered key count per partition
+     */
+    default int getMaxNumberOfKeysInPartitionBuffer() {
+        return Math.max(getMaxNumberOfKeysInActivePartition() + 1,
+                (int) Math.ceil(getMaxNumberOfKeysInActivePartition() * 1.4));
+    }
+
+    /**
+     * Returns the default buffered key limit across the whole index overlay.
+     *
+     * @return default total buffered key count
+     */
+    default int getMaxNumberOfKeysInIndexBuffer() {
+        return Math.max(getMaxNumberOfKeysInPartitionBuffer(),
+                getMaxNumberOfKeysInPartitionBuffer()
+                        * getMaxNumberOfSegmentsInCache());
+    }
+
+    /**
+     * Returns the default split/drain threshold for a routed partition.
+     *
+     * @return default partition split threshold
+     */
+    default int getMaxNumberOfKeysInPartitionBeforeSplit() {
         return MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     }
 

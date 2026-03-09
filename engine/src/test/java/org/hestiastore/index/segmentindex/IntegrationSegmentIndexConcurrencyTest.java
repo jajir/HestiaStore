@@ -141,6 +141,7 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
             final int cpuThreads) {
+        final int activePartitionSize = 16;
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -148,6 +149,10 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInActivePartition(activePartitionSize) //
+                .withMaxNumberOfImmutableRunsPerPartition(4) //
+                .withMaxNumberOfKeysInPartitionBuffer(64) //
+                .withMaxNumberOfKeysInIndexBuffer(128) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfSegmentsInCache(5) //
@@ -162,6 +167,11 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
             final ParallelPutsScenario scenario) {
+        final int activePartitionSize = scenario.maxNumberOfKeysInSegmentWriteCache();
+        final int partitionBufferSize = Math.max(activePartitionSize + 1,
+                scenario.keyCount());
+        final int indexBufferSize = Math.max(partitionBufferSize,
+                partitionBufferSize * 2);
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -170,8 +180,10 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegmentCache(
                         scenario.maxNumberOfKeysInSegmentCache()) //
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        scenario.maxNumberOfKeysInSegmentWriteCache()) //
+                .withMaxNumberOfKeysInActivePartition(activePartitionSize) //
+                .withMaxNumberOfImmutableRunsPerPartition(4) //
+                .withMaxNumberOfKeysInPartitionBuffer(partitionBufferSize) //
+                .withMaxNumberOfKeysInIndexBuffer(indexBufferSize) //
                 .withMaxNumberOfKeysInSegmentChunk(
                         scenario.maxNumberOfKeysInSegmentChunk()) //
                 .withMaxNumberOfKeysInSegment(

@@ -1,44 +1,50 @@
 # Range-Partitioned Ingest Architecture
 
-This document describes a proposed write-path redesign for `SegmentIndex`
-that keeps `put()` immediately visible to `get()` while removing long-running
-split and compaction work from the hot write path.
+This page describes the target write-path architecture for `SegmentIndex`.
+Its purpose is to preserve immediate read-after-write semantics while moving
+long-running drain and split work out of the hot user write path.
 
-The proposal does not remove the existing `segment` package. Instead:
-
-- `segment` remains the home of stable immutable segment storage.
-- a new package above it owns write buffering, routing, and draining of hot
-  ranges.
-
-Proposed package: `org.hestiastore.index.segmentindex.partition`
+This is an architecture page, not an implementation guide. It focuses on
+contracts, invariants, and flow boundaries.
 
 ## Goals
 
-- Keep `put()` visible to `get()` immediately after the call returns.
-- Prevent `put()` from waiting on split or compaction of the same hot range.
-- Bound the number of pending mutable/immutable write layers.
-- Localize overload to a hot range instead of turning the whole index into a
-  retry storm.
-- Keep stable immutable segments as the unit of durable read storage.
+- `put()` becomes visible to `get()` immediately after the call returns.
+- Hot user writes must not wait for long-running split or compaction work.
+- Buffered ingest must stay bounded at both local-range and whole-index level.
+- Overload should be explicit and controlled, not expressed as retry storms.
+- Stable segment files remain the durable storage boundary.
 
-## High-Level Model
+## What Stays
 
-`SegmentIndex` no longer writes directly into live `Segment` instances.
-Instead, each key range is assigned to a `RangePartition` that owns a short
-write pipeline:
+- Stable segment files remain the durable read and publish boundary.
+- `KeyToSegmentMap` remains the persisted routing source of truth in the first
+  version.
+- WAL remains the crash-recovery mechanism for acknowledged writes that are not
+  yet published into stable segment storage.
 
-- one active mutable layer
-- a small immutable queue, typically max `2`
-- references to stable immutable segments for the same range
+## What Changes
 
-`get(key)` resolves the owning partition and reads only inside that partition:
+- User writes stop targeting live segments directly.
+- New writes first enter a bounded in-memory overlay that is organized by key
+  range.
+- Each routed range owns a short ingest pipeline:
+  - an active mutable layer,
+  - a bounded queue of immutable runs waiting for drain,
+  - references to stable segment sources for that range.
+- Reads consult the overlay first and stable storage second.
 
-1. active mutable layer
-2. immutable runs from newest to oldest
-3. stable immutable segments
+## Read-After-Write Contract
 
-This keeps immediate read-after-write visibility without requiring background
-flush work to finish first.
+`get(key)` must resolve the routed range for `key` and read sources in this
+order:
+
+1. active mutable data for the range
+2. immutable runs for the range, newest first
+3. stable segment sources for the range
+
+This ordering guarantees that a successful `put()` is observable before any
+background drain completes.
 
 Diagram PNG:
 ![Range-partitioned ingest overview](images/range-partitioned-ingest-overview.png)
@@ -46,37 +52,18 @@ Diagram PNG:
 PlantUML source:
 [`docs/architecture/segmentindex/images/range-partitioned-ingest-overview.plantuml`](images/range-partitioned-ingest-overview.plantuml)
 
-## Partition Components
+## Drain Model
 
-Each `RangePartition` is responsible for a single key interval and owns:
+When the active mutable layer reaches its local admission limit, it is sealed
+and becomes an immutable run. Background drain then moves immutable data into
+stable segment storage.
 
-- `PartitionMutableLayer`: latest in-memory writes for the range
-- `PartitionImmutableRun`: sealed write batch waiting for flush
-- `stableSegments`: references to immutable on-disk segments
-- `PartitionBudget`: local memory and backlog budget
-- `PartitionState`: `ACTIVE`, `DRAINING`, or `SPLITTING`
+Key rules:
 
-Top-level routing is split into two maps:
-
-- `WriteRouteMap`: tells `put()` where new writes must go
-- `ReadRouteMap`: tells `get()` which sources are still valid during
-  transition
-
-The two maps are intentionally separate so that writes can move to new child
-partitions before the old stable data is fully rewritten.
-
-## Write Path
-
-`put(key, value)` performs only short local work:
-
-1. resolve partition in `WriteRouteMap`
-2. append to WAL
-3. insert into partition active mutable layer
-4. rotate the active layer when it reaches its local budget
-5. if the partition immutable queue is full, apply local backpressure
-
-Rotation is local to one partition. A hot range does not force unrelated
-ranges to rotate or stall.
+- user writes continue into a fresh active mutable layer,
+- immutable runs remain readable until drain and publish complete,
+- flush durability is reached only after buffered overlay data is drained and
+  WAL checkpointed.
 
 Diagram PNG:
 ![Range-partitioned ingest write sequence](images/range-partitioned-ingest-sequence.png)
@@ -84,49 +71,21 @@ Diagram PNG:
 PlantUML source:
 [`docs/architecture/segmentindex/images/range-partitioned-ingest-sequence.plantuml`](images/range-partitioned-ingest-sequence.plantuml)
 
-## Read Path
+## Split Model
 
-`get(key)` must remain cheap even when background flush is behind.
+Split no longer means freezing a live segment and making user writers wait.
+Instead:
 
-The design depends on two limits:
+1. new writes are routed to child ranges first,
+2. the previous parent range becomes draining-only,
+3. old stable data is rewritten in the background,
+4. `KeyToSegmentMap` is updated only at publish time,
+5. the old parent route is removed after publish succeeds.
 
-- per-partition immutable queue is small, typically max `2`
-- the number of stable sources per read route is bounded
+During the transition, reads must be able to combine:
 
-Lookup order inside one partition:
-
-1. active mutable layer
-2. immutable run queue, newest first
-3. stable segments
-
-Each source should expose cheap negative-check metadata, for example:
-
-- `minKey/maxKey`
-- Bloom filter
-- compact in-memory index for the immutable run
-
-This prevents `get()` from degenerating into a scan across all pending writes
-in the whole index.
-
-## Split Without Blocking `put()`
-
-The current design couples split with a live segment and holds exclusivity for
-too long. The proposed design splits the range-routing decision from the
-background rewrite work.
-
-Split flow:
-
-1. a partition `P=[A..Z]` becomes too large or too hot
-2. create new child partitions `P1=[A..M]` and `P2=[N..Z]`
-3. atomically switch `WriteRouteMap` so all new writes go directly to `P1/P2`
-4. old partition `P` moves to `DRAINING` and stops accepting new writes
-5. background work rewrites old stable data and old immutable runs into new
-   stable segments for `P1/P2`
-6. during the transition, `ReadRouteMap` exposes:
-   - overlays from `P1/P2`
-   - old stable sources from `P`
-7. after publish, `ReadRouteMap` is switched to the final `P1/P2` stable
-   sources and `P` is removed
+- overlays from the new child ranges,
+- stable sources still owned by the draining parent range.
 
 Diagram PNG:
 ![Range-partitioned split drain flow](images/range-partitioned-split-drain.png)
@@ -136,61 +95,31 @@ PlantUML source:
 
 ## Backpressure Model
 
-This architecture assumes bounded buffering. Immutable runs must never grow
-without limit.
+Bounded buffering is mandatory.
 
-Recommended first version:
+Two backpressure scopes exist:
 
-- `1` active mutable layer per partition
-- max `2` immutable runs per partition
-- per-partition memory budget
-- global memory budget across all partitions
+- local range backpressure when one routed range has too much buffered data,
+- global backpressure when total buffered overlay data exceeds the index-level
+  budget.
 
-Backpressure policy:
+This replaces the previous near-deadlock failure mode with explicit bounded
+admission.
 
-- if one hot partition fills its immutable queue, throttle only that partition
-- if the global memory budget is exhausted, apply global ingest throttling
+## Recovery Model
 
-This replaces the current near-deadlock behavior with explicit overload
-handling.
+Any overlay state that is not yet published into stable segment storage is
+transient.
 
-## Package Boundary Proposal
+Crash recovery therefore follows this rule:
 
-Existing package kept:
+- rebuild routed ranges from persisted stable metadata,
+- discard unpublished in-memory overlay state,
+- replay WAL to restore acknowledged writes into the overlay,
+- publish again during subsequent drain or flush.
 
-- `org.hestiastore.index.segment`
-  - stable immutable segment files
-  - Bloom filter, sparse index, on-disk readers
-  - stable compaction output
+The recovery boundary is therefore still:
 
-New package proposed:
-
-- `org.hestiastore.index.segmentindex.partition`
-  - `RangePartition`
-  - `PartitionMutableLayer`
-  - `PartitionImmutableRun`
-  - `WriteRouteMap`
-  - `ReadRouteMap`
-  - `PartitionFlushScheduler`
-  - `PartitionSplitCoordinator`
-  - `PartitionBudget`
-
-Expected package responsibility change:
-
-- `segment` stops being the primary live write admission object
-- new partition package becomes the hot write/read overlay layer
-- stable segment objects are loaded for read storage, not for per-write
-  mutation
-
-## Impact on Current Architecture
-
-This proposal is intentionally incremental at the package level:
-
-- keep `segment`
-- add a new top-level partition layer above it
-- route `put()` and `get()` through partitions first
-- keep stable segment publishing as the durable immutable storage boundary
-
-The biggest behavioral change is that split no longer means "freeze the live
-segment and make writers wait". Instead, split becomes "move new writes to new
-partitions immediately and drain old data in the background".
+- stable segment storage,
+- persisted `KeyToSegmentMap`,
+- WAL.

@@ -7,7 +7,9 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -53,6 +55,7 @@ class SegmentIndexImplRetryTest {
     @Test
     void getRetriesOnBusyThenOk() {
         index.put(1, "one");
+        index.flushAndWait();
 
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
@@ -79,32 +82,26 @@ class SegmentIndexImplRetryTest {
     }
 
     @Test
-    void putRetriesOnBusyThenOk() {
+    void putRetriesOnBusyPartitionUntilDrainCompletes() {
         index.put(1, "one");
-
-        final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
-                index);
-        final SegmentId segmentId = cache.findSegmentId(1);
-        final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
-                index);
-        final Segment<Integer, String> original = registry.getSegment(segmentId)
-                .getValue();
-
-        final AtomicInteger attempts = new AtomicInteger();
-        when(segment.put(2, "two")).thenAnswer(invocation -> {
-            if (attempts.getAndIncrement() == 0) {
-                return SegmentResult.busy();
-            }
-            return SegmentResult.ok();
-        });
-
-        replaceSegment(registry, segmentId, segment);
-
         index.put(2, "two");
-
-        verify(segment, times(2)).put(2, "two");
-
-        replaceSegment(registry, segmentId, original);
+        final Thread drainThread = new Thread(() -> {
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50L));
+            index.flushAndWait();
+        });
+        drainThread.start();
+        try {
+            index.put(3, "three");
+            assertEquals("three", index.get(3));
+        } finally {
+            try {
+                drainThread.join(TimeUnit.SECONDS.toMillis(5L));
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(
+                        "Interrupted while waiting for drain thread", ex);
+            }
+        }
     }
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
@@ -121,8 +118,10 @@ class SegmentIndexImplRetryTest {
                 .withName("segment-index-retry-test")
                 .withContextLoggingEnabled(false)
                 .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInSegmentWriteCache(5)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
+                .withMaxNumberOfKeysInActivePartition(1)
+                .withMaxNumberOfImmutableRunsPerPartition(1)
+                .withMaxNumberOfKeysInPartitionBuffer(2)
+                .withMaxNumberOfKeysInIndexBuffer(2)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withMaxNumberOfKeysInSegment(100)
                 .withMaxNumberOfSegmentsInCache(3)

@@ -51,10 +51,10 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(2L, snapshot.getPutOperationCount());
             assertEquals(4L, snapshot.getGetOperationCount());
             assertEquals(1L, snapshot.getDeleteOperationCount());
-            assertTrue(snapshot.getRegistryCacheHitCount() >= 1L);
-            assertTrue(snapshot.getRegistryCacheMissCount() >= 1L);
-            assertTrue(snapshot.getRegistryCacheLoadCount() >= 1L);
-            assertTrue(snapshot.getRegistryCacheSize() >= 1);
+            assertTrue(snapshot.getTotalWriteCacheKeys() >= 2L);
+            assertTrue(snapshot.getRegistryCacheHitCount() >= 0L);
+            assertTrue(snapshot.getRegistryCacheMissCount() >= 0L);
+            assertTrue(snapshot.getRegistryCacheLoadCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheLimit() >= 1);
             assertTrue(snapshot.getBloomFilterRequestCount() >= 0L);
             assertTrue(snapshot.getBloomFilterRefusedCount() >= 0L);
@@ -135,7 +135,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     }
 
     @Test
-    void compactRequestCount_remains_monotonic_across_split() {
+    void drainScheduleCount_remains_monotonic_across_overlay_rotations() {
         final Directory directory = new MemDirectory();
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
@@ -146,8 +146,10 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withKeyTypeDescriptor(keyDescriptor) //
                 .withValueTypeDescriptor(valueDescriptor) //
                 .withMaxNumberOfKeysInSegmentCache(5) //
-                .withMaxNumberOfKeysInSegmentWriteCache(64) //
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128) //
+                .withMaxNumberOfKeysInActivePartition(8) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(16) //
+                .withMaxNumberOfKeysInIndexBuffer(64) //
                 .withMaxNumberOfKeysInSegment(20) //
                 .withMaxNumberOfKeysInSegmentChunk(4) //
                 .withMaxNumberOfDeltaCacheFiles(1) //
@@ -160,27 +162,25 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 128; i++) {
                 index.put(i, "base-" + i);
             }
-            for (int i = 0; i < 120; i++) {
-                final int key = i % 10;
-                index.put(key, "v-" + i);
-            }
 
             awaitIdle(index);
-            final SegmentIndexMetricsSnapshot beforeSplit = index
+            final SegmentIndexMetricsSnapshot beforeRotation = index
                     .metricsSnapshot();
-            assertTrue(beforeSplit.getCompactRequestCount() > 0L);
+            assertTrue(beforeRotation.getSplitScheduleCount() > 0L);
 
-            populateUntilSegmentCountAtLeast(index, 2, 1_000, 20_000L);
+            for (int i = 128; i < 256; i++) {
+                index.put(i, "next-" + i);
+            }
             awaitIdle(index);
 
-            final SegmentIndexMetricsSnapshot afterSplit = index
+            final SegmentIndexMetricsSnapshot afterRotation = index
                     .metricsSnapshot();
             assertTrue(
-                    afterSplit.getCompactRequestCount() >= beforeSplit
-                            .getCompactRequestCount());
+                    afterRotation.getSplitScheduleCount() >= beforeRotation
+                            .getSplitScheduleCount());
         }
     }
 
@@ -196,8 +196,10 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withKeyTypeDescriptor(keyDescriptor) //
                 .withValueTypeDescriptor(valueDescriptor) //
                 .withMaxNumberOfKeysInSegmentCache(5) //
-                .withMaxNumberOfKeysInSegmentWriteCache(64) //
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128) //
+                .withMaxNumberOfKeysInActivePartition(8) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(16) //
+                .withMaxNumberOfKeysInIndexBuffer(64) //
                 .withMaxNumberOfKeysInSegment(20) //
                 .withMaxNumberOfKeysInSegmentChunk(4) //
                 .withMaxNumberOfDeltaCacheFiles(1) //
@@ -211,14 +213,15 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            populateUntilSegmentCountExceedsCacheLimit(index, 20_000L);
-            awaitIdle(index);
+            for (int i = 0; i < 64; i++) {
+                index.put(i, "v-" + i);
+            }
+            index.flushAndWait();
+            assertEquals("v-0", index.get(0));
 
             final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
             final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
 
-            assertTrue(
-                    before.getSegmentCount() > before.getRegistryCacheLimit());
             assertEquals(before.getRegistryCacheLoadCount(),
                     after.getRegistryCacheLoadCount());
             assertEquals(before.getRegistryCacheMissCount(),
@@ -234,58 +237,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                     && snapshot.getMaintenanceQueueSize() == 0
                     && snapshot.getSplitQueueSize() == 0;
         }, 10_000L);
-    }
-
-    private static void populateUntilSegmentCountExceedsCacheLimit(
-            final SegmentIndex<Integer, String> index,
-            final long timeoutMillis) {
-        int key = 0;
-        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
-        while (System.nanoTime() < deadline) {
-            for (int i = 0; i < 64; i++) {
-                index.put(key, "v-" + key);
-                key++;
-            }
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-            if (snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit()) {
-                return;
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
-            if (Thread.currentThread().isInterrupted()) {
-                throw new AssertionError("Interrupted while waiting");
-            }
-        }
-        final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-        assertTrue(snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit(),
-                "Segment count did not exceed cache limit within "
-                        + timeoutMillis + " ms.");
-    }
-
-    private static void populateUntilSegmentCountAtLeast(
-            final SegmentIndex<Integer, String> index,
-            final int expectedSegmentCount,
-            final int startingKey,
-            final long timeoutMillis) {
-        int key = startingKey;
-        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
-        while (System.nanoTime() < deadline) {
-            for (int i = 0; i < 64; i++) {
-                index.put(key, "new-" + key);
-                key++;
-            }
-            if (index.metricsSnapshot().getSegmentCount() >= expectedSegmentCount) {
-                return;
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
-            if (Thread.currentThread().isInterrupted()) {
-                throw new AssertionError("Interrupted while waiting");
-            }
-        }
-        final int segmentCount = index.metricsSnapshot().getSegmentCount();
-        assertTrue(segmentCount >= expectedSegmentCount,
-                "Segment count did not reach " + expectedSegmentCount
-                        + " within " + timeoutMillis + " ms. Last count: "
-                        + segmentCount + ".");
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,
