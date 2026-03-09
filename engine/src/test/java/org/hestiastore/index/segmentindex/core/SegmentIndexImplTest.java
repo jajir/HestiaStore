@@ -64,7 +64,6 @@ class SegmentIndexImplTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)
                 .withDiskIoBufferSizeInBytes(1024)
                 .withIndexWorkerThreadCount(1)
-                .withNumberOfIoThreads(1)
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
                 .build();

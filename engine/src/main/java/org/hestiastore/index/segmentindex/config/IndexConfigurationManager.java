@@ -45,7 +45,7 @@ public class IndexConfigurationManager<K, V> {
 
     public IndexConfiguration<K, V> applyDefaults(
             final IndexConfiguration<K, V> conf) {
-        validateDatatypesAndIndexName(conf);
+        validateRequiredDatatypesAndIndexName(conf);
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(conf);
         applyTypeDescriptorDefaults(conf, builder);
         final Optional<IndexConfigurationContract> oDefaults = IndexConfigurationRegistry
@@ -90,9 +90,6 @@ public class IndexConfigurationManager<K, V> {
         }
         if (conf.getIndexWorkerThreadCount() == null) {
             builder.withIndexWorkerThreadCount(defaults.getIndexWorkerThreadCount());
-        }
-        if (conf.getNumberOfIoThreads() == null) {
-            builder.withNumberOfIoThreads(defaults.getNumberOfIoThreads());
         }
         if (conf.getNumberOfSegmentIndexMaintenanceThreads() == null) {
             builder.withNumberOfSegmentIndexMaintenanceThreads(
@@ -291,11 +288,6 @@ public class IndexConfigurationManager<K, V> {
                         storedConf.getIndexWorkerThreadCount()),
                 () -> builder.withIndexWorkerThreadCount(
                         indexConf.getIndexWorkerThreadCount()));
-        dirty |= applyIf(
-                isPositiveOverride(indexConf.getNumberOfIoThreads(),
-                        storedConf.getNumberOfIoThreads()),
-                () -> builder.withNumberOfIoThreads(
-                        indexConf.getNumberOfIoThreads()));
         dirty |= applyIf(
                 isPositiveOverride(
                         indexConf.getNumberOfSegmentIndexMaintenanceThreads(),
@@ -650,11 +642,6 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Index worker thread count must be at least 1.");
         }
-        Vldtn.requireNonNull(conf.getNumberOfIoThreads(), "numberOfIoThreads");
-        if (conf.getNumberOfIoThreads() < 1) {
-            throw new IllegalArgumentException(
-                    "Number of IO threads must be at least 1.");
-        }
         Vldtn.requireNonNull(conf.getNumberOfSegmentIndexMaintenanceThreads(),
                 "segmentIndexMaintenanceThreads");
         if (conf.getNumberOfSegmentIndexMaintenanceThreads() < 1) {
@@ -690,7 +677,7 @@ public class IndexConfigurationManager<K, V> {
         }
     }
 
-    private void validateDatatypesAndIndexName(
+    private void validateRequiredDatatypesAndIndexName(
             final IndexConfiguration<K, V> conf) {
         if (conf.getKeyClass() == null) {
             throw new IllegalArgumentException("Key class wasn't specified");
@@ -699,6 +686,11 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException("Value class wasn't specified");
         }
         Vldtn.requireNotBlank(conf.getIndexName(), "indexName");
+    }
+
+    private void validateDatatypesAndIndexName(
+            final IndexConfiguration<K, V> conf) {
+        validateRequiredDatatypesAndIndexName(conf);
         Vldtn.requireNotBlank(conf.getKeyTypeDescriptor(), "keyTypeDescriptor");
         Vldtn.requireNotBlank(conf.getValueTypeDescriptor(),
                 "valueTypeDescriptor");
@@ -714,7 +706,6 @@ public class IndexConfigurationManager<K, V> {
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withIndexWorkerThreadCount(conf.getIndexWorkerThreadCount())//
-                .withNumberOfIoThreads(conf.getNumberOfIoThreads())//
                 .withNumberOfSegmentIndexMaintenanceThreads(
                         conf.getNumberOfSegmentIndexMaintenanceThreads())//
                 .withNumberOfIndexMaintenanceThreads(

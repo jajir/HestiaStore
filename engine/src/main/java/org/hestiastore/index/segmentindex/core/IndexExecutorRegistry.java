@@ -24,19 +24,16 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
     private static final String ARG_INDEX_CONFIGURATION = "indexConfiguration";
-    private static final String ARG_IO_THREADS = "ioThreads";
     private static final String ARG_INDEX_MAINTENANCE_THREADS = "indexMaintenanceThreads";
     private static final String ARG_SEGMENT_MAINTENANCE_THREADS = "segmentMaintenanceThreads";
     private static final String ARG_REGISTRY_MAINTENANCE_THREADS = "registryMaintenanceThreads";
     private static final String ARG_EXECUTOR = "executor";
     private static final String ARG_INDEX_NAME = "indexName";
-    private static final String THREAD_NAME_PREFIX_IO = "index-io-";
     private static final String THREAD_NAME_PREFIX_INDEX_MAINTENANCE = "index-maintenance-";
     private static final String THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE = "segment-maintenance-";
     private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
     private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
 
-    private final ExecutorService ioExecutor;
     private final ExecutorService indexMaintenanceExecutor;
     private final ExecutorService segmentMaintenanceExecutor;
     private final ExecutorService registryMaintenanceExecutor;
@@ -49,25 +46,12 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     IndexExecutorRegistry(final IndexConfiguration<?, ?> indexConfiguration) {
         final IndexConfiguration<?, ?> conf = Vldtn
                 .requireNonNull(indexConfiguration, ARG_INDEX_CONFIGURATION);
-        this.ioExecutor = wrapWithIndexContextIfEnabled(conf,
-                createIoExecutor(conf));
         this.indexMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
                 createIndexMaintenanceExecutor(conf));
         this.segmentMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
                 createSegmentMaintenanceExecutor(conf));
         this.registryMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
                 createRegistryMaintenanceExecutor(conf));
-    }
-
-    /**
-     * Returns shared IO executor.
-     *
-     * @return IO executor service
-     * @throws IllegalStateException when registry has already been closed
-     */
-    ExecutorService getIoExecutor() {
-        checkNotClosed();
-        return ioExecutor;
     }
 
     /**
@@ -101,17 +85,6 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     ExecutorService getRegistryMaintenanceExecutor() {
         checkNotClosed();
         return registryMaintenanceExecutor;
-    }
-
-    private static ExecutorService createIoExecutor(
-            final IndexConfiguration<?, ?> conf) {
-        final int ioThreads = Vldtn.requireGreaterThanZero(
-                Vldtn.requireNonNull(
-                        Vldtn.requireNonNull(conf, ARG_INDEX_CONFIGURATION)
-                                .getNumberOfIoThreads(),
-                        ARG_IO_THREADS),
-                ARG_IO_THREADS);
-        return createFixedDaemonExecutor(ioThreads, THREAD_NAME_PREFIX_IO);
     }
 
     private static ExecutorService createIndexMaintenanceExecutor(
@@ -202,7 +175,6 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     @Override
     protected void doClose() {
         RuntimeException failure = null;
-        failure = shutdownAndAwait(ioExecutor, failure);
         failure = shutdownAndAwait(indexMaintenanceExecutor, failure);
         failure = shutdownAndAwait(segmentMaintenanceExecutor, failure);
         failure = shutdownAndAwait(registryMaintenanceExecutor, failure);

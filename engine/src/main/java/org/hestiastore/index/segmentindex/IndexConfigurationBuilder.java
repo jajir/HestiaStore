@@ -30,7 +30,6 @@ public class IndexConfigurationBuilder<K, V> {
 
     private Integer diskIoBufferSizeInBytes;
     private Integer indexWorkerThreadCount;
-    private Integer numberOfIoThreads;
     private Integer numberOfSegmentIndexMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
     private Integer numberOfRegistryLifecycleThreads;
@@ -308,18 +307,6 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the number of IO threads used by the async directory.
-     *
-     * @param numberOfIoThreads IO thread count
-     * @return this builder
-     */
-    public IndexConfigurationBuilder<K, V> withNumberOfIoThreads(
-            final Integer numberOfIoThreads) {
-        this.numberOfIoThreads = numberOfIoThreads;
-        return this;
-    }
-
-    /**
      * Sets the number of segment maintenance threads.
      *
      * @param numberOfSegmentIndexMaintenanceThreads segment maintenance threads
@@ -512,9 +499,6 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveIndexWorkerThreadCount = indexWorkerThreadCount == null
                 ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
                 : indexWorkerThreadCount;
-        final Integer effectiveNumberOfIoThreads = numberOfIoThreads == null
-                ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
-                : numberOfIoThreads;
         final Integer effectiveSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads == null
                 ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
                 : numberOfSegmentIndexMaintenanceThreads;
@@ -547,7 +531,6 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 contextLoggingEnabled, effectiveIndexWorkerThreadCount,
-                effectiveNumberOfIoThreads,
                 effectiveSegmentIndexMaintenanceThreads,
                 effectiveIndexMaintenanceThreads,
                 effectiveRegistryLifecycleThreads,

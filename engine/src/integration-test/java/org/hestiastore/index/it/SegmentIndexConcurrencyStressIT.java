@@ -199,7 +199,6 @@ class SegmentIndexConcurrencyStressIT {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
                 .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfIoThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(
                         Math.max(1, Math.min(cpuThreads, 2)))//
                 .withNumberOfRegistryLifecycleThreads(

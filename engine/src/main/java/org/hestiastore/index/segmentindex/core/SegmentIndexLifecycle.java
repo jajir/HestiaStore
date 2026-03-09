@@ -1,13 +1,11 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.directory.async.AsyncDirectoryBlockingAdapter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
 import org.hestiastore.index.segmentindex.config.IndexConfiguratonStorage;
@@ -17,9 +15,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Owns initialization and close ordering for index startup dependencies.
  * <p>
- * The lifecycle opens configuration first, then executor registry, then wraps
- * the provided directory with async IO support. Close happens in reverse
- * dependency order.
+ * The lifecycle opens configuration first, then executor registry, then
+ * exposes the provided directory facade to the index runtime. Close happens in
+ * reverse dependency order.
  * </p>
  *
  * @param <K> key type
@@ -82,9 +80,7 @@ public class SegmentIndexLifecycle<K, V> {
 
         this.managedDirectory //
                 = new Managed<>(null, () -> {
-                    final ExecutorService ioExecutor = managedExecutorRegistry.resource
-                            .getIoExecutor();
-                    return new AsyncDirectoryBlockingAdapter(dir, ioExecutor);
+                    return dir;
                 }, toClose -> {
                     if (toClose instanceof CloseableResource closeable
                             && !closeable.wasClosed()) {

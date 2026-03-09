@@ -46,7 +46,6 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
-    private static final String PROP_NUMBER_OF_IO_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS;
     private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS;
@@ -133,9 +132,6 @@ public class IndexConfiguratonStorage<K, V> {
                 .withIndexWorkerThreadCount(getOrDefault(propsView,
                         PROP_INDEX_WORKER_THREAD_COUNT,
                         IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT))//
-                .withNumberOfIoThreads(getOrDefault(propsView,
-                        PROP_NUMBER_OF_IO_THREADS,
-                        IndexConfigurationContract.NUMBER_OF_IO_THREADS))//
                 .withNumberOfSegmentIndexMaintenanceThreads(getOrDefault(
                         propsView, PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
                         IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
@@ -273,11 +269,6 @@ public class IndexConfiguratonStorage<K, V> {
                         ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
                         : indexConfiguration.getIndexWorkerThreadCount();
         writer.setInt(PROP_INDEX_WORKER_THREAD_COUNT, threadCount);
-        final int ioThreadCount = indexConfiguration
-                .getNumberOfIoThreads() == null
-                        ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
-                        : indexConfiguration.getNumberOfIoThreads();
-        writer.setInt(PROP_NUMBER_OF_IO_THREADS, ioThreadCount);
         final int maintenanceThreads = indexConfiguration
                 .getNumberOfSegmentIndexMaintenanceThreads() == null
                         ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS

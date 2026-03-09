@@ -76,7 +76,7 @@ Lazy-loaded resources:
 
 ## 📁 Segment directory layout
 
-Segment writes all files into the `AsyncDirectory` passed to
+Segment writes all files into the `Directory` passed to
 `SegmentBuilder`. That directory can point to:
 
 * Index root (flat layout): segment files live next to `index.map`.
