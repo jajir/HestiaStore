@@ -529,9 +529,9 @@
     - Operation completion is observable when segment state returns to `READY`.
     - Update callers, docs, and tests that wait on completion stages.
 [x] 25 Create directory API and layout helpers (Risk: HIGH)
-    - Add `Directory.openSubDirectory(String)` + `AsyncDirectory.openSubDirectory(String)`
+    - Add `Directory.openSubDirectory(String)`
       and lifecycle helpers `Directory.mkdir(String)` / `Directory.rmdir(String)`.
-    - Implement in `FsDirectory`, `AsyncDirectoryAdapter`, and in-memory
+    - Implement in `FsDirectory` and in-memory
       `MemDirectory` equivalents; define semantics for non-empty rmdir.
     - Add `SegmentDirectoryLayout` (or similar) that builds names for:
       index, scarce, bloom, delta, properties, and lock files.
@@ -539,7 +539,7 @@
 
 [x] 26 Introduce segment-rooted `SegmentFiles` (Risk: HIGH)
     - Add a `SegmentFiles` constructor that accepts a segment root
-      `AsyncDirectory` (instead of a flat base directory + id).
+      `Directory` (instead of a flat base directory + id).
     - Keep legacy flat layout working (auto-detect existing files, or flag in
       `SegmentBuilder`).
     - Update `SegmentBuilder` to create/use the segment root directory.
@@ -585,7 +585,7 @@
       pointer).
     - Use zero-padded 2-digit versions and 4-digit delta ids.
 [x] 32 Builder/files treat the provided directory as the segment home (Risk: HIGH)
-    - Require `Segment.builder(AsyncDirectory)` for construction.
+    - Require `Segment.builder(Directory)` for construction.
     - Lock + properties live inside the segment directory.
     - Resolve active version from properties or detected index files.
 [x] 33 Compaction/flush publish is memory-only (Risk: HIGH)
@@ -701,7 +701,7 @@
     - Add tests for split failure cleanup of new segments.
 [x] 63 SegmentIdAllocator in segmentregistry (Risk: MEDIUM)
     - Add `SegmentIdAllocator` interface and directory-backed implementation.
-    - Scan `AsyncDirectory.getFileNamesAsync()` for segment directories named
+    - Scan `Directory.getFileNames()` for segment directories named
       `segment-00001` (prefix `segment-` + 5 digits) and initialize next id
       to max+1 (or 1 when none found).
     - Allocate ids with thread-safe counter.

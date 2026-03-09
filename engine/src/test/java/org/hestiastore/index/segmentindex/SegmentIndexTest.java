@@ -65,7 +65,7 @@ class SegmentIndexTest {
     }
 
     private IndexConfiguration<Integer, String> buildConf(final String indexName,
-            final int ioThreads) {
+            final int indexWorkerThreads) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -83,8 +83,7 @@ class SegmentIndexTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfIoThreads(ioThreads)//
+                .withIndexWorkerThreadCount(indexWorkerThreads)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .build();

@@ -140,14 +140,6 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withNumberOfIoThreadsSetsValue() {
-        final int value = 3;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withNumberOfIoThreads(value).build();
-        assertEquals(value, config.getNumberOfIoThreads());
-    }
-
-    @Test
     void withNumberOfRegistryLifecycleThreadsSetsValue() {
         final int value = 5;
         final IndexConfiguration<Integer, String> config = newBuilder()

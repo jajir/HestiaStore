@@ -189,7 +189,6 @@ class SegmentRegistryConcurrencyStressTest {
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withSegmentMaintenanceAutoEnabled(true)//
                 .withIndexWorkerThreadCount(8)//
-                .withNumberOfIoThreads(2)//
                 .withName("registry_concurrency_stress")//
                 .build();
         return SegmentIndex.create(directory, conf);

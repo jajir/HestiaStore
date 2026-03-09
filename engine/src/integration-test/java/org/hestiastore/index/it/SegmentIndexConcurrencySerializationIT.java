@@ -58,7 +58,8 @@ class SegmentIndexConcurrencySerializationIT {
     private void runReadOverlapTest(final ReadMode mode, final String name)
             throws Exception {
         final Directory directory = new MemDirectory();
-        final IndexConfiguration<String, String> conf = readLockConf(name);
+        final IndexConfiguration<String, String> conf = readLockConf(name,
+                mode == ReadMode.ASYNC ? 2 : 1);
         BlockingTombstoneTypeDescriptorString.Hook hook = null;
         final ExecutorService executor = mode == ReadMode.SYNC
                 ? Executors.newFixedThreadPool(2)
@@ -120,7 +121,7 @@ class SegmentIndexConcurrencySerializationIT {
     }
 
     private static IndexConfiguration<String, String> readLockConf(
-            final String name) {
+            final String name, final int indexWorkerThreads) {
         final IndexConfigurationContract defaults = new IndexConfigurationContract() {
         };
         return IndexConfiguration.<String, String>builder()//
@@ -151,7 +152,7 @@ class SegmentIndexConcurrencySerializationIT {
                         defaults.getBloomFilterProbabilityOfFalsePositive())//
                 .withDiskIoBufferSizeInBytes(
                         defaults.getDiskIoBufferSizeInBytes())//
-                .withNumberOfIoThreads(defaults.getNumberOfIoThreads())//
+                .withIndexWorkerThreadCount(indexWorkerThreads)//
                 .withNumberOfSegmentIndexMaintenanceThreads(
                         defaults.getNumberOfSegmentIndexMaintenanceThreads())//
                 .withIndexBusyBackoffMillis(

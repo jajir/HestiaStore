@@ -55,7 +55,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void concurrentReadsWithWriterOnSameKey() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4);
         try {
             index.put(1, "init");
             final CountDownLatch start = new CountDownLatch(1);
@@ -93,7 +93,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void interleavedFlushCompactWithReadsAndWrites() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4);
         try {
             final CountDownLatch start = new CountDownLatch(1);
             final var executor = Executors.newFixedThreadPool(4);
@@ -140,7 +140,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     }
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
-            final int cpuThreads, final int ioThreads) {
+            final int cpuThreads) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -155,7 +155,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withSegmentMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //
                 .build();
         return SegmentIndex.create(directory, conf);
@@ -183,7 +182,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withSegmentMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(scenario.cpuThreads())//
-                .withNumberOfIoThreads(scenario.ioThreads())//
                 .withName("concurrency_index_" + scenario.name()) //
                 .build();
         return SegmentIndex.create(directory, conf);
@@ -243,13 +241,13 @@ class IntegrationSegmentIndexConcurrencyTest {
     private static Stream<ParallelPutsScenario> parallelPutsScenarios() {
         return Stream.of(
                 new ParallelPutsScenario("small-cache-50-keys", 50, 3, 3, 2,
-                        4, 5, 4, 1, 40),
+                        4, 5, 4, 40),
                 new ParallelPutsScenario("write-cache-64-200-keys", 200, 128,
-                        64, 16, 128, 10, 8, 2, 64),
+                        64, 16, 128, 10, 8, 64),
                 new ParallelPutsScenario("write-cache-128-small-segment", 300,
-                        128, 128, 16, 32, 5, 8, 2, 64),
+                        128, 128, 16, 32, 5, 8, 64),
                 new ParallelPutsScenario("large-segment-512", 300, 256, 64,
-                        32, 512, 10, 8, 2, 40));
+                        32, 512, 10, 8, 40));
     }
 
     private record ParallelPutsScenario(String name, int keyCount,
@@ -257,7 +255,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             int maxNumberOfKeysInSegmentWriteCache,
             int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInSegment,
             int maxNumberOfSegmentsInCache,
-            int cpuThreads, int ioThreads, int writerThreads) {
+            int cpuThreads, int writerThreads) {
         @Override
         public String toString() {
             return name;

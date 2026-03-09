@@ -30,9 +30,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * applied to the provided configuration, then both the configuration and
      * the on-disk structures are persisted.
      * <p>
-     * The supplied directory is wrapped in an bounded directory adapter
-     * configured with the resolved {@code numberOfIoThreads}. The returned
-     * index owns that wrapper and will close it when the index is closed.
+     * The returned index owns the supplied directory facade and will close it
+     * when the index is closed if it implements {@link CloseableResource}.
      * </p>
      *
      * @param directory backing directory for the index
@@ -48,9 +47,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * Opens an existing index, merging the provided configuration overrides
      * with the stored configuration on disk.
      * <p>
-     * The supplied directory is wrapped in an bounded directory adapter
-     * configured with the merged {@code numberOfIoThreads}. The returned index
-     * owns that wrapper and will close it when the index is closed.
+     * The returned index owns the supplied directory facade and will close it
+     * when the index is closed if it implements {@link CloseableResource}.
      * </p>
      *
      * @param directory backing directory that already contains the index
@@ -65,9 +63,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     /**
      * Opens an existing index using the configuration stored on disk.
      * <p>
-     * The supplied directory is wrapped in an bounded directory adapter
-     * configured with the stored {@code numberOfIoThreads}. The returned index
-     * owns that wrapper and will close it when the index is closed.
+     * The returned index owns the supplied directory facade and will close it
+     * when the index is closed if it implements {@link CloseableResource}.
      * </p>
      *
      * @param directory backing directory with an existing index
@@ -80,10 +77,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     /**
      * Attempts to open an index when it may or may not exist.
      * <p>
-     * The supplied directory is wrapped in an bounded directory adapter
-     * configured with the stored {@code numberOfIoThreads} when a configuration
-     * is present. The returned index owns that wrapper and will close it when
-     * the index is closed.
+     * The returned index owns the supplied directory facade and will close it
+     * when the index is closed if it implements {@link CloseableResource}.
      * </p>
      *
      * @param directory backing directory that may contain an index

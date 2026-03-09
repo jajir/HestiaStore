@@ -42,7 +42,6 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer indexWorkerThreadCount;
-    private final Integer numberOfIoThreads;
     private final Integer numberOfSegmentIndexMaintenanceThreads;
     private final Integer numberOfIndexMaintenanceThreads;
     private final Integer numberOfRegistryLifecycleThreads;
@@ -88,7 +87,7 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
-            final Integer indexWorkerThreadCount, final Integer numberOfIoThreads,
+            final Integer indexWorkerThreadCount,
             final Integer numberOfSegmentIndexMaintenanceThreads,
             final Integer numberOfIndexMaintenanceThreads,
             final Integer numberOfRegistryLifecycleThreads,
@@ -111,7 +110,6 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.indexWorkerThreadCount = indexWorkerThreadCount;
-        this.numberOfIoThreads = numberOfIoThreads;
         this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
         this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
@@ -230,15 +228,6 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getIndexWorkerThreadCount() {
         return indexWorkerThreadCount;
-    }
-
-    /**
-     * Returns the number of IO threads used by the async directory wrapper.
-     *
-     * @return IO thread count
-     */
-    public Integer getNumberOfIoThreads() {
-        return numberOfIoThreads;
     }
 
     /**

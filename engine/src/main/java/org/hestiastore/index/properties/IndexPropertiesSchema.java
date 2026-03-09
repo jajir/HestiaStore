@@ -58,7 +58,6 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
         public static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
         public static final String PROP_INDEX_WORKER_THREAD_COUNT = "indexWorkerThreadCount";
-        public static final String PROP_NUMBER_OF_IO_THREADS = "numberOfIoThreads";
         public static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
         public static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = "numberOfIndexMaintenanceThreads";
         public static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = "numberOfRegistryLifecycleThreads";
@@ -336,9 +335,6 @@ public final class IndexPropertiesSchema {
 
     private static void addThreadingDefaults(
             final Map<String, DefaultValueProvider> defaults) {
-        defaults.put(IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS,
-                view -> String.valueOf(
-                        IndexConfigurationContract.NUMBER_OF_IO_THREADS));
         defaults.put(
                 IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
                 view -> String.valueOf(

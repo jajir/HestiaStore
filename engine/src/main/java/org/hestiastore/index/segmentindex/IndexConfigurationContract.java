@@ -27,7 +27,6 @@ public interface IndexConfigurationContract {
 
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
     int INDEX_WORKER_THREAD_COUNT = 1;
-    int NUMBER_OF_IO_THREADS = 1;
     int DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_REGISTRY_LIFECYCLE_THREADS = 3;
@@ -149,15 +148,6 @@ public interface IndexConfigurationContract {
      */
     default int getIndexWorkerThreadCount() {
         return INDEX_WORKER_THREAD_COUNT;
-    }
-
-    /**
-     * Returns the default number of IO threads used by the async directory.
-     *
-     * @return default IO thread count
-     */
-    default int getNumberOfIoThreads() {
-        return NUMBER_OF_IO_THREADS;
     }
 
     /**
