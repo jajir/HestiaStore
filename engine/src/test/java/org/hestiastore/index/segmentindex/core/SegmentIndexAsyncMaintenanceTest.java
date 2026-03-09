@@ -61,6 +61,7 @@ class SegmentIndexAsyncMaintenanceTest {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
+            index.flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentId(1);
@@ -93,6 +94,7 @@ class SegmentIndexAsyncMaintenanceTest {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
+            index.flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentId(1);

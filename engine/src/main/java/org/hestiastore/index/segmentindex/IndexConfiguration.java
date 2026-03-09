@@ -32,6 +32,8 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegmentCache;
     private final Integer maxNumberOfKeysInSegmentWriteCache;
     private final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final Integer maxNumberOfImmutableRunsPerPartition;
+    private final Integer maxNumberOfKeysInIndexBuffer;
     private final Integer maxNumberOfKeysInSegmentChunk;
     private final Integer maxNumberOfDeltaCacheFiles;
 
@@ -78,6 +80,8 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentCache, //
             final Integer maxNumberOfKeysInSegmentWriteCache, //
             final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance, //
+            final Integer maxNumberOfImmutableRunsPerPartition, //
+            final Integer maxNumberOfKeysInIndexBuffer, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfDeltaCacheFiles, //
             final Integer maxNumberOfKeysInSegment, //
@@ -104,6 +108,8 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
+        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
         this.indexName = indexName;
@@ -146,6 +152,16 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
+     * Returns the maximum number of keys accepted into the active partition
+     * before it rotates to an immutable run.
+     *
+     * @return max keys in active partition
+     */
+    public Integer getMaxNumberOfKeysInActivePartition() {
+        return maxNumberOfKeysInSegmentWriteCache;
+    }
+
+    /**
      * Returns the maximum number of keys allowed while maintenance is in flight
      * before back-pressure is applied to writers.
      *
@@ -153,6 +169,35 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
         return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    }
+
+    /**
+     * Returns the immutable run queue depth per partition.
+     *
+     * @return immutable run count
+     */
+    public Integer getMaxNumberOfImmutableRunsPerPartition() {
+        return maxNumberOfImmutableRunsPerPartition;
+    }
+
+    /**
+     * Returns the maximum number of buffered keys allowed inside one partition
+     * before local backpressure is applied.
+     *
+     * @return max buffered keys inside one partition
+     */
+    public Integer getMaxNumberOfKeysInPartitionBuffer() {
+        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    }
+
+    /**
+     * Returns the maximum number of buffered keys allowed across the whole
+     * index overlay.
+     *
+     * @return global buffered key count
+     */
+    public Integer getMaxNumberOfKeysInIndexBuffer() {
+        return maxNumberOfKeysInIndexBuffer;
     }
 
     /**
@@ -190,6 +235,15 @@ public class IndexConfiguration<K, V> {
      * @return max keys per segment
      */
     public Integer getMaxNumberOfKeysInSegment() {
+        return maxNumberOfKeysInSegment;
+    }
+
+    /**
+     * Returns the split/drain threshold for a routed partition.
+     *
+     * @return max keys before a partition is split
+     */
+    public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
         return maxNumberOfKeysInSegment;
     }
 

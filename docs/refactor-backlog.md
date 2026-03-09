@@ -12,6 +12,118 @@
 
 ### High
 
+[ ] 79 Replace live-segment write path with range-partitioned ingest (Risk: HIGH)
+    - Replace direct `Segment.put()/flush()/split` write admission with
+      `active mutable -> immutable queue -> background drain -> stable publish`.
+    - Keep `put()/get()/delete()` immediate visibility semantics and WAL-based
+      crash recovery.
+    - Reuse `KeyToSegmentMap` / `index.map` as the only persisted routing
+      metadata in v1; route tables and partition queues stay runtime-only and
+      are rebuilt from `index.map` + WAL replay on open.
+    - Keep `segment` as the stable storage/publish backend in v1; stop routing
+      user writes directly into live segments.
+    - Allow breaking cleanup in `IndexConfiguration`, runtime tuning keys,
+      metrics docs, and benchmark/test expectations.
+
+[ ] 79.1 Freeze architecture, docs, and migration contract (Risk: HIGH)
+    - Rewrite `range-partitioned-ingest.md` as architecture-only; remove class/
+      package-level implementation detail from that page.
+    - Add one implementation/migration doc that defines:
+      immediate read-after-write, delete visibility, flush/compact semantics,
+      split/drain lifecycle, crash-recovery rules, and config migration rules.
+    - Document that unpublished partition state is transient and recovered only
+      through WAL replay; no new partition manifest in this epic.
+    - Acceptance:
+      - architecture docs match the final behavior,
+      - upgrade notes describe old config key removal and new key mapping.
+
+[ ] 79.2 Introduce partition runtime and routing layer (Risk: HIGH)
+    - Add internal partition runtime under `segmentindex.partition` with:
+      range partition, mutable layer, immutable run, read/write route table,
+      drain scheduler, and local/global backpressure controller.
+    - Build runtime route tables from `KeyToSegmentMap.snapshot()` and existing
+      stable segments at open time.
+    - Keep partition state in memory only; do not persist mutable/immutable
+      runs or a separate manifest in v1.
+    - Acceptance:
+      - unit tests cover single-partition put/get/delete,
+      - rotation to immutable is bounded,
+      - local and global backpressure are deterministic.
+
+[ ] 79.3 Switch `SegmentIndexImpl` read/write/delete paths to partitions (Risk: HIGH)
+    - Change `put()` and `delete()` to: WAL append -> resolve write route ->
+      mutate active partition -> rotate when full -> local/global throttle when
+      bounds are exceeded.
+    - Change `get()` to read only inside the resolved read route in this order:
+      active layer, immutable runs newest-first, then stable segment sources.
+    - Change index iterators/streaming to merge partition overlays with stable
+      segment reads; `FULL_ISOLATION` must open over a route snapshot and
+      immutable copies of active layers without freezing live writers.
+    - Remove hot-path dependence on `SegmentIndexCore` calling `Segment.put()`
+      and retire or replace the current maintenance coordinator accordingly.
+    - Acceptance:
+      - read-after-write always holds before any drain completes,
+      - unrelated partitions keep working when one partition is throttled.
+
+[ ] 79.4 Implement drain, publish, flush, close, and WAL recovery (Risk: HIGH)
+    - Drain immutable runs in background by sorting/partitioning keys and
+      publishing them to stable segment storage using existing writer/publish
+      utilities; user threads must not write into live segments.
+    - Make `flush()/flushAndWait()` drain all partition queues and checkpoint
+      WAL; make `compact()/compactAndWait()` first drain overlays, then compact
+      stable segment storage only.
+    - On open, rebuild routes from `KeyToSegmentMap`, clean unpublished temp
+      drain/split artifacts, and replay WAL into fresh active partitions.
+    - Acceptance:
+      - crash during drain or publish loses no acknowledged write,
+      - close/reopen and crash/reopen produce the same final visible data.
+
+[ ] 79.5 Replace live-segment split with partition draining split (Risk: HIGH)
+    - Remove the current split model that opens a `FULL_ISOLATION` iterator on
+      a live segment and makes writers wait.
+    - New split flow:
+      route new writes to child partitions immediately,
+      mark parent partition `DRAINING`,
+      keep parent stable sources readable during transition,
+      publish child stable segments,
+      atomically update `KeyToSegmentMap`,
+      retire the parent route.
+    - Delete or retire the current `segmentindex.split` pipeline and its live-
+      segment lock/freeze tests once partition split parity is reached.
+    - Acceptance:
+      - reproduced hot-range write scenario no longer stalls near deadlock,
+      - split of one range does not stop writes to other ranges.
+
+[ ] 79.6 Clean up config, metrics, control-plane tuning, and obsolete code (Risk: HIGH)
+    - Replace old segment write-cache config keys with the new partition budget
+      keys and migrate persisted/opened configs once at load time.
+    - Update runtime tuning allowlist, snapshots, and docs to use partition
+      terminology and metrics.
+    - Remove dead or unreachable code paths tied only to live-segment write
+      admission, including old retry/split glue that no longer participates in
+      the new runtime.
+    - Acceptance:
+      - existing indexes open with migrated config,
+      - no old segment-write config key remains in public docs or runtime APIs.
+
+[ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
+    - Add a dedicated unit suite for partition runtime, route snapshots, drain
+      publish ordering, backpressure, iterator snapshots, and crash cleanup.
+    - Update or replace current concurrency/split suites, including:
+      `SegmentIndexImplConcurrencyTest`,
+      `SegmentIndexConcurrentIT`,
+      `SegmentIndexConcurrencyStressIT`,
+      and the current split coordinator tests.
+    - Add JMH benchmarks for:
+      hot-partition concurrent `put()`,
+      mixed `put()+get()` during drain,
+      and update `SegmentIndexGetBenchmark` to measure reads with overlay data
+      present.
+    - Acceptance:
+      - 20-writer random-put reproduction completes without timeout/stall,
+      - read-after-write and reopen consistency tests pass,
+      - pre/post JMH baselines are captured under `benchmarks/results`.
+
 [ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
     - Goal: evolve from in-process counters to multi-JVM monitoring and control
       without forcing Micrometer/Prometheus dependencies into core.
