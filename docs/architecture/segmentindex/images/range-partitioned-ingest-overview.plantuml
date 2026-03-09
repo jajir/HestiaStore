@@ -1,0 +1,39 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+
+component "WriteRouteMap" as WR
+
+package "Partition A" as PA {
+  component "active mutable" as A_ACTIVE
+  component "immutable queue" as A_QUEUE
+  component "stable segments" as A_STABLE
+}
+
+package "Partition B" as PB {
+  component "active mutable" as B_ACTIVE
+  component "immutable queue" as B_QUEUE
+  component "stable segments" as B_STABLE
+}
+
+package "Partition C" as PC {
+  component "active mutable" as C_ACTIVE
+  component "immutable queue" as C_QUEUE
+  component "stable segments" as C_STABLE
+}
+
+WR --> PA : resolve key range
+WR --> PB : resolve key range
+WR --> PC : resolve key range
+
+A_ACTIVE --> A_QUEUE
+A_QUEUE --> A_STABLE
+
+B_ACTIVE --> B_QUEUE
+B_QUEUE --> B_STABLE
+
+C_ACTIVE --> C_QUEUE
+C_QUEUE --> C_STABLE
+
+@enduml

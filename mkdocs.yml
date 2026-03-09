@@ -50,6 +50,7 @@ nav:
             - Overview: architecture/segmentindex/index.md
             - Write Path: architecture/segmentindex/write-path.md
             - Read Path: architecture/segmentindex/read-path.md
+            - Range-Partitioned Ingest: architecture/segmentindex/range-partitioned-ingest.md
             - Caching Strategy: architecture/segmentindex/caching.md
             - Cache LRU: architecture/segmentindex/cache-lru.md
             - Performance Model & Sizing: architecture/segmentindex/performance.md
@@ -74,6 +75,7 @@ nav:
         - Development:
             - Overview: development/index.md
             - Documentation: development/documentation.md
+            - Documentation Guidelines: development/documentation-guidelines.md
             - Guides: development/guides.md
             - Segment API: development/segment-api.md
             - JVM Profiling: development/profiler-stacktrace.md

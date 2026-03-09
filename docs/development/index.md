@@ -5,6 +5,7 @@ This page links development-focused documentation.
 ## Topics
 
 - [Documentation](documentation.md)
+- [Documentation Guidelines](documentation-guidelines.md)
 - [Guides](guides.md)
 - [Segment API](segment-api.md)
 - [JVM Profiling](profiler-stacktrace.md)

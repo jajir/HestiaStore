@@ -11,6 +11,8 @@ Segment internals are intentionally centralized in
 - [Read Path](read-path.md) — request routing and lookup flow.
 - [Write Path](write-path.md) — buffering, flush, compaction, and split
   orchestration.
+- [Range-Partitioned Ingest](range-partitioned-ingest.md) — proposed
+  partition-oriented write architecture with bounded mutable/immutable layers.
 - [Caching Strategy](caching.md) — index-level cache roles and sizing.
 - [Cache LRU](cache-lru.md) — bounded LRU behavior and trade-offs.
 - [Performance Model & Sizing](performance.md) — throughput/latency model and
