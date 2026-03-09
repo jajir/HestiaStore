@@ -1,0 +1,26 @@
+@startuml
+skinparam shadowing false
+
+actor User
+participant "WriteRouteMap" as WR
+participant "RangePartition" as P
+participant "Active Mutable Layer" as M
+participant "Immutable Queue" as Q
+participant "Background Flush" as F
+
+User -> WR : put(key, value)
+WR -> P : resolve partition
+P -> M : insert
+
+alt active has room
+  P --> User : OK
+else rotate possible
+  P -> Q : move old active to immutable
+  P -> M : create new active
+  P --> User : OK
+  F -> Q : flush oldest immutable
+else immutable queue full
+  P --> User : throttle / short stall / OVERLOADED
+end
+
+@enduml
