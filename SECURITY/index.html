@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -1176,6 +1176,8 @@
       
         
       
+        
+      
     
     
     
@@ -1230,6 +1232,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1641,7 +1671,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1883,6 +1913,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1982,6 +2016,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2581,6 +2671,8 @@
       
         
       
+        
+      
     
     
     
@@ -2672,6 +2764,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../development/guides/" class="md-nav__link">
         
   
@@ -2736,34 +2856,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2876,6 +2968,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3307,8 +3427,8 @@
 </tr>
 <tr>
 <td>File corruption</td>
-<td>🚫</td>
-<td>No WAL; durability depends on flush/close and atomic renames</td>
+<td>⚠️</td>
+<td>Optional WAL (disabled by default) can replay and truncate invalid tail; non-WAL files rely on atomic renames and consistency checks</td>
 </tr>
 <tr>
 <td>Memory data leakage</td>
@@ -3332,9 +3452,9 @@
 <h2 id="data-integrity">🔍 Data Integrity</h2>
 <p>HestiaStore provides limited protections:</p>
 <ul>
-<li>No Write-Ahead Logging (WAL); durability is tied to explicit flush/close.</li>
+<li>Optional Write-Ahead Logging (WAL) with CRC-protected records, recovery replay, and invalid-tail handling when enabled.</li>
 <li>Manual compaction and <code>checkAndRepairConsistency()</code> assist in recovery from logical inconsistencies.</li>
-<li>No built-in checksums or MACs are currently used.</li>
+<li>No built-in cryptographic MAC/signature verification is currently used.</li>
 </ul>
 <h2 id="encryption">🔒 Encryption</h2>
 <p>HestiaStore does not implement:</p>
@@ -3373,6 +3493,7 @@
 <li>✅ Unit tests with coverage reporting via JaCoCo</li>
 <li>⏳ Persistent encrypted storage is not yet supported</li>
 <li>✅ Basic threat model documented</li>
+<li>✅ Optional WAL-based local crash recovery is available</li>
 <li>⚠️ Assumes trusted host environment (no access control or encryption)</li>
 <li>🚧 Future improvements under consideration (checksums, encryption)</li>
 </ul>

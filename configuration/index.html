@@ -16,14 +16,14 @@
         <link rel="prev" href="../how-to-use/troubleshooting/">
       
       
-        <link rel="next" href="data-types/">
+        <link rel="next" href="filters/">
       
       
         
       
       
       <link rel="icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -976,6 +976,8 @@
       
         
       
+        
+      
     
     
     
@@ -1031,6 +1033,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1442,7 +1472,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1684,6 +1714,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1783,6 +1817,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2382,6 +2472,8 @@
       
         
       
+        
+      
     
     
     
@@ -2473,6 +2565,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../development/guides/" class="md-nav__link">
         
   
@@ -2537,34 +2657,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2677,6 +2769,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3192,7 +3312,9 @@
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
 <p>For node management API and direct web console startup, see:
-<a href="monitoring-console/">Monitoring Console Configuration</a>.</p>
+<a href="monitoring-console/">Monitoring Console Configuration</a>.
+For chunk filter setup, defaults, and examples, see:
+<a href="filters/">Filter Configuration</a>.</p>
 <p>Now let's look at particular parameters.</p>
 <h2 id="segmentindex-directory">📁 SegmentIndex Directory</h2>
 <p>Place where all data are stored. There are two already prepared types:</p>

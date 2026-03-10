@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1445,7 +1475,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1690,6 +1720,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1792,6 +1826,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2516,6 +2606,8 @@
       
         
       
+        
+      
     
     
     
@@ -2607,6 +2699,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../development/guides/" class="md-nav__link">
         
   
@@ -2671,34 +2791,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2811,6 +2903,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3191,7 +3311,7 @@ lazy-loaded disk-backed resources.</p>
 * <code>SegmentReadPath</code> also caches <code>SegmentIndexSearcher</code> for point lookups and
   resets it on maintenance.</p>
 <h2 id="segment-directory-layout">📁 Segment directory layout</h2>
-<p>Segment writes all files into the <code>AsyncDirectory</code> passed to
+<p>Segment writes all files into the <code>Directory</code> passed to
 <code>SegmentBuilder</code>. That directory can point to:</p>
 <ul>
 <li>Index root (flat layout): segment files live next to <code>index.map</code>.</li>

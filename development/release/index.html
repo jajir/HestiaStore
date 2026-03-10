@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1439,7 +1469,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1681,6 +1711,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1780,6 +1814,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2382,6 +2472,8 @@
       
         
       
+        
+      
     
     
     
@@ -2476,6 +2568,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guides/" class="md-nav__link">
         
   
@@ -2540,34 +2660,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2680,6 +2772,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3517,6 +3637,7 @@ You must have an account with a verified namespace <code>org.hestiastore</code> 
 <li>From the drop-down box <code>Choose a tag</code> enter <code>release-0.0.12</code> and click <code>Create new tag: release ...</code>. Now in the repo, the tag clearly signals the new release.</li>
 <li>Release title should be <code>Release 0.0.3</code> and in the <code>Write</code> field, use the text generated from the template below:</li>
 <li>Press <code>Publish release</code>.</li>
+<li>If the release contains breaking changes, add a dedicated <code>Breaking changes</code> section in the GitHub release body and include migration steps. For <code>0.0.6</code>, include the <code>TypeEncoder</code> migration (<code>encode(...)</code> only).</li>
 </ol>
 <p>Text template:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Release to maven central:

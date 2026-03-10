@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/refactor-backlog/">
       
       
-        <link rel="prev" href="../development/rollout-rollback-runbook/">
+        <link rel="prev" href="../development/wal-replication-fencing-design/">
       
       
         <link rel="next" href="../development/release/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1439,7 +1469,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1681,6 +1711,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1780,6 +1814,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2384,6 +2474,8 @@
       
         
       
+        
+      
     
     
     
@@ -2476,6 +2568,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../development/guides/" class="md-nav__link">
         
   
@@ -2540,34 +2660,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2680,6 +2772,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3254,6 +3374,110 @@
     - Tests: <code>IntegrationSegmentIndexConcurrencyTest</code> + new split/put stress.</p>
 <h2 id="planned">Planned</h2>
 <h3 id="high">High</h3>
+<p>[ ] 79 Replace live-segment write path with range-partitioned ingest (Risk: HIGH)
+    - Replace direct <code>Segment.put()/flush()/split</code> write admission with
+      <code>active mutable -&gt; immutable queue -&gt; background drain -&gt; stable publish</code>.
+    - Keep <code>put()/get()/delete()</code> immediate visibility semantics and WAL-based
+      crash recovery.
+    - Reuse <code>KeyToSegmentMap</code> / <code>index.map</code> as the only persisted routing
+      metadata in v1; route tables and partition queues stay runtime-only and
+      are rebuilt from <code>index.map</code> + WAL replay on open.
+    - Keep <code>segment</code> as the stable storage/publish backend in v1; stop routing
+      user writes directly into live segments.
+    - Allow breaking cleanup in <code>IndexConfiguration</code>, runtime tuning keys,
+      metrics docs, and benchmark/test expectations.</p>
+<p>[ ] 79.1 Freeze architecture, docs, and migration contract (Risk: HIGH)
+    - Rewrite <code>range-partitioned-ingest.md</code> as architecture-only; remove class/
+      package-level implementation detail from that page.
+    - Add one implementation/migration doc that defines:
+      immediate read-after-write, delete visibility, flush/compact semantics,
+      split/drain lifecycle, crash-recovery rules, and config migration rules.
+    - Document that unpublished partition state is transient and recovered only
+      through WAL replay; no new partition manifest in this epic.
+    - Acceptance:
+      - architecture docs match the final behavior,
+      - upgrade notes describe old config key removal and new key mapping.</p>
+<p>[ ] 79.2 Introduce partition runtime and routing layer (Risk: HIGH)
+    - Add internal partition runtime under <code>segmentindex.partition</code> with:
+      range partition, mutable layer, immutable run, read/write route table,
+      drain scheduler, and local/global backpressure controller.
+    - Build runtime route tables from <code>KeyToSegmentMap.snapshot()</code> and existing
+      stable segments at open time.
+    - Keep partition state in memory only; do not persist mutable/immutable
+      runs or a separate manifest in v1.
+    - Acceptance:
+      - unit tests cover single-partition put/get/delete,
+      - rotation to immutable is bounded,
+      - local and global backpressure are deterministic.</p>
+<p>[ ] 79.3 Switch <code>SegmentIndexImpl</code> read/write/delete paths to partitions (Risk: HIGH)
+    - Change <code>put()</code> and <code>delete()</code> to: WAL append -&gt; resolve write route -&gt;
+      mutate active partition -&gt; rotate when full -&gt; local/global throttle when
+      bounds are exceeded.
+    - Change <code>get()</code> to read only inside the resolved read route in this order:
+      active layer, immutable runs newest-first, then stable segment sources.
+    - Change index iterators/streaming to merge partition overlays with stable
+      segment reads; <code>FULL_ISOLATION</code> must open over a route snapshot and
+      immutable copies of active layers without freezing live writers.
+    - Remove hot-path dependence on <code>SegmentIndexCore</code> calling <code>Segment.put()</code>
+      and retire or replace the current maintenance coordinator accordingly.
+    - Acceptance:
+      - read-after-write always holds before any drain completes,
+      - unrelated partitions keep working when one partition is throttled.</p>
+<p>[ ] 79.4 Implement drain, publish, flush, close, and WAL recovery (Risk: HIGH)
+    - Drain immutable runs in background by sorting/partitioning keys and
+      publishing them to stable segment storage using existing writer/publish
+      utilities; user threads must not write into live segments.
+    - Make <code>flush()/flushAndWait()</code> drain all partition queues and checkpoint
+      WAL; make <code>compact()/compactAndWait()</code> first drain overlays, then compact
+      stable segment storage only.
+    - On open, rebuild routes from <code>KeyToSegmentMap</code>, clean unpublished temp
+      drain/split artifacts, and replay WAL into fresh active partitions.
+    - Acceptance:
+      - crash during drain or publish loses no acknowledged write,
+      - close/reopen and crash/reopen produce the same final visible data.</p>
+<p>[ ] 79.5 Replace live-segment split with partition draining split (Risk: HIGH)
+    - Remove the current split model that opens a <code>FULL_ISOLATION</code> iterator on
+      a live segment and makes writers wait.
+    - New split flow:
+      route new writes to child partitions immediately,
+      mark parent partition <code>DRAINING</code>,
+      keep parent stable sources readable during transition,
+      publish child stable segments,
+      atomically update <code>KeyToSegmentMap</code>,
+      retire the parent route.
+    - Delete or retire the current <code>segmentindex.split</code> pipeline and its live-
+      segment lock/freeze tests once partition split parity is reached.
+    - Acceptance:
+      - reproduced hot-range write scenario no longer stalls near deadlock,
+      - split of one range does not stop writes to other ranges.</p>
+<p>[ ] 79.6 Clean up config, metrics, control-plane tuning, and obsolete code (Risk: HIGH)
+    - Replace old segment write-cache config keys with the new partition budget
+      keys and migrate persisted/opened configs once at load time.
+    - Update runtime tuning allowlist, snapshots, and docs to use partition
+      terminology and metrics.
+    - Remove dead or unreachable code paths tied only to live-segment write
+      admission, including old retry/split glue that no longer participates in
+      the new runtime.
+    - Acceptance:
+      - existing indexes open with migrated config,
+      - no old segment-write config key remains in public docs or runtime APIs.</p>
+<p>[ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
+    - Add a dedicated unit suite for partition runtime, route snapshots, drain
+      publish ordering, backpressure, iterator snapshots, and crash cleanup.
+    - Update or replace current concurrency/split suites, including:
+      <code>SegmentIndexImplConcurrencyTest</code>,
+      <code>SegmentIndexConcurrentIT</code>,
+      <code>SegmentIndexConcurrencyStressIT</code>,
+      and the current split coordinator tests.
+    - Add JMH benchmarks for:
+      hot-partition concurrent <code>put()</code>,
+      mixed <code>put()+get()</code> during drain,
+      and update <code>SegmentIndexGetBenchmark</code> to measure reads with overlay data
+      present.
+    - Acceptance:
+      - 20-writer random-put reproduction completes without timeout/stall,
+      - read-after-write and reopen consistency tests pass,
+      - pre/post JMH baselines are captured under <code>benchmarks/results</code>.</p>
 <p>[ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
     - Goal: evolve from in-process counters to multi-JVM monitoring and control
       without forcing Micrometer/Prometheus dependencies into core.
@@ -3445,7 +3669,7 @@
       - Release docs include compatibility matrix and upgrade notes.
     - Delivered:
       - Added module target-state documentation:
-        <code>docs/development/module-current-state.md</code>.
+        <code>docs/architecture/general/package-boundaries.md</code>.
       - Added release compatibility matrix:
         <code>docs/development/compatibility-matrix.md</code>.
       - Added multi-module upgrade notes:
@@ -3737,16 +3961,16 @@
     - Operation completion is observable when segment state returns to <code>READY</code>.
     - Update callers, docs, and tests that wait on completion stages.
 [x] 25 Create directory API and layout helpers (Risk: HIGH)
-    - Add <code>Directory.openSubDirectory(String)</code> + <code>AsyncDirectory.openSubDirectory(String)</code>
+    - Add <code>Directory.openSubDirectory(String)</code>
       and lifecycle helpers <code>Directory.mkdir(String)</code> / <code>Directory.rmdir(String)</code>.
-    - Implement in <code>FsDirectory</code>, <code>AsyncDirectoryAdapter</code>, and in-memory
+    - Implement in <code>FsDirectory</code> and in-memory
       <code>MemDirectory</code> equivalents; define semantics for non-empty rmdir.
     - Add <code>SegmentDirectoryLayout</code> (or similar) that builds names for:
       index, scarce, bloom, delta, properties, and lock files.
     - Add tests for directory creation and layout mapping.</p>
 <p>[x] 26 Introduce segment-rooted <code>SegmentFiles</code> (Risk: HIGH)
     - Add a <code>SegmentFiles</code> constructor that accepts a segment root
-      <code>AsyncDirectory</code> (instead of a flat base directory + id).
+      <code>Directory</code> (instead of a flat base directory + id).
     - Keep legacy flat layout working (auto-detect existing files, or flag in
       <code>SegmentBuilder</code>).
     - Update <code>SegmentBuilder</code> to create/use the segment root directory.
@@ -3788,7 +4012,7 @@
       pointer).
     - Use zero-padded 2-digit versions and 4-digit delta ids.
 [x] 32 Builder/files treat the provided directory as the segment home (Risk: HIGH)
-    - Require <code>Segment.builder(AsyncDirectory)</code> for construction.
+    - Require <code>Segment.builder(Directory)</code> for construction.
     - Lock + properties live inside the segment directory.
     - Resolve active version from properties or detected index files.
 [x] 33 Compaction/flush publish is memory-only (Risk: HIGH)
@@ -3904,7 +4128,7 @@
     - Add tests for split failure cleanup of new segments.
 [x] 63 SegmentIdAllocator in segmentregistry (Risk: MEDIUM)
     - Add <code>SegmentIdAllocator</code> interface and directory-backed implementation.
-    - Scan <code>AsyncDirectory.getFileNamesAsync()</code> for segment directories named
+    - Scan <code>Directory.getFileNames()</code> for segment directories named
       <code>segment-00001</code> (prefix <code>segment-</code> + 5 digits) and initialize next id
       to max+1 (or 1 when none found).
     - Allocate ids with thread-safe counter.</p>

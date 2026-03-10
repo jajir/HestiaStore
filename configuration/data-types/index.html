@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://jajir.github.io/HestiaStore/configuration/data-types/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../filters/">
       
       
         <link rel="next" href="../logging/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -976,6 +976,8 @@
       
         
       
+        
+      
     
     
     
@@ -1031,6 +1033,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1110,6 +1140,17 @@
   
     <nav class="md-nav" aria-label="🧰 Custom Data Types">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeencoder-contract-006" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔁 TypeEncoder Contract (0.0.6+)
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#why-register-your-custom-type-descriptor" class="md-nav__link">
@@ -1550,7 +1591,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1792,6 +1833,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1891,6 +1936,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2490,6 +2591,8 @@
       
         
       
+        
+      
     
     
     
@@ -2581,6 +2684,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../development/guides/" class="md-nav__link">
         
   
@@ -2645,34 +2776,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2785,6 +2888,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -2962,6 +3093,17 @@
   
     <nav class="md-nav" aria-label="🧰 Custom Data Types">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeencoder-contract-006" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔁 TypeEncoder Contract (0.0.6+)
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#why-register-your-custom-type-descriptor" class="md-nav__link">
@@ -3164,9 +3306,43 @@
 </ul>
 <p>To create a new data type:</p>
 <ol>
-<li>Implement the <code>TypeDescriptor&lt;T&gt;</code> interface. It's just a collection of simple interfaces which allows store data type to bytes and restore it from byte array</li>
+<li>Implement the <code>TypeDescriptor&lt;T&gt;</code> interface. It groups encoder/decoder/reader/writer/comparator contracts for your type.</li>
 <li>Optionallly register it using <code>org.hestiastore.index.segmentindex.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)</code>.</li>
 </ol>
+<h3 id="typeencoder-contract-006">🔁 TypeEncoder Contract (0.0.6+)</h3>
+<p>Starting with <code>0.0.6</code>, <code>TypeEncoder</code> uses a single method:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">EncodedBytes</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="n">T</span><span class="w"> </span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">reusableBuffer</span><span class="p">)</span>
+</code></pre></div>
+<p>Notes:</p>
+<ul>
+<li><code>reusableBuffer</code> is provided by the caller to reduce allocations.</li>
+<li>Encoder should reuse it when possible, otherwise allocate a larger buffer.</li>
+<li>Returned <code>EncodedBytes</code> contains:</li>
+<li><code>bytes</code>: buffer holding encoded payload</li>
+<li><code>length</code>: effective encoded byte count (can be smaller than <code>bytes.length</code>)</li>
+</ul>
+<p>Example skeleton:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">TypeDescriptorMyType</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TypeDescriptor</span><span class="o">&lt;</span><span class="n">MyType</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nd">@Override</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">TypeEncoder</span><span class="o">&lt;</span><span class="n">MyType</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">getTypeEncoder</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="w"> </span><span class="n">reusableBuffer</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">            </span><span class="kt">byte</span><span class="o">[]</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reusableBuffer</span><span class="p">;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">            </span><span class="kt">int</span><span class="w"> </span><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* compute max/required length */</span><span class="p">;</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="na">length</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">required</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">                </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="kt">byte</span><span class="o">[</span><span class="n">required</span><span class="o">]</span><span class="p">;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">            </span><span class="kt">int</span><span class="w"> </span><span class="n">written</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* encode value to out */</span><span class="p">;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">EncodedBytes</span><span class="p">(</span><span class="n">out</span><span class="p">,</span><span class="w"> </span><span class="n">written</span><span class="p">);</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="p">};</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
+</code></pre></div>
+<p>Migration from older API:</p>
+<ul>
+<li>Remove old <code>bytesLength(...)</code>/<code>toBytes(...)</code> implementations.</li>
+<li>Move length validation and write validation directly into <code>encode(...)</code>.</li>
+<li>Return exact written length via <code>EncodedBytes</code>.</li>
+</ul>
 <h3 id="why-register-your-custom-type-descriptor">💡 Why Register Your Custom Type Descriptor</h3>
 <p>Registering your <code>TypeDescriptor</code> with <code>DataTypeDescriptorRegistry</code> is not mandatory, but it brings benefits:</p>
 <ul>
@@ -3177,16 +3353,16 @@
 <p>Important: If you register using a <code>TypeDescriptor</code> instance, its class will be saved. That class must have a public no-args constructor (the system instantiates it reflectively). If this is not possible, you can register using the explicit class name overload <code>addTypeDescriptor(Class, String)</code>.</p>
 <h3 id="how-to-use-new-data-type">🧪 How to use new Data Type</h3>
 <p>During SegmentIndex configuration new data type descriptor can by directly used:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span><span class="c1">//</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">MySuperDataType</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="p">...</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueTypeDescriptor</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">TypeDescriptorMySuperDataType</span><span class="p">())</span><span class="w"> </span><span class="c1">//</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p">...</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">IndexConfiguration</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">conf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">IndexConfiguration</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">builder</span><span class="p">()</span><span class="c1">//</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="p">.</span><span class="na">withKeyClass</span><span class="p">(</span><span class="n">Integer</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueClass</span><span class="p">(</span><span class="n">MySuperDataType</span><span class="p">.</span><span class="na">class</span><span class="p">)</span><span class="c1">//</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="p">...</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">.</span><span class="na">withValueTypeDescriptor</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">TypeDescriptorMySuperDataType</span><span class="p">())</span><span class="w"> </span><span class="c1">//</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="p">...</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">SegmentIndex</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SegmentIndex</span><span class="p">.</span><span class="o">&lt;</span><span class="n">Integer</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">conf</span><span class="p">);</span>
 </code></pre></div>
 <h2 id="notes">📝 Notes</h2>
 <ul>

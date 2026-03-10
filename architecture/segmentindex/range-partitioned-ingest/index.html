@@ -10,31 +10,31 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/module-current-state/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/segmentindex/range-partitioned-ingest/">
       
       
-        <link rel="prev" href="../profiler-stacktrace/">
+        <link rel="prev" href="../read-path/">
       
       
-        <link rel="next" href="../compatibility-matrix/">
+        <link rel="next" href="../range-partitioned-ingest-implementation/">
       
       
         
       
       
-      <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <link rel="icon" href="../../../favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
-        <title>Module Current State - HestiaStore</title>
+        <title>Range-Partitioned Ingest - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#module-current-state" class="md-skip">
+        <a href="#range-partitioned-ingest-architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -94,9 +94,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../images/logo-square.png" alt="logo">
+  <img src="../../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Module Current State
+              Range-Partitioned Ingest
             
           </span>
         </div>
@@ -235,7 +235,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         
   
   
@@ -256,7 +256,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../why-hestiastore/" class="md-tabs__link">
+        <a href="../../../why-hestiastore/" class="md-tabs__link">
           
   
   
@@ -278,7 +278,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../how-to-use/" class="md-tabs__link">
+        <a href="../../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -300,7 +300,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../configuration/" class="md-tabs__link">
+        <a href="../../../configuration/" class="md-tabs__link">
           
   
   
@@ -318,11 +318,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../" class="md-tabs__link">
           
   
   
@@ -340,13 +342,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../CHANGELOG/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../../CHANGELOG/" class="md-tabs__link">
           
   
   
@@ -388,9 +388,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../images/logo-square.png" alt="logo">
+  <img src="../../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -417,7 +417,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -477,7 +477,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../why-hestiastore/" class="md-nav__link ">
+            <a href="../../../why-hestiastore/" class="md-nav__link ">
               
   
   
@@ -521,7 +521,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/alternatives/" class="md-nav__link">
+      <a href="../../../why-hestiastore/alternatives/" class="md-nav__link">
         
   
   
@@ -611,7 +611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-write/" class="md-nav__link">
+      <a href="../../../why-hestiastore/out-write/" class="md-nav__link">
         
   
   
@@ -639,7 +639,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-read/" class="md-nav__link">
+      <a href="../../../why-hestiastore/out-read/" class="md-nav__link">
         
   
   
@@ -667,7 +667,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/out-sequential/" class="md-nav__link">
+      <a href="../../../why-hestiastore/out-sequential/" class="md-nav__link">
         
   
   
@@ -703,7 +703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY/" class="md-nav__link">
+      <a href="../../../SECURITY/" class="md-nav__link">
         
   
   
@@ -731,7 +731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../why-hestiastore/quality/" class="md-nav__link">
+      <a href="../../../why-hestiastore/quality/" class="md-nav__link">
         
   
   
@@ -799,7 +799,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../how-to-use/" class="md-nav__link ">
+            <a href="../../../how-to-use/" class="md-nav__link ">
               
   
   
@@ -843,7 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/install/" class="md-nav__link">
+      <a href="../../../how-to-use/install/" class="md-nav__link">
         
   
   
@@ -871,7 +871,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../../../how-to-use/quick-start/" class="md-nav__link">
         
   
   
@@ -899,7 +899,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../../../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -993,7 +995,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../configuration/" class="md-nav__link ">
+            <a href="../../../configuration/" class="md-nav__link ">
               
   
   
@@ -1037,7 +1039,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/data-types/" class="md-nav__link">
+      <a href="../../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/data-types/" class="md-nav__link">
         
   
   
@@ -1065,7 +1095,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/logging/" class="md-nav__link">
+      <a href="../../../configuration/logging/" class="md-nav__link">
         
   
   
@@ -1093,7 +1123,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../configuration/monitoring-console/" class="md-nav__link">
+      <a href="../../../configuration/monitoring-console/" class="md-nav__link">
         
   
   
@@ -1125,6 +1155,8 @@
       
   
   
+    
+  
   
   
     
@@ -1148,22 +1180,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/" class="md-nav__link ">
+            <a href="../../" class="md-nav__link ">
               
   
   
@@ -1181,13 +1214,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1235,10 +1268,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1248,7 +1284,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/general/" class="md-nav__link ">
+            <a href="../../general/" class="md-nav__link ">
               
   
   
@@ -1266,7 +1302,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5_2" id="__nav_5_2_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -1292,7 +1328,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/datablock/" class="md-nav__link">
+      <a href="../../general/datablock/" class="md-nav__link">
         
   
   
@@ -1320,7 +1356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/filters/" class="md-nav__link">
+      <a href="../../general/filters/" class="md-nav__link">
         
   
   
@@ -1348,7 +1384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/chain-of-filters/" class="md-nav__link">
+      <a href="../../general/chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1376,7 +1412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/concurrency/" class="md-nav__link">
+      <a href="../../general/concurrency/" class="md-nav__link">
         
   
   
@@ -1404,7 +1440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/recovery/" class="md-nav__link">
+      <a href="../../general/recovery/" class="md-nav__link">
         
   
   
@@ -1432,14 +1468,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/package-boundaries/" class="md-nav__link">
+      <a href="../../general/package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1460,7 +1496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/limits/" class="md-nav__link">
+      <a href="../../general/limits/" class="md-nav__link">
         
   
   
@@ -1488,7 +1524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/glossary/" class="md-nav__link">
+      <a href="../../general/glossary/" class="md-nav__link">
         
   
   
@@ -1540,10 +1576,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1553,7 +1592,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/monitoring/" class="md-nav__link ">
+            <a href="../../monitoring/" class="md-nav__link ">
               
   
   
@@ -1571,7 +1610,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5_3" id="__nav_5_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -1597,7 +1636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../../monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -1625,7 +1664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../../monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -1658,6 +1697,8 @@
                 
   
   
+    
+  
   
   
     
@@ -1681,26 +1722,31 @@
       
         
       
-    
-    
-    
-      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
+      
         
           
+          
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segmentindex/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1718,13 +1764,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5_4" id="__nav_5_4_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1744,7 +1790,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/write-path/" class="md-nav__link">
+      <a href="../write-path/" class="md-nav__link">
         
   
   
@@ -1772,7 +1818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/read-path/" class="md-nav__link">
+      <a href="../read-path/" class="md-nav__link">
         
   
   
@@ -1797,10 +1843,201 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-stays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Stays
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-after-write-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-After-Write Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drain-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drain Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Split Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backpressure-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backpressure Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/caching/" class="md-nav__link">
+      <a href="../range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../caching/" class="md-nav__link">
         
   
   
@@ -1828,7 +2065,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../cache-lru/" class="md-nav__link">
         
   
   
@@ -1856,7 +2093,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/performance/" class="md-nav__link">
+      <a href="../performance/" class="md-nav__link">
         
   
   
@@ -1884,7 +2121,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../metrics-snapshot/" class="md-nav__link">
         
   
   
@@ -1912,7 +2149,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -1968,10 +2205,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1981,7 +2221,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segment/" class="md-nav__link ">
+            <a href="../../segment/" class="md-nav__link ">
               
   
   
@@ -1999,7 +2239,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5_5" id="__nav_5_5_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2025,7 +2265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment/" class="md-nav__link">
+      <a href="../../segment/segment/" class="md-nav__link">
         
   
   
@@ -2053,7 +2293,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/on-disk-layout/" class="md-nav__link">
+      <a href="../../segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2081,7 +2321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/arch-index/" class="md-nav__link">
+      <a href="../../segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2109,7 +2349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment-concurrency/" class="md-nav__link">
+      <a href="../../segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2159,10 +2399,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -2172,7 +2415,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/registry/" class="md-nav__link ">
+            <a href="../../registry/" class="md-nav__link ">
               
   
   
@@ -2190,7 +2433,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_5_6" id="__nav_5_6_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2216,7 +2459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/registry/registry/" class="md-nav__link">
+      <a href="../../registry/registry/" class="md-nav__link">
         
   
   
@@ -2256,10 +2499,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2277,22 +2518,21 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -2310,7 +2550,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2328,7 +2568,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CHANGELOG/" class="md-nav__link">
+      <a href="../../../CHANGELOG/" class="md-nav__link">
         
   
   
@@ -2353,8 +2593,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2384,27 +2622,28 @@
       
         
       
+        
+      
     
     
     
       
       
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
         
           
-          
         
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" checked>
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_2" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../../development/" class="md-nav__link ">
               
   
   
@@ -2422,13 +2661,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2448,7 +2687,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation/" class="md-nav__link">
+      <a href="../../../development/documentation/" class="md-nav__link">
         
   
   
@@ -2476,7 +2715,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
+      <a href="../../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/guides/" class="md-nav__link">
         
   
   
@@ -2504,7 +2771,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segment-api/" class="md-nav__link">
+      <a href="../../../development/segment-api/" class="md-nav__link">
         
   
   
@@ -2532,7 +2799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -2557,96 +2824,10 @@
                 
   
   
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#current-layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Current layout
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
   
   
     <li class="md-nav__item">
-      <a href="../compatibility-matrix/" class="md-nav__link">
+      <a href="../../../development/compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -2674,7 +2855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../../../development/upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -2702,7 +2883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-quality-gates/" class="md-nav__link">
+      <a href="../../../development/rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -2730,7 +2911,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../../../development/rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -2758,7 +2939,35 @@
   
   
     <li class="md-nav__item">
-      <a href="../../refactor-backlog/" class="md-nav__link">
+      <a href="../../../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../refactor-backlog/" class="md-nav__link">
         
   
   
@@ -2794,7 +3003,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../../development/release/" class="md-nav__link">
         
   
   
@@ -2822,7 +3031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -2850,7 +3059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -2905,10 +3114,87 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#current-layout" class="md-nav__link">
+  <a href="#goals" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Current layout
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-stays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Stays
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-after-write-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-After-Write Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drain-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drain Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Split Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backpressure-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backpressure Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery Model
       
     </span>
   </a>
@@ -2940,7 +3226,7 @@
   
   
     <li class="md-path__item">
-      <a href="../.." class="md-path__link">
+      <a href="../../.." class="md-path__link">
         
   <span class="md-ellipsis">
     Home
@@ -2958,10 +3244,10 @@
     
     
       <li class="md-path__item">
-        <a href="../../CHANGELOG/" class="md-path__link">
+        <a href="../../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Community
+    Architecture
   </span>
 
         </a>
@@ -2979,7 +3265,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Development
+    SegmentIndex
   </span>
 
         </a>
@@ -3001,63 +3287,113 @@
   
 
 
-<h1 id="module-current-state">Module Current State</h1>
-<p>This document defines the current naming and package alignment for Maven subprojects.</p>
-<h2 id="current-layout">Current layout</h2>
-<table>
-<thead>
-<tr>
-<th>Domain</th>
-<th>Current module directory</th>
-<th>Current artifactId</th>
-<th>Current package root</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Parent build</td>
-<td><code>.</code> (repository root)</td>
-<td><code>hestiastore-parent</code></td>
-<td>N/A (parent POM only)</td>
-</tr>
-<tr>
-<td>Index core</td>
-<td><code>engine</code></td>
-<td><code>engine</code></td>
-<td><code>org.hestiastore.index</code></td>
-</tr>
-<tr>
-<td>Monitoring and management API contracts</td>
-<td><code>monitoring-rest-json-api</code></td>
-<td><code>monitoring-rest-json-api</code></td>
-<td><code>org.hestiastore.monitoring.json.api</code></td>
-</tr>
-<tr>
-<td>Monitoring bridge (Micrometer)</td>
-<td><code>monitoring-micrometer</code></td>
-<td><code>monitoring-micrometer</code></td>
-<td><code>org.hestiastore.monitoring.micrometer</code></td>
-</tr>
-<tr>
-<td>Monitoring bridge (Prometheus)</td>
-<td><code>monitoring-prometheus</code></td>
-<td><code>monitoring-prometheus</code></td>
-<td><code>org.hestiastore.monitoring.prometheus</code></td>
-</tr>
-<tr>
-<td>Node monitoring/management REST bridge</td>
-<td><code>monitoring-rest-json</code></td>
-<td><code>monitoring-rest-json</code></td>
-<td><code>org.hestiastore.management.restjson</code></td>
-</tr>
-<tr>
-<td>Monitoring console web UI</td>
-<td><code>monitoring-console-web</code></td>
-<td><code>monitoring-console-web</code></td>
-<td><code>org.hestiastore.console.web</code></td>
-</tr>
-</tbody>
-</table>
+<h1 id="range-partitioned-ingest-architecture">Range-Partitioned Ingest Architecture</h1>
+<p>This page describes the target write-path architecture for <code>SegmentIndex</code>.
+Its purpose is to preserve immediate read-after-write semantics while moving
+long-running drain and split work out of the hot user write path.</p>
+<p>This is an architecture page, not an implementation guide. It focuses on
+contracts, invariants, and flow boundaries.</p>
+<h2 id="goals">Goals</h2>
+<ul>
+<li><code>put()</code> becomes visible to <code>get()</code> immediately after the call returns.</li>
+<li>Hot user writes must not wait for long-running split or compaction work.</li>
+<li>Buffered ingest must stay bounded at both local-range and whole-index level.</li>
+<li>Overload should be explicit and controlled, not expressed as retry storms.</li>
+<li>Stable segment files remain the durable storage boundary.</li>
+</ul>
+<h2 id="what-stays">What Stays</h2>
+<ul>
+<li>Stable segment files remain the durable read and publish boundary.</li>
+<li><code>KeyToSegmentMap</code> remains the persisted routing source of truth in the first
+  version.</li>
+<li>WAL remains the crash-recovery mechanism for acknowledged writes that are not
+  yet published into stable segment storage.</li>
+</ul>
+<h2 id="what-changes">What Changes</h2>
+<ul>
+<li>User writes stop targeting live segments directly.</li>
+<li>New writes first enter a bounded in-memory overlay that is organized by key
+  range.</li>
+<li>Each routed range owns a short ingest pipeline:</li>
+<li>an active mutable layer,</li>
+<li>a bounded queue of immutable runs waiting for drain,</li>
+<li>references to stable segment sources for that range.</li>
+<li>Reads consult the overlay first and stable storage second.</li>
+</ul>
+<h2 id="read-after-write-contract">Read-After-Write Contract</h2>
+<p><code>get(key)</code> must resolve the routed range for <code>key</code> and read sources in this
+order:</p>
+<ol>
+<li>active mutable data for the range</li>
+<li>immutable runs for the range, newest first</li>
+<li>stable segment sources for the range</li>
+</ol>
+<p>This ordering guarantees that a successful <code>put()</code> is observable before any
+background drain completes.</p>
+<p>Diagram PNG:
+<img alt="Range-partitioned ingest overview" src="../images/range-partitioned-ingest-overview.png" /></p>
+<p>PlantUML source:
+<a href="../images/range-partitioned-ingest-overview.plantuml"><code>docs/architecture/segmentindex/images/range-partitioned-ingest-overview.plantuml</code></a></p>
+<h2 id="drain-model">Drain Model</h2>
+<p>When the active mutable layer reaches its local admission limit, it is sealed
+and becomes an immutable run. Background drain then moves immutable data into
+stable segment storage.</p>
+<p>Key rules:</p>
+<ul>
+<li>user writes continue into a fresh active mutable layer,</li>
+<li>immutable runs remain readable until drain and publish complete,</li>
+<li>flush durability is reached only after buffered overlay data is drained and
+  WAL checkpointed.</li>
+</ul>
+<p>Diagram PNG:
+<img alt="Range-partitioned ingest write sequence" src="../images/range-partitioned-ingest-sequence.png" /></p>
+<p>PlantUML source:
+<a href="../images/range-partitioned-ingest-sequence.plantuml"><code>docs/architecture/segmentindex/images/range-partitioned-ingest-sequence.plantuml</code></a></p>
+<h2 id="split-model">Split Model</h2>
+<p>Split no longer means freezing a live segment and making user writers wait.
+Instead:</p>
+<ol>
+<li>new writes are routed to child ranges first,</li>
+<li>the previous parent range becomes draining-only,</li>
+<li>old stable data is rewritten in the background,</li>
+<li><code>KeyToSegmentMap</code> is updated only at publish time,</li>
+<li>the old parent route is removed after publish succeeds.</li>
+</ol>
+<p>During the transition, reads must be able to combine:</p>
+<ul>
+<li>overlays from the new child ranges,</li>
+<li>stable sources still owned by the draining parent range.</li>
+</ul>
+<p>Diagram PNG:
+<img alt="Range-partitioned split drain flow" src="../images/range-partitioned-split-drain.png" /></p>
+<p>PlantUML source:
+<a href="../images/range-partitioned-split-drain.plantuml"><code>docs/architecture/segmentindex/images/range-partitioned-split-drain.plantuml</code></a></p>
+<h2 id="backpressure-model">Backpressure Model</h2>
+<p>Bounded buffering is mandatory.</p>
+<p>Two backpressure scopes exist:</p>
+<ul>
+<li>local range backpressure when one routed range has too much buffered data,</li>
+<li>global backpressure when total buffered overlay data exceeds the index-level
+  budget.</li>
+</ul>
+<p>This replaces the previous near-deadlock failure mode with explicit bounded
+admission.</p>
+<h2 id="recovery-model">Recovery Model</h2>
+<p>Any overlay state that is not yet published into stable segment storage is
+transient.</p>
+<p>Crash recovery therefore follows this rule:</p>
+<ul>
+<li>rebuild routed ranges from persisted stable metadata,</li>
+<li>discard unpublished in-memory overlay state,</li>
+<li>replay WAL to restore acknowledged writes into the overlay,</li>
+<li>publish again during subsequent drain or flush.</li>
+</ul>
+<p>The recovery boundary is therefore still:</p>
+<ul>
+<li>stable segment storage,</li>
+<li>persisted <code>KeyToSegmentMap</code>,</li>
+<li>WAL.</li>
+</ul>
 
 
 
@@ -3107,10 +3443,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

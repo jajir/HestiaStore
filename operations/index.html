@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -968,6 +968,8 @@
       
         
       
+        
+      
     
     
     
@@ -1022,6 +1024,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1433,7 +1463,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1675,6 +1705,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1774,6 +1808,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2373,6 +2463,8 @@
       
         
       
+        
+      
     
     
     
@@ -2464,6 +2556,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../development/guides/" class="md-nav__link">
         
   
@@ -2528,34 +2648,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2668,6 +2760,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -2904,8 +3024,10 @@
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">index</span><span class="p">.</span><span class="na">close</span><span class="p">();</span>
 </code></pre></div>
 <p>Notes:
-- HestiaStore has no WAL; durability comes from flush/close boundaries and atomic file replacement on commit.
-- If you keep running without compaction, reads remain correct; compaction improves locality and space usage.</p>
+- WAL is optional and disabled by default (<code>Wal.EMPTY</code>). When enabled, recovery replays WAL and can truncate invalid tails.
+- If you keep running without compaction, reads remain correct; compaction improves locality and space usage.
+- See <a href="wal/">WAL Operations</a> for durability modes, corruption handling, and WAL verification tooling.
+- Use <a href="wal-canary-runbook/">WAL Canary Runbook</a> for staged enablement, alert thresholds, and rollback to <code>Wal.EMPTY</code>.</p>
 
 
 

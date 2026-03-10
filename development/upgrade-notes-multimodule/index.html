@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1439,7 +1469,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1681,6 +1711,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1780,6 +1814,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2384,6 +2474,8 @@
       
         
       
+        
+      
     
     
     
@@ -2476,6 +2568,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guides/" class="md-nav__link">
         
   
@@ -2540,34 +2660,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2706,6 +2798,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Breaking-change expectation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeencoder-migration-checklist-006" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TypeEncoder migration checklist (0.0.6+)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2782,6 +2891,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -2979,6 +3116,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Breaking-change expectation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeencoder-migration-checklist-006" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TypeEncoder migration checklist (0.0.6+)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3113,7 +3267,17 @@ multi-module distribution.</p>
 <li>Package names for core APIs are preserved.</li>
 <li>Management contracts are versioned under <code>/api/v1/...</code>.</li>
 <li>DTO compatibility is guarded by contract tests.</li>
+<li><code>TypeEncoder</code> API changed in <code>0.0.6</code>:</li>
+<li>removed: <code>bytesLength(T)</code> and <code>toBytes(T, byte[])</code></li>
+<li>required: <code>EncodedBytes encode(T value, byte[] reusableBuffer)</code></li>
 </ul>
+<h3 id="typeencoder-migration-checklist-006">TypeEncoder migration checklist (0.0.6+)</h3>
+<ol>
+<li>Replace old two-step encoding with <code>encode(...)</code> implementation.</li>
+<li>Reuse caller-provided buffer when possible; allocate only when too small.</li>
+<li>Return exact written byte count in <code>EncodedBytes.length</code>.</li>
+<li>Update tests and custom integrations to call <code>encode(...)</code> only.</li>
+</ol>
 <h2 id="recommended-upgrade-sequence">Recommended upgrade sequence</h2>
 <ol>
 <li>Upgrade dependency coordinates to new module artifacts.</li>

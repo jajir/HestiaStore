@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1445,7 +1475,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1554,120 +1584,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#segment" class="md-nav__link">
+  <a href="#backpressure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧱 Segment
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#segmentid" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🏷️ SegmentId
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-to-segment-map" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🗺️ Key-to-Segment Map
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#main-sst" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📚 Main SST
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chunk" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📦 Chunk
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#delta-cache" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧮 Delta Cache
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#uniquecache" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧰 UniqueCache
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#flush" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🚿 Flush
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compaction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧹 Compaction
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#split" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ✂️ Split
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sparse-index-scarce-index" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🔍 Sparse Index (Scarce Index)
+        🚦 Backpressure
       
     </span>
   </a>
@@ -1686,10 +1606,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#filters-chunk-filters" class="md-nav__link">
+  <a href="#bounded-buffering" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧪 Filters (Chunk Filters)
+        📏 Bounded Buffering
       
     </span>
   </a>
@@ -1697,10 +1617,76 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tombstone" class="md-nav__link">
+  <a href="#chunk" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🪦 Tombstone
+        📦 Chunk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧹 Compaction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consistency-checker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 Consistency Checker
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delta-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧮 Delta Cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📁 Directory (Abstraction)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🌊 Drain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#durability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔒 Durability
       
     </span>
   </a>
@@ -1730,10 +1716,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#write-transaction" class="md-nav__link">
+  <a href="#filters-chunk-filters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ✍️ Write Transaction
+        🧪 Filters (Chunk Filters)
       
     </span>
   </a>
@@ -1741,10 +1727,109 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#directory-abstraction" class="md-nav__link">
+  <a href="#flush" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📁 Directory (Abstraction)
+        🚿 Flush
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hot-partition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔥 Hot Partition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ingest-index-ingest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📥 Ingest (Index Ingest)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-to-segment-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗺️ Key-to-Segment Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗒️ Logging Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-sst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Main SST
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overlay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🪟 Overlay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orphaned-segment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧷 Orphaned Segment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛟 Recovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 Segment
       
     </span>
   </a>
@@ -1763,10 +1848,76 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#segmentid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏷️ SegmentId
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#segmentwindow" class="md-nav__link">
     <span class="md-ellipsis">
       
         🪟 SegmentWindow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-index-scarce-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Sparse Index (Scarce Index)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✂️ Split
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Split Policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Split Procedure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-heavy-workload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧪 Split-heavy Workload
       
     </span>
   </a>
@@ -1785,10 +1936,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#consistency-checker" class="md-nav__link">
+  <a href="#thrash-thrashing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧰 Consistency Checker
+        🔁 Thrash (Thrashing)
       
     </span>
   </a>
@@ -1796,10 +1947,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#logging-context" class="md-nav__link">
+  <a href="#tombstone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🗒️ Logging Context
+        🪦 Tombstone
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uniquecache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 UniqueCache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wal-writeahead-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🪵 WAL (Write‑Ahead Log)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#write-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✍️ Write Transaction
       
     </span>
   </a>
@@ -1990,6 +2174,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2092,6 +2280,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2697,6 +2941,8 @@
       
         
       
+        
+      
     
     
     
@@ -2788,6 +3034,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../development/guides/" class="md-nav__link">
         
   
@@ -2852,34 +3126,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2992,6 +3238,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3159,120 +3433,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#segment" class="md-nav__link">
+  <a href="#backpressure" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧱 Segment
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#segmentid" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🏷️ SegmentId
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-to-segment-map" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🗺️ Key-to-Segment Map
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#main-sst" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📚 Main SST
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#chunk" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📦 Chunk
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#delta-cache" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧮 Delta Cache
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#uniquecache" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧰 UniqueCache
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#flush" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🚿 Flush
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compaction" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🧹 Compaction
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#split" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ✂️ Split
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sparse-index-scarce-index" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        🔍 Sparse Index (Scarce Index)
+        🚦 Backpressure
       
     </span>
   </a>
@@ -3291,10 +3455,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#filters-chunk-filters" class="md-nav__link">
+  <a href="#bounded-buffering" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧪 Filters (Chunk Filters)
+        📏 Bounded Buffering
       
     </span>
   </a>
@@ -3302,10 +3466,76 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tombstone" class="md-nav__link">
+  <a href="#chunk" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🪦 Tombstone
+        📦 Chunk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧹 Compaction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consistency-checker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 Consistency Checker
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delta-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧮 Delta Cache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-abstraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📁 Directory (Abstraction)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🌊 Drain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#durability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔒 Durability
       
     </span>
   </a>
@@ -3335,10 +3565,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#write-transaction" class="md-nav__link">
+  <a href="#filters-chunk-filters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ✍️ Write Transaction
+        🧪 Filters (Chunk Filters)
       
     </span>
   </a>
@@ -3346,10 +3576,109 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#directory-abstraction" class="md-nav__link">
+  <a href="#flush" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📁 Directory (Abstraction)
+        🚿 Flush
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hot-partition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔥 Hot Partition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ingest-index-ingest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📥 Ingest (Index Ingest)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-to-segment-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗺️ Key-to-Segment Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗒️ Logging Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-sst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Main SST
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overlay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🪟 Overlay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orphaned-segment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧷 Orphaned Segment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🛟 Recovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧱 Segment
       
     </span>
   </a>
@@ -3368,10 +3697,76 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#segmentid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏷️ SegmentId
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#segmentwindow" class="md-nav__link">
     <span class="md-ellipsis">
       
         🪟 SegmentWindow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sparse-index-scarce-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔍 Sparse Index (Scarce Index)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✂️ Split
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Split Policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Split Procedure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#split-heavy-workload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧪 Split-heavy Workload
       
     </span>
   </a>
@@ -3390,10 +3785,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#consistency-checker" class="md-nav__link">
+  <a href="#thrash-thrashing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧰 Consistency Checker
+        🔁 Thrash (Thrashing)
       
     </span>
   </a>
@@ -3401,10 +3796,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#logging-context" class="md-nav__link">
+  <a href="#tombstone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🗒️ Logging Context
+        🪦 Tombstone
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#uniquecache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧰 UniqueCache
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wal-writeahead-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🪵 WAL (Write‑Ahead Log)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#write-transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✍️ Write Transaction
       
     </span>
   </a>
@@ -3499,52 +3927,80 @@
 
 <h1 id="glossary">📖 Glossary</h1>
 <p>Concise definitions of terms used across HestiaStore’s architecture, with links and code pointers.</p>
-<h2 id="segment">🧱 Segment</h2>
-<p>Bounded shard of the index stored on disk with its own files: main SST (<code>vNN-index.sst</code>), sparse index (<code>vNN-scarce.sst</code>), Bloom filter (<code>vNN-bloom-filter.bin</code>), <code>manifest.txt</code>, optional delta caches (<code>vNN-delta-NNNN.cache</code>), and <code>.lock</code>. See also: On‑Disk Layout. Code: <code>segment/*</code>, <code>segmentindex/SegmentRegistry.java</code>.</p>
-<h2 id="segmentid">🏷️ SegmentId</h2>
-<p>Stable integer id rendered as <code>segment-00000</code>, used to name per‑segment files. Code: <code>segment/SegmentId.java</code>.</p>
-<h2 id="key-to-segment-map">🗺️ Key-to-Segment Map</h2>
-<p>Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as <code>index.map</code>. Code: <code>segmentindex/KeyToSegmentMap.java</code>.</p>
-<h2 id="main-sst">📚 Main SST</h2>
-<p>On‑disk, chunked Sorted String Table containing sorted key/value entries for a segment. Code: <code>chunkentryfile/*</code>, <code>chunkstore/*</code>.</p>
-<h2 id="chunk">📦 Chunk</h2>
-<p>Fixed‑cell payload plus a small header (magic, version, payload length, CRC, flags). Filters may transform payload on write and are inverted on read. Code: <code>chunkstore/Chunk*.java</code>.</p>
-<h2 id="delta-cache">🧮 Delta Cache</h2>
-<p>Per‑segment overlay of recent updates, materialized as sorted <code>.cache</code> files and an in‑memory <code>UniqueCache</code> when loaded. Code: <code>segment/SegmentDeltaCache*.java</code>.</p>
-<h2 id="uniquecache">🧰 UniqueCache</h2>
-<p>In‑memory map that keeps only the latest value per key. Used at the index‑level write buffer and inside the delta overlay. Code: <code>cache/UniqueCache*.java</code>.</p>
-<h2 id="flush">🚿 Flush</h2>
-<p>Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates <code>index.map</code>. <code>flush()</code> schedules the work; <code>flushAndWait()</code> waits for completion. Code: <code>segmentindex/SegmentIndexImpl#flush()</code>, <code>segmentindex/CompactSupport.java</code>.</p>
-<h2 id="compaction">🧹 Compaction</h2>
-<p>Segment rewrite that merges main SST with delta caches into fresh <code>vNN-index.sst</code>, <code>vNN-scarce.sst</code>, and <code>vNN-bloom-filter.bin</code> files, then clears delta caches. Code: <code>segment/SegmentCompacter.java</code>, <code>segment/SegmentFullWriter*.java</code>.</p>
-<h2 id="split">✂️ Split</h2>
-<p>When a segment grows beyond <code>maxNumberOfKeysInSegment</code>, it is split into two; <code>index.map</code> is updated with a new max key and SegmentId. Code: <code>segmentindex/SegmentSplitCoordinator.java</code>, <code>segment/SegmentSplitter*.java</code>.</p>
-<h2 id="sparse-index-scarce-index">🔍 Sparse Index (Scarce Index)</h2>
-<p>Per‑segment, sorted sample of keys that points to chunk start positions in the main SST to bound local scans. Code: <code>scarceindex/*</code>.</p>
+<h2 id="backpressure">🚦 Backpressure</h2>
+<p>Controlled write throttling/rejection when bounded ingest limits are reached (<code>BUSY</code>) or when WAL retention pressure requires forced checkpoint progress before accepting more writes. Code: <code>segmentindex/partition/RangePartition#write()</code>, <code>segmentindex/core/SegmentIndexImpl#enforceWalRetentionPressureIfNeeded()</code>, <code>segmentindex/wal/WalRuntime#isRetentionPressure()</code>.</p>
 <h2 id="bloom-filter">🌸 Bloom Filter</h2>
 <p>Per‑segment probabilistic set that quickly proves absence and reduces on‑disk probes; rebuilt during compaction. Code: <code>bloomfilter/*</code>.</p>
-<h2 id="filters-chunk-filters">🧪 Filters (Chunk Filters)</h2>
-<p>Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: <code>chunkstore/ChunkFilter*.java</code>; config via <code>segmentindex/IndexConfigurationBuilder</code>.</p>
-<h2 id="tombstone">🪦 Tombstone</h2>
-<p>Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: <code>datatype/TypeDescriptor#getTombstone()</code>, used in <code>segmentindex/SegmentIndexImpl#delete()</code>.</p>
+<h2 id="bounded-buffering">📏 Bounded Buffering</h2>
+<p>Capacity model that bounds active partition size, immutable-run depth, per-partition buffered keys, and total index buffered keys so ingest memory stays predictable under load. Code: <code>segmentindex/partition/PartitionRuntimeLimits.java</code>, <code>segmentindex/IndexConfiguration.java</code>, <code>control/model/RuntimeSettingKey.java</code>.</p>
+<h2 id="chunk">📦 Chunk</h2>
+<p>Fixed‑cell payload plus a small header (magic, version, payload length, CRC, flags). Filters may transform payload on write and are inverted on read. Code: <code>chunkstore/Chunk*.java</code>.</p>
+<h2 id="compaction">🧹 Compaction</h2>
+<p>Segment rewrite that merges main SST with delta caches into fresh <code>vNN-index.sst</code>, <code>vNN-scarce.sst</code>, and <code>vNN-bloom-filter.bin</code> files, then clears delta caches. Code: <code>segment/SegmentCompacter.java</code>, <code>segment/SegmentFullWriter*.java</code>.</p>
+<h2 id="consistency-checker">🧰 Consistency Checker</h2>
+<p>Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: <code>segmentindex/IndexConsistencyChecker.java</code>, <code>segment/SegmentConsistencyChecker.java</code>.</p>
+<h2 id="delta-cache">🧮 Delta Cache</h2>
+<p>Per‑segment overlay of recent updates, materialized as sorted <code>.cache</code> files and an in‑memory <code>UniqueCache</code> when loaded. Code: <code>segment/SegmentDeltaCache*.java</code>.</p>
+<h2 id="directory-abstraction">📁 Directory (Abstraction)</h2>
+<p>File I/O backend (FS, memory, zip) providing readers/writers and atomic rename. Code: <code>directory/*</code>.</p>
+<h2 id="drain">🌊 Drain</h2>
+<p>Movement of immutable partition runs from ingest overlay into stable segment storage, followed by segment flush. Drain is scheduled per routed segment and can be awaited by <code>flushAndWait()</code>. Code: <code>segmentindex/core/SegmentIndexImpl#drainPartitions()</code>, <code>segmentindex/core/SegmentIndexImpl#drainPartitionLoop()</code>, <code>segmentindex/partition/PartitionImmutableRun.java</code>.</p>
+<h2 id="durability">🔒 Durability</h2>
+<p>Persistence guarantee for acknowledged writes. With WAL enabled, durability mode controls acknowledgement timing (<code>ASYNC</code>, <code>GROUP_SYNC</code>, <code>SYNC</code>); with WAL disabled, explicit maintenance completion (<code>flushAndWait()</code>/close) is the durability boundary. Code: <code>segmentindex/WalDurabilityMode.java</code>, <code>segmentindex/core/SegmentIndexImpl#flushAndWait()</code>, <code>index/GuardedWriteTransaction.java</code>.</p>
 <h2 id="entry">🧾 Entry</h2>
 <p>Immutable key/value pair used across iterators and writers. Code: <code>index/Entry.java</code>.</p>
 <h2 id="entryiterator">🔁 EntryIterator</h2>
 <p>Forward iterator over entries; variants exist for merging overlays and for safe iteration under writes (optimistic lock). Code: <code>index/EntryIterator.java</code>, <code>segment/MergeDeltaCacheWithIndexIterator.java</code>, <code>index/EntryIteratorWithLock.java</code>.</p>
-<h2 id="write-transaction">✍️ Write Transaction</h2>
-<p>Pattern that enforces open → close → commit, guaranteeing atomic file replacement. Code: <code>index/GuardedWriteTransaction.java</code>, <code>index/WriteTransaction.java</code>.</p>
-<h2 id="directory-abstraction">📁 Directory (Abstraction)</h2>
-<p>File I/O backend (FS, memory, zip) providing readers/writers and atomic rename. Code: <code>directory/*</code>.</p>
-<h2 id="segmentdata-and-provider">🧩 SegmentData and Provider</h2>
-<p>Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: <code>segment/SegmentData*.java</code>, <code>segmentindex/SegmentDataCache.java</code>.</p>
-<h2 id="segmentwindow">🪟 SegmentWindow</h2>
-<p>Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: <code>segmentindex/SegmentWindow.java</code>.</p>
-<h2 id="stats">📊 Stats</h2>
-<p>Simple counters for get/put/delete to observe workload shape. Code: <code>segmentindex/Stats.java</code>.</p>
-<h2 id="consistency-checker">🧰 Consistency Checker</h2>
-<p>Utilities to verify sortedness and segment/map coherence after unexpected shutdowns; can repair certain metadata issues. Code: <code>segmentindex/IndexConsistencyChecker.java</code>, <code>segment/SegmentConsistencyChecker.java</code>.</p>
+<h2 id="filters-chunk-filters">🧪 Filters (Chunk Filters)</h2>
+<p>Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: <code>chunkstore/ChunkFilter*.java</code>; config via <code>segmentindex/IndexConfigurationBuilder</code>.</p>
+<h2 id="flush">🚿 Flush</h2>
+<p>Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates <code>index.map</code>. <code>flush()</code> schedules the work; <code>flushAndWait()</code> waits for completion. Code: <code>segmentindex/SegmentIndexImpl#flush()</code>, <code>segmentindex/CompactSupport.java</code>.</p>
+<h2 id="hot-partition">🔥 Hot Partition</h2>
+<p>Routed key range that receives a disproportionately large share of current reads or writes compared with the rest of the index. Hot partitions are where bounded buffering, drain backpressure, and split policy matter most. Code: <code>segmentindex/partition/RangePartition.java</code>, <code>segmentindex/core/SegmentIndexImpl.java</code>, <code>segmentindex/core/SegmentMaintenanceCoordinator.java</code>.</p>
+<h2 id="ingest-index-ingest">📥 Ingest (Index Ingest)</h2>
+<p>Index write path where <code>put</code>/<code>delete</code> first land in a partitioned in‑memory overlay above stable segments (and may be WAL‑recorded first when enabled). It provides read‑after‑write visibility before background publish to stable storage. Code: <code>segmentindex/core/SegmentIndexImpl#putBuffered()</code>, <code>segmentindex/partition/PartitionRuntime.java</code>, <code>segmentindex/partition/RangePartition.java</code>.</p>
+<h2 id="key-to-segment-map">🗺️ Key-to-Segment Map</h2>
+<p>Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as <code>index.map</code>. Code: <code>segmentindex/KeyToSegmentMap.java</code>.</p>
 <h2 id="logging-context">🗒️ Logging Context</h2>
 <p>Optional MDC enrichment that sets <code>index.name</code> for log correlation when enabled.</p>
+<h2 id="main-sst">📚 Main SST</h2>
+<p>On‑disk, chunked Sorted String Table containing sorted key/value entries for a segment. Code: <code>chunkentryfile/*</code>, <code>chunkstore/*</code>.</p>
+<h2 id="overlay">🪟 Overlay</h2>
+<p>The mutable and immutable in‑memory partition layers that sit above stable segment storage. Reads consult the overlay first so acknowledged writes are immediately visible before background drain publishes them into stable segments. Code: <code>segmentindex/partition/PartitionRuntime.java</code>, <code>segmentindex/partition/RangePartition.java</code>, <code>segmentindex/core/SegmentIndexImpl.java</code>.</p>
+<h2 id="orphaned-segment">🧷 Orphaned Segment</h2>
+<p>Segment directory that exists on disk but is not referenced by persisted routing metadata (<code>index.map</code>) and is not a pending split source. Cleanup removes these leftovers during recovery/consistency handling. Code: <code>segmentindex/core/SegmentIndexImpl#cleanupOrphanedSegmentDirectories()</code>, <code>segmentindex/core/SegmentIndexImpl#deleteOrphanedSegmentDirectory()</code>.</p>
+<h2 id="recovery">🛟 Recovery</h2>
+<p>Startup and repair path that restores stable metadata, replays WAL records above checkpoint, and handles invalid tails according to corruption policy before returning to ready state. Code: <code>segmentindex/wal/WalRuntime#recover()</code>, <code>segmentindex/core/SegmentIndexImpl#replayWalRecord()</code>, <code>segmentindex/IndexConsistencyChecker.java</code>.</p>
+<h2 id="segment">🧱 Segment</h2>
+<p>Bounded shard of the index stored on disk with its own files: main SST (<code>vNN-index.sst</code>), sparse index (<code>vNN-scarce.sst</code>), Bloom filter (<code>vNN-bloom-filter.bin</code>), <code>manifest.txt</code>, optional delta caches (<code>vNN-delta-NNNN.cache</code>), and <code>.lock</code>. See also: On‑Disk Layout. Code: <code>segment/*</code>, <code>segmentindex/SegmentRegistry.java</code>.</p>
+<h2 id="segmentdata-and-provider">🧩 SegmentData and Provider</h2>
+<p>Lazy containers and providers for per‑segment heavyweight structures (delta cache, Bloom, sparse index). Often cached via LRU. Code: <code>segment/SegmentData*.java</code>, <code>segmentindex/SegmentDataCache.java</code>.</p>
+<h2 id="segmentid">🏷️ SegmentId</h2>
+<p>Stable integer id rendered as <code>segment-00000</code>, used to name per‑segment files. Code: <code>segment/SegmentId.java</code>.</p>
+<h2 id="segmentwindow">🪟 SegmentWindow</h2>
+<p>Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT. Code: <code>segmentindex/SegmentWindow.java</code>.</p>
+<h2 id="sparse-index-scarce-index">🔍 Sparse Index (Scarce Index)</h2>
+<p>Per‑segment, sorted sample of keys that points to chunk start positions in the main SST to bound local scans. Code: <code>scarceindex/*</code>.</p>
+<h2 id="split">✂️ Split</h2>
+<p>Maintenance operation that replaces one routed segment range with child ranges when split policy is met; the route map is remapped atomically and overlay data can be reassigned to the new routes. Code: <code>segmentindex/split/PartitionStableSplitCoordinator.java</code>, <code>segmentindex/split/SegmentSplitCoordinator.java</code>, <code>segmentindex/core/SegmentMaintenanceCoordinator.java</code>.</p>
+<h2 id="split-policy">🧭 Split Policy</h2>
+<p>Background decision logic that identifies routed ranges worth splitting and schedules the work with cooldown, hysteresis, and in-flight guards so the system avoids split thrash. Code: <code>segmentindex/core/SegmentMaintenanceCoordinator.java</code>, <code>segmentindex/core/SegmentIndexImpl.java</code>.</p>
+<h2 id="split-procedure">🧭 Split Procedure</h2>
+<p>Ordered split pipeline: validate feasibility, open iterator, fill lower segment to target, ensure lower segment is not empty, then either replace the original segment (compacted outcome) or write remaining entries to an upper segment (split outcome). Code: <code>segmentindex/split/SegmentSplitPipeline.java</code>, <code>segmentindex/split/SegmentSplitter.java</code>, <code>segmentindex/split/SegmentSplitStep*.java</code>.</p>
+<h2 id="split-heavy-workload">🧪 Split-heavy Workload</h2>
+<p>Workload pattern or benchmark mode that intentionally drives frequent split candidates, typically by growing a routed keyspace under load while reads and writes continue. It is useful for validating autonomous split policy, child publish flow, and read/write behavior during repeated remapping. Code: <code>benchmark/segmentindex/SegmentIndexMixedDrainBenchmark.java</code>, <code>segmentindex/core/SegmentMaintenanceCoordinator.java</code>, <code>segmentindex/split/PartitionStableSplitCoordinator.java</code>.</p>
+<h2 id="stats">📊 Stats</h2>
+<p>Simple counters for get/put/delete to observe workload shape. Code: <code>segmentindex/Stats.java</code>.</p>
+<h2 id="thrash-thrashing">🔁 Thrash (Thrashing)</h2>
+<p>Pathological churn where the system repeatedly retries, reloads, evicts, splits, or rescans the same hot range/cache entries without making proportional forward progress. In this project the term is typically used for split thrash or cache thrash, for example when a hot routed segment keeps re-entering maintenance/scheduling pressure or when registry cache entries are repeatedly unloaded and loaded again under pressure. Code: <code>segmentindex/core/SegmentIndexImpl.java</code>, <code>segmentindex/core/SegmentMaintenanceCoordinator.java</code>, <code>segmentregistry/SegmentRegistryCache.java</code>.</p>
+<h2 id="tombstone">🪦 Tombstone</h2>
+<p>Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: <code>datatype/TypeDescriptor#getTombstone()</code>, used in <code>segmentindex/SegmentIndexImpl#delete()</code>.</p>
+<h2 id="uniquecache">🧰 UniqueCache</h2>
+<p>In‑memory map that keeps only the latest value per key. Used at the index‑level write buffer and inside the delta overlay. Code: <code>cache/UniqueCache*.java</code>.</p>
+<h2 id="wal-writeahead-log">🪵 WAL (Write‑Ahead Log)</h2>
+<p>Per-index append log in <code>wal/</code> that records <code>PUT</code>/<code>DELETE</code> operations with LSN and checksum before apply. It provides replay, checkpointing, segment rotation, and invalid-tail handling according to policy. Code: <code>segmentindex/Wal.java</code>, <code>segmentindex/wal/WalRuntime.java</code>, <code>segmentindex/wal/WalTool.java</code>.</p>
+<h2 id="write-transaction">✍️ Write Transaction</h2>
+<p>Pattern that enforces open → close → commit, guaranteeing atomic file replacement. Code: <code>index/GuardedWriteTransaction.java</code>, <code>index/WriteTransaction.java</code>.</p>
 
 
 

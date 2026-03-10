@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -974,6 +974,8 @@
       
         
       
+        
+      
     
     
     
@@ -1028,6 +1030,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1445,7 +1475,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1692,6 +1722,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1792,6 +1826,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2477,6 +2567,8 @@
       
         
       
+        
+      
     
     
     
@@ -2568,6 +2660,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../development/guides/" class="md-nav__link">
         
   
@@ -2632,34 +2752,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2772,6 +2864,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3062,14 +3182,36 @@
 for index-level telemetry.</p>
 <h2 id="current-fields">Current fields</h2>
 <ul>
-<li><code>getOperationCount</code><br />
-  Total number of <code>get(...)</code> calls accepted by the index instance.</li>
-<li><code>putOperationCount</code><br />
-  Total number of <code>put(...)</code> calls accepted by the index instance.</li>
-<li><code>deleteOperationCount</code><br />
-  Total number of <code>delete(...)</code> calls accepted by the index instance.</li>
-<li><code>state</code><br />
-  Current <code>SegmentIndexState</code> at snapshot creation time.</li>
+<li>Operation counters:</li>
+<li><code>getOperationCount</code></li>
+<li><code>putOperationCount</code></li>
+<li><code>deleteOperationCount</code></li>
+<li>Registry and segment state:</li>
+<li><code>registryCache*</code></li>
+<li><code>segment*</code></li>
+<li><code>totalSegmentKeys</code></li>
+<li><code>totalSegmentCacheKeys</code></li>
+<li><code>totalWriteCacheKeys</code></li>
+<li>Partitioned ingest overlay:</li>
+<li><code>maxNumberOfKeysInActivePartition</code></li>
+<li><code>maxNumberOfImmutableRunsPerPartition</code></li>
+<li><code>maxNumberOfKeysInPartitionBuffer</code></li>
+<li><code>maxNumberOfKeysInIndexBuffer</code></li>
+<li><code>partitionCount</code></li>
+<li><code>activePartitionCount</code></li>
+<li><code>drainingPartitionCount</code></li>
+<li><code>immutableRunCount</code></li>
+<li><code>partitionBufferedKeyCount</code></li>
+<li><code>localThrottleCount</code></li>
+<li><code>globalThrottleCount</code></li>
+<li><code>drainScheduleCount</code></li>
+<li><code>drainInFlightCount</code></li>
+<li>WAL and latency:</li>
+<li><code>wal*</code></li>
+<li><code>readLatencyP50/P95/P99Micros</code></li>
+<li><code>writeLatencyP50/P95/P99Micros</code></li>
+<li>Lifecycle:</li>
+<li><code>state</code></li>
 </ul>
 <h2 id="semantics">Semantics</h2>
 <ul>
@@ -3078,6 +3220,11 @@ for index-level telemetry.</p>
 <li>Counters are process-local and reset when a new index object is created.</li>
 <li>Field values represent observed operation calls, not necessarily durable
   writes on disk.</li>
+<li><code>partitionBufferedKeyCount</code> counts only overlay-resident keys; it is a
+  subset of <code>totalWriteCacheKeys</code>.</li>
+<li>Legacy <code>split*</code> and <code>maintenance*</code> fields remain in the snapshot for
+  compatibility, but partition-specific fields are the authoritative view for
+  the new ingest runtime.</li>
 </ul>
 <h2 id="compatibility-policy">Compatibility policy</h2>
 <ul>

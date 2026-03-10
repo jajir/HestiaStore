@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -1135,6 +1135,8 @@
       
         
       
+        
+      
     
     
     
@@ -1189,6 +1191,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1600,7 +1630,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1842,6 +1872,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1941,6 +1975,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2540,6 +2630,8 @@
       
         
       
+        
+      
     
     
     
@@ -2631,6 +2723,34 @@
   
   
     <li class="md-nav__item">
+      <a href="development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="development/guides/" class="md-nav__link">
         
   
@@ -2695,34 +2815,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2835,6 +2927,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -3168,7 +3288,7 @@
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a> • Custom key/value types via type descriptors
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a> • Single‑writer, multi‑reader (optional synchronized mode)
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a> • Test-friendly MemDirectory for fast, isolated tests
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a> • Roadmap: write-ahead logging and advanced compaction
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a> • Optional write-ahead logging (WAL) is implemented for local crash recovery
 </code></pre></div>
 <h2 id="performance-comparison">🚀 Performance Comparison</h2>
 <p>All tests ran on a 2024 Mac mini with 16 GB RAM. Absolute numbers vary between runs, so focus on relative differences.</p>
@@ -3199,7 +3319,7 @@
 <tr>
 <td style="text-align: left;">HestiaStore</td>
 <td style="text-align: left;">Segmented on-disk structure</td>
-<td style="text-align: left;">Single-writer, multi-reader (optional synchronized)</td>
+<td style="text-align: left;">Thread-safe concurrent operations (segment-level parallelism)</td>
 <td style="text-align: left;">Periodic segment flush/merge</td>
 </tr>
 <tr>
@@ -3248,10 +3368,10 @@
 <tbody>
 <tr>
 <td style="text-align: left;">HestiaStore</td>
-<td style="text-align: left;">File-backed; commit on close</td>
+<td style="text-align: left;">File-backed; optional WAL (opt-in) + flush/close boundaries</td>
 <td style="text-align: left;">Snappy</td>
 <td style="text-align: left;">Pure Java (JAR-only)</td>
-<td style="text-align: left;">Embedded KV with simple ops, large datasets</td>
+<td style="text-align: left;">Embedded KV with predictable local durability/recovery</td>
 </tr>
 <tr>
 <td style="text-align: left;">RocksDB</td>
@@ -3293,7 +3413,7 @@
 <p>Notes</p>
 <ul>
 <li>“Concurrency” describes the general access model; specifics depend on configuration and workload.</li>
-<li>HestiaStore focuses on predictable file I/O with configurable buffering; WAL/transactions are on the roadmap.</li>
+<li>HestiaStore supports opt-in WAL for local crash recovery; cross-key ACID transactions and replication are not part of current scope.</li>
 </ul>
 <h2 id="contributing">🤝 Contributing</h2>
 <p>We welcome contributions! Please read our <a href="CONTRIBUTING/">Contributing Guidelines</a> before submitting a pull request.</p>
@@ -3304,6 +3424,7 @@
 <li><a href="https://hestiastore.org/how-to-use/">Getting started</a> with a quick start and examples</li>
 <li><a href="https://hestiastore.org/configuration/">Configuration</a> — properties overview and guidance</li>
 <li><a href="https://hestiastore.org/configuration/logging/">Logging</a> — how to set up logging</li>
+<li><a href="https://hestiastore.org/operations/wal/">WAL operations</a> — enable and operate implemented opt-in WAL</li>
 <li><a href="https://hestiastore.org/development/release/">Releases</a> — versioning and release process</li>
 </ul>
 <!--
@@ -3349,9 +3470,10 @@
 <h2 id="roadmap">🗺️ Roadmap</h2>
 <p>Planned improvements include:</p>
 <ul>
-<li>Full Multithreaded Storage Engine – Currently this is the biggest performance limitation. Disk I/O consumes only about 40% of available CPU, leaving significant unused capacity.</li>
-<li>Implement Asynchronous I/O – Explore alternative approaches for file system access. Replace the current java.io-based implementation.</li>
-<li>Example Application – Provide a simple, easy-to-run demo application that demonstrates HestiaStore’s capabilities.
+<li>Add a demo application that showcases key features end-to-end (configuration, persistence, WAL, monitoring, and recovery).</li>
+<li>Expand performance testing and product comparison with more detailed methodology, larger datasets, and mixed workload scenarios.</li>
+<li>Add more complex test scenarios covering concurrency stress, long-running stability, crash recovery, and edge-case data distributions.</li>
+<li>Improve documentation with deeper architecture explanations, clearer operational runbooks, and more practical examples.
 For detailed tasks and progress, see the <a href="https://github.com/jajir/HestiaStore/issues">GitHub Issues</a> page.</li>
 </ul>
 <h2 id="need-help-or-have-questions">❓ Need Help or Have Questions?</h2>

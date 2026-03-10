@@ -19,11 +19,11 @@
       
       
       <link rel="icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
-        <title>📈 Observability - HestiaStore</title>
+        <title>Monitoring - HestiaStore</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#observability" class="md-skip">
+        <a href="#monitoring" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              📈 Observability
+              Monitoring
             
           </span>
         </div>
@@ -968,6 +968,8 @@
       
         
       
+        
+      
     
     
     
@@ -1022,6 +1024,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1433,7 +1463,7 @@
   <span class="md-ellipsis">
     
   
-    Package Boundaries
+    Package layout
   
 
     
@@ -1675,6 +1705,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1774,6 +1808,62 @@
     
   
     Read Path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Range-Partitioned Ingest Implementation Notes
   
 
     
@@ -2373,6 +2463,8 @@
       
         
       
+        
+      
     
     
     
@@ -2464,6 +2556,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../development/documentation-guidelines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../development/guides/" class="md-nav__link">
         
   
@@ -2528,34 +2648,6 @@
     
   
     JVM Profiling
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../development/module-current-state/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Module Current State
   
 
     
@@ -2668,6 +2760,34 @@
     
   
     Rollback Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WAL Replication & Fencing Design
   
 
     
@@ -2828,6 +2948,91 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics Source
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-index-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Index Signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partition-overlay-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partition Overlay Signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wal-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WAL Signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#suggested-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested Alerts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structured-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured Logs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dashboard-minimum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard Minimum
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2854,14 +3059,142 @@
   
 
 
-<h1 id="observability">📈 Observability</h1>
-<p>Monitoring and logging guidance for HestiaStore.</p>
+<h1 id="monitoring">Monitoring</h1>
+<p>This document describes runtime monitoring for HestiaStore indexes, with
+special focus on WAL-enabled deployments.</p>
+<p>For rollout and rollback procedures, see
+<a href="../wal-canary-runbook/">WAL Canary Runbook</a>.</p>
+<h2 id="metrics-source">Metrics Source</h2>
+<p>Use <code>SegmentIndex.metricsSnapshot()</code> as the canonical in-process source.
+Export these values into your monitoring stack (Micrometer/Prometheus, etc.)
+at a fixed scrape interval.</p>
+<h2 id="core-index-signals">Core Index Signals</h2>
 <ul>
-<li>Metrics and health checks (to be defined)</li>
-<li>Logging configuration: see configuration/logging.md</li>
-<li>Common alerts and thresholds</li>
+<li>Throughput:</li>
+<li><code>getOperationCount</code>, <code>putOperationCount</code>, <code>deleteOperationCount</code></li>
+<li>Cache behavior:</li>
+<li><code>registryCacheHitCount</code>, <code>registryCacheMissCount</code>, <code>registryCacheEvictionCount</code></li>
+<li>Latency:</li>
+<li><code>readLatencyP50/P95/P99Micros</code></li>
+<li><code>writeLatencyP50/P95/P99Micros</code></li>
+<li>State:</li>
+<li><code>state</code> (<code>OPEN</code>, <code>ERROR</code>, <code>CLOSED</code>, ...)</li>
 </ul>
-<p>Content to be expanded.</p>
+<h2 id="partition-overlay-signals">Partition Overlay Signals</h2>
+<p>For the range-partitioned ingest runtime, treat these as the primary
+backpressure and drain indicators:</p>
+<ul>
+<li>Buffered overlay pressure:</li>
+<li><code>getPartitionBufferedKeyCount()</code></li>
+<li><code>getImmutableRunCount()</code></li>
+<li><code>getDrainingPartitionCount()</code></li>
+<li>Capacity and routing shape:</li>
+<li><code>getPartitionCount()</code></li>
+<li><code>getActivePartitionCount()</code></li>
+<li><code>getMaxNumberOfKeysInActivePartition()</code></li>
+<li><code>getMaxNumberOfKeysInPartitionBuffer()</code></li>
+<li><code>getMaxNumberOfKeysInIndexBuffer()</code></li>
+<li><code>getMaxNumberOfImmutableRunsPerPartition()</code></li>
+<li>Throttling:</li>
+<li><code>getLocalThrottleCount()</code></li>
+<li><code>getGlobalThrottleCount()</code></li>
+<li>Drain activity:</li>
+<li><code>getDrainScheduleCount()</code></li>
+<li><code>getDrainInFlightCount()</code></li>
+</ul>
+<p>Compatibility note:</p>
+<ul>
+<li><code>splitScheduleCount</code>, <code>splitInFlightCount</code>, <code>maintenanceQueueSize</code>, and
+  related legacy queue fields are still emitted for older clients.</li>
+<li>New dashboards and alerts should prefer the explicit partition fields above.</li>
+</ul>
+<h2 id="wal-signals">WAL Signals</h2>
+<p>Use these fields whenever <code>isWalEnabled()</code> is <code>true</code>:</p>
+<ul>
+<li>Append throughput:</li>
+<li><code>getWalAppendCount()</code></li>
+<li><code>getWalAppendBytes()</code></li>
+<li>Sync health:</li>
+<li><code>getWalSyncCount()</code></li>
+<li><code>getWalSyncFailureCount()</code></li>
+<li><code>getWalSyncAvgNanos()</code></li>
+<li><code>getWalSyncMaxNanos()</code></li>
+<li><code>getWalSyncAvgBatchBytes()</code></li>
+<li><code>getWalSyncBatchBytesMax()</code></li>
+<li>Recovery/corruption:</li>
+<li><code>getWalCorruptionCount()</code></li>
+<li><code>getWalTruncationCount()</code></li>
+<li>Retention/checkpoint:</li>
+<li><code>getWalRetainedBytes()</code></li>
+<li><code>getWalSegmentCount()</code></li>
+<li><code>getWalCheckpointLsn()</code></li>
+<li><code>getWalAppliedLsn()</code></li>
+<li><code>getWalCheckpointLagLsn()</code></li>
+<li>Backlog:</li>
+<li><code>getWalPendingSyncBytes()</code></li>
+</ul>
+<h2 id="suggested-alerts">Suggested Alerts</h2>
+<p>Start with these baseline alerts and tune per workload:</p>
+<ul>
+<li><code>wal sync failures</code>:</li>
+<li>condition: <code>getWalSyncFailureCount()</code> increases</li>
+<li>severity: critical</li>
+<li><code>wal corruption detected</code>:</li>
+<li>condition: <code>getWalCorruptionCount()</code> increases</li>
+<li>severity: critical</li>
+<li><code>unexpected wal truncation</code>:</li>
+<li>condition: <code>getWalTruncationCount()</code> increases outside controlled recovery</li>
+<li>severity: high</li>
+<li><code>wal retention pressure</code>:</li>
+<li>condition: <code>getWalRetainedBytes()</code> exceeds 80% of configured
+    <code>maxBytesBeforeForcedCheckpoint</code> for 10 minutes</li>
+<li>severity: warning</li>
+<li><code>wal checkpoint lag growth</code>:</li>
+<li>condition: <code>getWalCheckpointLagLsn()</code> grows continuously for 10+ minutes</li>
+<li>severity: warning</li>
+<li><code>wal pending sync growth</code>:</li>
+<li>condition: <code>getWalPendingSyncBytes()</code> grows without recovery for 10+ minutes</li>
+<li>severity: warning</li>
+<li><code>partition overlay backlog growth</code>:</li>
+<li>condition: <code>getPartitionBufferedKeyCount()</code> and <code>getImmutableRunCount()</code>
+    grow continuously without returning to baseline</li>
+<li>severity: warning</li>
+<li><code>partition throttling</code>:</li>
+<li>condition: <code>getLocalThrottleCount()</code> or <code>getGlobalThrottleCount()</code>
+    increases steadily</li>
+<li>severity: warning</li>
+</ul>
+<h2 id="structured-logs">Structured Logs</h2>
+<p>Parse and index these WAL events:</p>
+<ul>
+<li>Recovery and repair:</li>
+<li><code>event=wal_recovery_start</code></li>
+<li><code>event=wal_recovery_invalid_tail</code></li>
+<li><code>event=wal_recovery_tail_repair</code></li>
+<li><code>event=wal_recovery_drop_newer_segments</code></li>
+<li><code>event=wal_recovery_checkpoint_clamp</code></li>
+<li><code>event=wal_recovery_complete</code></li>
+<li>Checkpoint and retention:</li>
+<li><code>event=wal_checkpoint_cleanup</code></li>
+<li><code>event=wal_retention_pressure_start</code></li>
+<li><code>event=wal_retention_pressure_cleared</code></li>
+<li>Sync failures:</li>
+<li><code>event=wal_sync_failure</code></li>
+<li><code>event=wal_sync_failure_transition</code></li>
+</ul>
+<h2 id="dashboard-minimum">Dashboard Minimum</h2>
+<p>At minimum, create one dashboard per WAL-enabled index with:</p>
+<ol>
+<li>Write latency (<code>P50/P95/P99</code>) and throughput.</li>
+<li><code>WalSyncAvgNanos</code>, <code>WalSyncMaxNanos</code>, <code>WalSyncCount</code>.</li>
+<li><code>WalRetainedBytes</code>, <code>WalSegmentCount</code>, <code>WalCheckpointLagLsn</code>.</li>
+<li><code>WalPendingSyncBytes</code>.</li>
+<li>Counters for <code>WalSyncFailureCount</code>, <code>WalCorruptionCount</code>,
+   <code>WalTruncationCount</code>.</li>
+<li><code>PartitionBufferedKeyCount</code>, <code>ImmutableRunCount</code>,
+   <code>DrainingPartitionCount</code>, <code>DrainInFlightCount</code>.</li>
+<li>Index state timeline (<code>OPEN</code> vs <code>ERROR</code>).</li>
+</ol>
 
 
 
