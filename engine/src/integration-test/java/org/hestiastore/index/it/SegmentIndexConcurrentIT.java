@@ -544,6 +544,12 @@ class SegmentIndexConcurrentIT {
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
+                .withSegmentMaintenanceAutoEnabled(false)//
+                .withMaxNumberOfKeysInActivePartition(256)//
+                .withMaxNumberOfImmutableRunsPerPartition(4)//
+                .withMaxNumberOfKeysInPartitionBuffer(1_024)//
+                .withMaxNumberOfKeysInIndexBuffer(4_096)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000)//
                 .withMaxNumberOfKeysInSegmentCache(30)//
                 .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentChunk(5)//
