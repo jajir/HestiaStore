@@ -3,6 +3,7 @@ package org.hestiastore.benchmark.segmentindex;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +55,7 @@ public class SegmentIndexGetBenchmark {
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
     private static final Comparator<File> REVERSE_FILE_ORDER = Comparator
             .comparing(File::getAbsolutePath).reversed();
+    private static final Path JMH_TEMP_ROOT = Path.of("target", "jmh-temp");
 
     @Param({ "12000" })
     private int keyCount;
@@ -76,7 +78,9 @@ public class SegmentIndexGetBenchmark {
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        tempDir = Files.createTempDirectory("hestia-jmh-get").toFile();
+        Files.createDirectories(JMH_TEMP_ROOT);
+        tempDir = Files.createTempDirectory(JMH_TEMP_ROOT, "hestia-jmh-get")
+                .toFile();
         final Directory directory = new FsDirectory(tempDir);
         final IndexConfiguration<Integer, String> conf = buildConfiguration();
 
