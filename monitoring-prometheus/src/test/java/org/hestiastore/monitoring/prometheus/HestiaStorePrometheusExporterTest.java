@@ -27,6 +27,9 @@ class HestiaStorePrometheusExporterTest {
         assertTrue(scrape.contains("hestiastore_ops_get_total"));
         assertTrue(scrape.contains("hestiastore_ops_put_total"));
         assertTrue(scrape.contains("hestiastore_ops_delete_total"));
+        assertTrue(scrape.contains("hestiastore_partition_count"));
+        assertTrue(scrape.contains("hestiastore_partition_buffered_key_count"));
+        assertTrue(scrape.contains("hestiastore_partition_drain_schedule_total"));
         assertTrue(scrape.contains("hestiastore_index_up"));
         assertTrue(scrape.contains("index=\"orders\""));
     }

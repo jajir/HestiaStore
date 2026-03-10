@@ -49,6 +49,19 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
         assertEquals(0L, snapshot.getWalSyncAvgNanos());
         assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
+        assertEquals(0, snapshot.getMaxNumberOfImmutableRunsPerPartition());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(0, snapshot.getPartitionCount());
+        assertEquals(0, snapshot.getActivePartitionCount());
+        assertEquals(0, snapshot.getDrainingPartitionCount());
+        assertEquals(0, snapshot.getImmutableRunCount());
+        assertEquals(0, snapshot.getPartitionBufferedKeyCount());
+        assertEquals(0L, snapshot.getLocalThrottleCount());
+        assertEquals(0L, snapshot.getGlobalThrottleCount());
+        assertEquals(0L, snapshot.getDrainScheduleCount());
+        assertEquals(0, snapshot.getDrainInFlightCount());
         assertTrue(snapshot.getSegmentRuntimeSnapshots().isEmpty());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
@@ -70,6 +83,33 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(14L, snapshot.getRegistryCacheEvictionCount());
         assertEquals(2, snapshot.getRegistryCacheSize());
         assertEquals(64, snapshot.getRegistryCacheLimit());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());
+    }
+
+    @Test
+    void fullConstructorStoresPartitionMetricsValues() {
+        final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 11, 12, 0, 0, 0, 0, 0,
+                0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L,
+                0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, true, 1L, 2L, 3L, 4L, 5L,
+                6L, 7L, 8, 9L, 10L, 11L, 12L, 13L, 14L, 15L, 16, 17, 18, 19,
+                20, 21, 22, 23, 24L, 25L, 26L, 27, List.of(),
+                SegmentIndexState.READY);
+
+        assertEquals(11, snapshot.getMaxNumberOfKeysInActivePartition());
+        assertEquals(12, snapshot.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(17, snapshot.getMaxNumberOfImmutableRunsPerPartition());
+        assertEquals(18, snapshot.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(19, snapshot.getPartitionCount());
+        assertEquals(20, snapshot.getActivePartitionCount());
+        assertEquals(21, snapshot.getDrainingPartitionCount());
+        assertEquals(22, snapshot.getImmutableRunCount());
+        assertEquals(23, snapshot.getPartitionBufferedKeyCount());
+        assertEquals(24L, snapshot.getLocalThrottleCount());
+        assertEquals(25L, snapshot.getGlobalThrottleCount());
+        assertEquals(26L, snapshot.getDrainScheduleCount());
+        assertEquals(27, snapshot.getDrainInFlightCount());
     }
 
     @Test

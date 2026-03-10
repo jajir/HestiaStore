@@ -52,6 +52,11 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(4L, snapshot.getGetOperationCount());
             assertEquals(1L, snapshot.getDeleteOperationCount());
             assertTrue(snapshot.getTotalWriteCacheKeys() >= 2L);
+            assertTrue(snapshot.getPartitionCount() >= 1);
+            assertTrue(snapshot.getActivePartitionCount() >= 1);
+            assertTrue(snapshot.getPartitionBufferedKeyCount() >= 1);
+            assertTrue(snapshot.getLocalThrottleCount() >= 0L);
+            assertTrue(snapshot.getGlobalThrottleCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheHitCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheMissCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheLoadCount() >= 0L);
@@ -169,7 +174,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             awaitIdle(index);
             final SegmentIndexMetricsSnapshot beforeRotation = index
                     .metricsSnapshot();
-            assertTrue(beforeRotation.getSplitScheduleCount() > 0L);
+            assertTrue(beforeRotation.getDrainScheduleCount() > 0L);
 
             for (int i = 128; i < 256; i++) {
                 index.put(i, "next-" + i);
@@ -179,8 +184,8 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             final SegmentIndexMetricsSnapshot afterRotation = index
                     .metricsSnapshot();
             assertTrue(
-                    afterRotation.getSplitScheduleCount() >= beforeRotation
-                            .getSplitScheduleCount());
+                    afterRotation.getDrainScheduleCount() >= beforeRotation
+                            .getDrainScheduleCount());
         }
     }
 
@@ -233,9 +238,9 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = index
                     .metricsSnapshot();
-            return snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getMaintenanceQueueSize() == 0
-                    && snapshot.getSplitQueueSize() == 0;
+            return snapshot.getDrainInFlightCount() == 0
+                    && snapshot.getImmutableRunCount() == 0
+                    && snapshot.getDrainingPartitionCount() == 0;
         }, 10_000L);
     }
 

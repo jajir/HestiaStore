@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.config;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
@@ -29,6 +30,29 @@ class IndexConfigurationManagerTest {
         assertNull(storage.getSaved());
     }
 
+    @Test
+    void applyDefaultsDerivesPartitionLimitsFromPartitionNames() {
+        final TestStorage<Integer, String> storage = new TestStorage<>(null);
+        final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
+                storage);
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()
+                .withKeyClass(Integer.class)
+                .withValueClass(String.class)
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                .withValueTypeDescriptor(new TypeDescriptorShortString())
+                .withName("test-index")
+                .withMaxNumberOfKeysInSegmentCache(10)
+                .withMaxNumberOfKeysInActivePartition(4)
+                .build();
+
+        final IndexConfiguration<Integer, String> applied = manager
+                .applyDefaults(conf);
+
+        assertEquals(4, applied.getMaxNumberOfKeysInActivePartition());
+        assertEquals(6, applied.getMaxNumberOfKeysInPartitionBuffer());
+    }
+
     private IndexConfiguration<Integer, String> buildStored() {
         return IndexConfiguration.<Integer, String>builder()
                 .withKeyClass(Integer.class)
@@ -38,12 +62,12 @@ class IndexConfigurationManagerTest {
                 .withName("test-index")
                 .withContextLoggingEnabled(false)
                 .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInSegmentWriteCache(5)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)
+                .withMaxNumberOfKeysInActivePartition(5)
+                .withMaxNumberOfKeysInPartitionBuffer(6)
                 .withMaxNumberOfKeysInSegmentChunk(2)
                 .withMaxNumberOfDeltaCacheFiles(
                         IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES)
-                .withMaxNumberOfKeysInSegment(100)
+                .withMaxNumberOfKeysInPartitionBeforeSplit(100)
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterNumberOfHashFunctions(1)
                 .withBloomFilterIndexSizeInBytes(1024)

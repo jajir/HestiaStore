@@ -132,6 +132,10 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return new Snapshot<>(snapshot, version.get());
     }
 
+    public boolean isVersion(final long expectedVersion) {
+        return version.get() == expectedVersion;
+    }
+
     public boolean isMappingValid(final K key,
             final SegmentId expectedSegmentId, final long expectedVersion) {
         Vldtn.requireNonNull(key, "key");
@@ -423,6 +427,15 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
             Vldtn.requireNonNull(key, "key");
             final Map.Entry<K, SegmentId> ceilingEntry = map.ceilingEntry(key);
             return ceilingEntry == null ? null : ceilingEntry.getValue();
+        }
+
+        public List<SegmentId> getSegmentIds(final SegmentWindow segmentWindow) {
+            Vldtn.requireNonNull(segmentWindow, "segmentWindow");
+            return map.entrySet().stream()//
+                    .skip(segmentWindow.getIntOffset())//
+                    .limit(segmentWindow.getIntLimit())//
+                    .map(entry -> entry.getValue())//
+                    .toList();
         }
 
         public long version() {

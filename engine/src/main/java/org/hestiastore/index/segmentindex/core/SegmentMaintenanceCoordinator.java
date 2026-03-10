@@ -2,14 +2,14 @@ package org.hestiastore.index.segmentindex.core;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.split.SegmentAsyncSplitCoordinator;
 
 /**
- * Coordinates post-write maintenance triggers and split decisions.
+ * Coordinates explicit split scheduling after partition drain or maintenance
+ * boundaries.
  */
 final class SegmentMaintenanceCoordinator<K, V> {
 
@@ -27,39 +27,18 @@ final class SegmentMaintenanceCoordinator<K, V> {
                 "splitCoordinator");
     }
 
-    void handlePostWrite(final Segment<K, V> segment, final K key,
-            final SegmentId segmentId, final long mappingVersion) {
-        if (Boolean.getBoolean("hestiastore.disableSplits")) {
+    void handlePostDrain(final Segment<K, V> segment,
+            final long maxNumberOfKeysInPartitionBeforeSplit) {
+        if (segment == null || segment.getState() == SegmentState.CLOSED) {
             return;
         }
-        final Integer maxWriteCacheKeys = conf
-                .getMaxNumberOfKeysInSegmentWriteCache();
-        if (maxWriteCacheKeys == null || maxWriteCacheKeys < 1) {
+        if (!isSplitSchedulingEnabled(maxNumberOfKeysInPartitionBeforeSplit)) {
             return;
         }
-        if (segment.getState() == SegmentState.CLOSED) {
+        if (!keyToSegmentMap.getSegmentIds().contains(segment.getId())) {
             return;
         }
-        if (!keyToSegmentMap.isKeyMappedToSegment(key, segmentId)
-                || !keyToSegmentMap.isMappingValid(key, segmentId,
-                        mappingVersion)) {
-            return;
-        }
-        final Integer maxNumberOfKeysInSegment = conf
-                .getMaxNumberOfKeysInSegment();
-        if (maxNumberOfKeysInSegment != null
-                && maxNumberOfKeysInSegment > 0) {
-            final long totalKeys = segment.getNumberOfKeysInCache();
-            if (totalKeys > maxNumberOfKeysInSegment.longValue()) {
-                splitCoordinator.optionallySplitAsync(segment,
-                        maxNumberOfKeysInSegment.longValue());
-            }
-        }
-    }
-
-    void awaitSplitCompletionIfInFlight(final SegmentId segmentId,
-            final long timeoutMillis) {
-        splitCoordinator.awaitCompletionIfInFlight(segmentId, timeoutMillis);
+        optionallyScheduleSplit(segment, maxNumberOfKeysInPartitionBeforeSplit);
     }
 
     void awaitSplitsIdle(final long timeoutMillis) {
@@ -70,7 +49,24 @@ final class SegmentMaintenanceCoordinator<K, V> {
         return splitCoordinator.inFlightCount();
     }
 
-    long splitScheduledCount() {
-        return splitCoordinator.scheduledCount();
+    private void optionallyScheduleSplit(final Segment<K, V> segment,
+            final long splitThreshold) {
+        if (!isSplitSchedulingEnabled(splitThreshold)) {
+            return;
+        }
+        final long totalKeys = segment.getNumberOfKeysInCache();
+        if (totalKeys > splitThreshold) {
+            splitCoordinator.optionallySplitAsync(segment, splitThreshold);
+        }
+    }
+
+    private boolean isSplitSchedulingEnabled(final long splitThreshold) {
+        if (Boolean.getBoolean("hestiastore.disableSplits")) {
+            return false;
+        }
+        final Integer maxActivePartitionKeys = conf
+                .getMaxNumberOfKeysInActivePartition();
+        return maxActivePartitionKeys != null && maxActivePartitionKeys >= 1
+                && splitThreshold >= 1L;
     }
 }

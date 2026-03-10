@@ -38,8 +38,11 @@ class ManagementAgentServerTest {
     private static final String INDEX_2 = "agent-test-index-2";
     private static final Set<String> RUNTIME_ALLOWLIST = Set.of(
             "maxNumberOfSegmentsInCache", "maxNumberOfKeysInSegmentCache",
-            "maxNumberOfKeysInSegmentWriteCache",
-            "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+            "maxNumberOfKeysInActivePartition",
+            "maxNumberOfImmutableRunsPerPartition",
+            "maxNumberOfKeysInPartitionBuffer",
+            "maxNumberOfKeysInIndexBuffer",
+            "maxNumberOfKeysInPartitionBeforeSplit");
 
     private final List<SegmentIndex<Integer, String>> indexes = new ArrayList<>();
     private ManagementAgentServer server;
@@ -98,7 +101,7 @@ class ManagementAgentServerTest {
         assertTrue(report.indexes().stream()
                 .allMatch(idx -> idx.segmentRuntimeSnapshots() != null));
         assertTrue(report.indexes().stream()
-                .allMatch(idx -> !idx.segmentRuntimeSnapshots().isEmpty()));
+                .allMatch(idx -> idx.partitionCount() >= 1));
     }
 
     @Test
@@ -185,8 +188,10 @@ class ManagementAgentServerTest {
                 payload.current().containsKey("maxNumberOfKeysInSegmentCache"));
         assertTrue(
                 payload.supportedKeys().contains("maxNumberOfSegmentsInCache"));
-        assertTrue(payload.supportedKeys().contains(
-                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
+        assertTrue(payload.supportedKeys()
+                .contains("maxNumberOfKeysInActivePartition"));
+        assertTrue(payload.supportedKeys()
+                .contains("maxNumberOfKeysInPartitionBuffer"));
     }
 
     @Test

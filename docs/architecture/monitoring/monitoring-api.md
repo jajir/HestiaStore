@@ -31,14 +31,26 @@ selected cache-related properties is applied.
 
 - `maxNumberOfSegmentsInCache`
 - `maxNumberOfKeysInSegmentCache`
-- `maxNumberOfKeysInSegmentWriteCache`
-- `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance`
+- `maxNumberOfKeysInActivePartition`
+- `maxNumberOfImmutableRunsPerPartition`
+- `maxNumberOfKeysInPartitionBuffer`
+- `maxNumberOfKeysInIndexBuffer`
+- `maxNumberOfKeysInPartitionBeforeSplit`
 
 These overrides are runtime-only:
 
 - applied in-memory for the running JVM
 - not persisted to index metadata (`meta.txt` / configuration property store)
 - reset on process restart
+
+Compatibility note:
+
+- `maxNumberOfKeysInSegmentWriteCache` is accepted as a legacy alias for
+  `maxNumberOfKeysInActivePartition`
+- `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance` is accepted as a
+  legacy alias for `maxNumberOfKeysInPartitionBuffer`
+- `supportedKeys` and config views return only the canonical partition-aware
+  names
 
 ## Example payloads
 
@@ -71,6 +83,10 @@ These overrides are runtime-only:
       "segmentCacheKeyLimitPerSegment": 260000,
       "maxNumberOfKeysInSegmentWriteCache": 120000,
       "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance": 180000,
+      "maxNumberOfKeysInActivePartition": 120000,
+      "maxNumberOfImmutableRunsPerPartition": 2,
+      "maxNumberOfKeysInPartitionBuffer": 180000,
+      "maxNumberOfKeysInIndexBuffer": 720000,
       "segmentCount": 24,
       "segmentReadyCount": 24,
       "segmentMaintenanceCount": 0,
@@ -89,6 +105,15 @@ These overrides are runtime-only:
       "maintenanceQueueCapacity": 1024,
       "splitQueueSize": 0,
       "splitQueueCapacity": 256,
+      "partitionCount": 24,
+      "activePartitionCount": 3,
+      "drainingPartitionCount": 1,
+      "immutableRunCount": 2,
+      "partitionBufferedKeyCount": 8700,
+      "localThrottleCount": 0,
+      "globalThrottleCount": 0,
+      "drainScheduleCount": 9,
+      "drainInFlightCount": 0,
       "readLatencyP50Micros": 78,
       "readLatencyP95Micros": 240,
       "readLatencyP99Micros": 710,
@@ -124,8 +149,11 @@ These overrides are runtime-only:
     "maxNumberOfKeysInSegment": 500000,
     "maxNumberOfKeysInSegmentChunk": 1024,
     "maxNumberOfKeysInSegmentCache": 200000,
-    "maxNumberOfKeysInSegmentWriteCache": 100000,
-    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance": 140000,
+    "maxNumberOfKeysInActivePartition": 100000,
+    "maxNumberOfImmutableRunsPerPartition": 2,
+    "maxNumberOfKeysInPartitionBuffer": 140000,
+    "maxNumberOfKeysInIndexBuffer": 560000,
+    "maxNumberOfKeysInPartitionBeforeSplit": 500000,
     "maxNumberOfDeltaCacheFiles": 128,
     "bloomFilterNumberOfHashFunctions": 7,
     "bloomFilterIndexSizeInBytes": 262144,
@@ -142,8 +170,11 @@ These overrides are runtime-only:
     "maxNumberOfKeysInSegment": 500000,
     "maxNumberOfKeysInSegmentChunk": 1024,
     "maxNumberOfKeysInSegmentCache": 260000,
-    "maxNumberOfKeysInSegmentWriteCache": 120000,
-    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance": 180000,
+    "maxNumberOfKeysInActivePartition": 120000,
+    "maxNumberOfImmutableRunsPerPartition": 2,
+    "maxNumberOfKeysInPartitionBuffer": 180000,
+    "maxNumberOfKeysInIndexBuffer": 720000,
+    "maxNumberOfKeysInPartitionBeforeSplit": 500000,
     "maxNumberOfDeltaCacheFiles": 128,
     "bloomFilterNumberOfHashFunctions": 7,
     "bloomFilterIndexSizeInBytes": 262144,
@@ -157,8 +188,11 @@ These overrides are runtime-only:
   },
   "supportedKeys": [
     "maxNumberOfKeysInSegmentCache",
-    "maxNumberOfKeysInSegmentWriteCache",
-    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
+    "maxNumberOfKeysInActivePartition",
+    "maxNumberOfImmutableRunsPerPartition",
+    "maxNumberOfKeysInPartitionBuffer",
+    "maxNumberOfKeysInIndexBuffer",
+    "maxNumberOfKeysInPartitionBeforeSplit",
     "maxNumberOfSegmentsInCache"
   ],
   "revision": 12,
@@ -173,8 +207,11 @@ These overrides are runtime-only:
   "values": {
     "maxNumberOfSegmentsInCache": "256",
     "maxNumberOfKeysInSegmentCache": "260000",
-    "maxNumberOfKeysInSegmentWriteCache": "120000",
-    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance": "180000"
+    "maxNumberOfKeysInActivePartition": "120000",
+    "maxNumberOfImmutableRunsPerPartition": "2",
+    "maxNumberOfKeysInPartitionBuffer": "180000",
+    "maxNumberOfKeysInIndexBuffer": "720000",
+    "maxNumberOfKeysInPartitionBeforeSplit": "500000"
   },
   "dryRun": false
 }
@@ -192,8 +229,11 @@ These overrides are runtime-only:
   read-only and cannot be patched.
 - `maxNumberOfSegmentsInCache >= 3`
 - `maxNumberOfKeysInSegmentCache >= 1`
-- `maxNumberOfKeysInSegmentWriteCache >= 1`
-- `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance > maxNumberOfKeysInSegmentWriteCache`
+- `maxNumberOfKeysInActivePartition >= 1`
+- `maxNumberOfImmutableRunsPerPartition >= 1`
+- `maxNumberOfKeysInPartitionBuffer > maxNumberOfKeysInActivePartition`
+- `maxNumberOfKeysInIndexBuffer >= maxNumberOfKeysInPartitionBuffer`
+- `maxNumberOfKeysInPartitionBeforeSplit >= maxNumberOfKeysInPartitionBuffer`
 - Unknown key error code: `CONFIG_KEY_NOT_SUPPORTED`
 
 ## Error response

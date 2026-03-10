@@ -666,6 +666,9 @@ public class ConsoleBackendClient {
             final CounterRate splitRate = computeCounterRate(
                     nodeId + ":" + monitoredIndex.indexName() + ":split",
                     snapshot.getSplitScheduleCount(), nowNanos);
+            final CounterRate drainRate = computeCounterRate(
+                    nodeId + ":" + monitoredIndex.indexName() + ":drain",
+                    snapshot.getDrainScheduleCount(), nowNanos);
             rows.add(new IndexRow(monitoredIndex.indexName(),
                     monitoredIndex.state().name(), monitoredIndex.ready(),
                     snapshot.getGetOperationCount(),
@@ -680,6 +683,10 @@ public class ConsoleBackendClient {
                     snapshot.getSegmentCacheKeyLimitPerSegment(),
                     snapshot.getMaxNumberOfKeysInSegmentWriteCache(),
                     snapshot.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
+                    snapshot.getMaxNumberOfKeysInActivePartition(),
+                    snapshot.getMaxNumberOfImmutableRunsPerPartition(),
+                    snapshot.getMaxNumberOfKeysInPartitionBuffer(),
+                    snapshot.getMaxNumberOfKeysInIndexBuffer(),
                     snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                     snapshot.getSegmentMaintenanceCount(),
                     snapshot.getSegmentErrorCount(),
@@ -705,14 +712,24 @@ public class ConsoleBackendClient {
                     snapshot.getFlushRequestCount(),
                     snapshot.getCompactRequestCount(),
                     snapshot.getSplitScheduleCount(),
+                    snapshot.getDrainScheduleCount(),
                     snapshot.getSplitInFlightCount(),
+                    snapshot.getDrainInFlightCount(),
                     snapshot.getMaintenanceQueueSize(),
                     snapshot.getMaintenanceQueueCapacity(),
                     snapshot.getSplitQueueSize(),
-                    snapshot.getSplitQueueCapacity(), throughput.value(),
+                    snapshot.getSplitQueueCapacity(),
+                    snapshot.getPartitionCount(),
+                    snapshot.getActivePartitionCount(),
+                    snapshot.getDrainingPartitionCount(),
+                    snapshot.getImmutableRunCount(),
+                    snapshot.getPartitionBufferedKeyCount(),
+                    snapshot.getLocalThrottleCount(),
+                    snapshot.getGlobalThrottleCount(), throughput.value(),
                     throughput.unit(), compactRate.value(), compactRate.unit(),
                     flushRate.value(), flushRate.unit(), splitRate.value(),
-                    splitRate.unit(), capturedAt,
+                    splitRate.unit(), drainRate.value(), drainRate.unit(),
+                    capturedAt,
                     toSegmentRows(snapshot.getSegmentRuntimeSnapshots())));
         }
         rows.sort(Comparator.comparing(IndexRow::indexName));
@@ -730,109 +747,128 @@ public class ConsoleBackendClient {
                     indexNode.path("indexName").asText("unknown-index"),
                     parseState(
                             indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)),
-                    new SegmentIndexMetricsSnapshot(
-                            nonNegativeLong(indexNode.path("getOperationCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode.path("putOperationCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("deleteOperationCount").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("registryCacheHitCount").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("registryCacheMissCount").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("registryCacheLoadCount").asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("registryCacheEvictionCount")
-                                            .asLong(0L)),
-                            nonNegativeInt(indexNode.path("registryCacheSize")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode.path("registryCacheLimit")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode
-                                    .path("segmentCacheKeyLimitPerSegment")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode
-                                    .path("maxNumberOfKeysInSegmentWriteCache")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode.path(
-                                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance")
-                                    .asInt(0)),
-                            nonNegativeInt(
-                                    indexNode.path("segmentCount").asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentReadyCount")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode
-                                    .path("segmentMaintenanceCount").asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentErrorCount")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentClosedCount")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode.path("segmentBusyCount")
-                                    .asInt(0)),
-                            nonNegativeLong(indexNode.path("totalSegmentKeys")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("totalSegmentCacheKeys").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("totalWriteCacheKeys").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("totalDeltaCacheFiles").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("compactRequestCount").asLong(0L)),
-                            nonNegativeLong(indexNode.path("flushRequestCount")
-                                    .asLong(0L)),
-                            nonNegativeLong(indexNode.path("splitScheduleCount")
-                                    .asLong(0L)),
-                            nonNegativeInt(indexNode.path("splitInFlightCount")
-                                    .asInt(0)),
-                            nonNegativeInt(indexNode
-                                    .path("maintenanceQueueSize").asInt(0)),
-                            nonNegativeInt(indexNode
-                                    .path("maintenanceQueueCapacity").asInt(0)),
-                            nonNegativeInt(
-                                    indexNode.path("splitQueueSize").asInt(0)),
-                            nonNegativeInt(indexNode.path("splitQueueCapacity")
-                                    .asInt(0)),
-                            nonNegativeLong(indexNode
-                                    .path("readLatencyP50Micros").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("readLatencyP95Micros").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("readLatencyP99Micros").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("writeLatencyP50Micros").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("writeLatencyP95Micros").asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("writeLatencyP99Micros").asLong(0L)),
-                            nonNegativeInt(indexNode
-                                    .path("bloomFilterHashFunctions").asInt(0)),
-                            nonNegativeInt(indexNode
-                                    .path("bloomFilterIndexSizeInBytes")
-                                    .asInt(0)),
-                            Math.max(0D, indexNode.path(
-                                    "bloomFilterProbabilityOfFalsePositive")
-                                    .asDouble(0D)),
-                            nonNegativeLong(
-                                    indexNode.path("bloomFilterRequestCount")
-                                            .asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("bloomFilterRefusedCount")
-                                            .asLong(0L)),
-                            nonNegativeLong(
-                                    indexNode.path("bloomFilterPositiveCount")
-                                            .asLong(0L)),
-                            nonNegativeLong(indexNode
-                                    .path("bloomFilterFalsePositiveCount")
-                                    .asLong(0L)),
-                            parseSegmentRuntimeSnapshots(
-                                    indexNode.path("segmentRuntimeSnapshots")),
-                            parseState(indexNode.path(FIELD_STATE)
-                                    .asText(DEFAULT_STATE)))));
+                    parseMetricsSnapshot(indexNode)));
         }
         return List.copyOf(parsed);
+    }
+
+    private SegmentIndexMetricsSnapshot parseMetricsSnapshot(
+            final JsonNode indexNode) {
+        return new SegmentIndexMetricsSnapshot(
+                nonNegativeLong(indexNode.path("getOperationCount").asLong(0L)),
+                nonNegativeLong(indexNode.path("putOperationCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("deleteOperationCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("registryCacheHitCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("registryCacheMissCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("registryCacheLoadCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("registryCacheEvictionCount")
+                                .asLong(0L)),
+                nonNegativeInt(indexNode.path("registryCacheSize").asInt(0)),
+                nonNegativeInt(indexNode.path("registryCacheLimit").asInt(0)),
+                nonNegativeInt(indexNode.path("segmentCacheKeyLimitPerSegment")
+                        .asInt(0)),
+                readNonNegativeIntWithFallback(indexNode,
+                        "maxNumberOfKeysInActivePartition",
+                        "maxNumberOfKeysInSegmentWriteCache"),
+                readNonNegativeIntWithFallback(indexNode,
+                        "maxNumberOfKeysInPartitionBuffer",
+                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"),
+                nonNegativeInt(indexNode.path("segmentCount").asInt(0)),
+                nonNegativeInt(indexNode.path("segmentReadyCount").asInt(0)),
+                nonNegativeInt(indexNode.path("segmentMaintenanceCount")
+                        .asInt(0)),
+                nonNegativeInt(indexNode.path("segmentErrorCount").asInt(0)),
+                nonNegativeInt(indexNode.path("segmentClosedCount").asInt(0)),
+                nonNegativeInt(indexNode.path("segmentBusyCount").asInt(0)),
+                nonNegativeLong(indexNode.path("totalSegmentKeys").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("totalSegmentCacheKeys").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("totalWriteCacheKeys").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("totalDeltaCacheFiles").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("compactRequestCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("flushRequestCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("splitScheduleCount").asLong(0L)),
+                nonNegativeInt(indexNode.path("splitInFlightCount").asInt(0)),
+                nonNegativeInt(
+                        indexNode.path("maintenanceQueueSize").asInt(0)),
+                nonNegativeInt(
+                        indexNode.path("maintenanceQueueCapacity").asInt(0)),
+                nonNegativeInt(indexNode.path("splitQueueSize").asInt(0)),
+                nonNegativeInt(indexNode.path("splitQueueCapacity").asInt(0)),
+                nonNegativeLong(
+                        indexNode.path("readLatencyP50Micros").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("readLatencyP95Micros").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("readLatencyP99Micros").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("writeLatencyP50Micros").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("writeLatencyP95Micros").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("writeLatencyP99Micros").asLong(0L)),
+                nonNegativeInt(
+                        indexNode.path("bloomFilterHashFunctions").asInt(0)),
+                nonNegativeInt(indexNode.path("bloomFilterIndexSizeInBytes")
+                        .asInt(0)),
+                Math.max(0D, indexNode
+                        .path("bloomFilterProbabilityOfFalsePositive")
+                        .asDouble(0D)),
+                nonNegativeLong(
+                        indexNode.path("bloomFilterRequestCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("bloomFilterRefusedCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("bloomFilterPositiveCount").asLong(0L)),
+                nonNegativeLong(indexNode.path("bloomFilterFalsePositiveCount")
+                        .asLong(0L)),
+                readNonNegativeIntWithFallback(indexNode,
+                        "maxNumberOfImmutableRunsPerPartition", null),
+                readNonNegativeIntWithFallback(indexNode,
+                        "maxNumberOfKeysInIndexBuffer", null),
+                readNonNegativeIntWithFallback(indexNode, "partitionCount",
+                        null),
+                readNonNegativeIntWithFallback(indexNode,
+                        "activePartitionCount", null),
+                readNonNegativeIntWithFallback(indexNode,
+                        "drainingPartitionCount", null),
+                readNonNegativeIntWithFallback(indexNode, "immutableRunCount",
+                        null),
+                readNonNegativeIntWithFallback(indexNode,
+                        "partitionBufferedKeyCount", null),
+                nonNegativeLong(
+                        indexNode.path("localThrottleCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("globalThrottleCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("drainScheduleCount").asLong(0L)),
+                readNonNegativeIntWithFallback(indexNode, "drainInFlightCount",
+                        null),
+                parseSegmentRuntimeSnapshots(
+                        indexNode.path("segmentRuntimeSnapshots")),
+                parseState(indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)));
+    }
+
+    private int readNonNegativeIntWithFallback(final JsonNode node,
+            final String primaryField, final String legacyField) {
+        final JsonNode primary = node.path(primaryField);
+        if (!primary.isMissingNode()) {
+            return nonNegativeInt(primary.asInt(0));
+        }
+        if (legacyField == null) {
+            return 0;
+        }
+        return nonNegativeInt(node.path(legacyField).asInt(0));
     }
 
     private List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> parseSegmentRuntimeSnapshots(
@@ -1430,6 +1466,10 @@ public class ConsoleBackendClient {
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
             int maxNumberOfKeysInSegmentWriteCache,
             int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            int maxNumberOfKeysInActivePartition,
+            int maxNumberOfImmutableRunsPerPartition,
+            int maxNumberOfKeysInPartitionBuffer,
+            int maxNumberOfKeysInIndexBuffer,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
@@ -1443,13 +1483,18 @@ public class ConsoleBackendClient {
             long bloomFilterRequestCount, long bloomFilterRefusedCount,
             long bloomFilterPositiveCount, long bloomFilterFalsePositiveCount,
             long flushRequestCount, long compactRequestCount,
-            long splitScheduleCount, int splitInFlightCount,
+            long splitScheduleCount, long drainScheduleCount,
+            int splitInFlightCount, int drainInFlightCount,
             int maintenanceQueueSize, int maintenanceQueueCapacity,
-            int splitQueueSize, int splitQueueCapacity,
+            int splitQueueSize, int splitQueueCapacity, int partitionCount,
+            int activePartitionCount, int drainingPartitionCount,
+            int immutableRunCount, int partitionBufferedKeyCount,
+            long localThrottleCount, long globalThrottleCount,
             double currentThroughputValue, String currentThroughputUnit,
             double compactRateValue, String compactRateUnit,
             double flushRateValue, String flushRateUnit, double splitRateValue,
-            String splitRateUnit, String capturedAt,
+            String splitRateUnit, double drainRateValue,
+            String drainRateUnit, String capturedAt,
             List<SegmentRow> segmentRuntimeSnapshots) {
 
         /**
@@ -1559,6 +1604,15 @@ public class ConsoleBackendClient {
          */
         public String splitRateDisplay() {
             return format4Significant(splitRateValue) + " " + splitRateUnit;
+        }
+
+        /**
+         * Current drain schedules rate display.
+         *
+         * @return drain rate with auto-selected unit
+         */
+        public String drainRateDisplay() {
+            return format4Significant(drainRateValue) + " " + drainRateUnit;
         }
 
         /**

@@ -14,6 +14,19 @@ final class HestiaStoreMetricNames {
     static final String REGISTRY_CACHE_EVICTION_TOTAL = "hestiastore_registry_cache_eviction_total";
     static final String REGISTRY_CACHE_SIZE = "hestiastore_registry_cache_size";
     static final String REGISTRY_CACHE_LIMIT = "hestiastore_registry_cache_limit";
+    static final String PARTITION_ACTIVE_LIMIT = "hestiastore_partition_active_limit";
+    static final String PARTITION_IMMUTABLE_RUN_LIMIT = "hestiastore_partition_immutable_run_limit";
+    static final String PARTITION_BUFFER_LIMIT = "hestiastore_partition_buffer_limit";
+    static final String INDEX_BUFFER_LIMIT = "hestiastore_index_buffer_limit";
+    static final String PARTITION_COUNT = "hestiastore_partition_count";
+    static final String PARTITION_ACTIVE_COUNT = "hestiastore_partition_active_count";
+    static final String PARTITION_DRAINING_COUNT = "hestiastore_partition_draining_count";
+    static final String PARTITION_IMMUTABLE_RUN_COUNT = "hestiastore_partition_immutable_run_count";
+    static final String PARTITION_BUFFERED_KEY_COUNT = "hestiastore_partition_buffered_key_count";
+    static final String PARTITION_THROTTLE_LOCAL_TOTAL = "hestiastore_partition_throttle_local_total";
+    static final String PARTITION_THROTTLE_GLOBAL_TOTAL = "hestiastore_partition_throttle_global_total";
+    static final String PARTITION_DRAIN_SCHEDULE_TOTAL = "hestiastore_partition_drain_schedule_total";
+    static final String PARTITION_DRAIN_IN_FLIGHT = "hestiastore_partition_drain_in_flight";
     static final String INDEX_UP = "hestiastore_index_up";
 
     private HestiaStoreMetricNames() {
