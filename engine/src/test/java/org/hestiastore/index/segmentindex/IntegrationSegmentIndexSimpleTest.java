@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -177,6 +178,59 @@ class IntegrationSegmentIndexSimpleTest {
         final List<Entry<Integer, String>> list1 = index2
                 .getStream(SegmentWindow.unbounded()).toList();
         assertEquals(1, list1.size());
+    }
+
+    @Test
+    void test_reopen_after_flush_and_split_materialization() {
+        final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
+        testData.stream().forEach(index1::put);
+        index1.flushAndWait();
+        index1.close();
+
+        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        try {
+            verifyDataIndex(index2, testData);
+        } finally {
+            index2.close();
+        }
+    }
+
+    @Test
+    void test_reopen_cleans_orphan_segment_directory() {
+        final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
+        testData.stream().forEach(index1::put);
+        index1.flushAndWait();
+        index1.close();
+
+        final SegmentId orphanSegmentId = SegmentId.of(999);
+        directory.openSubDirectory(orphanSegmentId.getName()).touch("junk");
+        assertTrue(directory.isFileExists(orphanSegmentId.getName()));
+
+        final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
+        try {
+            verifyDataIndex(index2, testData);
+        } finally {
+            index2.close();
+        }
+
+        assertFalse(directory.isFileExists(orphanSegmentId.getName()));
+    }
+
+    @Test
+    void test_consistency_check_cleans_orphan_segment_directory() {
+        final SegmentIndex<Integer, String> index = makeSegmentIndex();
+        testData.stream().forEach(index::put);
+        index.flushAndWait();
+
+        final SegmentId orphanSegmentId = SegmentId.of(998);
+        directory.openSubDirectory(orphanSegmentId.getName()).touch("junk");
+        assertTrue(directory.isFileExists(orphanSegmentId.getName()));
+
+        index.checkAndRepairConsistency();
+
+        assertFalse(directory.isFileExists(orphanSegmentId.getName()));
+        verifyDataIndex(index, testData);
+        index.close();
     }
 
     /**

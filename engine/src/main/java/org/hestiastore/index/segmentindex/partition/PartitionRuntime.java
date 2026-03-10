@@ -1,8 +1,11 @@
 package org.hestiastore.index.segmentindex.partition;
 
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.ArrayList;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,6 +27,8 @@ public final class PartitionRuntime<K, V> {
 
     private final Comparator<K> keyComparator;
     private final ConcurrentHashMap<SegmentId, RangePartition<K, V>> partitions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<SegmentId, SegmentId> stableSourceParentByChild = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<SegmentId, PendingPartitionSplit<K>> pendingSplitsByParent = new ConcurrentHashMap<>();
     private final AtomicInteger totalBufferedKeyCount = new AtomicInteger();
     private final AtomicInteger localThrottleCount = new AtomicInteger();
     private final AtomicInteger globalThrottleCount = new AtomicInteger();
@@ -91,10 +96,9 @@ public final class PartitionRuntime<K, V> {
 
     public void finishDrainScheduling(final SegmentId segmentId) {
         final RangePartition<K, V> partition = partitions.get(segmentId);
-        if (partition == null) {
-            return;
+        if (partition != null) {
+            partition.finishDrainScheduling();
         }
-        partition.finishDrainScheduling();
         final int updated = drainInFlightCount.decrementAndGet();
         if (updated < 0) {
             drainInFlightCount.compareAndSet(updated, 0);
@@ -149,6 +153,68 @@ public final class PartitionRuntime<K, V> {
         partition.finishSplit();
     }
 
+    public void registerPendingStableSplit(
+            final SegmentSplitApplyPlan<K> plan) {
+        Vldtn.requireNonNull(plan, "plan");
+        if (plan.getStatus() != SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+            return;
+        }
+        final PendingPartitionSplit<K> pending = new PendingPartitionSplit<>(
+                plan);
+        pendingSplitsByParent.put(plan.getOldSegmentId(), pending);
+        stableSourceParentByChild.put(plan.getLowerSegmentId(),
+                plan.getOldSegmentId());
+        beginSplit(plan.getLowerSegmentId());
+        plan.getUpperSegmentId().ifPresent(upperSegmentId -> {
+            stableSourceParentByChild.put(upperSegmentId,
+                    plan.getOldSegmentId());
+            beginSplit(upperSegmentId);
+        });
+    }
+
+    public List<PendingPartitionSplit<K>> pendingSplitsSnapshot() {
+        return new ArrayList<>(pendingSplitsByParent.values());
+    }
+
+    public Set<SegmentId> pendingStableSourceSegmentIds() {
+        return Set.copyOf(pendingSplitsByParent.keySet());
+    }
+
+    public void completePendingStableSplit(
+            final PendingPartitionSplit<K> pendingSplit) {
+        Vldtn.requireNonNull(pendingSplit, "pendingSplit");
+        pendingSplitsByParent.remove(pendingSplit.getParentSegmentId());
+        stableSourceParentByChild.remove(pendingSplit.getLowerSegmentId(),
+                pendingSplit.getParentSegmentId());
+        finishSplit(pendingSplit.getLowerSegmentId());
+        pendingSplit.getUpperSegmentId().ifPresent(upperSegmentId -> {
+            stableSourceParentByChild.remove(upperSegmentId,
+                    pendingSplit.getParentSegmentId());
+            finishSplit(upperSegmentId);
+        });
+    }
+
+    public List<SegmentId> resolveStableLookupChain(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        final List<SegmentId> out = new ArrayList<>();
+        SegmentId current = segmentId;
+        while (current != null) {
+            out.add(current);
+            current = stableSourceParentByChild.get(current);
+        }
+        return out;
+    }
+
+    public List<SegmentId> resolveStableMergeChain(
+            final List<SegmentId> routedSegmentIds) {
+        Vldtn.requireNonNull(routedSegmentIds, "routedSegmentIds");
+        final LinkedHashSet<SegmentId> ordered = new LinkedHashSet<>();
+        for (final SegmentId segmentId : routedSegmentIds) {
+            appendStableMergeChain(segmentId, ordered);
+        }
+        return List.copyOf(ordered);
+    }
+
     public void reassignOverlayAfterSplit(final SegmentSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
         final RangePartition<K, V> oldPartition = partitions
@@ -199,5 +265,15 @@ public final class PartitionRuntime<K, V> {
         final int restored = partition(segmentId).restoreOverlaySnapshot(
                 entries);
         totalBufferedKeyCount.addAndGet(restored);
+    }
+
+    private void appendStableMergeChain(final SegmentId segmentId,
+            final LinkedHashSet<SegmentId> ordered) {
+        final SegmentId parentSegmentId = stableSourceParentByChild
+                .get(segmentId);
+        if (parentSegmentId != null) {
+            appendStableMergeChain(parentSegmentId, ordered);
+        }
+        ordered.add(segmentId);
     }
 }

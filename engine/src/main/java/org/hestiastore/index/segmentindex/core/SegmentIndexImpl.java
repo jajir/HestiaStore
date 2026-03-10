@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -55,12 +56,12 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.partition.PartitionImmutableRun;
 import org.hestiastore.index.segmentindex.partition.PartitionLookupResult;
+import org.hestiastore.index.segmentindex.partition.PendingPartitionSplit;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeLimits;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.partition.PartitionWriteResultStatus;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
-import org.hestiastore.index.segmentindex.split.SegmentWriterTxFactory;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -86,10 +87,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private static final String OPERATION_DRAIN = "drain";
     private static final String OPERATION_SCHEDULE_SPLIT = "scheduleSplit";
     private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
+    private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
+    private static final Pattern SEGMENT_DIRECTORY_PATTERN = Pattern
+            .compile("^segment-(\\d{5})$");
+    private static final int BOOTSTRAP_SEGMENT_ID = 0;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Directory directoryFacade;
     private final IndexConfiguration<K, V> conf;
@@ -166,11 +171,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .build();
                 final PartitionRuntime<K, V> partitionRuntime = new PartitionRuntime<>(
                         keyTypeDescriptor.getComparator());
-                final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
-                        .newSegmentBuilder(id).openWriterTx();
                 final PartitionStableSplitCoordinator<K, V> splitCoordinator = new PartitionStableSplitCoordinator<>(
                         conf, keyToSegmentMap, segmentRegistry,
-                        writerTxFactory, partitionRuntime);
+                        partitionRuntime);
                 this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                         keyToSegmentMap, partitionRuntime, splitCoordinator);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
@@ -192,6 +195,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                                 recoveryResult.maxLsn()));
                     }
                 }
+                cleanupOrphanedSegmentDirectories();
                 getIndexState().onReady(this);
                 setSegmentIndexState(SegmentIndexState.READY);
                 if (openingState.wasStaleLockRecovered()) {
@@ -298,14 +302,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 : segmentWindows;
         Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> segmentIterator;
-        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION
-                && maintenanceCoordinator.splitInFlightCount() == 0) {
-            segmentIterator = openMergedIteratorWithRouteSnapshot(
-                    resolvedWindows, isolation);
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+            segmentIterator = maintenanceCoordinator.runWithStableWriteAdmission(
+                    () -> openMergedIteratorWithRouteSnapshot(resolvedWindows,
+                            isolation));
         } else {
-            if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
-                awaitSplitsIdle();
-            }
             segmentIterator = openMergedIterator(resolvedWindows, isolation);
         }
         if (isContextLoggingEnabled()) {
@@ -331,6 +332,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         keyToSegmentMap.getSegmentIds()
                 .forEach(segmentId -> compactSegment(segmentId, true));
         scheduleEligibleSplits();
+        materializePendingSplits();
+        drainPartitions(true);
+        flushSegments(true);
     }
 
     /** {@inheritDoc} */
@@ -399,6 +403,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         ? this::hasSegmentLockFile
                         : segmentId -> true);
         checker.checkAndRepairConsistency();
+        cleanupOrphanedSegmentDirectories();
     }
 
     private boolean hasSegmentLockFile(final SegmentId segmentId) {
@@ -423,6 +428,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             getIndexState().onClose(this);
             setSegmentIndexState(SegmentIndexState.CLOSED);
             awaitAsyncOperations();
+            drainPartitions(true);
+            materializePendingSplits();
             drainPartitions(true);
             flushSegments(true);
             final SegmentRegistryResult<Void> closeResult = segmentRegistry
@@ -627,6 +634,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         drainPartitions(true);
         flushSegments(true);
         scheduleEligibleSplits();
+        materializePendingSplits();
+        drainPartitions(true);
+        flushSegments(true);
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
     }
@@ -671,7 +681,24 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 snapshot.version())) {
             return IndexResult.busy();
         }
-        return core.get(key);
+        return getStableWithFallback(segmentId, key);
+    }
+
+    private IndexResult<V> getStableWithFallback(final SegmentId segmentId,
+            final K key) {
+        final List<SegmentId> stableChain = partitionRuntime
+                .resolveStableLookupChain(segmentId);
+        for (int i = 0; i < stableChain.size(); i++) {
+            final SegmentId currentSegmentId = stableChain.get(i);
+            final IndexResult<V> stableResult = core.get(currentSegmentId, key);
+            if (stableResult.getStatus() != IndexResultStatus.OK) {
+                return stableResult;
+            }
+            if (stableResult.getValue() != null || i == stableChain.size() - 1) {
+                return stableResult;
+            }
+        }
+        return IndexResult.ok(null);
     }
 
     private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
@@ -842,6 +869,140 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         keyToSegmentMap.getSegmentIds().forEach(this::scheduleSplitAfterDrain);
     }
 
+    private void materializePendingSplits() {
+        final List<PendingPartitionSplit<K>> pendingSplits = partitionRuntime
+                .pendingSplitsSnapshot();
+        for (final PendingPartitionSplit<K> pendingSplit : pendingSplits) {
+            materializePendingSplit(pendingSplit);
+        }
+    }
+
+    private void materializePendingSplit(
+            final PendingPartitionSplit<K> pendingSplit) {
+        final SegmentId parentSegmentId = pendingSplit.getParentSegmentId();
+        try (EntryIterator<K, V> iterator = openIteratorWithRetry(
+                parentSegmentId, SegmentIteratorIsolation.FAIL_FAST)) {
+            while (iterator.hasNext()) {
+                final Entry<K, V> entry = iterator.next();
+                final SegmentId targetSegmentId = resolveMaterializationTarget(
+                        pendingSplit, entry.getKey());
+                putStableEntry(targetSegmentId, entry.getKey(),
+                        entry.getValue());
+            }
+        }
+        flushSegment(pendingSplit.getLowerSegmentId(), true);
+        pendingSplit.getUpperSegmentId()
+                .ifPresent(segmentId -> flushSegment(segmentId, true));
+        keyToSegmentMap.optionalyFlush();
+        partitionRuntime.completePendingStableSplit(pendingSplit);
+        deleteRetiredParentSegment(parentSegmentId);
+    }
+
+    private SegmentId resolveMaterializationTarget(
+            final PendingPartitionSplit<K> pendingSplit, final K key) {
+        if (keyTypeDescriptor.getComparator().compare(key,
+                pendingSplit.getMaxKey()) <= 0) {
+            return pendingSplit.getLowerSegmentId();
+        }
+        return pendingSplit.getUpperSegmentId()
+                .orElseGet(pendingSplit::getLowerSegmentId);
+    }
+
+    private void deleteRetiredParentSegment(final SegmentId segmentId) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
+                    .deleteSegment(segmentId);
+            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK
+                    || deleteResult
+                            .getStatus() == SegmentRegistryResultStatus.CLOSED) {
+                return;
+            }
+            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                try {
+                    retryPolicy.backoffOrThrow(startNanos, "deleteRetiredSplit",
+                            segmentId);
+                } catch (final IndexException timeout) {
+                    logger.warn(
+                            "Retired parent segment '{}' remained on disk because delete timed out after child materialization.",
+                            segmentId);
+                    return;
+                }
+                continue;
+            }
+            logger.warn(
+                    "Retired parent segment '{}' could not be deleted after child materialization: {}",
+                    segmentId, deleteResult.getStatus());
+            return;
+        }
+    }
+
+    private void cleanupOrphanedSegmentDirectories() {
+        final Set<SegmentId> mappedSegmentIds = new HashSet<>(
+                keyToSegmentMap.getSegmentIds());
+        mappedSegmentIds
+                .addAll(partitionRuntime.pendingStableSourceSegmentIds());
+        final List<SegmentId> orphanedSegmentIds = new ArrayList<>();
+        try (var fileNames = directoryFacade.getFileNames()) {
+            fileNames.forEach(name -> {
+                final SegmentId segmentId = parseSegmentDirectoryName(name);
+                if (segmentId != null
+                        && segmentId.getId() != BOOTSTRAP_SEGMENT_ID
+                        && !mappedSegmentIds.contains(segmentId)) {
+                    orphanedSegmentIds.add(segmentId);
+                }
+            });
+        }
+        orphanedSegmentIds.forEach(this::deleteOrphanedSegmentDirectory);
+    }
+
+    private SegmentId parseSegmentDirectoryName(final String name) {
+        if (name == null) {
+            return null;
+        }
+        final var matcher = SEGMENT_DIRECTORY_PATTERN.matcher(name);
+        if (!matcher.matches()) {
+            return null;
+        }
+        try {
+            return SegmentId.of(Integer.parseInt(matcher.group(1)));
+        } catch (final NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private void deleteOrphanedSegmentDirectory(final SegmentId segmentId) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
+                    .deleteSegment(segmentId);
+            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK
+                    || deleteResult
+                            .getStatus() == SegmentRegistryResultStatus.CLOSED) {
+                logger.info(
+                        "Deleted orphaned segment directory '{}' during recovery/consistency cleanup.",
+                        segmentId);
+                return;
+            }
+            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                try {
+                    retryPolicy.backoffOrThrow(startNanos,
+                            OPERATION_CLEANUP_ORPHAN_SEGMENT, segmentId);
+                } catch (final IndexException timeout) {
+                    logger.warn(
+                            "Orphaned segment directory '{}' could not be deleted because cleanup timed out.",
+                            segmentId);
+                    return;
+                }
+                continue;
+            }
+            logger.warn(
+                    "Orphaned segment directory '{}' could not be deleted during cleanup: {}",
+                    segmentId, deleteResult.getStatus());
+            return;
+        }
+    }
+
     private EntryIterator<K, V> openMergedIterator(
             final SegmentWindow resolvedWindows,
             final SegmentIteratorIsolation isolation) {
@@ -881,8 +1042,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentIteratorIsolation isolation) {
         final NavigableMap<K, V> merged = new TreeMap<>(
                 keyTypeDescriptor.getComparator());
+        final List<SegmentId> stableSegmentIds = partitionRuntime
+                .resolveStableMergeChain(segmentIds);
         try (EntryIterator<K, V> stableIterator = new SegmentsIterator<>(
-                segmentIds, segmentRegistry, isolation, retryPolicy)) {
+                stableSegmentIds, segmentRegistry, isolation, retryPolicy)) {
             while (stableIterator.hasNext()) {
                 final Entry<K, V> entry = stableIterator.next();
                 merged.put(entry.getKey(), entry.getValue());
