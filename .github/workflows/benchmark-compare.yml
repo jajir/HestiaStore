@@ -109,6 +109,26 @@ jobs:
         echo "history_branch=${HISTORY_BRANCH}" >> "${GITHUB_OUTPUT}"
         echo "publish_history=${PUBLISH_HISTORY}" >> "${GITHUB_OUTPUT}"
 
+    - name: Detect fallback baseline compatibility
+      id: fallback-compat
+      if: steps.stored-baseline.outputs.baseline_summary == ''
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        PROFILE_PATH="benchmarks/profiles/${{ steps.refs.outputs.profile }}.json"
+        BENCHMARK_CLASS_PATH="benchmarks/src/main/java/org/hestiastore/benchmark/segmentindex/SegmentIndexMixedDrainBenchmark.java"
+        CAN_RUN="true"
+
+        if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${PROFILE_PATH}" 2>/dev/null; then
+          CAN_RUN="false"
+        fi
+        if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${BENCHMARK_CLASS_PATH}" 2>/dev/null; then
+          CAN_RUN="false"
+        fi
+
+        echo "can_run=${CAN_RUN}" >> "${GITHUB_OUTPUT}"
+
     - name: Prepare history checkout
       id: history
       shell: bash
@@ -160,7 +180,7 @@ jobs:
         echo "candidate_dir=${CANDIDATE_DIR}" >> "${GITHUB_OUTPUT}"
 
     - name: Create fallback baseline worktree
-      if: steps.stored-baseline.outputs.baseline_summary == ''
+      if: steps.stored-baseline.outputs.baseline_summary == '' && steps.fallback-compat.outputs.can_run == 'true'
       id: baseline-worktree
       shell: bash
       run: |
@@ -172,13 +192,13 @@ jobs:
         echo "baseline_dir=${BASE_DIR}" >> "${GITHUB_OUTPUT}"
 
     - name: Run fallback baseline benchmark profile
-      if: steps.stored-baseline.outputs.baseline_summary == ''
+      if: steps.stored-baseline.outputs.baseline_summary == '' && steps.fallback-compat.outputs.can_run == 'true'
       shell: bash
       run: |
         set -euo pipefail
         python3 benchmarks/scripts/run_jmh_profile.py \
           --repo-root "${{ steps.baseline-worktree.outputs.baseline_dir }}" \
-          --profile "${{ steps.refs.outputs.profile }}" \
+          --profile "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
           --output-dir "${RUNNER_TEMP}/benchmark-results/baseline"
 
     - name: Run candidate benchmark profile
@@ -187,7 +207,7 @@ jobs:
         set -euo pipefail
         python3 benchmarks/scripts/run_jmh_profile.py \
           --repo-root "${{ steps.candidate-worktree.outputs.candidate_dir }}" \
-          --profile "${{ steps.refs.outputs.profile }}" \
+          --profile "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
           --output-dir "${RUNNER_TEMP}/benchmark-results/candidate"
 
     - name: Compare baseline and candidate
@@ -202,7 +222,11 @@ jobs:
 
         BASELINE_SUMMARY="${{ steps.stored-baseline.outputs.baseline_summary }}"
         if [ -z "${BASELINE_SUMMARY}" ]; then
-          BASELINE_SUMMARY="${RUNNER_TEMP}/benchmark-results/baseline/summary.json"
+          if [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ]; then
+            BASELINE_SUMMARY="${RUNNER_TEMP}/benchmark-results/baseline/summary.json"
+          else
+            BASELINE_SUMMARY="${RUNNER_TEMP}/benchmark-results/candidate/summary.json"
+          fi
         fi
 
         python3 benchmarks/scripts/compare_jmh_profile.py \
@@ -211,6 +235,19 @@ jobs:
           --markdown-out "${RUNNER_TEMP}/benchmark-results/comparison.md" \
           --json-out "${RUNNER_TEMP}/benchmark-results/comparison.json" \
           "${EXTRA_ARGS[@]}"
+
+        if [ "${{ steps.stored-baseline.outputs.baseline_summary }}" = "" ] && [ "${{ steps.fallback-compat.outputs.can_run }}" != "true" ]; then
+          TMP_FILE="${RUNNER_TEMP}/benchmark-results/comparison.bootstrap.md"
+          {
+            echo "# Benchmark Comparison"
+            echo
+            echo "- Bootstrap mode: no prior canonical baseline exists yet, and fallback git baseline predates the benchmark harness."
+            echo "- Candidate results below are the first canonical benchmark snapshot for this workflow."
+            echo
+            tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison.md"
+          } > "${TMP_FILE}"
+          mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison.md"
+        fi
 
     - name: Add job summary
       shell: bash
