@@ -11,20 +11,28 @@ runtime introduced above stable segment storage.
 - WAL replay restores unpublished writes back into the partition overlay on
   open
 
-The current implementation changes the user write path first. It does not yet
-replace every historical split helper in one step.
+The current implementation changes the user write path first. It still uses
+the existing stable-segment split execution primitives, but the runtime no
+longer depends on the historical `SegmentSplitCoordinator` wrapper.
 
 ## Transitional Split Behavior
 
 - live-segment split is no longer triggered directly from `put()`
-- the current transition slice only evaluates legacy split scheduling on
-  explicit maintenance boundaries such as `flushAndWait()` and
+- the current transition slice only evaluates partition-aware stable split
+  scheduling on explicit maintenance boundaries such as `flushAndWait()` and
   `compactAndWait()`
 - when one of those explicit maintenance calls decides to split, the split now
   executes synchronously inside that maintenance call instead of being handed
   off to the old async split queue
+- if buffered overlay data still exists for the parent route at split-apply
+  time, it is reassigned to the produced child routes as part of the same
+  partition-aware split apply step instead of being left on the retired parent
+  segment id
 - background overlay drain itself does not schedule live split work, which
   avoids reintroducing split-vs-drain contention on the hot write path
+- point `get()` now runs under the same short split-apply read gate as `put()`,
+  so remap plus overlay reassignment cannot expose a stale point lookup during
+  the split apply window
 
 ## Read and Write Semantics
 
@@ -40,8 +48,8 @@ replace every historical split helper in one step.
 - point operations no longer wait explicitly for background live-segment split
   completion before retrying a `BUSY` path
 - `flushAndWait()` seals active partition data, drains immutable runs into
-  stable segment storage, flushes stable segments, runs eligible legacy splits,
-  and checkpoints WAL
+  stable segment storage, flushes stable segments, runs eligible partition-aware
+  stable splits, and checkpoints WAL
 - `compactAndWait()` likewise performs its explicit maintenance work under the
   same split-safe maintenance boundary
 
@@ -53,9 +61,10 @@ replace every historical split helper in one step.
 - drain work is scheduled on index maintenance executors
 - if the overlay exceeds local or global limits, writes receive bounded
   backpressure instead of waiting on a live segment split
-- during explicit `flushAndWait()` / `compactAndWait()` maintenance that may
-  end in a legacy split, write admission is briefly blocked so a drained route
-  cannot be repopulated before the split remaps it
+- during the brief split-apply window itself, write admission is still gated
+  so route remap and overlay reassignment stay atomic, but explicit
+  `flushAndWait()` / `compactAndWait()` no longer need a whole-operation global
+  write gate
 
 ## Recovery Contract
 

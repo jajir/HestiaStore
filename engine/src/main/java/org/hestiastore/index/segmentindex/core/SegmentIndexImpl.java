@@ -59,7 +59,7 @@ import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeLimits;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.partition.PartitionWriteResultStatus;
-import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.split.SegmentWriterTxFactory;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
@@ -164,16 +164,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .withRegistryMaintenanceExecutor(
                                 executorRegistry.getRegistryMaintenanceExecutor())
                         .build();
+                final PartitionRuntime<K, V> partitionRuntime = new PartitionRuntime<>(
+                        keyTypeDescriptor.getComparator());
                 final SegmentWriterTxFactory<K, V> writerTxFactory = id -> segmentFactory
                         .newSegmentBuilder(id).openWriterTx();
-                final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
-                        conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
+                final PartitionStableSplitCoordinator<K, V> splitCoordinator = new PartitionStableSplitCoordinator<>(
+                        conf, keyToSegmentMap, segmentRegistry,
+                        writerTxFactory, partitionRuntime);
                 this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                         keyToSegmentMap, splitCoordinator);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
                         segmentRegistry);
-                this.partitionRuntime = new PartitionRuntime<>(
-                        keyTypeDescriptor.getComparator());
+                this.partitionRuntime = partitionRuntime;
                 this.drainExecutor = executorRegistry
                         .getIndexMaintenanceExecutor();
                 this.retryPolicy = new IndexRetryPolicy(
@@ -325,12 +327,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
-        maintenanceCoordinator.runWithExclusiveWriteAdmission(() -> {
-            drainPartitions(true);
-            keyToSegmentMap.getSegmentIds()
-                    .forEach(segmentId -> compactSegment(segmentId, true));
-            scheduleEligibleSplits();
-        });
+        drainPartitions(true);
+        keyToSegmentMap.getSegmentIds()
+                .forEach(segmentId -> compactSegment(segmentId, true));
+        scheduleEligibleSplits();
     }
 
     /** {@inheritDoc} */
@@ -342,7 +342,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         stats.incGetCx();
 
         final IndexResult<V> result = retryWhileBusy(
-                () -> getBuffered(key), "get", key, true);
+                () -> maintenanceCoordinator
+                        .runWithStableWriteAdmission(() -> getBuffered(key)),
+                "get", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
             return result.getValue();
@@ -622,11 +624,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        maintenanceCoordinator.runWithExclusiveWriteAdmission(() -> {
-            drainPartitions(true);
-            flushSegments(true);
-            scheduleEligibleSplits();
-        });
+        drainPartitions(true);
+        flushSegments(true);
+        scheduleEligibleSplits();
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
     }

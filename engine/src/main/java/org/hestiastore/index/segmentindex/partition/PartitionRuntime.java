@@ -3,12 +3,15 @@ package org.hestiastore.index.segmentindex.partition;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.split.SegmentSplitApplyPlan;
+import org.hestiastore.index.segmentindex.split.SegmentSplitterResult;
 
 /**
  * In-memory partitioned ingest overlay layered above stable segments.
@@ -134,9 +137,55 @@ public final class PartitionRuntime<K, V> {
         return totalBufferedKeyCount.get() > 0;
     }
 
+    public void reassignOverlayAfterSplit(final SegmentSplitApplyPlan<K> plan) {
+        Vldtn.requireNonNull(plan, "plan");
+        final RangePartition<K, V> oldPartition = partitions
+                .remove(plan.getOldSegmentId());
+        if (oldPartition == null) {
+            return;
+        }
+        final RangePartition.DetachedOverlay<K, V> detached = oldPartition
+                .detachOverlaySnapshot();
+        totalBufferedKeyCount
+                .addAndGet(-detached.getRemovedBufferedKeyCount());
+        final NavigableMap<K, V> detachedEntries = detached.getEntries();
+        if (detachedEntries.isEmpty()) {
+            return;
+        }
+        if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+            final NavigableMap<K, V> lowerEntries = new TreeMap<>(
+                    keyComparator);
+            final NavigableMap<K, V> upperEntries = new TreeMap<>(
+                    keyComparator);
+            detachedEntries.forEach((key, value) -> {
+                if (keyComparator.compare(key, plan.getMaxKey()) <= 0) {
+                    lowerEntries.put(key, value);
+                } else {
+                    upperEntries.put(key, value);
+                }
+            });
+            restoreOverlay(plan.getLowerSegmentId(), lowerEntries);
+            plan.getUpperSegmentId()
+                    .ifPresent(upperSegmentId -> restoreOverlay(upperSegmentId,
+                            upperEntries));
+            return;
+        }
+        restoreOverlay(plan.getLowerSegmentId(), detachedEntries);
+    }
+
     private RangePartition<K, V> partition(final SegmentId segmentId) {
         return partitions.computeIfAbsent(
                 Vldtn.requireNonNull(segmentId, "segmentId"),
                 ignored -> new RangePartition<>(keyComparator));
+    }
+
+    private void restoreOverlay(final SegmentId segmentId,
+            final NavigableMap<K, V> entries) {
+        if (entries.isEmpty()) {
+            return;
+        }
+        final int restored = partition(segmentId).restoreOverlaySnapshot(
+                entries);
+        totalBufferedKeyCount.addAndGet(restored);
     }
 }

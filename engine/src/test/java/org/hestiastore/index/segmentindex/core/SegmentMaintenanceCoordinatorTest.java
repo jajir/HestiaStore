@@ -12,7 +12,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +31,7 @@ class SegmentMaintenanceCoordinatorTest {
     private Segment<String, String> segment;
 
     @Mock
-    private SegmentSplitCoordinator<String, String> splitCoordinator;
+    private PartitionStableSplitCoordinator<String, String> splitCoordinator;
 
     @BeforeEach
     void setUp() {
