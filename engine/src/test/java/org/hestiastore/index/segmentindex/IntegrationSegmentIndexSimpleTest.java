@@ -114,7 +114,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_merging_values_from_cache_and_segment() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flush();
+        index1.flushAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = index1
                 .getStream(SegmentWindow.unbounded())) {
@@ -134,7 +134,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_repeated_read() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flush();
+        index1.flushAndWait();
 
         final List<Entry<Integer, String>> list1 = index1
                 .getStream(SegmentWindow.unbounded()).toList();
@@ -305,6 +305,10 @@ class IntegrationSegmentIndexSimpleTest {
                 .withValueTypeDescriptor(tds) //
                 .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInActivePartition(64) //
+                .withMaxNumberOfKeysInPartitionBuffer(128) //
+                .withMaxNumberOfKeysInIndexBuffer(256) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
                 .withMaxNumberOfKeysInSegment(5) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withBloomFilterIndexSizeInBytes(1000) //

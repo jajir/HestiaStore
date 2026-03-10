@@ -41,7 +41,7 @@ When a page uses PlantUML:
 1. keep the `.plantuml` source checked in
 2. keep the generated `.png` checked in next to it
 3. embed the `.png` inline in the page
-4. add a nearby link to the `.plantuml` source
+4. Do not add link to to the `.plantuml` source
 
 On this workstation, use the `rp` command to generate the `.png` file from a
 PlantUML source file. Prefer `rp` over invoking other rendering commands
@@ -51,13 +51,7 @@ Preferred Markdown pattern:
 
 ```md
 ![Short diagram description](images/example-diagram.png)
-
-PlantUML source:
-[`docs/path/to/example-diagram.plantuml`](images/example-diagram.plantuml)
 ```
-
-Do not leave only a text link to the PNG when the page is meant to show the
-diagram inline.
 
 ## Navigation Rules
 

@@ -37,6 +37,8 @@ class IndexExecutorRegistryTest {
         final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         try {
             assertNotNull(registry.getIndexMaintenanceExecutor());
+            assertNotNull(registry.getSplitMaintenanceExecutor());
+            assertNotNull(registry.getSplitPolicyScheduler());
             assertNotNull(registry.getSegmentMaintenanceExecutor());
             assertNotNull(registry.getRegistryMaintenanceExecutor());
         } finally {
@@ -152,6 +154,10 @@ class IndexExecutorRegistryTest {
         final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         final ExecutorService indexMaintenance = registry
                 .getIndexMaintenanceExecutor();
+        final ExecutorService splitMaintenance = registry
+                .getSplitMaintenanceExecutor();
+        final ExecutorService splitPolicyScheduler = registry
+                .getSplitPolicyScheduler();
         final ExecutorService segmentMaintenance = registry
                 .getSegmentMaintenanceExecutor();
         final ExecutorService registryMaintenance = registry
@@ -160,6 +166,8 @@ class IndexExecutorRegistryTest {
         registry.close();
 
         assertTrue(indexMaintenance.isShutdown());
+        assertTrue(splitMaintenance.isShutdown());
+        assertTrue(splitPolicyScheduler.isShutdown());
         assertTrue(segmentMaintenance.isShutdown());
         assertTrue(registryMaintenance.isShutdown());
     }
@@ -173,6 +181,10 @@ class IndexExecutorRegistryTest {
         assertThrows(IllegalStateException.class,
                 registry::getIndexMaintenanceExecutor);
         assertThrows(IllegalStateException.class,
+                registry::getSplitMaintenanceExecutor);
+        assertThrows(IllegalStateException.class,
+                registry::getSplitPolicyScheduler);
+        assertThrows(IllegalStateException.class,
                 registry::getSegmentMaintenanceExecutor);
         assertThrows(IllegalStateException.class,
                 registry::getRegistryMaintenanceExecutor);
@@ -185,6 +197,10 @@ class IndexExecutorRegistryTest {
         try {
             assertSame(registry.getIndexMaintenanceExecutor(),
                     registry.getIndexMaintenanceExecutor());
+            assertSame(registry.getSplitMaintenanceExecutor(),
+                    registry.getSplitMaintenanceExecutor());
+            assertSame(registry.getSplitPolicyScheduler(),
+                    registry.getSplitPolicyScheduler());
             assertSame(registry.getSegmentMaintenanceExecutor(),
                     registry.getSegmentMaintenanceExecutor());
             assertSame(registry.getRegistryMaintenanceExecutor(),
@@ -203,6 +219,12 @@ class IndexExecutorRegistryTest {
             final String indexMaintenanceName = registry
                     .getIndexMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().getName()).get();
+            final String splitMaintenanceName = registry
+                    .getSplitMaintenanceExecutor()
+                    .submit(() -> Thread.currentThread().getName()).get();
+            final String splitPolicyName = registry
+                    .getSplitPolicyScheduler()
+                    .submit(() -> Thread.currentThread().getName()).get();
             final String segmentMaintenanceName = registry
                     .getSegmentMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().getName()).get();
@@ -213,6 +235,12 @@ class IndexExecutorRegistryTest {
             final boolean indexMaintenanceDaemon = registry
                     .getIndexMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
+            final boolean splitMaintenanceDaemon = registry
+                    .getSplitMaintenanceExecutor()
+                    .submit(() -> Thread.currentThread().isDaemon()).get();
+            final boolean splitPolicyDaemon = registry
+                    .getSplitPolicyScheduler()
+                    .submit(() -> Thread.currentThread().isDaemon()).get();
             final boolean segmentMaintenanceDaemon = registry
                     .getSegmentMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
@@ -221,10 +249,14 @@ class IndexExecutorRegistryTest {
                     .submit(() -> Thread.currentThread().isDaemon()).get();
 
             assertTrue(indexMaintenanceName.startsWith("index-maintenance-"));
+            assertTrue(splitMaintenanceName.startsWith("split-maintenance-"));
+            assertTrue(splitPolicyName.startsWith("split-policy-"));
             assertTrue(segmentMaintenanceName.startsWith("segment-maintenance-"));
             assertTrue(
                     registryMaintenanceName.startsWith("registry-maintenance-"));
             assertTrue(indexMaintenanceDaemon);
+            assertTrue(splitMaintenanceDaemon);
+            assertTrue(splitPolicyDaemon);
             assertTrue(segmentMaintenanceDaemon);
             assertTrue(registryMaintenanceDaemon);
         } finally {

@@ -45,6 +45,7 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES;
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
@@ -114,6 +115,12 @@ public class IndexConfiguratonStorage<K, V> {
         final int maxNumberOfDeltaCacheFiles = getOrDefault(propsView,
                 PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES);
+        final int maxNumberOfKeysInPartitionBeforeSplit = getOrDefault(propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
+        final int maxNumberOfKeysInSegment = getOrDefault(propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
+                maxNumberOfKeysInPartitionBeforeSplit);
         final IndexConfigurationBuilder<K, V> builder = IndexConfiguration
                 .<K, V>builder()//
                 .withKeyClass(keyClass) //
@@ -125,8 +132,9 @@ public class IndexConfiguratonStorage<K, V> {
                 // SegmentIndex runtime properties
                 .withMaxNumberOfSegmentsInCache(
                         propsView.getInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(propsView
-                        .getInt(PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT))//
+                .withMaxNumberOfKeysInSegment(maxNumberOfKeysInSegment)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(
+                        maxNumberOfKeysInPartitionBeforeSplit)//
                 .withDiskIoBufferSizeInBytes(
                         propsView.getInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES))//
 
@@ -257,6 +265,8 @@ public class IndexConfiguratonStorage<K, V> {
         // SegmentIndex runtime properties
         writer.setInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 indexConfiguration.getMaxNumberOfSegmentsInCache());
+        writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
+                indexConfiguration.getMaxNumberOfKeysInSegment());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                 indexConfiguration.getMaxNumberOfKeysInPartitionBeforeSplit());
         writer.setInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,

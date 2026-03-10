@@ -24,6 +24,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfDeltaCacheFiles;
     private Integer maxNumberOfKeysInSegment;
+    private Integer maxNumberOfKeysInPartitionBeforeSplit;
     private Integer maxNumberOfSegmentsInCache;
 
     private Integer bloomFilterNumberOfHashFunctions;
@@ -270,7 +271,7 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBeforeSplit(
             final Integer maxNumberOfKeysInPartitionBeforeSplit) {
-        this.maxNumberOfKeysInSegment = maxNumberOfKeysInPartitionBeforeSplit;
+        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
         return this;
     }
 
@@ -587,6 +588,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveMaxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition == null
                 ? IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION
                 : maxNumberOfImmutableRunsPerPartition;
+        final Integer effectiveMaxNumberOfKeysInSegment = resolveEffectiveMaxNumberOfKeysInSegment();
+        final Integer effectiveMaxNumberOfKeysInPartitionBeforeSplit = resolveEffectiveMaxNumberOfKeysInPartitionBeforeSplit(
+                effectiveMaxNumberOfKeysInSegment);
         final Integer effectiveWriteCacheDuringMaintenance = resolveEffectiveWriteCacheDuringMaintenance();
         final Integer effectiveIndexBuffer = resolveEffectiveIndexBuffer(
                 effectiveWriteCacheDuringMaintenance);
@@ -598,7 +602,9 @@ public class IndexConfigurationBuilder<K, V> {
                 effectiveMaxNumberOfImmutableRunsPerPartition,
                 effectiveIndexBuffer,
                 maxNumberOfKeysInSegmentChunk, effectiveMaxNumberOfDeltaCacheFiles,
-                maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
+                effectiveMaxNumberOfKeysInSegment,
+                effectiveMaxNumberOfKeysInPartitionBeforeSplit,
+                maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 contextLoggingEnabled, effectiveIndexWorkerThreadCount,
@@ -610,6 +616,21 @@ public class IndexConfigurationBuilder<K, V> {
                 effectiveSegmentMaintenanceAutoEnabled,
                 Wal.orEmpty(wal),
                 encodingChunkFilters, decodingChunkFilters);
+    }
+
+    private Integer resolveEffectiveMaxNumberOfKeysInSegment() {
+        if (maxNumberOfKeysInSegment != null) {
+            return maxNumberOfKeysInSegment;
+        }
+        return maxNumberOfKeysInPartitionBeforeSplit;
+    }
+
+    private Integer resolveEffectiveMaxNumberOfKeysInPartitionBeforeSplit(
+            final Integer effectiveMaxNumberOfKeysInSegment) {
+        if (maxNumberOfKeysInPartitionBeforeSplit != null) {
+            return maxNumberOfKeysInPartitionBeforeSplit;
+        }
+        return effectiveMaxNumberOfKeysInSegment;
     }
 
     private Integer resolveEffectiveWriteCacheDuringMaintenance() {

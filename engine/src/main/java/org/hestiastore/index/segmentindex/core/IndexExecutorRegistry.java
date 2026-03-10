@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,16 +26,21 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
     private static final String ARG_INDEX_CONFIGURATION = "indexConfiguration";
     private static final String ARG_INDEX_MAINTENANCE_THREADS = "indexMaintenanceThreads";
+    private static final String ARG_SPLIT_MAINTENANCE_THREADS = "splitMaintenanceThreads";
     private static final String ARG_SEGMENT_MAINTENANCE_THREADS = "segmentMaintenanceThreads";
     private static final String ARG_REGISTRY_MAINTENANCE_THREADS = "registryMaintenanceThreads";
     private static final String ARG_EXECUTOR = "executor";
     private static final String ARG_INDEX_NAME = "indexName";
     private static final String THREAD_NAME_PREFIX_INDEX_MAINTENANCE = "index-maintenance-";
+    private static final String THREAD_NAME_PREFIX_SPLIT_MAINTENANCE = "split-maintenance-";
+    private static final String THREAD_NAME_PREFIX_SPLIT_POLICY = "split-policy-";
     private static final String THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE = "segment-maintenance-";
     private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
     private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
 
     private final ExecutorService indexMaintenanceExecutor;
+    private final ExecutorService splitMaintenanceExecutor;
+    private final ScheduledExecutorService splitPolicyScheduler;
     private final ExecutorService segmentMaintenanceExecutor;
     private final ExecutorService registryMaintenanceExecutor;
 
@@ -48,6 +54,9 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 .requireNonNull(indexConfiguration, ARG_INDEX_CONFIGURATION);
         this.indexMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
                 createIndexMaintenanceExecutor(conf));
+        this.splitMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
+                createSplitMaintenanceExecutor(conf));
+        this.splitPolicyScheduler = createSplitPolicyScheduler();
         this.segmentMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
                 createSegmentMaintenanceExecutor(conf));
         this.registryMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
@@ -74,6 +83,28 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     ExecutorService getIndexMaintenanceExecutor() {
         checkNotClosed();
         return indexMaintenanceExecutor;
+    }
+
+    /**
+     * Returns shared split-maintenance executor.
+     *
+     * @return split-maintenance executor service
+     * @throws IllegalStateException when registry has already been closed
+     */
+    ExecutorService getSplitMaintenanceExecutor() {
+        checkNotClosed();
+        return splitMaintenanceExecutor;
+    }
+
+    /**
+     * Returns shared split-policy scheduler.
+     *
+     * @return split-policy scheduler
+     * @throws IllegalStateException when registry has already been closed
+     */
+    ScheduledExecutorService getSplitPolicyScheduler() {
+        checkNotClosed();
+        return splitPolicyScheduler;
     }
 
     /**
@@ -133,6 +164,30 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 }, new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
+    private static ExecutorService createSplitMaintenanceExecutor(
+            final IndexConfiguration<?, ?> conf) {
+        final int splitMaintenanceThreads = Vldtn
+                .requireGreaterThanZero(
+                        Vldtn.requireNonNull(
+                                Vldtn.requireNonNull(conf,
+                                        ARG_INDEX_CONFIGURATION)
+                                        .getNumberOfIndexMaintenanceThreads(),
+                                ARG_SPLIT_MAINTENANCE_THREADS),
+                        ARG_SPLIT_MAINTENANCE_THREADS);
+        final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
+                splitMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        return new ThreadPoolExecutor(splitMaintenanceThreads,
+                splitMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(queueCapacity), runnable -> {
+                    final Thread thread = new Thread(runnable,
+                            THREAD_NAME_PREFIX_SPLIT_MAINTENANCE
+                                    + threadCounter.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }, new ThreadPoolExecutor.AbortPolicy());
+    }
+
     private static ExecutorService createRegistryMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int registryMaintenanceThreads = Vldtn
@@ -145,6 +200,17 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                         ARG_REGISTRY_MAINTENANCE_THREADS);
         return createFixedDaemonExecutor(registryMaintenanceThreads,
                 THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE);
+    }
+
+    private static ScheduledExecutorService createSplitPolicyScheduler() {
+        final AtomicInteger threadCounter = new AtomicInteger(1);
+        return Executors.newSingleThreadScheduledExecutor(runnable -> {
+            final Thread thread = new Thread(runnable,
+                    THREAD_NAME_PREFIX_SPLIT_POLICY
+                            + threadCounter.getAndIncrement());
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     private static ExecutorService wrapWithIndexContextIfEnabled(
@@ -176,6 +242,8 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     protected void doClose() {
         RuntimeException failure = null;
         failure = shutdownAndAwait(indexMaintenanceExecutor, failure);
+        failure = shutdownAndAwait(splitMaintenanceExecutor, failure);
+        failure = shutdownAndAwait(splitPolicyScheduler, failure);
         failure = shutdownAndAwait(segmentMaintenanceExecutor, failure);
         failure = shutdownAndAwait(registryMaintenanceExecutor, failure);
         if (failure != null) {

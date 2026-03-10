@@ -37,9 +37,9 @@ import org.openjdk.jmh.annotations.Warmup;
  * End-to-end benchmark for SegmentIndex point lookups against an on-disk index.
  *
  * <p>
- * The benchmark intentionally closes and reopens the index after populating it
- * so lookup methods exercise the persisted read path instead of the write
- * cache.
+ * The benchmark intentionally closes and reopens the index after populating it.
+ * It can then either read only the persisted view or add a live overlay and
+ * measure point lookups that resolve from the active partition layer.
  * </p>
  */
 @BenchmarkMode(Mode.Throughput)
@@ -67,8 +67,12 @@ public class SegmentIndexGetBenchmark {
     @Param({ "false", "true" })
     private boolean snappy;
 
+    @Param({ "persisted", "overlay" })
+    private String readPathMode;
+
     private File tempDir;
     private SegmentIndex<Integer, String> index;
+    private int queryKeyBound;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
@@ -83,6 +87,10 @@ public class SegmentIndexGetBenchmark {
         }
 
         index = SegmentIndex.open(new FsDirectory(tempDir), conf);
+        queryKeyBound = keyCount;
+        if ("overlay".equals(readPathMode)) {
+            populateOverlay(index);
+        }
     }
 
     @TearDown(Level.Trial)
@@ -99,12 +107,12 @@ public class SegmentIndexGetBenchmark {
 
     @Benchmark
     public String getHitSync(final QueryState queryState) {
-        return index.get(Integer.valueOf(queryState.nextKey(keyCount)));
+        return index.get(Integer.valueOf(queryState.nextKey(queryKeyBound)));
     }
 
     @Benchmark
     public String getHitAsyncJoin(final QueryState queryState) {
-        return index.getAsync(Integer.valueOf(queryState.nextKey(keyCount)))
+        return index.getAsync(Integer.valueOf(queryState.nextKey(queryKeyBound)))
                 .toCompletableFuture().join();
     }
 
@@ -117,10 +125,13 @@ public class SegmentIndexGetBenchmark {
                 .withName("segment-index-get-benchmark")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(8)//
-                .withMaxNumberOfKeysInSegmentWriteCache(2048)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(4096)//
+                .withMaxNumberOfKeysInActivePartition(2048)//
+                .withMaxNumberOfImmutableRunsPerPartition(2)//
+                .withMaxNumberOfKeysInPartitionBuffer(4096)//
+                .withMaxNumberOfKeysInIndexBuffer(12_288)//
                 .withMaxNumberOfKeysInSegmentChunk(maxKeysInChunk)//
                 .withMaxNumberOfKeysInSegment(keyCount * 2)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(keyCount * 2)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withMaxNumberOfDeltaCacheFiles(2)//
                 .withBloomFilterIndexSizeInBytes(Math.max(8192, keyCount / 2))//
@@ -162,10 +173,23 @@ public class SegmentIndexGetBenchmark {
         }
     }
 
+    private void populateOverlay(final SegmentIndex<Integer, String> openedIndex) {
+        queryKeyBound = Math.min(keyCount, 1024);
+        for (int key = 0; key < queryKeyBound; key++) {
+            openedIndex.put(Integer.valueOf(key), buildOverlayValue(key));
+        }
+    }
+
     private String buildValue(final int key) {
         final String prefix = Integer.toString(key) + '-';
         final int suffixLength = Math.max(0, valueLength - prefix.length());
         return prefix + "x".repeat(suffixLength);
+    }
+
+    private String buildOverlayValue(final int key) {
+        final String prefix = "overlay-" + key + '-';
+        final int suffixLength = Math.max(0, valueLength - prefix.length());
+        return prefix + "o".repeat(suffixLength);
     }
 
     private static void deleteRecursively(final File file) {

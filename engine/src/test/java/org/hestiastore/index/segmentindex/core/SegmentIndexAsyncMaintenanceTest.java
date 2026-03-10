@@ -1,8 +1,10 @@
 package org.hestiastore.index.segmentindex.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
@@ -23,6 +25,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
@@ -122,6 +125,17 @@ class SegmentIndexAsyncMaintenanceTest {
         }
     }
 
+    @Test
+    void closeStopsAutonomousSplitPolicyLoop() throws Exception {
+        index.put(1, "one");
+        index.flushAndWait();
+
+        index.close();
+        TimeUnit.MILLISECONDS.sleep(750L);
+
+        assertEquals(SegmentIndexState.CLOSED, index.getState());
+    }
+
     private IndexInternalConcurrent<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         return new IndexInternalConcurrent<>(
@@ -158,19 +172,20 @@ class SegmentIndexAsyncMaintenanceTest {
             final boolean forFlush) {
         when(blockingSegment.getState()).thenAnswer(
                 invocation -> stateRef.get());
-        if (forFlush) {
-            when(blockingSegment.flush()).thenAnswer(invocation -> {
+        lenient().when(blockingSegment.flush()).thenAnswer(invocation -> {
+            if (forFlush) {
                 stateRef.set(SegmentState.MAINTENANCE_RUNNING);
                 started.countDown();
-                return SegmentResult.ok();
-            });
-        } else {
-            when(blockingSegment.compact()).thenAnswer(invocation -> {
+            }
+            return SegmentResult.ok();
+        });
+        lenient().when(blockingSegment.compact()).thenAnswer(invocation -> {
+            if (!forFlush) {
                 stateRef.set(SegmentState.MAINTENANCE_RUNNING);
                 started.countDown();
-                return SegmentResult.ok();
-            });
-        }
+            }
+            return SegmentResult.ok();
+        });
         return blockingSegment;
     }
 

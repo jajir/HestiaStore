@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,7 +57,6 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.partition.PartitionImmutableRun;
 import org.hestiastore.index.segmentindex.partition.PartitionLookupResult;
-import org.hestiastore.index.segmentindex.partition.PendingPartitionSplit;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeLimits;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
@@ -90,6 +90,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
+    private static final long BACKGROUND_SPLIT_POLICY_INTERVAL_MILLIS = 250L;
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
     private static final Pattern SEGMENT_DIRECTORY_PATTERN = Pattern
@@ -107,6 +108,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentIndexCore<K, V> core;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
+    private final ScheduledExecutorService splitPolicyScheduler;
     private final IndexRetryPolicy retryPolicy;
     private final RuntimeTuningState runtimeTuningState;
     private final IndexControlPlane controlPlane;
@@ -117,6 +119,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
             0L);
     private final AtomicBoolean walRetentionPressureWarnActive = new AtomicBoolean(
+            false);
+    private final AtomicBoolean backgroundSplitScanScheduled = new AtomicBoolean(
+            false);
+    private final AtomicBoolean backgroundSplitScanRequested = new AtomicBoolean(
+            false);
+    private final AtomicBoolean backgroundSplitPolicyTickScheduled = new AtomicBoolean(
             false);
     private final Object asyncMonitor = new Object();
     private int asyncInFlight = 0;
@@ -171,16 +179,21 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .build();
                 final PartitionRuntime<K, V> partitionRuntime = new PartitionRuntime<>(
                         keyTypeDescriptor.getComparator());
+                this.partitionRuntime = partitionRuntime;
                 final PartitionStableSplitCoordinator<K, V> splitCoordinator = new PartitionStableSplitCoordinator<>(
-                        conf, keyToSegmentMap, segmentRegistry,
+                        conf, keyTypeDescriptor.getComparator(), keyToSegmentMap, segmentRegistry,
                         partitionRuntime);
                 this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                        keyToSegmentMap, partitionRuntime, splitCoordinator);
+                        keyToSegmentMap, partitionRuntime, splitCoordinator,
+                        executorRegistry.getSplitMaintenanceExecutor(),
+                        this::failWithError,
+                        this::scheduleBackgroundSplitPolicyScanIfIdle);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
                         segmentRegistry);
-                this.partitionRuntime = partitionRuntime;
                 this.drainExecutor = executorRegistry
                         .getIndexMaintenanceExecutor();
+                this.splitPolicyScheduler = executorRegistry
+                        .getSplitPolicyScheduler();
                 this.retryPolicy = new IndexRetryPolicy(
                         conf.getIndexBusyBackoffMillis(),
                         conf.getIndexBusyTimeoutMillis());
@@ -208,6 +221,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         startupConsistencyCheckForStaleSegmentLocks = false;
                     }
                 }
+                scheduleBackgroundSplitPolicyScan();
                 logger.debug("Index '{}' opened.", conf.getIndexName());
             } finally {
                 if (contextApplied) {
@@ -320,8 +334,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void compact() {
         getIndexState().tryPerformOperation();
         drainPartitions(true);
-        keyToSegmentMap.getSegmentIds()
-                .forEach(segmentId -> compactSegment(segmentId, false));
+        awaitSplitsIdle();
+        drainPartitions(true);
+        awaitSplitsIdle();
+        maintenanceCoordinator.runWithSplitSchedulingPaused(() -> keyToSegmentMap
+                .getSegmentIds()
+                .forEach(segmentId -> compactSegment(segmentId, false)));
+        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     /** {@inheritDoc} */
@@ -329,12 +348,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
         drainPartitions(true);
-        keyToSegmentMap.getSegmentIds()
-                .forEach(segmentId -> compactSegment(segmentId, true));
-        scheduleEligibleSplits();
-        materializePendingSplits();
+        awaitSplitsIdle();
         drainPartitions(true);
-        flushSegments(true);
+        awaitSplitsIdle();
+        maintenanceCoordinator.runWithSplitSchedulingPaused(() -> {
+            keyToSegmentMap.getSegmentIds()
+                    .forEach(segmentId -> compactSegment(segmentId, true));
+            flushSegments(true);
+        });
+        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     /** {@inheritDoc} */
@@ -404,6 +426,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         : segmentId -> true);
         checker.checkAndRepairConsistency();
         cleanupOrphanedSegmentDirectories();
+        scheduleBackgroundSplitPolicyScan();
     }
 
     private boolean hasSegmentLockFile(final SegmentId segmentId) {
@@ -429,8 +452,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             setSegmentIndexState(SegmentIndexState.CLOSED);
             awaitAsyncOperations();
             drainPartitions(true);
-            materializePendingSplits();
+            awaitSplitsIdle();
             drainPartitions(true);
+            awaitSplitsIdle();
             flushSegments(true);
             final SegmentRegistryResult<Void> closeResult = segmentRegistry
                     .close();
@@ -624,21 +648,24 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void flush() {
         drainPartitions(false);
-        flushSegments(false);
+        maintenanceCoordinator
+                .runWithSplitSchedulingPaused(() -> flushSegments(false));
         keyToSegmentMap.optionalyFlush();
+        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
         drainPartitions(true);
-        flushSegments(true);
-        scheduleEligibleSplits();
-        materializePendingSplits();
+        awaitSplitsIdle();
         drainPartitions(true);
-        flushSegments(true);
+        awaitSplitsIdle();
+        maintenanceCoordinator
+                .runWithSplitSchedulingPaused(() -> flushSegments(true));
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
+        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
@@ -681,24 +708,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 snapshot.version())) {
             return IndexResult.busy();
         }
-        return getStableWithFallback(segmentId, key);
-    }
-
-    private IndexResult<V> getStableWithFallback(final SegmentId segmentId,
-            final K key) {
-        final List<SegmentId> stableChain = partitionRuntime
-                .resolveStableLookupChain(segmentId);
-        for (int i = 0; i < stableChain.size(); i++) {
-            final SegmentId currentSegmentId = stableChain.get(i);
-            final IndexResult<V> stableResult = core.get(currentSegmentId, key);
-            if (stableResult.getStatus() != IndexResultStatus.OK) {
-                return stableResult;
-            }
-            if (stableResult.getValue() != null || i == stableChain.size() - 1) {
-                return stableResult;
-            }
-        }
-        return IndexResult.ok(null);
+        return core.get(segmentId, key);
     }
 
     private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
@@ -771,6 +781,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void drainPartitionLoop(final SegmentId segmentId) {
+        boolean drainedAnyRun = false;
         try {
             while (true) {
                 final PartitionImmutableRun<K, V> run = partitionRuntime
@@ -780,12 +791,16 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 }
                 drainImmutableRun(segmentId, run);
                 partitionRuntime.completeDrainedRun(segmentId, run);
+                drainedAnyRun = true;
             }
         } catch (final RuntimeException e) {
             failWithError(e);
             throw e;
         } finally {
             partitionRuntime.finishDrainScheduling(segmentId);
+            if (drainedAnyRun && isBackgroundSplitPolicyEnabled()) {
+                scheduleSplitAfterDrain(segmentId);
+            }
         }
     }
 
@@ -831,7 +846,41 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    private void scheduleBackgroundSplitPolicyScan() {
+        if (!isBackgroundSplitPolicyEnabled()) {
+            return;
+        }
+        ensureAutonomousBackgroundSplitPolicyLoop();
+        backgroundSplitScanRequested.set(true);
+        if (!backgroundSplitScanScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            drainExecutor.execute(this::runBackgroundSplitPolicyLoop);
+        } catch (final RuntimeException e) {
+            backgroundSplitScanScheduled.set(false);
+            if (isClosedOrClosingState()) {
+                return;
+            }
+            throw e;
+        }
+    }
+
+    private void scheduleBackgroundSplitPolicyScanIfIdle() {
+        if (!isBackgroundSplitPolicyEnabled()) {
+            return;
+        }
+        ensureAutonomousBackgroundSplitPolicyLoop();
+        if (!isAutonomousSplitPolicyIdle()) {
+            return;
+        }
+        scheduleBackgroundSplitPolicyScan();
+    }
+
     private void scheduleSplitAfterDrain(final SegmentId segmentId) {
+        if (!isBackgroundSplitPolicyEnabled()) {
+            return;
+        }
         final int threshold = runtimeTuningState.effectiveValue(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
         if (threshold < 1 || !isSegmentStillMapped(segmentId)) {
@@ -859,89 +908,141 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         "Segment '%s' failed to load for split scheduling: %s",
                         segmentId, loaded.getStatus()));
             }
-            maintenanceCoordinator.handlePostDrain(loaded.getValue(),
-                    (long) threshold);
+            if (maintenanceCoordinator.handleSplitCandidate(loaded.getValue(),
+                    (long) threshold)) {
+                stats.incSplitScheduleCx();
+            }
             return;
         }
     }
 
-    private void scheduleEligibleSplits() {
-        keyToSegmentMap.getSegmentIds().forEach(this::scheduleSplitAfterDrain);
-    }
-
-    private void materializePendingSplits() {
-        final List<PendingPartitionSplit<K>> pendingSplits = partitionRuntime
-                .pendingSplitsSnapshot();
-        for (final PendingPartitionSplit<K> pendingSplit : pendingSplits) {
-            materializePendingSplit(pendingSplit);
-        }
-    }
-
-    private void materializePendingSplit(
-            final PendingPartitionSplit<K> pendingSplit) {
-        final SegmentId parentSegmentId = pendingSplit.getParentSegmentId();
-        try (EntryIterator<K, V> iterator = openIteratorWithRetry(
-                parentSegmentId, SegmentIteratorIsolation.FAIL_FAST)) {
-            while (iterator.hasNext()) {
-                final Entry<K, V> entry = iterator.next();
-                final SegmentId targetSegmentId = resolveMaterializationTarget(
-                        pendingSplit, entry.getKey());
-                putStableEntry(targetSegmentId, entry.getKey(),
-                        entry.getValue());
-            }
-        }
-        flushSegment(pendingSplit.getLowerSegmentId(), true);
-        pendingSplit.getUpperSegmentId()
-                .ifPresent(segmentId -> flushSegment(segmentId, true));
-        keyToSegmentMap.optionalyFlush();
-        partitionRuntime.completePendingStableSplit(pendingSplit);
-        deleteRetiredParentSegment(parentSegmentId);
-    }
-
-    private SegmentId resolveMaterializationTarget(
-            final PendingPartitionSplit<K> pendingSplit, final K key) {
-        if (keyTypeDescriptor.getComparator().compare(key,
-                pendingSplit.getMaxKey()) <= 0) {
-            return pendingSplit.getLowerSegmentId();
-        }
-        return pendingSplit.getUpperSegmentId()
-                .orElseGet(pendingSplit::getLowerSegmentId);
-    }
-
-    private void deleteRetiredParentSegment(final SegmentId segmentId) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
-                    .deleteSegment(segmentId);
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK
-                    || deleteResult
-                            .getStatus() == SegmentRegistryResultStatus.CLOSED) {
+    private void runBackgroundSplitPolicyLoop() {
+        try {
+            if (!isBackgroundSplitPolicyEnabled()) {
                 return;
             }
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                try {
-                    retryPolicy.backoffOrThrow(startNanos, "deleteRetiredSplit",
-                            segmentId);
-                } catch (final IndexException timeout) {
-                    logger.warn(
-                            "Retired parent segment '{}' remained on disk because delete timed out after child materialization.",
-                            segmentId);
-                    return;
-                }
-                continue;
+            do {
+                backgroundSplitScanRequested.set(false);
+                scanCurrentSplitCandidates();
+            } while (backgroundSplitScanRequested.get());
+        } catch (final RuntimeException e) {
+            if (!isClosedOrClosingState()) {
+                failWithError(e);
+                throw e;
             }
-            logger.warn(
-                    "Retired parent segment '{}' could not be deleted after child materialization: {}",
-                    segmentId, deleteResult.getStatus());
+        } finally {
+            backgroundSplitScanScheduled.set(false);
+            if (backgroundSplitScanRequested.get()) {
+                scheduleBackgroundSplitPolicyScan();
+            }
+        }
+    }
+
+    private void ensureAutonomousBackgroundSplitPolicyLoop() {
+        if (!isBackgroundSplitPolicyEnabled()) {
             return;
         }
+        if (!backgroundSplitPolicyTickScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            splitPolicyScheduler.schedule(
+                    this::runAutonomousBackgroundSplitPolicyTick,
+                    BACKGROUND_SPLIT_POLICY_INTERVAL_MILLIS,
+                    TimeUnit.MILLISECONDS);
+        } catch (final RuntimeException e) {
+            backgroundSplitPolicyTickScheduled.set(false);
+            if (isClosedOrClosingState()) {
+                return;
+            }
+            throw e;
+        }
+    }
+
+    private void runAutonomousBackgroundSplitPolicyTick() {
+        backgroundSplitPolicyTickScheduled.set(false);
+        try {
+            if (!isBackgroundSplitPolicyEnabled()) {
+                return;
+            }
+            if (isAutonomousSplitPolicyIdle()) {
+                scheduleBackgroundSplitPolicyScan();
+            }
+        } catch (final RuntimeException e) {
+            if (!isClosedOrClosingState()) {
+                failWithError(e);
+                throw e;
+            }
+        } finally {
+            if (isBackgroundSplitPolicyEnabled()) {
+                ensureAutonomousBackgroundSplitPolicyLoop();
+            }
+        }
+    }
+
+    private boolean isAutonomousSplitPolicyIdle() {
+        final PartitionRuntimeSnapshot snapshot = partitionRuntime.snapshot();
+        return snapshot.getBufferedKeyCount() == 0
+                && snapshot.getActivePartitionCount() == 0
+                && snapshot.getImmutableRunCount() == 0
+                && snapshot.getDrainInFlightCount() == 0
+                && snapshot.getDrainingPartitionCount() == 0
+                && maintenanceCoordinator.splitInFlightCount() == 0;
+    }
+
+    private void scanCurrentSplitCandidates() {
+        final int threshold = runtimeTuningState.effectiveValue(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
+        if (threshold < 1) {
+            return;
+        }
+        for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
+            if (!isSegmentStillMapped(segmentId)) {
+                continue;
+            }
+            final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
+            if (segment == null) {
+                continue;
+            }
+            if (maintenanceCoordinator.handleSplitCandidate(segment,
+                    (long) threshold)) {
+                stats.incSplitScheduleCx();
+            }
+        }
+    }
+
+    private Segment<K, V> tryLoadSplitCandidate(final SegmentId segmentId) {
+        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+                .getSegment(segmentId);
+        if (loaded.getStatus() == SegmentRegistryResultStatus.OK) {
+            return loaded.getValue();
+        }
+        if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY
+                || loaded.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+            return null;
+        }
+        if (!isSegmentStillMapped(segmentId)) {
+            return null;
+        }
+        throw new IndexException(String.format(
+                "Segment '%s' failed to load for split scheduling: %s",
+                segmentId, loaded.getStatus()));
+    }
+
+    private boolean isBackgroundSplitPolicyEnabled() {
+        return Boolean.TRUE.equals(conf.isSegmentMaintenanceAutoEnabled())
+                && !isClosedOrClosingState();
+    }
+
+    private boolean isClosedOrClosingState() {
+        final SegmentIndexState state = getState();
+        return wasClosed() || state == SegmentIndexState.CLOSED
+                || state == SegmentIndexState.ERROR;
     }
 
     private void cleanupOrphanedSegmentDirectories() {
         final Set<SegmentId> mappedSegmentIds = new HashSet<>(
                 keyToSegmentMap.getSegmentIds());
-        mappedSegmentIds
-                .addAll(partitionRuntime.pendingStableSourceSegmentIds());
         final List<SegmentId> orphanedSegmentIds = new ArrayList<>();
         try (var fileNames = directoryFacade.getFileNames()) {
             fileNames.forEach(name -> {
@@ -1042,10 +1143,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentIteratorIsolation isolation) {
         final NavigableMap<K, V> merged = new TreeMap<>(
                 keyTypeDescriptor.getComparator());
-        final List<SegmentId> stableSegmentIds = partitionRuntime
-                .resolveStableMergeChain(segmentIds);
         try (EntryIterator<K, V> stableIterator = new SegmentsIterator<>(
-                stableSegmentIds, segmentRegistry, isolation, retryPolicy)) {
+                segmentIds, segmentRegistry, isolation, retryPolicy)) {
             while (stableIterator.hasNext()) {
                 final Entry<K, V> entry = stableIterator.next();
                 merged.put(entry.getKey(), entry.getValue());
@@ -1639,6 +1738,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         applyRuntimeEffectiveLimits(effective);
         final ConfigurationSnapshot snapshot = runtimeTuningState
                 .apply(validation.normalizedValues());
+        if (validation.normalizedValues().containsKey(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT)) {
+            scheduleBackgroundSplitPolicyScan();
+        }
         return new RuntimePatchResult(true, validation, snapshot);
     }
 
