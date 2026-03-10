@@ -1,0 +1,11 @@
+{
+  "branch": "HEAD",
+  "channel": "main",
+  "comparisonJsonPath": "history/segment-index-nightly/2026/03/2026-03-10T19-40-13.452306+00-00_52b04525c10e_22920956070/comparison-vs-previous.json",
+  "comparisonMarkdownPath": "history/segment-index-nightly/2026/03/2026-03-10T19-40-13.452306+00-00_52b04525c10e_22920956070/comparison-vs-previous.md",
+  "profile": "segment-index-nightly",
+  "runPath": "history/segment-index-nightly/2026/03/2026-03-10T19-40-13.452306+00-00_52b04525c10e_22920956070",
+  "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
+  "summaryPath": "history/segment-index-nightly/2026/03/2026-03-10T19-40-13.452306+00-00_52b04525c10e_22920956070/summary.json",
+  "timestampUtc": "2026-03-10T19:40:13.452306+00:00"
+}
