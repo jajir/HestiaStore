@@ -26,6 +26,7 @@ final class RangePartition<K, V> {
     private TreeMap<K, V> activeEntries;
     private int bufferedKeyCount;
     private boolean drainScheduled;
+    private boolean splitInFlight;
 
     RangePartition(final Comparator<K> keyComparator) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
@@ -98,7 +99,7 @@ final class RangePartition<K, V> {
 
     boolean markDrainScheduledIfNeeded() {
         synchronized (monitor) {
-            if (drainScheduled || immutableRuns.isEmpty()) {
+            if (splitInFlight || drainScheduled || immutableRuns.isEmpty()) {
                 return false;
             }
             drainScheduled = true;
@@ -169,6 +170,18 @@ final class RangePartition<K, V> {
         }
     }
 
+    void beginSplit() {
+        synchronized (monitor) {
+            splitInFlight = true;
+        }
+    }
+
+    void finishSplit() {
+        synchronized (monitor) {
+            splitInFlight = false;
+        }
+    }
+
     DetachedOverlay<K, V> detachOverlaySnapshot() {
         synchronized (monitor) {
             final TreeMap<K, V> merged = new TreeMap<>(keyComparator);
@@ -181,6 +194,7 @@ final class RangePartition<K, V> {
             activeEntries = new TreeMap<>(keyComparator);
             bufferedKeyCount = 0;
             drainScheduled = false;
+            splitInFlight = false;
             return new DetachedOverlay<>(merged, removedBufferedKeyCount);
         }
     }

@@ -130,4 +130,20 @@ class PartitionRuntimeTest {
                 Integer.valueOf(9)).getValue());
         assertEquals(3, runtime.snapshot().getBufferedKeyCount());
     }
+
+    @Test
+    void splitFreezeBlocksDrainSchedulingUntilFinished() {
+        final SegmentId segmentId = SegmentId.of(8);
+        final PartitionRuntimeLimits limits = new PartitionRuntimeLimits(1, 2,
+                8, 16);
+
+        runtime.write(segmentId, Integer.valueOf(1), "v1", limits);
+        runtime.write(segmentId, Integer.valueOf(2), "v2", limits);
+
+        runtime.beginSplit(segmentId);
+        assertFalse(runtime.markDrainScheduledIfNeeded(segmentId));
+
+        runtime.finishSplit(segmentId);
+        assertTrue(runtime.markDrainScheduledIfNeeded(segmentId));
+    }
 }

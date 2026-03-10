@@ -33,6 +33,11 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - point `get()` now runs under the same short split-apply read gate as `put()`,
   so remap plus overlay reassignment cannot expose a stale point lookup during
   the split apply window
+- explicit maintenance split no longer holds that gate for the whole stable
+  child build; the gate only wraps the final split-apply remap window
+- while a split is building child stable segments, drain back into the parent
+  route is temporarily suspended so newly buffered data stays in overlay and is
+  reassigned to child routes if the split applies
 
 ## Read and Write Semantics
 

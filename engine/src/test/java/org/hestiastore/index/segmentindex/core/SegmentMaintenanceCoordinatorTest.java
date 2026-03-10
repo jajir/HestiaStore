@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -12,6 +14,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +33,8 @@ class SegmentMaintenanceCoordinatorTest {
     @Mock
     private Segment<String, String> segment;
 
+    private PartitionRuntime<String, String> partitionRuntime;
+
     @Mock
     private PartitionStableSplitCoordinator<String, String> splitCoordinator;
 
@@ -37,6 +42,7 @@ class SegmentMaintenanceCoordinatorTest {
     void setUp() {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
+        partitionRuntime = new PartitionRuntime<>(String::compareTo);
     }
 
     @Test
@@ -44,7 +50,8 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getState()).thenReturn(SegmentState.CLOSED);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                synchronizedKeyToSegmentMap, splitCoordinator);
+                synchronizedKeyToSegmentMap, partitionRuntime,
+                splitCoordinator);
 
         coordinator.handlePostDrain(segment, 100L);
 
@@ -61,7 +68,8 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(50L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                synchronizedKeyToSegmentMap, splitCoordinator);
+                synchronizedKeyToSegmentMap, partitionRuntime,
+                splitCoordinator);
 
         coordinator.handlePostDrain(segment, 1000L);
 
@@ -78,11 +86,12 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getNumberOfKeysInCache()).thenReturn(101L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                synchronizedKeyToSegmentMap, splitCoordinator);
+                synchronizedKeyToSegmentMap, partitionRuntime,
+                splitCoordinator);
 
         coordinator.handlePostDrain(segment, 100L);
 
-        verify(splitCoordinator).optionallySplit(segment, 100L);
+        verify(splitCoordinator).optionallySplit(eq(segment), eq(100L), any());
     }
 
 }
