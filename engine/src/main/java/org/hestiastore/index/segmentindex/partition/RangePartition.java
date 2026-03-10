@@ -169,6 +169,37 @@ final class RangePartition<K, V> {
         }
     }
 
+    DetachedOverlay<K, V> detachOverlaySnapshot() {
+        synchronized (monitor) {
+            final TreeMap<K, V> merged = new TreeMap<>(keyComparator);
+            for (final PartitionImmutableRun<K, V> run : immutableRuns) {
+                merged.putAll(run.getEntries());
+            }
+            merged.putAll(activeEntries);
+            final int removedBufferedKeyCount = bufferedKeyCount;
+            immutableRuns.clear();
+            activeEntries = new TreeMap<>(keyComparator);
+            bufferedKeyCount = 0;
+            drainScheduled = false;
+            return new DetachedOverlay<>(merged, removedBufferedKeyCount);
+        }
+    }
+
+    int restoreOverlaySnapshot(final NavigableMap<K, V> entries) {
+        Vldtn.requireNonNull(entries, "entries");
+        synchronized (monitor) {
+            int restored = 0;
+            for (final java.util.Map.Entry<K, V> entry : entries.entrySet()) {
+                if (!activeEntries.containsKey(entry.getKey())) {
+                    restored++;
+                }
+                activeEntries.put(entry.getKey(), entry.getValue());
+            }
+            bufferedKeyCount += restored;
+            return restored;
+        }
+    }
+
     private boolean exceedsLocalCapacity(final PartitionRuntimeLimits limits) {
         if (bufferedKeyCount >= limits.getMaxNumberOfKeysInPartitionBuffer()) {
             return true;
@@ -197,6 +228,25 @@ final class RangePartition<K, V> {
             if (totalBufferedKeyCount.compareAndSet(current, current + 1)) {
                 return true;
             }
+        }
+    }
+
+    static final class DetachedOverlay<K, V> {
+        private final NavigableMap<K, V> entries;
+        private final int removedBufferedKeyCount;
+
+        private DetachedOverlay(final NavigableMap<K, V> entries,
+                final int removedBufferedKeyCount) {
+            this.entries = entries;
+            this.removedBufferedKeyCount = removedBufferedKeyCount;
+        }
+
+        NavigableMap<K, V> getEntries() {
+            return entries;
+        }
+
+        int getRemovedBufferedKeyCount() {
+            return removedBufferedKeyCount;
         }
     }
 }

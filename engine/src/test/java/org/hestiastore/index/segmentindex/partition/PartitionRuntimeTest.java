@@ -8,6 +8,8 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.split.SegmentSplitApplyPlan;
+import org.hestiastore.index.segmentindex.split.SegmentSplitterResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -99,5 +101,33 @@ class PartitionRuntimeTest {
         assertFalse(runtime.hasBufferedData());
         assertEquals(0, runtime.snapshot().getBufferedKeyCount());
         assertEquals(0, runtime.snapshot().getImmutableRunCount());
+    }
+
+    @Test
+    void reassignOverlayAfterSplitMovesBufferedEntriesToChildPartitions() {
+        final SegmentId oldSegmentId = SegmentId.of(5);
+        final SegmentId lowerSegmentId = SegmentId.of(6);
+        final SegmentId upperSegmentId = SegmentId.of(7);
+        final PartitionRuntimeLimits limits = new PartitionRuntimeLimits(2, 2,
+                8, 16);
+
+        runtime.write(oldSegmentId, Integer.valueOf(1), "v1", limits);
+        runtime.write(oldSegmentId, Integer.valueOf(9), "v9", limits);
+        runtime.write(oldSegmentId, Integer.valueOf(2), "v2", limits);
+        runtime.write(oldSegmentId, Integer.valueOf(9), "v9-new", limits);
+
+        runtime.reassignOverlayAfterSplit(new SegmentSplitApplyPlan<>(
+                oldSegmentId, lowerSegmentId, upperSegmentId,
+                Integer.valueOf(1), Integer.valueOf(2),
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT));
+
+        assertFalse(runtime.lookup(oldSegmentId, Integer.valueOf(1)).isFound());
+        assertEquals("v1",
+                runtime.lookup(lowerSegmentId, Integer.valueOf(1)).getValue());
+        assertEquals("v2",
+                runtime.lookup(lowerSegmentId, Integer.valueOf(2)).getValue());
+        assertEquals("v9-new", runtime.lookup(upperSegmentId,
+                Integer.valueOf(9)).getValue());
+        assertEquals(3, runtime.snapshot().getBufferedKeyCount());
     }
 }

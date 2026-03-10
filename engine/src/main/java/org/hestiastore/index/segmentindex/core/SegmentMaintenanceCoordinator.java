@@ -9,7 +9,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 
 /**
  * Coordinates explicit split scheduling after partition drain or maintenance
@@ -18,14 +18,14 @@ import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
 final class SegmentMaintenanceCoordinator<K, V> {
 
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentSplitCoordinator<K, V> splitCoordinator;
+    private final PartitionStableSplitCoordinator<K, V> splitCoordinator;
     private final Object splitMonitor = new Object();
     private final ReentrantReadWriteLock splitGate = new ReentrantReadWriteLock();
     private int splitInFlightCount;
 
     SegmentMaintenanceCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentSplitCoordinator<K, V> splitCoordinator) {
+            final PartitionStableSplitCoordinator<K, V> splitCoordinator) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
@@ -87,17 +87,6 @@ final class SegmentMaintenanceCoordinator<K, V> {
             return action.get();
         } finally {
             readLock.unlock();
-        }
-    }
-
-    void runWithExclusiveWriteAdmission(final Runnable action) {
-        Vldtn.requireNonNull(action, "action");
-        final var writeLock = splitGate.writeLock();
-        writeLock.lock();
-        try {
-            action.run();
-        } finally {
-            writeLock.unlock();
         }
     }
 
