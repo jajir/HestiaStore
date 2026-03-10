@@ -53,7 +53,6 @@ class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow,
             final SegmentIteratorIsolation isolation) {
         getIndexState().tryPerformOperation();
-        awaitSplitsIdle();
         final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow,
                 isolation);
         final EntryIteratorToSpliterator<K, V> spliterator = new EntryIteratorToSpliterator<K, V>(

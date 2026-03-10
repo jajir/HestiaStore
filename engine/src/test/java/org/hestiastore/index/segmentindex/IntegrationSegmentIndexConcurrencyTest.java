@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -55,7 +56,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void concurrentReadsWithWriterOnSameKey() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4);
         try {
             index.put(1, "init");
             final CountDownLatch start = new CountDownLatch(1);
@@ -93,7 +94,7 @@ class IntegrationSegmentIndexConcurrencyTest {
     @Test
     void interleavedFlushCompactWithReadsAndWrites() throws Exception {
         final Directory directory = new MemDirectory();
-        final SegmentIndex<Integer, String> index = newIndex(directory, 4, 1);
+        final SegmentIndex<Integer, String> index = newIndex(directory, 4);
         try {
             final CountDownLatch start = new CountDownLatch(1);
             final var executor = Executors.newFixedThreadPool(4);
@@ -131,16 +132,16 @@ class IntegrationSegmentIndexConcurrencyTest {
 
             index.flushAndWait();
             index.compactAndWait();
-            final long count = index.getStream(SegmentWindow.unbounded(),
-                    SegmentIteratorIsolation.FULL_ISOLATION).count();
-            assertTrue(count >= 40, "Expected at least 40 entries");
+            awaitIdle(index);
+            verifySegmentIndexDataWithDiagnostics(index, expectedEntries(40));
         } finally {
             index.close();
         }
     }
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
-            final int cpuThreads, final int ioThreads) {
+            final int cpuThreads) {
+        final int activePartitionSize = 16;
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -148,14 +149,18 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
+                .withMaxNumberOfKeysInActivePartition(activePartitionSize) //
+                .withMaxNumberOfImmutableRunsPerPartition(4) //
+                .withMaxNumberOfKeysInPartitionBuffer(64) //
+                .withMaxNumberOfKeysInIndexBuffer(128) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000) //
+                .withMaxNumberOfKeysInSegment(64) //
+                .withMaxNumberOfKeysInSegmentChunk(8) //
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withSegmentMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfIoThreads(ioThreads)//
                 .withName("concurrency_index") //
                 .build();
         return SegmentIndex.create(directory, conf);
@@ -163,6 +168,11 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
             final ParallelPutsScenario scenario) {
+        final int activePartitionSize = scenario.maxNumberOfKeysInSegmentWriteCache();
+        final int partitionBufferSize = Math.max(activePartitionSize + 1,
+                scenario.keyCount());
+        final int indexBufferSize = Math.max(partitionBufferSize,
+                partitionBufferSize * 2);
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
@@ -171,8 +181,10 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegmentCache(
                         scenario.maxNumberOfKeysInSegmentCache()) //
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        scenario.maxNumberOfKeysInSegmentWriteCache()) //
+                .withMaxNumberOfKeysInActivePartition(activePartitionSize) //
+                .withMaxNumberOfImmutableRunsPerPartition(4) //
+                .withMaxNumberOfKeysInPartitionBuffer(partitionBufferSize) //
+                .withMaxNumberOfKeysInIndexBuffer(indexBufferSize) //
                 .withMaxNumberOfKeysInSegmentChunk(
                         scenario.maxNumberOfKeysInSegmentChunk()) //
                 .withMaxNumberOfKeysInSegment(
@@ -183,7 +195,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withBloomFilterNumberOfHashFunctions(3) //
                 .withSegmentMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(scenario.cpuThreads())//
-                .withNumberOfIoThreads(scenario.ioThreads())//
                 .withName("concurrency_index_" + scenario.name()) //
                 .build();
         return SegmentIndex.create(directory, conf);
@@ -240,16 +251,37 @@ class IntegrationSegmentIndexConcurrencyTest {
         }
     }
 
+    private static void awaitIdle(final SegmentIndex<Integer, String> index) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(10L);
+        while (System.nanoTime() < deadline) {
+            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            if (snapshot.getActivePartitionCount() == 0
+                    && snapshot.getPartitionBufferedKeyCount() == 0
+                    && snapshot.getDrainInFlightCount() == 0
+                    && snapshot.getImmutableRunCount() == 0
+                    && snapshot.getDrainingPartitionCount() == 0
+                    && snapshot.getSplitInFlightCount() == 0) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting for idle");
+            }
+        }
+        throw new AssertionError("Timed out waiting for maintenance idle");
+    }
+
     private static Stream<ParallelPutsScenario> parallelPutsScenarios() {
         return Stream.of(
                 new ParallelPutsScenario("small-cache-50-keys", 50, 3, 3, 2,
-                        4, 5, 4, 1, 40),
+                        4, 5, 4, 40),
                 new ParallelPutsScenario("write-cache-64-200-keys", 200, 128,
-                        64, 16, 128, 10, 8, 2, 64),
+                        64, 16, 128, 10, 8, 64),
                 new ParallelPutsScenario("write-cache-128-small-segment", 300,
-                        128, 128, 16, 32, 5, 8, 2, 64),
+                        128, 128, 16, 32, 5, 8, 64),
                 new ParallelPutsScenario("large-segment-512", 300, 256, 64,
-                        32, 512, 10, 8, 2, 40));
+                        32, 512, 10, 8, 40));
     }
 
     private record ParallelPutsScenario(String name, int keyCount,
@@ -257,7 +289,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             int maxNumberOfKeysInSegmentWriteCache,
             int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInSegment,
             int maxNumberOfSegmentsInCache,
-            int cpuThreads, int ioThreads, int writerThreads) {
+            int cpuThreads, int writerThreads) {
         @Override
         public String toString() {
             return name;

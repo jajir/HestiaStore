@@ -49,7 +49,7 @@ xception in thread "main" java.lang.IllegalArgumentException: Attempt to insert 
 
 ## ☕ Java Version Mismatch
 
-- Ensure Java 11+ is used (Java 17 recommended). Check with java -version and align your IDE or CI JDK.
+- Ensure Java 17+ is used. HestiaStore targets Java 17 bytecode and is compatible with newer/current JDK releases. Check with `java -version` and align your IDE or CI JDK.
 
 ## 📁 Permission or Path Errors
 

@@ -2,6 +2,7 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileReader;
 import org.hestiastore.index.directory.FileWriter;
 
@@ -22,14 +23,16 @@ public class TypeDescriptorDouble implements TypeDescriptor<Double> {
 
     private static final TypeEncoder<Double> CONVERTOR_TO_BYTES = new TypeEncoder<Double>() {
         @Override
-        public int bytesLength(final Double object) {
-            return REQUIRED_BYTES;
-        }
-
-        @Override
-        public int toBytes(final Double object, final byte[] destination) {
-            writeBytes(object, destination);
-            return REQUIRED_BYTES;
+        public EncodedBytes encode(final Double object,
+                final byte[] reusableBuffer) {
+            final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                    "reusableBuffer");
+            byte[] output = validatedBuffer;
+            if (output.length < REQUIRED_BYTES) {
+                output = new byte[REQUIRED_BYTES];
+            }
+            writeBytes(object, output);
+            return new EncodedBytes(output, REQUIRED_BYTES);
         }
     };
 

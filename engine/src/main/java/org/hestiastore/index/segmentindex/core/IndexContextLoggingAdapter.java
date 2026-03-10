@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
+import java.util.ArrayDeque;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
@@ -40,8 +41,11 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final String DELEGATE = "delegate";
-    private final IndexConfiguration<K, V> indexConf;
+    private final String indexName;
     private final SegmentIndex<K, V> index;
+    private static final Object NULL_INDEX_NAME = new Object();
+    private final ThreadLocal<ArrayDeque<Object>> previousIndexNameStack = ThreadLocal
+            .withInitial(ArrayDeque::new);
 
     /**
      * Creates a new adapter that augments the provided index with MDC context
@@ -52,18 +56,40 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
      */
     IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
             final SegmentIndex<K, V> index) {
-        this.indexConf = Vldtn.requireNonNull(indexConf, "indexConfiguration");
+        final IndexConfiguration<K, V> configuration = Vldtn
+                .requireNonNull(indexConf, "indexConfiguration");
+        this.indexName = Vldtn.requireNotBlank(configuration.getIndexName(),
+                "indexName");
         this.index = Vldtn.requireNonNull(index, "index");
     }
 
     /** Sets the {@code index.name} MDC key for the current thread. */
     private void setContext() {
-        MDC.put(INDEX_NAME_MDC_KEY, indexConf.getIndexName());
+        final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
+        previousIndexNameStack.get().push(
+                previousIndexName == null ? NULL_INDEX_NAME
+                        : previousIndexName);
+        MDC.put(INDEX_NAME_MDC_KEY, indexName);
     }
 
-    /** Removes the {@code index.name} MDC key for the current thread. */
+    /** Restores the previous {@code index.name} MDC key for this thread. */
     private void clearContext() {
-        MDC.remove(INDEX_NAME_MDC_KEY);
+        final ArrayDeque<Object> stack = previousIndexNameStack.get();
+        final Object previous = stack.isEmpty() ? NULL_INDEX_NAME : stack.pop();
+        if (stack.isEmpty()) {
+            previousIndexNameStack.remove();
+        }
+        restorePreviousIndexName(
+                previous == NULL_INDEX_NAME ? null : (String) previous);
+    }
+
+    private static void restorePreviousIndexName(
+            final String previousIndexName) {
+        if (previousIndexName == null) {
+            MDC.remove(INDEX_NAME_MDC_KEY);
+            return;
+        }
+        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 
     /**
@@ -78,6 +104,17 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             index.put(key, value);
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void put(final Entry<K, V> entry) {
+        setContext();
+        try {
+            index.put(entry);
         } finally {
             clearContext();
         }
@@ -222,6 +259,29 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         setContext();
         try {
             return index.getStream(segmentWindows, isolation);
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Stream<Entry<K, V>> getStream() {
+        setContext();
+        try {
+            return index.getStream();
+        } finally {
+            clearContext();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Stream<Entry<K, V>> getStream(
+            final SegmentIteratorIsolation isolation) {
+        setContext();
+        try {
+            return index.getStream(isolation);
         } finally {
             clearContext();
         }

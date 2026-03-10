@@ -1,0 +1,66 @@
+{
+  "profile": "segment-index-nightly",
+  "description": "Longer canonical SegmentIndex benchmark set for trend tracking on main/nightly runs.",
+  "benchmarks": [
+    {
+      "label": "segment-index-get-persisted",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-t", "4",
+        "-p", "readPathMode=persisted",
+        "-p", "snappy=true",
+        "-p", "keyCount=12000",
+        "-p", "maxKeysInChunk=256",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-get-overlay",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-t", "4",
+        "-p", "readPathMode=overlay",
+        "-p", "snappy=true",
+        "-p", "keyCount=12000",
+        "-p", "maxKeysInChunk=256",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-mixed-drain",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-p", "hotKeySpace=256",
+        "-p", "workloadMode=drainOnly"
+      ]
+    },
+    {
+      "label": "segment-index-mixed-split-heavy",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-p", "hotKeySpace=256",
+        "-p", "workloadMode=splitHeavy"
+      ]
+    }
+  ]
+}

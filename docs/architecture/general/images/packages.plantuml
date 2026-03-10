@@ -1,0 +1,27 @@
+@startuml packages
+title Package Dependency Boundaries
+skinparam componentStyle rectangle
+skinparam shadowing false
+top to bottom direction
+
+component "org.hestiastore.console.web.*" as Console
+component "org.hestiastore.management.restjson.*" as Management
+component "org.hestiastore.monitoring.micrometer.*" as Micrometer
+component "org.hestiastore.monitoring.prometheus.*" as Prometheus
+component "org.hestiastore.monitoring.json.api.*" as JsonApi
+component "org.hestiastore.index.*" as Core
+
+Console --> Management : HTTP management calls
+Management --> Core : uses public index APIs
+Management --> JsonApi : shared REST/JSON DTOs
+Micrometer --> Core : monitoring bridge
+Prometheus --> Core : monitoring bridge
+
+note right of Core
+  Core must not import:
+  - org.hestiastore.monitoring.*
+  - org.hestiastore.management.*
+  - org.hestiastore.console.*
+end note
+
+@enduml

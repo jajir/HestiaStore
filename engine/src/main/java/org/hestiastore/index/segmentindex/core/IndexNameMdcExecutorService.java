@@ -21,7 +21,7 @@ final class IndexNameMdcExecutorService extends AbstractExecutorService {
 
     IndexNameMdcExecutorService(final String indexName,
             final ExecutorService delegate) {
-        this.indexName = Vldtn.requireNonNull(indexName, "indexName");
+        this.indexName = Vldtn.requireNotBlank(indexName, "indexName");
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 

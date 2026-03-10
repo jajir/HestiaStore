@@ -25,6 +25,8 @@ SegmentIndex<Integer, Integer> index = SegmentIndex.<Integer, Integer>create(dir
 
 For node management API and direct web console startup, see:
 [Monitoring Console Configuration](monitoring-console.md).
+For chunk filter setup, defaults, and examples, see:
+[Filter Configuration](filters.md).
 
 Now let's look at particular parameters.
 

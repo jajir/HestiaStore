@@ -2,12 +2,16 @@ package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.control.IndexConfigurationManagement;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.control.IndexRuntimeView;
@@ -16,8 +20,11 @@ import org.hestiastore.index.control.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.control.model.RuntimeConfigPatch;
 import org.hestiastore.index.control.model.RuntimePatchResult;
 import org.hestiastore.index.control.model.RuntimePatchValidation;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +56,18 @@ class IndexContextLoggingAdapterTest {
             adapter.close();
         }
         MDC.clear();
+    }
+
+    @Test
+    void constructorRejectsBlankIndexName() {
+        final IndexConfiguration<String, String> blankConf = mock(
+                IndexConfiguration.class);
+        when(blankConf.getIndexName()).thenReturn("  ");
+        final IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new IndexContextLoggingAdapter<>(blankConf, delegate));
+        assertEquals("Property 'indexName' must not be blank.",
+                ex.getMessage());
     }
 
     @Test
@@ -147,5 +166,151 @@ class IndexContextLoggingAdapterTest {
         assertEquals("idx", mdcAtValidate.get());
         assertEquals("idx", mdcAtApply.get());
         assertNull(MDC.get("index.name"));
+    }
+
+    @Test
+    void restoresPreviousMdcForSegmentIndexOperations() {
+        final AtomicReference<String> mdcAtCompact = new AtomicReference<>();
+        final AtomicReference<String> mdcAtCompactAndWait = new AtomicReference<>();
+        final AtomicReference<String> mdcAtFlush = new AtomicReference<>();
+        final AtomicReference<String> mdcAtFlushAndWait = new AtomicReference<>();
+        final AtomicReference<String> mdcAtCheck = new AtomicReference<>();
+        final AtomicReference<String> mdcAtPutAsync = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetAsync = new AtomicReference<>();
+        final AtomicReference<String> mdcAtDeleteAsync = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetConfiguration = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetState = new AtomicReference<>();
+        final AtomicReference<String> mdcAtMetricsSnapshot = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetStream = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetStreamIsolation = new AtomicReference<>();
+        final AtomicReference<String> mdcAtPutEntry = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetStreamDefault = new AtomicReference<>();
+        final AtomicReference<String> mdcAtGetStreamDefaultIsolation = new AtomicReference<>();
+        final SegmentWindow window = SegmentWindow.unbounded();
+        final Entry<String, String> entry = Entry.of("entry-key", "entry-val");
+
+        doAnswer(invocation -> {
+            mdcAtCompact.set(MDC.get("index.name"));
+            return null;
+        }).when(delegate).compact();
+        doAnswer(invocation -> {
+            mdcAtCompactAndWait.set(MDC.get("index.name"));
+            return null;
+        }).when(delegate).compactAndWait();
+        doAnswer(invocation -> {
+            mdcAtFlush.set(MDC.get("index.name"));
+            return null;
+        }).when(delegate).flush();
+        doAnswer(invocation -> {
+            mdcAtFlushAndWait.set(MDC.get("index.name"));
+            return null;
+        }).when(delegate).flushAndWait();
+        doAnswer(invocation -> {
+            mdcAtCheck.set(MDC.get("index.name"));
+            return null;
+        }).when(delegate).checkAndRepairConsistency();
+        when(delegate.putAsync("k", "v")).thenAnswer(invocation -> {
+            mdcAtPutAsync.set(MDC.get("index.name"));
+            return CompletableFuture.completedFuture(null);
+        });
+        when(delegate.getAsync("k")).thenAnswer(invocation -> {
+            mdcAtGetAsync.set(MDC.get("index.name"));
+            return CompletableFuture.completedFuture("v");
+        });
+        when(delegate.deleteAsync("k")).thenAnswer(invocation -> {
+            mdcAtDeleteAsync.set(MDC.get("index.name"));
+            return CompletableFuture.completedFuture(null);
+        });
+        when(delegate.getConfiguration()).thenAnswer(invocation -> {
+            mdcAtGetConfiguration.set(MDC.get("index.name"));
+            return conf;
+        });
+        when(delegate.getState()).thenAnswer(invocation -> {
+            mdcAtGetState.set(MDC.get("index.name"));
+            return SegmentIndexState.READY;
+        });
+        when(delegate.metricsSnapshot()).thenAnswer(invocation -> {
+            mdcAtMetricsSnapshot.set(MDC.get("index.name"));
+            return null;
+        });
+        when(delegate.getStream(window)).thenAnswer(invocation -> {
+            mdcAtGetStream.set(MDC.get("index.name"));
+            return Stream.empty();
+        });
+        when(delegate.getStream(window, SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenAnswer(invocation -> {
+                    mdcAtGetStreamIsolation.set(MDC.get("index.name"));
+                    return Stream.empty();
+                });
+        doAnswer(invocation -> {
+            mdcAtPutEntry.set(MDC.get("index.name"));
+            return null;
+        }).when(delegate).put(entry);
+        when(delegate.getStream()).thenAnswer(invocation -> {
+            mdcAtGetStreamDefault.set(MDC.get("index.name"));
+            return Stream.empty();
+        });
+        when(delegate.getStream(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenAnswer(invocation -> {
+                    mdcAtGetStreamDefaultIsolation.set(MDC.get("index.name"));
+                    return Stream.empty();
+                });
+
+        MDC.put("index.name", "outer");
+        adapter.compact();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.compactAndWait();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.flush();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.flushAndWait();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.checkAndRepairConsistency();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.putAsync("k", "v");
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.getAsync("k");
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.deleteAsync("k");
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.getConfiguration();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.getState();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.metricsSnapshot();
+        assertEquals("outer", MDC.get("index.name"));
+        adapter.put(entry);
+        assertEquals("outer", MDC.get("index.name"));
+        try (Stream<?> ignored = adapter.getStream(window)) {
+            assertEquals("outer", MDC.get("index.name"));
+        }
+        try (Stream<?> ignored = adapter.getStream(window,
+                SegmentIteratorIsolation.FULL_ISOLATION)) {
+            assertEquals("outer", MDC.get("index.name"));
+        }
+        try (Stream<?> ignored = adapter.getStream()) {
+            assertEquals("outer", MDC.get("index.name"));
+        }
+        try (Stream<?> ignored = adapter
+                .getStream(SegmentIteratorIsolation.FULL_ISOLATION)) {
+            assertEquals("outer", MDC.get("index.name"));
+        }
+
+        assertEquals("idx", mdcAtCompact.get());
+        assertEquals("idx", mdcAtCompactAndWait.get());
+        assertEquals("idx", mdcAtFlush.get());
+        assertEquals("idx", mdcAtFlushAndWait.get());
+        assertEquals("idx", mdcAtCheck.get());
+        assertEquals("idx", mdcAtPutAsync.get());
+        assertEquals("idx", mdcAtGetAsync.get());
+        assertEquals("idx", mdcAtDeleteAsync.get());
+        assertEquals("idx", mdcAtGetConfiguration.get());
+        assertEquals("idx", mdcAtGetState.get());
+        assertEquals("idx", mdcAtMetricsSnapshot.get());
+        assertEquals("idx", mdcAtPutEntry.get());
+        assertEquals("idx", mdcAtGetStream.get());
+        assertEquals("idx", mdcAtGetStreamIsolation.get());
+        assertEquals("idx", mdcAtGetStreamDefault.get());
+        assertEquals("idx", mdcAtGetStreamDefaultIsolation.get());
     }
 }

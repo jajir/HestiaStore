@@ -1,5 +1,7 @@
 package org.hestiastore.index.datatype;
 
+import java.util.Arrays;
+
 import org.hestiastore.index.Vldtn;
 
 /**
@@ -14,15 +16,13 @@ public final class TestEncoding {
             final T value) {
         final TypeEncoder<T> validatedEncoder = Vldtn.requireNonNull(encoder,
                 "encoder");
+        final EncodedBytes encoded = Vldtn.requireNonNull(
+                validatedEncoder.encode(value, new byte[0]), "encoded");
         final int length = Vldtn.requireGreaterThanOrEqualToZero(
-                validatedEncoder.bytesLength(value), "encodedLength");
-        final byte[] out = new byte[length];
-        final int written = validatedEncoder.toBytes(value, out);
-        if (written != length) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", written,
-                    length));
+                encoded.getLength(), "encodedLength");
+        if (encoded.getBytes().length == length) {
+            return encoded.getBytes();
         }
-        return out;
+        return Arrays.copyOf(encoded.getBytes(), length);
     }
 }

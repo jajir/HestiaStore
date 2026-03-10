@@ -28,8 +28,11 @@ class ManagementAgentServerSecurityTest {
     private static final Set<String> RUNTIME_ALLOWLIST = Set.of(
             "maxNumberOfSegmentsInCache",
             "maxNumberOfKeysInSegmentCache",
-            "maxNumberOfKeysInSegmentWriteCache",
-            "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+            "maxNumberOfKeysInActivePartition",
+            "maxNumberOfImmutableRunsPerPartition",
+            "maxNumberOfKeysInPartitionBuffer",
+            "maxNumberOfKeysInIndexBuffer",
+            "maxNumberOfKeysInPartitionBeforeSplit");
 
     private SegmentIndex<Integer, String> index;
     private ManagementAgentServer server;

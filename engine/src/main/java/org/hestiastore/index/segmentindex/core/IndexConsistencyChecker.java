@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
 import java.util.Comparator;
+import java.util.function.Predicate;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
@@ -34,16 +35,27 @@ class IndexConsistencyChecker<K, V> {
     private final SegmentRegistry<K, V> segmentRegistry;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final Comparator<K> keyComparator;
+    private final Predicate<SegmentId> segmentFilter;
 
     IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
+        this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
+                segmentId -> true);
+    }
+
+    IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final Predicate<SegmentId> segmentFilter) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.keyComparator = keyTypeDescriptor.getComparator();
+        this.segmentFilter = Vldtn.requireNonNull(segmentFilter,
+                "segmentFilter");
     }
 
     private SegmentRegistryResult<Segment<K, V>> loadSegment(
@@ -64,6 +76,11 @@ class IndexConsistencyChecker<K, V> {
             final SegmentId segmentId = segmentPair.getValue();
             if (segmentId == null) {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
+            }
+            if (!segmentFilter.test(segmentId)) {
+                logger.debug("Skipping consistency check for segment '{}'.",
+                        segmentId);
+                return;
             }
             logger.debug("checking segment '{}'.", segmentId);
             final Segment<K, V> segment = awaitLoadedSegment(segmentId);

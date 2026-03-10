@@ -95,9 +95,17 @@ class IndexPropertiesSchemaTest {
         final int expectedWriteCacheDuringMaintenance = Math
                 .max(expectedWriteCache * 2, expectedWriteCache + 1);
         assertEquals(expectedWriteCache, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE));
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
+        assertEquals(
+                IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
+                view.getInt(
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
         assertEquals(expectedWriteCacheDuringMaintenance, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE));
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
+        assertEquals(expectedWriteCacheDuringMaintenance
+                * IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+                view.getInt(
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
         assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));

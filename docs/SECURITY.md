@@ -45,7 +45,7 @@ HestiaStore is designed to run as a component within a trusted local application
 |----------------------------|------------|-------|
 | Malicious input data       | ❌         | No input sanitization is performed |
 | Unauthorized file access   | ❌         | No access control; relies on OS permissions |
-| File corruption            | 🚫         | No WAL; durability depends on flush/close and atomic renames |
+| File corruption            | ⚠️         | Optional WAL (disabled by default) can replay and truncate invalid tail; non-WAL files rely on atomic renames and consistency checks |
 | Memory data leakage        | ❌         | JVM memory is not encrypted or zeroed |
 | SegmentIndex inconsistency        | ⚠️         | Recovery possible using `checkAndRepairConsistency()` |
 
@@ -61,9 +61,9 @@ HestiaStore does not define security boundaries within its API. Instead, it assu
 
 HestiaStore provides limited protections:
 
-- No Write-Ahead Logging (WAL); durability is tied to explicit flush/close.
+- Optional Write-Ahead Logging (WAL) with CRC-protected records, recovery replay, and invalid-tail handling when enabled.
 - Manual compaction and `checkAndRepairConsistency()` assist in recovery from logical inconsistencies.
-- No built-in checksums or MACs are currently used.
+- No built-in cryptographic MAC/signature verification is currently used.
 
 ## 🔒 Encryption
 
@@ -107,6 +107,7 @@ Planned or considered improvements include:
 - ✅ Unit tests with coverage reporting via JaCoCo
 - ⏳ Persistent encrypted storage is not yet supported
 - ✅ Basic threat model documented
+- ✅ Optional WAL-based local crash recovery is available
 - ⚠️ Assumes trusted host environment (no access control or encryption)
 - 🚧 Future improvements under consideration (checksums, encryption)
 

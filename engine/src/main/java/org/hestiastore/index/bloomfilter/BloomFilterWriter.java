@@ -2,6 +2,7 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.Directory.Access;
@@ -36,18 +37,12 @@ public class BloomFilterWriter<K> extends AbstractCloseableResource {
 
     public boolean write(final K key) {
         Vldtn.requireNonNull(key, "key");
-        final int encodedLength = convertorToBytes.bytesLength(key);
-        Vldtn.requireGreaterThanZero(encodedLength, "encodedLength");
-        if (encodedKeyBuffer.length != encodedLength) {
-            encodedKeyBuffer = new byte[encodedLength];
-        }
-        final int writtenBytes = convertorToBytes.toBytes(key, encodedKeyBuffer);
-        if (writtenBytes != encodedLength) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
-                    encodedLength));
-        }
-        return hash.store(encodedKeyBuffer);
+        final EncodedBytes encoded = convertorToBytes.encode(key,
+                encodedKeyBuffer);
+        final int encodedLength = Vldtn.requireGreaterThanZero(
+                encoded.getLength(), "encodedLength");
+        encodedKeyBuffer = encoded.getBytes();
+        return hash.store(encodedKeyBuffer, encodedLength);
     }
 
     @Override

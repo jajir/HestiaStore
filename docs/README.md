@@ -26,7 +26,7 @@ Features:
  • Custom key/value types via type descriptors
  • Single‑writer, multi‑reader (optional synchronized mode)
  • Test-friendly MemDirectory for fast, isolated tests
- • Roadmap: write-ahead logging and advanced compaction
+ • Optional write-ahead logging (WAL) is implemented for local crash recovery
 ```
 
 ## 🚀 Performance Comparison
@@ -61,30 +61,30 @@ Detailed methodology and full benchmark artifacts are available at [benchmark re
 
 Architecture & Concurrency
 
-| Engine | Storage/Index | Concurrency | Background Work |
-|:--|:--|:--|:--|
-| HestiaStore | Segmented on-disk structure | Single-writer, multi-reader (optional synchronized) | Periodic segment flush/merge |
-| RocksDB | LSM tree (leveled/uni) | Highly concurrent | Compaction + flush threads |
-| LevelDB | LSM tree | Single-writer, multi-reader | Compaction |
-| MapDB | B-tree/H-tree | Thread-safe (synchronized) | Periodic commits |
-| ChronicleMap | Off-heap mmap hash map | Lock-free/low-lock | None (no compaction) |
-| H2 | B-tree | Concurrent (MVCC) | Checkpoint/auto-vacuum |
+| Engine       | Storage/Index               | Concurrency                                                   | Background Work              |
+| :----------- | :-------------------------- | :------------------------------------------------------------ | :--------------------------- |
+| HestiaStore  | Segmented on-disk structure | Thread-safe concurrent operations (segment-level parallelism) | Periodic segment flush/merge |
+| RocksDB      | LSM tree (leveled/uni)      | Highly concurrent                                             | Compaction + flush threads   |
+| LevelDB      | LSM tree                    | Single-writer, multi-reader                                   | Compaction                   |
+| MapDB        | B-tree/H-tree               | Thread-safe (synchronized)                                    | Periodic commits             |
+| ChronicleMap | Off-heap mmap hash map      | Lock-free/low-lock                                            | None (no compaction)         |
+| H2           | B-tree                      | Concurrent (MVCC)                                             | Checkpoint/auto-vacuum       |
 
 Durability & Fit
 
-| Engine | Durability | Compression | Runtime Deps | Typical Fit |
-|:--|:--|:--|:--|:--|
-| HestiaStore | File-backed; commit on close | Snappy | Pure Java (JAR-only) | Embedded KV with simple ops, large datasets |
-| RocksDB | WAL + checkpoints (optional transactions) | Snappy/Zstd/LZ4 | Native library | High write throughput, low-latency reads |
-| LevelDB | File-backed; no transactions | Snappy | JAR-only port/native bindings | Lightweight LSM, smaller footprints |
-| MapDB | File-backed; optional TX | None/limited | Pure Java (JAR-only) | Simple embedded maps/sets |
-| ChronicleMap | Memory-mapped persistence; no ACID TX | None | Pure Java (JAR-only) | Ultra-low latency shared maps |
-| H2 | WAL + MVCC transactions | Optional | Pure Java (JAR-only) | SQL + transactional workloads |
+| Engine       | Durability                                                  | Compression     | Runtime Deps                  | Typical Fit                                            |
+| :----------- | :---------------------------------------------------------- | :-------------- | :---------------------------- | :----------------------------------------------------- |
+| HestiaStore  | File-backed; optional WAL (opt-in) + flush/close boundaries | Snappy          | Pure Java (JAR-only)          | Embedded KV with predictable local durability/recovery |
+| RocksDB      | WAL + checkpoints (optional transactions)                   | Snappy/Zstd/LZ4 | Native library                | High write throughput, low-latency reads               |
+| LevelDB      | File-backed; no transactions                                | Snappy          | JAR-only port/native bindings | Lightweight LSM, smaller footprints                    |
+| MapDB        | File-backed; optional TX                                    | None/limited    | Pure Java (JAR-only)          | Simple embedded maps/sets                              |
+| ChronicleMap | Memory-mapped persistence; no ACID TX                       | None            | Pure Java (JAR-only)          | Ultra-low latency shared maps                          |
+| H2           | WAL + MVCC transactions                                     | Optional        | Pure Java (JAR-only)          | SQL + transactional workloads                          |
 
 Notes
 
 - “Concurrency” describes the general access model; specifics depend on configuration and workload.
-- HestiaStore focuses on predictable file I/O with configurable buffering; WAL/transactions are on the roadmap.
+- HestiaStore supports opt-in WAL for local crash recovery; cross-key ACID transactions and replication are not part of current scope.
 
 ## 🤝 Contributing
 
@@ -97,6 +97,7 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 - [Getting started](https://hestiastore.org/how-to-use/) with a quick start and examples
 - [Configuration](https://hestiastore.org/configuration/) — properties overview and guidance
 - [Logging](https://hestiastore.org/configuration/logging/) — how to set up logging
+- [WAL operations](https://hestiastore.org/operations/wal/) — enable and operate implemented opt-in WAL
 - [Releases](https://hestiastore.org/development/release/) — versioning and release process
 
 <!--
@@ -153,9 +154,10 @@ For more integration details, see the [Getting Started](how-to-use/index.md) sec
 
 Planned improvements include:
 
-- Full Multithreaded Storage Engine – Currently this is the biggest performance limitation. Disk I/O consumes only about 40% of available CPU, leaving significant unused capacity.
-- Implement Asynchronous I/O – Explore alternative approaches for file system access. Replace the current java.io-based implementation.
-- Example Application – Provide a simple, easy-to-run demo application that demonstrates HestiaStore’s capabilities.
+- Add a demo application that showcases key features end-to-end (configuration, persistence, WAL, monitoring, and recovery).
+- Expand performance testing and product comparison with more detailed methodology, larger datasets, and mixed workload scenarios.
+- Add more complex test scenarios covering concurrency stress, long-running stability, crash recovery, and edge-case data distributions.
+- Improve documentation with deeper architecture explanations, clearer operational runbooks, and more practical examples.
 For detailed tasks and progress, see the [GitHub Issues](https://github.com/jajir/HestiaStore/issues) page.
 
 ## ❓ Need Help or Have Questions?

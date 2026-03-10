@@ -28,19 +28,18 @@ public final class Hash {
     }
 
     public boolean store(final byte[] data) {
-        if (data == null) {
-            throw new NullPointerException("No data");
-        }
-        if (data.length == 0) {
-            throw new IllegalArgumentException("Zero size of byte array");
-        }
+        return store(data, validateAndGetLength(data));
+    }
+
+    public boolean store(final byte[] data, final int length) {
+        validateData(data, length);
         final long bitSize = bitArray.bitSize();
         if (bitSize == 0) {
             return true;
         }
 
-        int h1 = MurmurHash3.hash32x86(data, 0, data.length, 0);
-        int h2 = MurmurHash3.hash32x86(data, 0, data.length, h1);
+        int h1 = MurmurHash3.hash32x86(data, 0, length, 0);
+        int h2 = MurmurHash3.hash32x86(data, 0, length, h1);
 
         boolean bitsChanged = false;
         for (int i = 1; i <= numHashFunctions; i++) {

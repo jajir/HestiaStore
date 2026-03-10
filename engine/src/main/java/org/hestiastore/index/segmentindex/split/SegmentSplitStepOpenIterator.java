@@ -7,9 +7,16 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 
 final class SegmentSplitStepOpenIterator<K, V>
         implements Filter<SegmentSplitContext<K, V>, SegmentSplitState<K, V>> {
+
+    private final IndexRetryPolicy retryPolicy;
+
+    SegmentSplitStepOpenIterator(final IndexRetryPolicy retryPolicy) {
+        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    }
 
     /** {@inheritDoc} */
     @Override
@@ -18,6 +25,7 @@ final class SegmentSplitStepOpenIterator<K, V>
         Vldtn.requireNonNull(ctx, "ctx");
         Vldtn.requireNonNull(state, "state");
         Vldtn.requireNonNull(ctx.getSegment(), "segment");
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentResult<EntryIterator<K, V>> result = ctx
                     .getSegment()
@@ -27,7 +35,14 @@ final class SegmentSplitStepOpenIterator<K, V>
                 return true;
             }
             if (result.getStatus() == SegmentResultStatus.BUSY) {
-                Thread.onSpinWait();
+                try {
+                    retryPolicy.backoffOrThrow(startNanos, "openIterator",
+                            ctx.getSegment().getId());
+                } catch (final IndexException e) {
+                    throw new SegmentSplitAbortException(String.format(
+                            "Split aborted while waiting for exclusive iterator on segment '%s'.",
+                            ctx.getSegment().getId()), e);
+                }
                 continue;
             }
             if (result.getStatus() == SegmentResultStatus.CLOSED) {

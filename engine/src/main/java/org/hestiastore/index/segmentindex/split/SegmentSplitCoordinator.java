@@ -79,6 +79,12 @@ public class SegmentSplitCoordinator<K, V> {
         Vldtn.requireNonNull(segment, SEGMENT_ARG);
         final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
         if (!isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split skipped: segment='{}' estimatedKeys='{}' maxKeysInSegment='{}' splitFeasible='{}'",
+                        segment.getId(), plan.getEstimatedNumberOfKeys(),
+                        maxNumberOfKeysInSegment, plan.isSplitFeasible());
+            }
             return false;
         }
         return splitWithLock(segment, maxNumberOfKeysInSegment);
@@ -92,23 +98,46 @@ public class SegmentSplitCoordinator<K, V> {
     private boolean splitWithLock(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         final SegmentId segmentId = segment.getId();
-        logger.debug("Splitting of '{}' started.", segmentId);
+        logger.debug("Split started: segment='{}' maxKeysInSegment='{}'",
+                segmentId, maxNumberOfKeysInSegment);
         final SegmentRegistryResult<Segment<K, V>> currentResult = segmentRegistry
                 .getSegment(segmentId);
         if (currentResult.getStatus() != SegmentRegistryResultStatus.OK
                 || currentResult.getValue() == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split aborted before lock validation: segment='{}' registryStatus='{}'",
+                        segmentId, currentResult.getStatus());
+            }
             return false;
         }
         final Segment<K, V> current = currentResult.getValue();
         if (current != segment) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split aborted because loaded segment changed: segment='{}'",
+                        segmentId);
+            }
             return false;
         }
         final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Split lock validated: segment='{}' estimatedKeys='{}' maxKeysInSegment='{}'",
+                    segmentId, plan.getEstimatedNumberOfKeys(),
+                    maxNumberOfKeysInSegment);
+        }
         final boolean split;
         if (isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)
                 && hasLiveEntries(segment)) {
             split = splitLocked(segment, plan);
         } else {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split aborted after eligibility/live-entry check: segment='{}' estimatedKeys='{}' maxKeysInSegment='{}'",
+                        segmentId, plan.getEstimatedNumberOfKeys(),
+                        maxNumberOfKeysInSegment);
+            }
             split = false;
         }
         if (split) {
@@ -142,10 +171,21 @@ public class SegmentSplitCoordinator<K, V> {
         final SegmentId lowerSegmentId = allocateSegmentId();
         final SegmentId upperSegmentId = allocateSegmentId();
         if (lowerSegmentId == null || upperSegmentId == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split aborted because new segment ids could not be allocated: segment='{}' lowerSegmentId='{}' upperSegmentId='{}'",
+                        segmentId, lowerSegmentId, upperSegmentId);
+            }
             return false;
         }
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Split ids allocated: segment='{}' lowerSegmentId='{}' upperSegmentId='{}' estimatedKeys='{}'",
+                    segmentId, lowerSegmentId, upperSegmentId,
+                    plan.getEstimatedNumberOfKeys());
+        }
         final SegmentSplitter<K, V> splitter = new SegmentSplitter<>(segment,
-                writerTxFactory);
+                writerTxFactory, retryPolicy);
         final SegmentSplitApplyPlan<K> applyPlan;
         final boolean applyResult;
         boolean applied = false;
@@ -155,6 +195,13 @@ public class SegmentSplitCoordinator<K, V> {
                     execution.getResult());
             applyResult = applySplitPlan(applyPlan, segment);
             if (!applyResult) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Split apply failed: segment='{}' lowerSegmentId='{}' upperSegmentId='{}' status='{}'",
+                            segmentId, applyPlan.getLowerSegmentId(),
+                            applyPlan.getUpperSegmentId().orElse(null),
+                            applyPlan.getStatus());
+                }
                 if (DEBUG_SPLIT_LOSS) {
                     logger.warn(
                             "Split debug: apply failed for segment '{}'.",
@@ -172,6 +219,14 @@ public class SegmentSplitCoordinator<K, V> {
             throw e;
         }
         if (applied) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split applied: segment='{}' lowerSegmentId='{}' upperSegmentId='{}' status='{}' minKey='{}' maxKey='{}'",
+                        segmentId, applyPlan.getLowerSegmentId(),
+                        applyPlan.getUpperSegmentId().orElse(null),
+                        applyPlan.getStatus(), applyPlan.getMinKey(),
+                        applyPlan.getMaxKey());
+            }
             closeSegmentAfterSplit(segment);
         }
         return true;
@@ -256,11 +311,32 @@ public class SegmentSplitCoordinator<K, V> {
         Vldtn.requireNonNull(segment, SEGMENT_ARG);
         try {
             if (!keyToSegmentMap.applySplitPlan(plan)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Split map apply returned false: oldSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' status='{}'",
+                            plan.getOldSegmentId(), plan.getLowerSegmentId(),
+                            plan.getUpperSegmentId().orElse(null),
+                            plan.getStatus());
+                }
                 return false;
             }
             keyToSegmentMap.optionalyFlush();
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split map apply succeeded: oldSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' status='{}'",
+                        plan.getOldSegmentId(), plan.getLowerSegmentId(),
+                        plan.getUpperSegmentId().orElse(null),
+                        plan.getStatus());
+            }
             return true;
         } catch (final RuntimeException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Split map apply failed with exception: oldSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' status='{}'",
+                        plan.getOldSegmentId(), plan.getLowerSegmentId(),
+                        plan.getUpperSegmentId().orElse(null),
+                        plan.getStatus(), e);
+            }
             return false;
         }
     }

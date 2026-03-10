@@ -1,0 +1,99 @@
+@startuml
+title Data Block and Chunk Design (Current)
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+
+package "datablockfile" {
+  class DataBlockFile {
+    +openReader(...)
+    +openWriterTx()
+  }
+  class DataBlockSize {
+    +getDataBlockSize()
+    +getPayloadSize()
+  }
+  class DataBlockPosition
+  class DataBlockHeader {
+    +HEADER_SIZE = 16
+    +MAGIC_NUMBER
+  }
+  class DataBlock
+  interface DataBlockWriter
+  class DataBlockWriterTx
+  interface DataBlockReader
+  interface DataBlockByteReader
+
+  DataBlockFile --> DataBlockSize
+  DataBlockFile --> DataBlockWriterTx
+  DataBlockFile --> DataBlockReader
+  DataBlockWriterTx --> DataBlockWriter
+  DataBlockReader --> DataBlock
+  DataBlock --> DataBlockHeader
+  DataBlock --> DataBlockPosition
+  DataBlockByteReader ..> DataBlockReader : reads payload bytes
+}
+
+package "chunkstore" {
+  class ChunkStoreFile {
+    +openReader(...)
+    +openWriteTx()
+  }
+  class CellPosition {
+    +CELL_SIZE = 16
+  }
+  class ChunkHeader {
+    +HEADER_SIZE = 32
+    +MAGIC_NUMBER
+  }
+  class ChunkData
+  class Chunk
+  class ChunkStoreWriterTx
+  interface ChunkStoreWriter
+  interface ChunkStoreReader
+  class CellStoreWriterCursor
+  interface CellStoreWriter
+  class ChunkProcessor
+  interface ChunkFilter
+
+  ChunkStoreFile --> ChunkStoreWriterTx
+  ChunkStoreFile --> ChunkStoreReader
+  ChunkStoreWriterTx --> ChunkStoreWriter
+  ChunkStoreWriter --> CellStoreWriter
+  CellStoreWriter --> CellStoreWriterCursor
+  ChunkStoreReader --> ChunkProcessor
+  ChunkStoreReader --> DataBlockByteReader
+  ChunkProcessor --> ChunkFilter
+  ChunkProcessor --> ChunkData
+  ChunkData --> ChunkHeader
+  Chunk --> ChunkHeader
+  CellPosition --> DataBlockPosition
+  CellPosition --> DataBlockSize
+}
+
+ChunkStoreFile --> DataBlockFile : stores chunk bytes in blocks
+ChunkStoreWriterTx --> DataBlockWriterTx
+CellStoreWriterCursor --> DataBlockWriter : writes full block payloads
+
+note right of DataBlockHeader
+16-byte header:
+magic(8) + crc(8)
+end note
+
+note right of ChunkHeader
+32-byte header:
+magic(8), version(4), payloadLength(4),
+crc(8), flags(8)
+end note
+
+note bottom
+Write path:
+Chunk payload -> ChunkData -> ChunkProcessor(filters) ->
+ChunkHeader + padded payload -> CellStoreWriter -> DataBlockWriter
+
+Read path:
+DataBlockByteReader -> ChunkData.read ->
+ChunkProcessor(filters) -> Chunk/payload
+end note
+
+@enduml

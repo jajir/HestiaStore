@@ -32,23 +32,12 @@ public class FixedLengthWriter<T> implements TypeWriter<T> {
      */
     @Override
     public int write(final FileWriter writer, final T object) {
+        final EncodedBytes encoded = convertor.encode(object, payloadBytes);
         final int payloadLength = Vldtn.requireGreaterThanOrEqualToZero(
-                convertor.bytesLength(object), "payloadLength");
-        ensurePayloadBufferSize(payloadLength);
-        final int writtenBytes = convertor.toBytes(object, payloadBytes);
-        if (writtenBytes != payloadLength) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
-                    payloadLength));
-        }
+                encoded.getLength(), "payloadLength");
+        payloadBytes = encoded.getBytes();
         writer.write(payloadBytes, 0, payloadLength);
         return payloadLength;
-    }
-
-    private void ensurePayloadBufferSize(final int payloadLength) {
-        if (payloadBytes.length < payloadLength) {
-            payloadBytes = new byte[payloadLength];
-        }
     }
 
 }

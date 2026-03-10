@@ -13,6 +13,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ class SegmentSplitStepOpenIteratorTest {
 
     @BeforeEach
     void setUp() {
-        step = new SegmentSplitStepOpenIterator<>();
+        step = new SegmentSplitStepOpenIterator<>(new IndexRetryPolicy(1, 100));
         final SegmentSplitterPlan<Integer, String> plan = SegmentSplitterPlan
                 .fromPolicy(new SegmentSplitterPolicy(4));
         context = new SegmentSplitContext<>(segment, plan, SegmentId.of(1),
@@ -106,5 +107,18 @@ class SegmentSplitStepOpenIteratorTest {
 
         assertThrows(SegmentSplitAbortException.class,
                 () -> step.filter(context, state));
+    }
+
+    @Test
+    void filter_aborts_when_busy_timeout_is_reached() {
+        when(segment.getId()).thenReturn(SegmentId.of(11));
+        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.busy());
+
+        final SegmentSplitStepOpenIterator<Integer, String> timedStep = new SegmentSplitStepOpenIterator<>(
+                new IndexRetryPolicy(1, 1));
+
+        assertThrows(SegmentSplitAbortException.class,
+                () -> timedStep.filter(context, state));
     }
 }

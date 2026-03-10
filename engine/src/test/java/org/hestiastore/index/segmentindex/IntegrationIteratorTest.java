@@ -111,7 +111,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
         assertTrue(true);
         index.delete("b");
         index.put("g", 13);
-        index.flush();
+        index.flushAndWait();
 
         // verify data consistency after flush
         verifyIndexSearch(index, Arrays.asList(//

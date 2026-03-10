@@ -32,8 +32,11 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegmentCache;
     private final Integer maxNumberOfKeysInSegmentWriteCache;
     private final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final Integer maxNumberOfImmutableRunsPerPartition;
+    private final Integer maxNumberOfKeysInIndexBuffer;
     private final Integer maxNumberOfKeysInSegmentChunk;
     private final Integer maxNumberOfDeltaCacheFiles;
+    private final Integer maxNumberOfKeysInPartitionBeforeSplit;
 
     /*
      * Segment index configuration
@@ -42,7 +45,6 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer indexWorkerThreadCount;
-    private final Integer numberOfIoThreads;
     private final Integer numberOfSegmentIndexMaintenanceThreads;
     private final Integer numberOfIndexMaintenanceThreads;
     private final Integer numberOfRegistryLifecycleThreads;
@@ -56,6 +58,7 @@ public class IndexConfiguration<K, V> {
 
     private final Integer diskIoBufferSize;
     private final Boolean contextLoggingEnabled;
+    private final Wal wal;
 
     private final List<ChunkFilter> encodingChunkFilters;
     private final List<ChunkFilter> decodingChunkFilters;
@@ -78,22 +81,26 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentCache, //
             final Integer maxNumberOfKeysInSegmentWriteCache, //
             final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance, //
+            final Integer maxNumberOfImmutableRunsPerPartition, //
+            final Integer maxNumberOfKeysInIndexBuffer, //
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfDeltaCacheFiles, //
             final Integer maxNumberOfKeysInSegment, //
+            final Integer maxNumberOfKeysInPartitionBeforeSplit, //
             final Integer maxNumberOfSegmentsInCache, //
             final String indexName, //
             final Integer bloomFilterNumberOfHashFunctions, //
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
-            final Integer indexWorkerThreadCount, final Integer numberOfIoThreads,
+            final Integer indexWorkerThreadCount,
             final Integer numberOfSegmentIndexMaintenanceThreads,
             final Integer numberOfIndexMaintenanceThreads,
             final Integer numberOfRegistryLifecycleThreads,
             final Integer indexBusyBackoffMillis,
             final Integer indexBusyTimeoutMillis,
             final Boolean segmentMaintenanceAutoEnabled,
+            final Wal wal,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
         this.keyClass = keyClass;
@@ -103,19 +110,22 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
+        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
+        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
         this.indexName = indexName;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.indexWorkerThreadCount = indexWorkerThreadCount;
-        this.numberOfIoThreads = numberOfIoThreads;
         this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
         this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
         this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
+        this.wal = Wal.orEmpty(wal);
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
@@ -145,6 +155,16 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
+     * Returns the maximum number of keys accepted into the active partition
+     * before it rotates to an immutable run.
+     *
+     * @return max keys in active partition
+     */
+    public Integer getMaxNumberOfKeysInActivePartition() {
+        return maxNumberOfKeysInSegmentWriteCache;
+    }
+
+    /**
      * Returns the maximum number of keys allowed while maintenance is in flight
      * before back-pressure is applied to writers.
      *
@@ -152,6 +172,35 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
         return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    }
+
+    /**
+     * Returns the immutable run queue depth per partition.
+     *
+     * @return immutable run count
+     */
+    public Integer getMaxNumberOfImmutableRunsPerPartition() {
+        return maxNumberOfImmutableRunsPerPartition;
+    }
+
+    /**
+     * Returns the maximum number of buffered keys allowed inside one partition
+     * before local backpressure is applied.
+     *
+     * @return max buffered keys inside one partition
+     */
+    public Integer getMaxNumberOfKeysInPartitionBuffer() {
+        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    }
+
+    /**
+     * Returns the maximum number of buffered keys allowed across the whole
+     * index overlay.
+     *
+     * @return global buffered key count
+     */
+    public Integer getMaxNumberOfKeysInIndexBuffer() {
+        return maxNumberOfKeysInIndexBuffer;
     }
 
     /**
@@ -193,6 +242,15 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
+     * Returns the split/drain threshold for a routed partition.
+     *
+     * @return max keys before a partition is split
+     */
+    public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
+        return maxNumberOfKeysInPartitionBeforeSplit;
+    }
+
+    /**
      * Returns the number of hash functions used by the Bloom filter.
      *
      * @return Bloom filter hash function count
@@ -227,15 +285,6 @@ public class IndexConfiguration<K, V> {
      */
     public Integer getIndexWorkerThreadCount() {
         return indexWorkerThreadCount;
-    }
-
-    /**
-     * Returns the number of IO threads used by the async directory wrapper.
-     *
-     * @return IO thread count
-     */
-    public Integer getNumberOfIoThreads() {
-        return numberOfIoThreads;
     }
 
     /**
@@ -318,6 +367,15 @@ public class IndexConfiguration<K, V> {
      */
     public Boolean isContextLoggingEnabled() {
         return contextLoggingEnabled;
+    }
+
+    /**
+     * Returns WAL configuration for this index.
+     *
+     * @return non-null WAL configuration
+     */
+    public Wal getWal() {
+        return wal;
     }
 
     /**

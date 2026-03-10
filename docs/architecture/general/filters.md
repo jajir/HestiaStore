@@ -1,18 +1,16 @@
 # 🧪 Filters & Integrity
 
-HestiaStore persists segment data in chunked files. Each chunk carries a small header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations. The same concept exists on both the write path (encoding pipeline) and read path (decoding pipeline).
+HestiaStore persists segment data in chunked files. Each chunk carries a header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations.
 
-This page summarizes what the filters do, how they are ordered, and how to configure them.
+This page focuses on filter behavior and ordering. For byte-level block/chunk
+structure see [Data Block Format](datablock.md). For builder setup and examples,
+see [Filter Configuration](../../configuration/filters.md).
 
-## 🏷️ Chunk Header and Flags
+## 🏷️ Chunk Flags Used by Filters
 
-Every chunk has a header with these fields:
-
-- Magic number — constant identifying HestiaStore chunk format
-- Version — current format version (presently 1)
-- Payload length — number of payload bytes (unpadded)
-- CRC32 — checksum of payload bytes (see ordering recommendations below)
-- Flags — bit field describing which filters transformed the payload
+Chunk headers include `magic`, `version`, `payloadLength`, `crc32`, and `flags`.
+This page documents only the `flags` bits used by filter pipeline steps.
+Header field layout is documented in [Data Block Format](datablock.md).
 
 Flag bit positions (see `src/main/java/org/hestiastore/index/chunkstore/ChunkFilter.java`):
 
@@ -25,7 +23,7 @@ Flag bit positions (see `src/main/java/org/hestiastore/index/chunkstore/ChunkFil
 
 Write path constructs a `ChunkData` and passes it through a `ChunkProcessor` configured with encoding filters. The writer then combines the resulting header and (possibly transformed) payload and writes padded bytes to the underlying cell store.
 
-- Implementation: `chunkstore/ChunkStoreWriterImpl#write`
+- Implementation: `chunkstore/ChunkStoreWriterImpl#writeSequence`
 - Pipeline wrapper: `chunkstore/ChunkProcessor` with encoding filters
 - Typical defaults: CRC32 → MagicNumber
 - With compression/encryption enabled, recommended order:
@@ -51,83 +49,57 @@ Notes:
 
 ## 🧰 Available Filters
 
-Integrity
-- Magic number writing/validation: `ChunkFilterMagicNumberWriting`, `ChunkFilterMagicNumberValidation`
-  - Sets and validates the fixed magic number; toggles bit 0 in flags.
-- CRC32 writing/validation: `ChunkFilterCrc32Writing`, `ChunkFilterCrc32Validation`
-  - Computes/stores CRC over the payload; validation recomputes and compares.
+### Magic Number
 
-Compression
-- Snappy compress/decompress: `ChunkFilterSnappyCompress`, `ChunkFilterSnappyDecompress`
-  - Fast compression; sets/clears bit 3 in flags.
+1. What it does: writes and validates the canonical chunk magic marker
+   (flag bit `0`) so readers can quickly detect invalid or unexpected chunk
+   content.
+2. Why it is valuable: provides a fast format guardrail before deeper decoding
+   work.
+3. Used classes: `ChunkFilterMagicNumberWriting`,
+   `ChunkFilterMagicNumberValidation`.
+4. External resources: [Magic number (programming)](https://en.wikipedia.org/wiki/Magic_number_(programming)).
 
-Transformations
-- XOR encrypt/decrypt: `ChunkFilterXorEncrypt`, `ChunkFilterXorDecrypt`
-  - Lightweight reversible obfuscation; sets/clears bit 4 in flags.
+### CRC32
 
-Utility
-- No‑op: `ChunkFilterDoNothing` (testing/bench harnesses)
+1. What it does: computes CRC32 on write and validates CRC32 on read against
+   payload bytes.
+2. Why it is valuable: detects data corruption and payload mismatch early.
+3. Used classes: `ChunkFilterCrc32Writing`, `ChunkFilterCrc32Validation`.
+4. External resources: [Cyclic redundancy check](https://en.wikipedia.org/wiki/Cyclic_redundancy_check).
+
+### Snappy Compression
+
+1. What it does: compresses payload on write and decompresses on read (flag bit
+   `3`).
+2. Why it is valuable: reduces storage footprint and I/O volume with low
+   latency overhead.
+3. Used classes: `ChunkFilterSnappyCompress`, `ChunkFilterSnappyDecompress`.
+4. External resources: [snappy-java](https://github.com/xerial/snappy-java).
+
+### XOR Encryption
+
+1. What it does: applies a reversible XOR transformation on write and restores
+   bytes on read (flag bit `4`).
+2. Why it is valuable: provides lightweight reversible obfuscation for specific
+   local use cases.
+3. Used classes: `ChunkFilterXorEncrypt`, `ChunkFilterXorDecrypt`.
+4. External resources: [XOR cipher](https://en.wikipedia.org/wiki/XOR_cipher).
+
+### Do Nothing Filter
+
+1. What it does: passes chunk data through unchanged.
+2. Why it is valuable: useful for tests, benchmarks, and pipeline wiring checks
+   when you want zero transformation.
+3. Used classes: `ChunkFilterDoNothing`.
+4. External resources: none.
 
 ## ⚙️ Configuration
 
-Filters are configured on the index through the fluent builder and then stored in the index configuration:
-
-- API: `segmentindex/IndexConfigurationBuilder`
-  - `addEncodingFilter(ChunkFilter)` / `addEncodingFilter(Class<? extends ChunkFilter>)`
-  - `addDecodingFilter(ChunkFilter)` / `addDecodingFilter(Class<? extends ChunkFilter>)`
-  - `withEncodingFilters(Collection<ChunkFilter>)`
-  - `withDecodingFilters(Collection<ChunkFilter>)`
-- Defaults (when you don’t specify any):
-  - Encoding: CRC32 writing → Magic number writing
-  - Decoding: Magic number validation → CRC32 validation
-
-The filter sequences are propagated into segment I/O via `SegmentFiles`, used by:
-- Writer side: `ChunkStoreWriterTx` → `ChunkStoreWriterImpl`
-- Reader side: `ChunkStoreReaderImpl`
-
-Constraints:
-- Filter lists must not be empty; `ChunkProcessor` enforces this.
-- Decoding order must mirror the inverse of encoding for transforms like compression/encryption. If you enable Snappy or XOR, include the matching decode filters in the correct order.
+Filter setup, defaults, constraints, and code examples are documented in
+[Filter Configuration](../../configuration/filters.md).
 
 ## 🛡️ Error Handling and Safety
 
 - Validation failures (wrong magic, CRC mismatch, missing flags) throw exceptions and abort the read; no partial state is committed.
-- Writes are protected by transactional temp‑file + atomic rename; a failed write never exposes a partially written chunk to readers.
-
-## 📋 Examples
-
-Enable Snappy compression with correct decode order:
-
-```java
-IndexConfiguration<Integer, String> conf = IndexConfiguration.<Integer, String>builder()
-    // ... types and other settings ...
-    .addEncodingFilter(new ChunkFilterCrc32Writing())
-    .addEncodingFilter(new ChunkFilterMagicNumberWriting())
-    .addEncodingFilter(new ChunkFilterSnappyCompress())
-    .addDecodingFilter(new ChunkFilterMagicNumberValidation())
-    .addDecodingFilter(new ChunkFilterSnappyDecompress())
-    .addDecodingFilter(new ChunkFilterCrc32Validation())
-    .build();
-```
-
-Add XOR obfuscation on top of compression:
-
-```java
-builder
-  .addEncodingFilter(new ChunkFilterXorEncrypt())
-  .addDecodingFilter(new ChunkFilterXorDecrypt());
-```
-
-## 🧩 Code Pointers
-
-- Pipeline engine: `src/main/java/org/hestiastore/index/chunkstore/ChunkProcessor.java`
-- Filters: `src/main/java/org/hestiastore/index/chunkstore/ChunkFilter*.java`
-- Writer path: `src/main/java/org/hestiastore/index/chunkstore/ChunkStoreWriterImpl.java`
-- Reader path: `src/main/java/org/hestiastore/index/chunkstore/ChunkStoreReaderImpl.java`
-- Configuration defaults: `src/main/java/org/hestiastore/index/segmentindex/IndexConfigurationContract.java`
-
-## 🔗 Related Glossary
-
-- [Filters](glossary.md#filters-chunk-filters)
-- [Chunk](glossary.md#chunk)
-- [Main SST](glossary.md#main-sst)
+- Chunk data is written through transactional temp-file + rename (`DataBlockWriterTx`); broader crash/recovery semantics are documented in [Consistency & Recovery](recovery.md).

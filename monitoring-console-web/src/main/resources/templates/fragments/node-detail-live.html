@@ -47,7 +47,7 @@
 
                 <section class="grid">
                     <article class="card section">
-                        <h3>Segment Runtime</h3>
+                        <h3>Stats about loaded segments in registry</h3>
                         <div class="line"><span>Number of segments</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.segmentCount)}">0</strong></div>
                         <div class="line"><span>Segment states (ready/maintenance/error/closed/busy)</span><strong
@@ -57,24 +57,30 @@
                                     th:text="${node.formatWholeNumber(idx.segmentErrorCount)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.segmentClosedCount)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.segmentBusyCount)}">0</span></strong></div>
-                        <div class="line"><span>Total Keys</span><strong class="value-runtime"
+                        <div class="line"><span>No. of Keys</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalSegmentKeys)}">0</strong></div>
-                        <div class="line"><span>Segment Cache Keys</span><strong class="value-runtime"
+                        <div class="line"><span>No. of keys in Segment Cache</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalSegmentCacheKeys)}">0</strong></div>
-                        <div class="line"><span>Write Cache Keys</span><strong class="value-runtime"
+                        <div class="line"><span>No. of keys in Write Cache</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalWriteCacheKeys)}">0</strong></div>
-                        <div class="line"><span>Delta Cache Files</span><strong class="value-runtime"
+                        <div class="line"><span>No. of Delta Cache Files</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalDeltaCacheFiles)}">0</strong></div>
                         <div class="line"><span>Average Delta Cache Files / Segment</span><strong class="value-runtime"
                                 th:text="${idx.averageDeltaCacheFilesPerSegmentDisplay}">0</strong></div>
                     </article>
 
                     <article class="card section">
-                        <h3>Compaction / Split / Flush</h3>
+                        <h3>Compaction / Drain / Split / Flush</h3>
                         <div class="line"><span>Total Flush Requests</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.flushRequestCount)}">0</strong></div>
                         <div class="line"><span>Current Flush Rate</span><strong class="value-runtime"
                                 th:text="${idx.flushRateDisplay}">0 /s</strong></div>
+                        <div class="line"><span>Total Drain Schedules</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.drainScheduleCount)}">0</strong></div>
+                        <div class="line"><span>Current Drain Rate</span><strong class="value-runtime"
+                                th:text="${idx.drainRateDisplay}">0 /s</strong></div>
+                        <div class="line"><span>Drain In Flight</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.drainInFlightCount)}">0</strong></div>
                         <div class="line"><span>Total Split Schedules</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.splitScheduleCount)}">0</strong></div>
                         <div class="line"><span>Current Split Rate</span><strong class="value-runtime"
@@ -85,11 +91,11 @@
                                 th:text="${idx.compactRateDisplay}">0 /s</strong></div>
                         <div class="line"><span>Split In Flight</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.splitInFlightCount)}">0</strong></div>
-                        <div class="line"><span>Maintenance Queue / Capacity</span><strong class="value-runtime"><span
+                        <div class="line"><span>Legacy Maintenance Queue / Capacity</span><strong class="value-runtime"><span
                                     th:text="${node.formatWholeNumber(idx.maintenanceQueueSize)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.maintenanceQueueCapacity)}">0</span></strong>
                         </div>
-                        <div class="line"><span>Split Queue / Capacity</span><strong class="value-runtime"><span
+                        <div class="line"><span>Legacy Split Queue / Capacity</span><strong class="value-runtime"><span
                                     th:text="${node.formatWholeNumber(idx.splitQueueSize)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.splitQueueCapacity)}">0</span></strong></div>
                     </article>
@@ -128,18 +134,34 @@
                         <h3>Segment Cache</h3>
                         <div class="line"><span>maxNumberOfKeysInSegmentCache</span><strong class="value-config"
                                 th:text="${node.formatWholeNumber(idx.segmentCacheKeyLimitPerSegment)}">0</strong></div>
-                        <div class="line"><span>maxNumberOfKeysInSegmentWriteCache</span><strong class="value-config"
-                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInSegmentWriteCache)}">0</strong>
-                        </div>
-                        <div class="line"><span>maxNumberOfKeysInSegmentWriteCacheDuringMaintenance</span><strong
-                                class="value-config"
-                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)}">0</strong>
-                        </div>
                         <div class="line"><span>Estimated Segment Cache Key Limit</span><strong class="value-config"
                                 th:text="${node.formatWholeNumber(idx.estimatedSegmentCacheKeyLimit)}">0</strong></div>
                         <div class="line"><span>Segment Cache Pressure</span><strong class="value-runtime"><span
                                     th:text="${node.formatWholeNumber(idx.segmentCachePressurePercent)}">0</span>%</strong>
                         </div>
+                    </article>
+
+                    <article class="card section">
+                        <h3>Partitioned Ingest</h3>
+                        <div class="line"><span>maxNumberOfKeysInActivePartition</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInActivePartition)}">0</strong></div>
+                        <div class="line"><span>maxNumberOfImmutableRunsPerPartition</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.maxNumberOfImmutableRunsPerPartition)}">0</strong></div>
+                        <div class="line"><span>maxNumberOfKeysInPartitionBuffer</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInPartitionBuffer)}">0</strong></div>
+                        <div class="line"><span>maxNumberOfKeysInIndexBuffer</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInIndexBuffer)}">0</strong></div>
+                        <div class="line"><span>Partitions (total/active/draining)</span><strong class="value-runtime"><span
+                                    th:text="${node.formatWholeNumber(idx.partitionCount)}">0</span> / <span
+                                    th:text="${node.formatWholeNumber(idx.activePartitionCount)}">0</span> / <span
+                                    th:text="${node.formatWholeNumber(idx.drainingPartitionCount)}">0</span></strong></div>
+                        <div class="line"><span>Immutable Runs</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.immutableRunCount)}">0</strong></div>
+                        <div class="line"><span>Partition Buffered Keys</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.partitionBufferedKeyCount)}">0</strong></div>
+                        <div class="line"><span>Local / Global Throttle Events</span><strong class="value-runtime"><span
+                                    th:text="${node.formatWholeNumber(idx.localThrottleCount)}">0</span> / <span
+                                    th:text="${node.formatWholeNumber(idx.globalThrottleCount)}">0</span></strong></div>
                     </article>
 
                     <article class="card section">
@@ -229,7 +251,8 @@
                                     <td th:text="${node.formatWholeNumber(segment.bloomFilterRequestCount)}">0</td>
                                     <td th:text="${node.formatWholeNumber(segment.bloomFilterRefusedCount)}">0</td>
                                     <td th:text="${node.formatWholeNumber(segment.bloomFilterPositiveCount)}">0</td>
-                                    <td th:text="${node.formatWholeNumber(segment.bloomFilterFalsePositiveCount)}">0</td>
+                                    <td th:text="${node.formatWholeNumber(segment.bloomFilterFalsePositiveCount)}">0
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -252,7 +275,8 @@
                 </p>
             </article>
         </div>
-        <div id="node-live-missing" th:if="${node == null}" class="card warn" th:text="${'Node not found: ' + missingNodeId}">
+        <div id="node-live-missing" th:if="${node == null}" class="card warn"
+            th:text="${'Node not found: ' + missingNodeId}">
             Node not found.
         </div>
     </div>

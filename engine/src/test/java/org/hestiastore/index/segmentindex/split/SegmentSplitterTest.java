@@ -16,6 +16,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,7 +56,8 @@ class SegmentSplitterTest {
 
     @BeforeEach
     void setUp() {
-        splitter = new SegmentSplitter<>(segment, writerTxFactory);
+        splitter = new SegmentSplitter<>(segment, writerTxFactory,
+                new IndexRetryPolicy(1, 1000));
     }
 
     @Test

@@ -1,5 +1,7 @@
 package org.hestiastore.index.datatype;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Converts strings using ISO-8859-1 and supports writing into reusable buffers.
  */
@@ -11,56 +13,32 @@ final class Iso88591StringConvertor implements TypeEncoder<String> {
     private Iso88591StringConvertor() {
     }
 
-    /**
-     * Returns encoded size in bytes for ISO-8859-1 representation.
-     *
-     * @param object source string
-     * @return encoded byte length
-     */
     @Override
-    public int bytesLength(final String object) {
-        int out = 0;
-        for (int i = 0; i < object.length(); i++) {
-            final char c = object.charAt(i);
-            if (c <= 0x00FF) {
-                out++;
-                continue;
-            }
-            out++;
-            if (Character.isHighSurrogate(c) && i + 1 < object.length()
-                    && Character.isLowSurrogate(object.charAt(i + 1))) {
-                i++;
-            }
+    public EncodedBytes encode(final String object, final byte[] reusableBuffer) {
+        final String validated = Vldtn.requireNonNull(object, "object");
+        final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                "reusableBuffer");
+        byte[] output = validatedBuffer;
+        final int maxRequired = validated.length();
+        if (output.length < maxRequired) {
+            output = new byte[maxRequired];
         }
-        return out;
+        final int written = encodeToBuffer(validated, output);
+        return new EncodedBytes(output, written);
     }
 
-    /**
-     * Encodes string into destination buffer using ISO-8859-1 compatible
-     * mapping.
-     *
-     * @param object      source string
-     * @param destination destination byte buffer
-     * @return number of bytes written
-     */
-    @Override
-    public int toBytes(final String object, final byte[] destination) {
-        final int required = bytesLength(object);
-        if (destination.length < required) {
-            throw new IllegalArgumentException(String.format(
-                    "Destination buffer too small. Required '%s' but was '%s'",
-                    required, destination.length));
-        }
+    private int encodeToBuffer(final String value, final byte[] destination) {
+        final int inputLength = value.length();
         int out = 0;
-        for (int i = 0; i < object.length(); i++) {
-            final char c = object.charAt(i);
+        for (int i = 0; i < inputLength; i++) {
+            final char c = value.charAt(i);
             if (c <= 0x00FF) {
                 destination[out++] = (byte) c;
                 continue;
             }
             destination[out++] = REPLACEMENT_BYTE;
-            if (Character.isHighSurrogate(c) && i + 1 < object.length()
-                    && Character.isLowSurrogate(object.charAt(i + 1))) {
+            if (Character.isHighSurrogate(c) && i + 1 < inputLength
+                    && Character.isLowSurrogate(value.charAt(i + 1))) {
                 i++;
             }
         }
