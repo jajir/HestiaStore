@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.hestiastore.index.segment.SegmentId;
@@ -145,5 +147,53 @@ class PartitionRuntimeTest {
 
         runtime.finishSplit(segmentId);
         assertTrue(runtime.markDrainScheduledIfNeeded(segmentId));
+    }
+
+    @Test
+    void finishingDrainAfterParentRouteWasRemovedStillClearsInFlightCount() {
+        final SegmentId oldSegmentId = SegmentId.of(12);
+        final SegmentId lowerSegmentId = SegmentId.of(13);
+        final SegmentId upperSegmentId = SegmentId.of(14);
+        final PartitionRuntimeLimits limits = new PartitionRuntimeLimits(1, 2,
+                8, 16);
+
+        runtime.write(oldSegmentId, Integer.valueOf(1), "v1", limits);
+        runtime.write(oldSegmentId, Integer.valueOf(2), "v2", limits);
+        runtime.sealAllActivePartitionsForDrain();
+        assertTrue(runtime.markDrainScheduledIfNeeded(oldSegmentId));
+        assertEquals(1, runtime.snapshot().getDrainInFlightCount());
+
+        runtime.reassignOverlayAfterSplit(new SegmentSplitApplyPlan<>(
+                oldSegmentId, lowerSegmentId, upperSegmentId,
+                Integer.valueOf(1), Integer.valueOf(1),
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT));
+        runtime.finishDrainScheduling(oldSegmentId);
+
+        assertEquals(0, runtime.snapshot().getDrainInFlightCount());
+    }
+
+    @Test
+    void pendingStableSplitAddsFallbackChainsAndUnfreezesChildrenWhenCompleted() {
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
+                SegmentId.of(9), SegmentId.of(10), SegmentId.of(11),
+                Integer.valueOf(1), Integer.valueOf(5),
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+
+        runtime.registerPendingStableSplit(plan);
+
+        assertEquals(List.of(SegmentId.of(10), SegmentId.of(9)),
+                runtime.resolveStableLookupChain(SegmentId.of(10)));
+        assertEquals(Set.of(SegmentId.of(9)),
+                runtime.pendingStableSourceSegmentIds());
+        assertEquals(List.of(SegmentId.of(9), SegmentId.of(10), SegmentId.of(11)),
+                runtime.resolveStableMergeChain(
+                        List.of(SegmentId.of(10), SegmentId.of(11))));
+        assertFalse(runtime.markDrainScheduledIfNeeded(SegmentId.of(10)));
+
+        runtime.completePendingStableSplit(new PendingPartitionSplit<>(plan));
+
+        assertTrue(runtime.pendingStableSourceSegmentIds().isEmpty());
+        assertEquals(List.of(SegmentId.of(10)),
+                runtime.resolveStableLookupChain(SegmentId.of(10)));
     }
 }

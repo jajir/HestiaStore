@@ -46,10 +46,9 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - `get()` reads overlay first and stable segment storage second
 - a successful `put()` is therefore visible to `get()` before any drain
   completes
-- `FULL_ISOLATION` index streaming now prefers a route-snapshot open path and
-  retries if the segment map changes underneath the open; if an explicit
-  maintenance-triggered split is already in flight, it still falls back to the
-  split-idle barrier for correctness during the transition
+- `FULL_ISOLATION` index streaming now opens against a split-safe route
+  snapshot and retries if the segment map changes underneath the open; it no
+  longer falls back to the historical split-idle barrier on the read path
 - point operations no longer wait explicitly for background live-segment split
   completion before retrying a `BUSY` path
 - `flushAndWait()` seals active partition data, drains immutable runs into
@@ -76,6 +75,9 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - unpublished partition overlay state is transient
 - startup reconstructs routing from persisted index metadata
 - WAL replay restores acknowledged writes that were not yet published
+- startup and explicit consistency checks delete orphaned segment directories
+  that are not referenced from the persisted routing metadata, which covers
+  abandoned route-first split children after interrupted maintenance
 - durability after `flushAndWait()` is defined by successful stable-segment
   flush plus WAL checkpoint
 

@@ -62,6 +62,28 @@ final class SegmentIndexCore<K, V> {
         return IndexResult.error();
     }
 
+    IndexResult<V> get(final SegmentId segmentId, final K key) {
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
+        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+                .getSegment(segmentId);
+        if (loaded.getStatus() != SegmentRegistryResultStatus.OK
+                || loaded.getValue() == null) {
+            return fromRegistryStatus(loaded.getStatus());
+        }
+        final Segment<K, V> segment = loaded.getValue();
+        final SegmentResult<V> result = segment.get(key);
+        if (result.getStatus() == SegmentResultStatus.OK) {
+            return IndexResult.ok(result.getValue());
+        }
+        if (result.getStatus() == SegmentResultStatus.BUSY) {
+            return IndexResult.busy();
+        }
+        if (result.getStatus() == SegmentResultStatus.CLOSED) {
+            return IndexResult.closed();
+        }
+        return IndexResult.error();
+    }
+
     IndexResult<EntryIterator<K, V>> openIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
