@@ -806,7 +806,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             syncBatchBytesTotal.add(Math.max(0L, batchBytes));
             updateMax(syncMaxNanos, elapsedNanos);
             updateMax(syncBatchBytesMax, Math.max(0L, batchBytes));
-            monitor.notifyAll();
+            synchronized (monitor) {
+                monitor.notifyAll();
+            }
         } catch (RuntimeException ex) {
             markSyncFailure(ex);
             checkSyncFailure();
@@ -821,7 +823,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                         "WAL runtime closed while waiting for durability.");
             }
             try {
-                monitor.wait(Math.max(1L, wal.getGroupSyncDelayMillis()));
+                synchronized (monitor) {
+                    monitor.wait(Math.max(1L,
+                            wal.getGroupSyncDelayMillis()));
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IndexException(
@@ -839,7 +844,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 "event=wal_sync_failure durableLsn={} pendingHighLsn={} pendingSyncBytes={} segmentCount={} syncFailureCount={}",
                 durableLsn.get(), pendingSyncHighLsn, pendingSyncBytes,
                 segments.size(), syncFailureCount.sum(), ex);
-        monitor.notifyAll();
+        synchronized (monitor) {
+            monitor.notifyAll();
+        }
     }
 
     private void checkSyncFailure() {
