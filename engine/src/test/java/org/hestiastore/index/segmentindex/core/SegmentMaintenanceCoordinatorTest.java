@@ -326,7 +326,7 @@ class SegmentMaintenanceCoordinatorTest {
         org.junit.jupiter.api.Assertions.assertEquals(1,
                 scheduledCount.get());
 
-        nowNanos.addAndGet(TimeUnit.MILLISECONDS.toNanos(400L));
+        nowNanos.addAndGet(TimeUnit.MILLISECONDS.toNanos(800L));
         final boolean rescheduled = coordinator.handleSplitCandidate(segment,
                 100L);
 

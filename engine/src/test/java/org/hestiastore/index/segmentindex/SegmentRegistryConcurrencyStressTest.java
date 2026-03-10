@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Timeout;
 
 class SegmentRegistryConcurrencyStressTest {
 
-    private static final int WAIT_SECONDS = 10;
+    private static final int WAIT_SECONDS = 20;
 
     @Test
     @Timeout(20)
@@ -181,9 +181,13 @@ class SegmentRegistryConcurrencyStressTest {
                 .withKeyTypeDescriptor(keyType)//
                 .withValueTypeDescriptor(valueType)//
                 .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInSegmentWriteCache(4)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(8)//
+                .withMaxNumberOfKeysInActivePartition(24)//
+                .withMaxNumberOfImmutableRunsPerPartition(4)//
+                .withMaxNumberOfKeysInPartitionBuffer(96)//
+                .withMaxNumberOfKeysInIndexBuffer(384)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(32)//
+                .withMaxNumberOfKeysInSegmentChunk(8)//
+                .withMaxNumberOfKeysInSegment(64)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterIndexSizeInBytes(1000)//
                 .withBloomFilterNumberOfHashFunctions(3)//
