@@ -10,6 +10,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -131,9 +132,8 @@ class IntegrationSegmentIndexConcurrencyTest {
 
             index.flushAndWait();
             index.compactAndWait();
-            final long count = index.getStream(SegmentWindow.unbounded(),
-                    SegmentIteratorIsolation.FULL_ISOLATION).count();
-            assertTrue(count >= 40, "Expected at least 40 entries");
+            awaitIdle(index);
+            verifySegmentIndexDataWithDiagnostics(index, expectedEntries(40));
         } finally {
             index.close();
         }
@@ -153,8 +153,9 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfImmutableRunsPerPartition(4) //
                 .withMaxNumberOfKeysInPartitionBuffer(64) //
                 .withMaxNumberOfKeysInIndexBuffer(128) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000) //
+                .withMaxNumberOfKeysInSegment(64) //
+                .withMaxNumberOfKeysInSegmentChunk(8) //
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
@@ -248,6 +249,27 @@ class IntegrationSegmentIndexConcurrencyTest {
         for (int i = 0; i < expected.size(); i++) {
             assertEquals(expected.get(i), actual.get(i));
         }
+    }
+
+    private static void awaitIdle(final SegmentIndex<Integer, String> index) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(10L);
+        while (System.nanoTime() < deadline) {
+            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            if (snapshot.getActivePartitionCount() == 0
+                    && snapshot.getPartitionBufferedKeyCount() == 0
+                    && snapshot.getDrainInFlightCount() == 0
+                    && snapshot.getImmutableRunCount() == 0
+                    && snapshot.getDrainingPartitionCount() == 0
+                    && snapshot.getSplitInFlightCount() == 0) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting for idle");
+            }
+        }
+        throw new AssertionError("Timed out waiting for maintenance idle");
     }
 
     private static Stream<ParallelPutsScenario> parallelPutsScenarios() {
