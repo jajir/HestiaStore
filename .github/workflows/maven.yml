@@ -46,6 +46,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-        
 
+    - name: Prepare badge paths
+      shell: bash
+      run: |
+        echo "SAFE_REF_NAME=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
+        mkdir -p badges
+
     - name: Build with Maven
       run: mvn -e -B verify --file pom.xml
 
@@ -59,7 +65,7 @@ jobs:
         generate-branches-badge: true
         jacoco-csv-file: ./engine/target/site/jacoco/jacoco.csv
         badges-directory: ./badges
-        coverage-badge-filename: jacoco-badge-${{ github.ref_name }}.svg
+        coverage-badge-filename: jacoco-badge-${{ env.SAFE_REF_NAME }}.svg
     
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
@@ -91,7 +97,7 @@ jobs:
         label: Tests
         status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
         color: ${{ env.BADGE_COLOR }}
-        path: badge-${{ github.ref_name }}.svg
+        path: badge-${{ env.SAFE_REF_NAME }}.svg
     
     - name: OWASP vulnerabilities - count
       id: vuln
@@ -106,15 +112,15 @@ jobs:
         label: 'OWASP Vulnerabilities'
         status: ${{ env.VULN_COUNT }}
         color: 31c653
-        path: badge-owasp-${{ github.ref_name }}.svg
+        path: badge-owasp-${{ env.SAFE_REF_NAME }}.svg
 
     - name: Upload badges to Gist
       if: ${{ env.GIST_TOKEN != '' }}
       env:
         GIST_ID: a613341fb9d9d0c6a426b42a714700b7
-        JACOCO_BADGE: ./badges/jacoco-badge-${{ github.ref_name }}.svg
-        TEST_BADGE: badge-${{ github.ref_name }}.svg
-        OWASP_BADGE: badge-owasp-${{ github.ref_name }}.svg
+        JACOCO_BADGE: ./badges/jacoco-badge-${{ env.SAFE_REF_NAME }}.svg
+        TEST_BADGE: badge-${{ env.SAFE_REF_NAME }}.svg
+        OWASP_BADGE: badge-owasp-${{ env.SAFE_REF_NAME }}.svg
       shell: bash
       run: |
         set -euo pipefail
