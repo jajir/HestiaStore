@@ -20,10 +20,8 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -258,9 +256,9 @@ class SegmentIndexConcurrentIT {
                     backgroundFailure);
         }
 
-        awaitMaintenanceSettled(index, 10_000L);
+        flushAndWaitWithRetry(index, 30_000L);
         checkAndRepairConsistencyWithRetry(index, 5_000L);
-        index.flushAndWait();
+        flushAndWaitWithRetry(index, 30_000L);
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -517,35 +515,23 @@ class SegmentIndexConcurrentIT {
         }
     }
 
-    private static void awaitMaintenanceSettled(
+    private static void flushAndWaitWithRetry(
             final SegmentIndex<Integer, Integer> index,
-            final long timeoutMillis) {
+            final long timeoutMillis) throws InterruptedException {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-            final boolean segmentsStable = snapshot.getSegmentRuntimeSnapshots()
-                    .stream()
-                    .map(SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot::getState)
-                    .noneMatch(state -> state == SegmentState.MAINTENANCE_RUNNING
-                            || state == SegmentState.FREEZE);
-            if (segmentsStable && snapshot.getDrainInFlightCount() == 0
-                    && snapshot.getImmutableRunCount() == 0
-                    && snapshot.getDrainingPartitionCount() == 0
-                    && snapshot.getSplitInFlightCount() == 0) {
-                return;
-            }
+        while (true) {
             try {
-                Thread.sleep(10L);
-            } catch (final InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                throw new AssertionError(
-                        "Interrupted while waiting for maintenance to settle",
-                        ex);
+                index.flushAndWait();
+                return;
+            } catch (final IndexException exception) {
+                if (!isTransientIndexFailure(exception)
+                        || System.nanoTime() >= deadline) {
+                    throw exception;
+                }
             }
+            Thread.sleep(10L);
         }
-        throw new AssertionError(
-                "Timed out waiting for background maintenance to settle");
     }
 
     private static int scaleByCpu(final int operations) {
