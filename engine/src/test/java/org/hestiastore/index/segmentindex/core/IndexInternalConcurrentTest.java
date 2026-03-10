@@ -137,7 +137,42 @@ class IndexInternalConcurrentTest {
         assertEquals(1, nextCalls.get());
     }
 
-    private static final class RecordingIndex
+    @Test
+    void getStreamFailFastDoesNotAwaitSplitIdleBarrier() {
+        final AtomicInteger awaitSplitsIdleCalls = new AtomicInteger();
+        final ObservingIndex streamingIndex = new ObservingIndex(
+                EntryIterator.make(List.<Entry<Integer, String>>of().iterator()),
+                buildConf(), awaitSplitsIdleCalls);
+        try (Stream<Entry<Integer, String>> stream = streamingIndex.getStream(
+                SegmentWindow.unbounded(),
+                SegmentIteratorIsolation.FAIL_FAST)) {
+            stream.count();
+        } finally {
+            streamingIndex.close();
+        }
+
+        assertEquals(0, awaitSplitsIdleCalls.get());
+    }
+
+    @Test
+    void fullIsolationStreamUsesRouteSnapshotInsteadOfSplitIdleBarrier() {
+        final AtomicInteger awaitSplitsIdleCalls = new AtomicInteger();
+        try (SplitBarrierObservingIndex streamingIndex = new SplitBarrierObservingIndex(
+                buildConf(), awaitSplitsIdleCalls)) {
+            streamingIndex.put(1, "one");
+            streamingIndex.put(2, "two");
+
+            try (Stream<Entry<Integer, String>> stream = streamingIndex
+                    .getStream(SegmentWindow.unbounded(),
+                            SegmentIteratorIsolation.FULL_ISOLATION)) {
+                assertEquals(2, stream.count());
+            }
+        }
+
+        assertEquals(0, awaitSplitsIdleCalls.get());
+    }
+
+    private static class RecordingIndex
             extends IndexInternalConcurrent<Integer, String> {
 
         private final EntryIterator<Integer, String> iterator;
@@ -161,6 +196,43 @@ class IndexInternalConcurrentTest {
 
         SegmentIteratorIsolation getLastIsolation() {
             return lastIsolation;
+        }
+    }
+
+    private static final class ObservingIndex extends RecordingIndex {
+
+        private final AtomicInteger awaitSplitsIdleCalls;
+
+        private ObservingIndex(final EntryIterator<Integer, String> iterator,
+                final IndexConfiguration<Integer, String> conf,
+                final AtomicInteger awaitSplitsIdleCalls) {
+            super(iterator, conf);
+            this.awaitSplitsIdleCalls = awaitSplitsIdleCalls;
+        }
+
+        @Override
+        protected void awaitSplitsIdle() {
+            awaitSplitsIdleCalls.incrementAndGet();
+        }
+    }
+
+    private static final class SplitBarrierObservingIndex
+            extends IndexInternalConcurrent<Integer, String> {
+
+        private final AtomicInteger awaitSplitsIdleCalls;
+
+        private SplitBarrierObservingIndex(
+                final IndexConfiguration<Integer, String> conf,
+                final AtomicInteger awaitSplitsIdleCalls) {
+            super(new MemDirectory(),
+                    new TypeDescriptorInteger(), new TypeDescriptorShortString(),
+                    conf, new IndexExecutorRegistry(conf));
+            this.awaitSplitsIdleCalls = awaitSplitsIdleCalls;
+        }
+
+        @Override
+        protected void awaitSplitsIdle() {
+            awaitSplitsIdleCalls.incrementAndGet();
         }
     }
 

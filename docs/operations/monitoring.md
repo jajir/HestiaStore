@@ -24,6 +24,35 @@ at a fixed scrape interval.
 - State:
   - `state` (`OPEN`, `ERROR`, `CLOSED`, ...)
 
+## Partition Overlay Signals
+
+For the range-partitioned ingest runtime, treat these as the primary
+backpressure and drain indicators:
+
+- Buffered overlay pressure:
+  - `getPartitionBufferedKeyCount()`
+  - `getImmutableRunCount()`
+  - `getDrainingPartitionCount()`
+- Capacity and routing shape:
+  - `getPartitionCount()`
+  - `getActivePartitionCount()`
+  - `getMaxNumberOfKeysInActivePartition()`
+  - `getMaxNumberOfKeysInPartitionBuffer()`
+  - `getMaxNumberOfKeysInIndexBuffer()`
+  - `getMaxNumberOfImmutableRunsPerPartition()`
+- Throttling:
+  - `getLocalThrottleCount()`
+  - `getGlobalThrottleCount()`
+- Drain activity:
+  - `getDrainScheduleCount()`
+  - `getDrainInFlightCount()`
+
+Compatibility note:
+
+- `splitScheduleCount`, `splitInFlightCount`, `maintenanceQueueSize`, and
+  related legacy queue fields are still emitted for older clients.
+- New dashboards and alerts should prefer the explicit partition fields above.
+
 ## WAL Signals
 
 Use these fields whenever `isWalEnabled()` is `true`:
@@ -73,6 +102,14 @@ Start with these baseline alerts and tune per workload:
 - `wal pending sync growth`:
   - condition: `getWalPendingSyncBytes()` grows without recovery for 10+ minutes
   - severity: warning
+- `partition overlay backlog growth`:
+  - condition: `getPartitionBufferedKeyCount()` and `getImmutableRunCount()`
+    grow continuously without returning to baseline
+  - severity: warning
+- `partition throttling`:
+  - condition: `getLocalThrottleCount()` or `getGlobalThrottleCount()`
+    increases steadily
+  - severity: warning
 
 ## Structured Logs
 
@@ -103,4 +140,6 @@ At minimum, create one dashboard per WAL-enabled index with:
 4. `WalPendingSyncBytes`.
 5. Counters for `WalSyncFailureCount`, `WalCorruptionCount`,
    `WalTruncationCount`.
-6. Index state timeline (`OPEN` vs `ERROR`).
+6. `PartitionBufferedKeyCount`, `ImmutableRunCount`,
+   `DrainingPartitionCount`, `DrainInFlightCount`.
+7. Index state timeline (`OPEN` vs `ERROR`).

@@ -24,6 +24,8 @@ public final class SegmentIndexMetricsSnapshot {
     private final int segmentCacheKeyLimitPerSegment;
     private final int maxNumberOfKeysInSegmentWriteCache;
     private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final int maxNumberOfImmutableRunsPerPartition;
+    private final int maxNumberOfKeysInIndexBuffer;
     private final int segmentCount;
     private final int segmentReadyCount;
     private final int segmentMaintenanceCount;
@@ -42,6 +44,15 @@ public final class SegmentIndexMetricsSnapshot {
     private final int maintenanceQueueCapacity;
     private final int splitQueueSize;
     private final int splitQueueCapacity;
+    private final int partitionCount;
+    private final int activePartitionCount;
+    private final int drainingPartitionCount;
+    private final int immutableRunCount;
+    private final int partitionBufferedKeyCount;
+    private final long localThrottleCount;
+    private final long globalThrottleCount;
+    private final long drainScheduleCount;
+    private final int drainInFlightCount;
     private final long readLatencyP50Micros;
     private final long readLatencyP95Micros;
     private final long readLatencyP99Micros;
@@ -128,7 +139,151 @@ public final class SegmentIndexMetricsSnapshot {
                 bloomFilterProbabilityOfFalsePositive, bloomFilterRequestCount,
                 bloomFilterRefusedCount, bloomFilterPositiveCount,
                 bloomFilterFalsePositiveCount, false, 0L, 0L, 0L, 0L, 0L, 0L,
-                0L, 0, 0L, 0L, 0L, segmentRuntimeSnapshots, state);
+                0L, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0,
+                0L,
+                0L, 0L, 0,
+                segmentRuntimeSnapshots, state);
+    }
+
+    /**
+     * Full runtime metrics constructor including per-segment and WAL metrics.
+     */
+    public SegmentIndexMetricsSnapshot(final long getOperationCount,
+            final long putOperationCount, final long deleteOperationCount,
+            final long registryCacheHitCount, final long registryCacheMissCount,
+            final long registryCacheLoadCount,
+            final long registryCacheEvictionCount, final int registryCacheSize,
+            final int registryCacheLimit,
+            final int segmentCacheKeyLimitPerSegment,
+            final int maxNumberOfKeysInSegmentWriteCache,
+            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int segmentCount, final int segmentReadyCount,
+            final int segmentMaintenanceCount, final int segmentErrorCount,
+            final int segmentClosedCount, final int segmentBusyCount,
+            final long totalSegmentKeys, final long totalSegmentCacheKeys,
+            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long compactRequestCount, final long flushRequestCount,
+            final long splitScheduleCount, final int splitInFlightCount,
+            final int maintenanceQueueSize, final int maintenanceQueueCapacity,
+            final int splitQueueSize, final int splitQueueCapacity,
+            final long readLatencyP50Micros, final long readLatencyP95Micros,
+            final long readLatencyP99Micros, final long writeLatencyP50Micros,
+            final long writeLatencyP95Micros, final long writeLatencyP99Micros,
+            final int bloomFilterHashFunctions,
+            final int bloomFilterIndexSizeInBytes,
+            final double bloomFilterProbabilityOfFalsePositive,
+            final long bloomFilterRequestCount,
+            final long bloomFilterRefusedCount,
+            final long bloomFilterPositiveCount,
+            final long bloomFilterFalsePositiveCount,
+            final boolean walEnabled, final long walAppendCount,
+            final long walAppendBytes, final long walSyncCount,
+            final long walSyncFailureCount, final long walCorruptionCount,
+            final long walTruncationCount, final long walRetainedBytes,
+            final int walSegmentCount, final long walDurableLsn,
+            final long walCheckpointLsn, final long walPendingSyncBytes,
+            final long walAppliedLsn, final long walSyncTotalNanos,
+            final long walSyncMaxNanos, final long walSyncBatchBytesTotal,
+            final long walSyncBatchBytesMax,
+            final List<SegmentMetricsSnapshot> segmentRuntimeSnapshots,
+            final SegmentIndexState state) {
+        this(getOperationCount, putOperationCount, deleteOperationCount,
+                registryCacheHitCount, registryCacheMissCount,
+                registryCacheLoadCount, registryCacheEvictionCount,
+                registryCacheSize, registryCacheLimit,
+                segmentCacheKeyLimitPerSegment,
+                maxNumberOfKeysInSegmentWriteCache,
+                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                segmentCount, segmentReadyCount, segmentMaintenanceCount,
+                segmentErrorCount, segmentClosedCount, segmentBusyCount,
+                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
+                splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
+                maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
+                readLatencyP50Micros, readLatencyP95Micros,
+                readLatencyP99Micros, writeLatencyP50Micros,
+                writeLatencyP95Micros, writeLatencyP99Micros,
+                bloomFilterHashFunctions, bloomFilterIndexSizeInBytes,
+                bloomFilterProbabilityOfFalsePositive, bloomFilterRequestCount,
+                bloomFilterRefusedCount, bloomFilterPositiveCount,
+                bloomFilterFalsePositiveCount, walEnabled, walAppendCount,
+                walAppendBytes, walSyncCount, walSyncFailureCount,
+                walCorruptionCount, walTruncationCount, walRetainedBytes,
+                walSegmentCount, walDurableLsn, walCheckpointLsn,
+                walPendingSyncBytes, walAppliedLsn, walSyncTotalNanos,
+                walSyncMaxNanos, walSyncBatchBytesTotal,
+                walSyncBatchBytesMax, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0,
+                segmentRuntimeSnapshots, state);
+    }
+
+    /**
+     * Full runtime metrics constructor including per-segment and partition
+     * metrics, without WAL metrics.
+     */
+    public SegmentIndexMetricsSnapshot(final long getOperationCount,
+            final long putOperationCount, final long deleteOperationCount,
+            final long registryCacheHitCount, final long registryCacheMissCount,
+            final long registryCacheLoadCount,
+            final long registryCacheEvictionCount, final int registryCacheSize,
+            final int registryCacheLimit,
+            final int segmentCacheKeyLimitPerSegment,
+            final int maxNumberOfKeysInSegmentWriteCache,
+            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int segmentCount, final int segmentReadyCount,
+            final int segmentMaintenanceCount, final int segmentErrorCount,
+            final int segmentClosedCount, final int segmentBusyCount,
+            final long totalSegmentKeys, final long totalSegmentCacheKeys,
+            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long compactRequestCount, final long flushRequestCount,
+            final long splitScheduleCount, final int splitInFlightCount,
+            final int maintenanceQueueSize, final int maintenanceQueueCapacity,
+            final int splitQueueSize, final int splitQueueCapacity,
+            final long readLatencyP50Micros, final long readLatencyP95Micros,
+            final long readLatencyP99Micros, final long writeLatencyP50Micros,
+            final long writeLatencyP95Micros, final long writeLatencyP99Micros,
+            final int bloomFilterHashFunctions,
+            final int bloomFilterIndexSizeInBytes,
+            final double bloomFilterProbabilityOfFalsePositive,
+            final long bloomFilterRequestCount,
+            final long bloomFilterRefusedCount,
+            final long bloomFilterPositiveCount,
+            final long bloomFilterFalsePositiveCount,
+            final int maxNumberOfImmutableRunsPerPartition,
+            final int maxNumberOfKeysInIndexBuffer,
+            final int partitionCount, final int activePartitionCount,
+            final int drainingPartitionCount, final int immutableRunCount,
+            final int partitionBufferedKeyCount,
+            final long localThrottleCount, final long globalThrottleCount,
+            final long drainScheduleCount, final int drainInFlightCount,
+            final List<SegmentMetricsSnapshot> segmentRuntimeSnapshots,
+            final SegmentIndexState state) {
+        this(getOperationCount, putOperationCount, deleteOperationCount,
+                registryCacheHitCount, registryCacheMissCount,
+                registryCacheLoadCount, registryCacheEvictionCount,
+                registryCacheSize, registryCacheLimit,
+                segmentCacheKeyLimitPerSegment,
+                maxNumberOfKeysInSegmentWriteCache,
+                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                segmentCount, segmentReadyCount, segmentMaintenanceCount,
+                segmentErrorCount, segmentClosedCount, segmentBusyCount,
+                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
+                splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
+                maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
+                readLatencyP50Micros, readLatencyP95Micros,
+                readLatencyP99Micros, writeLatencyP50Micros,
+                writeLatencyP95Micros, writeLatencyP99Micros,
+                bloomFilterHashFunctions, bloomFilterIndexSizeInBytes,
+                bloomFilterProbabilityOfFalsePositive, bloomFilterRequestCount,
+                bloomFilterRefusedCount, bloomFilterPositiveCount,
+                bloomFilterFalsePositiveCount, false, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                maxNumberOfImmutableRunsPerPartition,
+                maxNumberOfKeysInIndexBuffer, partitionCount,
+                activePartitionCount, drainingPartitionCount,
+                immutableRunCount, partitionBufferedKeyCount,
+                localThrottleCount, globalThrottleCount, drainScheduleCount,
+                drainInFlightCount, segmentRuntimeSnapshots, state);
     }
 
     /**
@@ -193,8 +348,8 @@ public final class SegmentIndexMetricsSnapshot {
                 walAppendBytes, walSyncCount, walSyncFailureCount,
                 walCorruptionCount, walTruncationCount, walRetainedBytes,
                 walSegmentCount, walDurableLsn, walCheckpointLsn,
-                walPendingSyncBytes, walDurableLsn, segmentRuntimeSnapshots,
-                state);
+                walPendingSyncBytes, walDurableLsn, 0L, 0L, 0L, 0L, 0, 0, 0,
+                0, 0, 0, 0, 0L, 0L, 0L, 0, segmentRuntimeSnapshots, state);
     }
 
     /**
@@ -260,8 +415,8 @@ public final class SegmentIndexMetricsSnapshot {
                 walAppendBytes, walSyncCount, walSyncFailureCount,
                 walCorruptionCount, walTruncationCount, walRetainedBytes,
                 walSegmentCount, walDurableLsn, walCheckpointLsn,
-                walPendingSyncBytes, walAppliedLsn, 0L, 0L, 0L, 0L,
-                segmentRuntimeSnapshots, state);
+                walPendingSyncBytes, walAppliedLsn, 0L, 0L, 0L, 0L, 0, 0, 0,
+                0, 0, 0, 0, 0L, 0L, 0L, 0, segmentRuntimeSnapshots, state);
     }
 
     /**
@@ -304,6 +459,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long walAppliedLsn, final long walSyncTotalNanos,
             final long walSyncMaxNanos, final long walSyncBatchBytesTotal,
             final long walSyncBatchBytesMax,
+            final int maxNumberOfImmutableRunsPerPartition,
+            final int maxNumberOfKeysInIndexBuffer,
+            final int partitionCount, final int activePartitionCount,
+            final int drainingPartitionCount, final int immutableRunCount,
+            final int partitionBufferedKeyCount,
+            final long localThrottleCount, final long globalThrottleCount,
+            final long drainScheduleCount, final int drainInFlightCount,
             final List<SegmentMetricsSnapshot> segmentRuntimeSnapshots,
             final SegmentIndexState state) {
         requireNotNegative(getOperationCount, "getOperationCount");
@@ -322,6 +484,10 @@ public final class SegmentIndexMetricsSnapshot {
                 "maxNumberOfKeysInSegmentWriteCache");
         requireNotNegative(maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
                 "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        requireNotNegative(maxNumberOfImmutableRunsPerPartition,
+                "maxNumberOfImmutableRunsPerPartition");
+        requireNotNegative(maxNumberOfKeysInIndexBuffer,
+                "maxNumberOfKeysInIndexBuffer");
         requireNotNegative(segmentCount, "segmentCount");
         requireNotNegative(segmentReadyCount, "segmentReadyCount");
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
@@ -341,6 +507,17 @@ public final class SegmentIndexMetricsSnapshot {
                 "maintenanceQueueCapacity");
         requireNotNegative(splitQueueSize, "splitQueueSize");
         requireNotNegative(splitQueueCapacity, "splitQueueCapacity");
+        requireNotNegative(partitionCount, "partitionCount");
+        requireNotNegative(activePartitionCount, "activePartitionCount");
+        requireNotNegative(drainingPartitionCount,
+                "drainingPartitionCount");
+        requireNotNegative(immutableRunCount, "immutableRunCount");
+        requireNotNegative(partitionBufferedKeyCount,
+                "partitionBufferedKeyCount");
+        requireNotNegative(localThrottleCount, "localThrottleCount");
+        requireNotNegative(globalThrottleCount, "globalThrottleCount");
+        requireNotNegative(drainScheduleCount, "drainScheduleCount");
+        requireNotNegative(drainInFlightCount, "drainInFlightCount");
         requireNotNegative(readLatencyP50Micros, "readLatencyP50Micros");
         requireNotNegative(readLatencyP95Micros, "readLatencyP95Micros");
         requireNotNegative(readLatencyP99Micros, "readLatencyP99Micros");
@@ -389,6 +566,8 @@ public final class SegmentIndexMetricsSnapshot {
         this.segmentCacheKeyLimitPerSegment = segmentCacheKeyLimitPerSegment;
         this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
         this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
+        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.segmentCount = segmentCount;
         this.segmentReadyCount = segmentReadyCount;
         this.segmentMaintenanceCount = segmentMaintenanceCount;
@@ -407,6 +586,15 @@ public final class SegmentIndexMetricsSnapshot {
         this.maintenanceQueueCapacity = maintenanceQueueCapacity;
         this.splitQueueSize = splitQueueSize;
         this.splitQueueCapacity = splitQueueCapacity;
+        this.partitionCount = partitionCount;
+        this.activePartitionCount = activePartitionCount;
+        this.drainingPartitionCount = drainingPartitionCount;
+        this.immutableRunCount = immutableRunCount;
+        this.partitionBufferedKeyCount = partitionBufferedKeyCount;
+        this.localThrottleCount = localThrottleCount;
+        this.globalThrottleCount = globalThrottleCount;
+        this.drainScheduleCount = drainScheduleCount;
+        this.drainInFlightCount = drainInFlightCount;
         this.readLatencyP50Micros = readLatencyP50Micros;
         this.readLatencyP95Micros = readLatencyP95Micros;
         this.readLatencyP99Micros = readLatencyP99Micros;
@@ -501,6 +689,22 @@ public final class SegmentIndexMetricsSnapshot {
         return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
     }
 
+    public int getMaxNumberOfKeysInActivePartition() {
+        return maxNumberOfKeysInSegmentWriteCache;
+    }
+
+    public int getMaxNumberOfImmutableRunsPerPartition() {
+        return maxNumberOfImmutableRunsPerPartition;
+    }
+
+    public int getMaxNumberOfKeysInPartitionBuffer() {
+        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    }
+
+    public int getMaxNumberOfKeysInIndexBuffer() {
+        return maxNumberOfKeysInIndexBuffer;
+    }
+
     public int getSegmentCount() {
         return segmentCount;
     }
@@ -571,6 +775,42 @@ public final class SegmentIndexMetricsSnapshot {
 
     public int getSplitQueueCapacity() {
         return splitQueueCapacity;
+    }
+
+    public int getPartitionCount() {
+        return partitionCount;
+    }
+
+    public int getActivePartitionCount() {
+        return activePartitionCount;
+    }
+
+    public int getDrainingPartitionCount() {
+        return drainingPartitionCount;
+    }
+
+    public int getImmutableRunCount() {
+        return immutableRunCount;
+    }
+
+    public int getPartitionBufferedKeyCount() {
+        return partitionBufferedKeyCount;
+    }
+
+    public long getLocalThrottleCount() {
+        return localThrottleCount;
+    }
+
+    public long getGlobalThrottleCount() {
+        return globalThrottleCount;
+    }
+
+    public long getDrainScheduleCount() {
+        return drainScheduleCount;
+    }
+
+    public int getDrainInFlightCount() {
+        return drainInFlightCount;
     }
 
     public long getReadLatencyP50Micros() {

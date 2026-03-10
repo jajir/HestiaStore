@@ -85,6 +85,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private static final String OPERATION_COMPACT = "compact";
     private static final String OPERATION_FLUSH = "flush";
     private static final String OPERATION_DRAIN = "drain";
+    private static final String OPERATION_SCHEDULE_SPLIT = "scheduleSplit";
+    private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
@@ -173,8 +175,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
                         conf, keyToSegmentMap, asyncSplitCoordinator);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
-                        segmentRegistry,
-                        maintenanceCoordinator);
+                        segmentRegistry);
                 this.partitionRuntime = new PartitionRuntime<>(
                         keyTypeDescriptor.getComparator());
                 this.drainExecutor = executorRegistry
@@ -232,7 +233,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         final long walLsn = appendWalPutWithFailureHandling(key, value);
 
-        final IndexResult<Void> result = retryWhileBusyWithSplitWait(
+        final IndexResult<Void> result = retryWhileBusy(
                 () -> putBuffered(key, value), "put", key, false);
         if (result.getStatus() == IndexResultStatus.OK) {
             recordAppliedWalLsn(walLsn);
@@ -298,11 +299,17 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 ? SegmentWindow.unbounded()
                 : segmentWindows;
         Vldtn.requireNonNull(isolation, "isolation");
-        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
-            awaitSplitsIdle();
+        final EntryIterator<K, V> segmentIterator;
+        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION
+                && maintenanceCoordinator.splitInFlightCount() == 0) {
+            segmentIterator = openMergedIteratorWithRouteSnapshot(
+                    resolvedWindows, isolation);
+        } else {
+            if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
+                awaitSplitsIdle();
+            }
+            segmentIterator = openMergedIterator(resolvedWindows, isolation);
         }
-        final EntryIterator<K, V> segmentIterator = openMergedIterator(
-                resolvedWindows, isolation);
         if (isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         }
@@ -325,6 +332,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         drainPartitions(true);
         keyToSegmentMap.getSegmentIds()
                 .forEach(segmentId -> compactSegment(segmentId, true));
+        scheduleEligibleSplits();
     }
 
     /** {@inheritDoc} */
@@ -335,7 +343,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incGetCx();
 
-        final IndexResult<V> result = retryWhileBusyWithSplitWait(
+        final IndexResult<V> result = retryWhileBusy(
                 () -> getBuffered(key), "get", key, true);
         if (result.getStatus() == IndexResultStatus.OK) {
             stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
@@ -359,7 +367,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
         final long walLsn = appendWalDeleteWithFailureHandling(key);
-        final IndexResult<Void> result = retryWhileBusyWithSplitWait(
+        final IndexResult<Void> result = retryWhileBusy(
                 () -> putBuffered(key, valueTypeDescriptor.getTombstone()),
                 "delete", key, false);
         if (result.getStatus() == IndexResultStatus.OK) {
@@ -573,6 +581,19 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 lastAppliedWalLsn.get(), walStats.syncTotalNanos(),
                 walStats.syncMaxNanos(), walStats.syncBatchBytesTotal(),
                 walStats.syncBatchBytesMax(),
+                runtimeTuningState.effectiveValue(
+                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
+                runtimeTuningState.effectiveValue(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
+                partitionSnapshot.getPartitionCount(),
+                partitionSnapshot.getActivePartitionCount(),
+                partitionSnapshot.getDrainingPartitionCount(),
+                partitionSnapshot.getImmutableRunCount(),
+                partitionSnapshot.getBufferedKeyCount(),
+                partitionSnapshot.getLocalThrottleCount(),
+                partitionSnapshot.getGlobalThrottleCount(),
+                partitionSnapshot.getDrainScheduleCount(),
+                partitionSnapshot.getDrainInFlightCount(),
                 segmentRuntime.segmentRuntimeSnapshots, getState());
     }
 
@@ -605,6 +626,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void flushAndWait() {
         drainPartitions(true);
         flushSegments(true);
+        scheduleEligibleSplits();
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
     }
@@ -779,11 +801,81 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
+    private void scheduleSplitAfterDrain(final SegmentId segmentId) {
+        final int threshold = runtimeTuningState.effectiveValue(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
+        if (threshold < 1 || !isSegmentStillMapped(segmentId)) {
+            return;
+        }
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+                    .getSegment(segmentId);
+            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                if (!isSegmentStillMapped(segmentId)) {
+                    return;
+                }
+                retryPolicy.backoffOrThrow(startNanos, OPERATION_SCHEDULE_SPLIT,
+                        segmentId);
+                continue;
+            }
+            if (loaded.getStatus() == SegmentRegistryResultStatus.CLOSED
+                    || !isSegmentStillMapped(segmentId)) {
+                return;
+            }
+            if (loaded.getStatus() != SegmentRegistryResultStatus.OK
+                    || loaded.getValue() == null) {
+                throw new IndexException(String.format(
+                        "Segment '%s' failed to load for split scheduling: %s",
+                        segmentId, loaded.getStatus()));
+            }
+            maintenanceCoordinator.handlePostDrain(loaded.getValue(),
+                    (long) threshold);
+            return;
+        }
+    }
+
+    private void scheduleEligibleSplits() {
+        keyToSegmentMap.getSegmentIds().forEach(this::scheduleSplitAfterDrain);
+    }
+
     private EntryIterator<K, V> openMergedIterator(
             final SegmentWindow resolvedWindows,
             final SegmentIteratorIsolation isolation) {
         final List<SegmentId> segmentIds = keyToSegmentMap
                 .getSegmentIds(resolvedWindows);
+        return openMergedIterator(segmentIds, isolation);
+    }
+
+    private EntryIterator<K, V> openMergedIteratorWithRouteSnapshot(
+            final SegmentWindow resolvedWindows,
+            final SegmentIteratorIsolation isolation) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap
+                    .snapshot();
+            final List<SegmentId> segmentIds = snapshot
+                    .getSegmentIds(resolvedWindows);
+            try {
+                final EntryIterator<K, V> iterator = openMergedIterator(
+                        segmentIds, isolation);
+                if (keyToSegmentMap.isVersion(snapshot.version())) {
+                    return iterator;
+                }
+                iterator.close();
+            } catch (final IndexException e) {
+                if (keyToSegmentMap.isVersion(snapshot.version())) {
+                    throw e;
+                }
+            }
+            retryPolicy.backoffOrThrow(startNanos,
+                    OPERATION_OPEN_FULL_ISOLATION_ITERATOR, null);
+        }
+    }
+
+    private EntryIterator<K, V> openMergedIterator(
+            final List<SegmentId> segmentIds,
+            final SegmentIteratorIsolation isolation) {
         final NavigableMap<K, V> merged = new TreeMap<>(
                 keyTypeDescriptor.getComparator());
         try (EntryIterator<K, V> stableIterator = new SegmentsIterator<>(
@@ -806,7 +898,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final V value = record.getOperation() == WalRuntime.Operation.PUT
                 ? record.getValue()
                 : valueTypeDescriptor.getTombstone();
-        final IndexResult<Void> result = retryWhileBusyWithSplitWait(
+        final IndexResult<Void> result = retryWhileBusy(
                 () -> putBuffered(record.getKey(), value), "walReplay",
                 record.getKey(), false);
         if (result.getStatus() != IndexResultStatus.OK) {
@@ -1126,7 +1218,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
     }
 
-    private <T> IndexResult<T> retryWhileBusyWithSplitWait(
+    private <T> IndexResult<T> retryWhileBusy(
             final Supplier<IndexResult<T>> operation, final String opName,
             final K key, final boolean retryClosed) {
         final long startNanos = retryPolicy.startNanos();
@@ -1135,7 +1227,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.BUSY
                     || (retryClosed && status == IndexResultStatus.CLOSED)) {
-                awaitSplitCompletionForKey(key, startNanos);
                 retryPolicy.backoffOrThrow(startNanos, opName, null);
                 continue;
             }
@@ -1223,34 +1314,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return;
         }
         MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
-    }
-
-    private void awaitSplitCompletionForKey(final K key,
-            final long startNanos) {
-        if (key == null) {
-            return;
-        }
-        final long remainingMillis = remainingBusyTimeoutMillis(startNanos);
-        if (remainingMillis <= 0) {
-            return;
-        }
-        final SegmentId segmentId = keyToSegmentMap.findSegmentId(key);
-        if (segmentId == null) {
-            return;
-        }
-        maintenanceCoordinator.awaitSplitCompletionIfInFlight(segmentId,
-                remainingMillis);
-    }
-
-    private long remainingBusyTimeoutMillis(final long startNanos) {
-        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
-        final long elapsedNanos = System.nanoTime() - startNanos;
-        final long remainingNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
-                - elapsedNanos;
-        if (remainingNanos <= 0) {
-            return 0;
-        }
-        return TimeUnit.NANOSECONDS.toMillis(remainingNanos);
     }
 
     private boolean isSegmentStillMapped(final SegmentId segmentId) {

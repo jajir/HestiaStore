@@ -27,9 +27,6 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
-import org.hestiastore.index.segmentindex.split.SegmentWriterTxFactory;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,22 +86,8 @@ class SegmentIndexImplPutTest {
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
                 .getValue();
         awaitSegmentReady(segment);
-        final ExecutorService segmentMaintenancePool = Executors
-                .newSingleThreadExecutor();
-        try {
-            final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                    directory, tdi, tds, index.getConfiguration(),
-                    segmentMaintenancePool);
-            final SegmentWriterTxFactory<Integer, String> writerTxFactory = id -> segmentFactory
-                    .newSegmentBuilder(id).openWriterTx();
-            final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
-                    index.getConfiguration(), cache, registry, writerTxFactory);
-            splitCoordinator.optionallySplit(segment);
-            awaitSegmentCount(cache, 2);
-            assertEquals(SegmentId.of(1), cache.findSegmentId(1));
-        } finally {
-            segmentMaintenancePool.shutdownNow();
-        }
+        awaitSegmentCount(cache, 2);
+        assertEquals(SegmentId.of(1), cache.findSegmentId(1));
     }
 
     @Test

@@ -66,8 +66,11 @@ public final class MonitoringConsoleWebDemoMain {
                         indexesForNode.get(0), namesForNode.get(0),
                         Set.of("maxNumberOfSegmentsInCache",
                                 "maxNumberOfKeysInSegmentCache",
-                                "maxNumberOfKeysInSegmentWriteCache",
-                                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
+                                "maxNumberOfKeysInActivePartition",
+                                "maxNumberOfImmutableRunsPerPartition",
+                                "maxNumberOfKeysInPartitionBuffer",
+                                "maxNumberOfKeysInIndexBuffer",
+                                "maxNumberOfKeysInPartitionBeforeSplit"));
             } catch (final IOException e) {
                 shutdownResources(loadExecutor, agents, indexes);
                 throw new IllegalStateException(
@@ -143,9 +146,14 @@ public final class MonitoringConsoleWebDemoMain {
                         DEMO_MAX_KEYS_IN_SEGMENT_CACHE)
                 .withMaxNumberOfSegmentsInCache(DEMO_MAX_SEGMENTS_IN_CACHE)
                 .withMaxNumberOfKeysInSegment(DEMO_MAX_KEYS_PER_SEGMENT)
-                .withMaxNumberOfKeysInSegmentWriteCache(DEMO_WRITE_CACHE_KEYS)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+                .withMaxNumberOfKeysInActivePartition(DEMO_WRITE_CACHE_KEYS)
+                .withMaxNumberOfImmutableRunsPerPartition(2)
+                .withMaxNumberOfKeysInPartitionBuffer(
                         DEMO_WRITE_CACHE_KEYS_DURING_MAINTENANCE)
+                .withMaxNumberOfKeysInIndexBuffer(
+                        DEMO_WRITE_CACHE_KEYS_DURING_MAINTENANCE * 4)
+                .withMaxNumberOfKeysInPartitionBeforeSplit(
+                        DEMO_MAX_KEYS_PER_SEGMENT)
                 .withMaxNumberOfDeltaCacheFiles(DEMO_MAX_DELTA_CACHE_FILES)
                 .withBloomFilterIndexSizeInBytes(DEMO_BLOOM_INDEX_SIZE_BYTES)
                 .withContextLoggingEnabled(false)

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.mapping;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,6 +15,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.split.SegmentSplitApplyPlan;
 import org.hestiastore.index.segmentindex.split.SegmentSplitterResult;
 import org.junit.jupiter.api.Test;
@@ -115,6 +117,25 @@ class KeyToSegmentMapTest {
 
         assertEquals(threads * perThread, adapter.getSegmentIds().size());
         adapter.close();
+    }
+
+    @Test
+    void snapshotRetainsSegmentOrderAfterLaterSplitMutation() {
+        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1)),
+                Entry.of(20, SegmentId.of(2)),
+                Entry.of(30, SegmentId.of(3))));
+        final KeyToSegmentMap.Snapshot<Integer> snapshot = cache.snapshot();
+
+        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
+                SegmentId.of(2), SegmentId.of(4), SegmentId.of(5), 11, 15,
+                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+        assertTrue(cache.applySplitPlan(plan));
+
+        assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),
+                snapshot.getSegmentIds(SegmentWindow.unbounded()));
+        assertTrue(cache.isVersion(cache.snapshot().version()));
+        assertFalse(cache.isVersion(snapshot.version()));
     }
 
     private KeyToSegmentMap<Integer> newCacheWithEntries(

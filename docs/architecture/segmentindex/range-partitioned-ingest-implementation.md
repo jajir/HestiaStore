@@ -14,6 +14,15 @@ runtime introduced above stable segment storage.
 The current implementation changes the user write path first. It does not yet
 replace every historical split helper in one step.
 
+## Transitional Split Behavior
+
+- live-segment split is no longer triggered directly from `put()`
+- the current transition slice only evaluates legacy split scheduling on
+  explicit maintenance boundaries such as `flushAndWait()` and
+  `compactAndWait()`
+- background overlay drain itself does not schedule live split work, which
+  avoids reintroducing split-vs-drain contention on the hot write path
+
 ## Read and Write Semantics
 
 - `put()` and `delete()` append to WAL, then update the routed partition
@@ -21,6 +30,12 @@ replace every historical split helper in one step.
 - `get()` reads overlay first and stable segment storage second
 - a successful `put()` is therefore visible to `get()` before any drain
   completes
+- `FULL_ISOLATION` index streaming now prefers a route-snapshot open path and
+  retries if the segment map changes underneath the open; if a legacy split is
+  already scheduled or in flight, it still falls back to the old split-idle
+  barrier for correctness during the transition
+- point operations no longer wait explicitly for in-flight live segment split
+  completion before retrying a `BUSY` path
 - `flushAndWait()` seals active partition data, drains immutable runs into
   stable segment storage, flushes stable segments, and checkpoints WAL
 

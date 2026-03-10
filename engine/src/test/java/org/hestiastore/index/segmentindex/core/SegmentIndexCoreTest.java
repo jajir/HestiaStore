@@ -3,8 +3,6 @@ package org.hestiastore.index.segmentindex.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -37,9 +35,6 @@ class SegmentIndexCoreTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private SegmentMaintenanceCoordinator<String, String> maintenanceCoordinator;
-
-    @Mock
     private Segment<String, String> segment;
 
     private Directory asyncDirectory;
@@ -55,7 +50,7 @@ class SegmentIndexCoreTest {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
         core = new SegmentIndexCore<>(synchronizedKeyToSegmentMap,
-                segmentRegistry, maintenanceCoordinator);
+                segmentRegistry);
     }
 
     @AfterEach
@@ -103,50 +98,6 @@ class SegmentIndexCoreTest {
         final IndexResult<String> result = core.get("key");
 
         assertEquals(IndexResultStatus.BUSY, result.getStatus());
-    }
-
-    @Test
-    void put_schedulesMaintenanceOnSuccess() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        final KeyToSegmentMap.Snapshot<String> snapshot = synchronizedKeyToSegmentMap
-                .snapshot();
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
-        when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
-
-        final IndexResult<Void> result = core.put("key", "value");
-
-        assertEquals(IndexResultStatus.OK, result.getStatus());
-        verify(maintenanceCoordinator).handlePostWrite(segment, "key",
-                segmentId, snapshot.version());
-    }
-
-    @Test
-    void put_returnsBusyWhenMappingChangesBeforeWrite() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
-            synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
-            return SegmentRegistryResult.ok(segment);
-        });
-
-        final IndexResult<Void> result = core.put("key", "value");
-
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
-        verify(segment, never()).put("key", "value");
-        verifyNoInteractions(maintenanceCoordinator);
-    }
-
-    @Test
-    void put_returnsBusyWhenSegmentIsBusy() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
-        when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
-
-        final IndexResult<Void> result = core.put("key", "value");
-
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
-        verifyNoInteractions(maintenanceCoordinator);
     }
 
     @Test

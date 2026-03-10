@@ -118,9 +118,9 @@ public class IndexConfigurationManager<K, V> {
         if (conf.getWal() == null) {
             builder.withWal(defaults.getWal());
         }
-        if (conf.getMaxNumberOfKeysInSegment() == null) {
-            builder.withMaxNumberOfKeysInSegment(
-                    defaults.getMaxNumberOfKeysInSegment());
+        if (conf.getMaxNumberOfKeysInPartitionBeforeSplit() == null) {
+            builder.withMaxNumberOfKeysInPartitionBeforeSplit(
+                    defaults.getMaxNumberOfKeysInPartitionBeforeSplit());
         }
     }
 
@@ -141,25 +141,25 @@ public class IndexConfigurationManager<K, V> {
     private int applyWriteCacheDefaults(final IndexConfiguration<K, V> conf,
             final IndexConfigurationBuilder<K, V> builder,
             final int effectiveMaxNumberOfKeysInSegmentCache) {
-        if (conf.getMaxNumberOfKeysInSegmentWriteCache() == null) {
+        if (conf.getMaxNumberOfKeysInActivePartition() == null) {
             final int effectiveWriteCacheSize = Math.max(1,
                     effectiveMaxNumberOfKeysInSegmentCache / 2);
-            builder.withMaxNumberOfKeysInSegmentWriteCache(
+            builder.withMaxNumberOfKeysInActivePartition(
                     effectiveWriteCacheSize);
             return effectiveWriteCacheSize;
         }
-        return conf.getMaxNumberOfKeysInSegmentWriteCache();
+        return conf.getMaxNumberOfKeysInActivePartition();
     }
 
     private void applyWriteCacheMaintenanceDefaults(
             final IndexConfiguration<K, V> conf,
             final IndexConfigurationBuilder<K, V> builder,
             final int effectiveWriteCacheSize) {
-        if (conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() == null) {
+        if (conf.getMaxNumberOfKeysInPartitionBuffer() == null) {
             final int effectiveFlushBackpressure = Math.max(
                     (int) Math.ceil(effectiveWriteCacheSize * 1.4),
                     effectiveWriteCacheSize + 1);
-            builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
+            builder.withMaxNumberOfKeysInPartitionBuffer(
                     effectiveFlushBackpressure);
         }
     }
@@ -265,13 +265,13 @@ public class IndexConfigurationManager<K, V> {
         dirty |= applyIf(
                 isMaxNumberOfKeysInSegmentWriteCacheOverriden(storedConf,
                         indexConf),
-                () -> builder.withMaxNumberOfKeysInSegmentWriteCache(
-                        indexConf.getMaxNumberOfKeysInSegmentWriteCache()));
+                () -> builder.withMaxNumberOfKeysInActivePartition(
+                        indexConf.getMaxNumberOfKeysInActivePartition()));
         dirty |= applyIf(
                 isMaxNumberOfKeysInSegmentWriteCacheDuringMaintenanceOverriden(
                         storedConf, indexConf),
-                () -> builder.withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()));
+                () -> builder.withMaxNumberOfKeysInPartitionBuffer(
+                        indexConf.getMaxNumberOfKeysInPartitionBuffer()));
         dirty |= applyIf(isMaxNumberOfDeltaCacheFilesOverriden(storedConf,
                 indexConf), () -> builder.withMaxNumberOfDeltaCacheFiles(
                         indexConf.getMaxNumberOfDeltaCacheFiles()));
@@ -382,21 +382,19 @@ public class IndexConfigurationManager<K, V> {
     private boolean isMaxNumberOfKeysInSegmentWriteCacheOverriden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
-        return indexConf.getMaxNumberOfKeysInSegmentWriteCache() != null
-                && indexConf.getMaxNumberOfKeysInSegmentWriteCache() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentWriteCache()
-                        .equals(storedConf
-                                .getMaxNumberOfKeysInSegmentWriteCache());
+        return indexConf.getMaxNumberOfKeysInActivePartition() != null
+                && indexConf.getMaxNumberOfKeysInActivePartition() > 0
+                && !indexConf.getMaxNumberOfKeysInActivePartition()
+                        .equals(storedConf.getMaxNumberOfKeysInActivePartition());
     }
 
     private boolean isMaxNumberOfKeysInSegmentWriteCacheDuringMaintenanceOverriden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
-        return indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() != null
-                && indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() > 0
-                && !indexConf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance()
-                        .equals(storedConf
-                                .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+        return indexConf.getMaxNumberOfKeysInPartitionBuffer() != null
+                && indexConf.getMaxNumberOfKeysInPartitionBuffer() > 0
+                && !indexConf.getMaxNumberOfKeysInPartitionBuffer()
+                        .equals(storedConf.getMaxNumberOfKeysInPartitionBuffer());
     }
 
     private boolean isMaxNumberOfDeltaCacheFilesOverriden(
@@ -586,23 +584,23 @@ public class IndexConfigurationManager<K, V> {
     }
 
     private void validateWriteCacheLimits(final IndexConfiguration<K, V> conf) {
-        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInSegmentWriteCache(),
-                "MaxNumberOfKeysInSegmentWriteCache");
-        if (conf.getMaxNumberOfKeysInSegmentWriteCache() < 1) {
+        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInActivePartition(),
+                "MaxNumberOfKeysInActivePartition");
+        if (conf.getMaxNumberOfKeysInActivePartition() < 1) {
             throw new IllegalArgumentException(
-                    "Max number of keys in segment write cache must be at least 1.");
+                    "Max number of keys in active partition must be at least 1.");
         }
         final int effectiveMaxDuringMaintenance = conf
-                .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() == null
+                .getMaxNumberOfKeysInPartitionBuffer() == null
                         ? Math.max(
-                                conf.getMaxNumberOfKeysInSegmentWriteCache()
-                                        * 2,
-                                conf.getMaxNumberOfKeysInSegmentWriteCache()
+                                conf.getMaxNumberOfKeysInActivePartition() * 2,
+                                conf.getMaxNumberOfKeysInActivePartition()
                                         + 1)
-                        : conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance();
-        if (effectiveMaxDuringMaintenance <= conf.getMaxNumberOfKeysInSegmentWriteCache()) {
+                        : conf.getMaxNumberOfKeysInPartitionBuffer();
+        if (effectiveMaxDuringMaintenance <= conf
+                .getMaxNumberOfKeysInActivePartition()) {
             throw new IllegalArgumentException(
-                    "Max number of keys in segment write cache during maintenance must be greater than the flush threshold.");
+                    "Max number of keys in partition buffer must be greater than the active partition limit.");
         }
     }
 
@@ -722,17 +720,17 @@ public class IndexConfigurationManager<K, V> {
                 // SegmentIndex runtime properties
                 .withMaxNumberOfSegmentsInCache(
                         conf.getMaxNumberOfSegmentsInCache())//
-                .withMaxNumberOfKeysInSegment(
-                        conf.getMaxNumberOfKeysInSegment())//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(
+                        conf.getMaxNumberOfKeysInPartitionBeforeSplit())//
                 .withDiskIoBufferSizeInBytes(conf.getDiskIoBufferSize())//
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        conf.getMaxNumberOfKeysInSegmentWriteCache())//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())//
+                .withMaxNumberOfKeysInActivePartition(
+                        conf.getMaxNumberOfKeysInActivePartition())//
+                .withMaxNumberOfKeysInPartitionBuffer(
+                        conf.getMaxNumberOfKeysInPartitionBuffer())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withMaxNumberOfDeltaCacheFiles(
