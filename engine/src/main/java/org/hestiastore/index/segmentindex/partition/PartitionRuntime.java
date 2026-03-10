@@ -137,6 +137,18 @@ public final class PartitionRuntime<K, V> {
         return totalBufferedKeyCount.get() > 0;
     }
 
+    public void beginSplit(final SegmentId segmentId) {
+        partition(segmentId).beginSplit();
+    }
+
+    public void finishSplit(final SegmentId segmentId) {
+        final RangePartition<K, V> partition = partitions.get(segmentId);
+        if (partition == null) {
+            return;
+        }
+        partition.finishSplit();
+    }
+
     public void reassignOverlayAfterSplit(final SegmentSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
         final RangePartition<K, V> oldPartition = partitions

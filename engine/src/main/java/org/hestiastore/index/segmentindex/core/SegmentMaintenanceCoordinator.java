@@ -9,6 +9,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 
 /**
@@ -18,6 +19,7 @@ import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 final class SegmentMaintenanceCoordinator<K, V> {
 
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final PartitionRuntime<K, V> partitionRuntime;
     private final PartitionStableSplitCoordinator<K, V> splitCoordinator;
     private final Object splitMonitor = new Object();
     private final ReentrantReadWriteLock splitGate = new ReentrantReadWriteLock();
@@ -25,9 +27,12 @@ final class SegmentMaintenanceCoordinator<K, V> {
 
     SegmentMaintenanceCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final PartitionRuntime<K, V> partitionRuntime,
             final PartitionStableSplitCoordinator<K, V> splitCoordinator) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
+        this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
+                "partitionRuntime");
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
     }
@@ -98,14 +103,25 @@ final class SegmentMaintenanceCoordinator<K, V> {
         final long totalKeys = segment.getNumberOfKeysInCache();
         if (totalKeys > splitThreshold) {
             markSplitStarted();
-            final var writeLock = splitGate.writeLock();
-            writeLock.lock();
+            partitionRuntime.beginSplit(segment.getId());
             try {
-                splitCoordinator.optionallySplit(segment, splitThreshold);
+                splitCoordinator.optionallySplit(segment, splitThreshold,
+                        this::runWithExclusiveSplitApply);
             } finally {
-                writeLock.unlock();
+                partitionRuntime.finishSplit(segment.getId());
                 markSplitFinished();
             }
+        }
+    }
+
+    private boolean runWithExclusiveSplitApply(final Supplier<Boolean> action) {
+        Vldtn.requireNonNull(action, "action");
+        final var writeLock = splitGate.writeLock();
+        writeLock.lock();
+        try {
+            return action.get();
+        } finally {
+            writeLock.unlock();
         }
     }
 

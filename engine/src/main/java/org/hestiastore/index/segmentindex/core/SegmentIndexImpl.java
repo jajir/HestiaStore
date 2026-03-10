@@ -172,7 +172,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         conf, keyToSegmentMap, segmentRegistry,
                         writerTxFactory, partitionRuntime);
                 this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                        keyToSegmentMap, splitCoordinator);
+                        keyToSegmentMap, partitionRuntime, splitCoordinator);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
                         segmentRegistry);
                 this.partitionRuntime = partitionRuntime;

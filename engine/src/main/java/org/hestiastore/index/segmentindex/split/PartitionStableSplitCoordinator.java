@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.split;
 
+import java.util.function.Supplier;
+
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -44,6 +46,11 @@ public class PartitionStableSplitCoordinator<K, V> {
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final IndexRetryPolicy retryPolicy;
 
+    @FunctionalInterface
+    public interface SplitApplyRunner {
+        boolean run(Supplier<Boolean> action);
+    }
+
     public PartitionStableSplitCoordinator(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
@@ -76,7 +83,15 @@ public class PartitionStableSplitCoordinator<K, V> {
 
     public boolean optionallySplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
+        return optionallySplit(segment, maxNumberOfKeysInSegment,
+                Supplier::get);
+    }
+
+    public boolean optionallySplit(final Segment<K, V> segment,
+            final long maxNumberOfKeysInSegment,
+            final SplitApplyRunner splitApplyRunner) {
         Vldtn.requireNonNull(segment, SEGMENT_ARG);
+        Vldtn.requireNonNull(splitApplyRunner, "splitApplyRunner");
         final SegmentSplitterPlan<K, V> plan = buildPlan(segment);
         if (!isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)) {
             if (logger.isDebugEnabled()) {
@@ -87,7 +102,8 @@ public class PartitionStableSplitCoordinator<K, V> {
             }
             return false;
         }
-        return splitWithLock(segment, maxNumberOfKeysInSegment);
+        return splitWithLock(segment, maxNumberOfKeysInSegment,
+                splitApplyRunner);
     }
 
     public boolean shouldBeSplit(final Segment<K, V> segment,
@@ -96,7 +112,8 @@ public class PartitionStableSplitCoordinator<K, V> {
     }
 
     private boolean splitWithLock(final Segment<K, V> segment,
-            final long maxNumberOfKeysInSegment) {
+            final long maxNumberOfKeysInSegment,
+            final SplitApplyRunner splitApplyRunner) {
         final SegmentId segmentId = segment.getId();
         logger.debug("Partition split started: segment='{}' threshold='{}'",
                 segmentId, maxNumberOfKeysInSegment);
@@ -130,7 +147,7 @@ public class PartitionStableSplitCoordinator<K, V> {
         final boolean split;
         if (isEligibleForSplit(segment, plan, maxNumberOfKeysInSegment)
                 && hasLiveEntries(segment)) {
-            split = splitLocked(segment, plan);
+            split = splitLocked(segment, plan, splitApplyRunner);
         } else {
             if (logger.isDebugEnabled()) {
                 logger.debug(
@@ -166,7 +183,8 @@ public class PartitionStableSplitCoordinator<K, V> {
     }
 
     private boolean splitLocked(final Segment<K, V> segment,
-            final SegmentSplitterPlan<K, V> plan) {
+            final SegmentSplitterPlan<K, V> plan,
+            final SplitApplyRunner splitApplyRunner) {
         final SegmentId segmentId = segment.getId();
         final SegmentId lowerSegmentId = allocateSegmentId();
         final SegmentId upperSegmentId = allocateSegmentId();
@@ -192,7 +210,8 @@ public class PartitionStableSplitCoordinator<K, V> {
                 .splitWithIterator(lowerSegmentId, upperSegmentId, plan)) {
             applyPlan = SegmentSplitCoordinator.toApplyPlan(segmentId,
                     upperSegmentId, execution.getResult());
-            if (!applySplitPlan(applyPlan, segment)) {
+            if (!splitApplyRunner
+                    .run(() -> applySplitPlan(applyPlan, segment))) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(
                             "Partition split apply failed: segment='{}' lowerSegmentId='{}' upperSegmentId='{}' status='{}'",
