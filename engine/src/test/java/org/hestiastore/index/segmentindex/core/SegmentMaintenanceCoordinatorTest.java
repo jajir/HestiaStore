@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -11,10 +10,9 @@ import java.util.List;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.split.SegmentAsyncSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,9 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentMaintenanceCoordinatorTest {
 
     @Mock
-    private IndexConfiguration<String, String> conf;
-
-    @Mock
     private KeyToSegmentMap<String> keyToSegmentMap;
 
     private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
@@ -36,7 +31,7 @@ class SegmentMaintenanceCoordinatorTest {
     private Segment<String, String> segment;
 
     @Mock
-    private SegmentAsyncSplitCoordinator<String, String> splitCoordinator;
+    private SegmentSplitCoordinator<String, String> splitCoordinator;
 
     @BeforeEach
     void setUp() {
@@ -45,12 +40,11 @@ class SegmentMaintenanceCoordinatorTest {
     }
 
     @Test
-    void returnsEarlyWhenWriteCacheLimitMissing() {
-        assertTrue(true);
-        when(conf.getMaxNumberOfKeysInActivePartition()).thenReturn(null);
+    void returnsEarlyWhenSegmentIsClosed() {
+        when(segment.getState()).thenReturn(SegmentState.CLOSED);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, synchronizedKeyToSegmentMap, splitCoordinator);
+                synchronizedKeyToSegmentMap, splitCoordinator);
 
         coordinator.handlePostDrain(segment, 100L);
 
@@ -61,37 +55,34 @@ class SegmentMaintenanceCoordinatorTest {
     @Test
     void usesSegmentSizeThreshold_notSegmentCacheThreshold() {
         final SegmentId segmentId = SegmentId.of(1);
-        when(conf.getMaxNumberOfKeysInActivePartition()).thenReturn(1);
         when(segment.getId()).thenReturn(segmentId);
         when(segment.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segment.getNumberOfKeysInCache()).thenReturn(50L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, synchronizedKeyToSegmentMap, splitCoordinator);
+                synchronizedKeyToSegmentMap, splitCoordinator);
 
         coordinator.handlePostDrain(segment, 1000L);
 
         verify(segment).getNumberOfKeysInCache();
-        verify(conf, never()).getMaxNumberOfKeysInSegmentCache();
         verifyNoInteractions(splitCoordinator);
     }
 
     @Test
     void schedulesSplitAfterDrainForStillMappedSegment() {
         final SegmentId segmentId = SegmentId.of(1);
-        when(conf.getMaxNumberOfKeysInActivePartition()).thenReturn(1);
         when(segment.getId()).thenReturn(segmentId);
         when(segment.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segment.getNumberOfKeysInCache()).thenReturn(101L);
 
         final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
-                conf, synchronizedKeyToSegmentMap, splitCoordinator);
+                synchronizedKeyToSegmentMap, splitCoordinator);
 
         coordinator.handlePostDrain(segment, 100L);
 
-        verify(splitCoordinator).optionallySplitAsync(segment, 100L);
+        verify(splitCoordinator).optionallySplit(segment, 100L);
     }
 
 }

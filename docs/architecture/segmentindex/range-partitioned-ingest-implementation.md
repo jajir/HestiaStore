@@ -20,6 +20,9 @@ replace every historical split helper in one step.
 - the current transition slice only evaluates legacy split scheduling on
   explicit maintenance boundaries such as `flushAndWait()` and
   `compactAndWait()`
+- when one of those explicit maintenance calls decides to split, the split now
+  executes synchronously inside that maintenance call instead of being handed
+  off to the old async split queue
 - background overlay drain itself does not schedule live split work, which
   avoids reintroducing split-vs-drain contention on the hot write path
 
@@ -31,13 +34,16 @@ replace every historical split helper in one step.
 - a successful `put()` is therefore visible to `get()` before any drain
   completes
 - `FULL_ISOLATION` index streaming now prefers a route-snapshot open path and
-  retries if the segment map changes underneath the open; if a legacy split is
-  already scheduled or in flight, it still falls back to the old split-idle
-  barrier for correctness during the transition
-- point operations no longer wait explicitly for in-flight live segment split
+  retries if the segment map changes underneath the open; if an explicit
+  maintenance-triggered split is already in flight, it still falls back to the
+  split-idle barrier for correctness during the transition
+- point operations no longer wait explicitly for background live-segment split
   completion before retrying a `BUSY` path
 - `flushAndWait()` seals active partition data, drains immutable runs into
-  stable segment storage, flushes stable segments, and checkpoints WAL
+  stable segment storage, flushes stable segments, runs eligible legacy splits,
+  and checkpoints WAL
+- `compactAndWait()` likewise performs its explicit maintenance work under the
+  same split-safe maintenance boundary
 
 ## Drain Contract
 
@@ -47,6 +53,9 @@ replace every historical split helper in one step.
 - drain work is scheduled on index maintenance executors
 - if the overlay exceeds local or global limits, writes receive bounded
   backpressure instead of waiting on a live segment split
+- during explicit `flushAndWait()` / `compactAndWait()` maintenance that may
+  end in a legacy split, write admission is briefly blocked so a drained route
+  cannot be repopulated before the split remaps it
 
 ## Recovery Contract
 

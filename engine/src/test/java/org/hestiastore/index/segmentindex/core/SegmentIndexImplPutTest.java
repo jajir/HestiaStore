@@ -79,7 +79,6 @@ class SegmentIndexImplPutTest {
 
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
-        index.awaitSplitsIdlePublic();
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);

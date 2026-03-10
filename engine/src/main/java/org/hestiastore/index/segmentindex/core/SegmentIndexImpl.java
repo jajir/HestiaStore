@@ -59,7 +59,6 @@ import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeLimits;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.partition.PartitionWriteResultStatus;
-import org.hestiastore.index.segmentindex.split.SegmentAsyncSplitCoordinator;
 import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
 import org.hestiastore.index.segmentindex.split.SegmentWriterTxFactory;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -169,11 +168,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .newSegmentBuilder(id).openWriterTx();
                 final SegmentSplitCoordinator<K, V> splitCoordinator = new SegmentSplitCoordinator<>(
                         conf, keyToSegmentMap, segmentRegistry, writerTxFactory);
-                final SegmentAsyncSplitCoordinator<K, V> asyncSplitCoordinator = new SegmentAsyncSplitCoordinator<>(
-                        splitCoordinator,
-                        executorRegistry.getIndexMaintenanceExecutor());
                 this.maintenanceCoordinator = new SegmentMaintenanceCoordinator<>(
-                        conf, keyToSegmentMap, asyncSplitCoordinator);
+                        keyToSegmentMap, splitCoordinator);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
                         segmentRegistry);
                 this.partitionRuntime = new PartitionRuntime<>(
@@ -329,10 +325,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
-        drainPartitions(true);
-        keyToSegmentMap.getSegmentIds()
-                .forEach(segmentId -> compactSegment(segmentId, true));
-        scheduleEligibleSplits();
+        maintenanceCoordinator.runWithExclusiveWriteAdmission(() -> {
+            drainPartitions(true);
+            keyToSegmentMap.getSegmentIds()
+                    .forEach(segmentId -> compactSegment(segmentId, true));
+            scheduleEligibleSplits();
+        });
     }
 
     /** {@inheritDoc} */
@@ -624,30 +622,35 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        drainPartitions(true);
-        flushSegments(true);
-        scheduleEligibleSplits();
+        maintenanceCoordinator.runWithExclusiveWriteAdmission(() -> {
+            drainPartitions(true);
+            flushSegments(true);
+            scheduleEligibleSplits();
+        });
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
-        final IndexResult<SegmentId> routeResult = resolveWriteSegmentId(key);
-        if (routeResult.getStatus() != IndexResultStatus.OK
-                || routeResult.getValue() == null) {
-            return toVoidResult(routeResult.getStatus());
-        }
-        final SegmentId segmentId = routeResult.getValue();
-        partitionRuntime.ensurePartition(segmentId);
-        final var writeResult = partitionRuntime.write(segmentId, key, value,
-                currentPartitionRuntimeLimits());
-        if (writeResult.getStatus() == PartitionWriteResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (writeResult.isDrainRecommended()) {
-            schedulePartitionDrain(segmentId);
-        }
-        return IndexResult.ok();
+        return maintenanceCoordinator.runWithStableWriteAdmission(() -> {
+            final IndexResult<SegmentId> routeResult = resolveWriteSegmentId(
+                    key);
+            if (routeResult.getStatus() != IndexResultStatus.OK
+                    || routeResult.getValue() == null) {
+                return toVoidResult(routeResult.getStatus());
+            }
+            final SegmentId segmentId = routeResult.getValue();
+            partitionRuntime.ensurePartition(segmentId);
+            final var writeResult = partitionRuntime.write(segmentId, key,
+                    value, currentPartitionRuntimeLimits());
+            if (writeResult.getStatus() == PartitionWriteResultStatus.BUSY) {
+                return IndexResult.busy();
+            }
+            if (writeResult.isDrainRecommended()) {
+                schedulePartitionDrain(segmentId);
+            }
+            return IndexResult.ok();
+        });
     }
 
     private IndexResult<V> getBuffered(final K key) {
