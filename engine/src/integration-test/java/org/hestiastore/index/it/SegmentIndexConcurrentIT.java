@@ -21,7 +21,9 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -256,6 +258,7 @@ class SegmentIndexConcurrentIT {
                     backgroundFailure);
         }
 
+        awaitMaintenanceSettled(index, 10_000L);
         checkAndRepairConsistencyWithRetry(index, 5_000L);
         index.flushAndWait();
 
@@ -512,6 +515,37 @@ class SegmentIndexConcurrentIT {
                 Thread.sleep(5L);
             }
         }
+    }
+
+    private static void awaitMaintenanceSettled(
+            final SegmentIndex<Integer, Integer> index,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (System.nanoTime() < deadline) {
+            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            final boolean segmentsStable = snapshot.getSegmentRuntimeSnapshots()
+                    .stream()
+                    .map(SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot::getState)
+                    .noneMatch(state -> state == SegmentState.MAINTENANCE_RUNNING
+                            || state == SegmentState.FREEZE);
+            if (segmentsStable && snapshot.getDrainInFlightCount() == 0
+                    && snapshot.getImmutableRunCount() == 0
+                    && snapshot.getDrainingPartitionCount() == 0
+                    && snapshot.getSplitInFlightCount() == 0) {
+                return;
+            }
+            try {
+                Thread.sleep(10L);
+            } catch (final InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(
+                        "Interrupted while waiting for maintenance to settle",
+                        ex);
+            }
+        }
+        throw new AssertionError(
+                "Timed out waiting for background maintenance to settle");
     }
 
     private static int scaleByCpu(final int operations) {
