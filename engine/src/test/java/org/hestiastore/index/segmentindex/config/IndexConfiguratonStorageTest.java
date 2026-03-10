@@ -36,6 +36,7 @@ class IndexConfiguratonStorageTest {
         assertEquals(2, loaded.getMaxNumberOfImmutableRunsPerPartition());
         assertEquals(3, loaded.getMaxNumberOfKeysInPartitionBuffer());
         assertEquals(9, loaded.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(11, loaded.getMaxNumberOfKeysInSegment());
         assertEquals(10, loaded.getMaxNumberOfKeysInPartitionBeforeSplit());
     }
 
@@ -84,6 +85,7 @@ class IndexConfiguratonStorageTest {
         assertEquals(5, loaded.getMaxNumberOfKeysInActivePartition());
         assertEquals(9, loaded.getMaxNumberOfKeysInPartitionBuffer());
         assertEquals(36, loaded.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(30, loaded.getMaxNumberOfKeysInSegment());
         assertEquals(30, loaded.getMaxNumberOfKeysInPartitionBeforeSplit());
     }
 
@@ -101,6 +103,7 @@ class IndexConfiguratonStorageTest {
                 .withMaxNumberOfKeysInPartitionBuffer(3)//
                 .withMaxNumberOfKeysInIndexBuffer(9)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaxNumberOfKeysInSegment(11)//
                 .withMaxNumberOfKeysInPartitionBeforeSplit(10)//
                 .withMaxNumberOfSegmentsInCache(3)//
                 .withBloomFilterNumberOfHashFunctions(1)//

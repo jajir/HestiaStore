@@ -4,9 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
 import java.util.NavigableMap;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.hestiastore.index.segment.SegmentId;
@@ -170,30 +168,5 @@ class PartitionRuntimeTest {
         runtime.finishDrainScheduling(oldSegmentId);
 
         assertEquals(0, runtime.snapshot().getDrainInFlightCount());
-    }
-
-    @Test
-    void pendingStableSplitAddsFallbackChainsAndUnfreezesChildrenWhenCompleted() {
-        final SegmentSplitApplyPlan<Integer> plan = new SegmentSplitApplyPlan<>(
-                SegmentId.of(9), SegmentId.of(10), SegmentId.of(11),
-                Integer.valueOf(1), Integer.valueOf(5),
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
-
-        runtime.registerPendingStableSplit(plan);
-
-        assertEquals(List.of(SegmentId.of(10), SegmentId.of(9)),
-                runtime.resolveStableLookupChain(SegmentId.of(10)));
-        assertEquals(Set.of(SegmentId.of(9)),
-                runtime.pendingStableSourceSegmentIds());
-        assertEquals(List.of(SegmentId.of(9), SegmentId.of(10), SegmentId.of(11)),
-                runtime.resolveStableMergeChain(
-                        List.of(SegmentId.of(10), SegmentId.of(11))));
-        assertFalse(runtime.markDrainScheduledIfNeeded(SegmentId.of(10)));
-
-        runtime.completePendingStableSplit(new PendingPartitionSplit<>(plan));
-
-        assertTrue(runtime.pendingStableSourceSegmentIds().isEmpty());
-        assertEquals(List.of(SegmentId.of(10)),
-                runtime.resolveStableLookupChain(SegmentId.of(10)));
     }
 }

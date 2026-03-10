@@ -168,6 +168,10 @@ public class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> conf,
             final IndexConfigurationContract defaults,
             final IndexConfigurationBuilder<K, V> builder) {
+        if (conf.getMaxNumberOfKeysInSegment() == null) {
+            builder.withMaxNumberOfKeysInSegment(
+                    defaults.getMaxNumberOfKeysInSegment());
+        }
         if (conf.getMaxNumberOfSegmentsInCache() == null) {
             builder.withMaxNumberOfSegmentsInCache(
                     defaults.getMaxNumberOfSegmentsInCache());
@@ -569,6 +573,12 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Max number of keys in segment must be at least 4.");
         }
+        Vldtn.requireNonNull(conf.getMaxNumberOfKeysInPartitionBeforeSplit(),
+                "MaxNumberOfKeysInPartitionBeforeSplit");
+        if (conf.getMaxNumberOfKeysInPartitionBeforeSplit() < 1) {
+            throw new IllegalArgumentException(
+                    "Max number of keys in partition before split must be at least 1.");
+        }
         Vldtn.requireNonNull(conf.getMaxNumberOfSegmentsInCache(),
                 "MaxNumberOfSegmentsInCache");
         if (conf.getMaxNumberOfSegmentsInCache() < 3) {
@@ -720,6 +730,8 @@ public class IndexConfigurationManager<K, V> {
                 // SegmentIndex runtime properties
                 .withMaxNumberOfSegmentsInCache(
                         conf.getMaxNumberOfSegmentsInCache())//
+                .withMaxNumberOfKeysInSegment(
+                        conf.getMaxNumberOfKeysInSegment())//
                 .withMaxNumberOfKeysInPartitionBeforeSplit(
                         conf.getMaxNumberOfKeysInPartitionBeforeSplit())//
                 .withDiskIoBufferSizeInBytes(conf.getDiskIoBufferSize())//

@@ -1,0 +1,160 @@
+# Benchmark History and Per-Change Comparison
+
+This module now contains a branch-based workflow for comparing benchmark
+results across changes instead of relying only on ad-hoc local JMH runs.
+
+## Goals
+
+- Show what a specific change did to the most important SegmentIndex
+  performance scenarios.
+- Keep the comparison reproducible by using fixed benchmark profiles.
+- Preserve raw JMH JSON and machine-readable metadata for later inspection.
+- Separate short per-change checks from longer nightly trend runs.
+
+## Canonical Profiles
+
+Profile definitions live in [profiles](/Users/jan/projects/HestiaStore/benchmarks/profiles):
+
+- `segment-index-pr-smoke`
+  - short per-change profile for PRs and local refactor validation
+- `segment-index-nightly`
+  - longer profile for trend tracking on `main`
+
+Both profiles currently include:
+
+- `SegmentIndexGetBenchmark` with `readPathMode=persisted`
+- `SegmentIndexGetBenchmark` with `readPathMode=overlay`
+- `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
+- `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
+
+## Runner and Compare Scripts
+
+Scripts live in [scripts](/Users/jan/projects/HestiaStore/benchmarks/scripts):
+
+- [run_jmh_profile.py](/Users/jan/projects/HestiaStore/benchmarks/scripts/run_jmh_profile.py)
+  - packages the benchmark jar
+  - runs each scenario from a profile
+  - writes raw JMH JSON, stdout logs, normalized summary, and metadata
+- [compare_jmh_profile.py](/Users/jan/projects/HestiaStore/benchmarks/scripts/compare_jmh_profile.py)
+  - compares two `summary.json` outputs
+  - emits markdown and machine-readable comparison JSON
+  - classifies metrics as `better`, `neutral`, `warning`, or `worse`
+
+## Output Model
+
+Each run produces:
+
+- `raw/<label>.json`
+- `logs/<label>.log`
+- `summary.json`
+
+`summary.json` is the stable compare input. It records:
+
+- profile name
+- git SHA / branch / dirty flag
+- host metadata
+- exact benchmark args
+- normalized primary and secondary JMH metrics
+
+## Local Usage
+
+Run a canonical profile:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile segment-index-pr-smoke \
+  --output-dir /tmp/hestia-bench/current
+```
+
+Compare two runs:
+
+```sh
+python3 benchmarks/scripts/compare_jmh_profile.py \
+  --baseline /tmp/hestia-bench/base/summary.json \
+  --candidate /tmp/hestia-bench/current/summary.json \
+  --markdown-out /tmp/hestia-bench/comparison.md \
+  --json-out /tmp/hestia-bench/comparison.json
+```
+
+## CI Workflow
+
+The workflow is [benchmark-compare.yml](/Users/jan/projects/HestiaStore/.github/workflows/benchmark-compare.yml).
+
+Current behavior:
+
+- pull requests to `main`
+  - run `segment-index-pr-smoke`
+  - first try to compare PR candidate against the latest canonical baseline
+    stored in the `perf-artifacts` branch
+  - if no stored baseline exists yet, fall back to merge-base with the target
+    branch
+- nightly schedule
+  - run `segment-index-nightly`
+  - compare `HEAD` against the latest stored nightly baseline from
+    `perf-artifacts`
+  - if no stored baseline exists yet, fall back to `HEAD~1`
+  - publish the new candidate run into `perf-artifacts`
+- manual dispatch
+  - can override profile, history branch, baseline ref, candidate ref, fail
+    policy, and whether to publish into history
+
+The workflow uses two git worktrees on the same runner so baseline and
+candidate execute under the same machine conditions when a fallback git baseline
+run is needed.
+
+## `perf-artifacts` Branch
+
+The intended long-lived store is a dedicated branch such as `perf-artifacts`.
+
+The branch contains only generated benchmark history data, not source code.
+Current layout:
+
+```text
+history/
+  index.json
+  <profile>/
+    latest-main.json
+    YYYY/
+      MM/
+        <timestamp>_<sha>_<run-id>/
+          summary.json
+          raw/
+          logs/
+          comparison-vs-previous.md
+          comparison-vs-previous.json
+```
+
+`latest-main.json` is the pointer used by PR and nightly compare runs.
+
+## Recommended Interpretation Model
+
+Use the per-change report for immediate review:
+
+- `neutral`
+  - within noise tolerance
+- `warning`
+  - noticeable regression, inspect before merging
+- `worse`
+  - large regression; block or justify
+
+Current default thresholds in the compare script:
+
+- `<= 3%` change: neutral
+- `3-7%` regression: warning
+- `> 7%` regression: worse
+
+## What This Solves
+
+- You can now compare one change against a concrete baseline on the same
+  runner.
+- Raw JMH outputs are not lost inside console logs.
+- Group benchmarks with secondary metrics (`get` vs `put`) are preserved and
+  compared separately.
+
+## What Still Remains
+
+This branch-based MVP gives us canonical nightly baselines and per-change
+comparison against them. The next step, if needed, is a separate report
+generator over `perf-artifacts` to render long-term trend charts or release
+to release summaries.

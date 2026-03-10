@@ -1,0 +1,66 @@
+{
+  "profile": "segment-index-pr-smoke",
+  "description": "Short canonical SegmentIndex benchmark set for per-change comparison.",
+  "benchmarks": [
+    {
+      "label": "segment-index-get-persisted",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-t", "4",
+        "-p", "readPathMode=persisted",
+        "-p", "snappy=true",
+        "-p", "keyCount=12000",
+        "-p", "maxKeysInChunk=256",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-get-overlay",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-t", "4",
+        "-p", "readPathMode=overlay",
+        "-p", "snappy=true",
+        "-p", "keyCount=12000",
+        "-p", "maxKeysInChunk=256",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-mixed-drain",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "hotKeySpace=256",
+        "-p", "workloadMode=drainOnly"
+      ]
+    },
+    {
+      "label": "segment-index-mixed-split-heavy",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "hotKeySpace=256",
+        "-p", "workloadMode=splitHeavy"
+      ]
+    }
+  ]
+}

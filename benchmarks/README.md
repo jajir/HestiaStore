@@ -2,6 +2,10 @@
 
 This module isolates JMH dependencies from production modules.
 
+See also:
+
+- [Benchmark history and per-change comparison](./benchmark-history.md)
+
 ## Why separate module
 
 - JMH dependencies are declared only here.
@@ -34,6 +38,7 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Bench
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotPartitionPutBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 ```
 
 Compare both modes in one run (recommended):
@@ -49,10 +54,41 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBe
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=overlay -prof gc
+```
+
+Mixed partitioned-ingest workloads with concurrent reads:
+
+```sh
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark -p workloadMode=splitHeavy -prof gc
 ```
 
 Quick smoke run:
 
 ```sh
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "ChunkStore.*Benchmark" -wi 1 -i 1 -f 1 -r 1s -w 1s
+```
+
+## Canonical compare flow
+
+Canonical profile definitions live in `benchmarks/profiles`.
+
+Run a profile locally:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile segment-index-pr-smoke \
+  --output-dir /tmp/hestia-bench/current
+```
+
+Compare two profile runs:
+
+```sh
+python3 benchmarks/scripts/compare_jmh_profile.py \
+  --baseline /tmp/hestia-bench/base/summary.json \
+  --candidate /tmp/hestia-bench/current/summary.json \
+  --markdown-out /tmp/hestia-bench/comparison.md \
+  --json-out /tmp/hestia-bench/comparison.json
 ```

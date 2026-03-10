@@ -36,6 +36,7 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInIndexBuffer;
     private final Integer maxNumberOfKeysInSegmentChunk;
     private final Integer maxNumberOfDeltaCacheFiles;
+    private final Integer maxNumberOfKeysInPartitionBeforeSplit;
 
     /*
      * Segment index configuration
@@ -85,6 +86,7 @@ public class IndexConfiguration<K, V> {
             final Integer maxNumberOfKeysInSegmentChunk, //
             final Integer maxNumberOfDeltaCacheFiles, //
             final Integer maxNumberOfKeysInSegment, //
+            final Integer maxNumberOfKeysInPartitionBeforeSplit, //
             final Integer maxNumberOfSegmentsInCache, //
             final String indexName, //
             final Integer bloomFilterNumberOfHashFunctions, //
@@ -112,6 +114,7 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
+        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
         this.indexName = indexName;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
@@ -244,7 +247,7 @@ public class IndexConfiguration<K, V> {
      * @return max keys before a partition is split
      */
     public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return maxNumberOfKeysInSegment;
+        return maxNumberOfKeysInPartitionBeforeSplit;
     }
 
     /**

@@ -57,6 +57,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER = "maxNumberOfKeysInIndexBuffer";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = "maxNumberOfKeysInSegmentChunk";
         public static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = "maxNumberOfDeltaCacheFiles";
+        public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = "maxNumberOfKeysInPartitionBeforeSplit";
         public static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
         public static final String PROP_INDEX_WORKER_THREAD_COUNT = "indexWorkerThreadCount";
@@ -85,7 +86,7 @@ public final class IndexPropertiesSchema {
 
         public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
         public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
-        public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
+        public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
 
         private IndexConfigurationKeys() {
         }

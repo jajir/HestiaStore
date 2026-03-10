@@ -16,6 +16,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
  */
 public interface IndexConfigurationContract {
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
+    int MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = 10_000_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
     int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
     int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
@@ -90,7 +91,7 @@ public interface IndexConfigurationContract {
      * @return default max keys per segment
      */
     default int getMaxNumberOfKeysInSegment() {
-        return getMaxNumberOfKeysInPartitionBeforeSplit();
+        return MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     }
 
     /**
@@ -139,7 +140,7 @@ public interface IndexConfigurationContract {
      * @return default partition split threshold
      */
     default int getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return MAX_NUMBER_OF_KEYS_IN_SEGMENT;
+        return MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
     }
 
     /**

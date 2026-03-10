@@ -18,18 +18,18 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 ## Transitional Split Behavior
 
 - live-segment split is no longer triggered directly from `put()`
-- the current transition slice only evaluates partition-aware stable split
-  scheduling on explicit maintenance boundaries such as `flushAndWait()` and
-  `compactAndWait()`
-- when one of those explicit maintenance calls decides to split, the split now
-  executes synchronously inside that maintenance call instead of being handed
-  off to the old async split queue
+- the current transition slice evaluates partition-aware stable split
+  scheduling from a coalesced background policy scan over current routed
+  partitions
+- when the background split policy decides a routed partition should split,
+  child stable segments are materialized from the parent stable snapshot before
+  the final route remap is published
 - if buffered overlay data still exists for the parent route at split-apply
   time, it is reassigned to the produced child routes as part of the same
   partition-aware split apply step instead of being left on the retired parent
   segment id
-- background overlay drain itself does not schedule live split work, which
-  avoids reintroducing split-vs-drain contention on the hot write path
+- background overlay drain only requests another policy scan; it does not run
+  split work inline on the hot write path
 - point `get()` now runs under the same short split-apply read gate as `put()`,
   so remap plus overlay reassignment cannot expose a stale point lookup during
   the split apply window
@@ -38,6 +38,9 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - while a split is building child stable segments, drain back into the parent
   route is temporarily suspended so newly buffered data stays in overlay and is
   reassigned to child routes if the split applies
+- there is no longer a runtime-only pending split fallback chain after route
+  apply; by the time the new route becomes visible, the child stable data
+  already exist on disk
 
 ## Read and Write Semantics
 
@@ -52,10 +55,14 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - point operations no longer wait explicitly for background live-segment split
   completion before retrying a `BUSY` path
 - `flushAndWait()` seals active partition data, drains immutable runs into
-  stable segment storage, flushes stable segments, runs eligible partition-aware
-  stable splits, and checkpoints WAL
-- `compactAndWait()` likewise performs its explicit maintenance work under the
-  same split-safe maintenance boundary
+  stable segment storage, waits for any partition-aware stable splits already
+  scheduled by background drain, drains again if split apply reassigned overlay
+  data to child routes, waits again for any second-wave split scheduled by that
+  follow-up drain, flushes stable segments, and checkpoints WAL
+- `compactAndWait()` likewise waits for any split already scheduled by
+  background drain before compacting stable segments, so compaction does not
+  overlap with split materialization of the same routed range; the same second
+  drain plus wait cycle is repeated before compaction begins
 
 ## Drain Contract
 
@@ -63,6 +70,35 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - immutable runs remain readable until they are successfully drained and
   flushed into stable storage
 - drain work is scheduled on index maintenance executors
+- partition-aware stable split build work is scheduled on a dedicated
+  split-maintenance executor so the heavy child materialization phase no
+  longer runs on the explicit maintenance caller thread
+- a periodic autonomous background split policy loop runs while the index is
+  open; it keeps reevaluating routed stable ranges even when no new writes,
+  reopen, or runtime-threshold patch occurs
+- the autonomous loop is driven by a dedicated split-policy scheduler owned by
+  the index executor registry, so `close()` shuts down both split execution and
+  future policy ticks together with the rest of index maintenance infrastructure
+- that autonomous loop only performs a full routed scan when overlay, drain,
+  and split backlog are idle; hot write periods still rely on targeted
+  post-drain split scheduling for the specific routed partition that just
+  drained
+- split scheduling keeps a per-segment cooldown and retry-growth hysteresis
+  window; if a borderline split candidate fails or aborts, the background loop
+  does not immediately thrash on the same stable range again unless either
+  enough time passes or the routed segment grows materially
+- that cooldown is adaptive rather than fixed: longer split attempts stretch
+  the next retry window, while short split attempts decay it back toward the
+  baseline
+- additional immediate background split policy scans are still triggered on
+  open, after consistency repair, and after runtime split-threshold changes
+- explicit `flushAndWait()` / `compactAndWait()` no longer initiate split
+  scanning themselves; they only wait for in-flight split work that was
+  already triggered by the background policy path
+- while explicit stable flush/compaction is running, new autonomous split
+  candidates are temporarily ignored; a fresh idle scan is requested right
+  after explicit maintenance completes so split materialization does not race
+  against that maintenance on the same routed range
 - if the overlay exceeds local or global limits, writes receive bounded
   backpressure instead of waiting on a live segment split
 - during the brief split-apply window itself, write admission is still gated
@@ -77,7 +113,7 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - WAL replay restores acknowledged writes that were not yet published
 - startup and explicit consistency checks delete orphaned segment directories
   that are not referenced from the persisted routing metadata, which covers
-  abandoned route-first split children after interrupted maintenance
+  abandoned split children after interrupted maintenance
 - durability after `flushAndWait()` is defined by successful stable-segment
   flush plus WAL checkpoint
 

@@ -147,11 +147,11 @@ class IndexInternalConcurrentTest {
                 SegmentWindow.unbounded(),
                 SegmentIteratorIsolation.FAIL_FAST)) {
             stream.count();
+            assertEquals(0, awaitSplitsIdleCalls.get());
         } finally {
             streamingIndex.close();
         }
-
-        assertEquals(0, awaitSplitsIdleCalls.get());
+        assertEquals(2, awaitSplitsIdleCalls.get());
     }
 
     @Test
@@ -166,10 +166,11 @@ class IndexInternalConcurrentTest {
                     .getStream(SegmentWindow.unbounded(),
                             SegmentIteratorIsolation.FULL_ISOLATION)) {
                 assertEquals(2, stream.count());
+                assertEquals(0, awaitSplitsIdleCalls.get());
             }
         }
 
-        assertEquals(0, awaitSplitsIdleCalls.get());
+        assertEquals(2, awaitSplitsIdleCalls.get());
     }
 
     private static class RecordingIndex

@@ -104,6 +104,10 @@ class IntegrationSegmentIndexIteratorTest {
                 .withKeyTypeDescriptor(TD_INTEGER) //
                 .withValueTypeDescriptor(TD_STRING) //
                 .withMaxNumberOfKeysInSegmentCache(3) //
+                .withMaxNumberOfKeysInActivePartition(64) //
+                .withMaxNumberOfKeysInPartitionBuffer(128) //
+                .withMaxNumberOfKeysInIndexBuffer(256) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(1) //
                 .withBloomFilterIndexSizeInBytes(1000) //
