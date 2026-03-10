@@ -1,0 +1,145 @@
+name: WAL Tools Distribution Release
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+  push:
+    branches: [ "main", "develop" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+concurrency:
+  group: wal-tools-release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-distribution:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      zip_name: ${{ steps.assets.outputs.zip_name }}
+      sha_name: ${{ steps.assets.outputs.sha_name }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Cache local Maven repository
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    - name: Smoke test WAL tools scripts
+      run: |
+        mvn -B -pl wal-tools -am \
+          -Dtest=org.hestiastore.waltools.WalToolsScriptsTest \
+          -Dsurefire.failIfNoSpecifiedTests=false \
+          test --file pom.xml
+
+    - name: Build WAL tools distribution
+      run: mvn -B -pl wal-tools -am -DskipTests package --file pom.xml
+
+    - name: Smoke test packaged WAL tool scripts
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ZIP_PATH="$(ls wal-tools/target/wal-tools-*.zip | head -n1)"
+        TMP_DIR="$(mktemp -d)"
+        unzip -q "${ZIP_PATH}" -d "${TMP_DIR}"
+
+        DIST_DIR="$(find "${TMP_DIR}" -maxdepth 1 -type d -name 'wal-tools-*' | head -n1)"
+        if [[ -z "${DIST_DIR}" ]]; then
+          echo "Unable to locate extracted wal-tools distribution directory."
+          exit 1
+        fi
+
+        MISSING_WAL_DIR="${TMP_DIR}/missing-wal-dir"
+
+        set +e
+        "${DIST_DIR}/bin/wal_verify" "${MISSING_WAL_DIR}" >"${TMP_DIR}/verify.out" 2>&1
+        VERIFY_EXIT=$?
+        "${DIST_DIR}/bin/wal_dump" "${MISSING_WAL_DIR}" >"${TMP_DIR}/dump.out" 2>&1
+        DUMP_EXIT=$?
+        set -e
+
+        if [[ ${VERIFY_EXIT} -ne 1 ]]; then
+          echo "Expected wal_verify missing-path exit code 1, got ${VERIFY_EXIT}."
+          cat "${TMP_DIR}/verify.out"
+          exit 1
+        fi
+        if [[ ${DUMP_EXIT} -ne 1 ]]; then
+          echo "Expected wal_dump missing-path exit code 1, got ${DUMP_EXIT}."
+          cat "${TMP_DIR}/dump.out"
+          exit 1
+        fi
+        if ! grep -q "WAL directory does not exist" "${TMP_DIR}/verify.out"; then
+          echo "wal_verify output did not include missing-directory error."
+          cat "${TMP_DIR}/verify.out"
+          exit 1
+        fi
+        if ! grep -q "WAL directory does not exist" "${TMP_DIR}/dump.out"; then
+          echo "wal_dump output did not include missing-directory error."
+          cat "${TMP_DIR}/dump.out"
+          exit 1
+        fi
+
+    - name: Generate SHA256 checksum
+      id: assets
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ZIP_PATH="$(ls wal-tools/target/wal-tools-*.zip | head -n1)"
+        ZIP_NAME="$(basename "${ZIP_PATH}")"
+        SHA_NAME="${ZIP_NAME}.sha256"
+
+        (
+          cd wal-tools/target
+          sha256sum "${ZIP_NAME}" > "${SHA_NAME}"
+        )
+
+        echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+        echo "sha_name=${SHA_NAME}" >> "$GITHUB_OUTPUT"
+
+    - name: Upload WAL tools build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wal-tools-distribution-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          wal-tools/target/${{ steps.assets.outputs.zip_name }}
+          wal-tools/target/${{ steps.assets.outputs.sha_name }}
+        if-no-files-found: error
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-distribution
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download WAL tools build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: wal-tools-distribution-${{ github.run_id }}-${{ github.run_attempt }}
+        path: dist
+
+    - name: Publish GitHub release assets
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/${{ needs.build-distribution.outputs.zip_name }}
+          dist/${{ needs.build-distribution.outputs.sha_name }}
+        generate_release_notes: true
+        fail_on_unmatched_files: true
+        overwrite_files: true

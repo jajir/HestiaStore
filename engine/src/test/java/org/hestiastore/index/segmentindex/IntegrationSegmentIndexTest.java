@@ -140,12 +140,17 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withKeyTypeDescriptor(tdi) //
                 .withValueTypeDescriptor(tds) //
                 .withMaxNumberOfKeysInSegmentCache(16) //
-                .withMaxNumberOfKeysInSegmentWriteCache(8) //
+                .withMaxNumberOfKeysInActivePartition(128) //
+                .withMaxNumberOfImmutableRunsPerPartition(4) //
+                .withMaxNumberOfKeysInPartitionBuffer(256) //
+                .withMaxNumberOfKeysInIndexBuffer(512) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(256) //
                 .withMaxNumberOfKeysInSegment(4) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
+                .withSegmentMaintenanceAutoEnabled(false) //
                 .withContextLoggingEnabled(withLog) //
                 .withName("test_index") //
                 .build();

@@ -17,6 +17,9 @@ import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.WalDurabilityMode;
 
 /**
  * Persists {@link IndexConfiguration} instances to the index configuration
@@ -36,14 +39,16 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_CONTEXT_LOGGING_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_CONTEXT_LOGGING_ENABLED;
 
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE;
-    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE;
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION;
+    private static final String PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION;
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER;
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
     private static final String PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
+    private static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
-    private static final String PROP_NUMBER_OF_IO_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_IO_THREADS;
     private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS;
@@ -56,6 +61,14 @@ public class IndexConfiguratonStorage<K, V> {
     private static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_DISK_IO_BUFFER_SIZE_IN_BYTES;
     private static final String PROP_ENCODING_CHUNK_FILTERS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS;
     private static final String PROP_DECODING_CHUNK_FILTERS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS;
+    private static final String PROP_WAL_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_ENABLED;
+    private static final String PROP_WAL_DURABILITY_MODE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_DURABILITY_MODE;
+    private static final String PROP_WAL_SEGMENT_SIZE_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_SEGMENT_SIZE_BYTES;
+    private static final String PROP_WAL_GROUP_SYNC_DELAY_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_DELAY_MILLIS;
+    private static final String PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES;
+    private static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT;
+    private static final String PROP_WAL_CORRUPTION_POLICY = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY;
+    private static final String PROP_WAL_EPOCH_SUPPORT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT;
 
     private static final String CONFIGURATION_FILENAME = IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
 
@@ -80,19 +93,34 @@ public class IndexConfiguratonStorage<K, V> {
                 ? maxNumberOfKeysInSegmentCache / 2
                 : IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
                         / 2;
-        final long maxNumberOfKeysInSegmentWriteCache = getOrDefaultLong(
-                propsView, PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
+        final long maxNumberOfKeysInActivePartition = getOrDefaultLong(
+                propsView, PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
                 defaultMaxNumberOfKeysInSegmentWriteCache);
         final long defaultWriteCacheDuringMaintenance = Math.max(
-                maxNumberOfKeysInSegmentWriteCache * 2,
-                maxNumberOfKeysInSegmentWriteCache + 1);
-        final long maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = getOrDefaultLong(
-                propsView,
-                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE,
+                maxNumberOfKeysInActivePartition * 2,
+                maxNumberOfKeysInActivePartition + 1);
+        final long maxNumberOfKeysInPartitionBuffer = getOrDefaultLong(propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
                 defaultWriteCacheDuringMaintenance);
+        final int maxNumberOfImmutableRunsPerPartition = getOrDefault(propsView,
+                PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
+                IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION);
+        final long maxNumberOfKeysInIndexBuffer = getOrDefaultLong(propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
+                Math.max(maxNumberOfKeysInPartitionBuffer,
+                        maxNumberOfKeysInPartitionBuffer
+                                * Math.max(1L,
+                                        propsView.getInt(
+                                                PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))));
         final int maxNumberOfDeltaCacheFiles = getOrDefault(propsView,
                 PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES);
+        final int maxNumberOfKeysInPartitionBeforeSplit = getOrDefault(propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
+        final int maxNumberOfKeysInSegment = getOrDefault(propsView,
+                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
+                maxNumberOfKeysInPartitionBeforeSplit);
         final IndexConfigurationBuilder<K, V> builder = IndexConfiguration
                 .<K, V>builder()//
                 .withKeyClass(keyClass) //
@@ -104,27 +132,29 @@ public class IndexConfiguratonStorage<K, V> {
                 // SegmentIndex runtime properties
                 .withMaxNumberOfSegmentsInCache(
                         propsView.getInt(PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE))//
-                .withMaxNumberOfKeysInSegment(
-                        propsView.getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT))//
+                .withMaxNumberOfKeysInSegment(maxNumberOfKeysInSegment)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(
+                        maxNumberOfKeysInPartitionBeforeSplit)//
                 .withDiskIoBufferSizeInBytes(
                         propsView.getInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES))//
 
                 // Segment properties
                 .withMaxNumberOfKeysInSegmentCache(
                         (int) maxNumberOfKeysInSegmentCache)//
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        (int) maxNumberOfKeysInSegmentWriteCache)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        (int) maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)//
+                .withMaxNumberOfKeysInActivePartition(
+                        (int) maxNumberOfKeysInActivePartition)//
+                .withMaxNumberOfImmutableRunsPerPartition(
+                        maxNumberOfImmutableRunsPerPartition)//
+                .withMaxNumberOfKeysInPartitionBuffer(
+                        (int) maxNumberOfKeysInPartitionBuffer)//
+                .withMaxNumberOfKeysInIndexBuffer(
+                        (int) maxNumberOfKeysInIndexBuffer)//
                 .withMaxNumberOfKeysInSegmentChunk(propsView
                         .getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
                 .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)//
                 .withIndexWorkerThreadCount(getOrDefault(propsView,
                         PROP_INDEX_WORKER_THREAD_COUNT,
                         IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT))//
-                .withNumberOfIoThreads(getOrDefault(propsView,
-                        PROP_NUMBER_OF_IO_THREADS,
-                        IndexConfigurationContract.NUMBER_OF_IO_THREADS))//
                 .withNumberOfSegmentIndexMaintenanceThreads(getOrDefault(
                         propsView, PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
                         IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
@@ -175,6 +205,38 @@ public class IndexConfiguratonStorage<K, V> {
             builder.withDecodingFilters(parseFilterList(decodingFilters));
         }
 
+        final boolean walEnabled = getOrDefaultBoolean(propsView,
+                PROP_WAL_ENABLED, false);
+        if (walEnabled) {
+            builder.withWal(Wal.builder()//
+                    .withDurabilityMode(resolveEnum(propsView,
+                            PROP_WAL_DURABILITY_MODE,
+                            Wal.DEFAULT_DURABILITY_MODE,
+                            WalDurabilityMode.class))//
+                    .withSegmentSizeBytes(getOrDefaultLong(propsView,
+                            PROP_WAL_SEGMENT_SIZE_BYTES,
+                            Wal.DEFAULT_SEGMENT_SIZE_BYTES))//
+                    .withGroupSyncDelayMillis(getOrDefault(propsView,
+                            PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
+                            Wal.DEFAULT_GROUP_SYNC_DELAY_MILLIS))//
+                    .withGroupSyncMaxBatchBytes(getOrDefault(propsView,
+                            PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
+                            Wal.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES))//
+                    .withMaxBytesBeforeForcedCheckpoint(getOrDefaultLong(
+                            propsView,
+                            PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+                            Wal.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT))//
+                    .withCorruptionPolicy(resolveEnum(propsView,
+                            PROP_WAL_CORRUPTION_POLICY,
+                            Wal.DEFAULT_CORRUPTION_POLICY,
+                            WalCorruptionPolicy.class))//
+                    .withEpochSupport(getOrDefaultBoolean(propsView,
+                            PROP_WAL_EPOCH_SUPPORT, false))//
+                    .build());
+        } else {
+            builder.withWal(Wal.EMPTY);
+        }
+
         return builder.build();
     }
 
@@ -205,18 +267,22 @@ public class IndexConfiguratonStorage<K, V> {
                 indexConfiguration.getMaxNumberOfSegmentsInCache());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
                 indexConfiguration.getMaxNumberOfKeysInSegment());
+        writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                indexConfiguration.getMaxNumberOfKeysInPartitionBeforeSplit());
         writer.setInt(PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,
                 indexConfiguration.getDiskIoBufferSize());
 
         // Segment properties
         writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 indexConfiguration.getMaxNumberOfKeysInSegmentCache());
-        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
-                indexConfiguration.getMaxNumberOfKeysInSegmentWriteCache());
-        writer.setLong(
-                PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE,
-                indexConfiguration
-                        .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
+                indexConfiguration.getMaxNumberOfKeysInActivePartition());
+        writer.setInt(PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
+                indexConfiguration.getMaxNumberOfImmutableRunsPerPartition());
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
+                indexConfiguration.getMaxNumberOfKeysInPartitionBuffer());
+        writer.setLong(PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
+                indexConfiguration.getMaxNumberOfKeysInIndexBuffer());
         writer.setInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 indexConfiguration.getMaxNumberOfKeysInSegmentChunk());
         final int deltaCacheFileCount = indexConfiguration
@@ -230,11 +296,6 @@ public class IndexConfiguratonStorage<K, V> {
                         ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
                         : indexConfiguration.getIndexWorkerThreadCount();
         writer.setInt(PROP_INDEX_WORKER_THREAD_COUNT, threadCount);
-        final int ioThreadCount = indexConfiguration
-                .getNumberOfIoThreads() == null
-                        ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
-                        : indexConfiguration.getNumberOfIoThreads();
-        writer.setInt(PROP_NUMBER_OF_IO_THREADS, ioThreadCount);
         final int maintenanceThreads = indexConfiguration
                 .getNumberOfSegmentIndexMaintenanceThreads() == null
                         ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
@@ -287,6 +348,20 @@ public class IndexConfiguratonStorage<K, V> {
 
         writer.setString(PROP_DECODING_CHUNK_FILTERS,
                 serializeFilters(indexConfiguration.getDecodingChunkFilters()));
+        final Wal wal = Wal.orEmpty(indexConfiguration.getWal());
+        writer.setBoolean(PROP_WAL_ENABLED, wal.isEnabled());
+        writer.setString(PROP_WAL_DURABILITY_MODE,
+                wal.getDurabilityMode().name());
+        writer.setLong(PROP_WAL_SEGMENT_SIZE_BYTES, wal.getSegmentSizeBytes());
+        writer.setInt(PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
+                wal.getGroupSyncDelayMillis());
+        writer.setInt(PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
+                wal.getGroupSyncMaxBatchBytes());
+        writer.setLong(PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+                wal.getMaxBytesBeforeForcedCheckpoint());
+        writer.setString(PROP_WAL_CORRUPTION_POLICY,
+                wal.getCorruptionPolicy().name());
+        writer.setBoolean(PROP_WAL_EPOCH_SUPPORT, wal.isEpochSupport());
         SCHEMA.writeMetadata(writer);
         tx.close();
     }
@@ -365,6 +440,19 @@ public class IndexConfiguratonStorage<K, V> {
             return defaultValue;
         }
         return Boolean.parseBoolean(value);
+    }
+
+    private <T extends Enum<T>> T resolveEnum(final PropertyView propsView,
+            final String key, final T defaultValue, final Class<T> enumClass) {
+        final String value = propsView.getString(key);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Enum.valueOf(enumClass, value.trim());
+        } catch (final IllegalArgumentException ex) {
+            return defaultValue;
+        }
     }
 
 }

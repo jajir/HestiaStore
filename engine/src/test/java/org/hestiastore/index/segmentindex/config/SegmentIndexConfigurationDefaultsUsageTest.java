@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -22,6 +24,8 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                 .<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                .withValueTypeDescriptor(new TypeDescriptorShortString())//
                 .withName("defaults-check-index")//
                 .build();
 
@@ -51,9 +55,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getIndexWorkerThreadCount(),
                     actual.getIndexWorkerThreadCount(),
                     "Number of threads must come from contract defaults");
-            assertEquals(defaults.getNumberOfIoThreads(),
-                    actual.getNumberOfIoThreads(),
-                    "Number of IO threads must come from contract defaults");
             assertEquals(defaults.getNumberOfRegistryLifecycleThreads(),
                     actual.getNumberOfRegistryLifecycleThreads(),
                     "Registry lifecycle threads must come from contract defaults");

@@ -2,11 +2,10 @@ package org.hestiastore.index.bloomfilter;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Default on-disk backed Bloom filter implementation.
@@ -17,8 +16,6 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
         implements BloomFilter<K> {
 
     private static final int INITIAL_REUSABLE_BUFFER_SIZE = 64;
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final Directory directoryFacade;
 
@@ -31,8 +28,6 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     private final int numberOfHashFunctions;
 
     private final int indexSizeInBytes;
-
-    private final String relatedObjectName;
 
     private Hash hash;
 
@@ -52,8 +47,7 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
                 "bloomFilterFileName");
         this.convertorToBytes = Vldtn.requireNonNull(convertorToBytes,
                 "convertorToBytes");
-        this.relatedObjectName = Vldtn.requireNonNull(relatedObjectName,
-                "relatedObjectName");
+        Vldtn.requireNonNull(relatedObjectName, "relatedObjectName");
         this.indexSizeInBytes = indexSizeInBytes;
         this.numberOfHashFunctions = numberOfHashFunctions;
         this.bloomFilterStats = new BloomFilterStats();
@@ -61,7 +55,6 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
         Vldtn.requireGreaterThanZero(numberOfHashFunctions,
                 "numberOfHashFunctions");
         hash = loadHashIfPresent();
-        logger.debug("Opening bloom filter for '{}'", relatedObjectName);
     }
 
     @Override
@@ -117,20 +110,16 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
     }
 
     private boolean isNotStoredInternal(final K key) {
-        final int bytesLength = convertorToBytes.bytesLength(key);
-        Vldtn.requireGreaterThanZero(bytesLength, "bytesLength");
-        byte[] buffer = reusableBytesBuffer.get();
-        if (buffer.length < bytesLength) {
-            buffer = new byte[bytesLength];
-            reusableBytesBuffer.set(buffer);
+        final byte[] reusableBuffer = reusableBytesBuffer.get();
+        final EncodedBytes encoded = convertorToBytes.encode(key,
+                reusableBuffer);
+        final int bytesLength = Vldtn.requireGreaterThanZero(
+                encoded.getLength(), "bytesLength");
+        final byte[] encodedBytes = encoded.getBytes();
+        if (encodedBytes != reusableBuffer) {
+            reusableBytesBuffer.set(encodedBytes);
         }
-        final int writtenBytes = convertorToBytes.toBytes(key, buffer);
-        if (writtenBytes != bytesLength) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
-                    bytesLength));
-        }
-        return hash.isNotStored(buffer, writtenBytes);
+        return hash.isNotStored(encodedBytes, bytesLength);
     }
 
     @Override
@@ -155,7 +144,6 @@ final class BloomFilterImpl<K> extends AbstractCloseableResource
 
     @Override
     protected void doClose() {
-        logger.debug("Closing bloom filter for '{}'. {}", relatedObjectName,
-                bloomFilterStats.getStatsString());
+        // no-op
     }
 }

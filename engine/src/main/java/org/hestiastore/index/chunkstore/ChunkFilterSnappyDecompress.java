@@ -30,6 +30,6 @@ public class ChunkFilterSnappyDecompress implements ChunkFilter {
     }
 
     byte[] decompressPayload(final ByteSequence payload) throws IOException {
-        return Snappy.uncompress(payload.toByteArrayCopy());
+        return Snappy.uncompress(payload.toByteArray());
     }
 }

@@ -1,7 +1,7 @@
 package org.hestiastore.index.directory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.hestiastore.index.bytes.ByteSequences;
 import org.junit.jupiter.api.Test;

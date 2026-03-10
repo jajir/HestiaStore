@@ -4,7 +4,7 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 ## 💾 Durability and Recovery
 
-- No WAL recovery: There is no write‑ahead log to replay after a crash. Durability boundaries are explicit `flushAndWait()` and `close()`. Writes still in the index write buffer (in‑memory `UniqueCache`) are not durable until flushed. See Recovery.
+- WAL is optional and disabled by default (`Wal.EMPTY`). With WAL disabled, durability boundaries are explicit `flushAndWait()` and `close()`. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.
 - Per‑file atomicity only: Writers use temp files + atomic rename; groups of files (e.g., SST + scarce index + bloom) commit in a safe order but not as a single atomic unit. Readers remain consistent because old files stay in place until each rename. See SegmentFullWriterTx, BloomFilterWriterTx.
 - Filesystem requirement: Crash safety relies on same‑directory atomic `rename`. Use local filesystems; be cautious with network filesystems that may not guarantee strict atomicity.
 - Stale lock files: A crash can leave `.lock` behind, preventing open until removed. See `directory/FsFileLock.java` and IndexState*. Remove the file only when certain no process still uses the directory.
@@ -50,8 +50,8 @@ Attempts to change these raise an error in `IndexConfigurationManager.validateTh
 
 ## 🚫 Anti‑patterns
 
-- Expecting durability without flush/close.
-- Relying on WAL replay (not implemented).
+- Expecting WAL recovery semantics without enabling WAL via `withWal(...)`.
+- Expecting `ASYNC` WAL mode to preserve every acknowledged write after OS/power loss.
 - Very large single segments (>2 GiB `vNN-index.sst`); split into more segments.
 - Heavy mixed concurrent reads/writes with strict low‑latency tail in synchronized mode (coarse locking).
 

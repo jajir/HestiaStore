@@ -20,8 +20,8 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -256,8 +256,9 @@ class SegmentIndexConcurrentIT {
                     backgroundFailure);
         }
 
+        flushAndWaitWithRetry(index, 30_000L);
         checkAndRepairConsistencyWithRetry(index, 5_000L);
-        index.flushAndWait();
+        flushAndWaitWithRetry(index, 30_000L);
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -514,6 +515,25 @@ class SegmentIndexConcurrentIT {
         }
     }
 
+    private static void flushAndWaitWithRetry(
+            final SegmentIndex<Integer, Integer> index,
+            final long timeoutMillis) throws InterruptedException {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (true) {
+            try {
+                index.flushAndWait();
+                return;
+            } catch (final IndexException exception) {
+                if (!isTransientIndexFailure(exception)
+                        || System.nanoTime() >= deadline) {
+                    throw exception;
+                }
+            }
+            Thread.sleep(10L);
+        }
+    }
+
     private static int scaleByCpu(final int operations) {
         if (TEST_CPU_THREADS >= 4) {
             return operations;
@@ -544,6 +564,12 @@ class SegmentIndexConcurrentIT {
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
+                .withSegmentMaintenanceAutoEnabled(false)//
+                .withMaxNumberOfKeysInActivePartition(256)//
+                .withMaxNumberOfImmutableRunsPerPartition(4)//
+                .withMaxNumberOfKeysInPartitionBuffer(1_024)//
+                .withMaxNumberOfKeysInIndexBuffer(4_096)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000)//
                 .withMaxNumberOfKeysInSegmentCache(30)//
                 .withMaxNumberOfKeysInSegment(20)// small to trigger splits
                 .withMaxNumberOfKeysInSegmentChunk(5)//

@@ -7,11 +7,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 
 class SegmentPropertiesManagerTest {
 
@@ -186,6 +189,25 @@ class SegmentPropertiesManagerTest {
         props.switchDirectory(newDirectory);
 
         assertEquals(0L, props.getVersion());
+    }
+
+    @Test
+    void commitTx_appliesConfiguredIndexNameToMdcAndRestoresPreviousValue() {
+        final SegmentPropertiesManager managerWithContext = new SegmentPropertiesManager(
+                directory, id, "orders");
+        final AtomicReference<String> mdcSeenInsideTransaction = new AtomicReference<>();
+        MDC.put("index.name", "previous");
+
+        managerWithContext.commitTx("mdcProbe", writer -> {
+            mdcSeenInsideTransaction.set(MDC.get("index.name"));
+            writer.setInt(
+                    IndexPropertiesSchema.SegmentKeys.NUMBER_OF_SEGMENT_CACHE_DELTA_FILES,
+                    0);
+        });
+
+        assertEquals("orders", mdcSeenInsideTransaction.get());
+        assertEquals("previous", MDC.get("index.name"));
+        MDC.remove("index.name");
     }
 
     @BeforeEach

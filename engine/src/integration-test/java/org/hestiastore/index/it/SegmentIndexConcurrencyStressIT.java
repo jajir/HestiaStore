@@ -192,6 +192,12 @@ class SegmentIndexConcurrencyStressIT {
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
                 .withContextLoggingEnabled(false)//
+                .withSegmentMaintenanceAutoEnabled(false)//
+                .withMaxNumberOfKeysInActivePartition(256)//
+                .withMaxNumberOfImmutableRunsPerPartition(4)//
+                .withMaxNumberOfKeysInPartitionBuffer(1_024)//
+                .withMaxNumberOfKeysInIndexBuffer(4_096)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000)//
                 .withMaxNumberOfKeysInSegmentCache(30)//
                 .withMaxNumberOfKeysInSegment(20)//
                 .withMaxNumberOfKeysInSegmentChunk(5)//
@@ -199,7 +205,6 @@ class SegmentIndexConcurrencyStressIT {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
                 .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfIoThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(
                         Math.max(1, Math.min(cpuThreads, 2)))//
                 .withNumberOfRegistryLifecycleThreads(

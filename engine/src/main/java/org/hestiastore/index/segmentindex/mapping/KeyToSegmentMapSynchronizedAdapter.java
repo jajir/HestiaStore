@@ -84,6 +84,15 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
+    public boolean isVersion(final long expectedVersion) {
+        readLock.lock();
+        try {
+            return delegate.isVersion(expectedVersion);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
     public boolean isMappingValid(final K key,
             final SegmentId expectedSegmentId, final long expectedVersion) {
         readLock.lock();

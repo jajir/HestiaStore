@@ -33,27 +33,17 @@ public class VarShortLengthWriter<T> implements TypeWriter<T> {
      */
     @Override
     public int write(final FileWriter writer, final T object) {
+        final EncodedBytes encodedPayload = convertor.encode(object,
+                payloadBytes);
         final int payloadLength = Vldtn.requireGreaterThanOrEqualToZero(
-                convertor.bytesLength(object), "payloadLength");
+                encodedPayload.getLength(), "payloadLength");
         if (payloadLength > 127) {
             throw new IllegalArgumentException("Converted type is too big");
         }
-        ensurePayloadBufferSize(payloadLength);
-        final int writtenBytes = convertor.toBytes(object, payloadBytes);
-        if (writtenBytes != payloadLength) {
-            throw new IllegalStateException(String.format(
-                    "Encoder wrote '%s' bytes but declared '%s'", writtenBytes,
-                    payloadLength));
-        }
+        payloadBytes = encodedPayload.getBytes();
         writer.write((byte) payloadLength);
         writer.write(payloadBytes, 0, payloadLength);
         return 1 + payloadLength;
-    }
-
-    private void ensurePayloadBufferSize(final int payloadLength) {
-        if (payloadBytes.length < payloadLength) {
-            payloadBytes = new byte[payloadLength];
-        }
     }
 
 }

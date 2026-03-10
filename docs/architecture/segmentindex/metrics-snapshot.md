@@ -5,14 +5,36 @@ for index-level telemetry.
 
 ## Current fields
 
-- `getOperationCount`  
-  Total number of `get(...)` calls accepted by the index instance.
-- `putOperationCount`  
-  Total number of `put(...)` calls accepted by the index instance.
-- `deleteOperationCount`  
-  Total number of `delete(...)` calls accepted by the index instance.
-- `state`  
-  Current `SegmentIndexState` at snapshot creation time.
+- Operation counters:
+  - `getOperationCount`
+  - `putOperationCount`
+  - `deleteOperationCount`
+- Registry and segment state:
+  - `registryCache*`
+  - `segment*`
+  - `totalSegmentKeys`
+  - `totalSegmentCacheKeys`
+  - `totalWriteCacheKeys`
+- Partitioned ingest overlay:
+  - `maxNumberOfKeysInActivePartition`
+  - `maxNumberOfImmutableRunsPerPartition`
+  - `maxNumberOfKeysInPartitionBuffer`
+  - `maxNumberOfKeysInIndexBuffer`
+  - `partitionCount`
+  - `activePartitionCount`
+  - `drainingPartitionCount`
+  - `immutableRunCount`
+  - `partitionBufferedKeyCount`
+  - `localThrottleCount`
+  - `globalThrottleCount`
+  - `drainScheduleCount`
+  - `drainInFlightCount`
+- WAL and latency:
+  - `wal*`
+  - `readLatencyP50/P95/P99Micros`
+  - `writeLatencyP50/P95/P99Micros`
+- Lifecycle:
+  - `state`
 
 ## Semantics
 
@@ -21,6 +43,11 @@ for index-level telemetry.
 - Counters are process-local and reset when a new index object is created.
 - Field values represent observed operation calls, not necessarily durable
   writes on disk.
+- `partitionBufferedKeyCount` counts only overlay-resident keys; it is a
+  subset of `totalWriteCacheKeys`.
+- Legacy `split*` and `maintenance*` fields remain in the snapshot for
+  compatibility, but partition-specific fields are the authoritative view for
+  the new ingest runtime.
 
 ## Compatibility policy
 

@@ -143,7 +143,8 @@ class SegmentRegistryCacheTest {
                 assertSame(first, value);
             }
         }
-        assertEquals(1, loads.get());
+        assertTrue(loads.get() >= 1 && loads.get() <= 2,
+                "Load failure must fan out to waiters; one retry after entry removal is acceptable.");
     }
 
     @Test
@@ -316,7 +317,8 @@ class SegmentRegistryCacheTest {
     }
 
     @Test
-    void failedEvictionCloseLeavesEntryUnloadingAndBusy() throws Exception {
+    void failedEvictionCloseCancelsUnloadAndKeepsEntryAvailable()
+            throws Exception {
         final CountDownLatch closeStarted = new CountDownLatch(1);
         final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
@@ -330,8 +332,13 @@ class SegmentRegistryCacheTest {
             assertEquals("value-2", cache.get(2));
             assertTrue(closeStarted.await(1, TimeUnit.SECONDS));
 
-            assertThrows(SegmentRegistryCache.EntryBusyException.class,
-                    () -> cache.get(1));
+            waitUntil(() -> {
+                try {
+                    return "value-1".equals(cache.get(1));
+                } catch (final SegmentRegistryCache.EntryBusyException ex) {
+                    return false;
+                }
+            }, 1000);
             assertEquals(2, cache.getSize());
         } finally {
             unloadExecutor.shutdownNow();

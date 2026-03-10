@@ -107,6 +107,17 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
+    void segmentAndPartitionSplitLimitsRemainIndependent() {
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .withMaxNumberOfKeysInSegment(5)
+                .withMaxNumberOfKeysInPartitionBeforeSplit(777)
+                .build();
+
+        assertEquals(5, config.getMaxNumberOfKeysInSegment());
+        assertEquals(777, config.getMaxNumberOfKeysInPartitionBeforeSplit());
+    }
+
+    @Test
     void withMaxNumberOfSegmentsInCacheSetsValue() {
         final int value = 42;
         final IndexConfiguration<Integer, String> config = newBuilder()
@@ -137,14 +148,6 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .withIndexWorkerThreadCount(value).build();
         assertEquals(value, config.getIndexWorkerThreadCount());
-    }
-
-    @Test
-    void withNumberOfIoThreadsSetsValue() {
-        final int value = 3;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withNumberOfIoThreads(value).build();
-        assertEquals(value, config.getNumberOfIoThreads());
     }
 
     @Test

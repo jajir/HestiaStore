@@ -15,6 +15,10 @@ public record IndexReportResponse(String indexName, String state,
         int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
         int maxNumberOfKeysInSegmentWriteCache,
         int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+        int maxNumberOfKeysInActivePartition,
+        int maxNumberOfImmutableRunsPerPartition,
+        int maxNumberOfKeysInPartitionBuffer,
+        int maxNumberOfKeysInIndexBuffer,
         int segmentCount, int segmentReadyCount,
         int segmentMaintenanceCount, int segmentErrorCount,
         int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
@@ -22,10 +26,15 @@ public record IndexReportResponse(String indexName, String state,
         long totalDeltaCacheFiles, long compactRequestCount,
         long flushRequestCount, long splitScheduleCount, int splitInFlightCount,
         int maintenanceQueueSize, int maintenanceQueueCapacity,
-        int splitQueueSize, int splitQueueCapacity, long readLatencyP50Micros,
-        long readLatencyP95Micros, long readLatencyP99Micros,
-        long writeLatencyP50Micros, long writeLatencyP95Micros,
-        long writeLatencyP99Micros, int bloomFilterHashFunctions,
+        int splitQueueSize, int splitQueueCapacity, int partitionCount,
+        int activePartitionCount, int drainingPartitionCount,
+        int immutableRunCount, int partitionBufferedKeyCount,
+        long localThrottleCount, long globalThrottleCount,
+        long drainScheduleCount, int drainInFlightCount,
+        long readLatencyP50Micros, long readLatencyP95Micros,
+        long readLatencyP99Micros, long writeLatencyP50Micros,
+        long writeLatencyP95Micros, long writeLatencyP99Micros,
+        int bloomFilterHashFunctions,
         int bloomFilterIndexSizeInBytes,
         double bloomFilterProbabilityOfFalsePositive,
         long bloomFilterRequestCount, long bloomFilterRefusedCount,
@@ -54,6 +63,14 @@ public record IndexReportResponse(String indexName, String state,
                 "maxNumberOfKeysInSegmentWriteCache");
         requireNotNegative(maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
                 "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        requireNotNegative(maxNumberOfKeysInActivePartition,
+                "maxNumberOfKeysInActivePartition");
+        requireNotNegative(maxNumberOfImmutableRunsPerPartition,
+                "maxNumberOfImmutableRunsPerPartition");
+        requireNotNegative(maxNumberOfKeysInPartitionBuffer,
+                "maxNumberOfKeysInPartitionBuffer");
+        requireNotNegative(maxNumberOfKeysInIndexBuffer,
+                "maxNumberOfKeysInIndexBuffer");
         requireNotNegative(segmentCount, "segmentCount");
         requireNotNegative(segmentReadyCount, "segmentReadyCount");
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
@@ -73,6 +90,17 @@ public record IndexReportResponse(String indexName, String state,
                 "maintenanceQueueCapacity");
         requireNotNegative(splitQueueSize, "splitQueueSize");
         requireNotNegative(splitQueueCapacity, "splitQueueCapacity");
+        requireNotNegative(partitionCount, "partitionCount");
+        requireNotNegative(activePartitionCount, "activePartitionCount");
+        requireNotNegative(drainingPartitionCount,
+                "drainingPartitionCount");
+        requireNotNegative(immutableRunCount, "immutableRunCount");
+        requireNotNegative(partitionBufferedKeyCount,
+                "partitionBufferedKeyCount");
+        requireNotNegative(localThrottleCount, "localThrottleCount");
+        requireNotNegative(globalThrottleCount, "globalThrottleCount");
+        requireNotNegative(drainScheduleCount, "drainScheduleCount");
+        requireNotNegative(drainInFlightCount, "drainInFlightCount");
         requireNotNegative(readLatencyP50Micros, "readLatencyP50Micros");
         requireNotNegative(readLatencyP95Micros, "readLatencyP95Micros");
         requireNotNegative(readLatencyP99Micros, "readLatencyP99Micros");
@@ -137,12 +165,14 @@ public record IndexReportResponse(String indexName, String state,
                 registryCacheLimit, segmentCacheKeyLimitPerSegment,
                 maxNumberOfKeysInSegmentWriteCache,
                 maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                0, 0, 0, 0,
                 segmentCount, segmentReadyCount, segmentMaintenanceCount,
                 segmentErrorCount, segmentClosedCount, segmentBusyCount,
                 totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
                 totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
+                0, 0, 0, 0, 0, 0L, 0L, 0L, 0,
                 readLatencyP50Micros, readLatencyP95Micros, readLatencyP99Micros,
                 writeLatencyP50Micros, writeLatencyP95Micros,
                 writeLatencyP99Micros, bloomFilterHashFunctions,

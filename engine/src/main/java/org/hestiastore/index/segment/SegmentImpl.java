@@ -175,6 +175,13 @@ class SegmentImpl<K, V> implements Segment<K, V> {
      */
     @Override
     public SegmentResult<Void> compact() {
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Compact requested: segment='{}' state='{}' deltaFiles='{}' writeCacheKeys='{}' keysInCache='{}'",
+                    core.getId(), gate.getState(), core.getDeltaCacheFileCount(),
+                    core.getNumberOfKeysInWriteCache(),
+                    core.getNumberOfKeysInCache());
+        }
         final AtomicReference<SegmentCompacter.CompactionPlan<K, V>> planRef = new AtomicReference<>();
         final SegmentResult<Void> result = maintenanceService.startMaintenance(() -> {
             final SegmentCompacter.CompactionPlan<K, V> plan = segmentCompacter
@@ -187,6 +194,10 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             segmentCompacter.scheduleCleanup(planRef.get(), maintenanceExecutor);
             scheduleMaintenanceIfNeeded();
         });
+        if (logger.isDebugEnabled()) {
+            logger.debug("Compact scheduling finished: segment='{}' status='{}'",
+                    core.getId(), result.getStatus());
+        }
         if (result.getStatus() == SegmentResultStatus.OK) {
             compactRequestCx.increment();
         }
@@ -226,16 +237,32 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     @Override
     public SegmentResult<Void> flush() {
         flushRequestCx.increment();
-        if (core.getDeltaCacheFileCount() >= core.getSegmentConf()
-                .getMaxNumberOfDeltaCacheFiles()) {
+        final int deltaFileCount = core.getDeltaCacheFileCount();
+        final int maxDeltaFileCount = core.getSegmentConf()
+                .getMaxNumberOfDeltaCacheFiles();
+        if (deltaFileCount >= maxDeltaFileCount) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Flush escalated to compact: segment='{}' deltaFiles='{}' maxDeltaFiles='{}'",
+                        core.getId(), deltaFileCount, maxDeltaFileCount);
+            }
             return compact();
         }
-        return maintenanceService.startMaintenance(() -> {
-            core.freezeWriteCacheForFlush();
-            return new SegmentMaintenanceWork(
-                    core::flushFrozenWriteCacheToDeltaFile,
-                    core::applyFrozenWriteCacheAfterFlush);
-        }, this::scheduleMaintenanceIfNeeded);
+        final SegmentResult<Void> result = maintenanceService.startMaintenance(
+                () -> {
+                    core.freezeWriteCacheForFlush();
+                    return new SegmentMaintenanceWork(
+                            core::flushFrozenWriteCacheToDeltaFile,
+                            core::applyFrozenWriteCacheAfterFlush);
+                }, this::scheduleMaintenanceIfNeeded);
+        if (logger.isDebugEnabled()
+                && result.getStatus() == SegmentResultStatus.OK) {
+            logger.debug(
+                    "Flush started: segment='{}' state='{}' deltaFiles='{}' maxDeltaFiles='{}' writeCacheKeys='{}'",
+                    core.getId(), gate.getState(), deltaFileCount,
+                    maxDeltaFileCount, core.getNumberOfKeysInWriteCache());
+        }
+        return result;
     }
 
     private void scheduleMaintenanceIfNeeded() {

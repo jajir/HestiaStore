@@ -8,17 +8,12 @@ package org.hestiastore.index.datatype;
 public interface TypeEncoder<T> {
 
     /**
-     * @param value value to encode
-     * @return exact encoded size in bytes
-     */
-    int bytesLength(T value);
-
-    /**
-     * Encodes value into destination array.
+     * Encodes value in a single operation and returns both payload bytes and
+     * the effective encoded length.
      *
      * @param value value to encode
-     * @param destination destination buffer
-     * @return number of bytes written
+     * @param reusableBuffer caller-provided reusable buffer
+     * @return encoded payload metadata
      */
-    int toBytes(T value, byte[] destination);
+    EncodedBytes encode(T value, byte[] reusableBuffer);
 }

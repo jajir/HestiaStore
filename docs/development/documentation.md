@@ -8,6 +8,9 @@ Documentation is available in the following locations:
 
 Following text is about HestiaStore.org site documentation.
 
+For page structure, diagram handling, navigation updates, and other writing
+rules, see [Documentation Guidelines](documentation-guidelines.md).
+
 ## Refactor backlog
 
 The project-wide refactor backlog lives in `docs/refactor-backlog.md`. Use it

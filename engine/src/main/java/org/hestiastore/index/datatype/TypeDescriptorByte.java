@@ -2,6 +2,8 @@ package org.hestiastore.index.datatype;
 
 import java.util.Comparator;
 
+import org.hestiastore.index.Vldtn;
+
 /**
  * Descriptor for {@link Byte} values.
  */
@@ -11,19 +13,17 @@ public class TypeDescriptorByte implements TypeDescriptor<Byte> {
 
     private static final TypeEncoder<Byte> CONVERTOR_TO_BYTES = new TypeEncoder<Byte>() {
         @Override
-        public int bytesLength(final Byte object) {
-            return REQUIRED_BYTES;
-        }
-
-        @Override
-        public int toBytes(final Byte object, final byte[] destination) {
-            if (destination.length < REQUIRED_BYTES) {
-                throw new IllegalArgumentException(String.format(
-                        "Destination buffer too small. Required '%s' but was '%s'",
-                        REQUIRED_BYTES, destination.length));
+        public EncodedBytes encode(final Byte object,
+                final byte[] reusableBuffer) {
+            final byte validatedValue = Vldtn.requireNonNull(object, "object");
+            final byte[] validatedBuffer = Vldtn.requireNonNull(reusableBuffer,
+                    "reusableBuffer");
+            byte[] output = validatedBuffer;
+            if (output.length < REQUIRED_BYTES) {
+                output = new byte[REQUIRED_BYTES];
             }
-            destination[0] = object;
-            return REQUIRED_BYTES;
+            output[0] = validatedValue;
+            return new EncodedBytes(output, REQUIRED_BYTES);
         }
     };
 

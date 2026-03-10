@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -152,6 +153,18 @@ class SegmentIndexConsistencyCheckerTest {
         checker.checkAndRepairConsistency();
 
         assertTrue(true);
+    }
+
+    @Test
+    void test_segmentFilteredOut_isSkippedWithoutLoading() {
+        when(keyToSegmentMap.getSegmentsAsStream())
+                .thenReturn(Stream.of(segmentPair));
+        checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
+                segmentRegistry, TYPE_DESCRIPTOR_INTEGER, segmentId -> false);
+
+        checker.checkAndRepairConsistency();
+
+        verifyNoInteractions(segmentRegistry);
     }
 
     // no such segment

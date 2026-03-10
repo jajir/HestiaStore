@@ -1,0 +1,29 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+top to bottom direction
+
+rectangle "Old Partition P(A..Z)" as OLD
+rectangle "New Partition P1(A..M)" as P1
+rectangle "New Partition P2(N..Z)" as P2
+rectangle "WriteRouteMap" as WR
+rectangle "ReadRouteMap (transition)" as RR1
+rectangle "ReadRouteMap (final)" as RR2
+rectangle "Background split / drain" as BG
+rectangle "New stable segments" as NS
+
+WR --> P1
+WR --> P2
+
+OLD --> BG : DRAINING
+BG --> NS
+
+RR1 --> P1
+RR1 --> P2
+RR1 --> OLD
+
+NS --> RR2
+P1 --> RR2
+P2 --> RR2
+
+@enduml

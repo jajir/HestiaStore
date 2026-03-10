@@ -3,6 +3,7 @@ package org.hestiastore.index.bloomfilter;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
@@ -16,14 +17,9 @@ class BloomFilterWriterEncodingTest {
         try (final BloomFilterWriter<String> writer = new BloomFilterWriter<>(
                 new TypeEncoder<String>() {
                     @Override
-                    public int bytesLength(final String value) {
-                        return 0;
-                    }
-
-                    @Override
-                    public int toBytes(final String value,
-                            final byte[] destination) {
-                        return 0;
+                    public EncodedBytes encode(final String value,
+                            final byte[] reusableBuffer) {
+                        return new EncodedBytes(reusableBuffer, 0);
                     }
                 }, new Hash(new BitArray(16), 2), new MemDirectory(), "test.bf",
                 DISK_IO_BUFFER_SIZE)) {
@@ -34,26 +30,19 @@ class BloomFilterWriterEncodingTest {
     }
 
     @Test
-    void write_rejectsDeclaredAndWrittenLengthMismatch() {
+    void write_rejectsEncodedLengthGreaterThanArraySize() {
         try (final BloomFilterWriter<String> writer = new BloomFilterWriter<>(
                 new TypeEncoder<String>() {
                     @Override
-                    public int bytesLength(final String value) {
-                        return 3;
-                    }
-
-                    @Override
-                    public int toBytes(final String value,
-                            final byte[] destination) {
-                        destination[0] = 'a';
-                        destination[1] = 'b';
-                        return 2;
+                    public EncodedBytes encode(final String value,
+                            final byte[] reusableBuffer) {
+                        return new EncodedBytes(new byte[2], 3);
                     }
                 }, new Hash(new BitArray(16), 2), new MemDirectory(), "test.bf",
                 DISK_IO_BUFFER_SIZE)) {
-            final IllegalStateException error = assertThrows(
-                    IllegalStateException.class, () -> writer.write("abc"));
-            assertTrue(error.getMessage().contains("declared"));
+            final IllegalArgumentException error = assertThrows(
+                    IllegalArgumentException.class, () -> writer.write("abc"));
+            assertTrue(error.getMessage().contains("exceeds byte array size"));
         }
     }
 }

@@ -3,9 +3,11 @@ package org.hestiastore.index.segmentindex.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,10 +23,10 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.split.SegmentSplitCoordinator;
-import org.hestiastore.index.segmentindex.split.SegmentWriterTxFactory;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,32 +75,18 @@ class SegmentIndexImplPutTest {
         index.put(3, "c");
         index.put(4, "d");
         index.put(5, "e");
+        index.flushAndWait();
 
         final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
                 index);
-        index.awaitSplitsIdlePublic();
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final SegmentId segmentId = cache.findSegmentId(1);
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
                 .getValue();
         awaitSegmentReady(segment);
-        final ExecutorService segmentMaintenancePool = Executors
-                .newSingleThreadExecutor();
-        try {
-            final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                    directory, tdi, tds, index.getConfiguration(),
-                    segmentMaintenancePool);
-            final SegmentWriterTxFactory<Integer, String> writerTxFactory = id -> segmentFactory
-                    .newSegmentBuilder(id).openWriterTx();
-            final SegmentSplitCoordinator<Integer, String> splitCoordinator = new SegmentSplitCoordinator<>(
-                    index.getConfiguration(), cache, registry, writerTxFactory);
-            splitCoordinator.optionallySplit(segment);
-            awaitSegmentCount(cache, 2);
-            assertEquals(SegmentId.of(1), cache.findSegmentId(1));
-        } finally {
-            segmentMaintenancePool.shutdownNow();
-        }
+        awaitSegmentCount(cache, 2);
+        assertEquals(SegmentId.of(1), cache.findSegmentId(1));
     }
 
     @Test
@@ -109,14 +97,155 @@ class SegmentIndexImplPutTest {
         assertNull(index.get(1));
     }
 
+    @Test
+    void walSyncFailureTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> index.put(1, "one"));
+            assertTrue(exception.getMessage().contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walSyncFailureDuringCheckpointTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        index.put(1, "one");
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> index.flushAndWait());
+            assertTrue(exception.getMessage().contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walSyncFailureOnDeleteTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        index.put(1, "one");
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> index.delete(1));
+            assertTrue(exception.getMessage().contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walSyncFailureOnPutAsyncTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final CompletionException exception = assertThrows(
+                    CompletionException.class,
+                    () -> index.putAsync(1, "one").toCompletableFuture()
+                            .join());
+            assertTrue(exception.getCause().getMessage()
+                    .contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walSyncFailureOnDeleteAsyncTransitionsIndexToErrorState() {
+        resetIndex(10, 1, Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        index.put(1, "one");
+        injectWalSyncFailure(index, new IllegalStateException("simulated"));
+
+        try {
+            final CompletionException exception = assertThrows(
+                    CompletionException.class,
+                    () -> index.deleteAsync(1).toCompletableFuture().join());
+            assertTrue(exception.getCause().getMessage()
+                    .contains("WAL sync failure"));
+            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertThrows(IllegalStateException.class, () -> index.get(1));
+        } finally {
+            clearWalSyncFailure(index);
+        }
+    }
+
+    @Test
+    void walRetentionBackpressureSkipsUnsatisfiableSingleActiveSegmentCase() {
+        final Wal wal = Wal.builder()
+                .withDurabilityMode(WalDurabilityMode.ASYNC)
+                .withSegmentSizeBytes(64L * 1024L)
+                .withMaxBytesBeforeForcedCheckpoint(1L).build();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .withName("wal-retention-single-segment-test")//
+                .withMaxNumberOfKeysInSegmentCache(4)//
+                .withMaxNumberOfKeysInSegmentWriteCache(1)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaxNumberOfKeysInSegment(10)//
+                .withMaxNumberOfSegmentsInCache(3)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withContextLoggingEnabled(false)//
+                .withIndexBusyBackoffMillis(1)//
+                .withIndexBusyTimeoutMillis(200)//
+                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withWal(wal)//
+                .build();
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+        directory = new MemDirectory();
+        index = new TestIndex<>(directory, tdi, tds, conf);
+
+        index.put(1, "one");
+        index.put(2, "two");
+        assertEquals("one", index.get(1));
+        assertEquals("two", index.get(2));
+        assertEquals(SegmentIndexState.READY, index.getState());
+    }
+
     private void resetIndex(final int maxKeysInSegment,
             final int maxNumberOfKeysInSegmentWriteCache) {
+        resetIndex(maxKeysInSegment, maxNumberOfKeysInSegmentWriteCache,
+                Wal.EMPTY);
+    }
+
+    private void resetIndex(final int maxKeysInSegment,
+            final int maxNumberOfKeysInSegmentWriteCache, final Wal wal) {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
         directory = new MemDirectory();
         index = new TestIndex<>(directory, tdi, tds, buildConf(maxKeysInSegment,
-                maxNumberOfKeysInSegmentWriteCache));
+                maxNumberOfKeysInSegmentWriteCache, wal));
     }
 
     private static final class TestIndex<K, V>
@@ -137,7 +266,7 @@ class SegmentIndexImplPutTest {
 
     private IndexConfiguration<Integer, String> buildConf(
             final int maxKeysInSegment,
-            final int maxNumberOfKeysInSegmentWriteCache) {
+            final int maxNumberOfKeysInSegmentWriteCache, final Wal wal) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -157,6 +286,7 @@ class SegmentIndexImplPutTest {
                 .withContextLoggingEnabled(false)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withWal(wal)//
                 .build();
     }
 
@@ -216,6 +346,32 @@ class SegmentIndexImplPutTest {
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read segmentRegistry for test", ex);
+        }
+    }
+
+    private static void injectWalSyncFailure(final SegmentIndexImpl<?, ?> index,
+            final RuntimeException failure) {
+        setWalSyncFailure(index, failure);
+    }
+
+    private static void clearWalSyncFailure(final SegmentIndexImpl<?, ?> index) {
+        setWalSyncFailure(index, null);
+    }
+
+    private static void setWalSyncFailure(final SegmentIndexImpl<?, ?> index,
+            final RuntimeException failure) {
+        try {
+            final Field walRuntimeField = SegmentIndexImpl.class
+                    .getDeclaredField("walRuntime");
+            walRuntimeField.setAccessible(true);
+            final Object walRuntime = walRuntimeField.get(index);
+            final Field syncFailureField = walRuntime.getClass()
+                    .getDeclaredField("syncFailure");
+            syncFailureField.setAccessible(true);
+            syncFailureField.set(walRuntime, failure);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to inject WAL sync failure for test", ex);
         }
     }
 }

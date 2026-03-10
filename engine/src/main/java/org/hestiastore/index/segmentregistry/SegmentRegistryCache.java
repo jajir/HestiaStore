@@ -267,13 +267,13 @@ public final class SegmentRegistryCache<K, V> {
         try {
             unloadExecutor.execute(() -> {
                 if (!unloadValue(candidate.value)) {
-                    // Keep entry in UNLOADING on close failure.
+                    candidate.entry.cancelUnload();
                     return;
                 }
                 finalizeRemoval(candidate.key, candidate.entry, true);
             });
         } catch (final RejectedExecutionException ex) {
-            // Keep entry in UNLOADING if lifecycle executor is not accepting tasks.
+            candidate.entry.cancelUnload();
         }
     }
 
@@ -449,6 +449,19 @@ public final class SegmentRegistryCache<K, V> {
                             "Invalid transition to missing from " + state);
                 }
                 value = null;
+                ready.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        void cancelUnload() {
+            lock.lock();
+            try {
+                if (state != EntryState.UNLOADING || value == null) {
+                    return;
+                }
+                state = EntryState.READY;
                 ready.signalAll();
             } finally {
                 lock.unlock();

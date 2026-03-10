@@ -80,18 +80,29 @@ public final class ManagementAgentServer
     private static final String AUDIT_FAILED = "FAILED";
     private static final int MAX_AUDIT_RECORDS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
-    private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = Map
-            .of("maxNumberOfSegmentsInCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                    "maxNumberOfKeysInSegmentCache",
+    private static final Map<RuntimeSettingKey, String> API_NAME_BY_RUNTIME_KEY = Map
+            .of(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+                    "maxNumberOfSegmentsInCache",
                     RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
-                    "maxNumberOfKeysInSegmentWriteCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE,
+                    "maxNumberOfKeysInSegmentCache",
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
+                    "maxNumberOfKeysInActivePartition",
+                    RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
+                    "maxNumberOfImmutableRunsPerPartition",
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
+                    "maxNumberOfKeysInPartitionBuffer",
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
+                    "maxNumberOfKeysInIndexBuffer",
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                    "maxNumberOfKeysInPartitionBeforeSplit");
+    private static final Map<String, RuntimeSettingKey> LEGACY_RUNTIME_KEY_ALIASES = Map
+            .of("maxNumberOfKeysInSegmentWriteCache",
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
                     "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE);
-    private static final Map<RuntimeSettingKey, String> API_NAME_BY_RUNTIME_KEY = buildApiNameByRuntimeKey();
-    private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = RUNTIME_KEY_BY_API_NAME
-            .keySet().stream().sorted().toList();
+                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER);
+    private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = buildRuntimeKeyByApiName();
+    private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_KEY
+            .values().stream().sorted().toList();
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final ConcurrentMap<String, SegmentIndex<?, ?>> indexes = new ConcurrentHashMap<>();
@@ -731,6 +742,10 @@ public final class ManagementAgentServer
                 snapshot.getSegmentCacheKeyLimitPerSegment(),
                 snapshot.getMaxNumberOfKeysInSegmentWriteCache(),
                 snapshot.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
+                snapshot.getMaxNumberOfKeysInActivePartition(),
+                snapshot.getMaxNumberOfImmutableRunsPerPartition(),
+                snapshot.getMaxNumberOfKeysInPartitionBuffer(),
+                snapshot.getMaxNumberOfKeysInIndexBuffer(),
                 snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                 snapshot.getSegmentMaintenanceCount(),
                 snapshot.getSegmentErrorCount(),
@@ -746,6 +761,15 @@ public final class ManagementAgentServer
                 snapshot.getMaintenanceQueueSize(),
                 snapshot.getMaintenanceQueueCapacity(),
                 snapshot.getSplitQueueSize(), snapshot.getSplitQueueCapacity(),
+                snapshot.getPartitionCount(),
+                snapshot.getActivePartitionCount(),
+                snapshot.getDrainingPartitionCount(),
+                snapshot.getImmutableRunCount(),
+                snapshot.getPartitionBufferedKeyCount(),
+                snapshot.getLocalThrottleCount(),
+                snapshot.getGlobalThrottleCount(),
+                snapshot.getDrainScheduleCount(),
+                snapshot.getDrainInFlightCount(),
                 snapshot.getReadLatencyP50Micros(),
                 snapshot.getReadLatencyP95Micros(),
                 snapshot.getReadLatencyP99Micros(),
@@ -1075,13 +1099,13 @@ public final class ManagementAgentServer
         }
     }
 
-    private static Map<RuntimeSettingKey, String> buildApiNameByRuntimeKey() {
-        final EnumMap<RuntimeSettingKey, String> values = new EnumMap<>(
-                RuntimeSettingKey.class);
-        for (final Map.Entry<String, RuntimeSettingKey> entry : RUNTIME_KEY_BY_API_NAME
+    private static Map<String, RuntimeSettingKey> buildRuntimeKeyByApiName() {
+        final LinkedHashMap<String, RuntimeSettingKey> values = new LinkedHashMap<>();
+        for (final Map.Entry<RuntimeSettingKey, String> entry : API_NAME_BY_RUNTIME_KEY
                 .entrySet()) {
             values.put(entry.getValue(), entry.getKey());
         }
+        values.putAll(LEGACY_RUNTIME_KEY_ALIASES);
         return Map.copyOf(values);
     }
 

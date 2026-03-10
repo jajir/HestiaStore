@@ -111,6 +111,10 @@ public final class SegmentFactory<K, V> {
                 .withDirectoryLockingEnabled(true)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withMaintenanceExecutor(segmentMaintenanceExecutor)//
+                .withLoggingContextIndexName(
+                        Boolean.TRUE.equals(conf.isContextLoggingEnabled())
+                                ? conf.getIndexName()
+                                : null)//
                 .withMaintenancePolicy(maintenancePolicy)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         maxNumberOfKeysInSegmentWriteCache)//

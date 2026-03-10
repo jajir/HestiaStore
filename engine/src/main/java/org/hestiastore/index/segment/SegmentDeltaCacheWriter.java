@@ -7,6 +7,8 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriter;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class collect unsorted data, sort them and finally write them into SST delta
@@ -19,6 +21,9 @@ import org.hestiastore.index.chunkentryfile.ChunkEntryFileWriterTx;
  */
 final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
         implements EntryWriter<K, V> {
+
+    private static final Logger logger = LoggerFactory
+            .getLogger(SegmentDeltaCacheWriter.class);
 
     /**
      * Cache will contains data written into this delta file.
@@ -93,6 +98,15 @@ final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
         // store cache
         final String deltaFileName = segmentPropertiesManager
                 .getNextDeltaFileName();
+        final int keysInDeltaFile = uniqueCache.size();
+        final int previousDeltaFileCount = segmentPropertiesManager
+                .getDeltaFileCount();
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Flush write started: segment='{}' activeVersion='{}' deltaFile='{}' keysInDeltaFile='{}' bufferedWrites='{}' previousDeltaFileCount='{}'",
+                    segmentFiles.getId(), segmentFiles.getActiveVersion(),
+                    deltaFileName, keysInDeltaFile, cx, previousDeltaFileCount);
+        }
         final ChunkEntryFileWriterTx<K, V> writerTx = segmentFiles
                 .getDeltaCacheChunkEntryFile(deltaFileName).openWriterTx();
         try (ChunkEntryFileWriter<K, V> writer = writerTx.openWriter()) {
@@ -111,14 +125,18 @@ final class SegmentDeltaCacheWriter<K, V> extends AbstractCloseableResource
         }
         writerTx.commit();
         // Update segment metadata in one transaction.
-        final int keysInCache = uniqueCache.size();
-        final int nextDeltaFileCount = segmentPropertiesManager
-                .getDeltaFileCount() + 1;
+        final int nextDeltaFileCount = previousDeltaFileCount + 1;
         final long nextDeltaCacheKeys = segmentPropertiesManager
-                .getNumberOfKeysInDeltaCache() + keysInCache;
+                .getNumberOfKeysInDeltaCache() + keysInDeltaFile;
         segmentPropertiesManager.startTx()
                 .setDeltaFileCount(nextDeltaFileCount)
                 .setNumberOfKeysInCache(nextDeltaCacheKeys).commit();
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Flush write finished: segment='{}' deltaFile='{}' keysInDeltaFile='{}' newDeltaFileCount='{}' newDeltaCacheKeyCount='{}'",
+                    segmentFiles.getId(), deltaFileName, keysInDeltaFile,
+                    nextDeltaFileCount, nextDeltaCacheKeys);
+        }
 
         uniqueCache.clear();
     }

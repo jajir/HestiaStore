@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 🏷️ 0.0.6 (Unreleased)
+
+### 🔧 Changed
+
+- Key encoding now uses a single-pass API (`TypeEncoder#encode(T, byte[])`) across read and write paths, including Bloom filter lookup, WAL encoding, and type writers.
+- Added `EncodedBytes` as the shared return type for encoded payload (`bytes` + effective `length`).
+
+### ⚠️ Breaking
+
+- `TypeEncoder` no longer exposes `bytesLength(T)` and `toBytes(T, byte[])`.
+- External/custom `TypeEncoder` implementations must migrate to:
+  - `EncodedBytes encode(T value, byte[] reusableBuffer)`
+- Migration intent:
+  - Use the provided reusable buffer when it is large enough.
+  - Allocate a larger buffer when needed.
+  - Return effective encoded length in `EncodedBytes.length`.
+
 ## 🏷️ 0.0.5
 
 ### ✨ Added

@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
+import org.hestiastore.index.control.model.RuntimePatchResult;
+import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -51,15 +55,40 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(2L, snapshot.getPutOperationCount());
             assertEquals(4L, snapshot.getGetOperationCount());
             assertEquals(1L, snapshot.getDeleteOperationCount());
-            assertTrue(snapshot.getRegistryCacheHitCount() >= 1L);
-            assertTrue(snapshot.getRegistryCacheMissCount() >= 1L);
-            assertTrue(snapshot.getRegistryCacheLoadCount() >= 1L);
-            assertTrue(snapshot.getRegistryCacheSize() >= 1);
+            assertTrue(snapshot.getTotalWriteCacheKeys() >= 2L);
+            assertTrue(snapshot.getPartitionCount() >= 1);
+            assertTrue(snapshot.getActivePartitionCount() >= 1);
+            assertTrue(snapshot.getPartitionBufferedKeyCount() >= 1);
+            assertTrue(snapshot.getLocalThrottleCount() >= 0L);
+            assertTrue(snapshot.getGlobalThrottleCount() >= 0L);
+            assertTrue(snapshot.getRegistryCacheHitCount() >= 0L);
+            assertTrue(snapshot.getRegistryCacheMissCount() >= 0L);
+            assertTrue(snapshot.getRegistryCacheLoadCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheLimit() >= 1);
             assertTrue(snapshot.getBloomFilterRequestCount() >= 0L);
             assertTrue(snapshot.getBloomFilterRefusedCount() >= 0L);
             assertTrue(snapshot.getBloomFilterPositiveCount() >= 0L);
             assertTrue(snapshot.getBloomFilterFalsePositiveCount() >= 0L);
+            assertEquals(false, snapshot.isWalEnabled());
+            assertEquals(0L, snapshot.getWalAppendCount());
+            assertEquals(0L, snapshot.getWalAppendBytes());
+            assertEquals(0L, snapshot.getWalSyncCount());
+            assertEquals(0L, snapshot.getWalSyncFailureCount());
+            assertEquals(0L, snapshot.getWalCorruptionCount());
+            assertEquals(0L, snapshot.getWalTruncationCount());
+            assertEquals(0L, snapshot.getWalRetainedBytes());
+            assertEquals(0, snapshot.getWalSegmentCount());
+            assertEquals(0L, snapshot.getWalDurableLsn());
+            assertEquals(0L, snapshot.getWalCheckpointLsn());
+            assertEquals(0L, snapshot.getWalPendingSyncBytes());
+            assertEquals(0L, snapshot.getWalAppliedLsn());
+            assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+            assertEquals(0L, snapshot.getWalSyncTotalNanos());
+            assertEquals(0L, snapshot.getWalSyncMaxNanos());
+            assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
+            assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
+            assertEquals(0L, snapshot.getWalSyncAvgNanos());
+            assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
             assertTrue(snapshot.getSegmentRuntimeSnapshots()
                     .size() <= snapshot.getSegmentCount());
             assertEquals(SegmentIndexState.READY, snapshot.getState());
@@ -67,7 +96,55 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     }
 
     @Test
-    void compactRequestCount_remains_monotonic_across_split() {
+    void metricsSnapshotExposesWalStatsWhenEnabled() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegment(64) //
+                .withName("metrics_wal_enabled_test_index") //
+                .withWal(Wal.builder().build()) //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            index.put(1, "a");
+            index.put(2, "b");
+            index.delete(1);
+            index.flushAndWait();
+
+            final SegmentIndexMetricsSnapshot snapshot = index
+                    .metricsSnapshot();
+            assertTrue(snapshot.isWalEnabled());
+            assertTrue(snapshot.getWalAppendCount() >= 3L);
+            assertTrue(snapshot.getWalAppendBytes() > 0L);
+            assertTrue(snapshot.getWalSyncCount() >= 1L);
+            assertEquals(0L, snapshot.getWalSyncFailureCount());
+            assertEquals(0L, snapshot.getWalCorruptionCount());
+            assertEquals(0L, snapshot.getWalTruncationCount());
+            assertTrue(snapshot.getWalSegmentCount() >= 1);
+            assertTrue(snapshot.getWalDurableLsn() >= 3L);
+            assertTrue(snapshot.getWalCheckpointLsn() >= 3L);
+            assertTrue(snapshot.getWalAppliedLsn() >= 3L);
+            assertTrue(snapshot.getWalCheckpointLagLsn() >= 0L);
+            assertTrue(snapshot.getWalSyncTotalNanos() >= 0L);
+            assertTrue(snapshot.getWalSyncMaxNanos() >= 0L);
+            assertTrue(snapshot.getWalSyncBatchBytesTotal() > 0L);
+            assertTrue(snapshot.getWalSyncBatchBytesMax() > 0L);
+            assertTrue(snapshot.getWalSyncBatchBytesTotal() >= snapshot
+                    .getWalSyncBatchBytesMax());
+            assertTrue(snapshot.getWalSyncAvgNanos() >= 0L);
+            assertTrue(snapshot.getWalSyncAvgBatchBytes() > 0L);
+        }
+    }
+
+    @Test
+    void drainScheduleCount_remains_monotonic_across_overlay_rotations() {
         final Directory directory = new MemDirectory();
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
@@ -78,9 +155,11 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withKeyTypeDescriptor(keyDescriptor) //
                 .withValueTypeDescriptor(valueDescriptor) //
                 .withMaxNumberOfKeysInSegmentCache(5) //
-                .withMaxNumberOfKeysInSegmentWriteCache(64) //
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128) //
-                .withMaxNumberOfKeysInSegment(20) //
+                .withMaxNumberOfKeysInActivePartition(8) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(16) //
+                .withMaxNumberOfKeysInIndexBuffer(64) //
+                .withMaxNumberOfKeysInSegment(512) //
                 .withMaxNumberOfKeysInSegmentChunk(4) //
                 .withMaxNumberOfDeltaCacheFiles(1) //
                 .withBloomFilterIndexSizeInBytes(1024 * 128) //
@@ -92,27 +171,25 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 128; i++) {
                 index.put(i, "base-" + i);
             }
-            for (int i = 0; i < 120; i++) {
-                final int key = i % 10;
-                index.put(key, "v-" + i);
-            }
 
             awaitIdle(index);
-            final SegmentIndexMetricsSnapshot beforeSplit = index
+            final SegmentIndexMetricsSnapshot beforeRotation = index
                     .metricsSnapshot();
-            assertTrue(beforeSplit.getCompactRequestCount() > 0L);
+            assertTrue(beforeRotation.getDrainScheduleCount() > 0L);
 
-            populateUntilSegmentCountAtLeast(index, 2, 1_000, 20_000L);
+            for (int i = 128; i < 256; i++) {
+                index.put(i, "next-" + i);
+            }
             awaitIdle(index);
 
-            final SegmentIndexMetricsSnapshot afterSplit = index
+            final SegmentIndexMetricsSnapshot afterRotation = index
                     .metricsSnapshot();
             assertTrue(
-                    afterSplit.getCompactRequestCount() >= beforeSplit
-                            .getCompactRequestCount());
+                    afterRotation.getDrainScheduleCount() >= beforeRotation
+                            .getDrainScheduleCount());
         }
     }
 
@@ -128,29 +205,33 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withKeyTypeDescriptor(keyDescriptor) //
                 .withValueTypeDescriptor(valueDescriptor) //
                 .withMaxNumberOfKeysInSegmentCache(5) //
-                .withMaxNumberOfKeysInSegmentWriteCache(64) //
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(128) //
+                .withMaxNumberOfKeysInActivePartition(8) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(16) //
+                .withMaxNumberOfKeysInIndexBuffer(64) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
                 .withMaxNumberOfKeysInSegment(20) //
                 .withMaxNumberOfKeysInSegmentChunk(4) //
                 .withMaxNumberOfDeltaCacheFiles(1) //
-                .withMaxNumberOfSegmentsInCache(3) //
+                .withMaxNumberOfSegmentsInCache(16) //
                 .withBloomFilterIndexSizeInBytes(1024 * 128) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(true) //
+                .withSegmentMaintenanceAutoEnabled(false) //
                 .withContextLoggingEnabled(false) //
                 .withName("metrics_cache_only_runtime_test") //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
-            populateUntilSegmentCountExceedsCacheLimit(index, 20_000L);
-            awaitIdle(index);
+            for (int i = 0; i < 64; i++) {
+                index.put(i, "v-" + i);
+            }
+            index.flushAndWait();
+            assertEquals("v-0", index.get(0));
 
             final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
             final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
 
-            assertTrue(
-                    before.getSegmentCount() > before.getRegistryCacheLimit());
             assertEquals(before.getRegistryCacheLoadCount(),
                     after.getRegistryCacheLoadCount());
             assertEquals(before.getRegistryCacheMissCount(),
@@ -158,66 +239,136 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         }
     }
 
+    @Test
+    void runtimeThresholdPatchTriggersBackgroundSplitWithoutNewWrites() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegmentCache(8) //
+                .withMaxNumberOfKeysInActivePartition(32) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(96) //
+                .withMaxNumberOfKeysInIndexBuffer(192) //
+                .withMaxNumberOfKeysInSegment(128) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withSegmentMaintenanceAutoEnabled(true) //
+                .withContextLoggingEnabled(false) //
+                .withName("metrics_runtime_split_policy_test") //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            for (int i = 0; i < 48; i++) {
+                index.put(i, "v-" + i);
+            }
+            index.flushAndWait();
+            awaitIdle(index);
+            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+
+            final long revision = index.controlPlane().configuration()
+                    .getConfigurationActual().getRevision();
+            final RuntimePatchResult patchResult = index.controlPlane()
+                    .configuration()
+                    .apply(new RuntimeConfigPatch(Map.of(
+                            RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                            Integer.valueOf(16)), false,
+                            Long.valueOf(revision)));
+
+            assertTrue(patchResult.isApplied());
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getSegmentCount() > 1
+                        && snapshot.getSplitInFlightCount() == 0;
+            }, 10_000L);
+
+            for (int i = 0; i < 48; i++) {
+                assertEquals("v-" + i, index.get(i));
+            }
+        }
+    }
+
+    @Test
+    void autonomousSplitPolicyLoopSplitsOversizedStableRangeWithoutNewEvents() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegmentCache(8) //
+                .withMaxNumberOfKeysInActivePartition(32) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(96) //
+                .withMaxNumberOfKeysInIndexBuffer(192) //
+                .withMaxNumberOfKeysInSegment(16) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withSegmentMaintenanceAutoEnabled(true) //
+                .withContextLoggingEnabled(false) //
+                .withName("metrics_autonomous_split_policy_test") //
+                .build();
+        final String propertyName = "hestiastore.disableSplits";
+        final String previousValue = System.getProperty(propertyName);
+        System.setProperty(propertyName, Boolean.TRUE.toString());
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            for (int i = 0; i < 48; i++) {
+                index.put(i, "v-" + i);
+            }
+            index.flushAndWait();
+            awaitIdle(index);
+            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+
+            if (previousValue == null) {
+                System.clearProperty(propertyName);
+            } else {
+                System.setProperty(propertyName, previousValue);
+            }
+
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getSegmentCount() > 1
+                        && snapshot.getSplitInFlightCount() == 0
+                        && snapshot.getDrainInFlightCount() == 0
+                        && snapshot.getImmutableRunCount() == 0;
+            }, 10_000L);
+
+            for (int i = 0; i < 48; i++) {
+                assertEquals("v-" + i, index.get(i));
+            }
+        } finally {
+            if (previousValue == null) {
+                System.clearProperty(propertyName);
+            } else {
+                System.setProperty(propertyName, previousValue);
+            }
+        }
+    }
+
     private static void awaitIdle(final SegmentIndex<Integer, String> index) {
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = index
                     .metricsSnapshot();
-            return snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getMaintenanceQueueSize() == 0
-                    && snapshot.getSplitQueueSize() == 0;
+            return snapshot.getDrainInFlightCount() == 0
+                    && snapshot.getImmutableRunCount() == 0
+                    && snapshot.getDrainingPartitionCount() == 0
+                    && snapshot.getSplitInFlightCount() == 0;
         }, 10_000L);
-    }
-
-    private static void populateUntilSegmentCountExceedsCacheLimit(
-            final SegmentIndex<Integer, String> index,
-            final long timeoutMillis) {
-        int key = 0;
-        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
-        while (System.nanoTime() < deadline) {
-            for (int i = 0; i < 64; i++) {
-                index.put(key, "v-" + key);
-                key++;
-            }
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-            if (snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit()) {
-                return;
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
-            if (Thread.currentThread().isInterrupted()) {
-                throw new AssertionError("Interrupted while waiting");
-            }
-        }
-        final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
-        assertTrue(snapshot.getSegmentCount() > snapshot.getRegistryCacheLimit(),
-                "Segment count did not exceed cache limit within "
-                        + timeoutMillis + " ms.");
-    }
-
-    private static void populateUntilSegmentCountAtLeast(
-            final SegmentIndex<Integer, String> index,
-            final int expectedSegmentCount,
-            final int startingKey,
-            final long timeoutMillis) {
-        int key = startingKey;
-        final long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
-        while (System.nanoTime() < deadline) {
-            for (int i = 0; i < 64; i++) {
-                index.put(key, "new-" + key);
-                key++;
-            }
-            if (index.metricsSnapshot().getSegmentCount() >= expectedSegmentCount) {
-                return;
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
-            if (Thread.currentThread().isInterrupted()) {
-                throw new AssertionError("Interrupted while waiting");
-            }
-        }
-        final int segmentCount = index.metricsSnapshot().getSegmentCount();
-        assertTrue(segmentCount >= expectedSegmentCount,
-                "Segment count did not reach " + expectedSegmentCount
-                        + " within " + timeoutMillis + " ms. Last count: "
-                        + segmentCount + ".");
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,

@@ -44,7 +44,8 @@ class SegmentIndexLifecycleTest {
                 directory, buildConf("lifecycle-open", 2));
         openLifecycle.open(false);
         assertEquals(2,
-                openLifecycle.getIndexConfiguration().getNumberOfIoThreads());
+                openLifecycle.getIndexConfiguration()
+                        .getIndexWorkerThreadCount());
         openLifecycle.close();
     }
 
@@ -58,7 +59,7 @@ class SegmentIndexLifecycleTest {
     }
 
     private static IndexConfiguration<Integer, String> buildConf(
-            final String indexName, final int ioThreads) {
+            final String indexName, final int indexWorkerThreads) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -76,8 +77,7 @@ class SegmentIndexLifecycleTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfIoThreads(ioThreads)//
+                .withIndexWorkerThreadCount(indexWorkerThreads)//
                 .withNumberOfSegmentIndexMaintenanceThreads(1)//
                 .withNumberOfRegistryLifecycleThreads(1)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//

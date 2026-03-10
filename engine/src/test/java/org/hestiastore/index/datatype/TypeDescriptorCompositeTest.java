@@ -33,16 +33,17 @@ class TypeDescriptorCompositeTest {
         final CompositeValue value = CompositeValue.of("Hello", 1.0D, 42);
         final byte[] expected = TestEncoding.toByteArray(convertor, value);
 
-        assertEquals(expected.length, convertor.bytesLength(value));
+        final EncodedBytes encoded = convertor.encode(value,
+                new byte[expected.length + 4]);
+        assertEquals(expected.length, encoded.getLength());
+        assertArrayEquals(expected, Arrays.copyOf(encoded.getBytes(),
+                encoded.getLength()));
 
-        final byte[] destination = new byte[expected.length + 4];
-        Arrays.fill(destination, (byte) 0x5A);
-        final int written = convertor.toBytes(value, destination);
-        assertEquals(expected.length, written);
-        assertArrayEquals(expected, Arrays.copyOf(destination, written));
-
-        assertThrows(IllegalArgumentException.class,
-                () -> convertor.toBytes(value, new byte[expected.length - 1]));
+        final EncodedBytes resized = convertor.encode(value,
+                new byte[expected.length - 1]);
+        assertEquals(expected.length, resized.getLength());
+        assertArrayEquals(expected, Arrays.copyOf(resized.getBytes(),
+                resized.getLength()));
     }
 
     @Test

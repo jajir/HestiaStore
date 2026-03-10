@@ -23,11 +23,13 @@ class TypeDescriptorFixedLengthStringTest {
                 4);
         final String value = "ABCD";
 
-        final byte[] bytes = TestEncoding.toByteArray(descriptor.getTypeEncoder(),
-                value);
+        final EncodedBytes encoded = descriptor.getTypeEncoder().encode(value,
+                new byte[0]);
+        final byte[] bytes = TestEncoding.toByteArray(
+                descriptor.getTypeEncoder(), value);
         final String decoded = descriptor.getTypeDecoder().decode(bytes);
 
-        assertEquals(4, descriptor.getTypeEncoder().bytesLength(value));
+        assertEquals(4, encoded.getLength());
         assertArrayEquals(value.getBytes(StandardCharsets.ISO_8859_1), bytes);
         assertEquals(value, decoded);
     }
@@ -39,19 +41,22 @@ class TypeDescriptorFixedLengthStringTest {
 
         final IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
-                () -> descriptor.getTypeEncoder().bytesLength("ABCD"));
+                () -> descriptor.getTypeEncoder().encode("ABCD", new byte[0]));
         assertTrue(error.getMessage().contains("String length"));
     }
 
     @Test
-    void encoderRejectsTooSmallDestination() {
+    void encoderResizesTooSmallReusableBuffer() {
         final TypeDescriptorFixedLengthString descriptor = new TypeDescriptorFixedLengthString(
                 4);
 
-        final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> descriptor.getTypeEncoder()
-                        .toBytes("ABCD", new byte[3]));
-        assertTrue(error.getMessage().contains("Destination buffer too small"));
+        final EncodedBytes encoded = descriptor.getTypeEncoder().encode("ABCD",
+                new byte[3]);
+
+        assertEquals(4, encoded.getLength());
+        assertArrayEquals("ABCD".getBytes(StandardCharsets.ISO_8859_1),
+                new byte[] { encoded.getBytes()[0], encoded.getBytes()[1],
+                        encoded.getBytes()[2], encoded.getBytes()[3] });
     }
 
     @Test
@@ -71,8 +76,8 @@ class TypeDescriptorFixedLengthStringTest {
                 2);
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> descriptor.getTypeEncoder()
-                        .toBytes("🙂", new byte[2]));
+                IllegalArgumentException.class,
+                () -> descriptor.getTypeEncoder().encode("🙂", new byte[2]));
         assertTrue(error.getMessage().contains("should be encoded"));
     }
 }

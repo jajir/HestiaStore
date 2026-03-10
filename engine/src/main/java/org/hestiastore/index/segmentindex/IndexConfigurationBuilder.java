@@ -19,9 +19,12 @@ public class IndexConfigurationBuilder<K, V> {
     private Integer maxNumberOfKeysInSegmentCache;
     private Integer maxNumberOfKeysInSegmentWriteCache;
     private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private Integer maxNumberOfImmutableRunsPerPartition;
+    private Integer maxNumberOfKeysInIndexBuffer;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfDeltaCacheFiles;
     private Integer maxNumberOfKeysInSegment;
+    private Integer maxNumberOfKeysInPartitionBeforeSplit;
     private Integer maxNumberOfSegmentsInCache;
 
     private Integer bloomFilterNumberOfHashFunctions;
@@ -30,7 +33,6 @@ public class IndexConfigurationBuilder<K, V> {
 
     private Integer diskIoBufferSizeInBytes;
     private Integer indexWorkerThreadCount;
-    private Integer numberOfIoThreads;
     private Integer numberOfSegmentIndexMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
     private Integer numberOfRegistryLifecycleThreads;
@@ -44,6 +46,7 @@ public class IndexConfigurationBuilder<K, V> {
     private String keyTypeDescriptor;
     private String valueTypeDescriptor;
     private Boolean contextLoggingEnabled;
+    private Wal wal = Wal.EMPTY;
     private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
     private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
 
@@ -163,6 +166,19 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Sets the maximum number of keys accepted into the active partition
+     * before it is rotated to an immutable run.
+     *
+     * @param maxNumberOfKeysInActivePartition max active partition keys
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInActivePartition(
+            final Integer maxNumberOfKeysInActivePartition) {
+        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInActivePartition;
+        return this;
+    }
+
+    /**
      * Sets the max number of keys per on-disk segment chunk.
      *
      * @param maxNumberOfKeysInSegmentChunk max keys per chunk
@@ -199,6 +215,30 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Sets the maximum immutable run queue depth per partition.
+     *
+     * @param maxNumberOfImmutableRunsPerPartition immutable run count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfImmutableRunsPerPartition(
+            final Integer maxNumberOfImmutableRunsPerPartition) {
+        this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
+        return this;
+    }
+
+    /**
+     * Sets the maximum number of keys buffered inside one partition.
+     *
+     * @param maxNumberOfKeysInPartitionBuffer per-partition buffered key count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBuffer(
+            final Integer maxNumberOfKeysInPartitionBuffer) {
+        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInPartitionBuffer;
+        return this;
+    }
+
+    /**
      * Sets the max number of keys allowed within a segment.
      *
      * @param maxNumberOfKeysInSegment max keys per segment
@@ -207,6 +247,31 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegment(
             final Integer maxNumberOfKeysInSegment) {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
+        return this;
+    }
+
+    /**
+     * Sets the maximum number of keys buffered across the whole index overlay.
+     *
+     * @param maxNumberOfKeysInIndexBuffer global buffered key count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInIndexBuffer(
+            final Integer maxNumberOfKeysInIndexBuffer) {
+        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
+        return this;
+    }
+
+    /**
+     * Sets the threshold at which a partition becomes eligible for split or
+     * drain re-routing.
+     *
+     * @param maxNumberOfKeysInPartitionBeforeSplit max keys before split
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBeforeSplit(
+            final Integer maxNumberOfKeysInPartitionBeforeSplit) {
+        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
         return this;
     }
 
@@ -283,6 +348,18 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Sets WAL configuration. {@code null} is normalized to
+     * {@link Wal#EMPTY}.
+     *
+     * @param wal WAL configuration
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withWal(final Wal wal) {
+        this.wal = Wal.orEmpty(wal);
+        return this;
+    }
+
+    /**
      * Sets the number of index worker threads used for index operations.
      *
      * @param indexWorkerThreadCount index worker thread count
@@ -291,18 +368,6 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfigurationBuilder<K, V> withIndexWorkerThreadCount(
             final Integer indexWorkerThreadCount) {
         this.indexWorkerThreadCount = indexWorkerThreadCount;
-        return this;
-    }
-
-    /**
-     * Sets the number of IO threads used by the async directory.
-     *
-     * @param numberOfIoThreads IO thread count
-     * @return this builder
-     */
-    public IndexConfigurationBuilder<K, V> withNumberOfIoThreads(
-            final Integer numberOfIoThreads) {
-        this.numberOfIoThreads = numberOfIoThreads;
         return this;
     }
 
@@ -499,9 +564,6 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveIndexWorkerThreadCount = indexWorkerThreadCount == null
                 ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
                 : indexWorkerThreadCount;
-        final Integer effectiveNumberOfIoThreads = numberOfIoThreads == null
-                ? IndexConfigurationContract.NUMBER_OF_IO_THREADS
-                : numberOfIoThreads;
         final Integer effectiveSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads == null
                 ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
                 : numberOfSegmentIndexMaintenanceThreads;
@@ -523,25 +585,52 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveMaxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles == null
                 ? IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES
                 : maxNumberOfDeltaCacheFiles;
+        final Integer effectiveMaxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition == null
+                ? IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION
+                : maxNumberOfImmutableRunsPerPartition;
+        final Integer effectiveMaxNumberOfKeysInSegment = resolveEffectiveMaxNumberOfKeysInSegment();
+        final Integer effectiveMaxNumberOfKeysInPartitionBeforeSplit = resolveEffectiveMaxNumberOfKeysInPartitionBeforeSplit(
+                effectiveMaxNumberOfKeysInSegment);
         final Integer effectiveWriteCacheDuringMaintenance = resolveEffectiveWriteCacheDuringMaintenance();
+        final Integer effectiveIndexBuffer = resolveEffectiveIndexBuffer(
+                effectiveWriteCacheDuringMaintenance);
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
                 maxNumberOfKeysInSegmentWriteCache,
                 effectiveWriteCacheDuringMaintenance,
+                effectiveMaxNumberOfImmutableRunsPerPartition,
+                effectiveIndexBuffer,
                 maxNumberOfKeysInSegmentChunk, effectiveMaxNumberOfDeltaCacheFiles,
-                maxNumberOfKeysInSegment, maxNumberOfSegmentsInCache, indexName,
+                effectiveMaxNumberOfKeysInSegment,
+                effectiveMaxNumberOfKeysInPartitionBeforeSplit,
+                maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 contextLoggingEnabled, effectiveIndexWorkerThreadCount,
-                effectiveNumberOfIoThreads,
                 effectiveSegmentIndexMaintenanceThreads,
                 effectiveIndexMaintenanceThreads,
                 effectiveRegistryLifecycleThreads,
                 effectiveIndexBusyBackoffMillis,
                 effectiveIndexBusyTimeoutMillis,
                 effectiveSegmentMaintenanceAutoEnabled,
+                Wal.orEmpty(wal),
                 encodingChunkFilters, decodingChunkFilters);
+    }
+
+    private Integer resolveEffectiveMaxNumberOfKeysInSegment() {
+        if (maxNumberOfKeysInSegment != null) {
+            return maxNumberOfKeysInSegment;
+        }
+        return maxNumberOfKeysInPartitionBeforeSplit;
+    }
+
+    private Integer resolveEffectiveMaxNumberOfKeysInPartitionBeforeSplit(
+            final Integer effectiveMaxNumberOfKeysInSegment) {
+        if (maxNumberOfKeysInPartitionBeforeSplit != null) {
+            return maxNumberOfKeysInPartitionBeforeSplit;
+        }
+        return effectiveMaxNumberOfKeysInSegment;
     }
 
     private Integer resolveEffectiveWriteCacheDuringMaintenance() {
@@ -566,6 +655,29 @@ public class IndexConfigurationBuilder<K, V> {
                     "maxNumberOfKeysInSegmentWriteCache"));
         }
         return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    }
+
+    private Integer resolveEffectiveIndexBuffer(
+            final Integer effectivePartitionBuffer) {
+        if (maxNumberOfKeysInIndexBuffer != null) {
+            if (effectivePartitionBuffer != null
+                    && maxNumberOfKeysInIndexBuffer.intValue() < effectivePartitionBuffer
+                            .intValue()) {
+                throw new IllegalArgumentException(String.format(
+                        "Property '%s' must be greater than or equal to '%s'",
+                        "maxNumberOfKeysInIndexBuffer",
+                        "maxNumberOfKeysInPartitionBuffer"));
+            }
+            return maxNumberOfKeysInIndexBuffer;
+        }
+        if (effectivePartitionBuffer == null) {
+            return null;
+        }
+        final int segmentCount = maxNumberOfSegmentsInCache == null
+                ? IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
+                : maxNumberOfSegmentsInCache.intValue();
+        return Integer.valueOf(Math.max(effectivePartitionBuffer.intValue(),
+                effectivePartitionBuffer.intValue() * Math.max(1, segmentCount)));
     }
 
     private ChunkFilter instantiateFilter(

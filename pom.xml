@@ -12,6 +12,7 @@
 
     <modules>
         <module>engine</module>
+        <module>wal-tools</module>
         <module>monitoring-micrometer</module>
         <module>monitoring-prometheus</module>
         <module>monitoring-rest-json-api</module>
