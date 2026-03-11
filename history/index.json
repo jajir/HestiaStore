@@ -4,7 +4,7 @@
       "latestChannel": "main",
       "latestPointerPath": "history/segment-index-nightly/latest-main.json",
       "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
-      "timestampUtc": "2026-03-10T19:40:13.452306+00:00"
+      "timestampUtc": "2026-03-11T03:44:03.274449+00:00"
     },
     "segment-index-pr-smoke": {
       "latestChannel": "main",
