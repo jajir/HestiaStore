@@ -168,7 +168,7 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
             final ParallelPutsScenario scenario) {
-        final int activePartitionSize = scenario.maxNumberOfKeysInSegmentWriteCache();
+        final int activePartitionSize = scenario.maxNumberOfKeysInActivePartition();
         final int partitionBufferSize = Math.max(activePartitionSize + 1,
                 scenario.keyCount());
         final int indexBufferSize = Math.max(partitionBufferSize,
@@ -286,7 +286,7 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private record ParallelPutsScenario(String name, int keyCount,
             int maxNumberOfKeysInSegmentCache,
-            int maxNumberOfKeysInSegmentWriteCache,
+            int maxNumberOfKeysInActivePartition,
             int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInSegment,
             int maxNumberOfSegmentsInCache,
             int cpuThreads, int writerThreads) {

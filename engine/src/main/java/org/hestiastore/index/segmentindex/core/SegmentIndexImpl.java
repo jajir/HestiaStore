@@ -577,7 +577,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.segmentBusyCount,
                 segmentRuntime.totalSegmentKeys,
                 segmentRuntime.totalSegmentCacheKeys,
-                segmentRuntime.totalWriteCacheKeys
+                segmentRuntime.totalSegmentBufferedWriteKeys
                         + partitionSnapshot.getBufferedKeyCount(),
                 segmentRuntime.totalDeltaCacheFiles, compactRequestCount,
                 flushRequestCount,
@@ -1638,7 +1638,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             segmentRuntime.getNumberOfKeys());
                     aggregate.totalSegmentCacheKeys += Math.max(0L,
                             segmentRuntime.getNumberOfKeysInSegmentCache());
-                    aggregate.totalWriteCacheKeys += Math.max(0L,
+                    aggregate.totalSegmentBufferedWriteKeys += Math.max(0L,
                             segmentRuntime.getNumberOfKeysInWriteCache());
                     aggregate.totalDeltaCacheFiles += Math.max(0,
                             segmentRuntime.getNumberOfDeltaCacheFiles());
@@ -1924,7 +1924,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         private int segmentBusyCount;
         private long totalSegmentKeys;
         private long totalSegmentCacheKeys;
-        private long totalWriteCacheKeys;
+        private long totalSegmentBufferedWriteKeys;
         private long totalDeltaCacheFiles;
         private long compactRequestCount;
         private long flushRequestCount;

@@ -22,8 +22,8 @@ public final class SegmentIndexMetricsSnapshot {
     private final int registryCacheSize;
     private final int registryCacheLimit;
     private final int segmentCacheKeyLimitPerSegment;
-    private final int maxNumberOfKeysInSegmentWriteCache;
-    private final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final int maxNumberOfKeysInActivePartition;
+    private final int maxNumberOfKeysInPartitionBuffer;
     private final int maxNumberOfImmutableRunsPerPartition;
     private final int maxNumberOfKeysInIndexBuffer;
     private final int segmentCount;
@@ -34,7 +34,7 @@ public final class SegmentIndexMetricsSnapshot {
     private final int segmentBusyCount;
     private final long totalSegmentKeys;
     private final long totalSegmentCacheKeys;
-    private final long totalWriteCacheKeys;
+    private final long totalBufferedWriteKeys;
     private final long totalDeltaCacheFiles;
     private final long compactRequestCount;
     private final long flushRequestCount;
@@ -96,13 +96,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer,
             final int segmentCount, final int segmentReadyCount,
             final int segmentMaintenanceCount, final int segmentErrorCount,
             final int segmentClosedCount, final int segmentBusyCount,
             final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
             final long compactRequestCount, final long flushRequestCount,
             final long splitScheduleCount, final int splitInFlightCount,
             final int maintenanceQueueSize, final int maintenanceQueueCapacity,
@@ -124,11 +124,11 @@ public final class SegmentIndexMetricsSnapshot {
                 registryCacheLoadCount, registryCacheEvictionCount,
                 registryCacheSize, registryCacheLimit,
                 segmentCacheKeyLimitPerSegment,
-                maxNumberOfKeysInSegmentWriteCache,
-                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                maxNumberOfKeysInActivePartition,
+                maxNumberOfKeysInPartitionBuffer,
                 segmentCount, segmentReadyCount, segmentMaintenanceCount,
                 segmentErrorCount, segmentClosedCount, segmentBusyCount,
-                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalSegmentKeys, totalSegmentCacheKeys, totalBufferedWriteKeys,
                 totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
@@ -155,13 +155,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer,
             final int segmentCount, final int segmentReadyCount,
             final int segmentMaintenanceCount, final int segmentErrorCount,
             final int segmentClosedCount, final int segmentBusyCount,
             final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
             final long compactRequestCount, final long flushRequestCount,
             final long splitScheduleCount, final int splitInFlightCount,
             final int maintenanceQueueSize, final int maintenanceQueueCapacity,
@@ -192,11 +192,11 @@ public final class SegmentIndexMetricsSnapshot {
                 registryCacheLoadCount, registryCacheEvictionCount,
                 registryCacheSize, registryCacheLimit,
                 segmentCacheKeyLimitPerSegment,
-                maxNumberOfKeysInSegmentWriteCache,
-                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                maxNumberOfKeysInActivePartition,
+                maxNumberOfKeysInPartitionBuffer,
                 segmentCount, segmentReadyCount, segmentMaintenanceCount,
                 segmentErrorCount, segmentClosedCount, segmentBusyCount,
-                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalSegmentKeys, totalSegmentCacheKeys, totalBufferedWriteKeys,
                 totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
@@ -227,13 +227,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer,
             final int segmentCount, final int segmentReadyCount,
             final int segmentMaintenanceCount, final int segmentErrorCount,
             final int segmentClosedCount, final int segmentBusyCount,
             final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
             final long compactRequestCount, final long flushRequestCount,
             final long splitScheduleCount, final int splitInFlightCount,
             final int maintenanceQueueSize, final int maintenanceQueueCapacity,
@@ -262,11 +262,11 @@ public final class SegmentIndexMetricsSnapshot {
                 registryCacheLoadCount, registryCacheEvictionCount,
                 registryCacheSize, registryCacheLimit,
                 segmentCacheKeyLimitPerSegment,
-                maxNumberOfKeysInSegmentWriteCache,
-                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                maxNumberOfKeysInActivePartition,
+                maxNumberOfKeysInPartitionBuffer,
                 segmentCount, segmentReadyCount, segmentMaintenanceCount,
                 segmentErrorCount, segmentClosedCount, segmentBusyCount,
-                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalSegmentKeys, totalSegmentCacheKeys, totalBufferedWriteKeys,
                 totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
@@ -296,13 +296,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer,
             final int segmentCount, final int segmentReadyCount,
             final int segmentMaintenanceCount, final int segmentErrorCount,
             final int segmentClosedCount, final int segmentBusyCount,
             final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
             final long compactRequestCount, final long flushRequestCount,
             final long splitScheduleCount, final int splitInFlightCount,
             final int maintenanceQueueSize, final int maintenanceQueueCapacity,
@@ -330,11 +330,11 @@ public final class SegmentIndexMetricsSnapshot {
                 registryCacheLoadCount, registryCacheEvictionCount,
                 registryCacheSize, registryCacheLimit,
                 segmentCacheKeyLimitPerSegment,
-                maxNumberOfKeysInSegmentWriteCache,
-                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                maxNumberOfKeysInActivePartition,
+                maxNumberOfKeysInPartitionBuffer,
                 segmentCount, segmentReadyCount, segmentMaintenanceCount,
                 segmentErrorCount, segmentClosedCount, segmentBusyCount,
-                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalSegmentKeys, totalSegmentCacheKeys, totalBufferedWriteKeys,
                 totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
@@ -362,13 +362,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer,
             final int segmentCount, final int segmentReadyCount,
             final int segmentMaintenanceCount, final int segmentErrorCount,
             final int segmentClosedCount, final int segmentBusyCount,
             final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
             final long compactRequestCount, final long flushRequestCount,
             final long splitScheduleCount, final int splitInFlightCount,
             final int maintenanceQueueSize, final int maintenanceQueueCapacity,
@@ -397,11 +397,11 @@ public final class SegmentIndexMetricsSnapshot {
                 registryCacheLoadCount, registryCacheEvictionCount,
                 registryCacheSize, registryCacheLimit,
                 segmentCacheKeyLimitPerSegment,
-                maxNumberOfKeysInSegmentWriteCache,
-                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+                maxNumberOfKeysInActivePartition,
+                maxNumberOfKeysInPartitionBuffer,
                 segmentCount, segmentReadyCount, segmentMaintenanceCount,
                 segmentErrorCount, segmentClosedCount, segmentBusyCount,
-                totalSegmentKeys, totalSegmentCacheKeys, totalWriteCacheKeys,
+                totalSegmentKeys, totalSegmentCacheKeys, totalBufferedWriteKeys,
                 totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
@@ -429,13 +429,13 @@ public final class SegmentIndexMetricsSnapshot {
             final long registryCacheEvictionCount, final int registryCacheSize,
             final int registryCacheLimit,
             final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer,
             final int segmentCount, final int segmentReadyCount,
             final int segmentMaintenanceCount, final int segmentErrorCount,
             final int segmentClosedCount, final int segmentBusyCount,
             final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalWriteCacheKeys, final long totalDeltaCacheFiles,
+            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
             final long compactRequestCount, final long flushRequestCount,
             final long splitScheduleCount, final int splitInFlightCount,
             final int maintenanceQueueSize, final int maintenanceQueueCapacity,
@@ -480,10 +480,10 @@ public final class SegmentIndexMetricsSnapshot {
         requireNotNegative(registryCacheLimit, "registryCacheLimit");
         requireNotNegative(segmentCacheKeyLimitPerSegment,
                 "segmentCacheKeyLimitPerSegment");
-        requireNotNegative(maxNumberOfKeysInSegmentWriteCache,
-                "maxNumberOfKeysInSegmentWriteCache");
-        requireNotNegative(maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        requireNotNegative(maxNumberOfKeysInActivePartition,
+                "maxNumberOfKeysInActivePartition");
+        requireNotNegative(maxNumberOfKeysInPartitionBuffer,
+                "maxNumberOfKeysInPartitionBuffer");
         requireNotNegative(maxNumberOfImmutableRunsPerPartition,
                 "maxNumberOfImmutableRunsPerPartition");
         requireNotNegative(maxNumberOfKeysInIndexBuffer,
@@ -496,7 +496,7 @@ public final class SegmentIndexMetricsSnapshot {
         requireNotNegative(segmentBusyCount, "segmentBusyCount");
         requireNotNegative(totalSegmentKeys, "totalSegmentKeys");
         requireNotNegative(totalSegmentCacheKeys, "totalSegmentCacheKeys");
-        requireNotNegative(totalWriteCacheKeys, "totalWriteCacheKeys");
+        requireNotNegative(totalBufferedWriteKeys, "totalBufferedWriteKeys");
         requireNotNegative(totalDeltaCacheFiles, "totalDeltaCacheFiles");
         requireNotNegative(compactRequestCount, "compactRequestCount");
         requireNotNegative(flushRequestCount, "flushRequestCount");
@@ -564,8 +564,8 @@ public final class SegmentIndexMetricsSnapshot {
         this.registryCacheSize = registryCacheSize;
         this.registryCacheLimit = registryCacheLimit;
         this.segmentCacheKeyLimitPerSegment = segmentCacheKeyLimitPerSegment;
-        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        this.maxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
+        this.maxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
         this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
         this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.segmentCount = segmentCount;
@@ -576,7 +576,7 @@ public final class SegmentIndexMetricsSnapshot {
         this.segmentBusyCount = segmentBusyCount;
         this.totalSegmentKeys = totalSegmentKeys;
         this.totalSegmentCacheKeys = totalSegmentCacheKeys;
-        this.totalWriteCacheKeys = totalWriteCacheKeys;
+        this.totalBufferedWriteKeys = totalBufferedWriteKeys;
         this.totalDeltaCacheFiles = totalDeltaCacheFiles;
         this.compactRequestCount = compactRequestCount;
         this.flushRequestCount = flushRequestCount;
@@ -681,16 +681,8 @@ public final class SegmentIndexMetricsSnapshot {
         return segmentCacheKeyLimitPerSegment;
     }
 
-    public int getMaxNumberOfKeysInSegmentWriteCache() {
-        return maxNumberOfKeysInSegmentWriteCache;
-    }
-
-    public int getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
-        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
-    }
-
     public int getMaxNumberOfKeysInActivePartition() {
-        return maxNumberOfKeysInSegmentWriteCache;
+        return maxNumberOfKeysInActivePartition;
     }
 
     public int getMaxNumberOfImmutableRunsPerPartition() {
@@ -698,7 +690,7 @@ public final class SegmentIndexMetricsSnapshot {
     }
 
     public int getMaxNumberOfKeysInPartitionBuffer() {
-        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        return maxNumberOfKeysInPartitionBuffer;
     }
 
     public int getMaxNumberOfKeysInIndexBuffer() {
@@ -737,8 +729,8 @@ public final class SegmentIndexMetricsSnapshot {
         return totalSegmentCacheKeys;
     }
 
-    public long getTotalWriteCacheKeys() {
-        return totalWriteCacheKeys;
+    public long getTotalBufferedWriteKeys() {
+        return totalBufferedWriteKeys;
     }
 
     public long getTotalDeltaCacheFiles() {

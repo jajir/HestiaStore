@@ -356,10 +356,19 @@ public class ConsoleBackendClient {
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
-                                    .getMaxNumberOfKeysInSegmentWriteCache())
+                                    .getMaxNumberOfKeysInActivePartition())
                             .sum(),
-                    monitoredIndexes.stream().mapToInt(i -> i.metricsSnapshot()
-                            .getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getMaxNumberOfImmutableRunsPerPartition())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getMaxNumberOfKeysInPartitionBuffer())
+                            .sum(),
+                    monitoredIndexes.stream()
+                            .mapToInt(i -> i.metricsSnapshot()
+                                    .getMaxNumberOfKeysInIndexBuffer())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(
@@ -395,7 +404,7 @@ public class ConsoleBackendClient {
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToLong(i -> i.metricsSnapshot()
-                                    .getTotalWriteCacheKeys())
+                                    .getTotalBufferedWriteKeys())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToLong(i -> i.metricsSnapshot()
@@ -515,10 +524,17 @@ public class ConsoleBackendClient {
             final MonitoringConsoleWebProperties.NodeEndpoint node,
             final String error, final long startedNanos) {
         return new NodeRow(node.nodeId(), node.nodeName(), "", "UNAVAILABLE",
-                false, false, node.baseUrl(), 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0D, "/s",
-                0D, "/s", 0D, "/s", 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                0D, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0D, OPS_PER_SECOND,
+                false, false, node.baseUrl(),
+                0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0D, "/s", 0D, "/s", 0D, "/s",
+                0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L,
+                0, 0, 0D,
+                0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L, 0L, 0D, OPS_PER_SECOND,
                 Duration.ofNanos(System.nanoTime() - startedNanos).toMillis(),
                 Instant.now().toString(), error == null ? "" : error);
     }
@@ -681,8 +697,6 @@ public class ConsoleBackendClient {
                     snapshot.getRegistryCacheSize(),
                     snapshot.getRegistryCacheLimit(),
                     snapshot.getSegmentCacheKeyLimitPerSegment(),
-                    snapshot.getMaxNumberOfKeysInSegmentWriteCache(),
-                    snapshot.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
                     snapshot.getMaxNumberOfKeysInActivePartition(),
                     snapshot.getMaxNumberOfImmutableRunsPerPartition(),
                     snapshot.getMaxNumberOfKeysInPartitionBuffer(),
@@ -694,7 +708,7 @@ public class ConsoleBackendClient {
                     snapshot.getSegmentBusyCount(),
                     snapshot.getTotalSegmentKeys(),
                     snapshot.getTotalSegmentCacheKeys(),
-                    snapshot.getTotalWriteCacheKeys(),
+                    snapshot.getTotalBufferedWriteKeys(),
                     snapshot.getTotalDeltaCacheFiles(),
                     snapshot.getReadLatencyP50Micros(),
                     snapshot.getReadLatencyP95Micros(),
@@ -773,11 +787,9 @@ public class ConsoleBackendClient {
                 nonNegativeInt(indexNode.path("segmentCacheKeyLimitPerSegment")
                         .asInt(0)),
                 readNonNegativeIntWithFallback(indexNode,
-                        "maxNumberOfKeysInActivePartition",
-                        "maxNumberOfKeysInSegmentWriteCache"),
+                        "maxNumberOfKeysInActivePartition", null),
                 readNonNegativeIntWithFallback(indexNode,
-                        "maxNumberOfKeysInPartitionBuffer",
-                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"),
+                        "maxNumberOfKeysInPartitionBuffer", null),
                 nonNegativeInt(indexNode.path("segmentCount").asInt(0)),
                 nonNegativeInt(indexNode.path("segmentReadyCount").asInt(0)),
                 nonNegativeInt(indexNode.path("segmentMaintenanceCount")
@@ -789,7 +801,7 @@ public class ConsoleBackendClient {
                 nonNegativeLong(
                         indexNode.path("totalSegmentCacheKeys").asLong(0L)),
                 nonNegativeLong(
-                        indexNode.path("totalWriteCacheKeys").asLong(0L)),
+                        indexNode.path("totalBufferedWriteKeys").asLong(0L)),
                 nonNegativeLong(
                         indexNode.path("totalDeltaCacheFiles").asLong(0L)),
                 nonNegativeLong(
@@ -1043,12 +1055,14 @@ public class ConsoleBackendClient {
             long getOps, long putOps, long deleteOps, long cacheHitCount,
             long cacheMissCount, long cacheLoadCount, long cacheEvictionCount,
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
-            int maxNumberOfKeysInSegmentWriteCache,
-            int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+            int maxNumberOfKeysInActivePartition,
+            int maxNumberOfImmutableRunsPerPartition,
+            int maxNumberOfKeysInPartitionBuffer,
+            int maxNumberOfKeysInIndexBuffer,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
-            long totalSegmentCacheKeys, long totalWriteCacheKeys,
+            long totalSegmentCacheKeys, long totalBufferedWriteKeys,
             long totalDeltaCacheFiles, long compactRequestCount,
             long flushRequestCount, long splitScheduleCount,
             double compactRateValue, String compactRateUnit,
@@ -1464,8 +1478,6 @@ public class ConsoleBackendClient {
             long getOps, long putOps, long deleteOps, long cacheHitCount,
             long cacheMissCount, long cacheLoadCount, long cacheEvictionCount,
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
-            int maxNumberOfKeysInSegmentWriteCache,
-            int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             int maxNumberOfKeysInActivePartition,
             int maxNumberOfImmutableRunsPerPartition,
             int maxNumberOfKeysInPartitionBuffer,
@@ -1473,7 +1485,7 @@ public class ConsoleBackendClient {
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
-            long totalSegmentCacheKeys, long totalWriteCacheKeys,
+            long totalSegmentCacheKeys, long totalBufferedWriteKeys,
             long totalDeltaCacheFiles, long readLatencyP50Micros,
             long readLatencyP95Micros, long readLatencyP99Micros,
             long writeLatencyP50Micros, long writeLatencyP95Micros,

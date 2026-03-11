@@ -118,10 +118,12 @@ Key classes: `segmentindex/SegmentIndexImpl#delete`, `datatype/TypeDescriptor#ge
 
 ## ⚙️ Configuration Knobs Affecting Writes
 
-- `maxNumberOfKeysInSegmentWriteCache` – bounds in‑segment write cache size before flushing to delta files.
+- `maxNumberOfKeysInActivePartition` – bounds active mutable overlay size before rotation to an immutable run.
+- `maxNumberOfKeysInPartitionBuffer` – bounds buffered keys per partition before local backpressure.
+- `maxNumberOfKeysInIndexBuffer` – bounds buffered keys across the whole index before global backpressure.
 - `maxNumberOfKeysInSegmentCache` – bounds total in‑segment cache size before compaction/split decisions.
 - `maxNumberOfKeysInSegmentChunk` – controls sparse index sampling cadence.
-- `maxNumberOfKeysInSegment` – split threshold per segment.
+- `maxNumberOfKeysInPartitionBeforeSplit` – split threshold per routed partition.
 - `bloomFilter*` – Bloom filter size/hash tuning.
 - `diskIoBufferSize` – I/O buffer sizing for on‑disk writers.
 - `encoding/decodingChunkFilters` – write/read pipelines (e.g., Snappy, CRC32, magic number).

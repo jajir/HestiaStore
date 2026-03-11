@@ -55,7 +55,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(2L, snapshot.getPutOperationCount());
             assertEquals(4L, snapshot.getGetOperationCount());
             assertEquals(1L, snapshot.getDeleteOperationCount());
-            assertTrue(snapshot.getTotalWriteCacheKeys() >= 2L);
+            assertTrue(snapshot.getTotalBufferedWriteKeys() >= 2L);
             assertTrue(snapshot.getPartitionCount() >= 1);
             assertTrue(snapshot.getActivePartitionCount() >= 1);
             assertTrue(snapshot.getPartitionBufferedKeyCount() >= 1);

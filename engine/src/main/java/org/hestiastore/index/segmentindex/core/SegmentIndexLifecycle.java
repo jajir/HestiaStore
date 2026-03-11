@@ -8,7 +8,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
-import org.hestiastore.index.segmentindex.config.IndexConfiguratonStorage;
+import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class SegmentIndexLifecycle<K, V> {
         managedConf//
                 = new Managed<>(null, () -> {
                     IndexConfigurationManager<K, V> confManager = new IndexConfigurationManager<>(
-                            new IndexConfiguratonStorage<>(dir));
+                            new IndexConfigurationStorage<>(dir));
                     return confManager.mergeWithStored(userProvidedConf);
                 }, toClose -> {
                     managedConf.resource = null;
@@ -61,7 +61,7 @@ public class SegmentIndexLifecycle<K, V> {
 
         createIndexSupplier = () -> {
             IndexConfigurationManager<K, V> confManager = new IndexConfigurationManager<>(
-                    new IndexConfiguratonStorage<>(dir));
+                    new IndexConfigurationStorage<>(dir));
             final IndexConfiguration<K, V> conf = confManager
                     .applyDefaults(userProvidedConf);
             confManager.save(conf);

@@ -163,7 +163,11 @@ At allows to pass `IndexConfiguration` object and this way change configuration 
 | valueTypeDescriptor                         | Value class type descriptor                          | 🟥             | index                |
 | maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
 | maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
-| maxNumberOfKeysInSegmentWriteCache          | Maximum number of keys in segment write cache        | 🟩             | segment              |
+| maxNumberOfKeysInActivePartition            | Maximum number of keys in active partition overlay   | 🟩             | partition            |
+| maxNumberOfImmutableRunsPerPartition        | Maximum number of immutable runs queued per partition| 🟩             | partition            |
+| maxNumberOfKeysInPartitionBuffer            | Maximum buffered keys allowed per partition          | 🟩             | partition            |
+| maxNumberOfKeysInIndexBuffer                | Maximum buffered keys allowed across the whole index | 🟩             | index                |
+| maxNumberOfKeysInPartitionBeforeSplit       | Threshold after which a partition becomes split-eligible | 🟩         | partition            |
 | maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |
 | maxNumberOfSegmentsInCache                  | Maximum number of segments in cache                  | 🟩             | index                |
 | bloomFilterNumberOfHashFunctions            | Bloom filter - number of hash functions used         | 🟥             | segment bloom filter |

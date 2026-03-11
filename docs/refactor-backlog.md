@@ -667,7 +667,7 @@
     - Introduce a common property schema used by segment + segmentindex
       packages (e.g. `IndexPropertiesSchema`).
     - Store schema version and required keys; add migration helpers.
-    - Update `SegmentPropertiesManager` and `IndexConfiguratonStorage`
+    - Update `SegmentPropertiesManager` and `IndexConfigurationStorage`
       to use the shared schema.
 
 [x] 29 Compact flow for directory layout (publish protocol) (Risk: HIGH)

@@ -45,7 +45,7 @@ class SegmentIndexConfigurationManagerTest {
             .withName("test_index")//
             .withContextLoggingEnabled(false)//
             .withMaxNumberOfKeysInSegmentCache(11)//
-            .withMaxNumberOfKeysInSegmentWriteCache(5)//
+            .withMaxNumberOfKeysInActivePartition(5)//
             .withMaxNumberOfKeysInSegmentChunk(33)//
             .withMaxNumberOfDeltaCacheFiles(7)//
             .withMaxNumberOfKeysInSegment(44)//
@@ -61,7 +61,7 @@ class SegmentIndexConfigurationManagerTest {
             .build();
 
     @Mock
-    private IndexConfiguratonStorage<Long, String> storage;
+    private IndexConfigurationStorage<Long, String> storage;
 
     private IndexConfigurationManager<Long, String> manager;
 
@@ -281,7 +281,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInActivePartition(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
@@ -312,7 +312,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withKeyTypeDescriptor(TD_LONG)//
                 .withValueTypeDescriptor(TD_STRING)//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInActivePartition(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfDeltaCacheFiles(7)//
                 .withMaxNumberOfKeysInSegment(44)//
@@ -750,7 +750,7 @@ class SegmentIndexConfigurationManagerTest {
                 .withValueTypeDescriptor(TD_STRING)//
                 .withName("base_index")//
                 .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInActivePartition(5)//
                 .withMaxNumberOfKeysInSegmentChunk(33)//
                 .withMaxNumberOfKeysInSegment(44)//
                 .withMaxNumberOfSegmentsInCache(66)//

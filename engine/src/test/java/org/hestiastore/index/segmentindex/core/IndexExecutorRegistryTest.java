@@ -81,10 +81,10 @@ class IndexExecutorRegistryTest {
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withMaxNumberOfKeysInSegmentCache(
                         conf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        conf.getMaxNumberOfKeysInSegmentWriteCache())//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())//
+                .withMaxNumberOfKeysInActivePartition(
+                        conf.getMaxNumberOfKeysInActivePartition())//
+                .withMaxNumberOfKeysInPartitionBuffer(
+                        conf.getMaxNumberOfKeysInPartitionBuffer())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withMaxNumberOfKeysInSegment(conf.getMaxNumberOfKeysInSegment())//
@@ -125,8 +125,8 @@ class IndexExecutorRegistryTest {
                 .withName("  ")//
                 .withContextLoggingEnabled(true)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)//
+                .withMaxNumberOfKeysInActivePartition(5)//
+                .withMaxNumberOfKeysInPartitionBuffer(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegment(100)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -319,8 +319,8 @@ class IndexExecutorRegistryTest {
                 .withName("index-executor-registry-test")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)//
+                .withMaxNumberOfKeysInActivePartition(5)//
+                .withMaxNumberOfKeysInPartitionBuffer(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegment(100)//
                 .withMaxNumberOfSegmentsInCache(3)//

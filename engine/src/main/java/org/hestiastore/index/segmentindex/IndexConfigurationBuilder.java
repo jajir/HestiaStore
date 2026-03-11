@@ -17,8 +17,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 public class IndexConfigurationBuilder<K, V> {
 
     private Integer maxNumberOfKeysInSegmentCache;
-    private Integer maxNumberOfKeysInSegmentWriteCache;
-    private Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private Integer maxNumberOfKeysInActivePartition;
+    private Integer maxNumberOfKeysInPartitionBuffer;
     private Integer maxNumberOfImmutableRunsPerPartition;
     private Integer maxNumberOfKeysInIndexBuffer;
     private Integer maxNumberOfKeysInSegmentChunk;
@@ -154,18 +154,6 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the max number of keys buffered in the segment write cache.
-     *
-     * @param maxNumberOfKeysInSegmentWriteCache max keys in segment write cache
-     * @return this builder
-     */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCache(
-            final Integer maxNumberOfKeysInSegmentWriteCache) {
-        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        return this;
-    }
-
-    /**
      * Sets the maximum number of keys accepted into the active partition
      * before it is rotated to an immutable run.
      *
@@ -174,7 +162,7 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInActivePartition(
             final Integer maxNumberOfKeysInActivePartition) {
-        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInActivePartition;
+        this.maxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
         return this;
     }
 
@@ -203,18 +191,6 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the max number of keys buffered while maintenance is running.
-     *
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance max buffered keys during maintenance
-     * @return this builder
-     */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-            final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance) {
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
-        return this;
-    }
-
-    /**
      * Sets the maximum immutable run queue depth per partition.
      *
      * @param maxNumberOfImmutableRunsPerPartition immutable run count
@@ -234,7 +210,7 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBuffer(
             final Integer maxNumberOfKeysInPartitionBuffer) {
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInPartitionBuffer;
+        this.maxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
         return this;
     }
 
@@ -591,14 +567,14 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveMaxNumberOfKeysInSegment = resolveEffectiveMaxNumberOfKeysInSegment();
         final Integer effectiveMaxNumberOfKeysInPartitionBeforeSplit = resolveEffectiveMaxNumberOfKeysInPartitionBeforeSplit(
                 effectiveMaxNumberOfKeysInSegment);
-        final Integer effectiveWriteCacheDuringMaintenance = resolveEffectiveWriteCacheDuringMaintenance();
+        final Integer effectivePartitionBuffer = resolveEffectivePartitionBuffer();
         final Integer effectiveIndexBuffer = resolveEffectiveIndexBuffer(
-                effectiveWriteCacheDuringMaintenance);
+                effectivePartitionBuffer);
         return new IndexConfiguration<K, V>(keyClass, valueClass,
                 keyTypeDescriptor, valueTypeDescriptor,
                 maxNumberOfKeysInSegmentCache,
-                maxNumberOfKeysInSegmentWriteCache,
-                effectiveWriteCacheDuringMaintenance,
+                maxNumberOfKeysInActivePartition,
+                effectivePartitionBuffer,
                 effectiveMaxNumberOfImmutableRunsPerPartition,
                 effectiveIndexBuffer,
                 maxNumberOfKeysInSegmentChunk, effectiveMaxNumberOfDeltaCacheFiles,
@@ -633,28 +609,28 @@ public class IndexConfigurationBuilder<K, V> {
         return effectiveMaxNumberOfKeysInSegment;
     }
 
-    private Integer resolveEffectiveWriteCacheDuringMaintenance() {
-        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null
-                && maxNumberOfKeysInSegmentWriteCache != null) {
+    private Integer resolveEffectivePartitionBuffer() {
+        if (maxNumberOfKeysInPartitionBuffer == null
+                && maxNumberOfKeysInActivePartition != null) {
             return Math.max(
-                    (int) Math.ceil(maxNumberOfKeysInSegmentWriteCache * 1.4),
-                    maxNumberOfKeysInSegmentWriteCache + 1);
+                    (int) Math.ceil(maxNumberOfKeysInActivePartition * 1.4),
+                    maxNumberOfKeysInActivePartition + 1);
         }
-        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance == null) {
+        if (maxNumberOfKeysInPartitionBuffer == null) {
             return null;
         }
-        if (maxNumberOfKeysInSegmentWriteCache == null) {
+        if (maxNumberOfKeysInActivePartition == null) {
             return Vldtn.requireGreaterThanZero(
-                    maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+                    maxNumberOfKeysInPartitionBuffer,
+                    "maxNumberOfKeysInPartitionBuffer");
         }
-        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance <= maxNumberOfKeysInSegmentWriteCache) {
+        if (maxNumberOfKeysInPartitionBuffer <= maxNumberOfKeysInActivePartition) {
             throw new IllegalArgumentException(String.format(
                     "Property '%s' must be greater than '%s'",
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
-                    "maxNumberOfKeysInSegmentWriteCache"));
+                    "maxNumberOfKeysInPartitionBuffer",
+                    "maxNumberOfKeysInActivePartition"));
         }
-        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        return maxNumberOfKeysInPartitionBuffer;
     }
 
     private Integer resolveEffectiveIndexBuffer(

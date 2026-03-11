@@ -138,10 +138,10 @@ class SegmentIndexConcurrencySerializationIT {
                         defaults.getMaxNumberOfSegmentsInCache())//
                 .withMaxNumberOfKeysInSegmentCache(
                         defaults.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        defaults.getMaxNumberOfKeysInSegmentWriteCache())//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        defaults.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())//
+                .withMaxNumberOfKeysInActivePartition(
+                        defaults.getMaxNumberOfKeysInActivePartition())//
+                .withMaxNumberOfKeysInPartitionBuffer(
+                        defaults.getMaxNumberOfKeysInPartitionBuffer())//
                 .withMaxNumberOfKeysInSegmentChunk(
                         defaults.getMaxNumberOfKeysInSegmentChunk())//
                 .withBloomFilterNumberOfHashFunctions(

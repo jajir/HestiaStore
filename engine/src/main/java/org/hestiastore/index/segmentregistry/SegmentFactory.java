@@ -57,9 +57,9 @@ public final class SegmentFactory<K, V> {
         this.runtimeMaxNumberOfKeysInSegmentCache = toIntOrZero(
                 conf.getMaxNumberOfKeysInSegmentCache());
         this.runtimeMaxNumberOfKeysInSegmentWriteCache = toIntOrZero(
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInActivePartition());
         this.runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = toIntOrZero(
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+                conf.getMaxNumberOfKeysInPartitionBuffer());
     }
 
     /**
@@ -180,9 +180,9 @@ public final class SegmentFactory<K, V> {
         final int configuredCache = toIntOrZero(
                 conf.getMaxNumberOfKeysInSegmentCache());
         final int configuredWrite = toIntOrZero(
-                conf.getMaxNumberOfKeysInSegmentWriteCache());
+                conf.getMaxNumberOfKeysInActivePartition());
         final int configuredWriteDuringMaintenance = toIntOrZero(
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+                conf.getMaxNumberOfKeysInPartitionBuffer());
         if (configuredCache > 0) {
             runtimeMaxNumberOfKeysInSegmentCache = configuredCache;
         }
