@@ -11,7 +11,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.config.DataTypeDescriptorRegistry;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
-import org.hestiastore.index.segmentindex.config.IndexConfiguratonStorage;
+import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 
 /**
  * Central lifecycle owner for SegmentIndex construction and dependent
@@ -71,7 +71,7 @@ public final class SegmentIndexFactory {
      */
     public static <M, N> SegmentIndex<M, N> open(final Directory directory) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
+                new IndexConfigurationStorage<>(directory));
         final IndexConfiguration<M, N> conf = confManager.loadExisting();
         final SegmentIndexLifecycle<M, N> lifecycle = new SegmentIndexLifecycle<>(
                 directory, conf);
@@ -90,7 +90,7 @@ public final class SegmentIndexFactory {
     public static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
         final IndexConfigurationManager<M, N> confManager = new IndexConfigurationManager<>(
-                new IndexConfiguratonStorage<>(directory));
+                new IndexConfigurationStorage<>(directory));
         final Optional<IndexConfiguration<M, N>> oConf = confManager
                 .tryToLoad();
         if (oConf.isEmpty()) {

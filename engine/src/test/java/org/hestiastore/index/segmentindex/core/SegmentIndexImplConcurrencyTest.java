@@ -101,8 +101,8 @@ class SegmentIndexImplConcurrencyTest {
                 .withName("segment-index-concurrency-test")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(100)//
-                .withMaxNumberOfKeysInSegmentWriteCache(200)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(220)//
+                .withMaxNumberOfKeysInActivePartition(200)//
+                .withMaxNumberOfKeysInPartitionBuffer(220)//
                 // Keep this test focused on concurrent put/get behavior and
                 // avoid background maintenance races while workers are running.
                 .withSegmentMaintenanceAutoEnabled(false)//

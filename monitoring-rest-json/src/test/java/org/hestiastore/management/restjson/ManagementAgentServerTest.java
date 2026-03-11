@@ -29,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -88,6 +89,7 @@ class ManagementAgentServerTest {
                 ManagementApiPaths.REPORT, null);
         assertEquals(200, reportResp.statusCode());
 
+        final JsonNode reportJson = objectMapper.readTree(reportResp.body());
         final NodeReportResponse report = objectMapper
                 .readValue(reportResp.body(), NodeReportResponse.class);
         assertEquals(2, report.indexes().size());
@@ -102,6 +104,15 @@ class ManagementAgentServerTest {
                 .allMatch(idx -> idx.segmentRuntimeSnapshots() != null));
         assertTrue(report.indexes().stream()
                 .allMatch(idx -> idx.partitionCount() >= 1));
+        for (final JsonNode indexNode : reportJson.path("indexes")) {
+            assertTrue(indexNode.has("maxNumberOfKeysInActivePartition"));
+            assertTrue(indexNode.has("maxNumberOfImmutableRunsPerPartition"));
+            assertTrue(indexNode.has("maxNumberOfKeysInPartitionBuffer"));
+            assertTrue(indexNode.has("maxNumberOfKeysInIndexBuffer"));
+            assertTrue(!indexNode.has("maxNumberOfKeysInSegmentWriteCache"));
+            assertTrue(!indexNode.has(
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
+        }
     }
 
     @Test
@@ -157,6 +168,17 @@ class ManagementAgentServerTest {
         final HttpResponse<String> response = send("PATCH",
                 ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
                 "{\"values\":{\"forbidden.key\":\"1\"},\"dryRun\":false}");
+        assertEquals(400, response.statusCode());
+        final ErrorResponse payload = objectMapper.readValue(response.body(),
+                ErrorResponse.class);
+        assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
+    }
+
+    @Test
+    void configPatchRejectsLegacyPartitionAliasKey() throws Exception {
+        final HttpResponse<String> response = send("PATCH",
+                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                "{\"values\":{\"maxNumberOfKeysInSegmentWriteCache\":\"16\"},\"dryRun\":false}");
         assertEquals(400, response.statusCode());
         final ErrorResponse payload = objectMapper.readValue(response.body(),
                 ErrorResponse.class);

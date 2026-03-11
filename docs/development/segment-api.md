@@ -96,18 +96,22 @@ unbounded, so if writes outpace maintenance, memory can grow.
 
 Current index-level handling (SegmentIndexImpl):
 
-- When `getNumberOfKeysInWriteCache()` reaches
-  `maxNumberOfKeysInSegmentWriteCache`, the index triggers `flush()`.
-- When `getNumberOfKeysInCache()` exceeds
-  `maxNumberOfKeysInSegmentCache`, the index tries `split()`, and falls back
-  to `flush()` if splitting is not possible.
+- When the active partition reaches `maxNumberOfKeysInActivePartition`, the
+  write overlay rotates to an immutable run and background drain starts.
+- When one partition exceeds `maxNumberOfKeysInPartitionBuffer`, or the whole
+  index exceeds `maxNumberOfKeysInIndexBuffer`, the index applies bounded
+  backpressure instead of letting buffered data grow without limit.
+- When a routed partition grows past
+  `maxNumberOfKeysInPartitionBeforeSplit`, the split policy loop schedules a
+  partition split.
 
 If write load still exceeds flush/compact throughput, pick one:
 
 - Apply backpressure at the index level (for example, wrap SegmentIndex with a
   bounded executor/queue).
 - Lower thresholds to flush/split earlier.
-- Add explicit write-cache caps or throttling around `Segment.put()`.
+- Add explicit throttling around `SegmentIndex.put()` callers if upstream
+  producers still exceed drain/compaction throughput.
 
 ### Parallel calls (flush vs compact vs split)
 

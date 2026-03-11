@@ -204,7 +204,7 @@ class SegmentIndexImplPutTest {
                 .withValueTypeDescriptor(tds)//
                 .withName("wal-retention-single-segment-test")//
                 .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInSegmentWriteCache(1)//
+                .withMaxNumberOfKeysInActivePartition(1)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegment(10)//
                 .withMaxNumberOfSegmentsInCache(3)//
@@ -233,19 +233,19 @@ class SegmentIndexImplPutTest {
     }
 
     private void resetIndex(final int maxKeysInSegment,
-            final int maxNumberOfKeysInSegmentWriteCache) {
-        resetIndex(maxKeysInSegment, maxNumberOfKeysInSegmentWriteCache,
+            final int maxNumberOfKeysInActivePartition) {
+        resetIndex(maxKeysInSegment, maxNumberOfKeysInActivePartition,
                 Wal.EMPTY);
     }
 
     private void resetIndex(final int maxKeysInSegment,
-            final int maxNumberOfKeysInSegmentWriteCache, final Wal wal) {
+            final int maxNumberOfKeysInActivePartition, final Wal wal) {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
         directory = new MemDirectory();
         index = new TestIndex<>(directory, tdi, tds, buildConf(maxKeysInSegment,
-                maxNumberOfKeysInSegmentWriteCache, wal));
+                maxNumberOfKeysInActivePartition, wal));
     }
 
     private static final class TestIndex<K, V>
@@ -266,7 +266,7 @@ class SegmentIndexImplPutTest {
 
     private IndexConfiguration<Integer, String> buildConf(
             final int maxKeysInSegment,
-            final int maxNumberOfKeysInSegmentWriteCache, final Wal wal) {
+            final int maxNumberOfKeysInActivePartition, final Wal wal) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -274,8 +274,8 @@ class SegmentIndexImplPutTest {
                 .withValueTypeDescriptor(tds)//
                 .withName("test-index")//
                 .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        maxNumberOfKeysInSegmentWriteCache)//
+                .withMaxNumberOfKeysInActivePartition(
+                        maxNumberOfKeysInActivePartition)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegment(maxKeysInSegment)//
                 .withMaxNumberOfSegmentsInCache(3)//

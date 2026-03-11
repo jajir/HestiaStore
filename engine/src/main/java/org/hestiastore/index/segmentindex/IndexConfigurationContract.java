@@ -47,26 +47,6 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default maximum number of keys buffered in the segment write
-     * cache before flush.
-     *
-     * @return default max keys in segment write cache
-     */
-    default int getMaxNumberOfKeysInSegmentWriteCache() {
-        return getMaxNumberOfKeysInActivePartition();
-    }
-
-    /**
-     * Returns the default maximum number of buffered keys allowed while
-     * maintenance is in flight.
-     *
-     * @return default max buffered keys during maintenance
-     */
-    default int getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
-        return getMaxNumberOfKeysInPartitionBuffer();
-    }
-
-    /**
      * Returns the default maximum number of keys per segment chunk.
      *
      * @return default max keys per chunk

@@ -83,8 +83,8 @@ class SegmentFactoryTest {
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//
                 .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(10)//
+                .withMaxNumberOfKeysInActivePartition(5)//
+                .withMaxNumberOfKeysInPartitionBuffer(10)//
                 .withMaxNumberOfKeysInSegmentChunk(4)//
                 .withMaxNumberOfDeltaCacheFiles(2)//
                 .withMaxNumberOfKeysInSegment(50)//

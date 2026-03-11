@@ -28,7 +28,7 @@ import org.hestiastore.index.segmentindex.WalDurabilityMode;
  * @param <K> key type
  * @param <V> value type
  */
-public class IndexConfiguratonStorage<K, V> {
+public class IndexConfigurationStorage<K, V> {
 
     private static final IndexPropertiesSchema SCHEMA = IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA;
     private static final String PROP_KEY_CLASS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_CLASS;
@@ -74,7 +74,7 @@ public class IndexConfiguratonStorage<K, V> {
 
     private final Directory directoryFacade;
 
-    public IndexConfiguratonStorage(final Directory directoryFacade) {
+    public IndexConfigurationStorage(final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
     }
@@ -89,19 +89,19 @@ public class IndexConfiguratonStorage<K, V> {
                 propsView.getString(PROP_VALUE_CLASS));
         final long maxNumberOfKeysInSegmentCache = propsView
                 .getLong(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE);
-        final long defaultMaxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentCache > 0
+        final long defaultMaxNumberOfKeysInActivePartition = maxNumberOfKeysInSegmentCache > 0
                 ? maxNumberOfKeysInSegmentCache / 2
                 : IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
                         / 2;
         final long maxNumberOfKeysInActivePartition = getOrDefaultLong(
                 propsView, PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                defaultMaxNumberOfKeysInSegmentWriteCache);
-        final long defaultWriteCacheDuringMaintenance = Math.max(
+                defaultMaxNumberOfKeysInActivePartition);
+        final long defaultMaxNumberOfKeysInPartitionBuffer = Math.max(
                 maxNumberOfKeysInActivePartition * 2,
                 maxNumberOfKeysInActivePartition + 1);
         final long maxNumberOfKeysInPartitionBuffer = getOrDefaultLong(propsView,
                 PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                defaultWriteCacheDuringMaintenance);
+                defaultMaxNumberOfKeysInPartitionBuffer);
         final int maxNumberOfImmutableRunsPerPartition = getOrDefault(propsView,
                 PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
                 IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION);

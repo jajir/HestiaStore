@@ -18,12 +18,12 @@ import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
 
-class IndexConfiguratonStorageWalTest {
+class IndexConfigurationStorageWalTest {
 
     @Test
     void saveAndLoadRoundTripEnabledWal() {
         final MemDirectory directory = new MemDirectory();
-        final IndexConfiguratonStorage<String, String> storage = new IndexConfiguratonStorage<>(
+        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
         final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
         final Wal wal = Wal.builder()//
@@ -44,8 +44,8 @@ class IndexConfiguratonStorageWalTest {
                 .withName("wal-storage-roundtrip")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(16)//
-                .withMaxNumberOfKeysInSegmentWriteCache(8)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(12)//
+                .withMaxNumberOfKeysInActivePartition(8)//
+                .withMaxNumberOfKeysInPartitionBuffer(12)//
                 .withMaxNumberOfKeysInSegmentChunk(4)//
                 .withMaxNumberOfDeltaCacheFiles(2)//
                 .withMaxNumberOfKeysInSegment(32)//
@@ -97,7 +97,7 @@ class IndexConfiguratonStorageWalTest {
                     IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
                     "legacy-no-wal");
         }
-        final IndexConfiguratonStorage<String, String> storage = new IndexConfiguratonStorage<>(
+        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
 
         final IndexConfiguration<String, String> loaded = storage.load();

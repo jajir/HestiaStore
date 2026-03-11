@@ -12,12 +12,14 @@ public record MetricsResponse(String indexName, String state,
         long registryCacheMissCount, long registryCacheLoadCount,
         long registryCacheEvictionCount, int registryCacheSize,
         int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
-        int maxNumberOfKeysInSegmentWriteCache,
-        int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
+        int maxNumberOfKeysInActivePartition,
+        int maxNumberOfImmutableRunsPerPartition,
+        int maxNumberOfKeysInPartitionBuffer,
+        int maxNumberOfKeysInIndexBuffer,
         int segmentCount, int segmentReadyCount,
         int segmentMaintenanceCount, int segmentErrorCount,
         int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
-        long totalSegmentCacheKeys, long totalWriteCacheKeys,
+        long totalSegmentCacheKeys, long totalBufferedWriteKeys,
         long totalDeltaCacheFiles, long compactRequestCount,
         long flushRequestCount, long splitScheduleCount, int splitInFlightCount,
         int maintenanceQueueSize, int maintenanceQueueCapacity,
@@ -51,10 +53,14 @@ public record MetricsResponse(String indexName, String state,
         requireNotNegative(registryCacheLimit, "registryCacheLimit");
         requireNotNegative(segmentCacheKeyLimitPerSegment,
                 "segmentCacheKeyLimitPerSegment");
-        requireNotNegative(maxNumberOfKeysInSegmentWriteCache,
-                "maxNumberOfKeysInSegmentWriteCache");
-        requireNotNegative(maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
+        requireNotNegative(maxNumberOfKeysInActivePartition,
+                "maxNumberOfKeysInActivePartition");
+        requireNotNegative(maxNumberOfImmutableRunsPerPartition,
+                "maxNumberOfImmutableRunsPerPartition");
+        requireNotNegative(maxNumberOfKeysInPartitionBuffer,
+                "maxNumberOfKeysInPartitionBuffer");
+        requireNotNegative(maxNumberOfKeysInIndexBuffer,
+                "maxNumberOfKeysInIndexBuffer");
         requireNotNegative(segmentCount, "segmentCount");
         requireNotNegative(segmentReadyCount, "segmentReadyCount");
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
@@ -63,7 +69,7 @@ public record MetricsResponse(String indexName, String state,
         requireNotNegative(segmentBusyCount, "segmentBusyCount");
         requireNotNegative(totalSegmentKeys, "totalSegmentKeys");
         requireNotNegative(totalSegmentCacheKeys, "totalSegmentCacheKeys");
-        requireNotNegative(totalWriteCacheKeys, "totalWriteCacheKeys");
+        requireNotNegative(totalBufferedWriteKeys, "totalBufferedWriteKeys");
         requireNotNegative(totalDeltaCacheFiles, "totalDeltaCacheFiles");
         requireNotNegative(compactRequestCount, "compactRequestCount");
         requireNotNegative(flushRequestCount, "flushRequestCount");
@@ -111,7 +117,7 @@ public record MetricsResponse(String indexName, String state,
         this(indexName, state, getOperationCount, putOperationCount,
                 deleteOperationCount,
                 0L, 0L, 0L, 0L,
-                0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
                 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                 0, 0, 0, 0, 0,

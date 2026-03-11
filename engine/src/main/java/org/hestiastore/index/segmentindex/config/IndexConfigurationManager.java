@@ -23,11 +23,11 @@ import org.slf4j.MDC;
 public class IndexConfigurationManager<K, V> {
 
     private static final String INDEX_NAME_MDC_KEY = "index.name";
-    private final IndexConfiguratonStorage<K, V> confStorage;
+    private final IndexConfigurationStorage<K, V> confStorage;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public IndexConfigurationManager(
-            final IndexConfiguratonStorage<K, V> confStorage) {
+            final IndexConfigurationStorage<K, V> confStorage) {
         this.confStorage = Vldtn.requireNonNull(confStorage, "confStorage");
     }
 
@@ -48,21 +48,21 @@ public class IndexConfigurationManager<K, V> {
         validateRequiredDatatypesAndIndexName(conf);
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(conf);
         applyTypeDescriptorDefaults(conf, builder);
-        final Optional<IndexConfigurationContract> oDefaults = IndexConfigurationRegistry
+        final Optional<IndexConfigurationContract> defaultsOpt = IndexConfigurationRegistry
                 .get(conf.getKeyClass());
-        if (oDefaults.isEmpty()) {
+        if (defaultsOpt.isEmpty()) {
             debugWithIndexContext(conf,
                     "There is no default configuration for key class '{}'",
                     conf.getKeyClass());
             return validate(builder.build());
         }
-        final IndexConfigurationContract defaults = oDefaults.get();
+        final IndexConfigurationContract defaults = defaultsOpt.get();
         applyCoreDefaults(conf, defaults, builder);
         final int effectiveMaxNumberOfKeysInSegmentCache = applySegmentCacheDefaults(
                 conf, defaults, builder);
-        final int effectiveWriteCacheSize = applyWriteCacheDefaults(conf,
+        final int effectiveActivePartitionLimit = applyActivePartitionDefaults(conf,
                 builder, effectiveMaxNumberOfKeysInSegmentCache);
-        applyWriteCacheMaintenanceDefaults(conf, builder, effectiveWriteCacheSize);
+        applyPartitionBufferDefaults(conf, builder, effectiveActivePartitionLimit);
         applyRemainingSegmentDefaults(conf, defaults, builder);
         applyBloomAndIoDefaults(conf, defaults, builder);
         applyChunkFilterDefaults(conf, defaults, builder);
@@ -138,29 +138,29 @@ public class IndexConfigurationManager<K, V> {
         return effectiveMaxNumberOfKeysInSegmentCache;
     }
 
-    private int applyWriteCacheDefaults(final IndexConfiguration<K, V> conf,
+    private int applyActivePartitionDefaults(final IndexConfiguration<K, V> conf,
             final IndexConfigurationBuilder<K, V> builder,
             final int effectiveMaxNumberOfKeysInSegmentCache) {
         if (conf.getMaxNumberOfKeysInActivePartition() == null) {
-            final int effectiveWriteCacheSize = Math.max(1,
+            final int effectiveActivePartitionLimit = Math.max(1,
                     effectiveMaxNumberOfKeysInSegmentCache / 2);
             builder.withMaxNumberOfKeysInActivePartition(
-                    effectiveWriteCacheSize);
-            return effectiveWriteCacheSize;
+                    effectiveActivePartitionLimit);
+            return effectiveActivePartitionLimit;
         }
         return conf.getMaxNumberOfKeysInActivePartition();
     }
 
-    private void applyWriteCacheMaintenanceDefaults(
+    private void applyPartitionBufferDefaults(
             final IndexConfiguration<K, V> conf,
             final IndexConfigurationBuilder<K, V> builder,
-            final int effectiveWriteCacheSize) {
+            final int effectiveActivePartitionLimit) {
         if (conf.getMaxNumberOfKeysInPartitionBuffer() == null) {
-            final int effectiveFlushBackpressure = Math.max(
-                    (int) Math.ceil(effectiveWriteCacheSize * 1.4),
-                    effectiveWriteCacheSize + 1);
+            final int effectivePartitionBufferLimit = Math.max(
+                    (int) Math.ceil(effectiveActivePartitionLimit * 1.4),
+                    effectiveActivePartitionLimit + 1);
             builder.withMaxNumberOfKeysInPartitionBuffer(
-                    effectiveFlushBackpressure);
+                    effectivePartitionBufferLimit);
         }
     }
 
@@ -240,7 +240,7 @@ public class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> indexConf) {
         final IndexConfiguration<K, V> storedConf = confStorage.load();
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
-        validateThatFixPropertiesAreNotOverriden(storedConf, indexConf);
+        validateThatFixedPropertiesAreNotOverridden(storedConf, indexConf);
         boolean dirty = false;
         dirty |= applyBasicOverrides(builder, storedConf, indexConf);
         dirty |= applyThreadAndBusyOverrides(builder, storedConf, indexConf);
@@ -257,26 +257,26 @@ public class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         boolean dirty = false;
-        dirty |= applyIf(isIndexNameOverriden(storedConf, indexConf),
+        dirty |= applyIf(isIndexNameOverridden(storedConf, indexConf),
                 () -> builder.withName(indexConf.getIndexName()));
-        dirty |= applyIf(isDiskIoBufferSizeOverriden(storedConf, indexConf),
+        dirty |= applyIf(isDiskIoBufferSizeOverridden(storedConf, indexConf),
                 () -> builder.withDiskIoBufferSizeInBytes(
                         indexConf.getDiskIoBufferSize()));
         dirty |= applyIf(
-                isMaxNumberOfKeysInSegmentCacheOverriden(storedConf, indexConf),
+                isMaxNumberOfKeysInSegmentCacheOverridden(storedConf, indexConf),
                 () -> builder.withMaxNumberOfKeysInSegmentCache(
                         indexConf.getMaxNumberOfKeysInSegmentCache()));
         dirty |= applyIf(
-                isMaxNumberOfKeysInSegmentWriteCacheOverriden(storedConf,
+                isMaxNumberOfKeysInActivePartitionOverridden(storedConf,
                         indexConf),
                 () -> builder.withMaxNumberOfKeysInActivePartition(
                         indexConf.getMaxNumberOfKeysInActivePartition()));
         dirty |= applyIf(
-                isMaxNumberOfKeysInSegmentWriteCacheDuringMaintenanceOverriden(
+                isMaxNumberOfKeysInPartitionBufferOverridden(
                         storedConf, indexConf),
                 () -> builder.withMaxNumberOfKeysInPartitionBuffer(
                         indexConf.getMaxNumberOfKeysInPartitionBuffer()));
-        dirty |= applyIf(isMaxNumberOfDeltaCacheFilesOverriden(storedConf,
+        dirty |= applyIf(isMaxNumberOfDeltaCacheFilesOverridden(storedConf,
                 indexConf), () -> builder.withMaxNumberOfDeltaCacheFiles(
                         indexConf.getMaxNumberOfDeltaCacheFiles()));
         return dirty;
@@ -358,14 +358,14 @@ public class IndexConfigurationManager<K, V> {
         return candidate != null && !candidate.equals(stored);
     }
 
-    private boolean isIndexNameOverriden(
+    private boolean isIndexNameOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         return indexConf.getIndexName() != null
                 && !indexConf.getIndexName().equals(storedConf.getIndexName());
     }
 
-    private boolean isDiskIoBufferSizeOverriden(
+    private boolean isDiskIoBufferSizeOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         return indexConf.getDiskIoBufferSize() != null
@@ -374,7 +374,7 @@ public class IndexConfigurationManager<K, V> {
                         .equals(storedConf.getDiskIoBufferSize());
     }
 
-    private boolean isMaxNumberOfKeysInSegmentCacheOverriden(
+    private boolean isMaxNumberOfKeysInSegmentCacheOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         return indexConf.getMaxNumberOfKeysInSegmentCache() != null
@@ -383,7 +383,7 @@ public class IndexConfigurationManager<K, V> {
                         .equals(storedConf.getMaxNumberOfKeysInSegmentCache());
     }
 
-    private boolean isMaxNumberOfKeysInSegmentWriteCacheOverriden(
+    private boolean isMaxNumberOfKeysInActivePartitionOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         return indexConf.getMaxNumberOfKeysInActivePartition() != null
@@ -392,7 +392,7 @@ public class IndexConfigurationManager<K, V> {
                         .equals(storedConf.getMaxNumberOfKeysInActivePartition());
     }
 
-    private boolean isMaxNumberOfKeysInSegmentWriteCacheDuringMaintenanceOverriden(
+    private boolean isMaxNumberOfKeysInPartitionBufferOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         return indexConf.getMaxNumberOfKeysInPartitionBuffer() != null
@@ -401,7 +401,7 @@ public class IndexConfigurationManager<K, V> {
                         .equals(storedConf.getMaxNumberOfKeysInPartitionBuffer());
     }
 
-    private boolean isMaxNumberOfDeltaCacheFilesOverriden(
+    private boolean isMaxNumberOfDeltaCacheFilesOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         return indexConf.getMaxNumberOfDeltaCacheFiles() != null
@@ -410,7 +410,7 @@ public class IndexConfigurationManager<K, V> {
                         .equals(storedConf.getMaxNumberOfDeltaCacheFiles());
     }
 
-    void validateThatFixPropertiesAreNotOverriden(
+    void validateThatFixedPropertiesAreNotOverridden(
             final IndexConfiguration<K, V> storedConf,
             final IndexConfiguration<K, V> indexConf) {
         validateClassNotChanged(indexConf.getKeyClass(), storedConf.getKeyClass(),
@@ -418,57 +418,57 @@ public class IndexConfigurationManager<K, V> {
         validateClassNotChanged(indexConf.getValueClass(),
                 storedConf.getValueClass(), "ValueClass");
 
-        validateThatWasntChanged(
+        throwIfChanged(
                 isChanged(indexConf.getKeyTypeDescriptor(),
                         storedConf.getKeyTypeDescriptor()),
                 "KeyTypeDescriptor", storedConf.getKeyTypeDescriptor(),
                 indexConf.getKeyTypeDescriptor());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isChanged(indexConf.getValueTypeDescriptor(),
                         storedConf.getValueTypeDescriptor()),
                 "ValueTypeDescriptor", storedConf.getValueTypeDescriptor(),
                 indexConf.getValueTypeDescriptor());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isPositiveOverride(indexConf.getMaxNumberOfKeysInSegment(),
                         storedConf.getMaxNumberOfKeysInSegment()),
                 "MaxNumberOfKeysInSegment",
                 storedConf.getMaxNumberOfKeysInSegment(),
                 indexConf.getMaxNumberOfKeysInSegment());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isPositiveOverride(indexConf.getMaxNumberOfKeysInSegmentChunk(),
                         storedConf.getMaxNumberOfKeysInSegmentChunk()),
                 "MaxNumberOfKeysInSegmentChunk",
                 storedConf.getMaxNumberOfKeysInSegmentChunk(),
                 indexConf.getMaxNumberOfKeysInSegmentChunk());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isPositiveOverride(indexConf.getBloomFilterIndexSizeInBytes(),
                         storedConf.getBloomFilterIndexSizeInBytes()),
                 "BloomFilterIndexSizeInBytes",
                 storedConf.getBloomFilterIndexSizeInBytes(),
                 indexConf.getBloomFilterIndexSizeInBytes());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isPositiveOverride(indexConf.getBloomFilterNumberOfHashFunctions(),
                         storedConf.getBloomFilterNumberOfHashFunctions()),
                 "BloomFilterNumberOfHashFunctions",
                 storedConf.getBloomFilterNumberOfHashFunctions(),
                 indexConf.getBloomFilterNumberOfHashFunctions());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isChanged(indexConf.getBloomFilterProbabilityOfFalsePositive(),
                         storedConf.getBloomFilterProbabilityOfFalsePositive()),
                 "BloomFilterProbabilityOfFalsePositive",
                 storedConf.getBloomFilterProbabilityOfFalsePositive(),
                 indexConf.getBloomFilterProbabilityOfFalsePositive());
-        validateThatWasntChanged(
-                wasntChanged(indexConf.getEncodingChunkFilters(),
+        throwIfChanged(
+                chunkFiltersChanged(indexConf.getEncodingChunkFilters(),
                         storedConf.getEncodingChunkFilters()),
                 "EncodingChunkFilters", storedConf.getEncodingChunkFilters(),
                 indexConf.getEncodingChunkFilters());
-        validateThatWasntChanged(
-                wasntChanged(indexConf.getDecodingChunkFilters(),
+        throwIfChanged(
+                chunkFiltersChanged(indexConf.getDecodingChunkFilters(),
                         storedConf.getDecodingChunkFilters()),
                 "DecodingChunkFilters", storedConf.getDecodingChunkFilters(),
                 indexConf.getDecodingChunkFilters());
-        validateThatWasntChanged(
+        throwIfChanged(
                 isChanged(indexConf.getWal(), storedConf.getWal()), "Wal",
                 storedConf.getWal(), indexConf.getWal());
     }
@@ -487,7 +487,7 @@ public class IndexConfigurationManager<K, V> {
         return true;
     }
 
-    private boolean wasntChanged(final List<ChunkFilter> indexFilters,
+    private boolean chunkFiltersChanged(final List<ChunkFilter> indexFilters,
             final List<ChunkFilter> storedFilters) {
         if (indexFilters == null) {
             return false;
@@ -503,7 +503,7 @@ public class IndexConfigurationManager<K, V> {
         if (requested == null) {
             return;
         }
-        validateThatWasntChanged(!requested.equals(stored), propertyName,
+        throwIfChanged(!requested.equals(stored), propertyName,
                 stored.getName(), requested.getName());
     }
 
@@ -511,7 +511,7 @@ public class IndexConfigurationManager<K, V> {
         return candidate != null && !candidate.equals(stored);
     }
 
-    private void validateThatWasntChanged(final boolean wasChanged,
+    private void throwIfChanged(final boolean wasChanged,
             final String propertyName, Object storedValue, Object newValue) {
         if (wasChanged) {
             throw new IllegalArgumentException(String.format(
@@ -527,7 +527,7 @@ public class IndexConfigurationManager<K, V> {
         validateDatatypesAndIndexName(conf);
         validateMandatoryFields(conf);
         validateSegmentLimits(conf);
-        validateWriteCacheLimits(conf);
+        validatePartitionBufferLimits(conf);
         validateDiskIoBuffer(conf);
         validateChunkFilters(conf);
         validateThreading(conf);
@@ -593,7 +593,7 @@ public class IndexConfigurationManager<K, V> {
         }
     }
 
-    private void validateWriteCacheLimits(final IndexConfiguration<K, V> conf) {
+    private void validatePartitionBufferLimits(final IndexConfiguration<K, V> conf) {
         Vldtn.requireNonNull(conf.getMaxNumberOfKeysInActivePartition(),
                 "MaxNumberOfKeysInActivePartition");
         if (conf.getMaxNumberOfKeysInActivePartition() < 1) {
