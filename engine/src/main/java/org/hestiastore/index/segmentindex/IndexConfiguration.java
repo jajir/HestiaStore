@@ -30,8 +30,8 @@ public class IndexConfiguration<K, V> {
      * Segments configuration
      */
     private final Integer maxNumberOfKeysInSegmentCache;
-    private final Integer maxNumberOfKeysInSegmentWriteCache;
-    private final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private final Integer maxNumberOfKeysInActivePartition;
+    private final Integer maxNumberOfKeysInPartitionBuffer;
     private final Integer maxNumberOfImmutableRunsPerPartition;
     private final Integer maxNumberOfKeysInIndexBuffer;
     private final Integer maxNumberOfKeysInSegmentChunk;
@@ -79,8 +79,8 @@ public class IndexConfiguration<K, V> {
             final String keyTypeDescriptor, //
             final String valueTypeDescriptor, //
             final Integer maxNumberOfKeysInSegmentCache, //
-            final Integer maxNumberOfKeysInSegmentWriteCache, //
-            final Integer maxNumberOfKeysInSegmentWriteCacheDuringMaintenance, //
+            final Integer maxNumberOfKeysInActivePartition, //
+            final Integer maxNumberOfKeysInPartitionBuffer, //
             final Integer maxNumberOfImmutableRunsPerPartition, //
             final Integer maxNumberOfKeysInIndexBuffer, //
             final Integer maxNumberOfKeysInSegmentChunk, //
@@ -108,8 +108,8 @@ public class IndexConfiguration<K, V> {
         this.keyTypeDescriptor = keyTypeDescriptor;
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        this.maxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
+        this.maxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
         this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
         this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
@@ -145,33 +145,13 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the maximum number of keys held in the segment write cache before
-     * flushing to disk.
-     *
-     * @return max keys in segment write cache
-     */
-    public Integer getMaxNumberOfKeysInSegmentWriteCache() {
-        return maxNumberOfKeysInSegmentWriteCache;
-    }
-
-    /**
      * Returns the maximum number of keys accepted into the active partition
      * before it rotates to an immutable run.
      *
      * @return max keys in active partition
      */
     public Integer getMaxNumberOfKeysInActivePartition() {
-        return maxNumberOfKeysInSegmentWriteCache;
-    }
-
-    /**
-     * Returns the maximum number of keys allowed while maintenance is in flight
-     * before back-pressure is applied to writers.
-     *
-     * @return max buffered keys during maintenance
-     */
-    public Integer getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance() {
-        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        return maxNumberOfKeysInActivePartition;
     }
 
     /**
@@ -190,7 +170,7 @@ public class IndexConfiguration<K, V> {
      * @return max buffered keys inside one partition
      */
     public Integer getMaxNumberOfKeysInPartitionBuffer() {
-        return maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        return maxNumberOfKeysInPartitionBuffer;
     }
 
     /**

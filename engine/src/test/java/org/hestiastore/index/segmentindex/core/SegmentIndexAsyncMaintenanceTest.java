@@ -151,7 +151,7 @@ class SegmentIndexAsyncMaintenanceTest {
                 .withValueTypeDescriptor(tds)//
                 .withName("async-maintenance-test")//
                 .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
+                .withMaxNumberOfKeysInActivePartition(5)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegment(100)//
                 .withMaxNumberOfSegmentsInCache(3)//

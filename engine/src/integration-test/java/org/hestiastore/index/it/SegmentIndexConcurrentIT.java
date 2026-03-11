@@ -244,8 +244,9 @@ class SegmentIndexConcurrentIT {
                 "Writer threads did not finish in time");
 
         stop.set(true);
-        maintenance.interrupt();
-        maintenance.join(TimeUnit.SECONDS.toMillis(10));
+        // Stop cooperatively so maintenance retries are not interrupted and
+        // escalated into index ERROR state.
+        maintenance.join(TimeUnit.SECONDS.toMillis(35));
         assertTrue(maintenance.isAlive() == false,
                 "Maintenance thread did not stop in time");
         executor.shutdownNow();

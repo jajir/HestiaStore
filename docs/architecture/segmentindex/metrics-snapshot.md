@@ -14,7 +14,7 @@ for index-level telemetry.
   - `segment*`
   - `totalSegmentKeys`
   - `totalSegmentCacheKeys`
-  - `totalWriteCacheKeys`
+  - `totalBufferedWriteKeys`
 - Partitioned ingest overlay:
   - `maxNumberOfKeysInActivePartition`
   - `maxNumberOfImmutableRunsPerPartition`
@@ -44,7 +44,7 @@ for index-level telemetry.
 - Field values represent observed operation calls, not necessarily durable
   writes on disk.
 - `partitionBufferedKeyCount` counts only overlay-resident keys; it is a
-  subset of `totalWriteCacheKeys`.
+  subset of `totalBufferedWriteKeys`.
 - Legacy `split*` and `maintenance*` fields remain in the snapshot for
   compatibility, but partition-specific fields are the authoritative view for
   the new ingest runtime.

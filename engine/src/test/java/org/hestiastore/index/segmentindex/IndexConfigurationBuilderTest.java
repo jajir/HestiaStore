@@ -8,28 +8,40 @@ import org.junit.jupiter.api.Test;
 class IndexConfigurationBuilderTest {
 
     @Test
-    void build_derivesWriteCacheDuringMaintenanceWhenMissing() {
+    void build_derivesPartitionBufferWhenMissing() {
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
-                .withMaxNumberOfKeysInSegmentWriteCache(10)
+                .withMaxNumberOfKeysInActivePartition(10)
                 .build();
 
         assertEquals(14,
-                config.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+                config.getMaxNumberOfKeysInPartitionBuffer());
     }
 
     @Test
-    void build_rejectsWriteCacheDuringMaintenanceNotGreaterThanWriteCache() {
+    void build_keepsCanonicalPartitionSettingsInSync() {
+        final IndexConfiguration<Integer, String> config = IndexConfiguration
+                .<Integer, String>builder()
+                .withMaxNumberOfKeysInActivePartition(10)
+                .withMaxNumberOfKeysInPartitionBuffer(14)
+                .build();
+
+        assertEquals(10, config.getMaxNumberOfKeysInActivePartition());
+        assertEquals(14, config.getMaxNumberOfKeysInPartitionBuffer());
+    }
+
+    @Test
+    void build_rejectsPartitionBufferNotGreaterThanActivePartition() {
         final IndexConfigurationBuilder<Integer, String> builder = IndexConfiguration
                 .<Integer, String>builder()
-                .withMaxNumberOfKeysInSegmentWriteCache(10)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(10);
+                .withMaxNumberOfKeysInActivePartition(10)
+                .withMaxNumberOfKeysInPartitionBuffer(10);
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class, builder::build);
 
         assertEquals(
-                "Property 'maxNumberOfKeysInSegmentWriteCacheDuringMaintenance' must be greater than 'maxNumberOfKeysInSegmentWriteCache'",
+                "Property 'maxNumberOfKeysInPartitionBuffer' must be greater than 'maxNumberOfKeysInActivePartition'",
                 ex.getMessage());
     }
 }

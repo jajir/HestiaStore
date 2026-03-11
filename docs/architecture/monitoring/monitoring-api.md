@@ -45,10 +45,7 @@ These overrides are runtime-only:
 
 Compatibility note:
 
-- `maxNumberOfKeysInSegmentWriteCache` is accepted as a legacy alias for
-  `maxNumberOfKeysInActivePartition`
-- `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance` is accepted as a
-  legacy alias for `maxNumberOfKeysInPartitionBuffer`
+- report and config responses emit only the canonical partition-aware names
 - `supportedKeys` and config views return only the canonical partition-aware
   names
 
@@ -81,8 +78,6 @@ Compatibility note:
       "registryCacheSize": 96,
       "registryCacheLimit": 128,
       "segmentCacheKeyLimitPerSegment": 260000,
-      "maxNumberOfKeysInSegmentWriteCache": 120000,
-      "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance": 180000,
       "maxNumberOfKeysInActivePartition": 120000,
       "maxNumberOfImmutableRunsPerPartition": 2,
       "maxNumberOfKeysInPartitionBuffer": 180000,
@@ -95,7 +90,7 @@ Compatibility note:
       "segmentBusyCount": 0,
       "totalSegmentKeys": 1489200,
       "totalSegmentCacheKeys": 402100,
-      "totalWriteCacheKeys": 8700,
+      "totalBufferedWriteKeys": 8700,
       "totalDeltaCacheFiles": 31,
       "compactRequestCount": 17,
       "flushRequestCount": 42,

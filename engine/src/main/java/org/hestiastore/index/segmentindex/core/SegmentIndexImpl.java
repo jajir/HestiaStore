@@ -333,10 +333,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
-        drainPartitions(true);
-        awaitSplitsIdle();
-        drainPartitions(true);
-        awaitSplitsIdle();
+        drainPartitions(false);
+        final PartitionRuntimeSnapshot partitionSnapshot = partitionRuntime
+                .snapshot();
+        if (partitionSnapshot.getDrainInFlightCount() > 0
+                || partitionSnapshot.getActivePartitionCount() > 0
+                || partitionSnapshot.getImmutableRunCount() > 0
+                || partitionSnapshot.getBufferedKeyCount() > 0) {
+            return;
+        }
+        if (maintenanceCoordinator.splitInFlightCount() > 0) {
+            return;
+        }
         maintenanceCoordinator.runWithSplitSchedulingPaused(() -> keyToSegmentMap
                 .getSegmentIds()
                 .forEach(segmentId -> compactSegment(segmentId, false)));
@@ -577,7 +585,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentRuntime.segmentBusyCount,
                 segmentRuntime.totalSegmentKeys,
                 segmentRuntime.totalSegmentCacheKeys,
-                segmentRuntime.totalWriteCacheKeys
+                segmentRuntime.totalSegmentBufferedWriteKeys
                         + partitionSnapshot.getBufferedKeyCount(),
                 segmentRuntime.totalDeltaCacheFiles, compactRequestCount,
                 flushRequestCount,
@@ -1357,6 +1365,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     }
                     return;
                 }
+                if (!waitForCompletion) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Compact coalesced because segment is already busy: segment='{}'",
+                                segmentId);
+                    }
+                    return;
+                }
                 if (logger.isDebugEnabled()) {
                     logger.debug("Compact busy, retrying: segment='{}'",
                             segmentId);
@@ -1422,6 +1438,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     if (logger.isDebugEnabled()) {
                         logger.debug(
                                 "Flush aborted because segment is no longer mapped: segment='{}'",
+                                segmentId);
+                    }
+                    return;
+                }
+                if (!waitForCompletion) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Flush coalesced because segment is already busy: segment='{}'",
                                 segmentId);
                     }
                     return;
@@ -1638,7 +1662,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             segmentRuntime.getNumberOfKeys());
                     aggregate.totalSegmentCacheKeys += Math.max(0L,
                             segmentRuntime.getNumberOfKeysInSegmentCache());
-                    aggregate.totalWriteCacheKeys += Math.max(0L,
+                    aggregate.totalSegmentBufferedWriteKeys += Math.max(0L,
                             segmentRuntime.getNumberOfKeysInWriteCache());
                     aggregate.totalDeltaCacheFiles += Math.max(0,
                             segmentRuntime.getNumberOfDeltaCacheFiles());
@@ -1924,7 +1948,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         private int segmentBusyCount;
         private long totalSegmentKeys;
         private long totalSegmentCacheKeys;
-        private long totalWriteCacheKeys;
+        private long totalSegmentBufferedWriteKeys;
         private long totalDeltaCacheFiles;
         private long compactRequestCount;
         private long flushRequestCount;
