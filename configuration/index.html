@@ -3436,10 +3436,34 @@ For chunk filter setup, defaults, and examples, see:
 <td>segment</td>
 </tr>
 <tr>
-<td>maxNumberOfKeysInSegmentWriteCache</td>
-<td>Maximum number of keys in segment write cache</td>
+<td>maxNumberOfKeysInActivePartition</td>
+<td>Maximum number of keys in active partition overlay</td>
 <td>🟩</td>
-<td>segment</td>
+<td>partition</td>
+</tr>
+<tr>
+<td>maxNumberOfImmutableRunsPerPartition</td>
+<td>Maximum number of immutable runs queued per partition</td>
+<td>🟩</td>
+<td>partition</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInPartitionBuffer</td>
+<td>Maximum buffered keys allowed per partition</td>
+<td>🟩</td>
+<td>partition</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInIndexBuffer</td>
+<td>Maximum buffered keys allowed across the whole index</td>
+<td>🟩</td>
+<td>index</td>
+</tr>
+<tr>
+<td>maxNumberOfKeysInPartitionBeforeSplit</td>
+<td>Threshold after which a partition becomes split-eligible</td>
+<td>🟩</td>
+<td>partition</td>
 </tr>
 <tr>
 <td>maxNumberOfKeysInSegment</td>

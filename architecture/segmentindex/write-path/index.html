@@ -3538,10 +3538,12 @@ additional files or provide durability.</p>
 </ul>
 <h2 id="configuration-knobs-affecting-writes">⚙️ Configuration Knobs Affecting Writes</h2>
 <ul>
-<li><code>maxNumberOfKeysInSegmentWriteCache</code> – bounds in‑segment write cache size before flushing to delta files.</li>
+<li><code>maxNumberOfKeysInActivePartition</code> – bounds active mutable overlay size before rotation to an immutable run.</li>
+<li><code>maxNumberOfKeysInPartitionBuffer</code> – bounds buffered keys per partition before local backpressure.</li>
+<li><code>maxNumberOfKeysInIndexBuffer</code> – bounds buffered keys across the whole index before global backpressure.</li>
 <li><code>maxNumberOfKeysInSegmentCache</code> – bounds total in‑segment cache size before compaction/split decisions.</li>
 <li><code>maxNumberOfKeysInSegmentChunk</code> – controls sparse index sampling cadence.</li>
-<li><code>maxNumberOfKeysInSegment</code> – split threshold per segment.</li>
+<li><code>maxNumberOfKeysInPartitionBeforeSplit</code> – split threshold per routed partition.</li>
 <li><code>bloomFilter*</code> – Bloom filter size/hash tuning.</li>
 <li><code>diskIoBufferSize</code> – I/O buffer sizing for on‑disk writers.</li>
 <li><code>encoding/decodingChunkFilters</code> – write/read pipelines (e.g., Snappy, CRC32, magic number).</li>

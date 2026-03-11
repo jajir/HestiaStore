@@ -3360,7 +3360,7 @@
 <li>Bloom filter sizing and hash functions</li>
 <li>Encoding/decoding filter lists (order and membership)</li>
 </ul>
-<p>Attempts to change these raise an error in <code>IndexConfigurationManager.validateThatWasntChanged</code>. To change them, create a new index and bulk‑copy data (read + write) or export/import. See <code>segmentindex/IndexConfigurationManager.java</code>.</p>
+<p>Attempts to change these raise a validation error in <code>IndexConfigurationManager</code>. To change them, create a new index and bulk-copy data (read + write) or export/import. See <code>segmentindex/IndexConfigurationManager.java</code>.</p>
 <h2 id="data-model-and-semantics">🧠 Data Model and Semantics</h2>
 <ul>
 <li>Strictly increasing keys: All on‑disk structures assume ascending order; compaction and consistency checks enforce it. Incorrect comparators or inconsistent key ordering will fail. Code: <code>segment/SegmentConsistencyChecker.java</code>.</li>

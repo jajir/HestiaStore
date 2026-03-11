@@ -3691,18 +3691,22 @@ used today.</p>
 unbounded, so if writes outpace maintenance, memory can grow.</p>
 <p>Current index-level handling (SegmentIndexImpl):</p>
 <ul>
-<li>When <code>getNumberOfKeysInWriteCache()</code> reaches
-  <code>maxNumberOfKeysInSegmentWriteCache</code>, the index triggers <code>flush()</code>.</li>
-<li>When <code>getNumberOfKeysInCache()</code> exceeds
-  <code>maxNumberOfKeysInSegmentCache</code>, the index tries <code>split()</code>, and falls back
-  to <code>flush()</code> if splitting is not possible.</li>
+<li>When the active partition reaches <code>maxNumberOfKeysInActivePartition</code>, the
+  write overlay rotates to an immutable run and background drain starts.</li>
+<li>When one partition exceeds <code>maxNumberOfKeysInPartitionBuffer</code>, or the whole
+  index exceeds <code>maxNumberOfKeysInIndexBuffer</code>, the index applies bounded
+  backpressure instead of letting buffered data grow without limit.</li>
+<li>When a routed partition grows past
+  <code>maxNumberOfKeysInPartitionBeforeSplit</code>, the split policy loop schedules a
+  partition split.</li>
 </ul>
 <p>If write load still exceeds flush/compact throughput, pick one:</p>
 <ul>
 <li>Apply backpressure at the index level (for example, wrap SegmentIndex with a
   bounded executor/queue).</li>
 <li>Lower thresholds to flush/split earlier.</li>
-<li>Add explicit write-cache caps or throttling around <code>Segment.put()</code>.</li>
+<li>Add explicit throttling around <code>SegmentIndex.put()</code> callers if upstream
+  producers still exceed drain/compaction throughput.</li>
 </ul>
 <h3 id="parallel-calls-flush-vs-compact-vs-split">Parallel calls (flush vs compact vs split)</h3>
 <p>Same segment:</p>

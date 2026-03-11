@@ -3077,30 +3077,7 @@ to centralize segment internals in one place.</p>
 <code>/api/v1/report</code>, and runtime-safe config overrides are applied in-memory only
 for the running process. Monitoring and management APIs do not directly access
 index files.</p>
-<p>PlantUML source:
-<a href="monitoring/images/monitoring-runtime-flow.plantuml"><code>docs/architecture/monitoring/images/monitoring-runtime-flow.plantuml</code></a></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>@startuml
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>skinparam componentStyle rectangle
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>skinparam shadowing false
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>left to right direction
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>package &quot;Application JVM&quot; {
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  [SegmentIndex]
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  [Segment API\nmetricsSnapshot()]
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  [Management Agent\n/api/v1/*]
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  [Runtime Overrides\n(in-memory)]
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  [SegmentIndex] --&gt; [Segment API\nmetricsSnapshot()] : publishes
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  [Management Agent\n/api/v1/*] --&gt; [Segment API\nmetricsSnapshot()] : reads
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  [Management Agent\n/api/v1/*] --&gt; [Runtime Overrides\n(in-memory)] : PATCH /config
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  [Runtime Overrides\n(in-memory)] --&gt; [SegmentIndex] : effective runtime limits
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>}
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>[Monitoring Bridge\n(Micrometer/Prometheus)] --&gt; [Segment API\nmetricsSnapshot()] : exports metrics
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>[Monitoring Console Web] --&gt; [Management Agent\n/api/v1/*] : poll/report/config
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>@enduml
-</code></pre></div>
+<p><img alt="Monitoring runtime flow" src="monitoring/images/monitoring-runtime-flow.png" /></p>
 <h2 id="sections">Sections</h2>
 <ul>
 <li><a href="general/">General</a> — cross-cutting format, integrity, recovery,

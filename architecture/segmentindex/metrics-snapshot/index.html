@@ -3191,7 +3191,7 @@ for index-level telemetry.</p>
 <li><code>segment*</code></li>
 <li><code>totalSegmentKeys</code></li>
 <li><code>totalSegmentCacheKeys</code></li>
-<li><code>totalWriteCacheKeys</code></li>
+<li><code>totalBufferedWriteKeys</code></li>
 <li>Partitioned ingest overlay:</li>
 <li><code>maxNumberOfKeysInActivePartition</code></li>
 <li><code>maxNumberOfImmutableRunsPerPartition</code></li>
@@ -3221,7 +3221,7 @@ for index-level telemetry.</p>
 <li>Field values represent observed operation calls, not necessarily durable
   writes on disk.</li>
 <li><code>partitionBufferedKeyCount</code> counts only overlay-resident keys; it is a
-  subset of <code>totalWriteCacheKeys</code>.</li>
+  subset of <code>totalBufferedWriteKeys</code>.</li>
 <li>Legacy <code>split*</code> and <code>maintenance*</code> fields remain in the snapshot for
   compatibility, but partition-specific fields are the authoritative view for
   the new ingest runtime.</li>
