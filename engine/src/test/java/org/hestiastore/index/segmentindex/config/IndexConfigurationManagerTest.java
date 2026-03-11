@@ -82,7 +82,7 @@ class IndexConfigurationManagerTest {
     }
 
     private static final class TestStorage<K, V>
-            extends IndexConfiguratonStorage<K, V> {
+            extends IndexConfigurationStorage<K, V> {
 
         private IndexConfiguration<K, V> stored;
         private IndexConfiguration<K, V> saved;

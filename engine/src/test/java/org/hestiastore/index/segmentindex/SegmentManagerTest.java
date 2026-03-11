@@ -51,8 +51,8 @@ class SegmentManagerTest {
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
                 .build();
-        when(conf.getMaxNumberOfKeysInSegmentWriteCache()).thenReturn(1);
-        when(conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
+        when(conf.getMaxNumberOfKeysInActivePartition()).thenReturn(1);
+        when(conf.getMaxNumberOfKeysInPartitionBuffer())
                 .thenReturn(2);
         when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(4);
         when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(1);

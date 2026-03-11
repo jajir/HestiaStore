@@ -256,10 +256,10 @@ class SegmentRegistryImplTest {
     }
 
     private void stubSegmentConfig() {
-        Mockito.when(conf.getMaxNumberOfKeysInSegmentWriteCache())
+        Mockito.when(conf.getMaxNumberOfKeysInActivePartition())
                 .thenReturn(5);
         Mockito.when(
-                conf.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance())
+                conf.getMaxNumberOfKeysInPartitionBuffer())
                 .thenReturn(6);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(10);
         Mockito.when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(2);

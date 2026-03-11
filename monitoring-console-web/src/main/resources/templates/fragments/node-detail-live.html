@@ -61,8 +61,8 @@
                                 th:text="${node.formatWholeNumber(idx.totalSegmentKeys)}">0</strong></div>
                         <div class="line"><span>No. of keys in Segment Cache</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalSegmentCacheKeys)}">0</strong></div>
-                        <div class="line"><span>No. of keys in Write Cache</span><strong class="value-runtime"
-                                th:text="${node.formatWholeNumber(idx.totalWriteCacheKeys)}">0</strong></div>
+                        <div class="line"><span>No. of buffered write keys</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.totalBufferedWriteKeys)}">0</strong></div>
                         <div class="line"><span>No. of Delta Cache Files</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalDeltaCacheFiles)}">0</strong></div>
                         <div class="line"><span>Average Delta Cache Files / Segment</span><strong class="value-runtime"

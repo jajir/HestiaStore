@@ -156,8 +156,8 @@ class SegmentSplitCoordinatorFlowTest {
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
                 .withMaxNumberOfKeysInSegmentCache(100)//
-                .withMaxNumberOfKeysInSegmentWriteCache(100)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(150)//
+                .withMaxNumberOfKeysInActivePartition(100)//
+                .withMaxNumberOfKeysInPartitionBuffer(150)//
                 .withMaxNumberOfKeysInSegmentChunk(10)//
                 .withMaxNumberOfDeltaCacheFiles(10)//
                 .withMaxNumberOfKeysInSegment(4)//

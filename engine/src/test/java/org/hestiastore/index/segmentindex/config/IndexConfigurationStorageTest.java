@@ -17,12 +17,12 @@ import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 
-class IndexConfiguratonStorageTest {
+class IndexConfigurationStorageTest {
 
     @Test
     void existsReflectsConfigurationPresence() {
         final MemDirectory directory = new MemDirectory();
-        final IndexConfiguratonStorage<String, String> storage = new IndexConfiguratonStorage<>(
+        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
 
         assertFalse(storage.exists());
@@ -78,7 +78,7 @@ class IndexConfiguratonStorageTest {
                     30);
         }
 
-        final IndexConfiguratonStorage<String, String> storage = new IndexConfiguratonStorage<>(
+        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
         final IndexConfiguration<String, String> loaded = storage.load();
 

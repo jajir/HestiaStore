@@ -80,8 +80,8 @@ class IndexStateErrorTest {
                 .withName("index-state-error-test")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInSegmentWriteCache(5)//
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(6)//
+                .withMaxNumberOfKeysInActivePartition(5)//
+                .withMaxNumberOfKeysInPartitionBuffer(6)//
                 .withMaxNumberOfKeysInSegmentChunk(2)//
                 .withMaxNumberOfKeysInSegment(100)//
                 .withMaxNumberOfSegmentsInCache(3)//

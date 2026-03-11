@@ -80,7 +80,9 @@ Index‑level:
 
 Per‑segment (via `SegmentConf`, derived from index configuration):
 - `maxNumberOfKeysInSegmentCache` — target size for a single delta cache
-- `maxNumberOfKeysInSegmentWriteCache` — in-memory write cache size before flush
+- `maxNumberOfKeysInActivePartition` — active mutable overlay size before rotation
+- `maxNumberOfKeysInPartitionBuffer` — buffered keys allowed per partition before backpressure
+- `maxNumberOfKeysInIndexBuffer` — buffered keys allowed across the whole index overlay
 - `maxNumberOfKeysInSegmentChunk` — sparse index sampling cadence (affects read scan window)
 
 Bloom filter sizing:
@@ -105,7 +107,7 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 ## 🛠️ Tuning Guidance
 
-- Throughput‑oriented writes: tune `maxNumberOfKeysInSegmentWriteCache` and `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance`; monitor memory and flush latency.
+- Throughput‑oriented writes: tune `maxNumberOfKeysInActivePartition`, `maxNumberOfKeysInPartitionBuffer`, and `maxNumberOfKeysInIndexBuffer`; monitor memory and drain latency.
 - Read‑heavy workloads touching few segments: increase `maxNumberOfSegmentsInCache` so the working set of segments (Bloom + scarce + delta) stays resident.
 - Space‑sensitive deployments: reduce Bloom filter size (may increase false positives and extra reads) or disable compression filters to trade CPU for I/O.
 - Latency‑sensitive point lookups: ensure Bloom filter is sized adequately; keep segments’ working set in the LRU; consider slightly smaller `maxNumberOfKeysInSegmentChunk` to narrow the local scan window.

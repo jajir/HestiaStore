@@ -30,7 +30,7 @@ Once an index is created, several properties cannot be changed when reopening wi
 - Bloom filter sizing and hash functions
 - Encoding/decoding filter lists (order and membership)
 
-Attempts to change these raise an error in `IndexConfigurationManager.validateThatWasntChanged`. To change them, create a new index and bulk‑copy data (read + write) or export/import. See `segmentindex/IndexConfigurationManager.java`.
+Attempts to change these raise a validation error in `IndexConfigurationManager`. To change them, create a new index and bulk-copy data (read + write) or export/import. See `segmentindex/IndexConfigurationManager.java`.
 
 ## 🧠 Data Model and Semantics
 

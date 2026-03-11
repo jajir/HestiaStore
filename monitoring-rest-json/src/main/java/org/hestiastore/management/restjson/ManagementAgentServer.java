@@ -95,11 +95,6 @@ public final class ManagementAgentServer
                     "maxNumberOfKeysInIndexBuffer",
                     RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                     "maxNumberOfKeysInPartitionBeforeSplit");
-    private static final Map<String, RuntimeSettingKey> LEGACY_RUNTIME_KEY_ALIASES = Map
-            .of("maxNumberOfKeysInSegmentWriteCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER);
     private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = buildRuntimeKeyByApiName();
     private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_KEY
             .values().stream().sorted().toList();
@@ -740,8 +735,6 @@ public final class ManagementAgentServer
                 snapshot.getRegistryCacheSize(),
                 snapshot.getRegistryCacheLimit(),
                 snapshot.getSegmentCacheKeyLimitPerSegment(),
-                snapshot.getMaxNumberOfKeysInSegmentWriteCache(),
-                snapshot.getMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(),
                 snapshot.getMaxNumberOfKeysInActivePartition(),
                 snapshot.getMaxNumberOfImmutableRunsPerPartition(),
                 snapshot.getMaxNumberOfKeysInPartitionBuffer(),
@@ -752,7 +745,7 @@ public final class ManagementAgentServer
                 snapshot.getSegmentClosedCount(),
                 snapshot.getSegmentBusyCount(), snapshot.getTotalSegmentKeys(),
                 snapshot.getTotalSegmentCacheKeys(),
-                snapshot.getTotalWriteCacheKeys(),
+                snapshot.getTotalBufferedWriteKeys(),
                 snapshot.getTotalDeltaCacheFiles(),
                 snapshot.getCompactRequestCount(),
                 snapshot.getFlushRequestCount(),
@@ -1105,7 +1098,6 @@ public final class ManagementAgentServer
                 .entrySet()) {
             values.put(entry.getValue(), entry.getKey());
         }
-        values.putAll(LEGACY_RUNTIME_KEY_ALIASES);
         return Map.copyOf(values);
     }
 
