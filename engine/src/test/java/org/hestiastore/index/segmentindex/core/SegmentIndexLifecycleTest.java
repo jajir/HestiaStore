@@ -78,7 +78,7 @@ class SegmentIndexLifecycleTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withIndexWorkerThreadCount(indexWorkerThreads)//
-                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfStableSegmentMaintenanceThreads(1)//
                 .withNumberOfRegistryLifecycleThreads(1)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//

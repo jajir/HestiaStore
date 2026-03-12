@@ -5,12 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-class SegmentSplitterPolicyTest {
+class PartitionSplitPolicyTest {
 
     @Test
     void estimateNumberOfKeys_returnsConfiguredValue() {
-        final SegmentSplitterPolicy policy = new SegmentSplitterPolicy(
-                57L);
+        final PartitionSplitPolicy policy = new PartitionSplitPolicy(57L);
         assertEquals(57L, policy.estimateNumberOfKeys());
     }
 
@@ -18,7 +17,7 @@ class SegmentSplitterPolicyTest {
     void rejects_negative_estimated_keys() {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentSplitterPolicy(-1L));
+                () -> new PartitionSplitPolicy(-1L));
         assertEquals(
                 "Property 'estimatedNumberOfKeys' must be >= 0.",
                 err.getMessage());

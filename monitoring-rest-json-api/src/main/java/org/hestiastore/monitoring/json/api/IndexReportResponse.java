@@ -29,6 +29,7 @@ public record IndexReportResponse(String indexName, String state,
         int immutableRunCount, int partitionBufferedKeyCount,
         long localThrottleCount, long globalThrottleCount,
         long drainScheduleCount, int drainInFlightCount,
+        long drainLatencyP95Micros,
         long readLatencyP50Micros, long readLatencyP95Micros,
         long readLatencyP99Micros, long writeLatencyP50Micros,
         long writeLatencyP95Micros, long writeLatencyP99Micros,
@@ -95,6 +96,7 @@ public record IndexReportResponse(String indexName, String state,
         requireNotNegative(globalThrottleCount, "globalThrottleCount");
         requireNotNegative(drainScheduleCount, "drainScheduleCount");
         requireNotNegative(drainInFlightCount, "drainInFlightCount");
+        requireNotNegative(drainLatencyP95Micros, "drainLatencyP95Micros");
         requireNotNegative(readLatencyP50Micros, "readLatencyP50Micros");
         requireNotNegative(readLatencyP95Micros, "readLatencyP95Micros");
         requireNotNegative(readLatencyP99Micros, "readLatencyP99Micros");
@@ -170,6 +172,7 @@ public record IndexReportResponse(String indexName, String state,
                 splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
                 maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
                 0, 0, 0, 0, 0, 0L, 0L, 0L, 0,
+                0L,
                 readLatencyP50Micros, readLatencyP95Micros, readLatencyP99Micros,
                 writeLatencyP50Micros, writeLatencyP95Micros,
                 writeLatencyP99Micros, bloomFilterHashFunctions,

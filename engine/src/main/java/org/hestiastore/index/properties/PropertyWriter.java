@@ -6,6 +6,8 @@ package org.hestiastore.index.properties;
  */
 public interface PropertyWriter {
 
+    PropertyWriter remove(String propertyKey);
+
     PropertyWriter setString(String propertyKey, String value);
 
     PropertyWriter setInt(String propertyKey, int value);

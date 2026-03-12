@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -26,8 +25,8 @@ public final class MonitoringConsoleWebDemoMain {
     private static final int DEMO_MAX_KEYS_PER_SEGMENT = 128;
     private static final int DEMO_MAX_KEYS_IN_SEGMENT_CACHE = 64;
     private static final int DEMO_MAX_SEGMENTS_IN_CACHE = 16;
-    private static final int DEMO_WRITE_CACHE_KEYS = 8;
-    private static final int DEMO_WRITE_CACHE_KEYS_DURING_MAINTENANCE = 16;
+    private static final int DEMO_ACTIVE_PARTITION_KEYS = 8;
+    private static final int DEMO_PARTITION_BUFFER_KEYS = 16;
     private static final int DEMO_MAX_DELTA_CACHE_FILES = 2;
     private static final int DEMO_BLOOM_INDEX_SIZE_BYTES = 256 * 1024;
     private static final int DEMO_KEY_SPACE = 10_000;
@@ -63,14 +62,7 @@ public final class MonitoringConsoleWebDemoMain {
             final ManagementAgentServer agent;
             try {
                 agent = new ManagementAgentServer("127.0.0.1", basePort + i,
-                        indexesForNode.get(0), namesForNode.get(0),
-                        Set.of("maxNumberOfSegmentsInCache",
-                                "maxNumberOfKeysInSegmentCache",
-                                "maxNumberOfKeysInActivePartition",
-                                "maxNumberOfImmutableRunsPerPartition",
-                                "maxNumberOfKeysInPartitionBuffer",
-                                "maxNumberOfKeysInIndexBuffer",
-                                "maxNumberOfKeysInPartitionBeforeSplit"));
+                        indexesForNode.get(0), namesForNode.get(0));
             } catch (final IOException e) {
                 shutdownResources(loadExecutor, agents, indexes);
                 throw new IllegalStateException(
@@ -146,12 +138,13 @@ public final class MonitoringConsoleWebDemoMain {
                         DEMO_MAX_KEYS_IN_SEGMENT_CACHE)
                 .withMaxNumberOfSegmentsInCache(DEMO_MAX_SEGMENTS_IN_CACHE)
                 .withMaxNumberOfKeysInSegment(DEMO_MAX_KEYS_PER_SEGMENT)
-                .withMaxNumberOfKeysInActivePartition(DEMO_WRITE_CACHE_KEYS)
+                .withMaxNumberOfKeysInActivePartition(
+                        DEMO_ACTIVE_PARTITION_KEYS)
                 .withMaxNumberOfImmutableRunsPerPartition(2)
                 .withMaxNumberOfKeysInPartitionBuffer(
-                        DEMO_WRITE_CACHE_KEYS_DURING_MAINTENANCE)
+                        DEMO_PARTITION_BUFFER_KEYS)
                 .withMaxNumberOfKeysInIndexBuffer(
-                        DEMO_WRITE_CACHE_KEYS_DURING_MAINTENANCE * 4)
+                        DEMO_PARTITION_BUFFER_KEYS * 4)
                 .withMaxNumberOfKeysInPartitionBeforeSplit(
                         DEMO_MAX_KEYS_PER_SEGMENT)
                 .withMaxNumberOfDeltaCacheFiles(DEMO_MAX_DELTA_CACHE_FILES)

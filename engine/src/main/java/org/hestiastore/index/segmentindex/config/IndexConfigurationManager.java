@@ -91,9 +91,9 @@ public class IndexConfigurationManager<K, V> {
         if (conf.getIndexWorkerThreadCount() == null) {
             builder.withIndexWorkerThreadCount(defaults.getIndexWorkerThreadCount());
         }
-        if (conf.getNumberOfSegmentIndexMaintenanceThreads() == null) {
-            builder.withNumberOfSegmentIndexMaintenanceThreads(
-                    defaults.getNumberOfSegmentIndexMaintenanceThreads());
+        if (conf.getNumberOfStableSegmentMaintenanceThreads() == null) {
+            builder.withNumberOfStableSegmentMaintenanceThreads(
+                    defaults.getNumberOfStableSegmentMaintenanceThreads());
         }
         if (conf.getNumberOfIndexMaintenanceThreads() == null) {
             builder.withNumberOfIndexMaintenanceThreads(
@@ -111,9 +111,9 @@ public class IndexConfigurationManager<K, V> {
             builder.withIndexBusyTimeoutMillis(
                     defaults.getIndexBusyTimeoutMillis());
         }
-        if (conf.isSegmentMaintenanceAutoEnabled() == null) {
-            builder.withSegmentMaintenanceAutoEnabled(
-                    defaults.isSegmentMaintenanceAutoEnabled());
+        if (conf.isBackgroundMaintenanceAutoEnabled() == null) {
+            builder.withBackgroundMaintenanceAutoEnabled(
+                    defaults.isBackgroundMaintenanceAutoEnabled());
         }
         if (conf.getWal() == null) {
             builder.withWal(defaults.getWal());
@@ -294,10 +294,10 @@ public class IndexConfigurationManager<K, V> {
                         indexConf.getIndexWorkerThreadCount()));
         dirty |= applyIf(
                 isPositiveOverride(
-                        indexConf.getNumberOfSegmentIndexMaintenanceThreads(),
-                        storedConf.getNumberOfSegmentIndexMaintenanceThreads()),
-                () -> builder.withNumberOfSegmentIndexMaintenanceThreads(
-                        indexConf.getNumberOfSegmentIndexMaintenanceThreads()));
+                        indexConf.getNumberOfStableSegmentMaintenanceThreads(),
+                        storedConf.getNumberOfStableSegmentMaintenanceThreads()),
+                () -> builder.withNumberOfStableSegmentMaintenanceThreads(
+                        indexConf.getNumberOfStableSegmentMaintenanceThreads()));
         dirty |= applyIf(
                 isPositiveOverride(indexConf.getNumberOfIndexMaintenanceThreads(),
                         storedConf.getNumberOfIndexMaintenanceThreads()),
@@ -328,10 +328,10 @@ public class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> indexConf) {
         boolean dirty = false;
         dirty |= applyIf(
-                isBooleanOverride(indexConf.isSegmentMaintenanceAutoEnabled(),
-                        storedConf.isSegmentMaintenanceAutoEnabled()),
-                () -> builder.withSegmentMaintenanceAutoEnabled(
-                        indexConf.isSegmentMaintenanceAutoEnabled()));
+                isBooleanOverride(indexConf.isBackgroundMaintenanceAutoEnabled(),
+                        storedConf.isBackgroundMaintenanceAutoEnabled()),
+                () -> builder.withBackgroundMaintenanceAutoEnabled(
+                        indexConf.isBackgroundMaintenanceAutoEnabled()));
         dirty |= applyIf(
                 isBooleanOverride(indexConf.isContextLoggingEnabled(),
                         storedConf.isContextLoggingEnabled()),
@@ -532,8 +532,8 @@ public class IndexConfigurationManager<K, V> {
         validateChunkFilters(conf);
         validateThreading(conf);
         validateBusyPolicy(conf);
-        Vldtn.requireNonNull(conf.isSegmentMaintenanceAutoEnabled(),
-                "segmentMaintenanceAutoEnabled");
+        Vldtn.requireNonNull(conf.isBackgroundMaintenanceAutoEnabled(),
+                "backgroundMaintenanceAutoEnabled");
         Vldtn.requireNonNull(conf.getWal(), "wal");
         validateWal(conf.getWal());
         return conf;
@@ -650,11 +650,11 @@ public class IndexConfigurationManager<K, V> {
             throw new IllegalArgumentException(
                     "Index worker thread count must be at least 1.");
         }
-        Vldtn.requireNonNull(conf.getNumberOfSegmentIndexMaintenanceThreads(),
-                "segmentIndexMaintenanceThreads");
-        if (conf.getNumberOfSegmentIndexMaintenanceThreads() < 1) {
+        Vldtn.requireNonNull(conf.getNumberOfStableSegmentMaintenanceThreads(),
+                "numberOfStableSegmentMaintenanceThreads");
+        if (conf.getNumberOfStableSegmentMaintenanceThreads() < 1) {
             throw new IllegalArgumentException(
-                    "Segment index maintenance threads must be at least 1.");
+                    "Stable segment maintenance threads must be at least 1.");
         }
         Vldtn.requireNonNull(conf.getNumberOfIndexMaintenanceThreads(),
                 "indexMaintenanceThreads");
@@ -714,16 +714,16 @@ public class IndexConfigurationManager<K, V> {
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
                 .withIndexWorkerThreadCount(conf.getIndexWorkerThreadCount())//
-                .withNumberOfSegmentIndexMaintenanceThreads(
-                        conf.getNumberOfSegmentIndexMaintenanceThreads())//
+                .withNumberOfStableSegmentMaintenanceThreads(
+                        conf.getNumberOfStableSegmentMaintenanceThreads())//
                 .withNumberOfIndexMaintenanceThreads(
                         conf.getNumberOfIndexMaintenanceThreads())//
                 .withNumberOfRegistryLifecycleThreads(
                         conf.getNumberOfRegistryLifecycleThreads())//
                 .withIndexBusyBackoffMillis(conf.getIndexBusyBackoffMillis())//
                 .withIndexBusyTimeoutMillis(conf.getIndexBusyTimeoutMillis())//
-                .withSegmentMaintenanceAutoEnabled(
-                        conf.isSegmentMaintenanceAutoEnabled())//
+                .withBackgroundMaintenanceAutoEnabled(
+                        conf.isBackgroundMaintenanceAutoEnabled())//
                 .withWal(conf.getWal())//
                 .withName(conf.getIndexName())//
 

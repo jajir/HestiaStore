@@ -5,12 +5,12 @@ import org.hestiastore.index.Vldtn;
 
 /**
  * Carries pre-computed statistics and mutable counters used during a single
- * segment split execution.
+ * partition split execution.
  *
  * @param <K> key type
  * @param <V> value type
  */
-final class SegmentSplitterPlan<K, V> {
+final class PartitionSplitPlan<K, V> {
 
     private K minKey;
     private K maxKey;
@@ -19,7 +19,7 @@ final class SegmentSplitterPlan<K, V> {
     private final long estimatedNumberOfKeys;
     private final long half;
 
-    private SegmentSplitterPlan(final long estimatedNumberOfKeys) {
+    private PartitionSplitPlan(final long estimatedNumberOfKeys) {
         this.estimatedNumberOfKeys = estimatedNumberOfKeys;
         this.half = estimatedNumberOfKeys / 2;
     }
@@ -29,15 +29,15 @@ final class SegmentSplitterPlan<K, V> {
      *
      * @param <K> key type
      * @param <V> value type
-     * @param segmentSplitterPolicy policy describing the estimated key count
+     * @param partitionSplitPolicy policy describing the estimated key count
      * @return new split plan
      */
-    static <K, V> SegmentSplitterPlan<K, V> fromPolicy(
-            final SegmentSplitterPolicy segmentSplitterPolicy) {
-        Vldtn.requireNonNull(segmentSplitterPolicy, "segmentSplitterPolicy");
-        final long estimatedNumberOfKeys = segmentSplitterPolicy
+    static <K, V> PartitionSplitPlan<K, V> fromPolicy(
+            final PartitionSplitPolicy partitionSplitPolicy) {
+        Vldtn.requireNonNull(partitionSplitPolicy, "partitionSplitPolicy");
+        final long estimatedNumberOfKeys = partitionSplitPolicy
                 .estimateNumberOfKeys();
-        return new SegmentSplitterPlan<>(estimatedNumberOfKeys);
+        return new PartitionSplitPlan<>(estimatedNumberOfKeys);
     }
 
     boolean isSplitFeasible() {

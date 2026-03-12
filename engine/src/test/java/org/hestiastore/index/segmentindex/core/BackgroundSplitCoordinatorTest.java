@@ -28,7 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentMaintenanceCoordinatorTest {
+class BackgroundSplitCoordinatorTest {
 
     @Mock
     private KeyToSegmentMap<String> keyToSegmentMap;
@@ -54,7 +54,7 @@ class SegmentMaintenanceCoordinatorTest {
     void returnsEarlyWhenSegmentIsClosed() {
         when(segment.getState()).thenReturn(SegmentState.CLOSED);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, Runnable::run, failure -> {
                 }, () -> {
@@ -74,7 +74,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segment.getNumberOfKeysInCache()).thenReturn(50L);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, Runnable::run, failure -> {
                 }, () -> {
@@ -94,7 +94,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segment.getNumberOfKeysInCache()).thenReturn(101L);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, Runnable::run, failure -> {
                 }, () -> {
@@ -115,7 +115,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segment.getNumberOfKeysInCache()).thenReturn(101L);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, splitExecutor, failure -> {
                 }, () -> {
@@ -144,7 +144,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(segment.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, Runnable::run, failure -> {
                 }, () -> {
@@ -170,7 +170,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(splitCoordinator.optionallySplit(eq(segment), eq(100L), any()))
                 .thenReturn(Boolean.TRUE);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, scheduledTask::set, failure -> {
                 }, splitAppliedCallbacks::incrementAndGet);
@@ -199,7 +199,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(splitCoordinator.optionallySplit(eq(segment), eq(100L), any()))
                 .thenReturn(Boolean.FALSE);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, splitExecutor, failure -> {
                 }, () -> {
@@ -235,7 +235,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(splitCoordinator.optionallySplit(eq(segment), eq(100L), any()))
                 .thenReturn(Boolean.FALSE);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, splitExecutor, failure -> {
                 }, () -> {
@@ -270,7 +270,7 @@ class SegmentMaintenanceCoordinatorTest {
         when(splitCoordinator.optionallySplit(eq(segment), eq(100L), any()))
                 .thenReturn(Boolean.FALSE);
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, splitExecutor, failure -> {
                 }, () -> {
@@ -308,7 +308,7 @@ class SegmentMaintenanceCoordinatorTest {
                     return Boolean.FALSE;
                 });
 
-        final SegmentMaintenanceCoordinator<String, String> coordinator = new SegmentMaintenanceCoordinator<>(
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime,
                 splitCoordinator, splitExecutor, failure -> {
                 }, () -> {

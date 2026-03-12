@@ -10,7 +10,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -24,15 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ManagementAgentServerSecurityTest {
-
-    private static final Set<String> RUNTIME_ALLOWLIST = Set.of(
-            "maxNumberOfSegmentsInCache",
-            "maxNumberOfKeysInSegmentCache",
-            "maxNumberOfKeysInActivePartition",
-            "maxNumberOfImmutableRunsPerPartition",
-            "maxNumberOfKeysInPartitionBuffer",
-            "maxNumberOfKeysInIndexBuffer",
-            "maxNumberOfKeysInPartitionBeforeSplit");
 
     private SegmentIndex<Integer, String> index;
     private ManagementAgentServer server;
@@ -61,7 +51,7 @@ class ManagementAgentServerSecurityTest {
                         "admin-token", AgentRole.ADMIN),
                 2);
         server = new ManagementAgentServer("127.0.0.1", 0, index,
-                "secure-index", RUNTIME_ALLOWLIST, policy);
+                "secure-index", policy);
         server.start();
         client = HttpClient.newHttpClient();
         baseUrl = "http://127.0.0.1:" + server.getPort();

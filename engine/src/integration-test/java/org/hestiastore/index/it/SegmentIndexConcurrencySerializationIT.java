@@ -153,14 +153,14 @@ class SegmentIndexConcurrencySerializationIT {
                 .withDiskIoBufferSizeInBytes(
                         defaults.getDiskIoBufferSizeInBytes())//
                 .withIndexWorkerThreadCount(indexWorkerThreads)//
-                .withNumberOfSegmentIndexMaintenanceThreads(
-                        defaults.getNumberOfSegmentIndexMaintenanceThreads())//
+                .withNumberOfStableSegmentMaintenanceThreads(
+                        defaults.getNumberOfStableSegmentMaintenanceThreads())//
                 .withIndexBusyBackoffMillis(
                         defaults.getIndexBusyBackoffMillis())//
                 .withIndexBusyTimeoutMillis(
                         defaults.getIndexBusyTimeoutMillis())//
-                .withSegmentMaintenanceAutoEnabled(
-                        defaults.isSegmentMaintenanceAutoEnabled())//
+                .withBackgroundMaintenanceAutoEnabled(
+                        defaults.isBackgroundMaintenanceAutoEnabled())//
                 .withEncodingFilters(defaults.getEncodingChunkFilters())//
                 .withDecodingFilters(defaults.getDecodingChunkFilters())//
                 .build();

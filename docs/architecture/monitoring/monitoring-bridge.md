@@ -45,6 +45,13 @@ without mutating index state.
 - `hestiastore_ops_get_total`
 - `hestiastore_ops_put_total`
 - `hestiastore_ops_delete_total`
+- `hestiastore_partition_count`
+- `hestiastore_partition_buffered_key_count`
+- `hestiastore_partition_drain_schedule_total`
+- `hestiastore_partition_drain_in_flight`
+- `hestiastore_partition_drain_latency_p95_micros`
+- `hestiastore_split_schedule_total`
+- `hestiastore_split_in_flight`
 - `hestiastore_index_up`
 
 All counters use the stable `index` tag to identify the logical index name.

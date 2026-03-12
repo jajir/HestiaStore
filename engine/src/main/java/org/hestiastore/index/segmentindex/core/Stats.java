@@ -17,6 +17,7 @@ class Stats {
     private final LongAdder splitScheduleCx = new LongAdder();
     private final OperationLatencyTracker readLatency = new OperationLatencyTracker();
     private final OperationLatencyTracker writeLatency = new OperationLatencyTracker();
+    private final OperationLatencyTracker drainLatency = new OperationLatencyTracker();
 
     Stats() {
 
@@ -52,6 +53,10 @@ class Stats {
 
     void recordWriteLatencyNanos(final long nanos) {
         writeLatency.recordNanos(nanos);
+    }
+
+    void recordDrainLatencyNanos(final long nanos) {
+        drainLatency.recordNanos(nanos);
     }
 
     /**
@@ -115,6 +120,10 @@ class Stats {
 
     long getWriteLatencyP99Micros() {
         return writeLatency.percentileMicros(0.99D);
+    }
+
+    long getDrainLatencyP95Micros() {
+        return drainLatency.percentileMicros(0.95D);
     }
 
 }

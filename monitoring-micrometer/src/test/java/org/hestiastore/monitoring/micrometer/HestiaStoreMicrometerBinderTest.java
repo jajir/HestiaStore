@@ -22,7 +22,7 @@ class HestiaStoreMicrometerBinderTest {
         final SegmentIndex<Integer, String> index = mock(SegmentIndex.class);
         final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
                 snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 2, 11, 29, 3,
-                        2, 1, 4, 17, 19L, 23L, 31L, 5));
+                        2, 1, 4, 17, 19L, 23L, 31L, 5, 43L, 37L, 2));
         when(index.metricsSnapshot()).thenAnswer(inv -> snapshotRef.get());
         when(index.getState()).thenAnswer(inv -> snapshotRef.get().getState());
 
@@ -70,11 +70,18 @@ class HestiaStoreMicrometerBinderTest {
                 .tag("index", "orders").functionCounter().count());
         assertEquals(5D, registry.get("hestiastore_partition_drain_in_flight")
                 .tag("index", "orders").gauge().value());
+        assertEquals(43D, registry
+                .get("hestiastore_partition_drain_latency_p95_micros")
+                .tag("index", "orders").gauge().value());
+        assertEquals(37D, registry.get("hestiastore_split_schedule_total")
+                .tag("index", "orders").functionCounter().count());
+        assertEquals(2D, registry.get("hestiastore_split_in_flight")
+                .tag("index", "orders").gauge().value());
         assertEquals(1D, registry.get("hestiastore_index_up")
                 .tag("index", "orders").gauge().value());
 
         snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 3,
-                15, 41, 4, 1, 0, 2, 5, 29L, 31L, 37L, 0));
+                15, 41, 4, 1, 0, 2, 5, 29L, 31L, 37L, 0, 0L, 41L, 0));
 
         assertEquals(5D,
                 registry.get("hestiastore_ops_get_total").tag("index", "orders")
@@ -93,6 +100,13 @@ class HestiaStoreMicrometerBinderTest {
                 .tag("index", "orders").functionCounter().count());
         assertEquals(0D, registry.get("hestiastore_partition_drain_in_flight")
                 .tag("index", "orders").gauge().value());
+        assertEquals(0D, registry
+                .get("hestiastore_partition_drain_latency_p95_micros")
+                .tag("index", "orders").gauge().value());
+        assertEquals(41D, registry.get("hestiastore_split_schedule_total")
+                .tag("index", "orders").functionCounter().count());
+        assertEquals(0D, registry.get("hestiastore_split_in_flight")
+                .tag("index", "orders").gauge().value());
         assertEquals(0D, registry.get("hestiastore_index_up")
                 .tag("index", "orders").gauge().value());
     }
@@ -108,7 +122,9 @@ class HestiaStoreMicrometerBinderTest {
             final int partitionBufferedKeyCount,
             final long localThrottleCount,
             final long globalThrottleCount,
-            final long drainScheduleCount, final int drainInFlightCount) {
+            final long drainScheduleCount, final int drainInFlightCount,
+            final long drainLatencyP95Micros,
+            final long splitScheduleCount, final int splitInFlightCount) {
         return new SegmentIndexMetricsSnapshot(
                 getCount, putCount, deleteCount,
                 0L, 0L, 0L, 0L,
@@ -116,17 +132,19 @@ class HestiaStoreMicrometerBinderTest {
                 0, activePartitionLimit, partitionBufferLimit,
                 0, 0, 0, 0, 0, 0,
                 0L, 0L, 0L, 0L,
-                0L, 0L, 0L,
-                0, 0, 0, 0, 0,
+                0L, 0L, splitScheduleCount,
+                splitInFlightCount, 0, 0, 0, 0,
                 0L, 0L, 0L,
                 0L, 0L, 0L,
                 0, 0, 0D,
                 0L, 0L, 0L, 0L,
+                false, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                 immutableRunLimit, indexBufferLimit, partitionCount,
                 activePartitionCount, drainingPartitionCount,
                 immutableRunCount, partitionBufferedKeyCount,
                 localThrottleCount, globalThrottleCount, drainScheduleCount,
-                drainInFlightCount, List.of(),
+                drainInFlightCount, drainLatencyP95Micros, List.of(),
                 state);
     }
 }

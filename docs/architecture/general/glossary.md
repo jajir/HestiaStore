@@ -42,16 +42,16 @@ Forward iterator over entries; variants exist for merging overlays and for safe 
 Pluggable transformations applied to chunk payloads on write and inverted on read (magic number, CRC32, Snappy, XOR). Configured per index. Code: `chunkstore/ChunkFilter*.java`; config via `segmentindex/IndexConfigurationBuilder`.
 
 ## 🚿 Flush
-Drains the index‑level write buffer, routes entries to per‑segment delta caches, and updates `index.map`. `flush()` schedules the work; `flushAndWait()` waits for completion. Code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport.java`.
+Seals active partition overlays, drains immutable runs to stable segments, and updates `index.map`. `flush()` schedules background maintenance; `flushAndWait()` waits until drain/split work and WAL checkpoint are complete. Code: `segmentindex/core/SegmentIndexImpl#flush()`, `segmentindex/partition/PartitionRuntime.java`, `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ## 🔥 Hot Partition
-Routed key range that receives a disproportionately large share of current reads or writes compared with the rest of the index. Hot partitions are where bounded buffering, drain backpressure, and split policy matter most. Code: `segmentindex/partition/RangePartition.java`, `segmentindex/core/SegmentIndexImpl.java`, `segmentindex/core/SegmentMaintenanceCoordinator.java`.
+Routed key range that receives a disproportionately large share of current reads or writes compared with the rest of the index. Hot partitions are where bounded buffering, drain backpressure, and split policy matter most. Code: `segmentindex/partition/RangePartition.java`, `segmentindex/core/SegmentIndexImpl.java`, `segmentindex/core/BackgroundSplitCoordinator.java`.
 
 ## 📥 Ingest (Index Ingest)
 Index write path where `put`/`delete` first land in a partitioned in‑memory overlay above stable segments (and may be WAL‑recorded first when enabled). It provides read‑after‑write visibility before background publish to stable storage. Code: `segmentindex/core/SegmentIndexImpl#putBuffered()`, `segmentindex/partition/PartitionRuntime.java`, `segmentindex/partition/RangePartition.java`.
 
 ## 🗺️ Key-to-Segment Map
-Global sorted map of max key → SegmentId that routes lookups and flushes. Persisted as `index.map`. Code: `segmentindex/KeyToSegmentMap.java`.
+Global sorted map of max key → SegmentId that routes lookups and stable publish targets. Persisted as `index.map`. Code: `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ## 🗒️ Logging Context
 Optional MDC enrichment that sets `index.name` for log correlation when enabled.
@@ -84,25 +84,25 @@ Offset/limit window for streaming across segments, analogous to SQL OFFSET/LIMIT
 Per‑segment, sorted sample of keys that points to chunk start positions in the main SST to bound local scans. Code: `scarceindex/*`.
 
 ## ✂️ Split
-Maintenance operation that replaces one routed segment range with child ranges when split policy is met; the route map is remapped atomically and overlay data can be reassigned to the new routes. Code: `segmentindex/split/PartitionStableSplitCoordinator.java`, `segmentindex/split/SegmentSplitCoordinator.java`, `segmentindex/core/SegmentMaintenanceCoordinator.java`.
+Maintenance operation that replaces one routed segment range with child ranges when split policy is met; the route map is remapped atomically and overlay data is reassigned to the new routes. Code: `segmentindex/split/PartitionStableSplitCoordinator.java`, `segmentindex/core/BackgroundSplitCoordinator.java`, `segmentindex/partition/PartitionRuntime.java`.
 
 ## 🧭 Split Policy
-Background decision logic that identifies routed ranges worth splitting and schedules the work with cooldown, hysteresis, and in-flight guards so the system avoids split thrash. Code: `segmentindex/core/SegmentMaintenanceCoordinator.java`, `segmentindex/core/SegmentIndexImpl.java`.
+Background decision logic that identifies routed ranges worth splitting and schedules the work with cooldown, hysteresis, and in-flight guards so the system avoids split thrash. Code: `segmentindex/core/BackgroundSplitCoordinator.java`, `segmentindex/core/SegmentIndexImpl.java`.
 
 ## 🧭 Split Procedure
-Ordered split pipeline: validate feasibility, open iterator, fill lower segment to target, ensure lower segment is not empty, then either replace the original segment (compacted outcome) or write remaining entries to an upper segment (split outcome). Code: `segmentindex/split/SegmentSplitPipeline.java`, `segmentindex/split/SegmentSplitter.java`, `segmentindex/split/SegmentSplitStep*.java`.
+Route-first split flow: compute split boundary from the parent stable snapshot, materialize lower/upper child stable segments, atomically apply the route-map update, then reassign partition overlays to child routes and retire the parent segment. Code: `segmentindex/split/PartitionStableSplitCoordinator.java`, `segmentindex/split/PartitionSplitApplyPlan.java`, `segmentindex/partition/PartitionRuntime.java`.
 
 ## 🧪 Split-heavy Workload
-Workload pattern or benchmark mode that intentionally drives frequent split candidates, typically by growing a routed keyspace under load while reads and writes continue. It is useful for validating autonomous split policy, child publish flow, and read/write behavior during repeated remapping. Code: `benchmark/segmentindex/SegmentIndexMixedDrainBenchmark.java`, `segmentindex/core/SegmentMaintenanceCoordinator.java`, `segmentindex/split/PartitionStableSplitCoordinator.java`.
+Workload pattern or benchmark mode that intentionally drives frequent split candidates, typically by growing a routed keyspace under load while reads and writes continue. It is useful for validating autonomous split policy, child publish flow, and read/write behavior during repeated remapping. Code: `benchmark/segmentindex/SegmentIndexMixedDrainBenchmark.java`, `segmentindex/core/BackgroundSplitCoordinator.java`, `segmentindex/split/PartitionStableSplitCoordinator.java`.
 
 ## 📊 Stats
 Simple counters for get/put/delete to observe workload shape. Code: `segmentindex/Stats.java`.
 
 ## 🔁 Thrash (Thrashing)
-Pathological churn where the system repeatedly retries, reloads, evicts, splits, or rescans the same hot range/cache entries without making proportional forward progress. In this project the term is typically used for split thrash or cache thrash, for example when a hot routed segment keeps re-entering maintenance/scheduling pressure or when registry cache entries are repeatedly unloaded and loaded again under pressure. Code: `segmentindex/core/SegmentIndexImpl.java`, `segmentindex/core/SegmentMaintenanceCoordinator.java`, `segmentregistry/SegmentRegistryCache.java`.
+Pathological churn where the system repeatedly retries, reloads, evicts, splits, or rescans the same hot range/cache entries without making proportional forward progress. In this project the term is typically used for split thrash or cache thrash, for example when a hot routed segment keeps re-entering maintenance/scheduling pressure or when registry cache entries are repeatedly unloaded and loaded again under pressure. Code: `segmentindex/core/SegmentIndexImpl.java`, `segmentindex/core/BackgroundSplitCoordinator.java`, `segmentregistry/SegmentRegistryCache.java`.
 
 ## 🪦 Tombstone
-Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: `datatype/TypeDescriptor#getTombstone()`, used in `segmentindex/SegmentIndexImpl#delete()`.
+Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: `datatype/TypeDescriptor#getTombstone()`, used in `segmentindex/core/SegmentIndexImpl#delete()`.
 
 ## 🧰 UniqueCache
 In‑memory map that keeps only the latest value per key. Used at the index‑level write buffer and inside the delta overlay. Code: `cache/UniqueCache*.java`.

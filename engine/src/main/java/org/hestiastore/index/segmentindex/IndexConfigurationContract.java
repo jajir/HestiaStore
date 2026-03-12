@@ -29,12 +29,12 @@ public interface IndexConfigurationContract {
 
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
     int INDEX_WORKER_THREAD_COUNT = 1;
-    int DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS = 10;
+    int DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS = 10;
     int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_REGISTRY_LIFECYCLE_THREADS = 3;
     int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
     int DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS = 30_000;
-    boolean DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED = true;
+    boolean DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED = true;
 
     /**
      * Returns the default maximum number of keys in the in-memory segment
@@ -180,12 +180,12 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default number of segment maintenance threads.
+     * Returns the default number of stable-segment maintenance threads.
      *
-     * @return default segment maintenance thread count
+     * @return default stable-segment maintenance thread count
      */
-    default int getNumberOfSegmentIndexMaintenanceThreads() {
-        return DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS;
+    default int getNumberOfStableSegmentMaintenanceThreads() {
+        return DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS;
     }
 
     /**
@@ -230,8 +230,8 @@ public interface IndexConfigurationContract {
      *
      * @return true when auto maintenance is enabled by default
      */
-    default boolean isSegmentMaintenanceAutoEnabled() {
-        return DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED;
+    default boolean isBackgroundMaintenanceAutoEnabled() {
+        return DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED;
     }
 
     /**

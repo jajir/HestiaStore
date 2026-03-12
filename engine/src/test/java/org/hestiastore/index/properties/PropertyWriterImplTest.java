@@ -1,6 +1,7 @@
 package org.hestiastore.index.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.HashMap;
@@ -25,5 +26,17 @@ class PropertyWriterImplTest {
         assertEquals("9_876_543_210", workingCopy.get("gamma"));
         assertEquals("12_345.14", workingCopy.get("delta"));
         assertEquals("true", workingCopy.get("epsilon"));
+    }
+
+    @Test
+    void remove_deletes_key_and_returns_same_writer() {
+        final Map<String, String> workingCopy = new HashMap<>();
+        workingCopy.put("alpha", "value");
+        final PropertyWriter writer = new PropertyWriterImpl(workingCopy);
+
+        final PropertyWriter returned = writer.remove("alpha");
+
+        assertSame(writer, returned);
+        assertNull(workingCopy.get("alpha"));
     }
 }

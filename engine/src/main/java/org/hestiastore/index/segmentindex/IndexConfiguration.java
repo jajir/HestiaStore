@@ -45,12 +45,12 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
     private final Integer indexWorkerThreadCount;
-    private final Integer numberOfSegmentIndexMaintenanceThreads;
+    private final Integer numberOfStableSegmentMaintenanceThreads;
     private final Integer numberOfIndexMaintenanceThreads;
     private final Integer numberOfRegistryLifecycleThreads;
     private final Integer indexBusyBackoffMillis;
     private final Integer indexBusyTimeoutMillis;
-    private final Boolean segmentMaintenanceAutoEnabled;
+    private final Boolean backgroundMaintenanceAutoEnabled;
 
     private final Integer bloomFilterNumberOfHashFunctions;
     private final Integer bloomFilterIndexSizeInBytes;
@@ -94,12 +94,12 @@ public class IndexConfiguration<K, V> {
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
             final Integer indexWorkerThreadCount,
-            final Integer numberOfSegmentIndexMaintenanceThreads,
+            final Integer numberOfStableSegmentMaintenanceThreads,
             final Integer numberOfIndexMaintenanceThreads,
             final Integer numberOfRegistryLifecycleThreads,
             final Integer indexBusyBackoffMillis,
             final Integer indexBusyTimeoutMillis,
-            final Boolean segmentMaintenanceAutoEnabled,
+            final Boolean backgroundMaintenanceAutoEnabled,
             final Wal wal,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
@@ -119,12 +119,12 @@ public class IndexConfiguration<K, V> {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         this.indexWorkerThreadCount = indexWorkerThreadCount;
-        this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
+        this.numberOfStableSegmentMaintenanceThreads = numberOfStableSegmentMaintenanceThreads;
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
         this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
-        this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
+        this.backgroundMaintenanceAutoEnabled = backgroundMaintenanceAutoEnabled;
         this.wal = Wal.orEmpty(wal);
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
@@ -272,8 +272,8 @@ public class IndexConfiguration<K, V> {
      *
      * @return maintenance thread count
      */
-    public Integer getNumberOfSegmentIndexMaintenanceThreads() {
-        return numberOfSegmentIndexMaintenanceThreads;
+    public Integer getNumberOfStableSegmentMaintenanceThreads() {
+        return numberOfStableSegmentMaintenanceThreads;
     }
 
     /**
@@ -317,8 +317,8 @@ public class IndexConfiguration<K, V> {
      *
      * @return true if auto maintenance is enabled; otherwise false
      */
-    public Boolean isSegmentMaintenanceAutoEnabled() {
-        return segmentMaintenanceAutoEnabled;
+    public Boolean isBackgroundMaintenanceAutoEnabled() {
+        return backgroundMaintenanceAutoEnabled;
     }
 
     /**

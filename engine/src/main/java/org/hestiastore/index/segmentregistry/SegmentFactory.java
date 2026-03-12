@@ -25,10 +25,10 @@ public final class SegmentFactory<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
-    private final ExecutorService segmentMaintenanceExecutor;
+    private final ExecutorService stableSegmentMaintenanceExecutor;
     private volatile int runtimeMaxNumberOfKeysInSegmentCache;
-    private volatile int runtimeMaxNumberOfKeysInSegmentWriteCache;
-    private volatile int runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+    private volatile int runtimeMaxNumberOfKeysInActivePartition;
+    private volatile int runtimeMaxNumberOfKeysInPartitionBuffer;
 
     /**
      * Creates a factory for building segments with shared configuration.
@@ -37,7 +37,8 @@ public final class SegmentFactory<K, V> {
      * @param keyTypeDescriptor  key type descriptor
      * @param valueTypeDescriptor value type descriptor
      * @param conf               index configuration
-     * @param segmentMaintenanceExecutor executor for segment maintenance tasks
+     * @param segmentMaintenanceExecutor executor for stable segment
+     *                                 maintenance tasks
      */
     public SegmentFactory(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -51,14 +52,14 @@ public final class SegmentFactory<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.segmentMaintenanceExecutor = Vldtn
+        this.stableSegmentMaintenanceExecutor = Vldtn
                 .requireNonNull(segmentMaintenanceExecutor,
                         "segmentMaintenanceExecutor");
         this.runtimeMaxNumberOfKeysInSegmentCache = toIntOrZero(
                 conf.getMaxNumberOfKeysInSegmentCache());
-        this.runtimeMaxNumberOfKeysInSegmentWriteCache = toIntOrZero(
+        this.runtimeMaxNumberOfKeysInActivePartition = toIntOrZero(
                 conf.getMaxNumberOfKeysInActivePartition());
-        this.runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = toIntOrZero(
+        this.runtimeMaxNumberOfKeysInPartitionBuffer = toIntOrZero(
                 conf.getMaxNumberOfKeysInPartitionBuffer());
     }
 
@@ -83,45 +84,46 @@ public final class SegmentFactory<K, V> {
     public SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         refreshRuntimeLimitsFromConfigurationIfInvalid();
-        final int maxNumberOfKeysInSegmentCache = Vldtn.requireGreaterThanZero(
+        final int segmentCacheKeyLimit = Vldtn.requireGreaterThanZero(
                 runtimeMaxNumberOfKeysInSegmentCache,
                 "maxNumberOfKeysInSegmentCache");
-        final int maxNumberOfKeysInSegmentWriteCache = Vldtn
-                .requireGreaterThanZero(runtimeMaxNumberOfKeysInSegmentWriteCache,
-                        "maxNumberOfKeysInSegmentWriteCache");
-        final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance = Vldtn
-                .requireGreaterThanZero(
-                        runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                        "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
-        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance
-                <= maxNumberOfKeysInSegmentWriteCache) {
+        final int activePartitionKeyLimit = Vldtn
+                .requireGreaterThanZero(runtimeMaxNumberOfKeysInActivePartition,
+                        "maxNumberOfKeysInActivePartition");
+        final int partitionBufferKeyLimit = Vldtn
+                .requireGreaterThanZero(runtimeMaxNumberOfKeysInPartitionBuffer,
+                        "maxNumberOfKeysInPartitionBuffer");
+        if (partitionBufferKeyLimit <= activePartitionKeyLimit) {
             throw new IllegalArgumentException(
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache");
+                    "maxNumberOfKeysInPartitionBuffer must be greater than maxNumberOfKeysInActivePartition");
         }
         final Directory segmentDirectory = openSegmentDirectory(segmentId);
-        final SegmentMaintenancePolicy<K, V> maintenancePolicy = Boolean.TRUE
-                .equals(conf.isSegmentMaintenanceAutoEnabled())
-                        ? new SegmentMaintenancePolicyThreshold<>(
-                                maxNumberOfKeysInSegmentCache,
-                                maxNumberOfKeysInSegmentWriteCache,
-                                conf.getMaxNumberOfDeltaCacheFiles())
+        final boolean backgroundMaintenanceEnabled = Boolean.TRUE
+                .equals(conf.isBackgroundMaintenanceAutoEnabled());
+        final SegmentMaintenancePolicy<K, V> stableSegmentMaintenancePolicy = backgroundMaintenanceEnabled
+                ? new SegmentMaintenancePolicyThreshold<>(
+                        segmentCacheKeyLimit, activePartitionKeyLimit,
+                        conf.getMaxNumberOfDeltaCacheFiles())
                         : SegmentMaintenancePolicy.none();
         return Segment.<K, V>builder(segmentDirectory)//
                 .withId(segmentId)//
                 .withDirectoryLockingEnabled(true)//
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
-                .withMaintenanceExecutor(segmentMaintenanceExecutor)//
+                .withMaintenanceExecutor(stableSegmentMaintenanceExecutor)//
                 .withLoggingContextIndexName(
                         Boolean.TRUE.equals(conf.isContextLoggingEnabled())
                                 ? conf.getIndexName()
                                 : null)//
-                .withMaintenancePolicy(maintenancePolicy)//
+                .withMaintenancePolicy(stableSegmentMaintenancePolicy)//
+                // Stable segment builder still uses legacy write-cache naming.
                 .withMaxNumberOfKeysInSegmentWriteCache(
-                        maxNumberOfKeysInSegmentWriteCache)//
+                        mapActivePartitionKeyLimitToStableWriteBuffer(
+                                activePartitionKeyLimit))//
                 .withMaxNumberOfKeysInSegmentCache(
-                        maxNumberOfKeysInSegmentCache)//
+                        segmentCacheKeyLimit)//
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)//
+                        mapPartitionBufferKeyLimitToStableDrainWriteBuffer(
+                                partitionBufferKeyLimit))//
                 .withMaxNumberOfKeysInSegmentChunk(
                         conf.getMaxNumberOfKeysInSegmentChunk())//
                 .withMaxNumberOfDeltaCacheFiles(
@@ -139,32 +141,29 @@ public final class SegmentFactory<K, V> {
     }
 
     /**
-     * Updates runtime-only segment cache/write thresholds used for newly loaded
-     * segments.
+     * Updates runtime-only segment limits used for newly loaded segments.
      *
      * @param maxNumberOfKeysInSegmentCache segment-cache threshold
-     * @param maxNumberOfKeysInSegmentWriteCache write-cache threshold
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance write-cache
-     *        threshold while maintenance is running
+     * @param maxNumberOfKeysInActivePartition active overlay threshold
+     * @param maxNumberOfKeysInPartitionBuffer partition buffer threshold
      */
     public void updateRuntimeLimits(final int maxNumberOfKeysInSegmentCache,
-            final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance) {
+            final int maxNumberOfKeysInActivePartition,
+            final int maxNumberOfKeysInPartitionBuffer) {
         Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentCache,
                 "maxNumberOfKeysInSegmentCache");
-        Vldtn.requireGreaterThanZero(maxNumberOfKeysInSegmentWriteCache,
-                "maxNumberOfKeysInSegmentWriteCache");
-        Vldtn.requireGreaterThanZero(
-                maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-                "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance");
-        if (maxNumberOfKeysInSegmentWriteCacheDuringMaintenance
-                <= maxNumberOfKeysInSegmentWriteCache) {
+        Vldtn.requireGreaterThanZero(maxNumberOfKeysInActivePartition,
+                "maxNumberOfKeysInActivePartition");
+        Vldtn.requireGreaterThanZero(maxNumberOfKeysInPartitionBuffer,
+                "maxNumberOfKeysInPartitionBuffer");
+        if (maxNumberOfKeysInPartitionBuffer
+                <= maxNumberOfKeysInActivePartition) {
             throw new IllegalArgumentException(
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache");
+                    "maxNumberOfKeysInPartitionBuffer must be greater than maxNumberOfKeysInActivePartition");
         }
         this.runtimeMaxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
-        this.runtimeMaxNumberOfKeysInSegmentWriteCache = maxNumberOfKeysInSegmentWriteCache;
-        this.runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = maxNumberOfKeysInSegmentWriteCacheDuringMaintenance;
+        this.runtimeMaxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
+        this.runtimeMaxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
     }
 
     private Directory openSegmentDirectory(final SegmentId segmentId) {
@@ -173,24 +172,24 @@ public final class SegmentFactory<K, V> {
 
     private void refreshRuntimeLimitsFromConfigurationIfInvalid() {
         if (runtimeMaxNumberOfKeysInSegmentCache > 0
-                && runtimeMaxNumberOfKeysInSegmentWriteCache > 0
-                && runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance > runtimeMaxNumberOfKeysInSegmentWriteCache) {
+                && runtimeMaxNumberOfKeysInActivePartition > 0
+                && runtimeMaxNumberOfKeysInPartitionBuffer > runtimeMaxNumberOfKeysInActivePartition) {
             return;
         }
         final int configuredCache = toIntOrZero(
                 conf.getMaxNumberOfKeysInSegmentCache());
-        final int configuredWrite = toIntOrZero(
+        final int configuredActivePartition = toIntOrZero(
                 conf.getMaxNumberOfKeysInActivePartition());
-        final int configuredWriteDuringMaintenance = toIntOrZero(
+        final int configuredPartitionBuffer = toIntOrZero(
                 conf.getMaxNumberOfKeysInPartitionBuffer());
         if (configuredCache > 0) {
             runtimeMaxNumberOfKeysInSegmentCache = configuredCache;
         }
-        if (configuredWrite > 0) {
-            runtimeMaxNumberOfKeysInSegmentWriteCache = configuredWrite;
+        if (configuredActivePartition > 0) {
+            runtimeMaxNumberOfKeysInActivePartition = configuredActivePartition;
         }
-        if (configuredWriteDuringMaintenance > 0) {
-            runtimeMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance = configuredWriteDuringMaintenance;
+        if (configuredPartitionBuffer > 0) {
+            runtimeMaxNumberOfKeysInPartitionBuffer = configuredPartitionBuffer;
         }
     }
 
@@ -199,5 +198,15 @@ public final class SegmentFactory<K, V> {
             return 0;
         }
         return value.intValue();
+    }
+
+    private int mapActivePartitionKeyLimitToStableWriteBuffer(
+            final int activePartitionKeyLimit) {
+        return activePartitionKeyLimit;
+    }
+
+    private int mapPartitionBufferKeyLimitToStableDrainWriteBuffer(
+            final int partitionBufferKeyLimit) {
+        return partitionBufferKeyLimit;
     }
 }

@@ -128,13 +128,13 @@ class SegmentLifecycleMaintenanceTest {
     private static final class Fixture implements AutoCloseable {
         private final MemDirectory directory = new MemDirectory();
         private final Directory asyncDirectory = directory;
-        private final ExecutorService segmentMaintenanceExecutor = Executors
+        private final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         private final IndexConfiguration<Integer, String> conf = newConfiguration();
 
         private final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 asyncDirectory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
-                segmentMaintenanceExecutor);
+                stableSegmentMaintenanceExecutor);
         private final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);
         private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
@@ -148,7 +148,7 @@ class SegmentLifecycleMaintenanceTest {
 
         @Override
         public void close() {
-            segmentMaintenanceExecutor.shutdownNow();
+            stableSegmentMaintenanceExecutor.shutdownNow();
         }
     }
 
@@ -171,9 +171,9 @@ class SegmentLifecycleMaintenanceTest {
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withEncodingFilters(FILTERS)//
                 .withDecodingFilters(FILTERS)//
-                .withSegmentMaintenanceAutoEnabled(false)//
+                .withBackgroundMaintenanceAutoEnabled(false)//
                 .withIndexWorkerThreadCount(1)//
-                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfStableSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
                 .withIndexBusyBackoffMillis(1)//
                 .withIndexBusyTimeoutMillis(1000)//
