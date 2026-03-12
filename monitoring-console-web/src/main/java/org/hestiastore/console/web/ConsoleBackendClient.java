@@ -729,6 +729,7 @@ public class ConsoleBackendClient {
                     snapshot.getDrainScheduleCount(),
                     snapshot.getSplitInFlightCount(),
                     snapshot.getDrainInFlightCount(),
+                    snapshot.getDrainLatencyP95Micros(),
                     snapshot.getMaintenanceQueueSize(),
                     snapshot.getMaintenanceQueueCapacity(),
                     snapshot.getSplitQueueSize(),
@@ -844,6 +845,8 @@ public class ConsoleBackendClient {
                         indexNode.path("bloomFilterPositiveCount").asLong(0L)),
                 nonNegativeLong(indexNode.path("bloomFilterFalsePositiveCount")
                         .asLong(0L)),
+                false, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L,
                 readNonNegativeIntWithFallback(indexNode,
                         "maxNumberOfImmutableRunsPerPartition", null),
                 readNonNegativeIntWithFallback(indexNode,
@@ -866,6 +869,8 @@ public class ConsoleBackendClient {
                         indexNode.path("drainScheduleCount").asLong(0L)),
                 readNonNegativeIntWithFallback(indexNode, "drainInFlightCount",
                         null),
+                nonNegativeLong(
+                        indexNode.path("drainLatencyP95Micros").asLong(0L)),
                 parseSegmentRuntimeSnapshots(
                         indexNode.path("segmentRuntimeSnapshots")),
                 parseState(indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)));
@@ -1497,6 +1502,7 @@ public class ConsoleBackendClient {
             long flushRequestCount, long compactRequestCount,
             long splitScheduleCount, long drainScheduleCount,
             int splitInFlightCount, int drainInFlightCount,
+            long drainLatencyP95Micros,
             int maintenanceQueueSize, int maintenanceQueueCapacity,
             int splitQueueSize, int splitQueueCapacity, int partitionCount,
             int activePartitionCount, int drainingPartitionCount,

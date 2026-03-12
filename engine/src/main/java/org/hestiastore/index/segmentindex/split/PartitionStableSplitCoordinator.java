@@ -94,7 +94,8 @@ public class PartitionStableSplitCoordinator<K, V> {
             final SplitApplyRunner splitApplyRunner) {
         Vldtn.requireNonNull(segment, SEGMENT_ARG);
         Vldtn.requireNonNull(splitApplyRunner, "splitApplyRunner");
-        final SegmentSplitterPlan<K, V> estimatedPlan = buildPlan(segment);
+        final PartitionSplitPlan<K, V> estimatedPlan = buildPartitionSplitPlan(
+                segment);
         if (!isEligibleForSplit(segment, estimatedPlan,
                 maxNumberOfKeysInSegment)) {
             if (logger.isDebugEnabled()) {
@@ -140,8 +141,8 @@ public class PartitionStableSplitCoordinator<K, V> {
             }
             return false;
         }
-        final SegmentSplitApplyPlan<K> applyPlan = buildApplyPlan(segment,
-                maxNumberOfKeysInSegment);
+        final PartitionSplitApplyPlan<K> applyPlan = buildPartitionSplitApplyPlan(
+                segment, maxNumberOfKeysInSegment);
         if (applyPlan == null) {
             return false;
         }
@@ -149,12 +150,13 @@ public class PartitionStableSplitCoordinator<K, V> {
             return false;
         }
         final boolean applied = splitApplyRunner
-                .run(() -> applySplitPlan(applyPlan));
+                .run(() -> applyPartitionSplitPlan(applyPlan));
         if (!applied) {
             deleteSplitSegments(applyPlan.getLowerSegmentId(),
                     applyPlan.getUpperSegmentId().orElse(null));
             return false;
         }
+        keyToSegmentMap.optionalyFlush();
         deleteRetiredParentSegment(applyPlan.getOldSegmentId());
         if (logger.isDebugEnabled()) {
             logger.debug(
@@ -166,7 +168,8 @@ public class PartitionStableSplitCoordinator<K, V> {
         return true;
     }
 
-    private SegmentSplitApplyPlan<K> buildApplyPlan(final Segment<K, V> segment,
+    private PartitionSplitApplyPlan<K> buildPartitionSplitApplyPlan(
+            final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         final SplitBoundary<K> boundary = computeSplitBoundary(segment);
         if (boundary == null) {
@@ -185,10 +188,10 @@ public class PartitionStableSplitCoordinator<K, V> {
             deleteSplitSegments(lowerCreated.getValue().getId(), null);
             return null;
         }
-        return new SegmentSplitApplyPlan<>(segment.getId(),
+        return new PartitionSplitApplyPlan<>(segment.getId(),
                 lowerCreated.getValue().getId(), upperCreated.getValue().getId(),
                 boundary.minKey(), boundary.maxLowerKey(),
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+                PartitionSplitResult.PartitionSplitStatus.SPLIT);
     }
 
     private SplitBoundary<K> computeSplitBoundary(final Segment<K, V> segment) {
@@ -281,10 +284,11 @@ public class PartitionStableSplitCoordinator<K, V> {
         }
     }
 
-    private boolean applySplitPlan(final SegmentSplitApplyPlan<K> plan) {
+    private boolean applyPartitionSplitPlan(
+            final PartitionSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
         try {
-            if (!keyToSegmentMap.applySplitPlan(plan)) {
+            if (!keyToSegmentMap.applyPartitionSplitPlan(plan)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(
                             "Route split map apply returned false: oldSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
@@ -293,7 +297,7 @@ public class PartitionStableSplitCoordinator<K, V> {
                 }
                 return false;
             }
-            partitionRuntime.reassignOverlayAfterSplit(plan);
+            partitionRuntime.reassignOverlayAfterPartitionSplit(plan);
             return true;
         } catch (final RuntimeException e) {
             if (logger.isDebugEnabled()) {
@@ -307,7 +311,7 @@ public class PartitionStableSplitCoordinator<K, V> {
     }
 
     private boolean materializeStableChildren(final Segment<K, V> parentSegment,
-            final SegmentSplitApplyPlan<K> plan) {
+            final PartitionSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(parentSegment, SEGMENT_ARG);
         Vldtn.requireNonNull(plan, "plan");
         final EntryIterator<K, V> openedIterator = openIteratorWithRetry(
@@ -459,8 +463,8 @@ public class PartitionStableSplitCoordinator<K, V> {
     }
 
     private SegmentId resolveMaterializationTarget(
-            final SegmentSplitApplyPlan<K> plan, final K key) {
-        if (plan.getStatus() != SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+            final PartitionSplitApplyPlan<K> plan, final K key) {
+        if (plan.getStatus() != PartitionSplitResult.PartitionSplitStatus.SPLIT) {
             return plan.getLowerSegmentId();
         }
         if (keyComparator.compare(key, plan.getMaxKey()) <= 0) {
@@ -525,14 +529,15 @@ public class PartitionStableSplitCoordinator<K, V> {
         }
     }
 
-    private SegmentSplitterPlan<K, V> buildPlan(final Segment<K, V> segment) {
-        return SegmentSplitterPlan
-                .fromPolicy(new SegmentSplitterPolicy(segment
+    private PartitionSplitPlan<K, V> buildPartitionSplitPlan(
+            final Segment<K, V> segment) {
+        return PartitionSplitPlan
+                .fromPolicy(new PartitionSplitPolicy(segment
                         .getNumberOfKeysInCache()));
     }
 
     private boolean isEligibleForSplit(final Segment<K, V> segment,
-            final SegmentSplitterPlan<K, V> plan,
+            final PartitionSplitPlan<K, V> plan,
             final long maxNumberOfKeysInSegment) {
         if (plan.getEstimatedNumberOfKeys() < maxNumberOfKeysInSegment) {
             return false;

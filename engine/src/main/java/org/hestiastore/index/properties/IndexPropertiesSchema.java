@@ -22,6 +22,10 @@ public final class IndexPropertiesSchema {
     public static final String REQUIRED_KEYS_KEY = "schema.requiredKeys";
     public static final int CURRENT_SCHEMA_VERSION = 1;
     private static final String LEGACY_PROP_NUMBER_OF_THREADS = "numberOfThreads";
+    private static final String LEGACY_PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
+    private static final String LEGACY_PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
+    private static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
+    private static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
 
     private static final String REQUIRED_KEYS_SEPARATOR = ",";
 
@@ -61,12 +65,12 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = "maxNumberOfKeysInPartitionBeforeSplit";
         public static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
         public static final String PROP_INDEX_WORKER_THREAD_COUNT = "indexWorkerThreadCount";
-        public static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
+        public static final String PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = "numberOfStableSegmentMaintenanceThreads";
         public static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = "numberOfIndexMaintenanceThreads";
         public static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = "numberOfRegistryLifecycleThreads";
         public static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = "indexBusyBackoffMillis";
         public static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = "indexBusyTimeoutMillis";
-        public static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
+        public static final String PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED = "backgroundMaintenanceAutoEnabled";
         public static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = "bloomFilterNumberOfHashFunctions";
         public static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = "bloomFilterIndexSizeInBytes";
         public static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = "bloomFilterProbabilityOfFalsePositive";
@@ -83,10 +87,6 @@ public final class IndexPropertiesSchema {
         public static final String PROP_WAL_EPOCH_SUPPORT = "wal.epochSupport";
 
         public static final String CONFIGURATION_FILENAME = "manifest.txt";
-
-        public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
-        public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
-        public static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
 
         private IndexConfigurationKeys() {
         }
@@ -306,9 +306,8 @@ public final class IndexPropertiesSchema {
         defaults.put(IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT,
                 IndexPropertiesSchema::resolveLegacyOrDefaultWorkerThreads);
         defaults.put(
-                IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
-                view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED));
+                IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED,
+                IndexPropertiesSchema::defaultBackgroundMaintenanceAutoEnabled);
     }
 
     private static void addSegmentDefaults(
@@ -349,9 +348,8 @@ public final class IndexPropertiesSchema {
     private static void addThreadingDefaults(
             final Map<String, DefaultValueProvider> defaults) {
         defaults.put(
-                IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
-                view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS));
+                IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
+                IndexPropertiesSchema::defaultStableSegmentMaintenanceThreads);
         defaults.put(
                 IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 view -> String.valueOf(
@@ -428,9 +426,31 @@ public final class IndexPropertiesSchema {
         return String.valueOf(IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT);
     }
 
+    private static String defaultBackgroundMaintenanceAutoEnabled(
+            final PropertyView view) {
+        final String legacy = view.getString(
+                LEGACY_PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED);
+        if (legacy != null && !legacy.isBlank()) {
+            return legacy;
+        }
+        return String.valueOf(
+                IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED);
+    }
+
+    private static String defaultStableSegmentMaintenanceThreads(
+            final PropertyView view) {
+        final String legacy = view.getString(
+                LEGACY_PROP_SEGMENT_INDEX_MAINTENANCE_THREADS);
+        if (legacy != null && !legacy.isBlank()) {
+            return legacy;
+        }
+        return String.valueOf(
+                IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS);
+    }
+
     private static String defaultActivePartition(final PropertyView view) {
         final String legacy = view.getString(
-                IndexConfigurationKeys.LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE);
+                LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE);
         if (legacy != null && !legacy.isBlank()) {
             return legacy;
         }
@@ -441,12 +461,13 @@ public final class IndexPropertiesSchema {
     private static String defaultPartitionBuffer(
             final PropertyView view) {
         final String legacy = view.getString(
-                IndexConfigurationKeys.LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE);
+                LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE);
         if (legacy != null && !legacy.isBlank()) {
             return legacy;
         }
-        final long writeCache = resolveActivePartition(view);
-        final long defaultValue = Math.max(writeCache * 2, writeCache + 1);
+        final long activePartitionKeyLimit = resolveActivePartition(view);
+        final long defaultValue = Math.max(activePartitionKeyLimit * 2,
+                activePartitionKeyLimit + 1);
         return String.valueOf(defaultValue);
     }
 
@@ -462,10 +483,10 @@ public final class IndexPropertiesSchema {
     }
 
     private static String defaultPartitionBeforeSplit(final PropertyView view) {
-        final String legacy = view.getString(
-                IndexConfigurationKeys.LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT);
-        if (legacy != null && !legacy.isBlank()) {
-            return legacy;
+        final String segmentKeyLimit = view.getString(
+                IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT);
+        if (segmentKeyLimit != null && !segmentKeyLimit.isBlank()) {
+            return segmentKeyLimit;
         }
         return String.valueOf(
                 IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT);
@@ -487,7 +508,7 @@ public final class IndexPropertiesSchema {
             return Long.parseLong(value);
         }
         final String legacy = view.getString(
-                IndexConfigurationKeys.LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE);
+                LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE);
         if (legacy != null && !legacy.isBlank()) {
             return Long.parseLong(legacy);
         }
@@ -501,20 +522,12 @@ public final class IndexPropertiesSchema {
             return Long.parseLong(value);
         }
         final String legacy = view.getString(
-                IndexConfigurationKeys.LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE);
+                LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE);
         if (legacy != null && !legacy.isBlank()) {
             return Long.parseLong(legacy);
         }
-        final long writeCache = resolveActivePartition(view);
-        return Math.max(writeCache * 2, writeCache + 1);
-    }
-
-    private static long resolveSegmentWriteCache(final PropertyView view) {
-        final String value = view.getString(
-                IndexConfigurationKeys.LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE);
-        if (value != null && !value.isBlank()) {
-            return Long.parseLong(value);
-        }
-        return resolveActivePartition(view);
+        final long activePartitionKeyLimit = resolveActivePartition(view);
+        return Math.max(activePartitionKeyLimit * 2,
+                activePartitionKeyLimit + 1);
     }
 }

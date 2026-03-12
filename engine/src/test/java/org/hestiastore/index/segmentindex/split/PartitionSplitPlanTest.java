@@ -6,23 +6,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.Entry;
 import org.junit.jupiter.api.Test;
 
-class SegmentSplitterPlanTest {
+class PartitionSplitPlanTest {
 
-    private SegmentSplitterPlan<String, String> newPlan() {
-        final SegmentSplitterPolicy policy = new SegmentSplitterPolicy(
-                3L);
-        return SegmentSplitterPlan.fromPolicy(policy);
+    private PartitionSplitPlan<String, String> newPlan() {
+        final PartitionSplitPolicy policy = new PartitionSplitPolicy(3L);
+        return PartitionSplitPlan.fromPolicy(policy);
     }
 
     @Test
     void isLowerSegmentEmpty_initially_true() {
-        final SegmentSplitterPlan<String, String> plan = newPlan();
+        final PartitionSplitPlan<String, String> plan = newPlan();
         assertTrue(plan.isLowerSegmentEmpty());
     }
 
     @Test
     void isLowerSegmentEmpty_after_recordLower_false() {
-        final SegmentSplitterPlan<String, String> plan = newPlan();
+        final PartitionSplitPlan<String, String> plan = newPlan();
         plan.recordLower(Entry.of("k1", "v1"));
         assertFalse(plan.isLowerSegmentEmpty());
     }

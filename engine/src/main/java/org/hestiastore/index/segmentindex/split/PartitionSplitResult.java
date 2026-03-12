@@ -5,14 +5,14 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
- * Provides result of segment splitting.
+ * Provides result metadata for partition split materialization.
  */
-public class SegmentSplitterResult<K> {
+public final class PartitionSplitResult<K> {
 
     /**
-     * Status of segment after splitting.
+     * Status of the parent route after applying split materialization.
      */
-    public enum SegmentSplittingStatus {
+    public enum PartitionSplitStatus {
         /**
          * Split produced a replacement using the lower segment; the temporary
          * upper segment id was not used.
@@ -27,7 +27,7 @@ public class SegmentSplitterResult<K> {
     private final SegmentId segmentId;
     private final K maxKey;
     private final K minKey;
-    private final SegmentSplittingStatus status;
+    private final PartitionSplitStatus status;
 
     /**
      * Creates a split result with the provided segment metadata.
@@ -37,14 +37,13 @@ public class SegmentSplitterResult<K> {
      * @param maxKey maximum key of the lower segment
      * @param segmentSplittingStatus split status
      */
-    public SegmentSplitterResult(final SegmentId segmentId, final K minKey,
-            final K maxKey,
-            final SegmentSplittingStatus segmentSplittingStatus) {
+    public PartitionSplitResult(final SegmentId segmentId, final K minKey,
+            final K maxKey, final PartitionSplitStatus partitionSplitStatus) {
         this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");
         this.minKey = Vldtn.requireNonNull(minKey, "minKey");
         this.maxKey = Vldtn.requireNonNull(maxKey, "maxKey");
-        this.status = Vldtn.requireNonNull(segmentSplittingStatus,
-                "segmentSplittingStatus");
+        this.status = Vldtn.requireNonNull(partitionSplitStatus,
+                "partitionSplitStatus");
     }
 
     /**
@@ -53,7 +52,7 @@ public class SegmentSplitterResult<K> {
      * @return {@code true} if the segment was split; {@code false} otherwise
      */
     public boolean isSplit() {
-        return status == SegmentSplittingStatus.SPLIT;
+        return status == PartitionSplitStatus.SPLIT;
     }
 
     /**
@@ -88,7 +87,7 @@ public class SegmentSplitterResult<K> {
      *
      * @return the segment splitting status
      */
-    public SegmentSplittingStatus getStatus() {
+    public PartitionSplitStatus getStatus() {
         return status;
     }
 }

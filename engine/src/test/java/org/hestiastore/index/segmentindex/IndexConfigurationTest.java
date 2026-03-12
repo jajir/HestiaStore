@@ -44,11 +44,14 @@ class IndexConfigurationTest {
     }
 
     @Test
-    void segmentMaintenanceAutoEnabledDefaultsToTrue() {
+    void backgroundMaintenanceAutoEnabledDefaultsToTrue() {
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
                 .build();
 
-        assertTrue(config.isSegmentMaintenanceAutoEnabled());
+        assertTrue(config.isBackgroundMaintenanceAutoEnabled());
+        assertEquals(
+                IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS,
+                config.getNumberOfStableSegmentMaintenanceThreads());
     }
 }

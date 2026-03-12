@@ -36,7 +36,10 @@ class IndexConfigurationContractTest {
         final IndexConfigurationContract contract = new IndexConfigurationContract() {
         };
 
-        assertTrue(contract.isSegmentMaintenanceAutoEnabled());
+        assertTrue(contract.isBackgroundMaintenanceAutoEnabled());
+        assertEquals(
+                IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS,
+                contract.getNumberOfStableSegmentMaintenanceThreads());
 
         final List<?> encoding = contract.getEncodingChunkFilters();
         assertEquals(2, encoding.size());

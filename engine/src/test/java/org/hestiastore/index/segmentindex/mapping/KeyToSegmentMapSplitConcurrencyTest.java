@@ -17,8 +17,8 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.split.SegmentSplitApplyPlan;
-import org.hestiastore.index.segmentindex.split.SegmentSplitterResult;
+import org.hestiastore.index.segmentindex.split.PartitionSplitApplyPlan;
+import org.hestiastore.index.segmentindex.split.PartitionSplitResult;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
 
     private KeyToSegmentMapSynchronizedAdapter<Integer> adapter;
     private ExecutorService executor;
-    private SegmentSplitApplyPlan<Integer> plan;
+    private PartitionSplitApplyPlan<Integer> plan;
 
     @BeforeEach
     void setUp() {
@@ -36,9 +36,9 @@ class KeyToSegmentMapSplitConcurrencyTest {
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         adapter = new KeyToSegmentMapSynchronizedAdapter<>(rawKeyMap);
-        plan = new SegmentSplitApplyPlan<>(SegmentId.of(1), SegmentId.of(3),
+        plan = new PartitionSplitApplyPlan<>(SegmentId.of(1), SegmentId.of(3),
                 SegmentId.of(4), 1, 5,
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+                PartitionSplitResult.PartitionSplitStatus.SPLIT);
         executor = Executors.newFixedThreadPool(2);
     }
 
@@ -93,7 +93,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
         assertTrue(await(startedOps, 5),
                 "Workers did not perform initial ops in time");
 
-        assertTrue(adapter.applySplitPlan(plan));
+        assertTrue(adapter.applyPartitionSplitPlan(plan));
         adapter.optionalyFlush();
 
         awaitFuture(reader, "Reader did not finish in time");

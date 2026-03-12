@@ -74,6 +74,18 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "ChunkStore.*Benchmark
 
 Canonical profile definitions live in `benchmarks/profiles`.
 
+Validate profile contracts before changing canonical JMH coverage:
+
+```sh
+mvn -pl benchmarks -am -DskipTests=false -Dtest=BenchmarkProfileContractTest test
+```
+
+Run script-level smoke coverage for compare/history tooling:
+
+```sh
+mvn -pl benchmarks -am -DskipTests=false -Dtest=BenchmarkHistoryScriptsSmokeTest test
+```
+
 Run a profile locally:
 
 ```sh

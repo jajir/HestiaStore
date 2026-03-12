@@ -33,12 +33,12 @@ public class IndexConfigurationBuilder<K, V> {
 
     private Integer diskIoBufferSizeInBytes;
     private Integer indexWorkerThreadCount;
-    private Integer numberOfSegmentIndexMaintenanceThreads;
+    private Integer numberOfStableSegmentMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
     private Integer numberOfRegistryLifecycleThreads;
     private Integer indexBusyBackoffMillis;
     private Integer indexBusyTimeoutMillis;
-    private Boolean segmentMaintenanceAutoEnabled;
+    private Boolean backgroundMaintenanceAutoEnabled;
 
     private String indexName;
     private Class<K> keyClass;
@@ -348,14 +348,15 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the number of segment maintenance threads.
+     * Sets the number of stable-segment maintenance threads.
      *
-     * @param numberOfSegmentIndexMaintenanceThreads segment maintenance threads
+     * @param numberOfStableSegmentMaintenanceThreads stable-segment
+     *                                               maintenance threads
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withNumberOfSegmentIndexMaintenanceThreads(
-            final Integer numberOfSegmentIndexMaintenanceThreads) {
-        this.numberOfSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads;
+    public IndexConfigurationBuilder<K, V> withNumberOfStableSegmentMaintenanceThreads(
+            final Integer numberOfStableSegmentMaintenanceThreads) {
+        this.numberOfStableSegmentMaintenanceThreads = numberOfStableSegmentMaintenanceThreads;
         return this;
     }
 
@@ -411,12 +412,12 @@ public class IndexConfigurationBuilder<K, V> {
     /**
      * Sets whether auto maintenance is enabled after writes.
      *
-     * @param segmentMaintenanceAutoEnabled true to enable auto maintenance
+     * @param backgroundMaintenanceAutoEnabled true to enable auto maintenance
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withSegmentMaintenanceAutoEnabled(
-            final Boolean segmentMaintenanceAutoEnabled) {
-        this.segmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled;
+    public IndexConfigurationBuilder<K, V> withBackgroundMaintenanceAutoEnabled(
+            final Boolean backgroundMaintenanceAutoEnabled) {
+        this.backgroundMaintenanceAutoEnabled = backgroundMaintenanceAutoEnabled;
         return this;
     }
 
@@ -540,9 +541,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveIndexWorkerThreadCount = indexWorkerThreadCount == null
                 ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
                 : indexWorkerThreadCount;
-        final Integer effectiveSegmentIndexMaintenanceThreads = numberOfSegmentIndexMaintenanceThreads == null
-                ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
-                : numberOfSegmentIndexMaintenanceThreads;
+        final Integer effectiveStableSegmentMaintenanceThreads = numberOfStableSegmentMaintenanceThreads == null
+                ? IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS
+                : numberOfStableSegmentMaintenanceThreads;
         final Integer effectiveIndexMaintenanceThreads = numberOfIndexMaintenanceThreads == null
                 ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
                 : numberOfIndexMaintenanceThreads;
@@ -555,9 +556,9 @@ public class IndexConfigurationBuilder<K, V> {
         final Integer effectiveIndexBusyTimeoutMillis = indexBusyTimeoutMillis == null
                 ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
                 : indexBusyTimeoutMillis;
-        final Boolean effectiveSegmentMaintenanceAutoEnabled = segmentMaintenanceAutoEnabled == null
-                ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED
-                : segmentMaintenanceAutoEnabled;
+        final Boolean effectiveBackgroundMaintenanceAutoEnabled = backgroundMaintenanceAutoEnabled == null
+                ? IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED
+                : backgroundMaintenanceAutoEnabled;
         final Integer effectiveMaxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles == null
                 ? IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES
                 : maxNumberOfDeltaCacheFiles;
@@ -584,12 +585,12 @@ public class IndexConfigurationBuilder<K, V> {
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
                 contextLoggingEnabled, effectiveIndexWorkerThreadCount,
-                effectiveSegmentIndexMaintenanceThreads,
+                effectiveStableSegmentMaintenanceThreads,
                 effectiveIndexMaintenanceThreads,
                 effectiveRegistryLifecycleThreads,
                 effectiveIndexBusyBackoffMillis,
                 effectiveIndexBusyTimeoutMillis,
-                effectiveSegmentMaintenanceAutoEnabled,
+                effectiveBackgroundMaintenanceAutoEnabled,
                 Wal.orEmpty(wal),
                 encodingChunkFilters, decodingChunkFilters);
     }

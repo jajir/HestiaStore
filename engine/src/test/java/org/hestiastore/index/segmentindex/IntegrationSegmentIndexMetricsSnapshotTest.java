@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -61,6 +62,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getPartitionBufferedKeyCount() >= 1);
             assertTrue(snapshot.getLocalThrottleCount() >= 0L);
             assertTrue(snapshot.getGlobalThrottleCount() >= 0L);
+            assertTrue(snapshot.getDrainLatencyP95Micros() >= 0L);
             assertTrue(snapshot.getRegistryCacheHitCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheMissCount() >= 0L);
             assertTrue(snapshot.getRegistryCacheLoadCount() >= 0L);
@@ -164,7 +166,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withMaxNumberOfDeltaCacheFiles(1) //
                 .withBloomFilterIndexSizeInBytes(1024 * 128) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(true) //
+                .withBackgroundMaintenanceAutoEnabled(true) //
                 .withContextLoggingEnabled(false) //
                 .withName("metrics_compaction_monotonicity_test") //
                 .build();
@@ -190,6 +192,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(
                     afterRotation.getDrainScheduleCount() >= beforeRotation
                             .getDrainScheduleCount());
+            assertTrue(afterRotation.getDrainLatencyP95Micros() >= 0L);
         }
     }
 
@@ -216,7 +219,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withMaxNumberOfSegmentsInCache(16) //
                 .withBloomFilterIndexSizeInBytes(1024 * 128) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(false) //
+                .withBackgroundMaintenanceAutoEnabled(false) //
                 .withContextLoggingEnabled(false) //
                 .withName("metrics_cache_only_runtime_test") //
                 .build();
@@ -259,7 +262,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withMaxNumberOfKeysInSegmentChunk(4) //
                 .withBloomFilterIndexSizeInBytes(1024 * 128) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(true) //
+                .withBackgroundMaintenanceAutoEnabled(true) //
                 .withContextLoggingEnabled(false) //
                 .withName("metrics_runtime_split_policy_test") //
                 .build();
@@ -316,7 +319,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .withMaxNumberOfKeysInSegmentChunk(4) //
                 .withBloomFilterIndexSizeInBytes(1024 * 128) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(true) //
+                .withBackgroundMaintenanceAutoEnabled(true) //
                 .withContextLoggingEnabled(false) //
                 .withName("metrics_autonomous_split_policy_test") //
                 .build();
@@ -358,6 +361,114 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 System.setProperty(propertyName, previousValue);
             }
         }
+    }
+
+    @Test
+    void flushAndWaitClearsOverlayBacklogMetricsAfterScheduledSplit() {
+        assertMaintenanceBoundaryClearsOverlayBacklogMetrics(
+                "metrics_flush_split_boundary_test",
+                SegmentIndex::flushAndWait);
+    }
+
+    @Test
+    void compactAndWaitClearsOverlayBacklogMetricsAfterScheduledSplit() {
+        assertMaintenanceBoundaryClearsOverlayBacklogMetrics(
+                "metrics_compact_split_boundary_test",
+                SegmentIndex::compactAndWait);
+    }
+
+    private static void assertMaintenanceBoundaryClearsOverlayBacklogMetrics(
+            final String indexName,
+            final Consumer<SegmentIndex<Integer, String>> maintenanceAction) {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegmentCache(8) //
+                .withMaxNumberOfKeysInActivePartition(32) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(96) //
+                .withMaxNumberOfKeysInIndexBuffer(192) //
+                .withMaxNumberOfKeysInSegment(128) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withBackgroundMaintenanceAutoEnabled(true) //
+                .withContextLoggingEnabled(false) //
+                .withName(indexName) //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            seedStableOverlaySplitScenario(index);
+
+            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
+            assertTrue(before.getTotalBufferedWriteKeys() > 0L);
+            assertTrue(before.getPartitionBufferedKeyCount() > 0);
+            assertTrue(before.getActivePartitionCount() > 0);
+            assertTrue(before.getSplitScheduleCount() > 0L
+                    || before.getSplitInFlightCount() > 0
+                    || before.getSegmentCount() > 1);
+
+            maintenanceAction.accept(index);
+            awaitIdle(index);
+
+            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+            assertEquals(0L, after.getTotalBufferedWriteKeys());
+            assertEquals(0, after.getPartitionBufferedKeyCount());
+            assertEquals(0, after.getImmutableRunCount());
+            assertEquals(0, after.getDrainingPartitionCount());
+            assertEquals(0, after.getDrainInFlightCount());
+            assertEquals(0, after.getSplitInFlightCount());
+            assertTrue(after.getSplitScheduleCount() >= before
+                    .getSplitScheduleCount());
+            assertTrue(after.getSegmentCount() > 1);
+            assertTrue(after.getDrainLatencyP95Micros() >= 0L);
+
+            assertEquals("overlay-5", index.get(5));
+            assertNull(index.get(18));
+            assertEquals("overlay-44", index.get(44));
+            assertEquals("overlay-49", index.get(49));
+        }
+    }
+
+    private static void seedStableOverlaySplitScenario(
+            final SegmentIndex<Integer, String> index) {
+        for (int i = 0; i < 48; i++) {
+            index.put(i, "stable-" + i);
+        }
+        index.flushAndWait();
+        awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
+                && index.metricsSnapshot().getSplitInFlightCount() == 0
+                && index.metricsSnapshot().getDrainInFlightCount() == 0,
+                10_000L);
+
+        index.put(5, "overlay-5");
+        index.delete(18);
+        index.put(44, "overlay-44");
+        index.put(49, "overlay-49");
+
+        final long revision = index.controlPlane().configuration()
+                .getConfigurationActual().getRevision();
+        final RuntimePatchResult patchResult = index.controlPlane()
+                .configuration()
+                .apply(new RuntimeConfigPatch(Map.of(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        Integer.valueOf(16)), false, Long.valueOf(revision)));
+        assertTrue(patchResult.isApplied());
+
+        awaitCondition(() -> {
+            final SegmentIndexMetricsSnapshot snapshot = index
+                    .metricsSnapshot();
+            return snapshot.getSplitScheduleCount() > 0L
+                    || snapshot.getSplitInFlightCount() > 0
+                    || snapshot.getSegmentCount() > 1;
+        }, 10_000L);
     }
 
     private static void awaitIdle(final SegmentIndex<Integer, String> index) {

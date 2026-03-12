@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -116,13 +115,12 @@ public final class ManagementAgentServer
      * @param bindPort               port to bind (0 means random free port)
      * @param index                  index instance exposed by this agent
      * @param indexName              logical index name returned in responses
-     * @param runtimeConfigAllowlist retained for backward compatibility
      * @throws IOException when HTTP server cannot be created
      */
     public ManagementAgentServer(final String bindAddress, final int bindPort,
-            final SegmentIndex<?, ?> index, final String indexName,
-            final Set<String> runtimeConfigAllowlist) throws IOException {
-        this(bindAddress, bindPort, runtimeConfigAllowlist,
+            final SegmentIndex<?, ?> index, final String indexName)
+            throws IOException {
+        this(bindAddress, bindPort,
                 ManagementAgentSecurityPolicy.permissive());
         addIndex(indexName, index);
     }
@@ -134,16 +132,14 @@ public final class ManagementAgentServer
      * @param bindPort               port to bind (0 means random free port)
      * @param index                  index instance exposed by this agent
      * @param indexName              logical index name returned in responses
-     * @param runtimeConfigAllowlist retained for backward compatibility
      * @param securityPolicy         authn/authz/rate-limit policy
      * @throws IOException when HTTP server cannot be created
      */
     public ManagementAgentServer(final String bindAddress, final int bindPort,
             final SegmentIndex<?, ?> index, final String indexName,
-            final Set<String> runtimeConfigAllowlist,
             final ManagementAgentSecurityPolicy securityPolicy)
             throws IOException {
-        this(bindAddress, bindPort, runtimeConfigAllowlist, securityPolicy);
+        this(bindAddress, bindPort, securityPolicy);
         addIndex(indexName, index);
     }
 
@@ -152,12 +148,11 @@ public final class ManagementAgentServer
      *
      * @param bindAddress            host to bind
      * @param bindPort               port to bind (0 means random free port)
-     * @param runtimeConfigAllowlist retained for backward compatibility
      * @throws IOException when HTTP server cannot be created
      */
-    public ManagementAgentServer(final String bindAddress, final int bindPort,
-            final Set<String> runtimeConfigAllowlist) throws IOException {
-        this(bindAddress, bindPort, runtimeConfigAllowlist,
+    public ManagementAgentServer(final String bindAddress, final int bindPort)
+            throws IOException {
+        this(bindAddress, bindPort,
                 ManagementAgentSecurityPolicy.permissive());
     }
 
@@ -166,15 +161,12 @@ public final class ManagementAgentServer
      *
      * @param bindAddress            host to bind
      * @param bindPort               port to bind (0 means random free port)
-     * @param runtimeConfigAllowlist retained for backward compatibility
      * @param securityPolicy         authn/authz/rate-limit policy
      * @throws IOException when HTTP server cannot be created
      */
     public ManagementAgentServer(final String bindAddress, final int bindPort,
-            final Set<String> runtimeConfigAllowlist,
             final ManagementAgentSecurityPolicy securityPolicy)
             throws IOException {
-        Objects.requireNonNull(runtimeConfigAllowlist, "runtimeConfigAllowlist");
         this.securityPolicy = Objects.requireNonNull(securityPolicy,
                 "securityPolicy");
         this.mutatingRateLimiter = new FixedWindowRateLimiter(
@@ -763,6 +755,7 @@ public final class ManagementAgentServer
                 snapshot.getGlobalThrottleCount(),
                 snapshot.getDrainScheduleCount(),
                 snapshot.getDrainInFlightCount(),
+                snapshot.getDrainLatencyP95Micros(),
                 snapshot.getReadLatencyP50Micros(),
                 snapshot.getReadLatencyP95Micros(),
                 snapshot.getReadLatencyP99Micros(),

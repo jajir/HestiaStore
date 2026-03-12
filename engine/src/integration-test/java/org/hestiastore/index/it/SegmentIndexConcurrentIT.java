@@ -12,7 +12,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.Entry;
@@ -393,6 +396,320 @@ class SegmentIndexConcurrentIT {
     }
 
     @Test
+    void hotRangeRandomPutsWithAutonomousSplitDoNotStall() throws Exception {
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<Integer, Integer> conf = newAutonomousSplitConfiguration(
+                "concurrent-index-hot-range", TEST_CPU_THREADS);
+        final SegmentIndex<Integer, Integer> index = SegmentIndex
+                .create(directory, conf);
+
+        final int hotPrefillKeys = 6_000;
+        final int hotWriterThreads = 20;
+        final int hotWriterOps = 400;
+        final int coldWriterThreads = 2;
+        final int coldWriterOps = 600;
+        final int hotKeyRange = hotPrefillKeys;
+        final ExecutorService executor = Executors
+                .newFixedThreadPool(hotWriterThreads + coldWriterThreads);
+        final CountDownLatch startGate = new CountDownLatch(1);
+        final CountDownLatch doneGate = new CountDownLatch(
+                hotWriterThreads + coldWriterThreads);
+        final AtomicReference<Throwable> workerFailure = new AtomicReference<>();
+        final AtomicInteger hotWriteCount = new AtomicInteger();
+        final AtomicInteger coldWriteCount = new AtomicInteger();
+        @SuppressWarnings("unchecked")
+        final Map<Integer, Integer>[] expectedColdByThread = new Map[coldWriterThreads];
+
+        try {
+            for (int i = 0; i < hotPrefillKeys; i++) {
+                index.put(i, -i);
+            }
+            flushAndWaitWithRetry(index, 30_000L);
+
+            for (int t = 0; t < hotWriterThreads; t++) {
+                final int threadId = t;
+                executor.submit(() -> {
+                    try {
+                        final Random rnd = new Random(777_000L + threadId);
+                        startGate.await();
+                        for (int i = 0; i < hotWriterOps; i++) {
+                            final int key = rnd.nextInt(hotKeyRange);
+                            final int value = threadId * 100_000 + i;
+                            index.put(key, value);
+                            hotWriteCount.incrementAndGet();
+                            if ((i % 200) == 0) {
+                                index.get(key);
+                            }
+                        }
+                    } catch (final Throwable t1) {
+                        workerFailure.compareAndSet(null, t1);
+                    } finally {
+                        doneGate.countDown();
+                    }
+                    return null;
+                });
+            }
+
+            for (int t = 0; t < coldWriterThreads; t++) {
+                final int threadId = t;
+                executor.submit(() -> {
+                    final Map<Integer, Integer> expectedLocal = new HashMap<>();
+                    try {
+                        final Random rnd = new Random(888_000L + threadId);
+                        final int keyBase = 1_000_000 + threadId * 100_000;
+                        startGate.await();
+                        for (int i = 0; i < coldWriterOps; i++) {
+                            final int key = keyBase + rnd.nextInt(1_000);
+                            final int value = threadId * 100_000 + i;
+                            expectedLocal.put(key, value);
+                            index.put(key, value);
+                            coldWriteCount.incrementAndGet();
+                            if ((i % 100) == 0) {
+                                index.get(key);
+                            }
+                        }
+                    } catch (final Throwable t1) {
+                        workerFailure.compareAndSet(null, t1);
+                    } finally {
+                        expectedColdByThread[threadId] = expectedLocal;
+                        doneGate.countDown();
+                    }
+                    return null;
+                });
+            }
+
+            startGate.countDown();
+            assertTrue(doneGate.await(90, TimeUnit.SECONDS),
+                    "Concurrent hot-range writers stalled");
+            assertNoWorkerFailure(workerFailure,
+                    "Hot-range split stress workers failed");
+
+            flushAndWaitWithRetry(index, 30_000L);
+            checkAndRepairConsistencyWithRetry(index, 5_000L);
+            flushAndWaitWithRetry(index, 30_000L);
+
+            assertEquals(hotWriterThreads * hotWriterOps,
+                    hotWriteCount.get(),
+                    "Expected all hot-range writes to complete");
+            assertEquals(coldWriterThreads * coldWriterOps,
+                    coldWriteCount.get(),
+                    "Expected all cold-range writes to complete");
+            assertTrue(index.metricsSnapshot().getSplitScheduleCount() > 0,
+                    "Expected autonomous split scheduling under hot-range load");
+
+            final Map<Integer, Integer> expectedCold = new HashMap<>();
+            for (final Map<Integer, Integer> local : expectedColdByThread) {
+                expectedCold.putAll(local);
+            }
+            for (final Map.Entry<Integer, Integer> entry : expectedCold
+                    .entrySet()) {
+                assertEquals(entry.getValue(), index.get(entry.getKey()),
+                        "Unexpected value for cold key " + entry.getKey());
+            }
+        } finally {
+            executor.shutdownNow();
+            index.close();
+        }
+    }
+
+    @Test
+    void hotRangeAutonomousSplitSurvivesCloseReopenRotations() throws Exception {
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<Integer, Integer> conf = newAutonomousSplitConfiguration(
+                "concurrent-index-hot-range-rotations", TEST_CPU_THREADS);
+        final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
+                SegmentIndex.create(directory, conf));
+        final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
+
+        final int hotPrefillKeys = 4_000;
+        final int hotWriterThreads = 12;
+        final int hotWriterOps = 300;
+        final int coldWriterThreads = 2;
+        final int coldWriterOps = 400;
+        final int rotations = TEST_CPU_THREADS <= 2 ? 2 : 3;
+        final ExecutorService executor = Executors.newFixedThreadPool(
+                hotWriterThreads + coldWriterThreads + 1);
+        final CountDownLatch startGate = new CountDownLatch(1);
+        final CountDownLatch doneGate = new CountDownLatch(
+                hotWriterThreads + coldWriterThreads + 1);
+        final AtomicReference<Throwable> workerFailure = new AtomicReference<>();
+        final AtomicInteger hotWriteCount = new AtomicInteger();
+        final AtomicInteger coldWriteCount = new AtomicInteger();
+        @SuppressWarnings("unchecked")
+        final Map<Integer, Integer>[] expectedColdByThread = new Map[coldWriterThreads];
+
+        lifecycleLock.writeLock().lock();
+        try {
+            final SegmentIndex<Integer, Integer> index = indexRef.get();
+            for (int i = 0; i < hotPrefillKeys; i++) {
+                index.put(i, -i);
+            }
+            flushAndWaitWithRetry(index, 30_000L);
+        } finally {
+            lifecycleLock.writeLock().unlock();
+        }
+
+        try {
+            for (int t = 0; t < hotWriterThreads; t++) {
+                final int threadId = t;
+                executor.submit(() -> {
+                    try {
+                        final Random rnd = new Random(991_000L + threadId);
+                        startGate.await();
+                        for (int i = 0; i < hotWriterOps; i++) {
+                            lifecycleLock.readLock().lock();
+                            try {
+                                final SegmentIndex<Integer, Integer> index = indexRef
+                                        .get();
+                                final int key = rnd.nextInt(hotPrefillKeys);
+                                final int value = threadId * 100_000 + i;
+                                index.put(key, value);
+                                hotWriteCount.incrementAndGet();
+                                if ((i % 150) == 0) {
+                                    index.get(key);
+                                }
+                            } finally {
+                                lifecycleLock.readLock().unlock();
+                            }
+                            if ((i % 200) == 0) {
+                                Thread.yield();
+                            }
+                        }
+                    } catch (final Throwable t1) {
+                        workerFailure.compareAndSet(null, t1);
+                    } finally {
+                        doneGate.countDown();
+                    }
+                    return null;
+                });
+            }
+
+            for (int t = 0; t < coldWriterThreads; t++) {
+                final int threadId = t;
+                executor.submit(() -> {
+                    final Map<Integer, Integer> expectedLocal = new HashMap<>();
+                    try {
+                        final Random rnd = new Random(992_000L + threadId);
+                        final int keyBase = 2_000_000 + threadId * 100_000;
+                        startGate.await();
+                        for (int i = 0; i < coldWriterOps; i++) {
+                            lifecycleLock.readLock().lock();
+                            try {
+                                final SegmentIndex<Integer, Integer> index = indexRef
+                                        .get();
+                                final int key = keyBase + rnd.nextInt(1_000);
+                                final int value = threadId * 100_000 + i;
+                                expectedLocal.put(key, value);
+                                index.put(key, value);
+                                coldWriteCount.incrementAndGet();
+                                if ((i % 100) == 0) {
+                                    index.get(key);
+                                }
+                            } finally {
+                                lifecycleLock.readLock().unlock();
+                            }
+                        }
+                    } catch (final Throwable t1) {
+                        workerFailure.compareAndSet(null, t1);
+                    } finally {
+                        expectedColdByThread[threadId] = expectedLocal;
+                        doneGate.countDown();
+                    }
+                    return null;
+                });
+            }
+
+            executor.submit(() -> {
+                try {
+                    final Random rnd = new Random(993_000L);
+                    startGate.await();
+                    for (int i = 0; i < rotations; i++) {
+                        Thread.sleep(rnd.nextInt(25) + 10L);
+                        lifecycleLock.writeLock().lock();
+                        try {
+                            final SegmentIndex<Integer, Integer> current = indexRef
+                                    .get();
+                            flushAndWaitWithRetry(current, 30_000L);
+                            current.close();
+                            indexRef.set(SegmentIndex.open(directory, conf));
+                        } finally {
+                            lifecycleLock.writeLock().unlock();
+                        }
+                    }
+                } catch (final Throwable t1) {
+                    workerFailure.compareAndSet(null, t1);
+                } finally {
+                    doneGate.countDown();
+                }
+                return null;
+            });
+
+            startGate.countDown();
+            assertTrue(doneGate.await(90, TimeUnit.SECONDS),
+                    "Autonomous split rotation workers stalled");
+            assertNoWorkerFailure(workerFailure,
+                    "Autonomous split rotation workload failed");
+
+            final Map<Integer, Integer> expectedCold = new HashMap<>();
+            for (final Map<Integer, Integer> local : expectedColdByThread) {
+                expectedCold.putAll(local);
+            }
+
+            lifecycleLock.writeLock().lock();
+            try {
+                SegmentIndex<Integer, Integer> current = indexRef.get();
+                flushAndWaitWithRetry(current, 30_000L);
+                checkAndRepairConsistencyWithRetry(current, 5_000L);
+                flushAndWaitWithRetry(current, 30_000L);
+
+                assertEquals(hotWriterThreads * hotWriterOps,
+                        hotWriteCount.get(),
+                        "Expected all hot-range writes to complete");
+                assertEquals(coldWriterThreads * coldWriterOps,
+                        coldWriteCount.get(),
+                        "Expected all cold-range writes to complete");
+                assertTrue(current.metricsSnapshot().getSegmentCount() > 1
+                        || current.metricsSnapshot()
+                                .getSplitScheduleCount() > 0,
+                        "Expected split evidence across rotations before final reopen");
+
+                for (final Map.Entry<Integer, Integer> entry : expectedCold
+                        .entrySet()) {
+                    assertEquals(entry.getValue(), current.get(entry.getKey()),
+                            "Unexpected value for rotated cold key "
+                                    + entry.getKey());
+                }
+
+                current.close();
+                indexRef.set(SegmentIndex.open(directory, conf));
+                current = indexRef.get();
+
+                for (final Map.Entry<Integer, Integer> entry : expectedCold
+                        .entrySet()) {
+                    assertEquals(entry.getValue(), current.get(entry.getKey()),
+                            "Unexpected reopened value for rotated cold key "
+                                    + entry.getKey());
+                }
+                assertTrue(current.metricsSnapshot().getSegmentCount() > 1,
+                        "Expected persisted child routes after rotation reopens");
+            } finally {
+                lifecycleLock.writeLock().unlock();
+            }
+        } finally {
+            executor.shutdownNow();
+            lifecycleLock.writeLock().lock();
+            try {
+                final SegmentIndex<Integer, Integer> current = indexRef.get();
+                if (current != null && !current.wasClosed()) {
+                    current.close();
+                }
+            } finally {
+                lifecycleLock.writeLock().unlock();
+            }
+        }
+    }
+
+    @Test
     void concurrent_async_put_delete_on_disjoint_keyspaces_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
@@ -565,7 +882,7 @@ class SegmentIndexConcurrentIT {
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
-                .withSegmentMaintenanceAutoEnabled(false)//
+                .withBackgroundMaintenanceAutoEnabled(false)//
                 .withMaxNumberOfKeysInActivePartition(256)//
                 .withMaxNumberOfImmutableRunsPerPartition(4)//
                 .withMaxNumberOfKeysInPartitionBuffer(1_024)//
@@ -577,6 +894,34 @@ class SegmentIndexConcurrentIT {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
                 .withIndexWorkerThreadCount(cpuThreads)//
+                .build();
+    }
+
+    private static IndexConfiguration<Integer, Integer> newAutonomousSplitConfiguration(
+            final String name, final int cpuThreads) {
+        return IndexConfiguration.<Integer, Integer>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(Integer.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                .withValueTypeDescriptor(new TypeDescriptorInteger())//
+                .withName(name)//
+                .withBackgroundMaintenanceAutoEnabled(true)//
+                .withMaxNumberOfKeysInActivePartition(512)//
+                .withMaxNumberOfImmutableRunsPerPartition(6)//
+                .withMaxNumberOfKeysInPartitionBuffer(8_192)//
+                .withMaxNumberOfKeysInIndexBuffer(65_536)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(2_000)//
+                .withMaxNumberOfKeysInSegmentCache(256)//
+                .withMaxNumberOfKeysInSegment(16_384)//
+                .withMaxNumberOfKeysInSegmentChunk(32)//
+                .withMaxNumberOfSegmentsInCache(64)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withIndexWorkerThreadCount(cpuThreads)//
+                .withNumberOfStableSegmentMaintenanceThreads(2)//
+                .withNumberOfIndexMaintenanceThreads(2)//
+                .withNumberOfRegistryLifecycleThreads(2)//
+                .withIndexBusyTimeoutMillis(120_000)//
                 .build();
     }
 }

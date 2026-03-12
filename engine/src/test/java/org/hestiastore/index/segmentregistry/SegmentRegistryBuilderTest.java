@@ -83,7 +83,7 @@ class SegmentRegistryBuilderTest {
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(10);
-        final ExecutorService segmentMaintenanceExecutor = Executors
+        final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         final ExecutorService registryMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
@@ -94,7 +94,8 @@ class SegmentRegistryBuilderTest {
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
                     .withConfiguration(conf)
-                    .withSegmentMaintenanceExecutor(segmentMaintenanceExecutor)
+                    .withSegmentMaintenanceExecutor(
+                            stableSegmentMaintenanceExecutor)
                     .withRegistryMaintenanceExecutor(
                             registryMaintenanceExecutor)
                     .build();
@@ -110,7 +111,7 @@ class SegmentRegistryBuilderTest {
                 registry.close();
             }
         } finally {
-            segmentMaintenanceExecutor.shutdownNow();
+            stableSegmentMaintenanceExecutor.shutdownNow();
             registryMaintenanceExecutor.shutdownNow();
         }
     }
@@ -119,18 +120,18 @@ class SegmentRegistryBuilderTest {
     void buildFailsWhenRegistryMaintenanceExecutorIsMissing() {
         final MemDirectory directory = new MemDirectory();
         final Directory asyncDirectory = directory;
-        final ExecutorService segmentMaintenanceExecutor = Executors
+        final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         try {
             final IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class,
                     () -> buildWithoutRegistryMaintenanceExecutor(asyncDirectory,
-                            segmentMaintenanceExecutor));
+                            stableSegmentMaintenanceExecutor));
             assertTrue(ex.getMessage()
                     .contains(
                             "Property 'registryMaintenanceExecutor' must not be null."));
         } finally {
-            segmentMaintenanceExecutor.shutdownNow();
+            stableSegmentMaintenanceExecutor.shutdownNow();
         }
     }
 
@@ -147,13 +148,14 @@ class SegmentRegistryBuilderTest {
 
     private SegmentRegistry<Integer, String> buildWithoutRegistryMaintenanceExecutor(
             final Directory asyncDirectory,
-            final ExecutorService segmentMaintenanceExecutor) {
+            final ExecutorService stableSegmentMaintenanceExecutor) {
         return SegmentRegistry.<Integer, String>builder()
                 .withDirectoryFacade(asyncDirectory)
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorShortString())
                 .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(segmentMaintenanceExecutor)
+                .withSegmentMaintenanceExecutor(
+                        stableSegmentMaintenanceExecutor)
                 .build();
     }
 }

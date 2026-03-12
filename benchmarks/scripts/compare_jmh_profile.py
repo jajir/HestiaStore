@@ -95,9 +95,24 @@ def markdown_report(
         "| --- | ---: | ---: | ---: | --- |",
     ]
     for row in comparison_rows:
+        baseline_display = (
+            "-"
+            if row["baselineScore"] is None
+            else f"{row['baselineScore']:.3f} {row['unit']}"
+        )
+        candidate_display = (
+            "-"
+            if row["candidateScore"] is None
+            else f"{row['candidateScore']:.3f} {row['unit']}"
+        )
+        delta_display = (
+            "-"
+            if row["deltaPct"] is None
+            else f"{row['deltaPct']:+.2f}%"
+        )
         lines.append(
-            f"| `{row['displayName']}` | `{row['baselineScore']:.3f} {row['unit']}` | "
-            f"`{row['candidateScore']:.3f} {row['unit']}` | `{row['deltaPct']:+.2f}%` | `{row['status']}` |"
+            f"| `{row['displayName']}` | `{baseline_display}` | "
+            f"`{candidate_display}` | `{delta_display}` | `{row['status']}` |"
         )
     return "\n".join(lines) + "\n"
 
@@ -110,8 +125,12 @@ def main() -> int:
     candidate_metrics = flatten(candidate_summary)
 
     shared_keys = sorted(set(baseline_metrics) & set(candidate_metrics))
+    candidate_only_keys = sorted(set(candidate_metrics) - set(baseline_metrics))
+    baseline_only_keys = sorted(set(baseline_metrics) - set(candidate_metrics))
     comparison_rows: list[dict[str, Any]] = []
     worse_count = 0
+    new_metric_count = 0
+    removed_metric_count = 0
 
     for key in shared_keys:
         baseline_metric = baseline_metrics[key]
@@ -137,6 +156,34 @@ def main() -> int:
             "unit": candidate_metric["unit"],
         })
 
+    for key in candidate_only_keys:
+        candidate_metric = candidate_metrics[key]
+        new_metric_count += 1
+        comparison_rows.append({
+            "key": key,
+            "displayName": display_metric_name(key, candidate_metric),
+            "baselineScore": None,
+            "candidateScore": candidate_metric["score"],
+            "deltaPct": None,
+            "status": "new",
+            "unit": candidate_metric["unit"],
+        })
+
+    for key in baseline_only_keys:
+        baseline_metric = baseline_metrics[key]
+        removed_metric_count += 1
+        comparison_rows.append({
+            "key": key,
+            "displayName": display_metric_name(key, baseline_metric),
+            "baselineScore": baseline_metric["score"],
+            "candidateScore": None,
+            "deltaPct": None,
+            "status": "removed",
+            "unit": baseline_metric["unit"],
+        })
+
+    comparison_rows.sort(key=lambda row: row["displayName"])
+
     markdown = markdown_report(
         baseline_summary,
         candidate_summary,
@@ -153,6 +200,8 @@ def main() -> int:
         "neutralThresholdPct": args.neutral_threshold,
         "failThresholdPct": args.fail_threshold,
         "worseCount": worse_count,
+        "newMetricCount": new_metric_count,
+        "removedMetricCount": removed_metric_count,
         "metrics": comparison_rows,
     }
     Path(args.json_out).write_text(

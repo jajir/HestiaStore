@@ -1,6 +1,8 @@
 package org.hestiastore.management.restjson;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -10,14 +12,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Supplier;
 
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
+import org.hestiastore.index.control.model.RuntimePatchResult;
+import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
 import org.hestiastore.monitoring.json.api.ActionType;
@@ -37,13 +46,6 @@ class ManagementAgentServerTest {
 
     private static final String INDEX_1 = "agent-test-index-1";
     private static final String INDEX_2 = "agent-test-index-2";
-    private static final Set<String> RUNTIME_ALLOWLIST = Set.of(
-            "maxNumberOfSegmentsInCache", "maxNumberOfKeysInSegmentCache",
-            "maxNumberOfKeysInActivePartition",
-            "maxNumberOfImmutableRunsPerPartition",
-            "maxNumberOfKeysInPartitionBuffer",
-            "maxNumberOfKeysInIndexBuffer",
-            "maxNumberOfKeysInPartitionBeforeSplit");
 
     private final List<SegmentIndex<Integer, String>> indexes = new ArrayList<>();
     private ManagementAgentServer server;
@@ -58,8 +60,7 @@ class ManagementAgentServerTest {
         indexes.add(index1);
         indexes.add(index2);
 
-        server = new ManagementAgentServer("127.0.0.1", 0, index1, INDEX_1,
-                RUNTIME_ALLOWLIST);
+        server = new ManagementAgentServer("127.0.0.1", 0, index1, INDEX_1);
         server.addIndex(INDEX_2, index2);
         server.start();
 
@@ -112,6 +113,7 @@ class ManagementAgentServerTest {
             assertTrue(!indexNode.has("maxNumberOfKeysInSegmentWriteCache"));
             assertTrue(!indexNode.has(
                     "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
+            assertTrue(indexNode.has("drainLatencyP95Micros"));
         }
     }
 
@@ -197,7 +199,7 @@ class ManagementAgentServerTest {
     }
 
     @Test
-    void configGetReturnsOriginalAndCurrentValues() throws Exception {
+    void configGetReturnsRuntimeConfigViewOnly() throws Exception {
         final HttpResponse<String> response = send("GET",
                 ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1, null);
         assertEquals(200, response.statusCode());
@@ -214,6 +216,15 @@ class ManagementAgentServerTest {
                 .contains("maxNumberOfKeysInActivePartition"));
         assertTrue(payload.supportedKeys()
                 .contains("maxNumberOfKeysInPartitionBuffer"));
+        assertTrue(payload.supportedKeys()
+                .contains("maxNumberOfKeysInPartitionBeforeSplit"));
+        assertFalse(payload.supportedKeys()
+                .contains("backgroundMaintenanceAutoEnabled"));
+        assertFalse(payload.original().containsKey("diskIoBufferSize"));
+        assertFalse(
+                payload.current().containsKey("numberOfIndexMaintenanceThreads"));
+        assertFalse(
+                payload.current().containsKey("backgroundMaintenanceAutoEnabled"));
     }
 
     @Test
@@ -225,6 +236,17 @@ class ManagementAgentServerTest {
         final ErrorResponse payload = objectMapper.readValue(response.body(),
                 ErrorResponse.class);
         assertEquals("REQUEST_TOO_LARGE", payload.code());
+    }
+
+    @Test
+    void configPatchRejectsBackgroundMaintenanceFlag() throws Exception {
+        final HttpResponse<String> response = send("PATCH",
+                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                "{\"values\":{\"backgroundMaintenanceAutoEnabled\":\"0\"},\"dryRun\":false}");
+        assertEquals(400, response.statusCode());
+        final ErrorResponse payload = objectMapper.readValue(response.body(),
+                ErrorResponse.class);
+        assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
     }
 
     @Test
@@ -291,6 +313,98 @@ class ManagementAgentServerTest {
         assertTrue(notReady.body().contains("\"NOT_READY\""));
     }
 
+    @Test
+    void reportEndpointMapsBufferedOverlayMetricsFromSnapshot() throws Exception {
+        final SegmentIndex<Integer, String> extra = createPartitionedIndex(
+                "buffered-overlay-report-index", false);
+        indexes.add(extra);
+        server.addIndex(extra.getConfiguration().getIndexName(), extra);
+
+        for (int i = 0; i < 6; i++) {
+            extra.put(i, "value-" + i);
+        }
+        final SegmentIndexMetricsSnapshot snapshot = extra.metricsSnapshot();
+
+        final HttpResponse<String> reportResp = send("GET",
+                ManagementApiPaths.REPORT, null);
+        assertEquals(200, reportResp.statusCode());
+        final JsonNode reportJson = objectMapper.readTree(reportResp.body());
+        final JsonNode indexNode = findIndexNode(reportJson,
+                extra.getConfiguration().getIndexName());
+
+        assertEquals(snapshot.getTotalBufferedWriteKeys(),
+                indexNode.path("totalBufferedWriteKeys").asLong());
+        assertEquals(snapshot.getPartitionCount(),
+                indexNode.path("partitionCount").asInt());
+        assertEquals(snapshot.getActivePartitionCount(),
+                indexNode.path("activePartitionCount").asInt());
+        assertEquals(snapshot.getDrainingPartitionCount(),
+                indexNode.path("drainingPartitionCount").asInt());
+        assertEquals(snapshot.getImmutableRunCount(),
+                indexNode.path("immutableRunCount").asInt());
+        assertEquals(snapshot.getPartitionBufferedKeyCount(),
+                indexNode.path("partitionBufferedKeyCount").asInt());
+        assertEquals(snapshot.getDrainScheduleCount(),
+                indexNode.path("drainScheduleCount").asLong());
+        assertEquals(snapshot.getDrainInFlightCount(),
+                indexNode.path("drainInFlightCount").asInt());
+    }
+
+    @Test
+    void reportEndpointMapsSplitMetricsFromSnapshot() throws Exception {
+        final SegmentIndex<Integer, String> extra = createPartitionedIndex(
+                "split-report-index", true);
+        indexes.add(extra);
+        server.addIndex(extra.getConfiguration().getIndexName(), extra);
+
+        for (int i = 0; i < 48; i++) {
+            extra.put(i, "stable-" + i);
+        }
+        extra.flushAndWait();
+        awaitCondition(() -> extra.metricsSnapshot().getSegmentCount() == 1
+                && extra.metricsSnapshot().getSplitInFlightCount() == 0
+                && extra.metricsSnapshot().getDrainInFlightCount() == 0,
+                10_000L);
+
+        final long revision = extra.controlPlane().configuration()
+                .getConfigurationActual().getRevision();
+        final RuntimePatchResult patchResult = extra.controlPlane()
+                .configuration()
+                .apply(new RuntimeConfigPatch(Map.of(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        Integer.valueOf(16)), false, Long.valueOf(revision)));
+        assertTrue(patchResult.isApplied());
+
+        awaitCondition(() -> {
+            final SegmentIndexMetricsSnapshot snapshot = extra
+                    .metricsSnapshot();
+            return snapshot.getSegmentCount() > 1
+                    && snapshot.getSplitInFlightCount() == 0
+                    && snapshot.getDrainInFlightCount() == 0;
+        }, 10_000L);
+
+        final SegmentIndexMetricsSnapshot snapshot = extra.metricsSnapshot();
+        final HttpResponse<String> reportResp = send("GET",
+                ManagementApiPaths.REPORT, null);
+        assertEquals(200, reportResp.statusCode());
+        final JsonNode reportJson = objectMapper.readTree(reportResp.body());
+        final JsonNode indexNode = findIndexNode(reportJson,
+                extra.getConfiguration().getIndexName());
+
+        assertEquals(snapshot.getSegmentCount(),
+                indexNode.path("segmentCount").asInt());
+        assertEquals(snapshot.getSplitScheduleCount(),
+                indexNode.path("splitScheduleCount").asLong());
+        assertEquals(snapshot.getSplitInFlightCount(),
+                indexNode.path("splitInFlightCount").asInt());
+        assertEquals(snapshot.getDrainScheduleCount(),
+                indexNode.path("drainScheduleCount").asLong());
+        assertEquals(snapshot.getDrainInFlightCount(),
+                indexNode.path("drainInFlightCount").asInt());
+        assertEquals(snapshot.getDrainLatencyP95Micros(),
+                indexNode.path("drainLatencyP95Micros").asLong());
+    }
+
     private SegmentIndex<Integer, String> createIndex(final String name) {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
@@ -304,6 +418,61 @@ class ManagementAgentServerTest {
                 .withName(name) //
                 .build();
         return SegmentIndex.create(directory, conf);
+    }
+
+    private SegmentIndex<Integer, String> createPartitionedIndex(
+            final String name, final boolean backgroundMaintenanceAutoEnabled) {
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
+                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
+                .withMaxNumberOfKeysInSegmentCache(8) //
+                .withMaxNumberOfKeysInActivePartition(32) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(96) //
+                .withMaxNumberOfKeysInIndexBuffer(192) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
+                .withMaxNumberOfKeysInSegment(128) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withContextLoggingEnabled(false) //
+                .withBackgroundMaintenanceAutoEnabled(
+                        backgroundMaintenanceAutoEnabled) //
+                .withName(name) //
+                .build();
+        return SegmentIndex.create(directory, conf);
+    }
+
+    private JsonNode findIndexNode(final JsonNode reportJson,
+            final String indexName) {
+        for (final JsonNode indexNode : reportJson.path("indexes")) {
+            if (indexName.equals(indexNode.path("indexName").asText())) {
+                return indexNode;
+            }
+        }
+        assertNotNull(null, "Missing index report for " + indexName);
+        return null;
+    }
+
+    private static void awaitCondition(final Supplier<Boolean> condition,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (System.nanoTime() < deadline) {
+            if (condition.get()) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        assertTrue(condition.get(),
+                "Condition not reached within " + timeoutMillis + " ms.");
     }
 
     private HttpResponse<String> send(final String method, final String path,

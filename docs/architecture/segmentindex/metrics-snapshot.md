@@ -29,6 +29,7 @@ for index-level telemetry.
   - `globalThrottleCount`
   - `drainScheduleCount`
   - `drainInFlightCount`
+  - `drainLatencyP95Micros`
 - WAL and latency:
   - `wal*`
   - `readLatencyP50/P95/P99Micros`

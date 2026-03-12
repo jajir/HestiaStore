@@ -6,7 +6,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Runtime configuration view for one monitored index.
+ * Runtime-tuning configuration view for one monitored index.
+ * <p>
+ * This payload exposes only the canonical runtime-overridable keys used by the
+ * management PATCH endpoint. It is not a dump of the full persisted index
+ * configuration.
  */
 public class ConfigViewResponse {
 
