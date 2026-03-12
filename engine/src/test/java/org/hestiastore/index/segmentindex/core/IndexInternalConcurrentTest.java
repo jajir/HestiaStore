@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
@@ -171,6 +172,63 @@ class IndexInternalConcurrentTest {
         }
 
         assertEquals(2, awaitSplitsIdleCalls.get());
+    }
+
+    @Test
+    void failFastIteratorKeepsOrderedPrefixAcrossFlushAndWaitBoundary() {
+        index.put(1, "one");
+        index.put(2, "two");
+        index.put(3, "three");
+        index.flushAndWait();
+
+        final List<Entry<Integer, String>> expected = List.of(
+                Entry.of(1, "one"), Entry.of(2, "two"),
+                Entry.of(3, "three"));
+        try (EntryIterator<Integer, String> iterator = index.openSegmentIterator(
+                SegmentWindow.unbounded(),
+                SegmentIteratorIsolation.FAIL_FAST)) {
+            final var consumed = new java.util.ArrayList<Entry<Integer, String>>();
+            assertTrue(iterator.hasNext());
+            consumed.add(iterator.next());
+            index.flushAndWait();
+            consumed.addAll(consumeAll(iterator));
+
+            assertTrue(consumed.size() > 0);
+            assertEquals(expected.subList(0, consumed.size()), consumed);
+        }
+    }
+
+    @Test
+    void failFastIteratorKeepsOrderedPrefixAcrossCompactAndWaitBoundary() {
+        index.put(1, "one");
+        index.put(2, "two");
+        index.put(3, "three");
+        index.flushAndWait();
+
+        final List<Entry<Integer, String>> expected = List.of(
+                Entry.of(1, "one"), Entry.of(2, "two"),
+                Entry.of(3, "three"));
+        try (EntryIterator<Integer, String> iterator = index.openSegmentIterator(
+                SegmentWindow.unbounded(),
+                SegmentIteratorIsolation.FAIL_FAST)) {
+            final var consumed = new java.util.ArrayList<Entry<Integer, String>>();
+            assertTrue(iterator.hasNext());
+            consumed.add(iterator.next());
+            index.compactAndWait();
+            consumed.addAll(consumeAll(iterator));
+
+            assertTrue(consumed.size() > 0);
+            assertEquals(expected.subList(0, consumed.size()), consumed);
+        }
+    }
+
+    private static <K, V> List<Entry<K, V>> consumeAll(
+            final EntryIterator<K, V> iterator) {
+        final var entries = new java.util.ArrayList<Entry<K, V>>();
+        while (iterator.hasNext()) {
+            entries.add(iterator.next());
+        }
+        return entries;
     }
 
     private static class RecordingIndex

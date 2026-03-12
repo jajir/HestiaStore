@@ -9,7 +9,7 @@ SegmentIndex-level orchestration path.
 ## 🧭 High‑Level Flow (Point Lookup)
 
 1. API call: `SegmentIndex.get(key)`
-1. Check the index‑level unique buffer (latest in‑process writes)
+1. Check the partition overlay for the routed key range (active mutable + immutable runs)
 1. Locate the target segment using the key→segment map
 1. Inside the segment: consult delta cache → Bloom filter → sparse index → local scan
 
@@ -17,12 +17,12 @@ Lookups are read‑after‑write consistent thanks to the in‑memory buffers.
 
 ## 🚪 Entry Point and First‑Level Cache
 
-- `segmentindex/SegmentIndexImpl#get(K)` does:
-  - Check the index‑level `UniqueCache` (holds latest writes prior to flush)
-  - If miss, find `SegmentId` via `KeyToSegmentMap.findSegmentId(key)`
+- `segmentindex/core/SegmentIndexImpl#get(K)` does:
+  - Resolve the routed partition and check overlay layers first
+  - If miss, resolve `SegmentId` via the route map for stable-segment lookup
   - Delegate to `Segment.get(key)`
 
-Key classes: `segmentindex/SegmentIndexImpl.java`, `segmentindex/KeyToSegmentMap.java`, `cache/UniqueCache.java`.
+Key classes: `segmentindex/core/SegmentIndexImpl.java`, `segmentindex/partition/PartitionRuntime.java`, `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ### Behavior
 
@@ -54,10 +54,10 @@ Key classes: `segmentindex/SegmentsIterator.java`, `segment/MergeDeltaCacheWithI
 
 ## 🔄 Read‑After‑Write Semantics
 
-Two layers provide immediate visibility of recent writes:
+Two overlay layers provide immediate visibility of recent writes:
 
-- Index‑level `UniqueCache` (pre‑flush) is checked first by `SegmentIndex.get` and overlaid on iterators.
-- Segment delta cache (post‑flush) is kept in memory when loaded; writes to a new delta file also update the in‑memory delta cache when present.
+- Active partition mutable layer is checked first by `SegmentIndex.get`.
+- Immutable partition runs (newest first) are checked before stable segment storage.
 
 Deletes are represented as tombstones by the value type descriptor. The read path treats a tombstone as “not found”.
 
@@ -95,7 +95,7 @@ Key classes: `chunkstore/ChunkStoreReaderImpl`, `chunkstore/ChunkFilterMagicNumb
 
 ## 🧩 Where to Look in the Code
 
-- Point lookup orchestration: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`
+- Point lookup orchestration: `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`
 - Segment search path: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`
 - Sparse index: `src/main/java/org/hestiastore/index/scarceindex/*`
 - Iteration and merging: `src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java`

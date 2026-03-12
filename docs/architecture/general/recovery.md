@@ -16,7 +16,10 @@ This page explains HestiaStore’s crash safety model and commit semantics. WAL 
 - Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
 - Key→segment map (`index.map`): persisted via a transactional sorted data writer during flush or when updated.
 
-Relevant code: `segmentindex/SegmentIndexImpl#flush()`, `segmentindex/CompactSupport`, `segmentindex/KeyToSegmentMap#optionalyFlush()`.
+Relevant code:
+`segmentindex/core/SegmentIndexImpl#flush()`,
+`segmentindex/partition/PartitionRuntime`,
+`segmentindex/mapping/KeyToSegmentMap#optionalyFlush()`.
 
 ## ✍️ Transactional Write Primitives
 

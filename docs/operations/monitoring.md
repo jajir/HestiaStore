@@ -46,6 +46,7 @@ backpressure and drain indicators:
 - Drain activity:
   - `getDrainScheduleCount()`
   - `getDrainInFlightCount()`
+  - `getDrainLatencyP95Micros()`
 
 Compatibility note:
 
@@ -105,6 +106,10 @@ Start with these baseline alerts and tune per workload:
 - `partition overlay backlog growth`:
   - condition: `getPartitionBufferedKeyCount()` and `getImmutableRunCount()`
     grow continuously without returning to baseline
+  - severity: warning
+- `partition drain latency spike`:
+  - condition: `getDrainLatencyP95Micros()` remains elevated above workload
+    baseline for 10+ minutes
   - severity: warning
 - `partition throttling`:
   - condition: `getLocalThrottleCount()` or `getGlobalThrottleCount()`

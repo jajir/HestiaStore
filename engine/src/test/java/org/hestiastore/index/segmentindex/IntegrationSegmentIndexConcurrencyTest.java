@@ -159,7 +159,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(true) //
+                .withBackgroundMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(cpuThreads)//
                 .withName("concurrency_index") //
                 .build();
@@ -193,7 +193,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                         scenario.maxNumberOfSegmentsInCache()) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(true) //
+                .withBackgroundMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(scenario.cpuThreads())//
                 .withName("concurrency_index_" + scenario.name()) //
                 .build();
@@ -276,10 +276,12 @@ class IntegrationSegmentIndexConcurrencyTest {
         return Stream.of(
                 new ParallelPutsScenario("small-cache-50-keys", 50, 3, 3, 2,
                         4, 5, 4, 40),
-                new ParallelPutsScenario("write-cache-64-200-keys", 200, 128,
+                new ParallelPutsScenario("active-partition-64-200-keys", 200,
+                        128,
                         64, 16, 128, 10, 8, 64),
-                new ParallelPutsScenario("write-cache-128-small-segment", 300,
-                        128, 128, 16, 32, 5, 8, 64),
+                new ParallelPutsScenario(
+                        "active-partition-128-small-segment-budget", 300, 128,
+                        128, 16, 32, 5, 8, 64),
                 new ParallelPutsScenario("large-segment-512", 300, 256, 64,
                         32, 512, 10, 8, 40));
     }

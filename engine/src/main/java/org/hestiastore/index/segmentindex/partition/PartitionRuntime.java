@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.split.SegmentSplitApplyPlan;
-import org.hestiastore.index.segmentindex.split.SegmentSplitterResult;
+import org.hestiastore.index.segmentindex.split.PartitionSplitApplyPlan;
+import org.hestiastore.index.segmentindex.split.PartitionSplitResult;
 
 /**
  * In-memory partitioned ingest overlay layered above stable segments.
@@ -149,7 +149,8 @@ public final class PartitionRuntime<K, V> {
         partition.finishSplit();
     }
 
-    public void reassignOverlayAfterSplit(final SegmentSplitApplyPlan<K> plan) {
+    public void reassignOverlayAfterPartitionSplit(
+            final PartitionSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
         final RangePartition<K, V> oldPartition = partitions
                 .remove(plan.getOldSegmentId());
@@ -164,7 +165,7 @@ public final class PartitionRuntime<K, V> {
         if (detachedEntries.isEmpty()) {
             return;
         }
-        if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+        if (plan.getStatus() == PartitionSplitResult.PartitionSplitStatus.SPLIT) {
             final NavigableMap<K, V> lowerEntries = new TreeMap<>(
                     keyComparator);
             final NavigableMap<K, V> upperEntries = new TreeMap<>(

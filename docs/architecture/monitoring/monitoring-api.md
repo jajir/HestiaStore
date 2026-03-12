@@ -4,7 +4,7 @@ Management contracts are versioned under `/api/v1` and defined in the
 `monitoring-rest-json-api` module (`org.hestiastore.monitoring.json.api.*`).
 
 This page describes the target `v1` shape after runtime override support for
-selected cache-related properties is applied.
+selected partition/cache runtime limits is applied.
 
 ## Versioning policy
 
@@ -40,7 +40,8 @@ selected cache-related properties is applied.
 These overrides are runtime-only:
 
 - applied in-memory for the running JVM
-- not persisted to index metadata (`meta.txt` / configuration property store)
+- not persisted to index metadata (`manifest.txt` / configuration property
+  store)
 - reset on process restart
 
 Compatibility note:
@@ -109,6 +110,7 @@ Compatibility note:
       "globalThrottleCount": 0,
       "drainScheduleCount": 9,
       "drainInFlightCount": 0,
+      "drainLatencyP95Micros": 420,
       "readLatencyP50Micros": 78,
       "readLatencyP95Micros": 240,
       "readLatencyP99Micros": 710,
@@ -130,56 +132,33 @@ Compatibility note:
 
 `GET /api/v1/config?indexName=orders` response:
 
-- `original` and `current` contain full index configuration values (including
-  values that are **not** runtime-changeable).
-- `supportedKeys` is the exact writable subset for `PATCH /api/v1/config`.
-- Any key present in `original/current` but missing from `supportedKeys` is
-  read-only at runtime.
+- `original` and `current` contain only the canonical runtime-tuning view used
+  by `PATCH /api/v1/config`.
+- Read-only or non-runtime properties are intentionally omitted from this
+  endpoint even if they exist in the persisted index manifest.
+- `supportedKeys` is the exact writable subset for `PATCH /api/v1/config` and
+  matches the key domain of `original/current`.
 
 ```json
 {
   "indexName": "orders",
   "original": {
     "maxNumberOfSegmentsInCache": 128,
-    "maxNumberOfKeysInSegment": 500000,
-    "maxNumberOfKeysInSegmentChunk": 1024,
     "maxNumberOfKeysInSegmentCache": 200000,
     "maxNumberOfKeysInActivePartition": 100000,
     "maxNumberOfImmutableRunsPerPartition": 2,
     "maxNumberOfKeysInPartitionBuffer": 140000,
     "maxNumberOfKeysInIndexBuffer": 560000,
-    "maxNumberOfKeysInPartitionBeforeSplit": 500000,
-    "maxNumberOfDeltaCacheFiles": 128,
-    "bloomFilterNumberOfHashFunctions": 7,
-    "bloomFilterIndexSizeInBytes": 262144,
-    "indexWorkerThreadCount": 8,
-    "numberOfSegmentIndexMaintenanceThreads": 6,
-    "numberOfIndexMaintenanceThreads": 4,
-    "numberOfRegistryLifecycleThreads": 2,
-    "indexBusyBackoffMillis": 10,
-    "indexBusyTimeoutMillis": 5000,
-    "diskIoBufferSize": 4096
+    "maxNumberOfKeysInPartitionBeforeSplit": 500000
   },
   "current": {
     "maxNumberOfSegmentsInCache": 256,
-    "maxNumberOfKeysInSegment": 500000,
-    "maxNumberOfKeysInSegmentChunk": 1024,
     "maxNumberOfKeysInSegmentCache": 260000,
     "maxNumberOfKeysInActivePartition": 120000,
     "maxNumberOfImmutableRunsPerPartition": 2,
     "maxNumberOfKeysInPartitionBuffer": 180000,
     "maxNumberOfKeysInIndexBuffer": 720000,
-    "maxNumberOfKeysInPartitionBeforeSplit": 500000,
-    "maxNumberOfDeltaCacheFiles": 128,
-    "bloomFilterNumberOfHashFunctions": 7,
-    "bloomFilterIndexSizeInBytes": 262144,
-    "indexWorkerThreadCount": 8,
-    "numberOfSegmentIndexMaintenanceThreads": 6,
-    "numberOfIndexMaintenanceThreads": 4,
-    "numberOfRegistryLifecycleThreads": 2,
-    "indexBusyBackoffMillis": 10,
-    "indexBusyTimeoutMillis": 5000,
-    "diskIoBufferSize": 4096
+    "maxNumberOfKeysInPartitionBeforeSplit": 500000
   },
   "supportedKeys": [
     "maxNumberOfKeysInSegmentCache",
@@ -219,9 +198,9 @@ Compatibility note:
 ## Validation rules
 
 - `indexName` query parameter is required for config read/update.
+- `GET /config` exposes only runtime-tunable keys; persisted read-only settings
+  are out of scope for this endpoint.
 - PATCH accepts only keys listed in `supportedKeys` returned by `GET /config`.
-- Keys present in `original/current` but not listed in `supportedKeys` are
-  read-only and cannot be patched.
 - `maxNumberOfSegmentsInCache >= 3`
 - `maxNumberOfKeysInSegmentCache >= 1`
 - `maxNumberOfKeysInActivePartition >= 1`

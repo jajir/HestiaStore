@@ -14,6 +14,12 @@ final class PropertyWriterImpl extends AbstractCloseableResource implements Prop
     }
 
     @Override
+    public PropertyWriter remove(final String propertyKey) {
+        workingCopy.remove(propertyKey);
+        return this;
+    }
+
+    @Override
     public PropertyWriter setString(final String propertyKey,
             final String value) {
         workingCopy.put(propertyKey, value);

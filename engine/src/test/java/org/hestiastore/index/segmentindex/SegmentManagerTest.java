@@ -38,7 +38,7 @@ class SegmentManagerTest {
     void test_getting_same_segmentId() {
         final Directory directory = new MemDirectory();
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        final ExecutorService segmentMaintenancePool = Executors
+        final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
@@ -47,7 +47,7 @@ class SegmentManagerTest {
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(segmentMaintenancePool)
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
                 .build();
@@ -82,14 +82,14 @@ class SegmentManagerTest {
          */
         assertSame(s1, s2);
         segmentRegistry.close();
-        segmentMaintenancePool.shutdownNow();
+        stableSegmentMaintenancePool.shutdownNow();
     }
 
     @Test
     void test_close() {
         final Directory directory = new MemDirectory();
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        final ExecutorService segmentMaintenancePool = Executors
+        final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
                 .<Integer, String>builder()
@@ -98,12 +98,12 @@ class SegmentManagerTest {
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(segmentMaintenancePool)
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
                 .build();
         assertDoesNotThrow(() -> segmentRegistry.close());
-        segmentMaintenancePool.shutdownNow();
+        stableSegmentMaintenancePool.shutdownNow();
     }
 
 }

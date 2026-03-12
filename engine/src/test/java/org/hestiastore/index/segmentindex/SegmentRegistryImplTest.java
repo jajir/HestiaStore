@@ -52,19 +52,19 @@ class SegmentRegistryImplTest {
     private IndexConfiguration<Integer, String> conf;
 
     private SegmentRegistryImpl<Integer, String> registry;
-    private ExecutorService segmentMaintenancePool;
+    private ExecutorService stableSegmentMaintenancePool;
 
     @BeforeEach
     void setUp() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         directoryFacade = new MemDirectory();
-        segmentMaintenancePool = Executors.newSingleThreadExecutor();
+        stableSegmentMaintenancePool = Executors.newSingleThreadExecutor();
         registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
                 .<Integer, String>builder().withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(segmentMaintenancePool)
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
                 .build();
@@ -75,8 +75,8 @@ class SegmentRegistryImplTest {
         if (registry != null) {
             registry.close();
         }
-        if (segmentMaintenancePool != null) {
-            segmentMaintenancePool.shutdownNow();
+        if (stableSegmentMaintenancePool != null) {
+            stableSegmentMaintenancePool.shutdownNow();
         }
     }
 
@@ -149,7 +149,7 @@ class SegmentRegistryImplTest {
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
                 .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(segmentMaintenancePool)
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
                 .build();

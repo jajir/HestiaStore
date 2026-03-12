@@ -35,7 +35,7 @@ These structures are shared across threads and require synchronization:
 - `UniqueCache` (index write buffer)
 - `KeyToSegmentMap` (key→segment map)
 - `SegmentRegistry` and `SegmentDataCache` (segment lookup + cached data)
-- `SegmentSplitCoordinator` (topology updates)
+- `BackgroundSplitCoordinator` + `PartitionStableSplitCoordinator` (range topology updates)
 - `IndexState` (open/close state) and `Stats` (counters)
 - Any `TypeDescriptor` implementation with mutable internal state
 

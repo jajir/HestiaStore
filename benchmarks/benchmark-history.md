@@ -24,6 +24,7 @@ Both profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
+- `SegmentIndexHotPartitionPutBenchmark` (20-thread hot `put` + `putThenGet`)
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
 
@@ -38,7 +39,11 @@ Scripts live in [scripts](/Users/jan/projects/HestiaStore/benchmarks/scripts):
 - [compare_jmh_profile.py](/Users/jan/projects/HestiaStore/benchmarks/scripts/compare_jmh_profile.py)
   - compares two `summary.json` outputs
   - emits markdown and machine-readable comparison JSON
-  - classifies metrics as `better`, `neutral`, `warning`, or `worse`
+  - classifies metrics as `better`, `neutral`, `warning`, `worse`, `new`, or `removed`
+
+Smoke coverage for the script entry points lives in
+`BenchmarkHistoryScriptsSmokeTest` and executes the real Python CLIs against
+temporary benchmark-history fixtures.
 
 ## Output Model
 
@@ -83,6 +88,11 @@ The workflow is [benchmark-compare.yml](/Users/jan/projects/HestiaStore/.github/
 
 Current behavior:
 
+- preflight
+  - run `BenchmarkProfileContractTest` before any JMH execution
+  - fail fast when a canonical profile references a missing benchmark class,
+    drifts from required SegmentIndex scenarios, or benchmark sources bring
+    back removed public config names
 - pull requests to `main`
   - run `segment-index-pr-smoke`
   - first try to compare PR candidate against the latest canonical baseline
@@ -137,6 +147,8 @@ Use the per-change report for immediate review:
   - noticeable regression, inspect before merging
 - `worse`
   - large regression; block or justify
+- `new` / `removed`
+  - benchmark metric exists only on one side (profile evolved or baseline is older)
 
 Current default thresholds in the compare script:
 

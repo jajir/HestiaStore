@@ -15,10 +15,10 @@ SegmentIndex integration level.
 
 ## 🧱 Layers Overview
 
-- SegmentIndex write buffer: in‑memory, unique latest value per key
-  - Class: `cache/UniqueCache`
-  - Owner: `segmentindex/SegmentIndexImpl` (top‑level)
-  - Purpose: absorb writes and provide immediate visibility before flush
+- Partition overlay: routed in-memory mutable/immutable layers
+  - Classes: `segmentindex/partition/PartitionRuntime`, `segmentindex/partition/RangePartition`
+  - Owner: `segmentindex/core/SegmentIndexImpl`
+  - Purpose: absorb writes and provide immediate visibility before drain publish
 
 - Segment delta cache: per‑segment overlay of recent writes
   - Classes: `segment/SegmentDeltaCache`, `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`
@@ -35,17 +35,24 @@ SegmentIndex integration level.
   - Classes: `scarceindex/ScarceIndex`, `ScarceIndexSnapshot`
 
 - Key→segment map: max‑key to SegmentId mapping
-  - Class: `segmentindex/KeyToSegmentMap` (TreeMap, persisted to `index.map`)
+  - Class: `segmentindex/mapping/KeyToSegmentMap` (TreeMap, persisted to `index.map`)
 
 ## ✍️ Write‑Time Caches
 
-### SegmentIndex write buffer (UniqueCache)
+### Partition overlay
 
-- On `SegmentIndex.put/delete`, the write is stored in an index‑level `UniqueCache`.
-- Replaces any prior value for the same key; deletes are represented as a tombstone value.
-- Triggered flush routes sorted writes to target segments and clears the buffer.
+- On `SegmentIndex.put/delete`, the write is stored in the routed partition's
+  active mutable layer.
+- New writes replace prior values for the same key within the mutable layer;
+  deletes are represented as tombstones.
+- Once the active layer crosses threshold, it rotates into immutable runs and
+  background drain publishes runs to stable segment storage.
 
-Code: `segmentindex/SegmentIndexImpl#put`, `segmentindex/SegmentIndexImpl#delete`, `segmentindex/SegmentIndexImpl#flushCache`, `cache/UniqueCache`.
+Code:
+`segmentindex/core/SegmentIndexImpl#put`,
+`segmentindex/core/SegmentIndexImpl#delete`,
+`segmentindex/partition/RangePartition#write`,
+`segmentindex/core/SegmentIndexImpl#drainPartitions`.
 
 ### Segment delta cache
 
@@ -57,18 +64,25 @@ Code: `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`, 
 
 ## 📖 Read‑Time Caches
 
-- Top‑level overlay: `SegmentIndex.get(k)` checks the index write buffer first. Iterators are also overlaid with `EntryIteratorRefreshedFromCache` so scans see most recent writes.
+- Top‑level overlay: `SegmentIndex.get(k)` checks routed partition overlay
+  first (active mutable then immutable runs).
 - Per‑segment overlay: `SegmentDeltaCache` is consulted before the Bloom filter + sparse index path. If it returns a tombstone, the key is absent.
 - Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a provider backed by LRU:
   - `segmentindex/SegmentDataCache` holds `segment/SegmentData` instances with an LRU limit; eviction calls `close()` on the container.
   - Providers: `segment/SegmentDataProvider` implementations
     - `segment/SegmentDataProviderLazyLoaded` — lazy local holder
 
-Code: `segmentindex/SegmentIndexImpl#get`, `segment/SegmentImpl#get`, `segment/SegmentSearcher`, `segmentindex/EntryIteratorRefreshedFromCache`, `segmentindex/SegmentDataCache`.
+Code:
+`segmentindex/core/SegmentIndexImpl#get`,
+`segment/SegmentImpl#get`,
+`segment/SegmentSearcher`,
+`segmentindex/partition/PartitionRuntime`,
+`segmentindex/SegmentDataCache`.
 
 ## ♻️ Eviction and Lifecycle
 
-- UniqueCache (index write buffer): no incremental eviction; cleared on flush.
+- Partition overlay: mutable layer rotates by key budget; immutable runs are
+  drained and retired after stable publish.
 - SegmentDataCache (LRU of SegmentData): evicts least‑recently‑used segment; eviction closes Bloom filter and clears delta cache via `close()` hook.
 - SegmentDeltaCache: cleared and files removed after compaction via `SegmentDeltaCacheController.clear()`; rebuilt on demand from delta files.
 - KeyToSegmentMap: persisted via `optionalyFlush()` when updated; survives process restarts by reading `index.map`.
@@ -114,11 +128,13 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 ## 🧩 Code Pointers
 
-- SegmentIndex write buffer: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`
-- Segment caches and providers: `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`, `src/main/java/org/hestiastore/index/segment/SegmentData*`
+- Partition overlay and drain: `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/partition/*`
+- Segment caches and providers: `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`,
+  `src/main/java/org/hestiastore/index/segment/SegmentData*`
 - LRU cache: `src/main/java/org/hestiastore/index/cache/CacheLru.java`,
   `src/main/java/org/hestiastore/index/cache/CacheLruImpl.java`
-- Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/KeyToSegmentMap.java`
+- Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/mapping/KeyToSegmentMap.java`
 
 ## 🔗 Related Glossary
 

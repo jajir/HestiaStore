@@ -18,8 +18,8 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.split.SegmentSplitApplyPlan;
-import org.hestiastore.index.segmentindex.split.SegmentSplitterResult;
+import org.hestiastore.index.segmentindex.split.PartitionSplitApplyPlan;
+import org.hestiastore.index.segmentindex.split.PartitionSplitResult;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -312,7 +312,8 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return removedKey;
     }
 
-    public boolean applySplitPlan(final SegmentSplitApplyPlan<K> plan) {
+    public boolean applyPartitionSplitPlan(
+            final PartitionSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
         final SegmentId oldSegmentId = plan.getOldSegmentId();
         final SegmentId lowerSegmentId = plan.getLowerSegmentId();
@@ -327,7 +328,7 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
                     plan.getStatus(), plan.getUpperSegmentId().orElse(null));
         }
         insertSegment(plan.getMaxKey(), lowerSegmentId);
-        if (plan.getStatus() == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+        if (plan.getStatus() == PartitionSplitResult.PartitionSplitStatus.SPLIT) {
             final SegmentId upperSegmentId = Vldtn.requireNonNull(
                     plan.getUpperSegmentId().orElse(null), "upperSegmentId");
             insertSegment(upperMaxKey, upperSegmentId);

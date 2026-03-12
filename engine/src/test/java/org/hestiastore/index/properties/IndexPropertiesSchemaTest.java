@@ -90,19 +90,19 @@ class IndexPropertiesSchemaTest {
                 IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
-        final int expectedWriteCache = IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+        final int expectedActivePartition = IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
                 / 2;
-        final int expectedWriteCacheDuringMaintenance = Math
-                .max(expectedWriteCache * 2, expectedWriteCache + 1);
-        assertEquals(expectedWriteCache, view.getInt(
+        final int expectedPartitionBuffer = Math.max(
+                expectedActivePartition * 2, expectedActivePartition + 1);
+        assertEquals(expectedActivePartition, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
         assertEquals(
                 IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
-        assertEquals(expectedWriteCacheDuringMaintenance, view.getInt(
+        assertEquals(expectedPartitionBuffer, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
-        assertEquals(expectedWriteCacheDuringMaintenance
+        assertEquals(expectedPartitionBuffer
                 * IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
@@ -134,5 +134,41 @@ class IndexPropertiesSchemaTest {
         assertThrows(IllegalStateException.class,
                 () -> IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA
                         .ensure(store));
+    }
+
+    @Test
+    void indexConfigurationSchemaMigratesLegacyMaintenanceKeysIntoNewNames() {
+        final PropertyStore store = PropertyStoreImpl.fromDirectory(
+                asyncDirectory,
+                IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
+                false);
+        try (PropertyTransaction tx = store.beginTransaction()) {
+            final PropertyWriter writer = tx.openPropertyWriter();
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_CLASS,
+                    String.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_CLASS,
+                    Long.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_TYPE_DESCRIPTOR,
+                    "test-key-descriptor");
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR,
+                    "test-value-descriptor");
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
+                    "legacy-maintenance-schema-test");
+            writer.setString("segmentMaintenanceAutoEnabled", "false");
+            writer.setString("segmentIndexMaintenanceThreads", "6");
+        }
+
+        IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
+
+        final PropertyView view = store.snapshot();
+        assertEquals(6, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS));
+        assertEquals("false", view.getString(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
     }
 }

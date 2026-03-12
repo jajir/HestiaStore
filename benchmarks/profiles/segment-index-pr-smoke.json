@@ -37,6 +37,17 @@
       ]
     },
     {
+      "label": "segment-index-hot-partition-put",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s"
+      ]
+    },
+    {
       "label": "segment-index-mixed-drain",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
       "args": [

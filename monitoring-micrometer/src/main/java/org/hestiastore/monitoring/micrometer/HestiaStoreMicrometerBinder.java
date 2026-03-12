@@ -172,6 +172,24 @@ public final class HestiaStoreMicrometerBinder implements MeterBinder {
                 .description("Current number of in-flight partition drains")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
+        Gauge.builder(HestiaStoreMetricNames.PARTITION_DRAIN_LATENCY_P95_MICROS,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getDrainLatencyP95Micros())
+                .description("Observed P95 partition drain latency in microseconds")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        FunctionCounter.builder(HestiaStoreMetricNames.SPLIT_SCHEDULE_TOTAL,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getSplitScheduleCount())
+                .description("Total number of scheduled split operations")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        Gauge.builder(HestiaStoreMetricNames.SPLIT_IN_FLIGHT,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getSplitInFlightCount())
+                .description("Current number of in-flight split operations")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
         Gauge.builder(HestiaStoreMetricNames.INDEX_UP,
                 monitoredIndex,
                 i -> isReady(i.state()) ? 1D : 0D)

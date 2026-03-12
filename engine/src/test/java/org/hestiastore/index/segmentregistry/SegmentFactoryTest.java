@@ -29,11 +29,12 @@ class SegmentFactoryTest {
     void buildSegment_createsSegmentWithId() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final Directory directory = new MemDirectory();
-        final ExecutorService segmentMaintenancePool = Executors
+        final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf, segmentMaintenancePool);
+                new TypeDescriptorShortString(), conf,
+                stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
                 .buildSegment(segmentId);
@@ -44,7 +45,7 @@ class SegmentFactoryTest {
             assertEquals(segmentId, segment.getId());
         } finally {
             SegmentTestHelper.closeAndAwait(segment);
-            segmentMaintenancePool.shutdownNow();
+            stableSegmentMaintenancePool.shutdownNow();
         }
     }
 
@@ -52,11 +53,12 @@ class SegmentFactoryTest {
     void buildSegment_enablesDirectoryLockingForRegistrySegments() {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final Directory directory = new MemDirectory();
-        final ExecutorService segmentMaintenancePool = Executors
+        final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf, segmentMaintenancePool);
+                new TypeDescriptorShortString(), conf,
+                stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(7);
         final String lockFileName = new SegmentDirectoryLayout(segmentId)
                 .getLockFileName();
@@ -71,7 +73,7 @@ class SegmentFactoryTest {
             assertTrue(segmentDirectory.isFileExists(lockFileName));
         } finally {
             SegmentTestHelper.closeAndAwait(segment);
-            segmentMaintenancePool.shutdownNow();
+            stableSegmentMaintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
     }
@@ -95,9 +97,9 @@ class SegmentFactoryTest {
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withSegmentMaintenanceAutoEnabled(false)//
+                .withBackgroundMaintenanceAutoEnabled(false)//
                 .withIndexWorkerThreadCount(1)//
-                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfStableSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
                 .withIndexBusyBackoffMillis(1)//
                 .withIndexBusyTimeoutMillis(1000)//
