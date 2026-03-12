@@ -4299,12 +4299,12 @@ view is published (after <code>flush()</code> or <code>compact()</code> swaps in
   <code>FREEZE</code> → <code>MAINTENANCE_RUNNING</code> → <code>READY</code>).</li>
 <li><strong>SegmentCompacter</strong>: performs full rewrite compaction using
   <code>SegmentCore</code>.</li>
-<li><strong>SegmentMaintenanceCoordinator</strong> (segmentindex): decides when to call
+<li><strong>BackgroundSplitCoordinator</strong> (segmentindex): decides when to call
   <code>flush()</code>/<code>compact()</code> after writes.</li>
 <li><strong>SegmentAsyncExecutor</strong> + executor (segmentindex): maintenance executor
   provided to <code>SegmentImpl</code> via <code>SegmentRegistry</code>.</li>
-<li><strong>SegmentAsyncSplitCoordinator / SegmentSplitCoordinator</strong> (segmentindex):
-  schedule and perform segment splits.</li>
+<li><strong>BackgroundSplitCoordinator / PartitionStableSplitCoordinator</strong>
+  (segmentindex): schedule and perform route-first stable segment splits.</li>
 </ul>
 <h3 id="responsibilities">Responsibilities</h3>
 <ul>
@@ -4323,7 +4323,7 @@ view is published (after <code>flush()</code> or <code>compact()</code> swaps in
 <li>State transitions are enforced by <code>SegmentStateMachine</code> and executed in
   <code>SegmentMaintenanceService.startMaintenance(...)</code> and
   <code>SegmentMaintenanceService.runMaintenance(...)</code>.</li>
-<li>Maintenance scheduling lives in <code>SegmentMaintenanceCoordinator</code> and uses the
+<li>Maintenance scheduling lives in <code>BackgroundSplitCoordinator</code> and uses the
   executor from <code>SegmentRegistry</code> (<code>SegmentAsyncExecutor</code>).</li>
 </ul>
 <h2 id="future-mvcc">Future: MVCC</h2>

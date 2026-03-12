@@ -3418,11 +3418,16 @@
 </ul>
 <h2 id="code-pointers">🧩 Code Pointers</h2>
 <ul>
-<li>Write buffer and flush: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code>, <code>src/main/java/org/hestiastore/index/segmentindex/CompactSupport.java</code></li>
-<li>Read path bounds: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code>, <code>.../SegmentIndexSearcher.java</code></li>
+<li>Write buffer, drain, and stable publish:
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java</code>,
+  <code>src/main/java/org/hestiastore/index/segmentindex/partition/PartitionRuntime.java</code></li>
+<li>Read path bounds: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code>,
+  <code>src/main/java/org/hestiastore/index/segment/SegmentIndexSearcher.java</code></li>
 <li>Bloom filter: <code>src/main/java/org/hestiastore/index/bloomfilter/*</code></li>
 <li>Chunked I/O and filters: <code>src/main/java/org/hestiastore/index/chunkstore/*</code></li>
-<li>Segment sizing/splitting: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentSplitCoordinator.java</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java</code></li>
+<li>Segment sizing/splitting:
+  <code>src/main/java/org/hestiastore/index/segmentindex/split/PartitionStableSplitCoordinator.java</code>,
+  <code>src/main/java/org/hestiastore/index/segmentindex/core/BackgroundSplitCoordinator.java</code></li>
 </ul>
 <h2 id="related-glossary">🔗 Related Glossary</h2>
 <ul>

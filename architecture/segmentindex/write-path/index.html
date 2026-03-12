@@ -1883,10 +1883,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unique-write-buffer-indexlevel" class="md-nav__link">
+  <a href="#partition-overlay-indexlevel" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧰 Unique Write Buffer (Index‑Level)
+        🧰 Partition Overlay (Index‑Level)
       
     </span>
   </a>
@@ -3224,10 +3224,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#unique-write-buffer-indexlevel" class="md-nav__link">
+  <a href="#partition-overlay-indexlevel" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🧰 Unique Write Buffer (Index‑Level)
+        🧰 Partition Overlay (Index‑Level)
       
     </span>
   </a>
@@ -3449,11 +3449,10 @@ orchestration and operation flow.</p>
 <h2 id="highlevel-flow">🧭 High‑Level Flow</h2>
 <ol>
 <li>API call: <code>SegmentIndex.put(key, value)</code> or <code>SegmentIndex.delete(key)</code></li>
-<li>In‑memory unique write buffer accepts the latest value per key</li>
-<li>Threshold‑based flush routes buffered writes to target segments</li>
-<li>Segment delta caches persist sorted updates as transactional files</li>
-<li>Segment compaction merges delta caches into the main SST + sparse index + bloom filter</li>
-<li>Optional segment split when size thresholds are exceeded</li>
+<li>Routed partition mutable layer accepts the latest value per key</li>
+<li>Mutable layer rotates to immutable runs when active-partition budget is reached</li>
+<li>Background drain publishes immutable runs to stable segment storage</li>
+<li>Autonomous split policy may remap hot ranges to child routes</li>
 </ol>
 <p>Writes become durable when flushed to segment files. Closing the index performs a flush.</p>
 <h2 id="entry-points">🚪 Entry Points</h2>
@@ -3473,25 +3472,28 @@ orchestration and operation flow.</p>
 populate the <code>index.name</code> MDC key so downstream logs can include the index
 identifier. This is purely for log correlation and does not write any
 additional files or provide durability.</p>
-<h2 id="unique-write-buffer-indexlevel">🧰 Unique Write Buffer (Index‑Level)</h2>
-<p>Every <code>put</code>/<code>delete</code> is first stored in an in‑memory unique cache that holds only the latest value per key and is flushed by internal policy.</p>
+<h2 id="partition-overlay-indexlevel">🧰 Partition Overlay (Index‑Level)</h2>
+<p>Every <code>put</code>/<code>delete</code> first updates the routed partition overlay:</p>
 <ul>
-<li>Structure: <code>UniqueCache</code> keyed by K with comparator ordering.</li>
-<li>Behavior:</li>
-<li>New write replaces any previous value for the same key.</li>
-<li>Reads consult this buffer first (read‑after‑write visibility without disk I/O).</li>
-<li>Deletes are represented as a tombstone value from the value type descriptor.</li>
+<li>active mutable layer stores latest values for the partition currently
+  accepting writes</li>
+<li>immutable runs keep rotated snapshots queued for drain</li>
+<li>reads consult overlay first, so read-after-write holds before drain publish</li>
 </ul>
-<p>Key classes: <code>cache/UniqueCache</code>, <code>segmentindex/SegmentIndexImpl#put</code>, <code>segmentindex/SegmentIndexImpl#delete</code>.</p>
+<p>Key classes:
+<code>segmentindex/partition/PartitionRuntime</code>,
+<code>segmentindex/partition/RangePartition</code>,
+<code>segmentindex/core/SegmentIndexImpl</code>.</p>
 <h2 id="flush-and-routing-to-segments">🚚 Flush and Routing to Segments</h2>
-<p>On flush, buffered entries are sorted and routed to target segments based on the key‑to‑segment map. Routing is incremental and batched per target segment for locality.</p>
+<p>On drain/flush, immutable partition runs are sorted and published to target
+stable segments based on the key‑to‑segment map.</p>
 <p>Flow:</p>
-<p>1) Sort unique cache entries by key.
-2) For each key, find the target segment id via <code>KeyToSegmentMap.insertKeyToSegment</code>.
-3) Buffer entries to the current segment; when switching segments, write the batch to that segment’s delta cache and continue.
-4) After all entries are written, optionally split segments that exceed size thresholds.
-5) Clear the unique buffer and flush the key‑segment map (if changed).</p>
-<p>Key classes: <code>segmentindex/CompactSupport</code>, <code>segmentindex/KeyToSegmentMap</code>, <code>segmentindex/SegmentSplitCoordinator</code>.</p>
+<p>1) Rotate active mutable layer into an immutable run.
+2) Drain immutable runs in the background.
+3) Route each entry to target stable segment id via key→segment map.
+4) Publish entries into stable segment storage and flush stable segments.
+5) Persist routing metadata and checkpoint WAL on <code>flushAndWait()</code>.</p>
+<p>Key classes: <code>segmentindex/core/SegmentIndexImpl</code>, <code>segmentindex/partition/PartitionRuntime</code>, <code>segmentindex/mapping/KeyToSegmentMap</code>.</p>
 <h2 id="segment-delta-cache-files-transactional">🗂️ Segment Delta Cache Files (Transactional)</h2>
 <p>Writes land in a segment’s delta cache as sorted key/value files. Each delta file is written transactionally:</p>
 <ul>
@@ -3520,16 +3522,22 @@ additional files or provide durability.</p>
 </ul>
 <p>Key classes: <code>segment/SegmentCompacter</code>, <code>segment/SegmentFullWriterTx</code>, <code>segment/SegmentFullWriter</code>, <code>bloomfilter/BloomFilterWriterTx</code>, <code>scarceindex/*</code>.</p>
 <h2 id="segment-splitting">✂️ Segment Splitting</h2>
-<p>When a segment grows beyond <code>maxNumberOfKeysInSegment</code>, the split coordinator computes a plan, optionally compacts first, and then splits into two segments. The key‑to‑segment map is updated with the new segment’s max key.</p>
-<p>Key classes: <code>segmentindex/SegmentSplitCoordinator</code>, <code>segment/SegmentSplitter</code>, <code>segment/SegmentSplitterPlan</code>, <code>segmentindex/KeyToSegmentMap</code>.</p>
+<p>When a routed segment grows beyond <code>maxNumberOfKeysInPartitionBeforeSplit</code>,
+the split coordinator computes a route-first split plan, materializes child
+stable segments, and atomically updates key-to-segment mapping. Buffered
+partition overlays are reassigned to child routes during apply.</p>
+<p>Key classes: <code>segmentindex/split/PartitionStableSplitCoordinator</code>, <code>segmentindex/split/PartitionSplitApplyPlan</code>, <code>segmentindex/partition/PartitionRuntime</code>, <code>segmentindex/mapping/KeyToSegmentMap</code>.</p>
 <h2 id="delete-semantics-tombstones">🪦 Delete Semantics (Tombstones)</h2>
 <p>Deletes write a tombstone value:</p>
 <ul>
-<li>Buffered in the unique cache and delta cache like any other update.</li>
+<li>Buffered in the partition overlay like any other update.</li>
 <li>During compaction, tombstones suppress older values and may be dropped if safe.</li>
 <li>Reads treat tombstones as absent.</li>
 </ul>
-<p>Key classes: <code>segmentindex/SegmentIndexImpl#delete</code>, <code>datatype/TypeDescriptor#getTombstone</code>, <code>segment/SegmentSearcher</code>.</p>
+<p>Key classes:
+<code>segmentindex/core/SegmentIndexImpl#delete</code>,
+<code>datatype/TypeDescriptor#getTombstone</code>,
+<code>segment/SegmentSearcher</code>.</p>
 <h2 id="durability-and-atomicity">💾 Durability and Atomicity</h2>
 <ul>
 <li>Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.</li>
@@ -3560,15 +3568,16 @@ additional files or provide durability.</p>
 <p>Key classes: <code>chunkstore/ChunkProcessor</code>, <code>chunkstore/ChunkFilterMagicNumberWriting</code>, <code>chunkstore/ChunkFilterCrc32Writing</code>, <code>chunkstore/ChunkFilterSnappyCompress</code>.</p>
 <h2 id="sequence-put">🔢 Sequence (Put)</h2>
 <p>1) <code>SegmentIndex.put(k,v)</code> → validate inputs; forbid direct tombstone values
-2) Buffer latest <code>(k,v)</code> into unique cache (replaces any prior value for k)
-3) If buffer over threshold → flushCache:
-   - Route sorted entries by key to segments
-   - For each target segment: write a new delta cache file (transactional)
-   - Optionally compact the segment and optionally split if too large
-   - Clear unique cache, flush key‑segment map</p>
+2) Append to WAL (when enabled)
+3) Resolve write route via key→segment map
+4) Write latest <code>(k,v)</code> into active partition mutable layer
+5) If active layer crosses threshold:
+   - rotate to immutable run
+   - schedule background drain
+   - apply local/global backpressure if partition/index limits are exceeded</p>
 <h2 id="where-to-look-in-the-code">🧩 Where to Look in the Code</h2>
 <ul>
-<li>SegmentIndex entry points and buffering: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code></li>
+<li>SegmentIndex entry points and buffering: <code>src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java</code></li>
 <li>Segment write/merge path: <code>src/main/java/org/hestiastore/index/segment/*</code></li>
 <li>Chunk store and filters: <code>src/main/java/org/hestiastore/index/chunkstore/*</code></li>
 <li>Delta and sorted file writers: <code>src/main/java/org/hestiastore/index/sorteddatafile/*</code></li>

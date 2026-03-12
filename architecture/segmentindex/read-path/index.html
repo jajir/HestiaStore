@@ -3373,19 +3373,19 @@ SegmentIndex-level orchestration path.</p>
 <h2 id="highlevel-flow-point-lookup">🧭 High‑Level Flow (Point Lookup)</h2>
 <ol>
 <li>API call: <code>SegmentIndex.get(key)</code></li>
-<li>Check the index‑level unique buffer (latest in‑process writes)</li>
+<li>Check the partition overlay for the routed key range (active mutable + immutable runs)</li>
 <li>Locate the target segment using the key→segment map</li>
 <li>Inside the segment: consult delta cache → Bloom filter → sparse index → local scan</li>
 </ol>
 <p>Lookups are read‑after‑write consistent thanks to the in‑memory buffers.</p>
 <h2 id="entry-point-and-firstlevel-cache">🚪 Entry Point and First‑Level Cache</h2>
 <ul>
-<li><code>segmentindex/SegmentIndexImpl#get(K)</code> does:</li>
-<li>Check the index‑level <code>UniqueCache</code> (holds latest writes prior to flush)</li>
-<li>If miss, find <code>SegmentId</code> via <code>KeyToSegmentMap.findSegmentId(key)</code></li>
+<li><code>segmentindex/core/SegmentIndexImpl#get(K)</code> does:</li>
+<li>Resolve the routed partition and check overlay layers first</li>
+<li>If miss, resolve <code>SegmentId</code> via the route map for stable-segment lookup</li>
 <li>Delegate to <code>Segment.get(key)</code></li>
 </ul>
-<p>Key classes: <code>segmentindex/SegmentIndexImpl.java</code>, <code>segmentindex/KeyToSegmentMap.java</code>, <code>cache/UniqueCache.java</code>.</p>
+<p>Key classes: <code>segmentindex/core/SegmentIndexImpl.java</code>, <code>segmentindex/partition/PartitionRuntime.java</code>, <code>segmentindex/mapping/KeyToSegmentMap.java</code>.</p>
 <h3 id="behavior">Behavior</h3>
 <ul>
 <li>Cache hit and non‑tombstone → return value</li>
@@ -3412,10 +3412,10 @@ SegmentIndex-level orchestration path.</p>
 </ul>
 <p>Key classes: <code>segmentindex/SegmentsIterator.java</code>, <code>segment/MergeDeltaCacheWithIndexIterator.java</code>, <code>segmentindex/EntryIteratorRefreshedFromCache.java</code>, <code>EntryIteratorWithLock.java</code>, <code>OptimisticLock.java</code>.</p>
 <h2 id="readafterwrite-semantics">🔄 Read‑After‑Write Semantics</h2>
-<p>Two layers provide immediate visibility of recent writes:</p>
+<p>Two overlay layers provide immediate visibility of recent writes:</p>
 <ul>
-<li>Index‑level <code>UniqueCache</code> (pre‑flush) is checked first by <code>SegmentIndex.get</code> and overlaid on iterators.</li>
-<li>Segment delta cache (post‑flush) is kept in memory when loaded; writes to a new delta file also update the in‑memory delta cache when present.</li>
+<li>Active partition mutable layer is checked first by <code>SegmentIndex.get</code>.</li>
+<li>Immutable partition runs (newest first) are checked before stable segment storage.</li>
 </ul>
 <p>Deletes are represented as tombstones by the value type descriptor. The read path treats a tombstone as “not found”.</p>
 <h2 id="complexity-and-io-characteristics">🧮 Complexity and I/O Characteristics</h2>
@@ -3447,7 +3447,7 @@ SegmentIndex-level orchestration path.</p>
 <p>Key classes: <code>chunkstore/ChunkStoreReaderImpl</code>, <code>chunkstore/ChunkFilterMagicNumberValidation</code>, <code>chunkstore/ChunkFilterCrc32Validation</code>, <code>chunkstore/ChunkFilterSnappyDecompress</code>.</p>
 <h2 id="where-to-look-in-the-code">🧩 Where to Look in the Code</h2>
 <ul>
-<li>Point lookup orchestration: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code></li>
+<li>Point lookup orchestration: <code>src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java</code></li>
 <li>Segment search path: <code>src/main/java/org/hestiastore/index/segment/SegmentSearcher.java</code></li>
 <li>Sparse index: <code>src/main/java/org/hestiastore/index/scarceindex/*</code></li>
 <li>Iteration and merging: <code>src/main/java/org/hestiastore/index/segment/MergeDeltaCacheWithIndexIterator.java</code></li>

@@ -18,7 +18,7 @@ package "Application JVM" {
 [Monitoring Bridge\n(Micrometer/Prometheus)] --> [Segment API\nmetricsSnapshot()] : exports metrics
 [Monitoring Console Web] -up-> [Management Agent\n/api/v1/*] : poll/report/config
 
-database "Index Metadata\n(meta.txt)" as Meta
+database "Index Metadata\n(manifest.txt)" as Meta
 [Management Agent\n/api/v1/*] ..> Meta : reads persisted config
 [Runtime Overrides\n(in-memory)] ..> Meta : no write
 

@@ -3347,7 +3347,10 @@
 <li>Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.</li>
 <li>Key→segment map (<code>index.map</code>): persisted via a transactional sorted data writer during flush or when updated.</li>
 </ul>
-<p>Relevant code: <code>segmentindex/SegmentIndexImpl#flush()</code>, <code>segmentindex/CompactSupport</code>, <code>segmentindex/KeyToSegmentMap#optionalyFlush()</code>.</p>
+<p>Relevant code:
+<code>segmentindex/core/SegmentIndexImpl#flush()</code>,
+<code>segmentindex/partition/PartitionRuntime</code>,
+<code>segmentindex/mapping/KeyToSegmentMap#optionalyFlush()</code>.</p>
 <h2 id="transactional-write-primitives">✍️ Transactional Write Primitives</h2>
 <p>All main data files follow the same pattern: write to a temporary file, then atomically rename on <code>commit()</code>.</p>
 <ul>

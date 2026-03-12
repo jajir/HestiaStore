@@ -1488,17 +1488,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#segment-split-pipeline-splitcompaction-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Segment Split Pipeline (split/compaction path)
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -3142,17 +3131,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#segment-split-pipeline-splitcompaction-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Segment Split Pipeline (split/compaction path)
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -3261,7 +3239,7 @@
 <ul>
 <li>The base class keeps the ordered <code>List&lt;Filter&lt;Context, Result&gt;&gt;</code> and exposes a single <code>filter(context, result)</code> method that drives the loop.</li>
 <li>Steps see the immutable context and may update the mutable result; they must return <code>false</code> once they have produced a terminal outcome so the chain stops immediately.</li>
-<li>Subclasses wrap the call to <code>filter</code> so they can prepare state/result objects and handle cleanup. Example: <code>SegmentSplitPipeline#run</code> closes the iterator in a <code>finally</code> block even when a step short-circuits.</li>
+<li>Subclasses wrap the call to <code>filter</code> so they can prepare state/result objects and handle cleanup.</li>
 <li>Filters are regular classes that implement <code>Filter&lt;Context, Result&gt;</code> and can be reused or composed in different orders when building a pipeline.</li>
 </ul>
 <h2 id="typical-usage">🛠️ Typical Usage</h2>
@@ -3308,26 +3286,6 @@
 <ul>
 <li>Short-circuits: cache hit/tombstone, Bloom filter negative, or sparse-index probe missing/false-positive correction.</li>
 <li>Context/result types: <code>SegmentSearcherContext</code> carries the key plus caches/searcher; <code>SegmentSearcherResult</code> holds the found value (or <code>null</code> when absent).</li>
-</ul>
-<h3 id="segment-split-pipeline-splitcompaction-path">Segment Split Pipeline (split/compaction path)</h3>
-<p><code>SegmentSplitPipeline</code> (<code>src/main/java/org/hestiastore/index/segment/SegmentSplitPipeline.java</code>) orchestrates the per-segment split flow inside <code>SegmentSplitter#split</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">final</span><span class="w"> </span><span class="n">SegmentSplitPipeline</span><span class="o">&lt;</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pipeline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitPipeline</span><span class="o">&lt;&gt;</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">        </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepValidateFeasibility</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">      </span><span class="c1">// throws if plan is invalid</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepOpenIterator</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">             </span><span class="c1">// opens streaming iterator</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepCreateLowerSegment</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">       </span><span class="c1">// prepares target segment</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepFillLowerUntilTarget</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">     </span><span class="c1">// writes first half</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepEnsureLowerNotEmpty</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">      </span><span class="c1">// guardrail for tiny splits</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepReplaceIfNoRemaining</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">segmentReplacer</span><span class="p">),</span><span class="w"> </span><span class="c1">// compaction path, may stop here</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSplitStepWriteRemainingToCurrent</span><span class="o">&lt;&gt;</span><span class="p">()</span><span class="w">   </span><span class="c1">// split path, always stops after writing</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="p">));</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="kd">final</span><span class="w"> </span><span class="n">SegmentSplitterResult</span><span class="o">&lt;</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pipeline</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
-</code></pre></div>
-<ul>
-<li>Short-circuits: compaction path (<code>SegmentSplitStepReplaceIfNoRemaining</code>) replaces the original segment and stops; the final write step stops after producing the split result.</li>
-<li>Context/result types: <code>SegmentSplitContext</code> carries the segment, version controller, plan, and IDs; <code>SegmentSplitState</code> owns the iterator, lower-segment handle, and final <code>SegmentSplitterResult</code>.</li>
-<li>Safety: <code>SegmentSplitPipeline#run</code> wraps <code>filter</code> so the opened iterator closes even when a step throws or short-circuits.</li>
 </ul>
 <h2 id="guidelines-for-adding-new-pipelines">✅ Guidelines for Adding New Pipelines</h2>
 <ul>

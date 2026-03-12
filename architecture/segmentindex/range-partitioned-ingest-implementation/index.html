@@ -3322,9 +3322,9 @@ longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</
   the index executor registry, so <code>close()</code> shuts down both split execution and
   future policy ticks together with the rest of index maintenance infrastructure</li>
 <li>that autonomous loop only performs a full routed scan when overlay, drain,
-  and split backlog are idle; hot write periods still rely on targeted
-  post-drain split scheduling for the specific routed partition that just
-  drained</li>
+  and split backlog are idle; hot write periods feed the loop with post-drain
+  per-partition hints, so split candidate evaluation stays in background
+  instead of inline scheduling on the drain worker</li>
 <li>split scheduling keeps a per-segment cooldown and retry-growth hysteresis
   window; if a borderline split candidate fails or aborts, the background loop
   does not immediately thrash on the same stable range again unless either
@@ -3368,15 +3368,18 @@ longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</
 <li><code>maxNumberOfKeysInIndexBuffer</code></li>
 <li><code>maxNumberOfKeysInPartitionBeforeSplit</code></li>
 </ul>
-<p>Legacy persisted settings are still accepted during load and are migrated to
-the new keys:</p>
+<p>Compatibility fallbacks during load map older or cross-version settings to the
+new partition keys:</p>
 <ul>
 <li><code>maxNumberOfKeysInSegmentWriteCache</code> -&gt;
   <code>maxNumberOfKeysInActivePartition</code></li>
 <li><code>maxNumberOfKeysInSegmentWriteCacheDuringMaintenance</code> -&gt;
   <code>maxNumberOfKeysInPartitionBuffer</code></li>
-<li><code>maxNumberOfKeysInSegment</code> -&gt;
+<li><code>maxNumberOfKeysInSegment</code> (when
+  <code>maxNumberOfKeysInPartitionBeforeSplit</code> is absent) -&gt;
   <code>maxNumberOfKeysInPartitionBeforeSplit</code></li>
+<li><code>segmentMaintenanceAutoEnabled</code> -&gt;
+  <code>backgroundMaintenanceAutoEnabled</code></li>
 </ul>
 <p>New manifests are written with the partition-oriented names only.</p>
 

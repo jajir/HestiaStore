@@ -3101,6 +3101,7 @@ backpressure and drain indicators:</p>
 <li>Drain activity:</li>
 <li><code>getDrainScheduleCount()</code></li>
 <li><code>getDrainInFlightCount()</code></li>
+<li><code>getDrainLatencyP95Micros()</code></li>
 </ul>
 <p>Compatibility note:</p>
 <ul>
@@ -3158,6 +3159,10 @@ backpressure and drain indicators:</p>
 <li><code>partition overlay backlog growth</code>:</li>
 <li>condition: <code>getPartitionBufferedKeyCount()</code> and <code>getImmutableRunCount()</code>
     grow continuously without returning to baseline</li>
+<li>severity: warning</li>
+<li><code>partition drain latency spike</code>:</li>
+<li>condition: <code>getDrainLatencyP95Micros()</code> remains elevated above workload
+    baseline for 10+ minutes</li>
 <li>severity: warning</li>
 <li><code>partition throttling</code>:</li>
 <li>condition: <code>getLocalThrottleCount()</code> or <code>getGlobalThrottleCount()</code>

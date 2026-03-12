@@ -1996,10 +1996,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#segmentindex-write-buffer-uniquecache" class="md-nav__link">
+  <a href="#partition-overlay" class="md-nav__link">
     <span class="md-ellipsis">
       
-        SegmentIndex write buffer (UniqueCache)
+        Partition overlay
       
     </span>
   </a>
@@ -3209,10 +3209,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#segmentindex-write-buffer-uniquecache" class="md-nav__link">
+  <a href="#partition-overlay" class="md-nav__link">
     <span class="md-ellipsis">
       
-        SegmentIndex write buffer (UniqueCache)
+        Partition overlay
       
     </span>
   </a>
@@ -3423,11 +3423,11 @@ SegmentIndex integration level.</p>
 </ul>
 <h2 id="layers-overview">🧱 Layers Overview</h2>
 <ul>
-<li>SegmentIndex write buffer: in‑memory, unique latest value per key</li>
-<li>Class: <code>cache/UniqueCache</code></li>
-<li>Owner: <code>segmentindex/SegmentIndexImpl</code> (top‑level)</li>
+<li>Partition overlay: routed in-memory mutable/immutable layers</li>
+<li>Classes: <code>segmentindex/partition/PartitionRuntime</code>, <code>segmentindex/partition/RangePartition</code></li>
+<li>Owner: <code>segmentindex/core/SegmentIndexImpl</code></li>
 <li>
-<p>Purpose: absorb writes and provide immediate visibility before flush</p>
+<p>Purpose: absorb writes and provide immediate visibility before drain publish</p>
 </li>
 <li>
 <p>Segment delta cache: per‑segment overlay of recent writes</p>
@@ -3458,16 +3458,23 @@ SegmentIndex integration level.</p>
 <li>
 <p>Key→segment map: max‑key to SegmentId mapping</p>
 </li>
-<li>Class: <code>segmentindex/KeyToSegmentMap</code> (TreeMap, persisted to <code>index.map</code>)</li>
+<li>Class: <code>segmentindex/mapping/KeyToSegmentMap</code> (TreeMap, persisted to <code>index.map</code>)</li>
 </ul>
 <h2 id="writetime-caches">✍️ Write‑Time Caches</h2>
-<h3 id="segmentindex-write-buffer-uniquecache">SegmentIndex write buffer (UniqueCache)</h3>
+<h3 id="partition-overlay">Partition overlay</h3>
 <ul>
-<li>On <code>SegmentIndex.put/delete</code>, the write is stored in an index‑level <code>UniqueCache</code>.</li>
-<li>Replaces any prior value for the same key; deletes are represented as a tombstone value.</li>
-<li>Triggered flush routes sorted writes to target segments and clears the buffer.</li>
+<li>On <code>SegmentIndex.put/delete</code>, the write is stored in the routed partition's
+  active mutable layer.</li>
+<li>New writes replace prior values for the same key within the mutable layer;
+  deletes are represented as tombstones.</li>
+<li>Once the active layer crosses threshold, it rotates into immutable runs and
+  background drain publishes runs to stable segment storage.</li>
 </ul>
-<p>Code: <code>segmentindex/SegmentIndexImpl#put</code>, <code>segmentindex/SegmentIndexImpl#delete</code>, <code>segmentindex/SegmentIndexImpl#flushCache</code>, <code>cache/UniqueCache</code>.</p>
+<p>Code:
+<code>segmentindex/core/SegmentIndexImpl#put</code>,
+<code>segmentindex/core/SegmentIndexImpl#delete</code>,
+<code>segmentindex/partition/RangePartition#write</code>,
+<code>segmentindex/core/SegmentIndexImpl#drainPartitions</code>.</p>
 <h3 id="segment-delta-cache">Segment delta cache</h3>
 <ul>
 <li>Flush writes become per‑segment delta files via <code>SegmentDeltaCacheWriter</code> (transactional temp file + rename).</li>
@@ -3477,7 +3484,8 @@ SegmentIndex integration level.</p>
 <p>Code: <code>segment/SegmentDeltaCacheWriter</code>, <code>segment/SegmentDeltaCacheController</code>, <code>segment/SegmentCompacter</code>, <code>segment/SegmentFullWriterTx#doCommit</code>.</p>
 <h2 id="readtime-caches">📖 Read‑Time Caches</h2>
 <ul>
-<li>Top‑level overlay: <code>SegmentIndex.get(k)</code> checks the index write buffer first. Iterators are also overlaid with <code>EntryIteratorRefreshedFromCache</code> so scans see most recent writes.</li>
+<li>Top‑level overlay: <code>SegmentIndex.get(k)</code> checks routed partition overlay
+  first (active mutable then immutable runs).</li>
 <li>Per‑segment overlay: <code>SegmentDeltaCache</code> is consulted before the Bloom filter + sparse index path. If it returns a tombstone, the key is absent.</li>
 <li>Heavy objects (Bloom filter, scarce index, delta cache) are obtained via a provider backed by LRU:</li>
 <li><code>segmentindex/SegmentDataCache</code> holds <code>segment/SegmentData</code> instances with an LRU limit; eviction calls <code>close()</code> on the container.</li>
@@ -3486,10 +3494,16 @@ SegmentIndex integration level.</p>
 </ul>
 </li>
 </ul>
-<p>Code: <code>segmentindex/SegmentIndexImpl#get</code>, <code>segment/SegmentImpl#get</code>, <code>segment/SegmentSearcher</code>, <code>segmentindex/EntryIteratorRefreshedFromCache</code>, <code>segmentindex/SegmentDataCache</code>.</p>
+<p>Code:
+<code>segmentindex/core/SegmentIndexImpl#get</code>,
+<code>segment/SegmentImpl#get</code>,
+<code>segment/SegmentSearcher</code>,
+<code>segmentindex/partition/PartitionRuntime</code>,
+<code>segmentindex/SegmentDataCache</code>.</p>
 <h2 id="eviction-and-lifecycle">♻️ Eviction and Lifecycle</h2>
 <ul>
-<li>UniqueCache (index write buffer): no incremental eviction; cleared on flush.</li>
+<li>Partition overlay: mutable layer rotates by key budget; immutable runs are
+  drained and retired after stable publish.</li>
 <li>SegmentDataCache (LRU of SegmentData): evicts least‑recently‑used segment; eviction closes Bloom filter and clears delta cache via <code>close()</code> hook.</li>
 <li>SegmentDeltaCache: cleared and files removed after compaction via <code>SegmentDeltaCacheController.clear()</code>; rebuilt on demand from delta files.</li>
 <li>KeyToSegmentMap: persisted via <code>optionalyFlush()</code> when updated; survives process restarts by reading <code>index.map</code>.</li>
@@ -3529,11 +3543,13 @@ SegmentIndex integration level.</p>
 </ul>
 <h2 id="code-pointers">🧩 Code Pointers</h2>
 <ul>
-<li>SegmentIndex write buffer: <code>src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java</code></li>
-<li>Segment caches and providers: <code>src/main/java/org/hestiastore/index/segmentindex/*SegmentData*</code>, <code>src/main/java/org/hestiastore/index/segment/SegmentData*</code></li>
+<li>Partition overlay and drain: <code>src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java</code>,
+  <code>src/main/java/org/hestiastore/index/segmentindex/partition/*</code></li>
+<li>Segment caches and providers: <code>src/main/java/org/hestiastore/index/segmentindex/*SegmentData*</code>,
+  <code>src/main/java/org/hestiastore/index/segment/SegmentData*</code></li>
 <li>LRU cache: <code>src/main/java/org/hestiastore/index/cache/CacheLru.java</code>,
   <code>src/main/java/org/hestiastore/index/cache/CacheLruImpl.java</code></li>
-<li>Key→segment map: <code>src/main/java/org/hestiastore/index/segmentindex/KeyToSegmentMap.java</code></li>
+<li>Key→segment map: <code>src/main/java/org/hestiastore/index/segmentindex/mapping/KeyToSegmentMap.java</code></li>
 </ul>
 <h2 id="related-glossary">🔗 Related Glossary</h2>
 <ul>

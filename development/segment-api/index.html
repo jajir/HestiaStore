@@ -3611,10 +3611,11 @@
 <h2 id="scope-and-assumptions">Scope and assumptions</h2>
 <p>This document describes how to use the Segment API for maintenance operations.
 The public Segment interface exposes <code>flush()</code> and <code>compact()</code>. Split is
-orchestrated by the segment-index layer (<code>SegmentSplitCoordinator</code> +
-<code>SegmentSplitter</code>) using <code>Segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION)</code>.
-Split behavior is documented here because it affects locking and iterator
-semantics.</p>
+orchestrated by the segment-index layer
+(<code>BackgroundSplitCoordinator</code> + <code>PartitionStableSplitCoordinator</code>) using a
+route-first stable child materialization flow and a short exclusive apply
+window. Split behavior is documented here because it affects locking and
+iterator semantics.</p>
 <p><code>Segment</code> is thread-safe by contract. The legacy lock-based adapter was removed;
 historical notes remain below for reference. For the lock-free <code>SegmentImpl</code>
 behavior and state machine rules, rely on
@@ -3657,7 +3658,7 @@ used today.</p>
 <li>The new write blocks on the write lock.</li>
 </ul>
 <h3 id="c-split-segmentindex">C) Split (SegmentIndex)</h3>
-<p>What it does today (SegmentSplitCoordinator + SegmentSplitter):</p>
+<p>Historical behavior (removed live-segment split pipeline):</p>
 <ul>
 <li>Triggered when <code>getNumberOfKeysInCache()</code> exceeds
   <code>maxNumberOfKeysInSegmentCache</code> (or the coordinator threshold).</li>
@@ -3714,7 +3715,7 @@ unbounded, so if writes outpace maintenance, memory can grow.</p>
 <li><code>flush()</code>, <code>compact()</code>, and split are exclusive. The write lock serializes
   them, so parallel calls run one after another.</li>
 <li>Split uses <code>FULL_ISOLATION</code> iterators and is wrapped in the write lock by
-  <code>SegmentSplitCoordinator</code> when the segment is a
+  the historical <code>SegmentSplitCoordinator</code> when the segment is a
   <code>SegmentImplSynchronizationAdapter</code>.</li>
 </ul>
 <p>Different segments:</p>

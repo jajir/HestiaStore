@@ -3274,7 +3274,7 @@ enforces its own lock-free admission gate (see
 <li><code>UniqueCache</code> (index write buffer)</li>
 <li><code>KeyToSegmentMap</code> (key→segment map)</li>
 <li><code>SegmentRegistry</code> and <code>SegmentDataCache</code> (segment lookup + cached data)</li>
-<li><code>SegmentSplitCoordinator</code> (topology updates)</li>
+<li><code>BackgroundSplitCoordinator</code> + <code>PartitionStableSplitCoordinator</code> (range topology updates)</li>
 <li><code>IndexState</code> (open/close state) and <code>Stats</code> (counters)</li>
 <li>Any <code>TypeDescriptor</code> implementation with mutable internal state</li>
 </ul>

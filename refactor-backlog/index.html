@@ -3435,7 +3435,7 @@
     - Acceptance:
       - crash during drain or publish loses no acknowledged write,
       - close/reopen and crash/reopen produce the same final visible data.</p>
-<p>[ ] 79.5 Replace live-segment split with partition draining split (Risk: HIGH)
+<p>[x] 79.5 Replace live-segment split with partition draining split (Risk: HIGH)
     - Remove the current split model that opens a <code>FULL_ISOLATION</code> iterator on
       a live segment and makes writers wait.
     - New split flow:
@@ -3449,7 +3449,19 @@
       segment lock/freeze tests once partition split parity is reached.
     - Acceptance:
       - reproduced hot-range write scenario no longer stalls near deadlock,
-      - split of one range does not stop writes to other ranges.</p>
+      - split of one range does not stop writes to other ranges.
+    - Delivered:
+      - Removed legacy live-segment split pipeline classes from
+        <code>segmentindex.split</code> and deleted their lock/freeze-oriented tests.
+      - Kept only route-first split primitives
+        (<code>PartitionStableSplitCoordinator</code>, split policy/plan/result DTOs).
+      - Converted post-drain split triggering to background hinting:
+        drain now only enqueues per-partition split hints and split candidate
+        evaluation runs exclusively inside the autonomous background split loop.
+      - Added integration regression
+        <code>SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall</code>
+        to validate 20 hot-range writers + concurrent cold-range writes under
+        autonomous split policy.</p>
 <p>[ ] 79.6 Clean up config, metrics, control-plane tuning, and obsolete code (Risk: HIGH)
     - Replace old segment write-cache config keys with the new partition budget
       keys and migrate persisted/opened configs once at load time.
@@ -3460,7 +3472,68 @@
       the new runtime.
     - Acceptance:
       - existing indexes open with migrated config,
-      - no old segment-write config key remains in public docs or runtime APIs.</p>
+      - no old segment-write config key remains in public docs or runtime APIs.
+    - Delivered (partial):
+      - Removed public legacy write-cache alias constants from
+        <code>IndexPropertiesSchema.IndexConfigurationKeys</code>; kept migration fallback
+        internal to schema/default resolution during load.
+      - Updated configuration migration tests
+        (<code>IndexConfigurationStorageTest</code>) to assert fallback behavior without
+        exposing removed aliases in public API.
+      - Removed obsolete <code>runtimeConfigAllowlist</code> constructor parameter from
+        <code>ManagementAgentServer</code>; runtime-tunable key allowlist is now derived
+        only from <code>RuntimeSettingKey</code> mapping (<code>supportedRuntimeConfigKeys()</code>).
+      - Normalized runtime-limit naming in write-admission code so partition
+        semantics are explicit (<code>activePartition</code>/<code>partitionBuffer</code>) in
+        <code>SegmentFactory</code> and <code>SegmentIndexImpl</code> instead of legacy
+        <code>segmentWriteCache</code> naming.
+      - Added <code>drainLatencyP95Micros</code> metric end-to-end:
+        engine snapshot production, REST report payload, Micrometer/Prometheus
+        export, monitoring console parsing, and architecture/operations docs.
+      - Refreshed architecture docs and glossary to reference current
+        partition-overlay + route-first split runtime instead of deleted
+        live-segment split pipeline classes.
+      - Renamed config flag <code>segmentMaintenanceAutoEnabled</code> to
+        <code>backgroundMaintenanceAutoEnabled</code> across builder/config/storage/docs;
+        kept load-time migration fallback for legacy manifests.
+      - Migrated SegmentIndex JMH benchmark sources to the new builder/config
+        terminology (<code>backgroundMaintenanceAutoEnabled</code>) so benchmark code no
+        longer depends on removed public alias methods.
+      - Renamed internal split admission/scheduling runtime from
+        <code>SegmentMaintenanceCoordinator</code> to <code>BackgroundSplitCoordinator</code> so the
+        core implementation reflects the current partition-first split model
+        instead of the retired generic segment-maintenance wording.
+      - Renamed <code>SegmentIndexImpl</code> stable-storage aggregation and
+        <code>IndexExecutorRegistry</code> stable-segment executor internals so the core
+        code clearly separates partition overlay runtime from stable segment
+        backend maintenance while keeping the public metrics snapshot contract
+        unchanged.
+      - Renamed route-first split DTO/policy/plan types from <code>SegmentSplit*</code> /
+        <code>SegmentSplitter*</code> to <code>PartitionSplit*</code> across
+        <code>segmentindex.split</code>, <code>partition</code>, <code>mapping</code>, and their tests; also
+        aligned nearest method names
+        (<code>applyPartitionSplitPlan</code>, <code>reassignOverlayAfterPartitionSplit</code>) so
+        the partition-first split flow no longer mixes segment-era type names
+        into the runtime overlay layer.
+      - Cleaned residual engine-only helper/scenario naming around partition
+        defaults and stable-segment test fixtures:
+        <code>IndexPropertiesSchema</code> now derives partition buffer defaults from
+        <code>activePartitionKeyLimit</code> wording, schema tests assert
+        <code>expectedActivePartition</code> / <code>expectedPartitionBuffer</code>, and selected
+        engine/registry tests plus concurrency scenario labels no longer use
+        stale <code>write-cache-*</code> or ambiguous segment-maintenance pool naming for
+        partition-first ingest cases.
+    - Delivered (additional):
+      - Finished the public config cleanup around
+        <code>numberOfStableSegmentMaintenanceThreads</code>: storage/tests now verify
+        round-trip persistence under the new key, schema/storage load still
+        migrate legacy <code>segmentIndexMaintenanceThreads</code> manifests, and save
+        removes the legacy alias from rewritten manifests.
+      - Refreshed architecture/development docs to reference
+        <code>BackgroundSplitCoordinator</code> / <code>PartitionSplitApplyPlan</code> and the
+        current split-vs-drain responsibilities, so the documentation no
+        longer points at deleted segment-era coordinator classes after the
+        rename sweep.</p>
 <p>[ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
     - Add a dedicated unit suite for partition runtime, route snapshots, drain
       publish ordering, backpressure, iterator snapshots, and crash cleanup.
@@ -3477,7 +3550,101 @@
     - Acceptance:
       - 20-writer random-put reproduction completes without timeout/stall,
       - read-after-write and reopen consistency tests pass,
-      - pre/post JMH baselines are captured under <code>benchmarks/results</code>.</p>
+      - pre/post JMH baselines are captured under <code>benchmarks/results</code>.
+    - Delivered (partial):
+      - Expanded <code>PartitionRuntimeTest</code> with deterministic unit coverage for:
+        global index-buffer throttling across partitions, duplicate-key updates
+        staying within the active-layer budget, drain schedule monotonicity,
+        overlay precedence across older/newer immutable runs plus active data,
+        and overlay reassignment for <code>COMPACTED</code> split apply plans.
+      - Expanded <code>SegmentIndexImplConcurrencyTest</code> with deterministic
+        core-level coverage for immediate <code>put/get/delete</code> visibility while a
+        background split remaps routes from a parent partition to child
+        routes.
+      - Expanded <code>SegmentIndexAsyncMaintenanceTest</code> with blocked-drain
+        maintenance boundary coverage proving <code>flushAndWait()</code> and
+        <code>compactAndWait()</code> wait for in-flight partition drain publish to
+        stable segments.
+      - Expanded <code>IntegrationSegmentIndexIteratorTest</code> with deterministic
+        <code>FULL_ISOLATION</code> coverage for:
+        active-overlay merge over stable segments with tombstone filtering,
+        open-stream snapshot stability while later <code>put()/delete()</code> calls
+        immediately change live <code>get()</code> visibility,
+        route-remap consistency while split apply reassigns buffered overlay
+        entries from a parent partition to child partitions,
+        and <code>FAIL_FAST</code> prefix behavior for streams opened before split remap.
+      - Expanded <code>IndexInternalConcurrentTest</code> with deterministic <code>FAIL_FAST</code>
+        prefix behavior coverage across maintenance boundaries
+        (<code>flushAndWait()</code> and <code>compactAndWait()</code>).
+      - Expanded <code>IntegrationSegmentIndexWalRecoveryTest</code> with a crash-style
+        reopen snapshot covering:
+        split-apply durability, persisted child-route recovery from
+        <code>index.map</code>, WAL replay of unpublished overlay writes above the
+        post-split stable layout, and cleanup of unpublished split-child
+        segment artifacts when restart still routes reads/writes through the
+        original parent segment.
+      - Expanded <code>IntegrationSegmentIndexMetricsSnapshotTest</code> with
+        maintenance-boundary metrics coverage for <code>flushAndWait()</code> and
+        <code>compactAndWait()</code> after scheduled split backlog, asserting buffered
+        overlay metrics settle to zero while split evidence and visible data
+        remain correct.
+      - Added maintenance-boundary recovery coverage to
+        <code>IntegrationSegmentIndexWalRecoveryTest</code> for:
+        <code>flushAndWait()</code>, <code>compactAndWait()</code>, and <code>close()/reopen()</code> over a
+        scheduled split backlog, asserting consistent final visibility and
+        persisted child-route layout after reopen.
+      - Added hot-range concurrency regression
+        <code>SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall</code>
+        (20 hot writers + concurrent cold-range writers).
+      - Added autonomous split lifecycle regression
+        <code>SegmentIndexConcurrentIT.hotRangeAutonomousSplitSurvivesCloseReopenRotations</code>
+        to cover hot-range write pressure plus repeated <code>flush/close/open</code>
+        rotations while preserving cold-range correctness after reopen.
+      - Expanded <code>SegmentIndexConcurrencyStressIT</code> with repeated lifecycle
+        stress under autonomous split pressure:
+        hot-range biased writes, background split enabled, and repeated
+        <code>close/open</code> rotations with explicit split-evidence assertion.
+      - Exposed split scheduling/in-flight counters in monitoring exporters
+        (<code>monitoring-micrometer</code>, <code>monitoring-prometheus</code>) and covered with
+        module-level exact-value tests, including live refresh across
+        successive scrape/snapshot reads.
+      - Added <code>monitoring-console-web</code> parser coverage so <code>/api/v1/report</code>
+        partition/split/drain metrics are verified through the UI backend
+        client path, not only at exporter/source level.
+      - Extended canonical JMH profiles
+        (<code>segment-index-pr-smoke</code>, <code>segment-index-nightly</code>) with
+        <code>SegmentIndexHotPartitionPutBenchmark</code>.
+      - Improved benchmark compare tooling:
+        <code>compare_jmh_profile.py</code> now reports <code>new</code>/<code>removed</code> metrics when
+        profile coverage differs between baseline and candidate.
+      - Improved benchmark workflow fallback compatibility:
+        <code>benchmark-compare.yml</code> now validates all benchmark classes referenced
+        by the selected profile instead of one hardcoded class path.
+      - Added <code>BenchmarkProfileContractTest</code> plus benchmark-workflow preflight
+        gating so canonical profiles are checked for:
+        required SegmentIndex scenarios, duplicate labels, resolvable
+        benchmark classes, and accidental reintroduction of removed public
+        config names in benchmark sources.
+      - Added script-level smoke coverage for
+        <code>compare_jmh_profile.py</code>, <code>publish_jmh_history.py</code>, and
+        <code>resolve_jmh_history_baseline.py</code> by executing the real Python CLIs
+        from JUnit against temporary benchmark-history fixtures.
+      - Ran the broader engine-only regression sweep for the renamed
+        partition split vocabulary across split/remap/recovery/concurrency
+        suites. The only issue found was a flaky 10s timeout in
+        <code>IntegrationSegmentIndexIteratorTest</code> while waiting for split remap
+        under full-suite load; the fix was to widen the test-only split
+        remapping wait window to 30s. No production runtime change was needed.
+      - Ran a cross-module monitoring/control-plane regression sweep after the
+        config/runtime rename cleanup:
+        <code>ManagementApiContractCompatibilityTest</code>,
+        <code>ManagementAgentServerTest</code>,
+        <code>ManagementAgentServerSecurityTest</code>,
+        <code>ConsoleBackendClientTest</code>,
+        <code>HestiaStoreMicrometerBinderTest</code>,
+        <code>HestiaStorePrometheusExporterTest</code>,
+        plus <code>test-compile</code> for monitoring modules and benchmarks. All passed;
+        only expected JDK/Mockito/SLF4J warnings were emitted.</p>
 <p>[ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
     - Goal: evolve from in-process counters to multi-JVM monitoring and control
       without forcing Micrometer/Prometheus dependencies into core.
