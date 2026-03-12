@@ -83,11 +83,16 @@ Segment-specific internals referenced here are centralized in
 
 ## 🧩 Code Pointers
 
-- Write buffer and flush: `src/main/java/org/hestiastore/index/segmentindex/SegmentIndexImpl.java`, `src/main/java/org/hestiastore/index/segmentindex/CompactSupport.java`
-- Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`, `.../SegmentIndexSearcher.java`
+- Write buffer, drain, and stable publish:
+  `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/partition/PartitionRuntime.java`
+- Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`,
+  `src/main/java/org/hestiastore/index/segment/SegmentIndexSearcher.java`
 - Bloom filter: `src/main/java/org/hestiastore/index/bloomfilter/*`
 - Chunked I/O and filters: `src/main/java/org/hestiastore/index/chunkstore/*`
-- Segment sizing/splitting: `src/main/java/org/hestiastore/index/segmentindex/SegmentSplitCoordinator.java`, `src/main/java/org/hestiastore/index/segment/SegmentSplitter*.java`
+- Segment sizing/splitting:
+  `src/main/java/org/hestiastore/index/segmentindex/split/PartitionStableSplitCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/BackgroundSplitCoordinator.java`
 
 ## 🔗 Related Glossary
 

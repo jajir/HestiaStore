@@ -46,6 +46,7 @@ class SegmentIndexConfigurationStorageTest {
     private static final int MAX_KEYS_BEFORE_SPLIT = 30000;
     private static final int MAX_SEGMENTS_CACHE = 8;
     private static final int INDEX_WORKER_THREAD_COUNT = 2;
+    private static final int NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = 5;
     private static final int NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = 4;
     private static final String INDEX_NAME = "specialIndex01";
     private static final int BLOOM_FILTER_HASH = 3;
@@ -71,6 +72,8 @@ class SegmentIndexConfigurationStorageTest {
                         MAX_KEYS_BEFORE_SPLIT)//
                 .withMaxNumberOfSegmentsInCache(8)//
                 .withIndexWorkerThreadCount(INDEX_WORKER_THREAD_COUNT)//
+                .withNumberOfStableSegmentMaintenanceThreads(
+                        NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS)//
                 .withNumberOfRegistryLifecycleThreads(
                         NUMBER_OF_REGISTRY_LIFECYCLE_THREADS)//
                 .withName(INDEX_NAME)//
@@ -80,7 +83,7 @@ class SegmentIndexConfigurationStorageTest {
                         BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
                 .withDiskIoBufferSizeInBytes(4096)//
                 .withContextLoggingEnabled(true)//
-                .withSegmentMaintenanceAutoEnabled(true)//
+                .withBackgroundMaintenanceAutoEnabled(true)//
                 .build();
         storage.save(config);
         logConfigurationFile();
@@ -103,6 +106,8 @@ class SegmentIndexConfigurationStorageTest {
                 ret.getMaxNumberOfKeysInPartitionBeforeSplit());
         assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
         assertEquals(INDEX_WORKER_THREAD_COUNT, ret.getIndexWorkerThreadCount());
+        assertEquals(NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
+                ret.getNumberOfStableSegmentMaintenanceThreads());
         assertEquals(NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
                 ret.getNumberOfRegistryLifecycleThreads());
         assertEquals(INDEX_NAME, ret.getIndexName());
@@ -114,7 +119,7 @@ class SegmentIndexConfigurationStorageTest {
                 ret.getBloomFilterProbabilityOfFalsePositive());
         assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
         assertTrue(ret.isContextLoggingEnabled());
-        assertTrue(ret.isSegmentMaintenanceAutoEnabled());
+        assertTrue(ret.isBackgroundMaintenanceAutoEnabled());
     }
 
     @Test

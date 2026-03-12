@@ -1,5 +1,7 @@
 package org.hestiastore.index.it;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -7,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -71,6 +74,15 @@ class SegmentIndexConcurrencyStressIT {
                 "stress-test-" + repetitionId, //
                 23L + repetitionId, workerCount, opsPerWorker,
                 timeoutInSeconds);
+    }
+
+    @RepeatedTest(3)
+    void test_concurrent_load_with_autonomous_split_and_rotations(
+            final RepetitionInfo repetitionInfo) throws Exception {
+        runAutonomousSplitStressScenario(
+                "stress-autonomous-split-"
+                        + repetitionInfo.getCurrentRepetition(),
+                1_023L + repetitionInfo.getCurrentRepetition(), 6, 600, 60);
     }
 
     /**
@@ -183,6 +195,145 @@ class SegmentIndexConcurrencyStressIT {
         }
     }
 
+    void runAutonomousSplitStressScenario(final String indexName,
+            final long randomSeed, final int workerCount,
+            final int opsPerWorker, final long timeoutInSeconds)
+            throws Exception {
+        final int effectiveWorkerCount = Math.max(2,
+                Math.min(workerCount, MAX_TEST_WORKERS));
+        final int effectiveOpsPerWorker = scaleOpsByCpu(opsPerWorker);
+        final long effectiveTimeoutInSeconds = scaleTimeout(timeoutInSeconds);
+        final int indexWorkerThreads = Math.min(4, TEST_CPU_THREADS);
+        final int hotKeyRange = 4_000;
+        final int hotReadThreshold = 70;
+        final int hotPutThreshold = 92;
+
+        final Directory directory = new MemDirectory();
+        final IndexConfiguration<Integer, Integer> conf = autonomousSplitStressConf(
+                indexName, indexWorkerThreads);
+        final AtomicReference<SegmentIndex<Integer, Integer>> indexRef = new AtomicReference<>(
+                SegmentIndex.create(directory, conf));
+        final ReadWriteLock lifecycleLock = new ReentrantReadWriteLock(true);
+        final AtomicBoolean splitObserved = new AtomicBoolean(false);
+
+        lifecycleLock.writeLock().lock();
+        try {
+            final SegmentIndex<Integer, Integer> index = indexRef.get();
+            for (int key = 0; key < hotKeyRange; key++) {
+                index.put(key, -key);
+            }
+            index.flushAndWait();
+            observeSplitEvidence(indexRef.get(), splitObserved);
+        } finally {
+            lifecycleLock.writeLock().unlock();
+        }
+
+        final int rotations = TEST_CPU_THREADS <= 2 ? 2 : 3;
+        final ExecutorService workers = Executors
+                .newFixedThreadPool(effectiveWorkerCount);
+        final ExecutorService rotator = Executors.newSingleThreadExecutor();
+        final List<Future<?>> futures = new ArrayList<>();
+
+        try {
+            for (int t = 0; t < effectiveWorkerCount; t++) {
+                final int workerId = t;
+                futures.add(workers.submit(() -> {
+                    final Random rnd = new Random(
+                            50_000L + 1000L * workerId + randomSeed);
+                    for (int i = 0; i < effectiveOpsPerWorker; i++) {
+                        final int op = rnd.nextInt(100);
+                        lifecycleLock.readLock().lock();
+                        try {
+                            final SegmentIndex<Integer, Integer> index = indexRef
+                                    .get();
+                            final int key = selectAutonomousSplitKey(rnd,
+                                    hotKeyRange, workerId);
+                            if (op < hotReadThreshold) {
+                                index.put(key, workerId * 1_000_000 + i);
+                            } else if (op < hotPutThreshold) {
+                                index.get(key);
+                            } else if (op < 98) {
+                                index.delete(key);
+                            } else if (op < 99) {
+                                index.flush();
+                            } else {
+                                index.compact();
+                            }
+                            observeSplitEvidence(index, splitObserved);
+                        } catch (final IndexException exception) {
+                            if (!isTransientLifecycleFailure(exception)) {
+                                throw exception;
+                            }
+                        } finally {
+                            lifecycleLock.readLock().unlock();
+                        }
+                        if ((i % 100) == 0) {
+                            Thread.yield();
+                        }
+                    }
+                    return null;
+                }));
+            }
+
+            futures.add(rotator.submit(() -> {
+                final Random rnd = new Random(99_000L + randomSeed);
+                for (int i = 0; i < rotations; i++) {
+                    try {
+                        Thread.sleep(rnd.nextInt(25) + 10);
+                    } catch (final InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                    lifecycleLock.writeLock().lock();
+                    try {
+                        final SegmentIndex<Integer, Integer> current = indexRef
+                                .get();
+                        current.flushAndWait();
+                        observeSplitEvidence(current, splitObserved);
+                        current.close();
+                        indexRef.set(openWithRetry(directory, conf));
+                        observeSplitEvidence(indexRef.get(), splitObserved);
+                    } finally {
+                        lifecycleLock.writeLock().unlock();
+                    }
+                }
+                return null;
+            }));
+
+            for (final Future<?> future : futures) {
+                future.get(effectiveTimeoutInSeconds, TimeUnit.SECONDS);
+            }
+
+            lifecycleLock.writeLock().lock();
+            try {
+                final SegmentIndex<Integer, Integer> current = indexRef.get();
+                if (!current.wasClosed()) {
+                    current.flushAndWait();
+                    current.compactAndWait();
+                    checkAndRepairConsistencyWithRetry(current,
+                            RETRY_TIMEOUT_MILLIS);
+                    observeSplitEvidence(current, splitObserved);
+                }
+            } finally {
+                lifecycleLock.writeLock().unlock();
+            }
+            assertTrue(splitObserved.get(),
+                    "Expected autonomous split evidence during lifecycle stress.");
+        } finally {
+            workers.shutdownNow();
+            rotator.shutdownNow();
+            lifecycleLock.writeLock().lock();
+            try {
+                final SegmentIndex<Integer, Integer> current = indexRef.get();
+                if (!current.wasClosed()) {
+                    current.close();
+                }
+            } finally {
+                lifecycleLock.writeLock().unlock();
+            }
+        }
+    }
+
     private static IndexConfiguration<Integer, Integer> stressConf(
             final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
@@ -192,7 +343,7 @@ class SegmentIndexConcurrencyStressIT {
                 .withValueTypeDescriptor(new TypeDescriptorInteger())//
                 .withName(name)//
                 .withContextLoggingEnabled(false)//
-                .withSegmentMaintenanceAutoEnabled(false)//
+                .withBackgroundMaintenanceAutoEnabled(false)//
                 .withMaxNumberOfKeysInActivePartition(256)//
                 .withMaxNumberOfImmutableRunsPerPartition(4)//
                 .withMaxNumberOfKeysInPartitionBuffer(1_024)//
@@ -210,6 +361,58 @@ class SegmentIndexConcurrencyStressIT {
                 .withNumberOfRegistryLifecycleThreads(
                         Math.max(1, Math.min(cpuThreads, 2)))//
                 .build();
+    }
+
+    private static IndexConfiguration<Integer, Integer> autonomousSplitStressConf(
+            final String name, final int cpuThreads) {
+        return IndexConfiguration.<Integer, Integer>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(Integer.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                .withValueTypeDescriptor(new TypeDescriptorInteger())//
+                .withName(name)//
+                .withContextLoggingEnabled(false)//
+                .withBackgroundMaintenanceAutoEnabled(true)//
+                .withMaxNumberOfKeysInActivePartition(512)//
+                .withMaxNumberOfImmutableRunsPerPartition(6)//
+                .withMaxNumberOfKeysInPartitionBuffer(8_192)//
+                .withMaxNumberOfKeysInIndexBuffer(65_536)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(2_000)//
+                .withMaxNumberOfKeysInSegmentCache(256)//
+                .withMaxNumberOfKeysInSegment(16_384)//
+                .withMaxNumberOfKeysInSegmentChunk(32)//
+                .withMaxNumberOfSegmentsInCache(64)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withIndexWorkerThreadCount(cpuThreads)//
+                .withNumberOfIndexMaintenanceThreads(
+                        Math.max(1, Math.min(cpuThreads, 2)))//
+                .withNumberOfRegistryLifecycleThreads(
+                        Math.max(1, Math.min(cpuThreads, 2)))//
+                .withIndexBusyTimeoutMillis(120_000)//
+                .build();
+    }
+
+    private static int selectAutonomousSplitKey(final Random rnd,
+            final int hotKeyRange, final int workerId) {
+        if (rnd.nextInt(10) < 8) {
+            return rnd.nextInt(hotKeyRange);
+        }
+        return 1_000_000 + workerId * 10_000 + rnd.nextInt(2_000);
+    }
+
+    private static void observeSplitEvidence(
+            final SegmentIndex<Integer, Integer> index,
+            final AtomicBoolean splitObserved) {
+        if (splitObserved.get()) {
+            return;
+        }
+        final var snapshot = index.metricsSnapshot();
+        if (snapshot.getSplitScheduleCount() > 0
+                || snapshot.getSplitInFlightCount() > 0
+                || snapshot.getSegmentCount() > 1) {
+            splitObserved.set(true);
+        }
     }
 
     private static int scaleOpsByCpu(final int requestedOps) {

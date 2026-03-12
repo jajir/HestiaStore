@@ -4,27 +4,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
+import org.hestiastore.index.control.model.RuntimePatchResult;
+import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
@@ -136,8 +147,92 @@ class SegmentIndexAsyncMaintenanceTest {
         assertEquals(SegmentIndexState.CLOSED, index.getState());
     }
 
+    @Test
+    void flush_waits_for_blocked_partition_drain_publish() throws Exception {
+        index.close();
+        index = newDrainIndex();
+
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            final BlockedDrainHarness harness = installBlockedDrainHarness(index);
+            try {
+                final Future<?> flushTask = executor.submit(index::flushAndWait);
+                assertFalse(flushTask.isDone());
+
+                final SegmentIndexMetricsSnapshot blockedSnapshot = index
+                        .metricsSnapshot();
+                assertTrue(blockedSnapshot.getDrainInFlightCount() > 0);
+                assertTrue(blockedSnapshot.getDrainingPartitionCount() > 0);
+                assertTrue(blockedSnapshot.getImmutableRunCount() > 0);
+
+                harness.release().countDown();
+                flushTask.get(5, TimeUnit.SECONDS);
+            } finally {
+                harness.release().countDown();
+                replaceSegment(harness.registry(), harness.segmentId(),
+                        harness.originalSegment());
+            }
+
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getDrainInFlightCount() == 0
+                        && snapshot.getDrainingPartitionCount() == 0
+                        && snapshot.getImmutableRunCount() == 0;
+            }, 5_000L);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void compact_waits_for_blocked_partition_drain_publish() throws Exception {
+        index.close();
+        index = newDrainIndex();
+
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            final BlockedDrainHarness harness = installBlockedDrainHarness(index);
+            try {
+                final Future<?> compactTask = executor
+                        .submit(index::compactAndWait);
+                assertFalse(compactTask.isDone());
+
+                final SegmentIndexMetricsSnapshot blockedSnapshot = index
+                        .metricsSnapshot();
+                assertTrue(blockedSnapshot.getDrainInFlightCount() > 0);
+                assertTrue(blockedSnapshot.getDrainingPartitionCount() > 0);
+                assertTrue(blockedSnapshot.getImmutableRunCount() > 0);
+
+                harness.release().countDown();
+                compactTask.get(5, TimeUnit.SECONDS);
+            } finally {
+                harness.release().countDown();
+                replaceSegment(harness.registry(), harness.segmentId(),
+                        harness.originalSegment());
+            }
+
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getDrainInFlightCount() == 0
+                        && snapshot.getDrainingPartitionCount() == 0
+                        && snapshot.getImmutableRunCount() == 0;
+            }, 5_000L);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
     private IndexInternalConcurrent<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
+        return new IndexInternalConcurrent<>(
+                new MemDirectory(),
+                tdi, tds, conf, new IndexExecutorRegistry(conf));
+    }
+
+    private IndexInternalConcurrent<Integer, String> newDrainIndex() {
+        final IndexConfiguration<Integer, String> conf = buildDrainConf();
         return new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 tdi, tds, conf, new IndexExecutorRegistry(conf));
@@ -166,6 +261,34 @@ class SegmentIndexAsyncMaintenanceTest {
                 .build();
     }
 
+    private IndexConfiguration<Integer, String> buildDrainConf() {
+        return IndexConfiguration.<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(tdi)//
+                .withValueTypeDescriptor(tds)//
+                .withName("async-maintenance-drain-test")//
+                .withMaxNumberOfKeysInSegmentCache(10)//
+                .withMaxNumberOfKeysInActivePartition(4)//
+                .withMaxNumberOfImmutableRunsPerPartition(1)//
+                .withMaxNumberOfKeysInPartitionBuffer(16)//
+                .withMaxNumberOfKeysInIndexBuffer(32)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000)//
+                .withMaxNumberOfKeysInSegmentChunk(2)//
+                .withMaxNumberOfKeysInSegment(100)//
+                .withMaxNumberOfSegmentsInCache(3)//
+                .withBloomFilterNumberOfHashFunctions(1)//
+                .withBloomFilterIndexSizeInBytes(1024)//
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
+                .withDiskIoBufferSizeInBytes(1024)//
+                .withContextLoggingEnabled(false)//
+                .withBackgroundMaintenanceAutoEnabled(false)//
+                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .withIndexWorkerThreadCount(1)//
+                .build();
+    }
+
     private Segment<Integer, String> mockBlockingSegment(
             final CountDownLatch started,
             final AtomicReference<SegmentState> stateRef,
@@ -187,6 +310,101 @@ class SegmentIndexAsyncMaintenanceTest {
             return SegmentResult.ok();
         });
         return blockingSegment;
+    }
+
+    private BlockedDrainHarness installBlockedDrainHarness(
+            final IndexInternalConcurrent<Integer, String> drainingIndex)
+            throws Exception {
+        if (readKeyToSegmentMap(drainingIndex).getSegmentIds().isEmpty()) {
+            drainingIndex.put(0, "seed-0");
+        }
+        final SegmentId segmentId = readKeyToSegmentMap(drainingIndex)
+                .getSegmentIds().get(0);
+        final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
+                drainingIndex);
+        final Segment<Integer, String> originalSegment = registry
+                .getSegment(segmentId).getValue();
+        final CountDownLatch started = new CountDownLatch(1);
+        final CountDownLatch release = new CountDownLatch(1);
+        final Segment<Integer, String> blockedSegment = mockBlockedDrainSegment(
+                segmentId, started, release);
+        replaceSegment(registry, segmentId, blockedSegment);
+
+        for (int i = 1; i < 32; i++) {
+            drainingIndex.put(i, "value-" + i);
+            if (started.await(20, TimeUnit.MILLISECONDS)) {
+                awaitCondition(() -> {
+                    final SegmentIndexMetricsSnapshot snapshot = drainingIndex
+                            .metricsSnapshot();
+                    return snapshot.getDrainInFlightCount() > 0
+                            && snapshot.getDrainingPartitionCount() > 0;
+                }, 5_000L);
+                return new BlockedDrainHarness(segmentId, registry,
+                        originalSegment, release);
+            }
+        }
+        replaceSegment(registry, segmentId, originalSegment);
+        throw new AssertionError("Blocked drain did not start in time.");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Segment<Integer, String> mockBlockedDrainSegment(
+            final SegmentId segmentId, final CountDownLatch started,
+            final CountDownLatch release) throws Exception {
+        final Segment<Integer, String> blockedSegment = mock(Segment.class);
+        lenient().when(blockedSegment.getId()).thenReturn(segmentId);
+        lenient().when(blockedSegment.getState())
+                .thenReturn(SegmentState.READY);
+        lenient().when(blockedSegment.getRuntimeSnapshot()).thenReturn(
+                new SegmentRuntimeSnapshot(segmentId, SegmentState.READY, 0L,
+                        0L, 0L, 0L, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L));
+        when(blockedSegment.put(any(), any())).thenAnswer(invocation -> {
+            started.countDown();
+            if (!release.await(5, TimeUnit.SECONDS)) {
+                throw new TimeoutException(
+                        "Timed out waiting to release blocked drain.");
+            }
+            return SegmentResult.ok();
+        });
+        lenient().when(blockedSegment.flush()).thenReturn(SegmentResult.ok());
+        lenient().when(blockedSegment.compact()).thenReturn(SegmentResult.ok());
+        return blockedSegment;
+    }
+
+    @SuppressWarnings("unused")
+    private void triggerSplitScan(final IndexInternalConcurrent<Integer, String> drainingIndex) {
+        final long revision = drainingIndex.controlPlane().configuration()
+                .getConfigurationActual().getRevision();
+        final RuntimePatchResult patchResult = drainingIndex.controlPlane()
+                .configuration()
+                .apply(new RuntimeConfigPatch(Map.of(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        Integer.valueOf(16)), false,
+                        Long.valueOf(revision)));
+        assertTrue(patchResult.isApplied());
+    }
+
+    private static void awaitCondition(final Supplier<Boolean> condition,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (System.nanoTime() < deadline) {
+            if (condition.get()) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        assertTrue(condition.get(),
+                "Condition not reached within " + timeoutMillis + " ms.");
+    }
+
+    private record BlockedDrainHarness(SegmentId segmentId,
+            SegmentRegistryImpl<Integer, String> registry,
+            Segment<Integer, String> originalSegment,
+            CountDownLatch release) {
     }
 
     private static <K, V> void replaceSegment(

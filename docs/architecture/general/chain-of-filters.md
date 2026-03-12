@@ -6,7 +6,7 @@
 
 - The base class keeps the ordered `List<Filter<Context, Result>>` and exposes a single `filter(context, result)` method that drives the loop.
 - Steps see the immutable context and may update the mutable result; they must return `false` once they have produced a terminal outcome so the chain stops immediately.
-- Subclasses wrap the call to `filter` so they can prepare state/result objects and handle cleanup. Example: `SegmentSplitPipeline#run` closes the iterator in a `finally` block even when a step short-circuits.
+- Subclasses wrap the call to `filter` so they can prepare state/result objects and handle cleanup.
 - Filters are regular classes that implement `Filter<Context, Result>` and can be reused or composed in different orders when building a pipeline.
 
 ## 🛠️ Typical Usage
@@ -64,29 +64,6 @@ return result.getValue();
 
 - Short-circuits: cache hit/tombstone, Bloom filter negative, or sparse-index probe missing/false-positive correction.
 - Context/result types: `SegmentSearcherContext` carries the key plus caches/searcher; `SegmentSearcherResult` holds the found value (or `null` when absent).
-
-### Segment Split Pipeline (split/compaction path)
-
-`SegmentSplitPipeline` (`src/main/java/org/hestiastore/index/segment/SegmentSplitPipeline.java`) orchestrates the per-segment split flow inside `SegmentSplitter#split`:
-
-```java
-final SegmentSplitPipeline<K, V> pipeline = new SegmentSplitPipeline<>(
-        List.of(
-            new SegmentSplitStepValidateFeasibility<>(),      // throws if plan is invalid
-            new SegmentSplitStepOpenIterator<>(),             // opens streaming iterator
-            new SegmentSplitStepCreateLowerSegment<>(),       // prepares target segment
-            new SegmentSplitStepFillLowerUntilTarget<>(),     // writes first half
-            new SegmentSplitStepEnsureLowerNotEmpty<>(),      // guardrail for tiny splits
-            new SegmentSplitStepReplaceIfNoRemaining<>(segmentReplacer), // compaction path, may stop here
-            new SegmentSplitStepWriteRemainingToCurrent<>()   // split path, always stops after writing
-        ));
-
-final SegmentSplitterResult<K, V> result = pipeline.run(ctx);
-```
-
-- Short-circuits: compaction path (`SegmentSplitStepReplaceIfNoRemaining`) replaces the original segment and stops; the final write step stops after producing the split result.
-- Context/result types: `SegmentSplitContext` carries the segment, version controller, plan, and IDs; `SegmentSplitState` owns the iterator, lower-segment handle, and final `SegmentSplitterResult`.
-- Safety: `SegmentSplitPipeline#run` wraps `filter` so the opened iterator closes even when a step throws or short-circuits.
 
 ## ✅ Guidelines for Adding New Pipelines
 

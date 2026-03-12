@@ -6,7 +6,7 @@
 - Mapping version: monotonically increasing counter for optimistic mapping
   checks.
 - Segment registry: cache of Segment instances plus the maintenance executor.
-- Maintenance coordinator: decides compact/split after writes.
+- Background split coordinator: decides split scheduling after writes.
 - Split: replace one segment with a new segment (or two) and update the
   mapping.
 
@@ -18,7 +18,7 @@
   shared caches, mapping updates, and per-segment state machines.
 - Segment maintenance IO runs on the segment maintenance executor.
 - The maintenance executor is always created by SegmentRegistry from
-  IndexConfiguration.numberOfSegmentIndexMaintenanceThreads (default 10).
+  IndexConfiguration.numberOfStableSegmentMaintenanceThreads (default 10).
 - Automatic post-write flush/compact is optional and enabled by default.
 - Segment BUSY is treated as transient and retried internally; callers do not
   see BUSY.
@@ -54,14 +54,16 @@
   The per-segment `.lock` file enforces single-open at the directory level.
 
 ## Maintenance & Splits
-- SegmentMaintenanceCoordinator evaluates thresholds after each write and
-  triggers flush/compact only when segmentMaintenanceAutoEnabled is true.
-- Splits are scheduled by SegmentAsyncSplitCoordinator on the shared
-  maintenance executor; only one split per segment id can be in flight.
-- SegmentSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts throw.
-- SegmentSplitCoordinator opens a FULL_ISOLATION iterator and keeps it open
-  until file swap + mapping update completes to prevent partial splits from
-  leaking to writers.
+- SegmentIndexImpl evaluates overlay thresholds after each write and
+  triggers drain/flush follow-up only when backgroundMaintenanceAutoEnabled is
+  true.
+- Splits are scheduled by BackgroundSplitCoordinator on the shared split
+  executor; only one split per segment id can be in flight.
+- PartitionStableSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts
+  throw.
+- Split materialization reads parent stable data with FAIL_FAST iteration,
+  publishes child stable segments, then performs a short exclusive apply phase
+  for route-map swap + overlay reassignment.
 - After a split, KeyToSegmentMap updates the mapping and flushes it to disk;
   any in-flight write with a stale mapping version retries.
 
@@ -101,9 +103,8 @@ Only one index instance may hold the directory lock at a time.
 - KeyToSegmentMap: mapping, snapshot versioning, and persistence of segment ids.
 - SegmentRegistry(Synchronized): caches Segment instances and supplies the
   maintenance executor.
-- SegmentMaintenanceCoordinator: post-write flush/compact/split decisions.
-- SegmentSplitCoordinator / SegmentAsyncSplitCoordinator: split execution and
-  scheduling.
+- BackgroundSplitCoordinator: post-write split scheduling decisions.
+- PartitionStableSplitCoordinator: split execution.
 
 ## Iterator Isolation
 - FAIL_FAST: iteration is optimistic; any mutation can invalidate the
@@ -116,7 +117,7 @@ Only one index instance may hold the directory lock at a time.
 - Index implementation: IndexInternalConcurrent (caller-thread execution).
 - Mapping version: KeyToSegmentMap.version (AtomicLong).
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
-  IndexConfiguration.numberOfSegmentIndexMaintenanceThreads (default 10).
+  IndexConfiguration.numberOfStableSegmentMaintenanceThreads (default 10).
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.
 - Retry policy: IndexConfiguration.indexBusyBackoffMillis and
   IndexConfiguration.indexBusyTimeoutMillis.

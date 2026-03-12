@@ -21,9 +21,9 @@ import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 
 /**
- * Coordinates background split scheduling for routed partitions.
+ * Coordinates background split scheduling and split-apply admission.
  */
-final class SegmentMaintenanceCoordinator<K, V> {
+final class BackgroundSplitCoordinator<K, V> {
 
     private static final long SPLIT_RESCHEDULE_COOLDOWN_MILLIS = 500L;
     private static final long SPLIT_RESCHEDULE_COOLDOWN_NANOS = TimeUnit.MILLISECONDS
@@ -55,7 +55,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
             SPLIT_RESCHEDULE_COOLDOWN_NANOS);
     private int splitInFlightCount;
 
-    SegmentMaintenanceCoordinator(
+    BackgroundSplitCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final PartitionRuntime<K, V> partitionRuntime,
             final PartitionStableSplitCoordinator<K, V> splitCoordinator,
@@ -66,7 +66,7 @@ final class SegmentMaintenanceCoordinator<K, V> {
                 splitFailureHandler, splitAppliedListener, System::nanoTime);
     }
 
-    SegmentMaintenanceCoordinator(
+    BackgroundSplitCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final PartitionRuntime<K, V> partitionRuntime,
             final PartitionStableSplitCoordinator<K, V> splitCoordinator,

@@ -49,12 +49,12 @@ public class IndexConfigurationStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
     private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
-    private static final String PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_INDEX_MAINTENANCE_THREADS;
+    private static final String PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS;
     private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS;
     private static final String PROP_INDEX_BUSY_TIMEOUT_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_TIMEOUT_MILLIS;
-    private static final String PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED;
+    private static final String PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED;
     private static final String PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
     private static final String PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private static final String PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE;
@@ -69,6 +69,10 @@ public class IndexConfigurationStorage<K, V> {
     private static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT;
     private static final String PROP_WAL_CORRUPTION_POLICY = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY;
     private static final String PROP_WAL_EPOCH_SUPPORT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT;
+    private static final String LEGACY_PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
+    private static final String LEGACY_PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
+    private static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
+    private static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
 
     private static final String CONFIGURATION_FILENAME = IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME;
 
@@ -155,9 +159,10 @@ public class IndexConfigurationStorage<K, V> {
                 .withIndexWorkerThreadCount(getOrDefault(propsView,
                         PROP_INDEX_WORKER_THREAD_COUNT,
                         IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT))//
-                .withNumberOfSegmentIndexMaintenanceThreads(getOrDefault(
-                        propsView, PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
-                        IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS))//
+                .withNumberOfStableSegmentMaintenanceThreads(getOrDefault(
+                        propsView,
+                        PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
+                        IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS))//
                 .withNumberOfIndexMaintenanceThreads(getOrDefault(propsView,
                         PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                         IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS))//
@@ -170,9 +175,9 @@ public class IndexConfigurationStorage<K, V> {
                 .withIndexBusyTimeoutMillis(getOrDefault(propsView,
                         PROP_INDEX_BUSY_TIMEOUT_MILLIS,
                         IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS))//
-                .withSegmentMaintenanceAutoEnabled(getOrDefaultBoolean(
-                        propsView, PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED,
-                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_AUTO_ENABLED))//
+                .withBackgroundMaintenanceAutoEnabled(getOrDefaultBoolean(
+                        propsView, PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED,
+                        IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED))//
 
                 // Segment bloom filter properties
                 .withBloomFilterNumberOfHashFunctions(propsView
@@ -297,11 +302,11 @@ public class IndexConfigurationStorage<K, V> {
                         : indexConfiguration.getIndexWorkerThreadCount();
         writer.setInt(PROP_INDEX_WORKER_THREAD_COUNT, threadCount);
         final int maintenanceThreads = indexConfiguration
-                .getNumberOfSegmentIndexMaintenanceThreads() == null
-                        ? IndexConfigurationContract.DEFAULT_SEGMENT_INDEX_MAINTENANCE_THREADS
+                .getNumberOfStableSegmentMaintenanceThreads() == null
+                        ? IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS
                         : indexConfiguration
-                                .getNumberOfSegmentIndexMaintenanceThreads();
-        writer.setInt(PROP_SEGMENT_INDEX_MAINTENANCE_THREADS,
+                                .getNumberOfStableSegmentMaintenanceThreads();
+        writer.setInt(PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
                 maintenanceThreads);
         final int indexMaintenanceThreads = indexConfiguration
                 .getNumberOfIndexMaintenanceThreads() == null
@@ -327,8 +332,8 @@ public class IndexConfigurationStorage<K, V> {
                         ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
                         : indexConfiguration.getIndexBusyTimeoutMillis();
         writer.setInt(PROP_INDEX_BUSY_TIMEOUT_MILLIS, busyTimeoutMillis);
-        writer.setBoolean(PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED, Boolean.TRUE
-                .equals(indexConfiguration.isSegmentMaintenanceAutoEnabled()));
+        writer.setBoolean(PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED, Boolean.TRUE
+                .equals(indexConfiguration.isBackgroundMaintenanceAutoEnabled()));
         // Segment bloom filter properties
         writer.setInt(PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 indexConfiguration.getBloomFilterNumberOfHashFunctions());
@@ -362,6 +367,11 @@ public class IndexConfigurationStorage<K, V> {
         writer.setString(PROP_WAL_CORRUPTION_POLICY,
                 wal.getCorruptionPolicy().name());
         writer.setBoolean(PROP_WAL_EPOCH_SUPPORT, wal.isEpochSupport());
+        writer.remove(LEGACY_PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED);
+        writer.remove(LEGACY_PROP_SEGMENT_INDEX_MAINTENANCE_THREADS);
+        writer.remove(LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE);
+        writer.remove(
+                LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE);
         SCHEMA.writeMetadata(writer);
         tx.close();
     }

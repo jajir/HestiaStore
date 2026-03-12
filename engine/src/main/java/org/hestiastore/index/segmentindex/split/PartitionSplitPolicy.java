@@ -1,10 +1,10 @@
 package org.hestiastore.index.segmentindex.split;
 
 /**
- * Encapsulates pre-split statistics for a segment, providing an estimated
+ * Encapsulates pre-split statistics for a stable segment, providing an estimated
  * number of keys that drives split planning.
  */
-final class SegmentSplitterPolicy {
+final class PartitionSplitPolicy {
 
     private final long estimatedNumberOfKeys;
 
@@ -13,7 +13,7 @@ final class SegmentSplitterPolicy {
      *
      * @param estimatedNumberOfKeys estimated number of keys in the segment
      */
-    SegmentSplitterPolicy(final long estimatedNumberOfKeys) {
+    PartitionSplitPolicy(final long estimatedNumberOfKeys) {
         if (estimatedNumberOfKeys < 0) {
             throw new IllegalArgumentException(
                     "Property 'estimatedNumberOfKeys' must be >= 0.");

@@ -6,18 +6,18 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
- * Immutable DTO carrying data required to apply a completed split.
+ * Immutable DTO carrying data required to apply a completed partition split.
  *
  * @param <K> key type
  */
-public final class SegmentSplitApplyPlan<K> {
+public final class PartitionSplitApplyPlan<K> {
 
     private final SegmentId oldSegmentId;
     private final SegmentId lowerSegmentId;
     private final SegmentId upperSegmentId;
     private final K minKey;
     private final K maxKey;
-    private final SegmentSplitterResult.SegmentSplittingStatus status;
+    private final PartitionSplitResult.PartitionSplitStatus status;
 
     /**
      * Creates an immutable plan describing how to apply split/compaction
@@ -30,15 +30,15 @@ public final class SegmentSplitApplyPlan<K> {
      * @param maxKey maximum key covered by the lower segment
      * @param status split outcome status
      */
-    public SegmentSplitApplyPlan(final SegmentId oldSegmentId,
+    public PartitionSplitApplyPlan(final SegmentId oldSegmentId,
             final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId, final K minKey, final K maxKey,
-            final SegmentSplitterResult.SegmentSplittingStatus status) {
+            final PartitionSplitResult.PartitionSplitStatus status) {
         this.oldSegmentId = Vldtn.requireNonNull(oldSegmentId, "oldSegmentId");
         this.lowerSegmentId = Vldtn.requireNonNull(lowerSegmentId,
                 "lowerSegmentId");
         this.status = Vldtn.requireNonNull(status, "status");
-        if (status == SegmentSplitterResult.SegmentSplittingStatus.SPLIT) {
+        if (status == PartitionSplitResult.PartitionSplitStatus.SPLIT) {
             this.upperSegmentId = Vldtn.requireNonNull(upperSegmentId,
                     "upperSegmentId");
         } else {
@@ -86,7 +86,7 @@ public final class SegmentSplitApplyPlan<K> {
     /**
      * @return split outcome status
      */
-    public SegmentSplitterResult.SegmentSplittingStatus getStatus() {
+    public PartitionSplitResult.PartitionSplitStatus getStatus() {
         return status;
     }
 }

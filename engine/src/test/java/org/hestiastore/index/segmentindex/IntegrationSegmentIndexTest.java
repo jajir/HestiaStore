@@ -150,7 +150,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
-                .withSegmentMaintenanceAutoEnabled(false) //
+                .withBackgroundMaintenanceAutoEnabled(false) //
                 .withContextLoggingEnabled(withLog) //
                 .withName("test_index") //
                 .build();

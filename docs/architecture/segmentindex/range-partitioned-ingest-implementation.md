@@ -80,9 +80,9 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
   the index executor registry, so `close()` shuts down both split execution and
   future policy ticks together with the rest of index maintenance infrastructure
 - that autonomous loop only performs a full routed scan when overlay, drain,
-  and split backlog are idle; hot write periods still rely on targeted
-  post-drain split scheduling for the specific routed partition that just
-  drained
+  and split backlog are idle; hot write periods feed the loop with post-drain
+  per-partition hints, so split candidate evaluation stays in background
+  instead of inline scheduling on the drain worker
 - split scheduling keeps a per-segment cooldown and retry-growth hysteresis
   window; if a borderline split candidate fails or aborts, the background loop
   does not immediately thrash on the same stable range again unless either
@@ -127,14 +127,17 @@ New partition-oriented settings:
 - `maxNumberOfKeysInIndexBuffer`
 - `maxNumberOfKeysInPartitionBeforeSplit`
 
-Legacy persisted settings are still accepted during load and are migrated to
-the new keys:
+Compatibility fallbacks during load map older or cross-version settings to the
+new partition keys:
 
 - `maxNumberOfKeysInSegmentWriteCache` ->
   `maxNumberOfKeysInActivePartition`
 - `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance` ->
   `maxNumberOfKeysInPartitionBuffer`
-- `maxNumberOfKeysInSegment` ->
+- `maxNumberOfKeysInSegment` (when
+  `maxNumberOfKeysInPartitionBeforeSplit` is absent) ->
   `maxNumberOfKeysInPartitionBeforeSplit`
+- `segmentMaintenanceAutoEnabled` ->
+  `backgroundMaintenanceAutoEnabled`
 
 New manifests are written with the partition-oriented names only.

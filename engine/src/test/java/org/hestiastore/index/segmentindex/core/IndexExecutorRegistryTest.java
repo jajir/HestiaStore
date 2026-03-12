@@ -39,7 +39,7 @@ class IndexExecutorRegistryTest {
             assertNotNull(registry.getIndexMaintenanceExecutor());
             assertNotNull(registry.getSplitMaintenanceExecutor());
             assertNotNull(registry.getSplitPolicyScheduler());
-            assertNotNull(registry.getSegmentMaintenanceExecutor());
+            assertNotNull(registry.getStableSegmentMaintenanceExecutor());
             assertNotNull(registry.getRegistryMaintenanceExecutor());
         } finally {
             registry.close();
@@ -53,7 +53,7 @@ class IndexExecutorRegistryTest {
                 IllegalArgumentException.class,
                 () -> new IndexExecutorRegistry(conf));
         assertEquals(
-                "Property 'segmentMaintenanceThreads' must be greater than 0",
+                "Property 'numberOfStableSegmentMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
@@ -100,8 +100,8 @@ class IndexExecutorRegistryTest {
                 .withIndexWorkerThreadCount(conf.getIndexWorkerThreadCount())//
                 .withNumberOfIndexMaintenanceThreads(
                         conf.getNumberOfIndexMaintenanceThreads())//
-                .withNumberOfSegmentIndexMaintenanceThreads(
-                        conf.getNumberOfSegmentIndexMaintenanceThreads())//
+                .withNumberOfStableSegmentMaintenanceThreads(
+                        conf.getNumberOfStableSegmentMaintenanceThreads())//
                 .withNumberOfRegistryLifecycleThreads(0)//
                 .withEncodingFilters(conf.getEncodingChunkFilters())//
                 .withDecodingFilters(conf.getDecodingChunkFilters())//
@@ -136,7 +136,7 @@ class IndexExecutorRegistryTest {
                 .withDiskIoBufferSizeInBytes(1024)//
                 .withIndexWorkerThreadCount(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfStableSegmentMaintenanceThreads(1)//
                 .withNumberOfRegistryLifecycleThreads(1)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
@@ -158,8 +158,8 @@ class IndexExecutorRegistryTest {
                 .getSplitMaintenanceExecutor();
         final ExecutorService splitPolicyScheduler = registry
                 .getSplitPolicyScheduler();
-        final ExecutorService segmentMaintenance = registry
-                .getSegmentMaintenanceExecutor();
+        final ExecutorService stableSegmentMaintenance = registry
+                .getStableSegmentMaintenanceExecutor();
         final ExecutorService registryMaintenance = registry
                 .getRegistryMaintenanceExecutor();
 
@@ -168,7 +168,7 @@ class IndexExecutorRegistryTest {
         assertTrue(indexMaintenance.isShutdown());
         assertTrue(splitMaintenance.isShutdown());
         assertTrue(splitPolicyScheduler.isShutdown());
-        assertTrue(segmentMaintenance.isShutdown());
+        assertTrue(stableSegmentMaintenance.isShutdown());
         assertTrue(registryMaintenance.isShutdown());
     }
 
@@ -185,7 +185,7 @@ class IndexExecutorRegistryTest {
         assertThrows(IllegalStateException.class,
                 registry::getSplitPolicyScheduler);
         assertThrows(IllegalStateException.class,
-                registry::getSegmentMaintenanceExecutor);
+                registry::getStableSegmentMaintenanceExecutor);
         assertThrows(IllegalStateException.class,
                 registry::getRegistryMaintenanceExecutor);
     }
@@ -201,8 +201,8 @@ class IndexExecutorRegistryTest {
                     registry.getSplitMaintenanceExecutor());
             assertSame(registry.getSplitPolicyScheduler(),
                     registry.getSplitPolicyScheduler());
-            assertSame(registry.getSegmentMaintenanceExecutor(),
-                    registry.getSegmentMaintenanceExecutor());
+            assertSame(registry.getStableSegmentMaintenanceExecutor(),
+                    registry.getStableSegmentMaintenanceExecutor());
             assertSame(registry.getRegistryMaintenanceExecutor(),
                     registry.getRegistryMaintenanceExecutor());
         } finally {
@@ -225,8 +225,8 @@ class IndexExecutorRegistryTest {
             final String splitPolicyName = registry
                     .getSplitPolicyScheduler()
                     .submit(() -> Thread.currentThread().getName()).get();
-            final String segmentMaintenanceName = registry
-                    .getSegmentMaintenanceExecutor()
+            final String stableSegmentMaintenanceName = registry
+                    .getStableSegmentMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().getName()).get();
             final String registryMaintenanceName = registry
                     .getRegistryMaintenanceExecutor()
@@ -241,8 +241,8 @@ class IndexExecutorRegistryTest {
             final boolean splitPolicyDaemon = registry
                     .getSplitPolicyScheduler()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
-            final boolean segmentMaintenanceDaemon = registry
-                    .getSegmentMaintenanceExecutor()
+            final boolean stableSegmentMaintenanceDaemon = registry
+                    .getStableSegmentMaintenanceExecutor()
                     .submit(() -> Thread.currentThread().isDaemon()).get();
             final boolean registryMaintenanceDaemon = registry
                     .getRegistryMaintenanceExecutor()
@@ -251,13 +251,14 @@ class IndexExecutorRegistryTest {
             assertTrue(indexMaintenanceName.startsWith("index-maintenance-"));
             assertTrue(splitMaintenanceName.startsWith("split-maintenance-"));
             assertTrue(splitPolicyName.startsWith("split-policy-"));
-            assertTrue(segmentMaintenanceName.startsWith("segment-maintenance-"));
+            assertTrue(stableSegmentMaintenanceName
+                    .startsWith("stable-segment-maintenance-"));
             assertTrue(
                     registryMaintenanceName.startsWith("registry-maintenance-"));
             assertTrue(indexMaintenanceDaemon);
             assertTrue(splitMaintenanceDaemon);
             assertTrue(splitPolicyDaemon);
-            assertTrue(segmentMaintenanceDaemon);
+            assertTrue(stableSegmentMaintenanceDaemon);
             assertTrue(registryMaintenanceDaemon);
         } finally {
             registry.close();
@@ -265,26 +266,27 @@ class IndexExecutorRegistryTest {
     }
 
     @Test
-    void segmentMaintenanceExecutorUsesConfiguredThreadCount() throws Exception {
-        final int segmentMaintenanceThreads = 4;
+    void stableSegmentMaintenanceExecutorUsesConfiguredThreadCount()
+            throws Exception {
+        final int stableSegmentMaintenanceThreads = 4;
         final IndexConfiguration<Integer, String> conf = buildConf(
-                segmentMaintenanceThreads, 1, 1);
+                stableSegmentMaintenanceThreads, 1, 1);
         final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
         final CountDownLatch started = new CountDownLatch(
-                segmentMaintenanceThreads);
+                stableSegmentMaintenanceThreads);
         final CountDownLatch release = new CountDownLatch(1);
         try {
             final List<java.util.concurrent.Future<String>> futures = java.util.stream.IntStream
-                    .range(0, segmentMaintenanceThreads)
-                    .mapToObj(i -> registry.getSegmentMaintenanceExecutor()
-                            .submit(() -> {
+                    .range(0, stableSegmentMaintenanceThreads)
+                    .mapToObj(i -> registry
+                            .getStableSegmentMaintenanceExecutor().submit(() -> {
                                 started.countDown();
                                 release.await();
                                 return Thread.currentThread().getName();
                             }))
                     .toList();
             assertTrue(started.await(2, TimeUnit.SECONDS),
-                    "Segment maintenance executor did not start all configured workers.");
+                    "Stable segment maintenance executor did not start all configured workers.");
             release.countDown();
             final Set<String> threadNames = futures.stream().map(future -> {
                 try {
@@ -292,15 +294,16 @@ class IndexExecutorRegistryTest {
                 } catch (final InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException(
-                            "Interrupted while collecting segment maintenance worker names.",
+                            "Interrupted while collecting stable segment maintenance worker names.",
                             e);
                 } catch (final ExecutionException e) {
                     throw new IllegalStateException(
-                            "Failed while collecting segment maintenance worker names.",
+                            "Failed while collecting stable segment maintenance worker names.",
                             e.getCause());
                 }
             }).collect(Collectors.toSet());
-            assertEquals(segmentMaintenanceThreads, threadNames.size());
+            assertEquals(stableSegmentMaintenanceThreads,
+                    threadNames.size());
         } finally {
             release.countDown();
             registry.close();
@@ -308,7 +311,7 @@ class IndexExecutorRegistryTest {
     }
 
     private static IndexConfiguration<Integer, String> buildConf(
-            final int segmentMaintenanceThreads,
+            final int stableSegmentMaintenanceThreads,
             final int indexMaintenanceThreads,
             final int registryMaintenanceThreads) {
         return IndexConfiguration.<Integer, String>builder()//
@@ -331,8 +334,8 @@ class IndexExecutorRegistryTest {
                 .withIndexWorkerThreadCount(1)//
                 .withNumberOfIndexMaintenanceThreads(
                         indexMaintenanceThreads)//
-                .withNumberOfSegmentIndexMaintenanceThreads(
-                        segmentMaintenanceThreads)//
+                .withNumberOfStableSegmentMaintenanceThreads(
+                        stableSegmentMaintenanceThreads)//
                 .withNumberOfRegistryLifecycleThreads(
                         registryMaintenanceThreads)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//

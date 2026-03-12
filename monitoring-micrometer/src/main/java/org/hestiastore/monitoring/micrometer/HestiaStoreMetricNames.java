@@ -27,6 +27,9 @@ final class HestiaStoreMetricNames {
     static final String PARTITION_THROTTLE_GLOBAL_TOTAL = "hestiastore_partition_throttle_global_total";
     static final String PARTITION_DRAIN_SCHEDULE_TOTAL = "hestiastore_partition_drain_schedule_total";
     static final String PARTITION_DRAIN_IN_FLIGHT = "hestiastore_partition_drain_in_flight";
+    static final String PARTITION_DRAIN_LATENCY_P95_MICROS = "hestiastore_partition_drain_latency_p95_micros";
+    static final String SPLIT_SCHEDULE_TOTAL = "hestiastore_split_schedule_total";
+    static final String SPLIT_IN_FLIGHT = "hestiastore_split_in_flight";
     static final String INDEX_UP = "hestiastore_index_up";
 
     private HestiaStoreMetricNames() {

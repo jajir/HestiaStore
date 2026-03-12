@@ -143,10 +143,10 @@ public class SegmentIndexGetBenchmark {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(8 * 1024)//
                 .withIndexWorkerThreadCount(4)//
-                .withNumberOfSegmentIndexMaintenanceThreads(1)//
+                .withNumberOfStableSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
                 .withNumberOfRegistryLifecycleThreads(1)//
-                .withSegmentMaintenanceAutoEnabled(false);
+                .withBackgroundMaintenanceAutoEnabled(false);
         builder.addEncodingFilter(new ChunkFilterCrc32Writing())
                 .addEncodingFilter(new ChunkFilterMagicNumberWriting());
         builder.addDecodingFilter(new ChunkFilterMagicNumberValidation())

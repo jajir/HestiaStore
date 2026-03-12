@@ -4,10 +4,11 @@
 
 This document describes how to use the Segment API for maintenance operations.
 The public Segment interface exposes `flush()` and `compact()`. Split is
-orchestrated by the segment-index layer (`SegmentSplitCoordinator` +
-`SegmentSplitter`) using `Segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION)`.
-Split behavior is documented here because it affects locking and iterator
-semantics.
+orchestrated by the segment-index layer
+(`BackgroundSplitCoordinator` + `PartitionStableSplitCoordinator`) using a
+route-first stable child materialization flow and a short exclusive apply
+window. Split behavior is documented here because it affects locking and
+iterator semantics.
 
 `Segment` is thread-safe by contract. The legacy lock-based adapter was removed;
 historical notes remain below for reference. For the lock-free `SegmentImpl`
@@ -60,7 +61,7 @@ When a new write arrives while `compact()` is running:
 
 ### C) Split (SegmentIndex)
 
-What it does today (SegmentSplitCoordinator + SegmentSplitter):
+Historical behavior (removed live-segment split pipeline):
 
 - Triggered when `getNumberOfKeysInCache()` exceeds
   `maxNumberOfKeysInSegmentCache` (or the coordinator threshold).
@@ -120,7 +121,7 @@ Same segment:
 - `flush()`, `compact()`, and split are exclusive. The write lock serializes
   them, so parallel calls run one after another.
 - Split uses `FULL_ISOLATION` iterators and is wrapped in the write lock by
-  `SegmentSplitCoordinator` when the segment is a
+  the historical `SegmentSplitCoordinator` when the segment is a
   `SegmentImplSynchronizationAdapter`.
 
 Different segments:

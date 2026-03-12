@@ -61,6 +61,14 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
+    - name: Validate benchmark profile contracts
+      shell: bash
+      run: |
+        set -euo pipefail
+        mvn -q -pl benchmarks -am -DskipTests=false \
+          -Dtest=BenchmarkProfileContractTest \
+          -Dsurefire.failIfNoSpecifiedTests=false test
+
     - name: Resolve benchmark refs
       id: refs
       shell: bash
@@ -117,14 +125,34 @@ jobs:
         set -euo pipefail
 
         PROFILE_PATH="benchmarks/profiles/${{ steps.refs.outputs.profile }}.json"
-        BENCHMARK_CLASS_PATH="benchmarks/src/main/java/org/hestiastore/benchmark/segmentindex/SegmentIndexMixedDrainBenchmark.java"
         CAN_RUN="true"
 
         if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${PROFILE_PATH}" 2>/dev/null; then
           CAN_RUN="false"
         fi
-        if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${BENCHMARK_CLASS_PATH}" 2>/dev/null; then
-          CAN_RUN="false"
+        if [ "${CAN_RUN}" = "true" ]; then
+          while IFS= read -r BENCHMARK_CLASS_PATH; do
+            if ! git cat-file -e "${{ steps.refs.outputs.fallback_baseline_ref }}:${BENCHMARK_CLASS_PATH}" 2>/dev/null; then
+              CAN_RUN="false"
+              break
+            fi
+          done < <(python3 - <<'PY'
+        import json
+        from pathlib import Path
+
+        profile_path = Path("benchmarks/profiles/${{ steps.refs.outputs.profile }}.json")
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        paths = []
+        for benchmark in profile.get("benchmarks", []):
+            include = benchmark.get("include")
+            if not include:
+                continue
+            relative = "benchmarks/src/main/java/" + include.replace(".", "/") + ".java"
+            paths.append(relative)
+        for path in sorted(set(paths)):
+            print(path)
+        PY
+          )
         fi
 
         echo "can_run=${CAN_RUN}" >> "${GITHUB_OUTPUT}"

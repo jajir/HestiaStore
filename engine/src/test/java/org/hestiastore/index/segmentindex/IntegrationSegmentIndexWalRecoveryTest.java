@@ -15,6 +15,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -24,12 +29,139 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.control.model.RuntimeConfigPatch;
+import org.hestiastore.index.control.model.RuntimePatchResult;
+import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FsDirectory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.junit.jupiter.api.Test;
 
 class IntegrationSegmentIndexWalRecoveryTest {
+
+    @Test
+    void crashReopenAfterSplitApplyKeepsChildRoutesAndWalRecoveredOverlay() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> conf = integerWalRecoveryConfig(
+                "wal-split-crash-recovery-it", true);
+        final List<Entry<Integer, String>> expected = expectedStableOverlayEntries();
+
+        final MemDirectory crashSnapshot;
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            seedStableAndOverlaySplitScenario(index);
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getSegmentCount() > 1
+                        && snapshot.getSplitInFlightCount() == 0
+                        && snapshot.getDrainInFlightCount() == 0;
+            }, 10_000L);
+            assertIntegerIndexSnapshot(index, expected);
+
+            crashSnapshot = copyDirectoryWithoutLocks(directory);
+        }
+
+        try (SegmentIndex<Integer, String> reopened = SegmentIndex
+                .open(crashSnapshot)) {
+            assertEquals("overlay-5", reopened.get(5));
+            assertNull(reopened.get(18));
+            assertEquals("overlay-44", reopened.get(44));
+            assertEquals("overlay-49", reopened.get(49));
+            assertIntegerIndexSnapshot(reopened, expected);
+            assertTrue(reopened.metricsSnapshot().getSegmentCount() > 1,
+                    "Expected persisted child routes after crash-style reopen.");
+        }
+    }
+
+    @Test
+    void crashReopenCleansUnpublishedSplitChildrenAndReplaysWalIntoParentRoute() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> conf = integerWalRecoveryConfig(
+                "wal-split-orphan-children-recovery-it", false);
+        final List<Entry<Integer, String>> expected = expectedStableOverlayEntries();
+
+        final MemDirectory crashSnapshot;
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            seedStableSegment(index);
+            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+            applyOverlayMutations(index);
+
+            crashSnapshot = copyDirectoryWithoutLocks(directory);
+        }
+
+        final String parentSegmentDirectory = SegmentId.of(0).getName();
+        final String orphanChildLowerDirectory = SegmentId.of(1).getName();
+        final String orphanChildUpperDirectory = SegmentId.of(2).getName();
+        copyDirectoryRecursively(
+                (MemDirectory) crashSnapshot
+                        .openSubDirectory(parentSegmentDirectory),
+                (MemDirectory) crashSnapshot
+                        .openSubDirectory(orphanChildLowerDirectory));
+        copyDirectoryRecursively(
+                (MemDirectory) crashSnapshot
+                        .openSubDirectory(parentSegmentDirectory),
+                (MemDirectory) crashSnapshot
+                        .openSubDirectory(orphanChildUpperDirectory));
+        assertTrue(crashSnapshot.isFileExists(orphanChildLowerDirectory));
+        assertTrue(crashSnapshot.isFileExists(orphanChildUpperDirectory));
+
+        try (SegmentIndex<Integer, String> reopened = SegmentIndex
+                .open(crashSnapshot)) {
+            assertEquals("overlay-5", reopened.get(5));
+            assertNull(reopened.get(18));
+            assertEquals("overlay-44", reopened.get(44));
+            assertEquals("overlay-49", reopened.get(49));
+            assertIntegerIndexSnapshot(reopened, expected);
+            assertEquals(1, reopened.metricsSnapshot().getSegmentCount(),
+                    "Interrupted split artifacts must not publish child routes.");
+        }
+
+        assertFalse(crashSnapshot.isFileExists(orphanChildLowerDirectory));
+        assertFalse(crashSnapshot.isFileExists(orphanChildUpperDirectory));
+        assertTrue(crashSnapshot.isFileExists(parentSegmentDirectory));
+    }
+
+    @Test
+    void flushAndWaitAfterSplitBacklogKeepsCrashReopenSnapshotConsistent() {
+        assertCrashReopenAfterMaintenanceBoundary(
+                "wal-flush-split-boundary-it",
+                SegmentIndex::flushAndWait);
+    }
+
+    @Test
+    void compactAndWaitAfterSplitBacklogKeepsCrashReopenSnapshotConsistent() {
+        assertCrashReopenAfterMaintenanceBoundary(
+                "wal-compact-split-boundary-it",
+                SegmentIndex::compactAndWait);
+    }
+
+    @Test
+    void closeAfterScheduledSplitBacklogKeepsReopenSnapshotConsistent() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> conf = integerWalRecoveryConfig(
+                "wal-close-split-boundary-it", true);
+        final List<Entry<Integer, String>> expected = expectedStableOverlayEntries();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            seedStableAndOverlaySplitScenario(index);
+            awaitSplitBacklogScheduledOrApplied(index);
+        }
+
+        try (SegmentIndex<Integer, String> reopened = SegmentIndex
+                .open(directory)) {
+            assertIntegerIndexSnapshot(reopened, expected);
+            assertTrue(reopened.metricsSnapshot().getSegmentCount() > 1,
+                    "Close must persist child routes when split backlog was scheduled.");
+        }
+    }
 
     @Test
     void reopenRecoversFromCorruptedWalTail() {
@@ -257,6 +389,185 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .forEach(name -> snapshot.put(name,
                         walDirectory.getFileSequence(name).toByteArrayCopy()));
         return snapshot;
+    }
+
+    private static void assertCrashReopenAfterMaintenanceBoundary(
+            final String indexName,
+            final Consumer<SegmentIndex<Integer, String>> maintenanceAction) {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> conf = integerWalRecoveryConfig(
+                indexName, true);
+        final List<Entry<Integer, String>> expected = expectedStableOverlayEntries();
+
+        final MemDirectory crashSnapshot;
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            seedStableAndOverlaySplitScenario(index);
+            awaitSplitBacklogScheduledOrApplied(index);
+
+            maintenanceAction.accept(index);
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getSplitInFlightCount() == 0
+                        && snapshot.getDrainInFlightCount() == 0
+                        && snapshot.getImmutableRunCount() == 0
+                        && snapshot.getDrainingPartitionCount() == 0;
+            }, 10_000L);
+            assertIntegerIndexSnapshot(index, expected);
+
+            crashSnapshot = copyDirectoryWithoutLocks(directory);
+        }
+
+        try (SegmentIndex<Integer, String> reopened = SegmentIndex
+                .open(crashSnapshot)) {
+            assertIntegerIndexSnapshot(reopened, expected);
+        }
+    }
+
+    private static IndexConfiguration<Integer, String> integerWalRecoveryConfig(
+            final String indexName,
+            final boolean backgroundMaintenanceAutoEnabled) {
+        return IndexConfiguration.<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
+                .withValueTypeDescriptor(new TypeDescriptorShortString())//
+                .withName(indexName)//
+                .withWal(Wal.builder().build())//
+                .withMaxNumberOfKeysInSegmentCache(8) //
+                .withMaxNumberOfKeysInActivePartition(32) //
+                .withMaxNumberOfImmutableRunsPerPartition(2) //
+                .withMaxNumberOfKeysInPartitionBuffer(96) //
+                .withMaxNumberOfKeysInIndexBuffer(192) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
+                .withMaxNumberOfKeysInSegment(128) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withBloomFilterIndexSizeInBytes(1024 * 128) //
+                .withBloomFilterNumberOfHashFunctions(3) //
+                .withBackgroundMaintenanceAutoEnabled(
+                        backgroundMaintenanceAutoEnabled) //
+                .build();
+    }
+
+    private static List<Entry<Integer, String>> expectedStableOverlayEntries() {
+        return IntStream.concat(IntStream.range(0, 48), IntStream.of(49))
+                .filter(key -> key != 18).mapToObj(key -> {
+                    if (key == 5) {
+                        return Entry.of(key, "overlay-5");
+                    }
+                    if (key == 44) {
+                        return Entry.of(key, "overlay-44");
+                    }
+                    if (key == 49) {
+                        return Entry.of(key, "overlay-49");
+                    }
+                    return Entry.of(key, "stable-" + key);
+                }).toList();
+    }
+
+    private static void seedStableAndOverlaySplitScenario(
+            final SegmentIndex<Integer, String> index) {
+        seedStableSegment(index);
+        applyOverlayMutations(index);
+        lowerSplitThreshold(index, 16);
+    }
+
+    private static void seedStableSegment(
+            final SegmentIndex<Integer, String> index) {
+        for (int i = 0; i < 48; i++) {
+            index.put(i, "stable-" + i);
+        }
+        index.flushAndWait();
+        awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
+                && index.metricsSnapshot().getSplitInFlightCount() == 0
+                && index.metricsSnapshot().getDrainInFlightCount() == 0,
+                10_000L);
+    }
+
+    private static void applyOverlayMutations(
+            final SegmentIndex<Integer, String> index) {
+        index.put(5, "overlay-5");
+        index.delete(18);
+        index.put(44, "overlay-44");
+        index.put(49, "overlay-49");
+    }
+
+    private static void lowerSplitThreshold(
+            final SegmentIndex<Integer, String> index,
+            final int threshold) {
+        final long revision = index.controlPlane().configuration()
+                .getConfigurationActual().getRevision();
+        final RuntimePatchResult patchResult = index.controlPlane()
+                .configuration()
+                .apply(new RuntimeConfigPatch(Map.of(
+                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        Integer.valueOf(threshold)), false,
+                        Long.valueOf(revision)));
+        assertTrue(patchResult.isApplied());
+    }
+
+    private static void awaitSplitBacklogScheduledOrApplied(
+            final SegmentIndex<Integer, String> index) {
+        awaitCondition(() -> {
+            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            return snapshot.getSplitScheduleCount() > 0L
+                    || snapshot.getSplitInFlightCount() > 0
+                    || snapshot.getSegmentCount() > 1;
+        }, 10_000L);
+    }
+
+    private static void assertIntegerIndexSnapshot(
+            final SegmentIndex<Integer, String> index,
+            final List<Entry<Integer, String>> expected) {
+        try (var stream = index.getStream(SegmentWindow.unbounded(),
+                SegmentIteratorIsolation.FULL_ISOLATION)) {
+            assertEquals(expected, stream.toList());
+        }
+    }
+
+    private static MemDirectory copyDirectoryWithoutLocks(
+            final MemDirectory source) {
+        final MemDirectory target = new MemDirectory();
+        copyDirectoryRecursively(source, target);
+        return target;
+    }
+
+    private static void copyDirectoryRecursively(final MemDirectory source,
+            final MemDirectory target) {
+        source.getFileNames().forEach(name -> {
+            if (name.endsWith(".lock")) {
+                return;
+            }
+            try {
+                target.setFileSequence(name, source.getFileSequence(name));
+                return;
+            } catch (final org.hestiastore.index.IndexException ignored) {
+                // The name belongs to a subdirectory, not a file.
+            }
+            final MemDirectory sourceChild = (MemDirectory) source
+                    .openSubDirectory(name);
+            final MemDirectory targetChild = (MemDirectory) target
+                    .openSubDirectory(name);
+            copyDirectoryRecursively(sourceChild, targetChild);
+        });
+    }
+
+    private static void awaitCondition(final Supplier<Boolean> condition,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (System.nanoTime() < deadline) {
+            if (condition.get()) {
+                return;
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        assertTrue(condition.get(),
+                "Condition not reached within " + timeoutMillis + " ms.");
     }
 
     private static void assertWalSnapshotsEqual(final Map<String, byte[]> expected,

@@ -7,28 +7,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
 
-class SegmentSplitterResultTest {
+class PartitionSplitResultTest {
 
     @Test
     void exposesSplitValues() {
         final SegmentId segmentId = SegmentId.of(1);
-        final SegmentSplitterResult<String> result = new SegmentSplitterResult<>(
+        final PartitionSplitResult<String> result = new PartitionSplitResult<>(
                 segmentId, "min", "max",
-                SegmentSplitterResult.SegmentSplittingStatus.SPLIT);
+                PartitionSplitResult.PartitionSplitStatus.SPLIT);
 
         assertTrue(result.isSplit());
         assertEquals(segmentId, result.getSegmentId());
         assertEquals("min", result.getMinKey());
         assertEquals("max", result.getMaxKey());
-        assertEquals(SegmentSplitterResult.SegmentSplittingStatus.SPLIT,
+        assertEquals(PartitionSplitResult.PartitionSplitStatus.SPLIT,
                 result.getStatus());
     }
 
     @Test
     void compactionIsNotSplit() {
-        final SegmentSplitterResult<String> result = new SegmentSplitterResult<>(
+        final PartitionSplitResult<String> result = new PartitionSplitResult<>(
                 SegmentId.of(1), "min", "max",
-                SegmentSplitterResult.SegmentSplittingStatus.COMPACTED);
+                PartitionSplitResult.PartitionSplitStatus.COMPACTED);
 
         assertFalse(result.isSplit());
     }
