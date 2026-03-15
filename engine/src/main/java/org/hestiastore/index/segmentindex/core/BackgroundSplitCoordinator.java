@@ -92,6 +92,19 @@ final class BackgroundSplitCoordinator<K, V> {
 
     boolean handleSplitCandidate(final Segment<K, V> segment,
             final long maxNumberOfKeysInPartitionBeforeSplit) {
+        return handleSplitCandidate(segment,
+                maxNumberOfKeysInPartitionBeforeSplit, false);
+    }
+
+    boolean forceHandleSplitCandidate(final Segment<K, V> segment,
+            final long maxNumberOfKeysInPartitionBeforeSplit) {
+        return handleSplitCandidate(segment,
+                maxNumberOfKeysInPartitionBeforeSplit, true);
+    }
+
+    private boolean handleSplitCandidate(final Segment<K, V> segment,
+            final long maxNumberOfKeysInPartitionBeforeSplit,
+            final boolean ignoreCooldown) {
         if (segment == null) {
             return false;
         }
@@ -112,7 +125,7 @@ final class BackgroundSplitCoordinator<K, V> {
             return false;
         }
         return optionallyScheduleSplit(segment,
-                maxNumberOfKeysInPartitionBeforeSplit);
+                maxNumberOfKeysInPartitionBeforeSplit, ignoreCooldown);
     }
 
     void awaitSplitsIdle(final long timeoutMillis) {
@@ -190,7 +203,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     private boolean optionallyScheduleSplit(final Segment<K, V> segment,
-            final long splitThreshold) {
+            final long splitThreshold, final boolean ignoreCooldown) {
         if (!isSplitSchedulingEnabled(splitThreshold)
                 || splitSchedulingPauseCount.get() > 0) {
             return false;
@@ -201,8 +214,13 @@ final class BackgroundSplitCoordinator<K, V> {
             splitAttemptStates.remove(segmentId);
             return false;
         }
-        if (!isEligibleAfterCooldown(segmentId, totalKeys, splitThreshold)) {
+        if (!ignoreCooldown
+                && !isEligibleAfterCooldown(segmentId, totalKeys,
+                        splitThreshold)) {
             return false;
+        }
+        if (ignoreCooldown) {
+            splitAttemptStates.remove(segmentId);
         }
         if (scheduleSplitAsync(segment, splitThreshold, totalKeys)) {
             return true;
