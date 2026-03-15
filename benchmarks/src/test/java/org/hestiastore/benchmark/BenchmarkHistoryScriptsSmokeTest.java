@@ -1,6 +1,8 @@
 package org.hestiastore.benchmark;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -103,6 +105,7 @@ class BenchmarkHistoryScriptsSmokeTest {
         final Path historyDir = tempDir.resolve("perf-artifacts");
         final Path comparisonMarkdown = tempDir.resolve("comparison-vs-prev.md");
         final Path comparisonJson = tempDir.resolve("comparison-vs-prev.json");
+        final Path metadataJson = tempDir.resolve("publish-metadata.json");
         Files.createDirectories(sourceDir.resolve("raw"));
         Files.createDirectories(sourceDir.resolve("logs"));
         writeSummary(sourceDir.resolve("summary.json"), candidateSummaryModel());
@@ -122,7 +125,8 @@ class BenchmarkHistoryScriptsSmokeTest {
                 "--channel", "main",
                 "--run-suffix", "unit",
                 "--comparison-markdown", comparisonMarkdown.toString(),
-                "--comparison-json", comparisonJson.toString());
+                "--comparison-json", comparisonJson.toString(),
+                "--metadata-out", metadataJson.toString());
 
         assertEquals(0, publishResult.exitCode(), publishResult.output());
 
@@ -140,6 +144,23 @@ class BenchmarkHistoryScriptsSmokeTest {
         assertTrue(Files.isRegularFile(resolvedMarkdown));
         assertTrue(Files.isRegularFile(resolvedJson));
         assertTrue(pointer.path("runPath").asText().contains("/2026/03/"));
+        final JsonNode metadata = OBJECT_MAPPER.readTree(metadataJson.toFile());
+        assertEquals(pointer.path("runPath").asText(),
+                metadata.path("runPath").asText());
+        assertEquals(pointer.path("summaryPath").asText(),
+                metadata.path("summaryPath").asText());
+        assertTrue(metadata.path("prNumber").isNull());
+
+        final Path historyIndex = historyDir.resolve("history").resolve("index.json");
+        final JsonNode index = OBJECT_MAPPER.readTree(historyIndex.toFile());
+        assertEquals("main", index.path("profiles").path(PROFILE)
+                .path("latestChannel").asText());
+        assertEquals("history/" + PROFILE + "/latest-main.json",
+                index.path("profiles").path(PROFILE)
+                        .path("latestPointerPath").asText());
+        assertEquals("history/" + PROFILE + "/latest-main.json",
+                index.path("profiles").path(PROFILE).path("channels")
+                        .path("main").path("latestPointerPath").asText());
 
         final ProcessResult resolveResult = runPythonScript(
                 "resolve_jmh_history_baseline.py",
@@ -150,6 +171,97 @@ class BenchmarkHistoryScriptsSmokeTest {
         assertEquals(0, resolveResult.exitCode(), resolveResult.output());
         assertEquals(resolvedSummary.toRealPath().toString(),
                 Path.of(resolveResult.output().trim()).toRealPath().toString());
+    }
+
+    @Test
+    void publishScriptStoresPrScopedHistoryWithoutOverwritingCanonicalMainPointer()
+            throws Exception {
+        assumePython3Available();
+        final Path sourceDir = tempDir.resolve("candidate-pr-run");
+        final Path historyDir = tempDir.resolve("perf-artifacts");
+        final Path comparisonMarkdown = tempDir.resolve("pr-comparison.md");
+        final Path comparisonJson = tempDir.resolve("pr-comparison.json");
+        final Path mainMetadataJson = tempDir.resolve("publish-main-metadata.json");
+        final Path prMetadataJson = tempDir.resolve("publish-pr-metadata.json");
+        Files.createDirectories(sourceDir.resolve("raw"));
+        Files.createDirectories(sourceDir.resolve("logs"));
+        writeSummary(sourceDir.resolve("summary.json"), candidateSummaryModel());
+        Files.writeString(sourceDir.resolve("raw/sample.json"), "{}",
+                StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("logs/sample.log"), "ok\n",
+                StandardCharsets.UTF_8);
+        Files.writeString(comparisonMarkdown, "# Comparison\n",
+                StandardCharsets.UTF_8);
+        Files.writeString(comparisonJson, "{\"status\":\"ok\"}\n",
+                StandardCharsets.UTF_8);
+
+        final ProcessResult publishMainResult = runPythonScript(
+                "publish_jmh_history.py",
+                "--source-dir", sourceDir.toString(),
+                "--history-dir", historyDir.toString(),
+                "--channel", "main",
+                "--run-suffix", "main",
+                "--metadata-out", mainMetadataJson.toString());
+
+        assertEquals(0, publishMainResult.exitCode(), publishMainResult.output());
+
+        final ProcessResult publishPrResult = runPythonScript(
+                "publish_jmh_history.py",
+                "--source-dir", sourceDir.toString(),
+                "--history-dir", historyDir.toString(),
+                "--channel", "pr-125",
+                "--pr-number", "125",
+                "--run-suffix", "pr",
+                "--comparison-markdown", comparisonMarkdown.toString(),
+                "--comparison-json", comparisonJson.toString(),
+                "--metadata-out", prMetadataJson.toString());
+
+        assertEquals(0, publishPrResult.exitCode(), publishPrResult.output());
+
+        final Path canonicalPointer = historyDir.resolve("history")
+                .resolve(PROFILE).resolve("latest-main.json");
+        final Path prPointer = historyDir.resolve("history")
+                .resolve(PROFILE).resolve("pull-requests")
+                .resolve("pr-125").resolve("latest.json");
+        assertTrue(Files.isRegularFile(canonicalPointer));
+        assertTrue(Files.isRegularFile(prPointer));
+
+        final JsonNode mainMetadata = OBJECT_MAPPER.readTree(mainMetadataJson.toFile());
+        final JsonNode prMetadata = OBJECT_MAPPER.readTree(prMetadataJson.toFile());
+        assertTrue(mainMetadata.path("prNumber").isNull());
+        assertEquals("125", prMetadata.path("prNumber").asText());
+        assertTrue(prMetadata.path("runPath").asText()
+                .contains("/pull-requests/pr-125/2026/03/"));
+        assertNotNull(prMetadata.path("comparisonMarkdownPath").asText(null));
+        assertNotNull(prMetadata.path("comparisonJsonPath").asText(null));
+        assertTrue(Files.isRegularFile(historyDir.resolve(
+                prMetadata.path("comparisonMarkdownPath").asText())));
+        assertTrue(Files.isRegularFile(historyDir.resolve(
+                prMetadata.path("comparisonJsonPath").asText())));
+
+        final JsonNode prPointerJson = OBJECT_MAPPER.readTree(prPointer.toFile());
+        assertEquals("pr-125", prPointerJson.path("channel").asText());
+        assertEquals("125", prPointerJson.path("prNumber").asText());
+        assertTrue(prPointerJson.path("summaryPath").asText()
+                .contains("/pull-requests/pr-125/"));
+
+        final JsonNode index = OBJECT_MAPPER.readTree(historyDir.resolve("history")
+                .resolve("index.json").toFile());
+        assertEquals("main", index.path("profiles").path(PROFILE)
+                .path("latestChannel").asText());
+        assertEquals(mainMetadata.path("latestPointerPath").asText(),
+                index.path("profiles").path(PROFILE)
+                        .path("latestPointerPath").asText());
+        assertEquals(prMetadata.path("latestPointerPath").asText(),
+                index.path("profiles").path(PROFILE).path("pullRequests")
+                        .path("125").path("latestPointerPath").asText());
+        assertEquals("pr-125", index.path("profiles").path(PROFILE)
+                .path("pullRequests").path("125").path("channel").asText());
+        assertTrue(index.path("profiles").path(PROFILE).path("channels")
+                .path("pr-125").isMissingNode());
+        assertFalse(index.path("profiles").path(PROFILE)
+                .path("latestPointerPath").asText()
+                .contains("/pull-requests/"));
     }
 
     private boolean hasMetricWithStatus(final JsonNode comparison,

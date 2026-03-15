@@ -17,6 +17,8 @@ interface IndexState<K, V> {
 
     /**
      * Handles transition to CLOSED.
+     * Implementations may enter an intermediate closing state before the index
+     * reaches the terminal closed state.
      *
      * @param index index instance
      */

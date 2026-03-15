@@ -1,0 +1,32 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "**/pom.xml"
+      - ".github/workflows/dependency-review.yml"
+      - ".github/dependabot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dependency-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Review dependency changes
+      uses: actions/dependency-review-action@v4
+      with:
+        warn-only: true
+        comment-summary-in-pr: always
+        show-openssf-scorecard: true

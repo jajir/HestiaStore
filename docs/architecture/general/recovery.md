@@ -7,7 +7,7 @@ This page explains HestiaStore’s crash safety model and commit semantics. WAL 
 - WAL-disabled mode: no automatic WAL replay. Durability boundary is `flushAndWait()` (or close).
 - WAL-enabled mode: startup can repair invalid WAL tail and replay durable records above checkpoint.
 - No multi-key ACID transactions: operations are per-key, and there is no cross-key atomic batch commit.
-- Durability boundary: calling `flushAndWait()` (or closing the index) persists all writes that happened before the call. `flush()` only schedules maintenance; wait for completion if you need a durability guarantee.
+- Durability boundary: calling `flushAndWait()` (or closing the index) persists all writes that happened before the call. During `close()`, the index enters `CLOSING` while pending maintenance and WAL/map flush work are finalized. `flush()` only schedules maintenance; wait for completion if you need a durability guarantee.
 - Atomic file replacement: data files are written to `*.tmp` and made visible via `rename` only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.
 
 ## 💾 Where Writes Become Durable
@@ -87,6 +87,9 @@ Examples in code:
 ## 🧭 Practical Guidance
 
 - If WAL is disabled, call `flushAndWait()` on periodic boundaries and always before shutdown to persist in‑memory writes.
+- If another thread observes the index during shutdown, expect `getState()` /
+  `metricsSnapshot().getState()` to report `CLOSING` until the final `CLOSED`
+  transition.
 - If WAL is enabled, configure durability mode (`ASYNC`, `GROUP_SYNC`, `SYNC`) based on loss tolerance and latency targets.
 - After a crash, reopen the index; WAL-enabled indexes recover from WAL first, then `checkAndRepairConsistency()` can be run as an additional integrity check.
 

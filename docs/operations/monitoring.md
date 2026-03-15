@@ -22,7 +22,7 @@ at a fixed scrape interval.
   - `readLatencyP50/P95/P99Micros`
   - `writeLatencyP50/P95/P99Micros`
 - State:
-  - `state` (`OPEN`, `ERROR`, `CLOSED`, ...)
+  - `state` (`OPENING`, `READY`, `CLOSING`, `ERROR`, `CLOSED`)
 
 ## Partition Overlay Signals
 
@@ -115,6 +115,9 @@ Start with these baseline alerts and tune per workload:
   - condition: `getLocalThrottleCount()` or `getGlobalThrottleCount()`
     increases steadily
   - severity: warning
+- `index stuck closing`:
+  - condition: `state == CLOSING` for longer than the expected shutdown window
+  - severity: warning
 
 ## Structured Logs
 
@@ -147,4 +150,4 @@ At minimum, create one dashboard per WAL-enabled index with:
    `WalTruncationCount`.
 6. `PartitionBufferedKeyCount`, `ImmutableRunCount`,
    `DrainingPartitionCount`, `DrainInFlightCount`.
-7. Index state timeline (`OPEN` vs `ERROR`).
+7. Index state timeline (`OPENING` / `READY` / `CLOSING` / `ERROR` / `CLOSED`).

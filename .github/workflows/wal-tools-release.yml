@@ -41,13 +41,13 @@ jobs:
 
     - name: Smoke test WAL tools scripts
       run: |
-        mvn -B -pl wal-tools -am \
+        mvn -B -pl engine,wal-tools -am \
           -Dtest=org.hestiastore.waltools.WalToolsScriptsTest \
           -Dsurefire.failIfNoSpecifiedTests=false \
           test --file pom.xml
 
     - name: Build WAL tools distribution
-      run: mvn -B -pl wal-tools -am -DskipTests package --file pom.xml
+      run: mvn -B -pl engine,wal-tools -am -DskipTests package --file pom.xml
 
     - name: Smoke test packaged WAL tool scripts
       shell: bash
