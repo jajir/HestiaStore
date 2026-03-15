@@ -200,87 +200,42 @@ public class PartitionStableSplitCoordinator<K, V> {
             return null;
         }
         final long targetLowerCount = Math.max(1L, visibleCount / 2L);
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(SegmentIteratorIsolation.FAIL_FAST);
-            if (result.getStatus() == SegmentResultStatus.OK
-                    && result.getValue() != null) {
-                try (EntryIterator<K, V> iterator = result.getValue()) {
-                    K minKey = null;
-                    K maxLowerKey = null;
-                    long lowerCount = 0L;
-                    while (iterator.hasNext() && lowerCount < targetLowerCount) {
-                        final Entry<K, V> entry = iterator.next();
-                        if (minKey == null) {
-                            minKey = entry.getKey();
-                        }
-                        maxLowerKey = entry.getKey();
-                        lowerCount++;
-                    }
-                    if (minKey == null || maxLowerKey == null
-                            || lowerCount >= visibleCount) {
-                        return null;
-                    }
-                    return new SplitBoundary<>(minKey, maxLowerKey,
-                            visibleCount);
-                } catch (final RuntimeException e) {
-                    if (isIteratorInvalidated(e)) {
-                        retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                                segment.getId());
-                        continue;
-                    }
-                    throw e;
-                }
-            }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                        segment.getId());
-                continue;
-            }
-            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+        try (EntryIterator<K, V> iterator = openIteratorWithRetry(segment,
+                SegmentIteratorIsolation.FULL_ISOLATION)) {
+            if (iterator == null) {
                 return null;
             }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to open iterator for route split: %s",
-                    segment.getId(), result.getStatus()));
+            K minKey = null;
+            K maxLowerKey = null;
+            long lowerCount = 0L;
+            while (iterator.hasNext() && lowerCount < targetLowerCount) {
+                final Entry<K, V> entry = iterator.next();
+                if (minKey == null) {
+                    minKey = entry.getKey();
+                }
+                maxLowerKey = entry.getKey();
+                lowerCount++;
+            }
+            if (minKey == null || maxLowerKey == null
+                    || lowerCount >= visibleCount) {
+                return null;
+            }
+            return new SplitBoundary<>(minKey, maxLowerKey, visibleCount);
         }
     }
 
     private long countVisibleEntries(final Segment<K, V> segment) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(SegmentIteratorIsolation.FAIL_FAST);
-            if (result.getStatus() == SegmentResultStatus.OK
-                    && result.getValue() != null) {
-                try (EntryIterator<K, V> iterator = result.getValue()) {
-                    long count = 0L;
-                    while (iterator.hasNext()) {
-                        iterator.next();
-                        count++;
-                    }
-                    return count;
-                } catch (final RuntimeException e) {
-                    if (isIteratorInvalidated(e)) {
-                        retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                                segment.getId());
-                        continue;
-                    }
-                    throw e;
-                }
-            }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                        segment.getId());
-                continue;
-            }
-            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+        try (EntryIterator<K, V> iterator = openIteratorWithRetry(segment,
+                SegmentIteratorIsolation.FULL_ISOLATION)) {
+            if (iterator == null) {
                 return 0L;
             }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to count entries for route split: %s",
-                    segment.getId(), result.getStatus()));
+            long count = 0L;
+            while (iterator.hasNext()) {
+                iterator.next();
+                count++;
+            }
+            return count;
         }
     }
 
@@ -315,7 +270,7 @@ public class PartitionStableSplitCoordinator<K, V> {
         Vldtn.requireNonNull(parentSegment, SEGMENT_ARG);
         Vldtn.requireNonNull(plan, "plan");
         final EntryIterator<K, V> openedIterator = openIteratorWithRetry(
-                parentSegment, SegmentIteratorIsolation.FAIL_FAST);
+                parentSegment, SegmentIteratorIsolation.FULL_ISOLATION);
         if (openedIterator == null) {
             deleteSplitSegments(plan.getLowerSegmentId(),
                     plan.getUpperSegmentId().orElse(null));
