@@ -343,7 +343,7 @@ jobs:
         fi
 
     - name: Upload benchmark comparison artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: benchmark-compare-${{ steps.refs.outputs.profile }}-${{ github.run_id }}
         path: |
