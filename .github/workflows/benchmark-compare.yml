@@ -356,51 +356,94 @@ jobs:
       run: |
         set -euo pipefail
 
+        HISTORY_DIR="${{ steps.history.outputs.history_dir }}"
+        HISTORY_BRANCH="${{ steps.refs.outputs.history_branch }}"
         METADATA_PATH="${RUNNER_TEMP}/benchmark-results/publish-history.json"
-        PUBLISH_ARGS=(
-          --source-dir "${RUNNER_TEMP}/benchmark-results/candidate"
-          --history-dir "${{ steps.history.outputs.history_dir }}"
-          --channel "${{ steps.refs.outputs.history_channel }}"
-          --run-suffix "${GITHUB_RUN_ID}"
-          --comparison-markdown "${RUNNER_TEMP}/benchmark-results/comparison.md"
-          --comparison-json "${RUNNER_TEMP}/benchmark-results/comparison.json"
-          --metadata-out "${METADATA_PATH}"
-        )
-        if [ -n "${{ steps.refs.outputs.pr_number }}" ]; then
-          PUBLISH_ARGS+=(--pr-number "${{ steps.refs.outputs.pr_number }}")
-        fi
+        OUTPUT_PATH="${RUNNER_TEMP}/benchmark-results/publish-history.outputs"
+        MAX_PUSH_ATTEMPTS=3
 
-        python3 benchmarks/scripts/publish_jmh_history.py \
-          "${PUBLISH_ARGS[@]}"
+        prepare_history_branch() {
+          cd "${HISTORY_DIR}"
+          if git ls-remote --exit-code --heads origin "${HISTORY_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${HISTORY_BRANCH}"
+            git checkout -B "${HISTORY_BRANCH}" "origin/${HISTORY_BRANCH}"
+          else
+            git checkout --orphan "${HISTORY_BRANCH}"
+            git rm -rf . >/dev/null 2>&1 || true
+            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            mkdir -p history
+          fi
+          git clean -fd
+        }
 
-        export METADATA_PATH
-        python3 - <<'PY' >> "${GITHUB_OUTPUT}"
-        import json
-        import os
-        import pathlib
+        emit_publish_outputs() {
+          export METADATA_PATH
+          export OUTPUT_PATH
+          python3 -c '
+import json
+import os
+import pathlib
 
-        metadata_path = pathlib.Path(os.environ["METADATA_PATH"])
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        for key in ("latestPointerPath", "runPath", "summaryPath",
-                    "comparisonMarkdownPath", "comparisonJsonPath"):
-            value = metadata.get(key)
-            if value:
-                print(f"{key}={value}")
-        pr_number = metadata.get("prNumber")
-        if pr_number:
-            print(f"publishedPrNumber={pr_number}")
-        PY
+metadata_path = pathlib.Path(os.environ["METADATA_PATH"])
+output_path = pathlib.Path(os.environ["OUTPUT_PATH"])
+metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+lines = []
+for key in ("latestPointerPath", "runPath", "summaryPath",
+            "comparisonMarkdownPath", "comparisonJsonPath"):
+    value = metadata.get(key)
+    if value:
+        lines.append(f"{key}={value}")
+pr_number = metadata.get("prNumber")
+if pr_number:
+    lines.append(f"publishedPrNumber={pr_number}")
+output_path.write_text("\n".join(lines) + ("\n" if lines else ""),
+                       encoding="utf-8")
+'
+        }
 
-        cd "${{ steps.history.outputs.history_dir }}"
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add history
-        if git diff --cached --quiet; then
-          echo "No perf history changes to publish."
-          exit 0
-        fi
-        git commit -m "perf: publish ${{ steps.refs.outputs.profile }} ${{ steps.refs.outputs.history_channel }} for ${{ steps.refs.outputs.candidate_ref }}"
-        git push origin "HEAD:${{ steps.refs.outputs.history_branch }}"
+        for attempt in $(seq 1 "${MAX_PUSH_ATTEMPTS}"); do
+          prepare_history_branch
+          rm -f "${METADATA_PATH}" "${OUTPUT_PATH}"
+
+          PUBLISH_ARGS=(
+            --source-dir "${RUNNER_TEMP}/benchmark-results/candidate"
+            --history-dir "${HISTORY_DIR}"
+            --channel "${{ steps.refs.outputs.history_channel }}"
+            --run-suffix "${GITHUB_RUN_ID}"
+            --comparison-markdown "${RUNNER_TEMP}/benchmark-results/comparison.md"
+            --comparison-json "${RUNNER_TEMP}/benchmark-results/comparison.json"
+            --metadata-out "${METADATA_PATH}"
+          )
+          if [ -n "${{ steps.refs.outputs.pr_number }}" ]; then
+            PUBLISH_ARGS+=(--pr-number "${{ steps.refs.outputs.pr_number }}")
+          fi
+
+          python3 benchmarks/scripts/publish_jmh_history.py \
+            "${PUBLISH_ARGS[@]}"
+          emit_publish_outputs
+
+          cd "${HISTORY_DIR}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history
+          if git diff --cached --quiet; then
+            cat "${OUTPUT_PATH}" >> "${GITHUB_OUTPUT}"
+            echo "No perf history changes to publish."
+            exit 0
+          fi
+          git commit -m "perf: publish ${{ steps.refs.outputs.profile }} ${{ steps.refs.outputs.history_channel }} for ${{ steps.refs.outputs.candidate_ref }}"
+          if git push origin "HEAD:${HISTORY_BRANCH}"; then
+            cat "${OUTPUT_PATH}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "Publish to ${HISTORY_BRANCH} raced with another run; retrying attempt ${attempt}/${MAX_PUSH_ATTEMPTS}."
+          if [ "${attempt}" -eq "${MAX_PUSH_ATTEMPTS}" ]; then
+            echo "Failed to publish perf history after ${MAX_PUSH_ATTEMPTS} attempts." >&2
+            exit 1
+          fi
+          sleep $((attempt * 2))
+        done
 
     - name: Prepare PR benchmark comment
       if: github.event_name == 'pull_request'
