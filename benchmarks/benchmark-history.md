@@ -99,6 +99,9 @@ Current behavior:
     stored in the `perf-artifacts` branch
   - if no stored baseline exists yet, fall back to merge-base with the target
     branch
+  - publish the candidate run into a PR-scoped history path on
+    `perf-artifacts`
+  - update a sticky PR comment with the current comparison and history links
 - nightly schedule
   - run `segment-index-nightly`
   - compare `HEAD` against the latest stored nightly baseline from
@@ -106,8 +109,9 @@ Current behavior:
   - if no stored baseline exists yet, fall back to `HEAD~1`
   - publish the new candidate run into `perf-artifacts`
 - manual dispatch
-  - can override profile, history branch, baseline ref, candidate ref, fail
-    policy, and whether to publish into history
+  - can override profile, history branch, history channel, optional PR number,
+    baseline ref, candidate ref, fail policy, and whether to publish into
+    history
 
 The workflow uses two git worktrees on the same runner so baseline and
 candidate execute under the same machine conditions when a fallback git baseline
@@ -133,9 +137,36 @@ history/
           logs/
           comparison-vs-previous.md
           comparison-vs-previous.json
+    pull-requests/
+      pr-<number>/
+        latest.json
+        YYYY/
+          MM/
+            <timestamp>_<sha>_<run-id>/
+              summary.json
+              raw/
+              logs/
+              comparison-vs-previous.md
+              comparison-vs-previous.json
 ```
 
-`latest-main.json` is the pointer used by PR and nightly compare runs.
+`latest-main.json` remains the canonical baseline pointer used by PR and
+nightly compare runs. PR snapshots publish under
+`pull-requests/pr-<number>/latest.json` without overwriting the canonical main
+pointer.
+
+## Where To Look
+
+After a PR benchmark run, the same comparison is visible in three places:
+
+- Actions job summary for the `Benchmark Compare` run
+- a sticky PR comment with the latest delta table and history links
+- `perf-artifacts/history/<profile>/pull-requests/pr-<number>/...`
+
+After a nightly run on `main`, the canonical baseline moves forward in:
+
+- `perf-artifacts/history/<profile>/latest-main.json`
+- the timestamped run directory referenced by that pointer
 
 ## Recommended Interpretation Model
 
@@ -166,7 +197,12 @@ Current default thresholds in the compare script:
 
 ## What Still Remains
 
-This branch-based MVP gives us canonical nightly baselines and per-change
-comparison against them. The next step, if needed, is a separate report
-generator over `perf-artifacts` to render long-term trend charts or release
-to release summaries.
+This branch-based flow now gives us:
+
+- canonical nightly baselines on `main`
+- durable per-PR snapshots and comments for merged review history
+- raw JMH outputs that remain inspectable after workflow log retention expires
+
+The next step, if needed, is a separate report generator over
+`perf-artifacts` to render long-term trend charts or release to release
+summaries.
