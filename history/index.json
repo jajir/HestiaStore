@@ -25,8 +25,8 @@
         "129": {
           "channel": "pr-129",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-129/latest.json",
-          "sha": "10641a8137c0333369ea6fdf5a5cf79d15ad35a6",
-          "timestampUtc": "2026-03-15T21:30:45.201160+00:00"
+          "sha": "759d58e2366c320edc21a073c28753b35ac49edb",
+          "timestampUtc": "2026-03-15T21:41:37.188392+00:00"
         },
         "130": {
           "channel": "pr-130",
