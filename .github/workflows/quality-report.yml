@@ -32,8 +32,8 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Compile sources for static analysis
-      run: mvn -B -ntp -DskipTests -Ddependency-check.skip=true test-compile --file pom.xml
+    - name: Build and install reactor artifacts for static analysis
+      run: mvn -B -ntp -DskipTests -Ddependency-check.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -Djacoco.skip=true install --file pom.xml
 
     - name: Generate PMD, CPD, and SpotBugs reports
       run: |
