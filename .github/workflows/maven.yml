@@ -91,6 +91,7 @@ jobs:
       if: always()
       with:
         check_run: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && github.actor != 'dependabot[bot]' }}
+        comment_mode: off
         job_summary: true
         files: |
           **/target/surefire-reports/TEST-*.xml
