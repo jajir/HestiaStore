@@ -460,13 +460,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         logger.debug("Closing index '{}'.", conf.getIndexName());
         try {
             getIndexState().onClose(this);
-            setSegmentIndexState(SegmentIndexState.CLOSED);
+            setSegmentIndexState(SegmentIndexState.CLOSING);
             awaitAsyncOperations();
             drainPartitions(true);
-            awaitSplitsIdle();
+            awaitBackgroundSplitPolicySettled();
             drainPartitions(true);
-            awaitSplitsIdle();
-            flushSegments(true);
+            awaitBackgroundSplitPolicySettled();
+            setSegmentIndexState(SegmentIndexState.CLOSED);
+            backgroundSplitCoordinator
+                    .runWithSplitSchedulingPaused(() -> flushSegments(true));
             final SegmentRegistryResult<Void> closeResult = segmentRegistry
                     .close();
             if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
@@ -486,7 +488,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             logger.debug("Index '{}' closed.", conf.getIndexName());
         } finally {
-            walRuntime.close();
+            try {
+                completeCloseStateTransition();
+            } finally {
+                walRuntime.close();
+            }
         }
     }
 
@@ -657,6 +663,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             fileLock = readyState.getFileLock();
         } else if (currentState instanceof IndexStateOpening<?, ?> openingState) {
             fileLock = openingState.getFileLock();
+        } else if (currentState instanceof IndexStateClosing<?, ?> closingState) {
+            fileLock = closingState.getFileLock();
         }
         setIndexState(new IndexStateError<>(failure, fileLock));
     }
@@ -1069,8 +1077,25 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private boolean isClosedOrClosingState() {
         final SegmentIndexState state = getState();
-        return wasClosed() || state == SegmentIndexState.CLOSED
+        return state == SegmentIndexState.CLOSED
                 || state == SegmentIndexState.ERROR;
+    }
+
+    private void completeCloseStateTransition() {
+        if (getState() != SegmentIndexState.ERROR) {
+            setSegmentIndexState(SegmentIndexState.CLOSED);
+        }
+        final IndexState<K, V> currentState = indexState;
+        if (currentState instanceof IndexStateClosing<?, ?>) {
+            @SuppressWarnings("unchecked")
+            final IndexStateClosing<K, V> closingState = (IndexStateClosing<K, V>) currentState;
+            closingState.finishClose(this);
+            return;
+        }
+        if (currentState instanceof IndexStateClosed<?, ?>) {
+            return;
+        }
+        currentState.onClose(this);
     }
 
     private void cleanupOrphanedSegmentDirectories() {
