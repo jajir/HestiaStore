@@ -99,9 +99,12 @@ Current behavior:
     stored in the `perf-artifacts` branch
   - if no stored baseline exists yet, fall back to merge-base with the target
     branch
+  - if the PR already has published history, also compare against the latest
+    stored PR snapshot from the same PR number
   - publish the candidate run into a PR-scoped history path on
     `perf-artifacts`
-  - update a sticky PR comment with the current comparison and history links
+  - update a sticky PR comment with the canonical baseline comparison,
+    previous-PR delta when available, and history links
 - nightly schedule
   - run `segment-index-nightly`
   - compare `HEAD` against the latest stored nightly baseline from
@@ -160,7 +163,8 @@ pointer.
 After a PR benchmark run, the same comparison is visible in three places:
 
 - Actions job summary for the `Benchmark Compare` run
-- a sticky PR comment with the latest delta table and history links
+- a sticky PR comment with the latest delta table against canonical `main`,
+  plus previous-PR delta when available, and history links
 - `perf-artifacts/history/<profile>/pull-requests/pr-<number>/...`
 
 After a nightly run on `main`, the canonical baseline moves forward in:
