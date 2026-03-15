@@ -222,6 +222,23 @@ jobs:
 
         echo "baseline_summary=${BASELINE_SUMMARY}" >> "${GITHUB_OUTPUT}"
 
+    - name: Resolve previous PR baseline
+      if: github.event_name == 'pull_request'
+      id: previous-pr-baseline
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        PREVIOUS_PR_SUMMARY=""
+        if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
+          --history-dir "${{ steps.history.outputs.history_dir }}" \
+          --profile "${{ steps.refs.outputs.profile }}" \
+          --channel "pr-${{ github.event.pull_request.number }}" > "${RUNNER_TEMP}/previous-pr-summary-path.txt"; then
+          PREVIOUS_PR_SUMMARY="$(cat "${RUNNER_TEMP}/previous-pr-summary-path.txt")"
+        fi
+
+        echo "summary=${PREVIOUS_PR_SUMMARY}" >> "${GITHUB_OUTPUT}"
+
     - name: Create candidate worktree
       id: candidate-worktree
       shell: bash
@@ -303,10 +320,27 @@ jobs:
           mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison.md"
         fi
 
+        PREVIOUS_PR_SUMMARY="${{ steps.previous-pr-baseline.outputs.summary }}"
+        if [ -n "${PREVIOUS_PR_SUMMARY}" ]; then
+          python3 benchmarks/scripts/compare_jmh_profile.py \
+            --baseline "${PREVIOUS_PR_SUMMARY}" \
+            --candidate "${RUNNER_TEMP}/benchmark-results/candidate/summary.json" \
+            --markdown-out "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md" \
+            --json-out "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.json"
+        fi
+
     - name: Add job summary
       shell: bash
       run: |
         cat "${RUNNER_TEMP}/benchmark-results/comparison.md" >> "${GITHUB_STEP_SUMMARY}"
+        if [ -f "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md" ]; then
+          {
+            echo
+            echo "## Comparison Vs Previous PR Run"
+            echo
+            tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        fi
 
     - name: Upload benchmark comparison artifacts
       uses: actions/upload-artifact@v4
@@ -391,6 +425,9 @@ jobs:
             echo "- PR history pointer: [latest.json](${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/${{ steps.publish-history.outputs.latestPointerPath }})"
             echo "- PR history run: [published snapshot](${HISTORY_BASE_URL}/tree/${{ steps.refs.outputs.history_branch }}/${{ steps.publish-history.outputs.runPath }})"
           fi
+          if [ -n "${{ steps.previous-pr-baseline.outputs.summary }}" ]; then
+            echo "- Previous PR baseline: latest stored PR snapshot before this run"
+          fi
           if [ -n "${{ steps.stored-baseline.outputs.baseline_summary }}" ]; then
             echo "- Baseline source: [canonical latest-main.json](${BASELINE_POINTER_URL})"
           elif [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ]; then
@@ -399,11 +436,19 @@ jobs:
             echo "- Baseline source: bootstrap mode without prior canonical baseline"
           fi
           echo
-          echo "<details><summary>Comparison details</summary>"
+          echo "<details><summary>Comparison vs canonical baseline</summary>"
           echo
           cat "${RUNNER_TEMP}/benchmark-results/comparison.md"
           echo
           echo "</details>"
+          if [ -f "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md" ]; then
+            echo
+            echo "<details><summary>Comparison vs previous PR run</summary>"
+            echo
+            tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md"
+            echo
+            echo "</details>"
+          fi
         } > "${COMMENT_PATH}"
 
         echo "comment_path=${COMMENT_PATH}" >> "${GITHUB_OUTPUT}"
