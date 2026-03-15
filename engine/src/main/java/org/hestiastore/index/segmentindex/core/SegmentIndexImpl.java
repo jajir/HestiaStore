@@ -367,6 +367,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     .forEach(segmentId -> compactSegment(segmentId, true));
             flushSegments(true);
         });
+        keyToSegmentMap.optionalyFlush();
+        checkpointWal();
         scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
