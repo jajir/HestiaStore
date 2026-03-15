@@ -75,6 +75,8 @@ nav:
         - Changelog: CHANGELOG.md
         - Development:
             - Overview: development/index.md
+            - Code Quality Charter: development/code-quality-charter.md
+            - Quality Reporting: development/quality-reporting.md
             - Documentation: development/documentation.md
             - Documentation Guidelines: development/documentation-guidelines.md
             - Guides: development/guides.md
