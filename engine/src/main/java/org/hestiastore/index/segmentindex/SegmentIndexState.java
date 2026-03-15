@@ -8,6 +8,8 @@ public enum SegmentIndexState {
     OPENING,
     /** Index is ready to serve operations. */
     READY,
+    /** Index is shutting down and finishing background maintenance. */
+    CLOSING,
     /** Index encountered an unrecoverable error. */
     ERROR,
     /** Index has been closed and rejects operations. */

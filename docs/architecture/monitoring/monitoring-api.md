@@ -50,6 +50,13 @@ Compatibility note:
 - `supportedKeys` and config views return only the canonical partition-aware
   names
 
+Lifecycle note:
+
+- `state` is one of `OPENING`, `READY`, `CLOSING`, `CLOSED`, or `ERROR`.
+- `ready` is `true` only when `state == "READY"`.
+- `CLOSING` means shutdown is in progress and final maintenance/persistence
+  work has not finished yet.
+
 ## Example payloads
 
 `GET /api/v1/report` response:

@@ -1,0 +1,110 @@
+name: Quality Report
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "**/*.java"
+      - "**/pom.xml"
+      - ".github/workflows/quality-report.yml"
+      - ".github/dependabot.yml"
+      - "docs/development/quality-reporting.md"
+      - "docs/development/index.md"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: quality-report-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build and install reactor artifacts for static analysis
+      run: mvn -B -ntp -DskipTests -Ddependency-check.skip=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -Djacoco.skip=true install --file pom.xml
+
+    - name: Generate PMD, CPD, and SpotBugs reports
+      run: |
+        mvn -B -ntp -DskipTests -Ddependency-check.skip=true \
+          pmd:pmd \
+          pmd:cpd \
+          spotbugs:spotbugs \
+          --file pom.xml
+
+    - name: Summarize generated quality reports
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+        from pathlib import Path
+        import xml.etree.ElementTree as ET
+
+        print("## Quality reports")
+        print()
+        print("Report-only run. Findings do not fail the PR yet.")
+        print()
+        print("| Module | PMD | CPD | SpotBugs | SpotBugs internal errors |")
+        print("| --- | ---: | ---: | ---: | ---: |")
+
+        modules = []
+        for pmd_xml in sorted(Path(".").glob("*/target/pmd.xml")):
+            module = pmd_xml.parts[0]
+            modules.append(module)
+
+        for module in modules:
+            pmd_xml = Path(module) / "target" / "pmd.xml"
+            cpd_xml = Path(module) / "target" / "cpd.xml"
+            spotbugs_xml = Path(module) / "target" / "spotbugsXml.xml"
+
+            pmd_count = 0
+            if pmd_xml.exists():
+                pmd_count = len(ET.parse(pmd_xml).getroot().findall(".//violation"))
+
+            cpd_count = 0
+            if cpd_xml.exists():
+                cpd_count = len(ET.parse(cpd_xml).getroot().findall(".//duplication"))
+
+            spotbugs_count = 0
+            spotbugs_errors = 0
+            if spotbugs_xml.exists():
+                root = ET.parse(spotbugs_xml).getroot()
+                spotbugs_count = len(root.findall(".//BugInstance"))
+                errors = root.find(".//Errors")
+                if errors is not None:
+                    spotbugs_errors = int(errors.attrib.get("errors", "0"))
+
+            print(
+                f"| `{module}` | `{pmd_count}` | `{cpd_count}` | "
+                f"`{spotbugs_count}` | `{spotbugs_errors}` |"
+            )
+
+        print()
+        print("Artifacts include XML/HTML reports for offline inspection.")
+        PY
+
+    - name: Upload quality report artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-reports-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          **/target/site/pmd.html
+          **/target/site/cpd.html
+          **/target/site/spotbugs.html
+          **/target/spotbugsXml.xml
+          **/target/pmd.xml
+          **/target/cpd.xml
+        if-no-files-found: warn

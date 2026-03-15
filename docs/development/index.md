@@ -4,6 +4,8 @@ This page links development-focused documentation.
 
 ## Topics
 
+- [Code Quality Charter](code-quality-charter.md)
+- [Quality Reporting](quality-reporting.md)
 - [Documentation](documentation.md)
 - [Documentation Guidelines](documentation-guidelines.md)
 - [Guides](guides.md)

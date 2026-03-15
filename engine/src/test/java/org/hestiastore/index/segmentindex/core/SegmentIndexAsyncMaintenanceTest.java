@@ -148,6 +148,35 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @Test
+    void closeExposesClosingStateWhileBlockedPartitionDrainPublishes() throws Exception {
+        index.close();
+        index = newDrainIndex();
+
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            final BlockedDrainHarness harness = installBlockedDrainHarness(index);
+            try {
+                final Future<?> closeTask = executor.submit(index::close);
+
+                awaitCondition(() -> index.getState() == SegmentIndexState.CLOSING,
+                        5_000L);
+                assertFalse(closeTask.isDone());
+                assertEquals(SegmentIndexState.CLOSING, index.metricsSnapshot()
+                        .getState());
+
+                harness.release().countDown();
+                closeTask.get(5, TimeUnit.SECONDS);
+            } finally {
+                harness.release().countDown();
+            }
+
+            assertEquals(SegmentIndexState.CLOSED, index.getState());
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
     void flush_waits_for_blocked_partition_drain_publish() throws Exception {
         index.close();
         index = newDrainIndex();
@@ -351,13 +380,16 @@ class SegmentIndexAsyncMaintenanceTest {
     private Segment<Integer, String> mockBlockedDrainSegment(
             final SegmentId segmentId, final CountDownLatch started,
             final CountDownLatch release) throws Exception {
+        final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
+                SegmentState.READY);
         final Segment<Integer, String> blockedSegment = mock(Segment.class);
         lenient().when(blockedSegment.getId()).thenReturn(segmentId);
-        lenient().when(blockedSegment.getState())
-                .thenReturn(SegmentState.READY);
-        lenient().when(blockedSegment.getRuntimeSnapshot()).thenReturn(
-                new SegmentRuntimeSnapshot(segmentId, SegmentState.READY, 0L,
-                        0L, 0L, 0L, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L));
+        lenient().when(blockedSegment.getState()).thenAnswer(
+                invocation -> stateRef.get());
+        lenient().when(blockedSegment.getRuntimeSnapshot()).thenAnswer(
+                invocation -> new SegmentRuntimeSnapshot(segmentId,
+                        stateRef.get(), 0L, 0L, 0L, 0L, 0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L));
         when(blockedSegment.put(any(), any())).thenAnswer(invocation -> {
             started.countDown();
             if (!release.await(5, TimeUnit.SECONDS)) {
@@ -368,6 +400,10 @@ class SegmentIndexAsyncMaintenanceTest {
         });
         lenient().when(blockedSegment.flush()).thenReturn(SegmentResult.ok());
         lenient().when(blockedSegment.compact()).thenReturn(SegmentResult.ok());
+        lenient().when(blockedSegment.close()).thenAnswer(invocation -> {
+            stateRef.set(SegmentState.CLOSED);
+            return SegmentResult.ok();
+        });
         return blockedSegment;
     }
 

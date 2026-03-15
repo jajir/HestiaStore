@@ -15,6 +15,16 @@ on:
         required: false
         default: perf-artifacts
         type: string
+      history_channel:
+        description: Optional history channel name for latest pointers
+        required: false
+        default: main
+        type: string
+      history_pr_number:
+        description: Optional PR number for PR-scoped history publishing
+        required: false
+        default: ""
+        type: string
       baseline_ref:
         description: Optional git baseline when no stored history baseline is available
         required: false
@@ -48,6 +58,8 @@ jobs:
     timeout-minutes: 90
     permissions:
       contents: write
+      issues: write
+      pull-requests: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -78,6 +90,8 @@ jobs:
         PROFILE="segment-index-pr-smoke"
         FAIL_ON_REGRESSION="false"
         HISTORY_BRANCH="perf-artifacts"
+        HISTORY_CHANNEL="main"
+        PR_NUMBER=""
         PUBLISH_HISTORY="false"
         FALLBACK_BASELINE_REF=""
 
@@ -89,12 +103,19 @@ jobs:
         elif [ "${{ github.event_name }}" = "pull_request" ]; then
           CANDIDATE_REF="${{ github.event.pull_request.head.sha }}"
           BASE_BRANCH="origin/${{ github.event.pull_request.base.ref }}"
+          HISTORY_CHANNEL="pr-${{ github.event.pull_request.number }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+            PUBLISH_HISTORY="true"
+          fi
           git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}" "${CANDIDATE_REF}"
           FALLBACK_BASELINE_REF="$(git merge-base "${CANDIDATE_REF}" "${BASE_BRANCH}")"
         else
           PROFILE="${{ inputs.profile }}"
           FAIL_ON_REGRESSION="${{ inputs.fail_on_regression }}"
           HISTORY_BRANCH="${{ inputs.history_branch }}"
+          HISTORY_CHANNEL="${{ inputs.history_channel }}"
+          PR_NUMBER="${{ inputs.history_pr_number }}"
           PUBLISH_HISTORY="${{ inputs.publish_history }}"
           CANDIDATE_REF="${{ inputs.candidate_ref }}"
           FALLBACK_BASELINE_REF="${{ inputs.baseline_ref }}"
@@ -106,6 +127,9 @@ jobs:
           fi
           git fetch --no-tags origin main "${CANDIDATE_REF}" || true
         fi
+        if [ -n "${PR_NUMBER}" ] && [ "${HISTORY_CHANNEL}" = "main" ]; then
+          HISTORY_CHANNEL="pr-${PR_NUMBER}"
+        fi
 
         CANDIDATE_REF="$(git rev-parse "${CANDIDATE_REF}")"
         FALLBACK_BASELINE_REF="$(git rev-parse "${FALLBACK_BASELINE_REF}")"
@@ -115,6 +139,8 @@ jobs:
         echo "candidate_ref=${CANDIDATE_REF}" >> "${GITHUB_OUTPUT}"
         echo "fail_on_regression=${FAIL_ON_REGRESSION}" >> "${GITHUB_OUTPUT}"
         echo "history_branch=${HISTORY_BRANCH}" >> "${GITHUB_OUTPUT}"
+        echo "history_channel=${HISTORY_CHANNEL}" >> "${GITHUB_OUTPUT}"
+        echo "pr_number=${PR_NUMBER}" >> "${GITHUB_OUTPUT}"
         echo "publish_history=${PUBLISH_HISTORY}" >> "${GITHUB_OUTPUT}"
 
     - name: Detect fallback baseline compatibility
@@ -291,17 +317,45 @@ jobs:
 
     - name: Publish candidate run to perf-artifacts history
       if: steps.refs.outputs.publish_history == 'true'
+      id: publish-history
       shell: bash
       run: |
         set -euo pipefail
 
-        python3 benchmarks/scripts/publish_jmh_history.py \
-          --source-dir "${RUNNER_TEMP}/benchmark-results/candidate" \
-          --history-dir "${{ steps.history.outputs.history_dir }}" \
-          --channel main \
-          --run-suffix "${GITHUB_RUN_ID}" \
-          --comparison-markdown "${RUNNER_TEMP}/benchmark-results/comparison.md" \
+        METADATA_PATH="${RUNNER_TEMP}/benchmark-results/publish-history.json"
+        PUBLISH_ARGS=(
+          --source-dir "${RUNNER_TEMP}/benchmark-results/candidate"
+          --history-dir "${{ steps.history.outputs.history_dir }}"
+          --channel "${{ steps.refs.outputs.history_channel }}"
+          --run-suffix "${GITHUB_RUN_ID}"
+          --comparison-markdown "${RUNNER_TEMP}/benchmark-results/comparison.md"
           --comparison-json "${RUNNER_TEMP}/benchmark-results/comparison.json"
+          --metadata-out "${METADATA_PATH}"
+        )
+        if [ -n "${{ steps.refs.outputs.pr_number }}" ]; then
+          PUBLISH_ARGS+=(--pr-number "${{ steps.refs.outputs.pr_number }}")
+        fi
+
+        python3 benchmarks/scripts/publish_jmh_history.py \
+          "${PUBLISH_ARGS[@]}"
+
+        export METADATA_PATH
+        python3 - <<'PY' >> "${GITHUB_OUTPUT}"
+        import json
+        import os
+        import pathlib
+
+        metadata_path = pathlib.Path(os.environ["METADATA_PATH"])
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        for key in ("latestPointerPath", "runPath", "summaryPath",
+                    "comparisonMarkdownPath", "comparisonJsonPath"):
+            value = metadata.get(key)
+            if value:
+                print(f"{key}={value}")
+        pr_number = metadata.get("prNumber")
+        if pr_number:
+            print(f"publishedPrNumber={pr_number}")
+        PY
 
         cd "${{ steps.history.outputs.history_dir }}"
         git config user.name "github-actions[bot]"
@@ -311,8 +365,88 @@ jobs:
           echo "No perf history changes to publish."
           exit 0
         fi
-        git commit -m "perf: update ${{ steps.refs.outputs.profile }} for ${{ steps.refs.outputs.candidate_ref }}"
+        git commit -m "perf: publish ${{ steps.refs.outputs.profile }} ${{ steps.refs.outputs.history_channel }} for ${{ steps.refs.outputs.candidate_ref }}"
         git push origin "HEAD:${{ steps.refs.outputs.history_branch }}"
+
+    - name: Prepare PR benchmark comment
+      if: github.event_name == 'pull_request'
+      id: prepare-pr-comment
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        COMMENT_PATH="${RUNNER_TEMP}/benchmark-results/pr-comment.md"
+        RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        HISTORY_BASE_URL="${{ github.server_url }}/${{ github.repository }}"
+        ARTIFACT_NAME="benchmark-compare-${{ steps.refs.outputs.profile }}-${{ github.run_id }}"
+        BASELINE_POINTER_URL="${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/history/${{ steps.refs.outputs.profile }}/latest-main.json"
+
+        {
+          echo "<!-- benchmark-compare:${{ steps.refs.outputs.profile }} -->"
+          echo "## Benchmark Compare: \`${{ steps.refs.outputs.profile }}\`"
+          echo
+          echo "- Run: [${{ github.run_id }}](${RUN_URL})"
+          echo "- Artifact: \`${ARTIFACT_NAME}\`"
+          if [ -n "${{ steps.publish-history.outputs.latestPointerPath }}" ]; then
+            echo "- PR history pointer: [latest.json](${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/${{ steps.publish-history.outputs.latestPointerPath }})"
+            echo "- PR history run: [published snapshot](${HISTORY_BASE_URL}/tree/${{ steps.refs.outputs.history_branch }}/${{ steps.publish-history.outputs.runPath }})"
+          fi
+          if [ -n "${{ steps.stored-baseline.outputs.baseline_summary }}" ]; then
+            echo "- Baseline source: [canonical latest-main.json](${BASELINE_POINTER_URL})"
+          elif [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ]; then
+            echo "- Baseline source: fallback git baseline \`${{ steps.refs.outputs.fallback_baseline_ref }}\`"
+          else
+            echo "- Baseline source: bootstrap mode without prior canonical baseline"
+          fi
+          echo
+          echo "<details><summary>Comparison details</summary>"
+          echo
+          cat "${RUNNER_TEMP}/benchmark-results/comparison.md"
+          echo
+          echo "</details>"
+        } > "${COMMENT_PATH}"
+
+        echo "comment_path=${COMMENT_PATH}" >> "${GITHUB_OUTPUT}"
+
+    - name: Upsert PR benchmark comment
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      uses: actions/github-script@v7
+      env:
+        COMMENT_PATH: ${{ steps.prepare-pr-comment.outputs.comment_path }}
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          const fs = require("fs");
+          const body = fs.readFileSync(process.env.COMMENT_PATH, "utf8");
+          const marker = "<!-- benchmark-compare:${{ steps.refs.outputs.profile }} -->";
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const comments = await github.paginate(github.rest.issues.listComments, {
+            owner,
+            repo,
+            issue_number,
+            per_page: 100,
+          });
+          const existing = comments.find((comment) =>
+            comment.user?.type === "Bot"
+            && typeof comment.body === "string"
+            && comment.body.includes(marker)
+          );
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: existing.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body,
+            });
+          }
 
     - name: Remove temporary worktrees
       if: always()

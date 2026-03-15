@@ -86,6 +86,16 @@ Run script-level smoke coverage for compare/history tooling:
 mvn -pl benchmarks -am -DskipTests=false -Dtest=BenchmarkHistoryScriptsSmokeTest test
 ```
 
+PR benchmark runs now surface in three places:
+
+- Actions job summary
+- a sticky PR comment with the latest comparison
+- the `perf-artifacts` branch under
+  `history/<profile>/pull-requests/pr-<number>/...`
+
+Nightly canonical baselines continue to advance only through
+`history/<profile>/latest-main.json`.
+
 Run a profile locally:
 
 ```sh

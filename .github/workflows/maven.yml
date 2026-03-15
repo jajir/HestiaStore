@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
     
     - name: Checkout repository
@@ -52,7 +53,21 @@ jobs:
         echo "SAFE_REF_NAME=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
         mkdir -p badges
 
+    - name: Show NVD API key availability
+      shell: bash
+      run: |
+        if [ -n "${NVD_API_KEY:-}" ]; then
+          echo "NVD_API_KEY is set"
+        else
+          echo "NVD_API_KEY is missing"
+        fi
+
+    - name: Build with Maven (PR)
+      if: github.event_name == 'pull_request'
+      run: mvn -e -B -Ddependency-check.skip=true verify --file pom.xml
+
     - name: Build with Maven
+      if: github.event_name != 'pull_request'
       run: mvn -e -B verify --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
@@ -101,17 +116,31 @@ jobs:
     
     - name: OWASP vulnerabilities - count
       id: vuln
+      shell: bash
       run: |
+        if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+          echo "Dependency-Check report skipped on pull_request builds."
+          echo "VULN_COUNT=skipped" >> "$GITHUB_ENV"
+          echo "OWASP_BADGE_COLOR=696969" >> "$GITHUB_ENV"
+          exit 0
+        fi
+
+        if [ ! -f engine/target/dependency-check-report.json ]; then
+          echo "Expected engine/target/dependency-check-report.json after verify, but the file is missing." >&2
+          exit 1
+        fi
+
         VULN_COUNT=$(jq '[.dependencies[] | select(.vulnerabilities and (.vulnerabilities | length > 0)) | .vulnerabilities[]] | length' engine/target/dependency-check-report.json)
         echo "OWASP Vulnerabilities count: $VULN_COUNT"
-        echo "VULN_COUNT=$VULN_COUNT" >> $GITHUB_ENV
+        echo "VULN_COUNT=$VULN_COUNT" >> "$GITHUB_ENV"
+        echo "OWASP_BADGE_COLOR=31c653" >> "$GITHUB_ENV"
 
     - name: OWASP vulnerabilities - Generate badge
       uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
       with:
         label: 'OWASP Vulnerabilities'
         status: ${{ env.VULN_COUNT }}
-        color: 31c653
+        color: ${{ env.OWASP_BADGE_COLOR }}
         path: badge-owasp-${{ env.SAFE_REF_NAME }}.svg
 
     - name: Upload badges to Gist
@@ -196,7 +225,7 @@ jobs:
           ${{ runner.os }}-maven-
 
     - name: Build WAL tools distribution
-      run: mvn -B -pl wal-tools -am -DskipTests package --file pom.xml
+      run: mvn -B -pl engine,wal-tools -am -DskipTests package --file pom.xml
 
     - name: Smoke test WAL tools scripts
       shell: bash

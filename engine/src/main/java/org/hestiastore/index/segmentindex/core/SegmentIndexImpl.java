@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -358,15 +359,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> {
             keyToSegmentMap.getSegmentIds()
                     .forEach(segmentId -> compactSegment(segmentId, true));
             flushSegments(true);
         });
         scheduleBackgroundSplitPolicyScanIfIdle();
+        awaitBackgroundSplitPolicySettled();
+        keyToSegmentMap.optionalyFlush();
+        checkpointWal();
     }
 
     /** {@inheritDoc} */
@@ -459,13 +463,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         logger.debug("Closing index '{}'.", conf.getIndexName());
         try {
             getIndexState().onClose(this);
-            setSegmentIndexState(SegmentIndexState.CLOSED);
+            setSegmentIndexState(SegmentIndexState.CLOSING);
             awaitAsyncOperations();
             drainPartitions(true);
-            awaitSplitsIdle();
+            awaitBackgroundSplitPolicySettled();
             drainPartitions(true);
-            awaitSplitsIdle();
-            flushSegments(true);
+            awaitBackgroundSplitPolicySettled();
+            setSegmentIndexState(SegmentIndexState.CLOSED);
+            backgroundSplitCoordinator
+                    .runWithSplitSchedulingPaused(() -> flushSegments(true));
             final SegmentRegistryResult<Void> closeResult = segmentRegistry
                     .close();
             if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
@@ -485,7 +491,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             }
             logger.debug("Index '{}' closed.", conf.getIndexName());
         } finally {
-            walRuntime.close();
+            try {
+                completeCloseStateTransition();
+            } finally {
+                walRuntime.close();
+            }
         }
     }
 
@@ -656,6 +666,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             fileLock = readyState.getFileLock();
         } else if (currentState instanceof IndexStateOpening<?, ?> openingState) {
             fileLock = openingState.getFileLock();
+        } else if (currentState instanceof IndexStateClosing<?, ?> closingState) {
+            fileLock = closingState.getFileLock();
         }
         setIndexState(new IndexStateError<>(failure, fileLock));
     }
@@ -674,14 +686,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void flushAndWait() {
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         backgroundSplitCoordinator
                 .runWithSplitSchedulingPaused(() -> flushSegments(true));
+        scheduleBackgroundSplitPolicyScanIfIdle();
+        awaitBackgroundSplitPolicySettled();
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
-        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
@@ -1068,8 +1081,25 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private boolean isClosedOrClosingState() {
         final SegmentIndexState state = getState();
-        return wasClosed() || state == SegmentIndexState.CLOSED
+        return state == SegmentIndexState.CLOSED
                 || state == SegmentIndexState.ERROR;
+    }
+
+    private void completeCloseStateTransition() {
+        if (getState() != SegmentIndexState.ERROR) {
+            setSegmentIndexState(SegmentIndexState.CLOSED);
+        }
+        final IndexState<K, V> currentState = indexState;
+        if (currentState instanceof IndexStateClosing<?, ?>) {
+            @SuppressWarnings("unchecked")
+            final IndexStateClosing<K, V> closingState = (IndexStateClosing<K, V>) currentState;
+            closingState.finishClose(this);
+            return;
+        }
+        if (currentState instanceof IndexStateClosed<?, ?>) {
+            return;
+        }
+        currentState.onClose(this);
     }
 
     private void cleanupOrphanedSegmentDirectories() {
@@ -1597,6 +1627,32 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected void awaitSplitsIdle() {
         backgroundSplitCoordinator
                 .awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
+    }
+
+    private void awaitBackgroundSplitPolicySettled() {
+        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (true) {
+            awaitSplitsIdle();
+            if (!backgroundSplitScanRequested.get()
+                    && !backgroundSplitScanScheduled.get()
+                    && !hasPendingSplitHints()
+                    && backgroundSplitCoordinator.splitInFlightCount() == 0) {
+                return;
+            }
+            if (System.nanoTime() >= deadline) {
+                throw new IndexException(String.format(
+                        "Background split policy completion timed out after %d ms.",
+                        timeoutMillis));
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                throw new IndexException(
+                        "Interrupted while waiting for background split policy completion.");
+            }
+        }
     }
 
     private static boolean applyIndexContext(

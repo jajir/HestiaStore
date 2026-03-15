@@ -32,6 +32,8 @@
         <surefire.plugin.version>3.5.3</surefire.plugin.version>
         <mockito.version>5.20.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
+        <pmd.plugin.version>3.21.2</pmd.plugin.version>
+        <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
         <micrometer.version>1.15.5</micrometer.version>
         <dependency-check.skip>false</dependency-check.skip>
     </properties>
@@ -102,6 +104,30 @@
     </dependencyManagement>
 
     <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${pmd.plugin.version}</version>
+                <configuration>
+                    <excludeRoots>
+                        <excludeRoot>${project.build.directory}/generated-sources/annotations</excludeRoot>
+                    </excludeRoots>
+                    <linkXRef>false</linkXRef>
+                    <skipEmptyReport>false</skipEmptyReport>
+                    <targetJdk>${java.version}</targetJdk>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.plugin.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Medium</threshold>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/config/spotbugs/exclude.xml</excludeFilterFile>
+                </configuration>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
