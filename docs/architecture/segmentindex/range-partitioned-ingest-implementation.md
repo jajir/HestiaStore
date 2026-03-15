@@ -92,9 +92,10 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
   baseline
 - additional immediate background split policy scans are still triggered on
   open, after consistency repair, and after runtime split-threshold changes
-- explicit `flushAndWait()` / `compactAndWait()` no longer initiate split
-  scanning themselves; they only wait for in-flight split work that was
-  already triggered by the background policy path
+- explicit `flushAndWait()` / `compactAndWait()` still keep split candidate
+  evaluation on the background policy path, but before returning they also
+  wait for one final idle split-policy scan triggered after explicit
+  maintenance so routed segment backlog does not leak past the boundary
 - while explicit stable flush/compaction is running, new autonomous split
   candidates are temporarily ignored; a fresh idle scan is requested right
   after explicit maintenance completes so split materialization does not race
