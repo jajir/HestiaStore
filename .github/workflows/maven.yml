@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
     
     - name: Checkout repository
@@ -52,7 +53,12 @@ jobs:
         echo "SAFE_REF_NAME=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
         mkdir -p badges
 
+    - name: Build with Maven (PR)
+      if: github.event_name == 'pull_request'
+      run: mvn -e -B -Ddependency-check.skip=true verify --file pom.xml
+
     - name: Build with Maven
+      if: github.event_name != 'pull_request'
       run: mvn -e -B verify --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive

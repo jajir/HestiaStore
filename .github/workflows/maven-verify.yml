@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     steps:
     
     - name: Checkout repository
@@ -39,7 +41,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-        
 
+    - name: Build with Maven (PR)
+      if: github.event_name == 'pull_request'
+      run: mvn -B -Ddependency-check.skip=true verify --file pom.xml
+
     - name: Build with Maven
+      if: github.event_name != 'pull_request'
       run: mvn -B verify --file pom.xml
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
