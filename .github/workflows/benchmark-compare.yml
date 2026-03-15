@@ -379,26 +379,26 @@ jobs:
         emit_publish_outputs() {
           export METADATA_PATH
           export OUTPUT_PATH
-          python3 -c '
-import json
-import os
-import pathlib
+          python3 - <<'PY'
+          import json
+          import os
+          import pathlib
 
-metadata_path = pathlib.Path(os.environ["METADATA_PATH"])
-output_path = pathlib.Path(os.environ["OUTPUT_PATH"])
-metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-lines = []
-for key in ("latestPointerPath", "runPath", "summaryPath",
-            "comparisonMarkdownPath", "comparisonJsonPath"):
-    value = metadata.get(key)
-    if value:
-        lines.append(f"{key}={value}")
-pr_number = metadata.get("prNumber")
-if pr_number:
-    lines.append(f"publishedPrNumber={pr_number}")
-output_path.write_text("\n".join(lines) + ("\n" if lines else ""),
-                       encoding="utf-8")
-'
+          metadata_path = pathlib.Path(os.environ["METADATA_PATH"])
+          output_path = pathlib.Path(os.environ["OUTPUT_PATH"])
+          metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+          lines = []
+          for key in ("latestPointerPath", "runPath", "summaryPath",
+                      "comparisonMarkdownPath", "comparisonJsonPath"):
+              value = metadata.get(key)
+              if value:
+                  lines.append(f"{key}={value}")
+          pr_number = metadata.get("prNumber")
+          if pr_number:
+              lines.append(f"publishedPrNumber={pr_number}")
+          output_path.write_text("\n".join(lines) + ("\n" if lines else ""),
+                                 encoding="utf-8")
+          PY
         }
 
         for attempt in $(seq 1 "${MAX_PUSH_ATTEMPTS}"); do
