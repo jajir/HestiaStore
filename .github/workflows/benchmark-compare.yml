@@ -358,6 +358,7 @@ jobs:
 
         HISTORY_DIR="${{ steps.history.outputs.history_dir }}"
         HISTORY_BRANCH="${{ steps.refs.outputs.history_branch }}"
+        PUBLISH_HISTORY_SCRIPT="${GITHUB_WORKSPACE}/benchmarks/scripts/publish_jmh_history.py"
         METADATA_PATH="${RUNNER_TEMP}/benchmark-results/publish-history.json"
         OUTPUT_PATH="${RUNNER_TEMP}/benchmark-results/publish-history.outputs"
         MAX_PUSH_ATTEMPTS=3
@@ -399,7 +400,7 @@ jobs:
             PUBLISH_ARGS+=(--pr-number "${{ steps.refs.outputs.pr_number }}")
           fi
 
-          python3 benchmarks/scripts/publish_jmh_history.py \
+          python3 "${PUBLISH_HISTORY_SCRIPT}" \
             "${PUBLISH_ARGS[@]}"
           emit_publish_outputs
 
