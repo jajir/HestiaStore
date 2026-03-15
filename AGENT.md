@@ -69,6 +69,7 @@
 
 ## Refactoring guidelines
 
+- source-of-truth for target code shape, refactoring workflow, and performance gates lives in `docs/development/code-quality-charter.md`
 - refactoring backlog lives in `docs/refactor-backlog.md`
 - each reafactoring step ha unique id and brackets to identified what;s done [ ]
 - task that are done are moved to section "## Done (Archive)" and are marked as done
