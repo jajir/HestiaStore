@@ -1675,19 +1675,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void awaitBackgroundSplitPolicyExhausted() {
-        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
-        final long deadline = System.nanoTime()
-                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        while (true) {
+        awaitBackgroundSplitPolicySettled();
+        if (forceRetryEligibleSplitCandidates()) {
             awaitBackgroundSplitPolicySettled();
-            if (!forceRetryEligibleSplitCandidates()) {
-                return;
-            }
-            if (System.nanoTime() >= deadline) {
-                throw new IndexException(String.format(
-                        "Background split policy exhaustion timed out after %d ms.",
-                        timeoutMillis));
-            }
         }
     }
 
