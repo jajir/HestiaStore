@@ -31,8 +31,8 @@
         "135": {
           "channel": "pr-135",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-135/latest.json",
-          "sha": "47391b04890ddd73b3d87ba73f5fa30cd2e86189",
-          "timestampUtc": "2026-03-15T18:58:44.679336+00:00"
+          "sha": "e266c08f86d115240b6c7ea7e383dc19d446387c",
+          "timestampUtc": "2026-03-15T19:08:15.799876+00:00"
         }
       },
       "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
