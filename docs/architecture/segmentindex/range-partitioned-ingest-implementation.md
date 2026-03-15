@@ -58,7 +58,9 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
   stable segment storage, waits for any partition-aware stable splits already
   scheduled by background drain, drains again if split apply reassigned overlay
   data to child routes, waits again for any second-wave split scheduled by that
-  follow-up drain, flushes stable segments, and checkpoints WAL
+  follow-up drain, flushes stable segments, and if the final idle split-policy
+  scan still publishes child routes, reestablishes the flush boundary on the
+  final mapped segments before checkpointing WAL
 - `compactAndWait()` likewise waits for any split already scheduled by
   background drain before compacting stable segments, so compaction does not
   overlap with split materialization of the same routed range; the same second
