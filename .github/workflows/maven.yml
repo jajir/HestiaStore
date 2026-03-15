@@ -14,6 +14,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
     env:
       GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
       NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
@@ -87,6 +90,8 @@ jobs:
       id: test-results
       if: always()
       with:
+        check_run: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        job_summary: true
         files: |
           **/target/surefire-reports/TEST-*.xml
           **/target/failsafe-reports/TEST-*.xml
