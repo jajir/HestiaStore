@@ -49,6 +49,9 @@ for index-level telemetry.
 - Legacy `split*` and `maintenance*` fields remain in the snapshot for
   compatibility, but partition-specific fields are the authoritative view for
   the new ingest runtime.
+- `state` is one of `OPENING`, `READY`, `CLOSING`, `CLOSED`, or `ERROR`.
+- `CLOSING` means shutdown is in progress and the index is no longer accepting
+  new API operations, but final persistence/cleanup work may still be running.
 
 ## Compatibility policy
 

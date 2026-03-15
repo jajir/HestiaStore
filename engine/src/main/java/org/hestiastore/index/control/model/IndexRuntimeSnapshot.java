@@ -7,7 +7,9 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 
 /**
- * Immutable runtime snapshot for one index.
+ * Immutable runtime snapshot for one index, including the current
+ * {@link SegmentIndexState} (`OPENING`, `READY`, `CLOSING`, `CLOSED`, or
+ * `ERROR`).
  */
 public record IndexRuntimeSnapshot(String indexName, SegmentIndexState state,
         SegmentIndexMetricsSnapshot metrics, Instant capturedAt) {

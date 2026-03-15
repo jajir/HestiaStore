@@ -1,8 +1,9 @@
 package org.hestiastore.index.segmentindex.core;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -19,31 +20,34 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class IndexStateReadyTest {
+class IndexStateClosingTest {
 
     @Mock
     private FileLock fileLock;
 
     @Test
-    void onCloseTransitionsToClosingState() {
-        final IndexStateReady<Integer, String> state = new IndexStateReady<>(
+    void finishCloseTransitionsToClosedStateAndUnlocks() {
+        when(fileLock.isLocked()).thenReturn(true);
+        final IndexStateClosing<Integer, String> state = new IndexStateClosing<>(
                 fileLock);
 
-        final TestIndex index = new TestIndex(new MemDirectory(), new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), buildConf());
-        state.onClose(index);
+        final TestIndex index = new TestIndex(new MemDirectory(),
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(),
+                buildConf());
+        index.setIndexState(state);
 
-        assertTrue(index.getIndexState() instanceof IndexStateClosing);
-        verify(fileLock, never()).unlock();
+        state.finishClose(index);
+
+        assertTrue(index.getIndexState() instanceof IndexStateClosed);
+        verify(fileLock).unlock();
     }
 
     @Test
-    void tryPerformOperationDoesNothing() {
-        assertTrue(true);
-        final IndexStateReady<Integer, String> state = new IndexStateReady<>(
+    void tryPerformOperationRejectsWhileClosing() {
+        final IndexStateClosing<Integer, String> state = new IndexStateClosing<>(
                 fileLock);
 
-        state.tryPerformOperation();
+        assertThrows(IllegalStateException.class, state::tryPerformOperation);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
@@ -52,7 +56,7 @@ class IndexStateReadyTest {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())//
                 .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("index-state-ready-test")//
+                .withName("index-state-closing-test")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(10)//
                 .withMaxNumberOfKeysInActivePartition(5)//
@@ -73,8 +77,7 @@ class IndexStateReadyTest {
     private static final class TestIndex
             extends SegmentIndexImpl<Integer, String> {
 
-        private TestIndex(
-                final Directory directoryFacade,
+        private TestIndex(final Directory directoryFacade,
                 final TypeDescriptorInteger keyTypeDescriptor,
                 final TypeDescriptorShortString valueTypeDescriptor,
                 final IndexConfiguration<Integer, String> conf) {

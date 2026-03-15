@@ -285,10 +285,21 @@ public interface SegmentIndex<K, V> extends CloseableResource {
 
     /**
      * Returns the current lifecycle state of this index instance.
+     * Typical transitions are `OPENING -> READY -> CLOSING -> CLOSED`, with
+     * `ERROR` as a terminal failure state.
      *
      * @return index state
      */
     SegmentIndexState getState();
+
+    /**
+     * Closes the index and releases owned resources.
+     * Other threads may observe {@link SegmentIndexState#CLOSING} while close
+     * is waiting for in-flight maintenance and durability boundaries to
+     * settle.
+     */
+    @Override
+    void close();
 
     /**
      * Returns an immutable snapshot of index-level operation counters and

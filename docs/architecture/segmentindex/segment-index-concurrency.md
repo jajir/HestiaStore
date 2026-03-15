@@ -68,20 +68,34 @@
   any in-flight write with a stale mapping version retries.
 
 ## Index State Machine
+
+![SegmentIndex lifecycle state machine](images/index-lifecycle-state.svg)
+
 States:
 - OPENING: index bootstrap/consistency checks (and lock acquisition) in
   progress; operations are rejected.
 - READY: operations allowed.
+- CLOSING: `close()` is in progress; new API operations are rejected, the
+  directory lock is still held, and shutdown may still wait for split/drain/WAL
+  durability boundaries to settle.
 - ERROR: unrecoverable failure; operations are rejected.
-- CLOSED: operations are rejected.
+- CLOSED: shutdown completed, resources were released, and operations are
+  rejected.
 
 Transitions:
 - OPENING -> READY: after initialization and consistency checks complete.
-- READY -> CLOSED: close() completes; file lock released.
+- READY -> CLOSING: `close()` starts and begins shutdown coordination.
+- CLOSING -> CLOSED: shutdown completes; file lock released.
 - any -> ERROR: unrecoverable failure (e.g., OOM, disk full, failed split/file
   swap, or consistency check failure).
 
-Only one index instance may hold the directory lock at a time.
+Notes:
+- Only one index instance may hold the directory lock at a time.
+- The lock is held through `CLOSING` and released only when the instance
+  reaches `CLOSED` (or during terminal `ERROR` cleanup).
+- `flushAndWait()` and `compactAndWait()` remain explicit maintenance
+  boundaries while `close()` now uses the same settlement model before
+  finalizing shutdown.
 
 ## Failure Handling
 - SegmentResultStatus.ERROR from any segment results in IndexException.

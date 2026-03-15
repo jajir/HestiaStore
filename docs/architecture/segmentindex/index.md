@@ -21,4 +21,5 @@ Segment internals are intentionally centralized in
   tuning knobs.
 - [Metrics Snapshot](metrics-snapshot.md) — stable index telemetry contract.
 - [Segment Index Concurrency](segment-index-concurrency.md) — index
-  thread-safety and lifecycle behavior.
+  thread-safety and lifecycle behavior, including `OPENING`, `READY`,
+  `CLOSING`, `CLOSED`, and `ERROR`.
