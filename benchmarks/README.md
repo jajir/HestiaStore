@@ -89,7 +89,8 @@ mvn -pl benchmarks -am -DskipTests=false -Dtest=BenchmarkHistoryScriptsSmokeTest
 PR benchmark runs now surface in three places:
 
 - Actions job summary
-- a sticky PR comment with the latest comparison
+- a sticky PR comment with the latest comparison against canonical `main`
+  and, once a PR has history, the delta against the previous PR run
 - the `perf-artifacts` branch under
   `history/<profile>/pull-requests/pr-<number>/...`
 
