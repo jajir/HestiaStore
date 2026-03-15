@@ -53,6 +53,15 @@ jobs:
         echo "SAFE_REF_NAME=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_ENV"
         mkdir -p badges
 
+    - name: Show NVD API key availability
+      shell: bash
+      run: |
+        if [ -n "${NVD_API_KEY:-}" ]; then
+          echo "NVD_API_KEY is set"
+        else
+          echo "NVD_API_KEY is missing"
+        fi
+
     - name: Build with Maven (PR)
       if: github.event_name == 'pull_request'
       run: mvn -e -B -Ddependency-check.skip=true verify --file pom.xml
