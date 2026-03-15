@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -358,9 +359,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> {
             keyToSegmentMap.getSegmentIds()
                     .forEach(segmentId -> compactSegment(segmentId, true));
@@ -674,9 +675,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void flushAndWait() {
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         drainPartitions(true);
-        awaitSplitsIdle();
+        awaitBackgroundSplitPolicySettled();
         backgroundSplitCoordinator
                 .runWithSplitSchedulingPaused(() -> flushSegments(true));
         keyToSegmentMap.optionalyFlush();
@@ -1597,6 +1598,32 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected void awaitSplitsIdle() {
         backgroundSplitCoordinator
                 .awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
+    }
+
+    private void awaitBackgroundSplitPolicySettled() {
+        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (true) {
+            awaitSplitsIdle();
+            if (!backgroundSplitScanRequested.get()
+                    && !backgroundSplitScanScheduled.get()
+                    && !hasPendingSplitHints()
+                    && backgroundSplitCoordinator.splitInFlightCount() == 0) {
+                return;
+            }
+            if (System.nanoTime() >= deadline) {
+                throw new IndexException(String.format(
+                        "Background split policy completion timed out after %d ms.",
+                        timeoutMillis));
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                throw new IndexException(
+                        "Interrupted while waiting for background split policy completion.");
+            }
+        }
     }
 
     private static boolean applyIndexContext(
