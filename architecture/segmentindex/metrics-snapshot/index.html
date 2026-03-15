@@ -2569,6 +2569,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2623,6 +2627,62 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Quality Charter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3226,6 +3286,9 @@ for index-level telemetry.</p>
 <li>Legacy <code>split*</code> and <code>maintenance*</code> fields remain in the snapshot for
   compatibility, but partition-specific fields are the authoritative view for
   the new ingest runtime.</li>
+<li><code>state</code> is one of <code>OPENING</code>, <code>READY</code>, <code>CLOSING</code>, <code>CLOSED</code>, or <code>ERROR</code>.</li>
+<li><code>CLOSING</code> means shutdown is in progress and the index is no longer accepting
+  new API operations, but final persistence/cleanup work may still be running.</li>
 </ul>
 <h2 id="compatibility-policy">Compatibility policy</h2>
 <ul>

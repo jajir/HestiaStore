@@ -2646,6 +2646,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2700,6 +2704,62 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Quality Charter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3338,7 +3398,7 @@
 <li>WAL-disabled mode: no automatic WAL replay. Durability boundary is <code>flushAndWait()</code> (or close).</li>
 <li>WAL-enabled mode: startup can repair invalid WAL tail and replay durable records above checkpoint.</li>
 <li>No multi-key ACID transactions: operations are per-key, and there is no cross-key atomic batch commit.</li>
-<li>Durability boundary: calling <code>flushAndWait()</code> (or closing the index) persists all writes that happened before the call. <code>flush()</code> only schedules maintenance; wait for completion if you need a durability guarantee.</li>
+<li>Durability boundary: calling <code>flushAndWait()</code> (or closing the index) persists all writes that happened before the call. During <code>close()</code>, the index enters <code>CLOSING</code> while pending maintenance and WAL/map flush work are finalized. <code>flush()</code> only schedules maintenance; wait for completion if you need a durability guarantee.</li>
 <li>Atomic file replacement: data files are written to <code>*.tmp</code> and made visible via <code>rename</code> only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.</li>
 </ul>
 <h2 id="where-writes-become-durable">💾 Where Writes Become Durable</h2>
@@ -3421,6 +3481,9 @@
 <h2 id="practical-guidance">🧭 Practical Guidance</h2>
 <ul>
 <li>If WAL is disabled, call <code>flushAndWait()</code> on periodic boundaries and always before shutdown to persist in‑memory writes.</li>
+<li>If another thread observes the index during shutdown, expect <code>getState()</code> /
+  <code>metricsSnapshot().getState()</code> to report <code>CLOSING</code> until the final <code>CLOSED</code>
+  transition.</li>
 <li>If WAL is enabled, configure durability mode (<code>ASYNC</code>, <code>GROUP_SYNC</code>, <code>SYNC</code>) based on loss tolerance and latency targets.</li>
 <li>After a crash, reopen the index; WAL-enabled indexes recover from WAL first, then <code>checkAndRepairConsistency()</code> can be run as an additional integrity check.</li>
 </ul>

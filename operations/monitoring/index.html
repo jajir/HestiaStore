@@ -2465,6 +2465,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2519,6 +2523,62 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Quality Charter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3078,7 +3138,7 @@ at a fixed scrape interval.</p>
 <li><code>readLatencyP50/P95/P99Micros</code></li>
 <li><code>writeLatencyP50/P95/P99Micros</code></li>
 <li>State:</li>
-<li><code>state</code> (<code>OPEN</code>, <code>ERROR</code>, <code>CLOSED</code>, ...)</li>
+<li><code>state</code> (<code>OPENING</code>, <code>READY</code>, <code>CLOSING</code>, <code>ERROR</code>, <code>CLOSED</code>)</li>
 </ul>
 <h2 id="partition-overlay-signals">Partition Overlay Signals</h2>
 <p>For the range-partitioned ingest runtime, treat these as the primary
@@ -3168,6 +3228,9 @@ backpressure and drain indicators:</p>
 <li>condition: <code>getLocalThrottleCount()</code> or <code>getGlobalThrottleCount()</code>
     increases steadily</li>
 <li>severity: warning</li>
+<li><code>index stuck closing</code>:</li>
+<li>condition: <code>state == CLOSING</code> for longer than the expected shutdown window</li>
+<li>severity: warning</li>
 </ul>
 <h2 id="structured-logs">Structured Logs</h2>
 <p>Parse and index these WAL events:</p>
@@ -3198,7 +3261,7 @@ backpressure and drain indicators:</p>
    <code>WalTruncationCount</code>.</li>
 <li><code>PartitionBufferedKeyCount</code>, <code>ImmutableRunCount</code>,
    <code>DrainingPartitionCount</code>, <code>DrainInFlightCount</code>.</li>
-<li>Index state timeline (<code>OPEN</code> vs <code>ERROR</code>).</li>
+<li>Index state timeline (<code>OPENING</code> / <code>READY</code> / <code>CLOSING</code> / <code>ERROR</code> / <code>CLOSED</code>).</li>
 </ol>
 
 

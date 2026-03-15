@@ -2602,6 +2602,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2656,6 +2660,62 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Quality Charter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3291,6 +3351,13 @@ selected partition/cache runtime limits is applied.</p>
 <li>report and config responses emit only the canonical partition-aware names</li>
 <li><code>supportedKeys</code> and config views return only the canonical partition-aware
   names</li>
+</ul>
+<p>Lifecycle note:</p>
+<ul>
+<li><code>state</code> is one of <code>OPENING</code>, <code>READY</code>, <code>CLOSING</code>, <code>CLOSED</code>, or <code>ERROR</code>.</li>
+<li><code>ready</code> is <code>true</code> only when <code>state == "READY"</code>.</li>
+<li><code>CLOSING</code> means shutdown is in progress and final maintenance/persistence
+  work has not finished yet.</li>
 </ul>
 <h2 id="example-payloads">Example payloads</h2>
 <p><code>GET /api/v1/report</code> response:</p>

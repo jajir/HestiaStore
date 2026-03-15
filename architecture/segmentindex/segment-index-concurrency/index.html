@@ -2646,6 +2646,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2700,6 +2704,62 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Quality Charter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3405,18 +3465,30 @@
   any in-flight write with a stale mapping version retries.</li>
 </ul>
 <h2 id="index-state-machine">Index State Machine</h2>
+<p><img alt="SegmentIndex lifecycle state machine" src="../images/index-lifecycle-state.svg" /></p>
 <p>States:
 - OPENING: index bootstrap/consistency checks (and lock acquisition) in
   progress; operations are rejected.
 - READY: operations allowed.
+- CLOSING: <code>close()</code> is in progress; new API operations are rejected, the
+  directory lock is still held, and shutdown may still wait for split/drain/WAL
+  durability boundaries to settle.
 - ERROR: unrecoverable failure; operations are rejected.
-- CLOSED: operations are rejected.</p>
+- CLOSED: shutdown completed, resources were released, and operations are
+  rejected.</p>
 <p>Transitions:
 - OPENING -&gt; READY: after initialization and consistency checks complete.
-- READY -&gt; CLOSED: close() completes; file lock released.
+- READY -&gt; CLOSING: <code>close()</code> starts and begins shutdown coordination.
+- CLOSING -&gt; CLOSED: shutdown completes; file lock released.
 - any -&gt; ERROR: unrecoverable failure (e.g., OOM, disk full, failed split/file
   swap, or consistency check failure).</p>
-<p>Only one index instance may hold the directory lock at a time.</p>
+<p>Notes:
+- Only one index instance may hold the directory lock at a time.
+- The lock is held through <code>CLOSING</code> and released only when the instance
+  reaches <code>CLOSED</code> (or during terminal <code>ERROR</code> cleanup).
+- <code>flushAndWait()</code> and <code>compactAndWait()</code> remain explicit maintenance
+  boundaries while <code>close()</code> now uses the same settlement model before
+  finalizing shutdown.</p>
 <h2 id="failure-handling">Failure Handling</h2>
 <ul>
 <li>SegmentResultStatus.ERROR from any segment results in IndexException.</li>

@@ -2602,6 +2602,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2656,6 +2660,62 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Quality Charter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/quality-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3334,9 +3394,10 @@ longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</
   baseline</li>
 <li>additional immediate background split policy scans are still triggered on
   open, after consistency repair, and after runtime split-threshold changes</li>
-<li>explicit <code>flushAndWait()</code> / <code>compactAndWait()</code> no longer initiate split
-  scanning themselves; they only wait for in-flight split work that was
-  already triggered by the background policy path</li>
+<li>explicit <code>flushAndWait()</code> / <code>compactAndWait()</code> still keep split candidate
+  evaluation on the background policy path, but before returning they also
+  wait for one final idle split-policy scan triggered after explicit
+  maintenance so routed segment backlog does not leak past the boundary</li>
 <li>while explicit stable flush/compaction is running, new autonomous split
   candidates are temporarily ignored; a fresh idle scan is requested right
   after explicit maintenance completes so split materialization does not race

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="260" viewBox="0 0 980 260" role="img" aria-labelledby="title desc">
+  <title id="title">SegmentIndex lifecycle state machine</title>
+  <desc id="desc">State machine showing OPENING to READY to CLOSING to CLOSED, with ERROR reachable from any state.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/>
+    </marker>
+    <style>
+      .state { fill: #f8fafc; stroke: #1f2937; stroke-width: 2; rx: 14; ry: 14; }
+      .state-ready { fill: #dcfce7; }
+      .state-closing { fill: #fef3c7; }
+      .state-closed { fill: #e0f2fe; }
+      .state-error { fill: #fee2e2; }
+      .label { font: 700 18px sans-serif; fill: #111827; text-anchor: middle; dominant-baseline: middle; }
+      .arrow { stroke: #374151; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .note { font: 14px sans-serif; fill: #374151; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="state" x="50" y="70" width="160" height="64"/>
+  <text class="label" x="130" y="102">OPENING</text>
+
+  <rect class="state state-ready" x="280" y="70" width="160" height="64"/>
+  <text class="label" x="360" y="102">READY</text>
+
+  <rect class="state state-closing" x="510" y="70" width="160" height="64"/>
+  <text class="label" x="590" y="102">CLOSING</text>
+
+  <rect class="state state-closed" x="740" y="70" width="160" height="64"/>
+  <text class="label" x="820" y="102">CLOSED</text>
+
+  <rect class="state state-error" x="395" y="180" width="190" height="64"/>
+  <text class="label" x="490" y="212">ERROR</text>
+
+  <path class="arrow" d="M 210 102 L 280 102"/>
+  <text class="note" x="245" y="84">startup complete</text>
+
+  <path class="arrow" d="M 440 102 L 510 102"/>
+  <text class="note" x="475" y="84">close() starts</text>
+
+  <path class="arrow" d="M 670 102 L 740 102"/>
+  <text class="note" x="705" y="84">shutdown finalized</text>
+
+  <path class="arrow" d="M 130 134 C 130 176, 320 176, 395 202"/>
+  <path class="arrow" d="M 360 134 C 360 165, 410 178, 450 198"/>
+  <path class="arrow" d="M 590 134 C 590 165, 555 178, 530 198"/>
+  <path class="arrow" d="M 820 134 C 820 176, 640 176, 585 202"/>
+  <text class="note" x="490" y="162">unrecoverable failure</text>
+</svg>
