@@ -27,8 +27,7 @@ class IndexStateReady<K, V> implements IndexState<K, V> {
     /** {@inheritDoc} */
     @Override
     public void onClose(SegmentIndexImpl<K, V> index) {
-        index.setIndexState(new IndexStateClosed<>());
-        fileLock.unlock();
+        index.setIndexState(new IndexStateClosing<>(fileLock));
     }
 
     /** {@inheritDoc} */
