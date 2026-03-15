@@ -689,10 +689,15 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         awaitBackgroundSplitPolicySettled();
         drainPartitions(true);
         awaitBackgroundSplitPolicySettled();
-        backgroundSplitCoordinator
-                .runWithSplitSchedulingPaused(() -> flushSegments(true));
+        flushMappedSegmentsAndWait();
+        final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
         scheduleBackgroundSplitPolicyScanIfIdle();
         awaitBackgroundSplitPolicySettled();
+        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
+            drainPartitions(true);
+            awaitBackgroundSplitPolicySettled();
+            flushMappedSegmentsAndWait();
+        }
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
     }
@@ -1371,6 +1376,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 segmentId -> flushSegment(segmentId, waitForCompletion));
     }
 
+    private void flushMappedSegmentsAndWait() {
+        backgroundSplitCoordinator
+                .runWithSplitSchedulingPaused(() -> flushSegments(true));
+    }
+
+    private void compactMappedSegmentsAndFlush() {
+        backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> {
+            keyToSegmentMap.getSegmentIds()
+                    .forEach(segmentId -> compactSegment(segmentId, true));
+            flushSegments(true);
+        });
+    }
     private void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         if (logger.isDebugEnabled()) {
