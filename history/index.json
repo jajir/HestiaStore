@@ -22,6 +22,12 @@
           "sha": "40385a73172250be0ab7f63acb5dbf9264432e45",
           "timestampUtc": "2026-03-15T09:31:29.386911+00:00"
         },
+        "134": {
+          "channel": "pr-134",
+          "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-134/latest.json",
+          "sha": "d1a64762610e2138053c39b70b086039957f7813",
+          "timestampUtc": "2026-03-15T09:33:59.441842+00:00"
+        },
         "135": {
           "channel": "pr-135",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-135/latest.json",
