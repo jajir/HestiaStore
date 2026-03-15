@@ -367,9 +367,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     .forEach(segmentId -> compactSegment(segmentId, true));
             flushSegments(true);
         });
+        scheduleBackgroundSplitPolicyScanIfIdle();
+        awaitBackgroundSplitPolicySettled();
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
-        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     /** {@inheritDoc} */
@@ -690,9 +691,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         awaitBackgroundSplitPolicySettled();
         backgroundSplitCoordinator
                 .runWithSplitSchedulingPaused(() -> flushSegments(true));
+        scheduleBackgroundSplitPolicyScanIfIdle();
+        awaitBackgroundSplitPolicySettled();
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
-        scheduleBackgroundSplitPolicyScanIfIdle();
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
