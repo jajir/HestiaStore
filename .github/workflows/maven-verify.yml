@@ -89,7 +89,7 @@ jobs:
           ${{ runner.os }}-maven-
 
     - name: Build WAL tools distribution
-      run: mvn -B -pl wal-tools -am -DskipTests package --file pom.xml
+      run: mvn -B -pl engine,wal-tools -am -DskipTests package --file pom.xml
 
     - name: Smoke test WAL tools scripts
       shell: bash
