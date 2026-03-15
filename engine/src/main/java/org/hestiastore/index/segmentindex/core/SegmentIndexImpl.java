@@ -359,16 +359,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
         drainPartitions(true);
-        awaitBackgroundSplitPolicySettled();
+        awaitBackgroundSplitPolicyExhausted();
         drainPartitions(true);
-        awaitBackgroundSplitPolicySettled();
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> {
-            keyToSegmentMap.getSegmentIds()
-                    .forEach(segmentId -> compactSegment(segmentId, true));
-            flushSegments(true);
-        });
+        awaitBackgroundSplitPolicyExhausted();
+        compactMappedSegmentsAndFlush();
+        final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
         scheduleBackgroundSplitPolicyScanIfIdle();
-        awaitBackgroundSplitPolicySettled();
+        awaitBackgroundSplitPolicyExhausted();
+        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
+            drainPartitions(true);
+            awaitBackgroundSplitPolicyExhausted();
+            compactMappedSegmentsAndFlush();
+        }
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
     }
@@ -466,9 +468,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             setSegmentIndexState(SegmentIndexState.CLOSING);
             awaitAsyncOperations();
             drainPartitions(true);
-            awaitBackgroundSplitPolicySettled();
+            awaitBackgroundSplitPolicyExhausted();
             drainPartitions(true);
-            awaitBackgroundSplitPolicySettled();
+            awaitBackgroundSplitPolicyExhausted();
             setSegmentIndexState(SegmentIndexState.CLOSED);
             backgroundSplitCoordinator
                     .runWithSplitSchedulingPaused(() -> flushSegments(true));
@@ -686,16 +688,16 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void flushAndWait() {
         drainPartitions(true);
-        awaitBackgroundSplitPolicySettled();
+        awaitBackgroundSplitPolicyExhausted();
         drainPartitions(true);
-        awaitBackgroundSplitPolicySettled();
+        awaitBackgroundSplitPolicyExhausted();
         flushMappedSegmentsAndWait();
         final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
         scheduleBackgroundSplitPolicyScanIfIdle();
-        awaitBackgroundSplitPolicySettled();
+        awaitBackgroundSplitPolicyExhausted();
         if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
             drainPartitions(true);
-            awaitBackgroundSplitPolicySettled();
+            awaitBackgroundSplitPolicyExhausted();
             flushMappedSegmentsAndWait();
         }
         keyToSegmentMap.optionalyFlush();
@@ -1670,6 +1672,47 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         "Interrupted while waiting for background split policy completion.");
             }
         }
+    }
+
+    private void awaitBackgroundSplitPolicyExhausted() {
+        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        while (true) {
+            awaitBackgroundSplitPolicySettled();
+            if (!forceRetryEligibleSplitCandidates()) {
+                return;
+            }
+            if (System.nanoTime() >= deadline) {
+                throw new IndexException(String.format(
+                        "Background split policy exhaustion timed out after %d ms.",
+                        timeoutMillis));
+            }
+        }
+    }
+
+    private boolean forceRetryEligibleSplitCandidates() {
+        final int threshold = runtimeTuningState.effectiveValue(
+                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
+        if (threshold < 1) {
+            return false;
+        }
+        boolean scheduledAny = false;
+        for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
+            if (!isSegmentStillMapped(segmentId)) {
+                continue;
+            }
+            final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
+            if (segment == null) {
+                continue;
+            }
+            if (backgroundSplitCoordinator.forceHandleSplitCandidate(segment,
+                    (long) threshold)) {
+                stats.incSplitScheduleCx();
+                scheduledAny = true;
+            }
+        }
+        return scheduledAny;
     }
 
     private static boolean applyIndexContext(
