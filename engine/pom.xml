@@ -225,13 +225,14 @@
 				</executions>
 				<configuration>
 					<skip>${dependency-check.skip}</skip>
+					<dataDirectory>${dependency-check.dataDirectory}</dataDirectory>
 					<formats>
 						<format>HTML</format>
 						<format>JSON</format>
 					</formats>
 					<failBuildOnCVSS>7</failBuildOnCVSS> <!-- Fail build on vulnerabilities above this CVSS score -->
 					<failOnError>false</failOnError>
-					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+					<nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
 				</configuration>
         	</plugin>
 			<plugin>

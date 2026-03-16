@@ -37,6 +37,73 @@
       ]
     },
     {
+      "label": "segment-index-get-multisegment-hot",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-t", "4",
+        "-p", "workingSetMode=hot",
+        "-p", "snappy=true",
+        "-p", "keyCount=32768",
+        "-p", "maxKeysInSegment=1024",
+        "-p", "maxSegmentsInCache=3",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-get-multisegment-cold",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-t", "4",
+        "-p", "workingSetMode=cold",
+        "-p", "snappy=true",
+        "-p", "keyCount=32768",
+        "-p", "maxKeysInSegment=1024",
+        "-p", "maxSegmentsInCache=3",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-persisted-mutation",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "args": [
+        "-wi", "2",
+        "-i", "5",
+        "-f", "1",
+        "-r", "2s",
+        "-w", "2s",
+        "-p", "snappy=true",
+        "-p", "walMode=sync",
+        "-p", "seededKeyCount=75000",
+        "-p", "valueLength=64",
+        "-p", "flushBatchSize=256"
+      ]
+    },
+    {
+      "label": "segment-index-lifecycle",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "snappy=true",
+        "-p", "walMode=sync",
+        "-p", "keyCount=16384",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
       "label": "segment-index-hot-partition-put",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
       "args": [

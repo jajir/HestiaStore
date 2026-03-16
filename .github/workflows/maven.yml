@@ -50,6 +50,24 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-        
 
+    - name: Prepare Dependency-Check cache settings
+      if: github.event_name != 'pull_request'
+      id: dependency-check-cache
+      shell: bash
+      run: |
+        echo "path=$HOME/.cache/dependency-check" >> "$GITHUB_OUTPUT"
+        echo "key=${{ runner.os }}-dependency-check-data-v1-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Dependency-Check data
+      if: github.event_name != 'pull_request'
+      id: dependency-check-cache-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.dependency-check-cache.outputs.path }}
+        key: ${{ steps.dependency-check-cache.outputs.key }}
+        restore-keys: |
+          ${{ runner.os }}-dependency-check-data-v1-
+
     - name: Prepare badge paths
       shell: bash
       run: |
@@ -72,6 +90,13 @@ jobs:
     - name: Build with Maven
       if: github.event_name != 'pull_request'
       run: mvn -e -B verify --file pom.xml
+
+    - name: Save Dependency-Check data
+      if: always() && github.event_name != 'pull_request' && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.dependency-check-cache.outputs.path }}
+        key: ${{ steps.dependency-check-cache.outputs.key }}
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph

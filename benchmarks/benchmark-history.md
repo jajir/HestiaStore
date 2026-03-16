@@ -24,9 +24,17 @@ Both profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
+- `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=hot`
+- `SegmentIndexPersistedMutationBenchmark` for persisted `put`/`delete`
 - `SegmentIndexHotPartitionPutBenchmark` (20-thread hot `put` + `putThenGet`)
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
+
+The nightly profile additionally includes:
+
+- `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=cold`
+- `SegmentIndexLifecycleBenchmark` for `open`, `checkAndRepairConsistency`,
+  and `compactAndWait`
 
 ## Runner and Compare Scripts
 
