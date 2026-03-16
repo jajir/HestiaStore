@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.IntFunction;
 
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
@@ -20,6 +21,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 
 final class SegmentIndexBenchmarkSupport {
 
@@ -69,6 +71,23 @@ final class SegmentIndexBenchmarkSupport {
         final String valuePrefix = prefix + key + '-';
         final int suffixLength = Math.max(0, valueLength - valuePrefix.length());
         return valuePrefix + Character.toString(fillChar).repeat(suffixLength);
+    }
+
+    static void populateSequential(final SegmentIndex<Integer, String> index,
+            final int keyCount, final int flushBatchSize,
+            final IntFunction<String> valueBuilder) {
+        int pending = 0;
+        for (int key = 0; key < keyCount; key++) {
+            index.put(Integer.valueOf(key), valueBuilder.apply(key));
+            pending++;
+            if (pending >= flushBatchSize) {
+                index.flushAndWait();
+                pending = 0;
+            }
+        }
+        if (pending > 0) {
+            index.flushAndWait();
+        }
     }
 
     static void deleteRecursively(final File file) {
