@@ -1,10 +1,17 @@
 {
   "profiles": {
     "segment-index-nightly": {
+      "channels": {
+        "main": {
+          "latestPointerPath": "history/segment-index-nightly/latest-main.json",
+          "sha": "cd0cc92efd820c9eed4f8ca4861418ad2684176a",
+          "timestampUtc": "2026-03-16T04:01:32.574036+00:00"
+        }
+      },
       "latestChannel": "main",
       "latestPointerPath": "history/segment-index-nightly/latest-main.json",
-      "sha": "5eac6dab4c182c00e03ffe09d4c5f1cf167b44f7",
-      "timestampUtc": "2026-03-15T03:56:38.072653+00:00"
+      "sha": "cd0cc92efd820c9eed4f8ca4861418ad2684176a",
+      "timestampUtc": "2026-03-16T04:01:32.574036+00:00"
     },
     "segment-index-pr-smoke": {
       "latestChannel": "main",
