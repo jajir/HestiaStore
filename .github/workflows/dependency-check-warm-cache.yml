@@ -1,0 +1,68 @@
+name: Warm Dependency-Check Cache
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: dependency-check-cache-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  warm-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v5
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Prepare Dependency-Check cache settings
+      id: dependency-check-cache
+      shell: bash
+      run: |
+        echo "path=$HOME/.cache/dependency-check" >> "$GITHUB_OUTPUT"
+        echo "key=${{ runner.os }}-dependency-check-data-v1-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+    - name: Show NVD API key availability
+      shell: bash
+      run: |
+        if [ -n "${NVD_API_KEY:-}" ]; then
+          echo "NVD_API_KEY is set"
+        else
+          echo "NVD_API_KEY is missing"
+        fi
+
+    - name: Restore Dependency-Check data
+      id: dependency-check-cache-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.dependency-check-cache.outputs.path }}
+        key: ${{ steps.dependency-check-cache.outputs.key }}
+        restore-keys: |
+          ${{ runner.os }}-dependency-check-data-v1-
+
+    - name: Warm Dependency-Check NVD data
+      shell: bash
+      run: |
+        mkdir -p "${{ steps.dependency-check-cache.outputs.path }}"
+        mvn -B -ntp org.owasp:dependency-check-maven:12.1.6:update-only \
+          -DdataDirectory="${{ steps.dependency-check-cache.outputs.path }}" \
+          -DnvdApiKeyEnvironmentVariable=NVD_API_KEY \
+          --file pom.xml
+
+    - name: Save Dependency-Check data
+      if: always() && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.dependency-check-cache.outputs.path }}
+        key: ${{ steps.dependency-check-cache.outputs.key }}
