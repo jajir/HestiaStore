@@ -53,30 +53,22 @@ class SegmentRegistryImplTest {
 
     private SegmentRegistryImpl<Integer, String> registry;
     private ExecutorService stableSegmentMaintenancePool;
+    private ExecutorService registryMaintenancePool;
 
     @BeforeEach
     void setUp() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
         directoryFacade = new MemDirectory();
         stableSegmentMaintenancePool = Executors.newSingleThreadExecutor();
-        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
-                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
-                .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(
-                        Executors.newSingleThreadExecutor())
-                .build();
+        rebuildRegistry();
     }
 
     @AfterEach
     void tearDown() {
-        if (registry != null) {
-            registry.close();
-        }
+        closeRegistry();
         if (stableSegmentMaintenancePool != null) {
             stableSegmentMaintenancePool.shutdownNow();
+            stableSegmentMaintenancePool = null;
         }
     }
 
@@ -143,16 +135,7 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_evicts_least_recently_used_when_limit_exceeded() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
-        registry.close();
-        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
-                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
-                .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(
-                        Executors.newSingleThreadExecutor())
-                .build();
+        rebuildRegistry();
         stubSegmentConfig();
         final Segment<Integer, String> first = registry.createSegment()
                 .getValue();
@@ -177,16 +160,7 @@ class SegmentRegistryImplTest {
     @Test
     void pinSegment_preventsEvictionWhileCacheIsOverLimit() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
-        registry.close();
-        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
-                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
-                .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
-                .withRegistryMaintenanceExecutor(
-                        Executors.newSingleThreadExecutor())
-                .build();
+        rebuildRegistry();
         stubSegmentConfig();
         final Segment<Integer, String> first = registry.createSegment()
                 .getValue();
@@ -271,6 +245,30 @@ class SegmentRegistryImplTest {
 
         closeAndAwait(segment);
         removeCacheEntry(segmentId);
+    }
+
+    private void rebuildRegistry() {
+        closeRegistry();
+        registryMaintenancePool = Executors.newSingleThreadExecutor();
+        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
+                .withRegistryMaintenanceExecutor(registryMaintenancePool)
+                .build();
+    }
+
+    private void closeRegistry() {
+        if (registry != null) {
+            registry.close();
+            registry = null;
+        }
+        if (registryMaintenancePool != null) {
+            registryMaintenancePool.shutdownNow();
+            registryMaintenancePool = null;
+        }
     }
 
     private static void awaitCondition(
