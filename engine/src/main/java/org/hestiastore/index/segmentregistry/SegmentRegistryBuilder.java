@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -8,6 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
@@ -160,6 +163,7 @@ public final class SegmentRegistryBuilder<K, V> {
         final IndexRetryPolicy resolvedRegistryCloseRetryPolicy = new IndexRetryPolicy(
                 busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        final Set<SegmentId> pinnedSegments = ConcurrentHashMap.newKeySet();
         final SegmentLifecycleMaintenance<K, V> maintenance = new SegmentLifecycleMaintenance<>(
                 resolvedFactory, resolvedFileSystem, resolvedCloseRetryPolicy,
                 gate);
@@ -167,9 +171,13 @@ public final class SegmentRegistryBuilder<K, V> {
                 maxNumberOfSegmentsInCache, maintenance::loadSegment,
                 maintenance::closeSegmentIfNeeded,
                 resolvedRegistryMaintenanceExecutor,
-                segment -> segment != null);
+                segment -> segment != null && (segment.getState() == SegmentState.CLOSED
+                        || (!pinnedSegments.contains(segment.getId())
+                                && segment.getState() == SegmentState.READY
+                                && segment.getNumberOfKeysInWriteCache() == 0)));
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
-                cache, resolvedRegistryCloseRetryPolicy, gate);
+                cache, resolvedRegistryCloseRetryPolicy, gate,
+                pinnedSegments);
     }
 
     private static int sanitizeRetryConf(final Integer configured,

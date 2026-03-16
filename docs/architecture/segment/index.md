@@ -1,4 +1,4 @@
-# 🧱 Segment Architecture
+# Segment Architecture
 
 This is the central place for segment-specific internals.
 

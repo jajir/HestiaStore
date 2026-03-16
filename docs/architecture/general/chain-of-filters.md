@@ -1,15 +1,15 @@
-# 🔗 Chain of Filters
+# Chain of Filters
 
 `AbstractChainOfFilters` is the small engine that runs ordered pipelines inside the index. It accepts an immutable context object plus a mutable result carrier and iterates over a list of `Filter<Context, Result>` steps. Each step returns `true` to continue or `false` to short-circuit, which is how we cheaply exit when work is already finished (cache hits) or impossible (invalid plan).
 
-## ⚙️ Mechanics
+## Mechanics
 
 - The base class keeps the ordered `List<Filter<Context, Result>>` and exposes a single `filter(context, result)` method that drives the loop.
 - Steps see the immutable context and may update the mutable result; they must return `false` once they have produced a terminal outcome so the chain stops immediately.
 - Subclasses wrap the call to `filter` so they can prepare state/result objects and handle cleanup.
 - Filters are regular classes that implement `Filter<Context, Result>` and can be reused or composed in different orders when building a pipeline.
 
-## 🛠️ Typical Usage
+## Typical Usage
 
 1) Define small, focused filters:
 
@@ -45,7 +45,7 @@ final class ProcessingPipeline
 }
 ```
 
-## 📍 Where It Is Used
+## Where It Is Used
 
 ### Segment Searcher Pipeline (read path)
 
@@ -65,7 +65,7 @@ return result.getValue();
 - Short-circuits: cache hit/tombstone, Bloom filter negative, or sparse-index probe missing/false-positive correction.
 - Context/result types: `SegmentSearcherContext` carries the key plus caches/searcher; `SegmentSearcherResult` holds the found value (or `null` when absent).
 
-## ✅ Guidelines for Adding New Pipelines
+## Guidelines for Adding New Pipelines
 
 - Keep steps single-purpose and side-effect aware; ensure they set a final result before returning `false`.
 - Copy the incoming steps list (`List.copyOf(...)`) to avoid accidental reordering at runtime.

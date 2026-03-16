@@ -1,40 +1,40 @@
-# 🏭 Production Guide
+# Operations
 
-Operational guidance for running HestiaStore in production.
+Use this section once HestiaStore is already integrated and you need to run it
+reliably in production-like environments.
 
-- Deployment considerations and sizing
-- File system and storage layout
-- Backup and restore strategy
-- Observability and logging
+## What belongs here
 
-## ⚠️ After Unexpected Shutdown
+- WAL enablement and recovery
+- monitoring and alerting
+- tuning for memory, I/O, and maintenance behavior
+- backup, restore, and post-crash validation
+- staged rollout and rollback procedures
 
-Recommended steps to verify integrity and reclaim optimal layout:
+## Recommended operating path
 
-- Reopen the index and run a consistency check to validate segments and the key→segment map.
-- Optionally run a compaction to merge delta caches into main SST files and rebuild auxiliary structures (sparse index, Bloom filter).
-- Take a fresh backup after compaction completes.
+1. Start with [WAL](wal.md) if you need local crash recovery.
+2. Add [Monitoring](monitoring.md) before broad rollout.
+3. Use [Performance Tuning](tuning.md) only after you have workload evidence.
+4. Define [Backup & Restore](backup-restore.md) before calling the system
+   production-ready.
+5. Use [WAL Canary Runbook](wal-canary-runbook.md) for staged WAL rollouts.
 
-Example (Java):
+## After an unexpected shutdown
 
-```java
-// Open existing index (types omitted for brevity)
-SegmentIndex<Integer, String> index = SegmentIndex.open(directory);
+Recommended recovery sequence:
 
-// 1) Verify internal consistency (throws IndexException on irreparable issues)
-index.checkAndRepairConsistency();
+1. Reopen the index.
+2. Run `checkAndRepairConsistency()`.
+3. If WAL is enabled, inspect the WAL directory with `wal_verify`.
+4. Run `compact()` if you need to restore locality and clean up fragmented
+   layout.
+5. Take a fresh backup after the system is healthy again.
 
-// 2) Optionally compact to fold delta caches into main SST files
-index.compact();
+## Related docs
 
-// 3) Create a new backup snapshot
-//   (use your backup process; see operations/backup-restore.md)
-
-index.close();
-```
-
-Notes:
-- WAL is optional and disabled by default (`Wal.EMPTY`). When enabled, recovery replays WAL and can truncate invalid tails.
-- If you keep running without compaction, reads remain correct; compaction improves locality and space usage.
-- See [WAL Operations](wal.md) for durability modes, corruption handling, and WAL verification tooling.
-- Use [WAL Canary Runbook](wal-canary-runbook.md) for staged enablement, alert thresholds, and rollback to `Wal.EMPTY`.
+- [Configuration](../configuration/index.md) for builder-level settings
+- [Monitoring Architecture](../architecture/monitoring/index.md) for internal
+  monitoring design
+- [Performance Model & Sizing](../architecture/segmentindex/performance.md) for
+  implementation-level tuning context

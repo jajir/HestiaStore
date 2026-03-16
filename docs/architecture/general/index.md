@@ -1,4 +1,4 @@
-# 🧩 General Architecture
+# General Architecture
 
 Cross-cutting architecture topics that apply to the whole engine (not to one
 component only).

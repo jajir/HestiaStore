@@ -1,165 +1,117 @@
 # ![HestiaStore logo](./images/logo.png)
 
+HestiaStore is an embeddable Java key-value storage engine for large local
+datasets. It is optimized for predictable file I/O, bounded-memory lookups,
+range scans, and operational simplicity inside a single application process.
+
 [![Build (main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml/badge.svg?branch=main)](https://github.com/jajir/HestiaStore/actions/workflows/maven.yml?query=branch%3Amain)
 ![test results](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-main.svg)
 ![line coverage](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/jacoco-badge-main.svg)
 ![OWASP dependency check](https://gist.githubusercontent.com/jajir/a613341fb9d9d0c6a426b42a714700b7/raw/badge-owasp-main.svg)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10654/badge)](https://www.bestpractices.dev/projects/10654)
-![Maven Central Version](https://img.shields.io/maven-central/v/org.hestiastore.index/core)
-[![javadoc](https://javadoc.io/badge2/org.hestiastore.index/core/javadoc.svg)](https://javadoc.io/doc/org.hestiastore.index/core)
+![Maven Central Version](https://img.shields.io/maven-central/v/org.hestiastore/engine)
+[![javadoc](https://javadoc.io/badge2/org.hestiastore/engine/javadoc.svg)](https://javadoc.io/doc/org.hestiastore/engine)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jajir_HestiaStore&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jajir_HestiaStore)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=jajir_HestiaStore&metric=bugs)](https://sonarcloud.io/summary/new_code?id=jajir_HestiaStore)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=jajir_HestiaStore&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=jajir_HestiaStore)
 
-HestiaStore is a lightweight, embeddable key‑value storage engine optimized for billions of records, designed to run in a single directory with high performance and minimal configuration.
+## What it is a good fit for
 
-Features:
+- embedded storage inside a Java service or application
+- datasets that do not fit comfortably in memory
+- predictable local persistence with optional WAL-based crash recovery
+- point lookups plus ordered iteration over large key ranges
+- teams that want a pure-Java dependency without native libraries
 
-```plaintext
- • Pure Java (no native dependencies), easy to embed
- • 200k+ ops/s; predictable I/O with configurable buffering
- • In‑memory or file‑backed storage, zero‑config setup
- • Pluggable filters: Snappy compression, CRC32 integrity, magic-number validation
- • Bloom filter for fast negative lookups (tunable false-positive rate)
- • Segmented structure with sparse index for efficient range scans
- • Custom key/value types via type descriptors
- • Single‑writer, multi‑reader (optional synchronized mode)
- • Test-friendly MemDirectory for fast, isolated tests
- • Optional write-ahead logging (WAL) is implemented for local crash recovery
-```
+## What it is not trying to be
 
-## 🚀 Performance Comparison
+- a distributed database
+- a multi-node replication layer
+- a cross-key ACID transaction engine
+- a replacement for a full relational database when SQL is the primary need
 
-All tests ran on a 2024 Mac mini with 16 GB RAM. Absolute numbers vary between runs, so focus on relative differences.
+## Start here
 
-### Benchmark `write` throughput (ops/s, higher is better)
+- [Evaluate HestiaStore](why-hestiastore/index.md) if you are deciding whether
+  it matches your workload.
+- [Install](how-to-use/install.md) and [Quick Start](how-to-use/quick-start.md)
+  if you want a working example immediately.
+- [Configuration](configuration/index.md) if you need to tune directories,
+  caching, filters, or custom data types.
+- [Operations](operations/index.md) if you need WAL, monitoring, backups, or
+  tuning guidance.
+- [Architecture](architecture/index.md) if you need implementation detail and
+  internal contracts.
+- [Contribute & Community](development/index.md) if you are contributing code,
+  documentation, or release work.
 
-The following benchmark compares similar products by writing simple key-value pairs into a map. It includes a 3-minute warm-up to prime caches, followed by a 4-minute measurement period.
+## Key capabilities
 
-![Performace comparision](./images/out-write.svg)
+- Pure Java embedding with no native dependency requirement
+- In-memory or filesystem-backed directories
+- Custom key and value type descriptors
+- Bloom-filter assisted negative lookups
+- Segment-based storage with ordered scans
+- Optional write-ahead logging for local crash recovery
+- Monitoring snapshots and optional monitoring modules
 
-Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/why-hestiastore/out-write/).
+## Performance highlights
 
-### Benchmark `read` throughput (ops/s, higher is better)
+All tests ran on a 2024 Mac mini with 16 GB RAM. Absolute numbers vary between
+runs, so treat the charts as relative comparisons, not absolute guarantees.
 
-The read benchmark measures random lookups over the same pre-populated dataset produced by the write test. Each engine is opened on that data and a single client issues random reads of existing keys (no deletes). A 3-minute warm-up primes OS and engine caches, followed by a 4-minute measurement window.
+### Write throughput
 
-![Performace comparision](./images/out-read.svg)
+![Write benchmark comparison](./images/out-write.svg)
 
-Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/why-hestiastore/out-read/).
+### Random read throughput
 
-### Benchmark `sequential read` throughput (ops/s, higher is better)
+![Read benchmark comparison](./images/out-read.svg)
 
-The sequential read benchmark scans the same pre‑populated dataset in key order using each engine’s iterator. Each engine is opened on that data and a single client performs a forward scan across all entries. A 3‑minute warm‑up primes OS and engine caches, followed by a 4‑minute measurement window.
+### Sequential read throughput
 
-![Performace comparision](./images/out-sequential.svg)
+![Sequential read benchmark comparison](./images/out-sequential.svg)
 
-Detailed methodology and full benchmark artifacts are available at [benchmark results](https://hestiastore.org/why-hestiastore/out-sequential/).
+Detailed methodology, workload notes, and links to raw artifacts are available
+on the [Benchmarks](why-hestiastore/benchmarks.md) page.
 
-## 📊 Feature Comparison
-
-Architecture & Concurrency
-
-| Engine       | Storage/Index               | Concurrency                                                   | Background Work              |
-| :----------- | :-------------------------- | :------------------------------------------------------------ | :--------------------------- |
-| HestiaStore  | Segmented on-disk structure | Thread-safe concurrent operations (segment-level parallelism) | Periodic segment flush/merge |
-| RocksDB      | LSM tree (leveled/uni)      | Highly concurrent                                             | Compaction + flush threads   |
-| LevelDB      | LSM tree                    | Single-writer, multi-reader                                   | Compaction                   |
-| MapDB        | B-tree/H-tree               | Thread-safe (synchronized)                                    | Periodic commits             |
-| ChronicleMap | Off-heap mmap hash map      | Lock-free/low-lock                                            | None (no compaction)         |
-| H2           | B-tree                      | Concurrent (MVCC)                                             | Checkpoint/auto-vacuum       |
-
-Durability & Fit
-
-| Engine       | Durability                                                  | Compression     | Runtime Deps                  | Typical Fit                                            |
-| :----------- | :---------------------------------------------------------- | :-------------- | :---------------------------- | :----------------------------------------------------- |
-| HestiaStore  | File-backed; optional WAL (opt-in) + flush/close boundaries | Snappy          | Pure Java (JAR-only)          | Embedded KV with predictable local durability/recovery |
-| RocksDB      | WAL + checkpoints (optional transactions)                   | Snappy/Zstd/LZ4 | Native library                | High write throughput, low-latency reads               |
-| LevelDB      | File-backed; no transactions                                | Snappy          | JAR-only port/native bindings | Lightweight LSM, smaller footprints                    |
-| MapDB        | File-backed; optional TX                                    | None/limited    | Pure Java (JAR-only)          | Simple embedded maps/sets                              |
-| ChronicleMap | Memory-mapped persistence; no ACID TX                       | None            | Pure Java (JAR-only)          | Ultra-low latency shared maps                          |
-| H2           | WAL + MVCC transactions                                     | Optional        | Pure Java (JAR-only)          | SQL + transactional workloads                          |
-
-Notes
-
-- “Concurrency” describes the general access model; specifics depend on configuration and workload.
-- HestiaStore supports opt-in WAL for local crash recovery; cross-key ACID transactions and replication are not part of current scope.
-
-## 🤝 Contributing
-
-We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
-
-## 📚 Documentation
-
-- [Architecture overview](https://hestiastore.org/architecture/)
-- [Segment architecture](https://hestiastore.org/architecture/segment/)
-- [Getting started](https://hestiastore.org/how-to-use/) with a quick start and examples
-- [Configuration](https://hestiastore.org/configuration/) — properties overview and guidance
-- [Logging](https://hestiastore.org/configuration/logging/) — how to set up logging
-- [WAL operations](https://hestiastore.org/operations/wal/) — enable and operate implemented opt-in WAL
-- [Releases](https://hestiastore.org/development/release/) — versioning and release process
-
-<!--
-* [Segment implementation details](segment.md)
--->
-
-## 📦 Installation and Basic Usage
-
-To include HestiaStore in your Maven project, add the following dependency to your `pom.xml`:
-
-```xml
-<dependencies>
-  <dependency>
-    <groupId>org.hestiastore.index</groupId>
-    <artifactId>core</artifactId>
-    <version><!--latest verson--></version>
-  </dependency>
-</dependencies>
-```
-
-Replace the version number with the latest available from Maven Central [org.hestiastore.index:core](https://central.sonatype.com/artifact/org.hestiastore.index/core).
-
-**Note**: HestiaStore requires Java 17 or newer.
-
-You can create a new index using the builder pattern as shown below:
+## Minimal example
 
 ```java
-// Create an in-memory file system abstraction
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+
 Directory directory = new MemDirectory();
 
-// Prepare index configuration
 IndexConfiguration<String, String> conf = IndexConfiguration
-        .<String, String>builder()//
-        .withKeyClass(String.class)//
-        .withValueClass(String.class)//
-        .withName("test_index") //
-        .build();
+    .<String, String>builder()
+    .withKeyClass(String.class)
+    .withValueClass(String.class)
+    .withName("example")
+    .build();
 
-// Create a new index
-SegmentIndex<String, String> index = SegmentIndex.<String, String>create(directory, conf);
-
-// Perform basic operations
-index.put("Hello", "World");
-
-String value = index.get("Hello");
-System.out.println("Value for 'Hello': " + value);
-
-index.close();
+try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) {
+    index.put("hello", "world");
+    System.out.println(index.get("hello"));
+}
 ```
 
-For more integration details, see the [Getting Started](how-to-use/index.md) section.
+For the next step after this example, go to [Quick Start](how-to-use/quick-start.md).
 
-## 🗺️ Roadmap
+## Documentation paths
 
-Planned improvements include:
+- [Alternatives](why-hestiastore/alternatives.md) for a side-by-side comparison
+  against other embedded engines
+- [Benchmarks](why-hestiastore/benchmarks.md) for evaluation
+- [Quality & Testing](why-hestiastore/quality.md) for delivery confidence
+- [Security](SECURITY.md) for reporting and posture
+- [Release Process](development/release.md) for maintainers
 
-- Add a demo application that showcases key features end-to-end (configuration, persistence, WAL, monitoring, and recovery).
-- Expand performance testing and product comparison with more detailed methodology, larger datasets, and mixed workload scenarios.
-- Add more complex test scenarios covering concurrency stress, long-running stability, crash recovery, and edge-case data distributions.
-- Improve documentation with deeper architecture explanations, clearer operational runbooks, and more practical examples.
-For detailed tasks and progress, see the [GitHub Issues](https://github.com/jajir/HestiaStore/issues) page.
+## Support
 
-## ❓ Need Help or Have Questions?
-
-If you encounter a bug, have a feature request, or need help using HestiaStore, please [create an issue](https://github.com/jajir/HestiaStore/issues).
+- Search or open issues on [GitHub Issues](https://github.com/jajir/HestiaStore/issues)
+- Read [Troubleshooting](how-to-use/troubleshooting.md) for common integration
+  problems

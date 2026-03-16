@@ -1,4 +1,4 @@
-# 🧱 Segment implementation
+# Segment implementation
 
 Segment is core part of index. It represents one string sorted table file with:
 
@@ -7,7 +7,7 @@ Segment is core part of index. It represents one string sorted table file with:
 * Bloom filter for faster evaluating if key is in index
 * Scarce index for faster searching for data in main index
 
-## 🔄 Segment put/get and iterate consistency
+## Segment put/get and iterate consistency
 
 operations like write and get should be always consistent. What is written is read. Iteration behave differently. better than provide old data it stop providing any data.
 
@@ -47,7 +47,7 @@ iterator.read() --> null
 
 Any segment write operation will break segment iterator. It's easier way to secure segment consistency.  
 
-## 🗄️ Caching of segment data
+## Caching of segment data
 
 Segment caching has two parts: in-memory caches for write/delta data and
 lazy-loaded disk-backed resources.
@@ -74,7 +74,7 @@ Lazy-loaded resources:
 * `SegmentReadPath` also caches `SegmentIndexSearcher` for point lookups and
   resets it on maintenance.
 
-## 📁 Segment directory layout
+## Segment directory layout
 
 Segment writes all files into the `Directory` passed to
 `SegmentBuilder`. That directory can point to:
@@ -97,7 +97,7 @@ Versioned layouts use the `vNN-` marker in file names when
 `SegmentPropertiesManager` records the active version, e.g.
 `v02-index.sst` and `v02-delta-0001.cache`.
 
-## ✍️ Writing to segment
+## Writing to segment
 
 Opening segment writer immediatelly close all segment readers. When writing operation add key that is in index but is not in cache this value will not returned updated. 
 
