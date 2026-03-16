@@ -1,4 +1,4 @@
-# 🧪 Filters & Integrity
+# Filters & Integrity
 
 HestiaStore persists segment data in chunked files. Each chunk carries a header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations.
 
@@ -6,7 +6,7 @@ This page focuses on filter behavior and ordering. For byte-level block/chunk
 structure see [Data Block Format](datablock.md). For builder setup and examples,
 see [Filter Configuration](../../configuration/filters.md).
 
-## 🏷️ Chunk Flags Used by Filters
+## Chunk Flags Used by Filters
 
 Chunk headers include `magic`, `version`, `payloadLength`, `crc32`, and `flags`.
 This page documents only the `flags` bits used by filter pipeline steps.
@@ -19,7 +19,7 @@ Flag bit positions (see `src/main/java/org/hestiastore/index/chunkstore/ChunkFil
 - 3 — Snappy compression
 - 4 — XOR encryption (reversible obfuscation)
 
-## ✍️ Encoding Pipeline (Write Path)
+## Encoding Pipeline (Write Path)
 
 Write path constructs a `ChunkData` and passes it through a `ChunkProcessor` configured with encoding filters. The writer then combines the resulting header and (possibly transformed) payload and writes padded bytes to the underlying cell store.
 
@@ -33,7 +33,7 @@ Why this order:
 - CRC32 computed on the plaintext payload gives a strong data‑integrity check after decoding (you must decompress/decrypt before CRC validation on read).
 - Magic‑number header flag is a quick consistency guard before attempting other transforms.
 
-## 📖 Decoding Pipeline (Read Path)
+## Decoding Pipeline (Read Path)
 
 Read path pulls a raw chunk, parses the header, then applies the decoding filters in order. The final `ChunkData` is used to rebuild a consistent `Chunk` instance with the validated header and payload.
 
@@ -47,7 +47,7 @@ Notes:
 - Validation filters check the corresponding header flag (when provided) and throw an exception if the precondition fails (e.g., “not marked as compressed”).
 - CRC validation recomputes CRC32 on the current payload and compares to the header value.
 
-## 🧰 Available Filters
+## Available Filters
 
 ### Magic Number
 
@@ -94,12 +94,12 @@ Notes:
 3. Used classes: `ChunkFilterDoNothing`.
 4. External resources: none.
 
-## ⚙️ Configuration
+## Configuration
 
 Filter setup, defaults, constraints, and code examples are documented in
 [Filter Configuration](../../configuration/filters.md).
 
-## 🛡️ Error Handling and Safety
+## Error Handling and Safety
 
 - Validation failures (wrong magic, CRC mismatch, missing flags) throw exceptions and abort the read; no partial state is committed.
 - Chunk data is written through transactional temp-file + rename (`DataBlockWriterTx`); broader crash/recovery semantics are documented in [Consistency & Recovery](recovery.md).

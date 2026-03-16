@@ -1,0 +1,31 @@
+name: Docs Verify
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+        cache: 'pip'
+        cache-dependency-path: 'engine/src/requirements.txt'
+
+    - name: Install MkDocs dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r engine/src/requirements.txt
+
+    - name: Validate docs navigation coverage
+      run: python3 scripts/check_docs_nav.py
+
+    - name: Build docs
+      run: mkdocs build --clean --strict

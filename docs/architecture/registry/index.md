@@ -1,4 +1,4 @@
-# 🗂️ Registry Architecture
+# Registry Architecture
 
 This section describes the segment registry as the lifecycle/cache orchestration
 layer between SegmentIndex and Segment instances.
