@@ -1,39 +1,34 @@
-# 📦 Installation Guide
+# Installation
 
-## ⚙️ Prerequisites
+HestiaStore is published to Maven Central as `org.hestiastore:engine`.
 
-- Java 17 or higher (recommended baseline; compatible with newer/current JDK releases)
+## Prerequisites
+
+- Java 17 or newer
 - Maven 3.6+ or Gradle 6+
 
-HestiaStore is distributed via Maven Central: <https://central.sonatype.com/artifact/org.hestiastore.index/core>
+Latest artifact:
+[org.hestiastore:engine](https://central.sonatype.com/artifact/org.hestiastore/engine)
 
-## 🛠️ Maven
-
-Add the dependency to your pom.xml (use the latest version from Maven Central):
+## Maven
 
 ```xml
 <dependencies>
   <dependency>
-    <groupId>org.hestiastore.index</groupId>
-    <artifactId>core</artifactId>
-    <version><!-- latest --></version>
+    <groupId>org.hestiastore</groupId>
+    <artifactId>engine</artifactId>
+    <version><!-- latest version --></version>
   </dependency>
 </dependencies>
 ```
 
-### ✅ Verify Installation (Maven)
+Verify the dependency is resolved:
 
 ```bash
 mvn dependency:tree
 ```
 
-Confirm org.hestiastore.index:core is present in the dependency tree.
-
-## 🛠️ Gradle
-
-Add the dependency to your Gradle build (use the latest version from Maven Central). Ensure mavenCentral() is in repositories.
-
-Groovy DSL (build.gradle):
+## Gradle (Groovy DSL)
 
 ```groovy
 repositories {
@@ -41,19 +36,17 @@ repositories {
 }
 
 dependencies {
-  implementation "org.hestiastore.index:core:<latest>"
+  implementation "org.hestiastore:engine:<latest>"
 }
 ```
 
-### ✅ Verify Installation (Gradle)
+Verify the dependency is resolved:
 
 ```bash
-./gradlew dependencyInsight --dependency org.hestiastore.index:core
+./gradlew dependencyInsight --dependency org.hestiastore:engine
 ```
 
-## 🛠️ Kotlin
-
-Kotlin DSL (build.gradle.kts):
+## Gradle (Kotlin DSL)
 
 ```kotlin
 repositories {
@@ -61,17 +54,16 @@ repositories {
 }
 
 dependencies {
-  implementation("org.hestiastore.index:core:<latest>")
+  implementation("org.hestiastore:engine:<latest>")
 }
 ```
 
-## 🧱 Build from Sources
+## Build from source
 
-Source code for each release can be downloaded from GitHub releases:
-<https://github.com/jajir/HestiaStore/releases>
-
-Build the desired version:
+If you need a local build instead of a published release:
 
 ```bash
 mvn install
 ```
+
+Then continue with [Quick Start](quick-start.md).

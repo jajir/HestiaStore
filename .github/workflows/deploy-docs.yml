@@ -8,6 +8,8 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'mkdocs.yaml'
+      - 'docs-nav-exclude.txt'
+      - 'scripts/check_docs_nav.py'
       - 'engine/src/requirements.txt'
   workflow_dispatch:
 
@@ -53,6 +55,9 @@ jobs:
             echo "ERROR: mkdocs.yml or mkdocs.yaml not found in repo root."
             exit 1
           fi
+
+      - name: Validate docs navigation coverage
+        run: python3 scripts/check_docs_nav.py
 
       # Configure Git so mkdocs gh-deploy can push to gh-pages using the GITHUB_TOKEN
       - name: Configure Git credentials for gh-deploy

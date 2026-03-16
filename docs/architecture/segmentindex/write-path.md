@@ -1,4 +1,4 @@
-# ✍️ Write Path
+# Write Path
 
 This page describes how a write travels through HestiaStore from the API call to on‑disk structures, highlighting buffering, compaction, and atomicity. It maps directly to the code so you can cross‑check behavior and tune configuration.
 
@@ -6,7 +6,7 @@ Segment-internal structures are centralized in
 [Segment Architecture](../segment/index.md). This page focuses on SegmentIndex
 orchestration and operation flow.
 
-## 🧭 High‑Level Flow
+## High‑Level Flow
 
 1. API call: `SegmentIndex.put(key, value)` or `SegmentIndex.delete(key)`
 1. Routed partition mutable layer accepts the latest value per key
@@ -16,7 +16,7 @@ orchestration and operation flow.
 
 Writes become durable when flushed to segment files. Closing the index performs a flush.
 
-## 🚪 Entry Points
+## Entry Points
 
 - `SegmentIndex.put(K,V)` and `SegmentIndex.delete(K)` validate input, update counters, and delegate to the internal implementation.
 - Internal implementation: `IndexInternalConcurrent` (caller-thread execution,
@@ -29,14 +29,14 @@ Key classes: `segmentindex/SegmentIndex.java`,
 `segmentindex/IndexAsyncAdapter.java`,
 `segmentindex/IndexContextLoggingAdapter.java`.
 
-## 🗒️ Optional Logging Context
+## Optional Logging Context
 
 If `IndexConfiguration.isContextLoggingEnabled()` is true, index operations
 populate the `index.name` MDC key so downstream logs can include the index
 identifier. This is purely for log correlation and does not write any
 additional files or provide durability.
 
-## 🧰 Partition Overlay (Index‑Level)
+## Partition Overlay (Index‑Level)
 
 Every `put`/`delete` first updates the routed partition overlay:
 
@@ -50,7 +50,7 @@ Key classes:
 `segmentindex/partition/RangePartition`,
 `segmentindex/core/SegmentIndexImpl`.
 
-## 🚚 Flush and Routing to Segments
+## Flush and Routing to Segments
 
 On drain/flush, immutable partition runs are sorted and published to target
 stable segments based on the key‑to‑segment map.
@@ -65,7 +65,7 @@ Flow:
 
 Key classes: `segmentindex/core/SegmentIndexImpl`, `segmentindex/partition/PartitionRuntime`, `segmentindex/mapping/KeyToSegmentMap`.
 
-## 🗂️ Segment Delta Cache Files (Transactional)
+## Segment Delta Cache Files (Transactional)
 
 Writes land in a segment’s delta cache as sorted key/value files. Each delta file is written transactionally:
 
@@ -75,7 +75,7 @@ Writes land in a segment’s delta cache as sorted key/value files. Each delta f
 
 Key classes: `segment/SegmentDeltaCacheWriter`, `segment/SegmentPropertiesManager`, `sorteddatafile/SortedDataFileWriterTx`.
 
-## 🧹 On‑Disk Merge (Compaction)
+## On‑Disk Merge (Compaction)
 
 Compaction merges the main SST with all delta cache files into a new consistent state and rebuilds auxiliary structures:
 
@@ -96,7 +96,7 @@ Atomicity:
 
 Key classes: `segment/SegmentCompacter`, `segment/SegmentFullWriterTx`, `segment/SegmentFullWriter`, `bloomfilter/BloomFilterWriterTx`, `scarceindex/*`.
 
-## ✂️ Segment Splitting
+## Segment Splitting
 
 When a routed segment grows beyond `maxNumberOfKeysInPartitionBeforeSplit`,
 the split coordinator computes a route-first split plan, materializes child
@@ -105,7 +105,7 @@ partition overlays are reassigned to child routes during apply.
 
 Key classes: `segmentindex/split/PartitionStableSplitCoordinator`, `segmentindex/split/PartitionSplitApplyPlan`, `segmentindex/partition/PartitionRuntime`, `segmentindex/mapping/KeyToSegmentMap`.
 
-## 🪦 Delete Semantics (Tombstones)
+## Delete Semantics (Tombstones)
 
 Deletes write a tombstone value:
 
@@ -118,13 +118,13 @@ Key classes:
 `datatype/TypeDescriptor#getTombstone`,
 `segment/SegmentSearcher`.
 
-## 💾 Durability and Atomicity
+## Durability and Atomicity
 
 - Transactional writers use a temp file + atomic rename to ensure either the old state or the new state is visible after a crash.
 - SegmentIndex `close()` and explicit `flushAndWait()` drive persistence of buffered writes.
 - Context logging is not a durability mechanism.
 
-## ⚙️ Configuration Knobs Affecting Writes
+## Configuration Knobs Affecting Writes
 
 - `maxNumberOfKeysInActivePartition` – bounds active mutable overlay size before rotation to an immutable run.
 - `maxNumberOfKeysInPartitionBuffer` – bounds buffered keys per partition before local backpressure.
@@ -138,7 +138,7 @@ Key classes:
 
 See: `segmentindex/IndexConfiguration` and `segmentindex/IndexConfigurationBuilder`.
 
-## 🛡️ Integrity Filters on the Write Path
+## Integrity Filters on the Write Path
 
 The chunk writer applies a filter pipeline when persisting chunk payloads:
 
@@ -150,7 +150,7 @@ These produce a self‑describing chunk header and robust payload handling.
 
 Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWriting`, `chunkstore/ChunkFilterCrc32Writing`, `chunkstore/ChunkFilterSnappyCompress`.
 
-## 🔢 Sequence (Put)
+## Sequence (Put)
 
 1) `SegmentIndex.put(k,v)` → validate inputs; forbid direct tombstone values
 2) Append to WAL (when enabled)
@@ -161,7 +161,7 @@ Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWrit
    - schedule background drain
    - apply local/global backpressure if partition/index limits are exceeded
 
-## 🧩 Where to Look in the Code
+## Where to Look in the Code
 
 - SegmentIndex entry points and buffering: `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`
 - Segment write/merge path: `src/main/java/org/hestiastore/index/segment/*`
