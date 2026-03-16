@@ -24,9 +24,17 @@ Both profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
+- `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=hot`
+- `SegmentIndexPersistedMutationBenchmark` for persisted `put`/`delete`
 - `SegmentIndexHotPartitionPutBenchmark` (20-thread hot `put` + `putThenGet`)
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
+
+The nightly profile additionally includes:
+
+- `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=cold`
+- `SegmentIndexLifecycleBenchmark` for `open`, `checkAndRepairConsistency`,
+  and `compactAndWait`
 
 ## Runner and Compare Scripts
 
@@ -93,7 +101,7 @@ Current behavior:
   - fail fast when a canonical profile references a missing benchmark class,
     drifts from required SegmentIndex scenarios, or benchmark sources bring
     back removed public config names
-- pull requests to `main`
+- pull requests
   - run `segment-index-pr-smoke`
   - first try to compare PR candidate against the latest canonical baseline
     stored in the `perf-artifacts` branch
