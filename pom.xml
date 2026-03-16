@@ -36,6 +36,7 @@
         <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
         <micrometer.version>1.15.5</micrometer.version>
         <dependency-check.skip>false</dependency-check.skip>
+        <dependency-check.dataDirectory>${user.home}/.cache/dependency-check</dependency-check.dataDirectory>
     </properties>
 
     <dependencyManagement>
