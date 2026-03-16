@@ -27,9 +27,21 @@ class BenchmarkProfileContractTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String LEGACY_BACKGROUND_MAINTENANCE_METHOD = "withSegmentMaintenanceAutoEnabled";
-    private static final Set<String> REQUIRED_SEGMENT_INDEX_LABELS = Set.of(
+    private static final Set<String> REQUIRED_PR_SEGMENT_INDEX_LABELS = Set.of(
             "segment-index-get-persisted",
             "segment-index-get-overlay",
+            "segment-index-get-multisegment-hot",
+            "segment-index-persisted-mutation",
+            "segment-index-hot-partition-put",
+            "segment-index-mixed-drain",
+            "segment-index-mixed-split-heavy");
+    private static final Set<String> REQUIRED_NIGHTLY_SEGMENT_INDEX_LABELS = Set.of(
+            "segment-index-get-persisted",
+            "segment-index-get-overlay",
+            "segment-index-get-multisegment-hot",
+            "segment-index-get-multisegment-cold",
+            "segment-index-persisted-mutation",
+            "segment-index-lifecycle",
             "segment-index-hot-partition-put",
             "segment-index-mixed-drain",
             "segment-index-mixed-split-heavy");
@@ -71,9 +83,9 @@ class BenchmarkProfileContractTest {
             profilesByName.put(profile.profile(), profile);
         }
 
-        assertCanonicalSegmentIndexProfile(
+        assertCanonicalPrSegmentIndexProfile(
                 profilesByName.get("segment-index-pr-smoke"));
-        assertCanonicalSegmentIndexProfile(
+        assertCanonicalNightlySegmentIndexProfile(
                 profilesByName.get("segment-index-nightly"));
     }
 
@@ -92,14 +104,14 @@ class BenchmarkProfileContractTest {
         }
     }
 
-    private void assertCanonicalSegmentIndexProfile(
+    private void assertCanonicalPrSegmentIndexProfile(
             final BenchmarkProfile profile) {
         assertNotNull(profile, "Missing canonical segment-index profile");
         final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
         for (final BenchmarkEntry benchmark : profile.benchmarks()) {
             byLabel.put(benchmark.label(), benchmark);
         }
-        assertEquals(REQUIRED_SEGMENT_INDEX_LABELS, byLabel.keySet(),
+        assertEquals(REQUIRED_PR_SEGMENT_INDEX_LABELS, byLabel.keySet(),
                 () -> "Unexpected benchmark labels in profile "
                         + profile.profile());
 
@@ -109,6 +121,52 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-overlay"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
                 Map.of("readPathMode", "overlay"));
+        assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+                Map.of("workingSetMode", "hot"));
+        assertEntry(byLabel.get("segment-index-persisted-mutation"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+                Map.of("walMode", "sync"));
+        assertEntry(byLabel.get("segment-index-hot-partition-put"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+                Map.of());
+        assertEntry(byLabel.get("segment-index-mixed-drain"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+                Map.of("workloadMode", "drainOnly"));
+        assertEntry(byLabel.get("segment-index-mixed-split-heavy"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
+                Map.of("workloadMode", "splitHeavy"));
+    }
+
+    private void assertCanonicalNightlySegmentIndexProfile(
+            final BenchmarkProfile profile) {
+        assertNotNull(profile, "Missing canonical segment-index profile");
+        final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
+        for (final BenchmarkEntry benchmark : profile.benchmarks()) {
+            byLabel.put(benchmark.label(), benchmark);
+        }
+        assertEquals(REQUIRED_NIGHTLY_SEGMENT_INDEX_LABELS, byLabel.keySet(),
+                () -> "Unexpected benchmark labels in profile "
+                        + profile.profile());
+
+        assertEntry(byLabel.get("segment-index-get-persisted"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+                Map.of("readPathMode", "persisted"));
+        assertEntry(byLabel.get("segment-index-get-overlay"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
+                Map.of("readPathMode", "overlay"));
+        assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+                Map.of("workingSetMode", "hot"));
+        assertEntry(byLabel.get("segment-index-get-multisegment-cold"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+                Map.of("workingSetMode", "cold"));
+        assertEntry(byLabel.get("segment-index-persisted-mutation"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+                Map.of("walMode", "sync"));
+        assertEntry(byLabel.get("segment-index-lifecycle"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark",
+                Map.of("walMode", "sync"));
         assertEntry(byLabel.get("segment-index-hot-partition-put"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
                 Map.of());

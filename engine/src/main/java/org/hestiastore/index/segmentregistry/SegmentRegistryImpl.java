@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.List;
+import java.util.Set;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
@@ -31,6 +32,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final SegmentIdAllocator segmentIdAllocator;
     private final SegmentRegistryFileSystem fileSystem;
+    private final Set<SegmentId> pinnedSegments;
 
     /**
      * Creates a registry using prebuilt dependencies from the builder.
@@ -45,7 +47,8 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             final SegmentRegistryFileSystem fileSystem,
             final SegmentRegistryCache<SegmentId, Segment<K, V>> cache,
             final IndexRetryPolicy closeRetryPolicy,
-            final SegmentRegistryStateMachine gate) {
+            final SegmentRegistryStateMachine gate,
+            final Set<SegmentId> pinnedSegments) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
@@ -53,6 +56,8 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         this.closeRetryPolicy = Vldtn.requireNonNull(closeRetryPolicy,
                 "closeRetryPolicy");
         this.gate = Vldtn.requireNonNull(gate, "gate");
+        this.pinnedSegments = Vldtn.requireNonNull(pinnedSegments,
+                "pinnedSegments");
         if (!gate.finishFreezeToReady()) {
             throw new IllegalStateException(
                     "Failed to transition registry from FREEZE to READY");
@@ -194,6 +199,21 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     @Override
     public int cacheLimit() {
         return cache.getLimit();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void pinSegment(final SegmentId segmentId) {
+        pinnedSegments.add(Vldtn.requireNonNull(segmentId, "segmentId"));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void unpinSegment(final SegmentId segmentId) {
+        if (segmentId == null) {
+            return;
+        }
+        pinnedSegments.remove(segmentId);
     }
 
     /** {@inheritDoc} */

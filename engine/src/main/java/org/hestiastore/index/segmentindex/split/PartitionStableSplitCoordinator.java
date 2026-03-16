@@ -11,10 +11,12 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
@@ -269,42 +271,121 @@ public class PartitionStableSplitCoordinator<K, V> {
             final PartitionSplitApplyPlan<K> plan) {
         Vldtn.requireNonNull(parentSegment, SEGMENT_ARG);
         Vldtn.requireNonNull(plan, "plan");
-        final EntryIterator<K, V> openedIterator = openIteratorWithRetry(
-                parentSegment, SegmentIteratorIsolation.FULL_ISOLATION);
-        if (openedIterator == null) {
-            deleteSplitSegments(plan.getLowerSegmentId(),
-                    plan.getUpperSegmentId().orElse(null));
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "Route split aborted because parent segment closed before child materialization completed: segment='{}'",
-                        parentSegment.getId());
+        pinSplitTargets(plan);
+        boolean deleteTargets = true;
+        try {
+            final Segment<K, V> lowerSegment = loadSegmentWithRetry(
+                    plan.getLowerSegmentId(), "splitChildLoad");
+            final Segment<K, V> upperSegment = plan.getUpperSegmentId()
+                    .map(segmentId -> loadSegmentWithRetry(segmentId,
+                            "splitChildLoad"))
+                    .orElse(null);
+            final SegmentRuntimeLimits defaultLimits = defaultRuntimeLimits();
+            final SegmentRuntimeLimits materializationLimits = splitMaterializationRuntimeLimits(
+                    parentSegment, defaultLimits);
+            lowerSegment.applyRuntimeLimits(materializationLimits);
+            if (upperSegment != null) {
+                upperSegment.applyRuntimeLimits(materializationLimits);
             }
-            return false;
-        }
-        try (EntryIterator<K, V> iterator = openedIterator) {
-            while (iterator.hasNext()) {
-                final Entry<K, V> entry = iterator.next();
-                final SegmentId targetSegmentId = resolveMaterializationTarget(
-                        plan, entry.getKey());
-                putStableEntry(targetSegmentId, entry.getKey(),
-                        entry.getValue());
-            }
-        } catch (final RuntimeException e) {
-            deleteSplitSegments(plan.getLowerSegmentId(),
-                    plan.getUpperSegmentId().orElse(null));
-            if (isIteratorInvalidated(e)) {
+            final EntryIterator<K, V> openedIterator = openIteratorWithRetry(
+                    parentSegment, SegmentIteratorIsolation.FULL_ISOLATION);
+            if (openedIterator == null) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(
-                            "Route split aborted because parent iterator was invalidated during child materialization: segment='{}'",
+                            "Route split aborted because parent segment closed before child materialization completed: segment='{}'",
                             parentSegment.getId());
                 }
                 return false;
             }
-            throw e;
+            try (EntryIterator<K, V> iterator = openedIterator) {
+                while (iterator.hasNext()) {
+                    final Entry<K, V> entry = iterator.next();
+                    final Segment<K, V> targetSegment = resolveMaterializationTarget(
+                            plan, entry.getKey(), lowerSegment, upperSegment);
+                    putStableEntry(targetSegment, entry.getKey(),
+                            entry.getValue());
+                }
+            } catch (final RuntimeException e) {
+                if (isIteratorInvalidated(e)) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(
+                                "Route split aborted because parent iterator was invalidated during child materialization: segment='{}'",
+                                parentSegment.getId());
+                    }
+                    return false;
+                }
+                throw e;
+            }
+            flushSegment(lowerSegment);
+            if (upperSegment != null) {
+                flushSegment(upperSegment);
+            }
+            lowerSegment.applyRuntimeLimits(defaultLimits);
+            if (upperSegment != null) {
+                upperSegment.applyRuntimeLimits(defaultLimits);
+            }
+            deleteTargets = false;
+            return true;
+        } finally {
+            unpinSplitTargets(plan);
+            if (deleteTargets) {
+                deleteSplitSegments(plan.getLowerSegmentId(),
+                        plan.getUpperSegmentId().orElse(null));
+            }
         }
-        flushSegment(plan.getLowerSegmentId());
-        plan.getUpperSegmentId().ifPresent(this::flushSegment);
-        return true;
+    }
+
+    private void pinSplitTargets(final PartitionSplitApplyPlan<K> plan) {
+        segmentRegistry.pinSegment(plan.getLowerSegmentId());
+        plan.getUpperSegmentId().ifPresent(segmentRegistry::pinSegment);
+    }
+
+    private void unpinSplitTargets(final PartitionSplitApplyPlan<K> plan) {
+        segmentRegistry.unpinSegment(plan.getLowerSegmentId());
+        plan.getUpperSegmentId().ifPresent(segmentRegistry::unpinSegment);
+    }
+
+    private SegmentRuntimeLimits defaultRuntimeLimits() {
+        final int segmentCacheLimit = positiveOrFallback(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE);
+        final int writeCacheLimit = positiveOrFallback(
+                conf.getMaxNumberOfKeysInActivePartition(),
+                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+                        / 2);
+        final int writeCacheDuringMaintenance = Math.max(writeCacheLimit + 1,
+                positiveOrFallback(conf.getMaxNumberOfKeysInPartitionBuffer(),
+                        writeCacheLimit + 1));
+        return new SegmentRuntimeLimits(segmentCacheLimit, writeCacheLimit,
+                writeCacheDuringMaintenance);
+    }
+
+    private SegmentRuntimeLimits splitMaterializationRuntimeLimits(
+            final Segment<K, V> parentSegment,
+            final SegmentRuntimeLimits defaultLimits) {
+        final int widenedSegmentCacheLimit = saturatingToPositiveInt(
+                Math.max(parentSegment.getNumberOfKeysInCache() + 1L,
+                        defaultLimits.maxNumberOfKeysInSegmentCache()));
+        return new SegmentRuntimeLimits(widenedSegmentCacheLimit,
+                defaultLimits.maxNumberOfKeysInSegmentWriteCache(),
+                defaultLimits.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
+    }
+
+    private int positiveOrFallback(final Integer value, final int fallback) {
+        if (value != null && value.intValue() > 0) {
+            return value.intValue();
+        }
+        return Math.max(1, fallback);
+    }
+
+    private int saturatingToPositiveInt(final long value) {
+        if (value <= 0L) {
+            return 1;
+        }
+        if (value >= Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) value;
     }
 
     private EntryIterator<K, V> openIteratorWithRetry(
@@ -332,33 +413,44 @@ public class PartitionStableSplitCoordinator<K, V> {
         }
     }
 
-    private void putStableEntry(final SegmentId segmentId, final K key,
-            final V value) {
+    private Segment<K, V> loadSegmentWithRetry(final SegmentId segmentId,
+            final String operation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
                     .getSegment(segmentId);
             if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "splitPut",
-                        segmentId);
+                retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
                 continue;
             }
-            if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                    || loaded.getValue() == null) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to load for split materialization: %s",
-                        segmentId, loaded.getStatus()));
+            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
+                    && loaded.getValue() != null) {
+                return loaded.getValue();
             }
-            final SegmentResult<Void> putResult = loaded.getValue().put(key,
-                    value);
+            throw new IndexException(String.format(
+                    "Segment '%s' failed to load for split materialization: %s",
+                    segmentId, loaded.getStatus()));
+        }
+    }
+
+    private void putStableEntry(final Segment<K, V> segment, final K key,
+            final V value) {
+        final SegmentId segmentId = segment.getId();
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentResult<Void> putResult = segment.put(key, value);
             if (putResult.getStatus() == SegmentResultStatus.OK) {
                 return;
             }
-            if (putResult.getStatus() == SegmentResultStatus.BUSY
-                    || putResult.getStatus() == SegmentResultStatus.CLOSED) {
+            if (putResult.getStatus() == SegmentResultStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "splitPut",
                         segmentId);
                 continue;
+            }
+            if (putResult.getStatus() == SegmentResultStatus.CLOSED) {
+                throw new IndexException(String.format(
+                        "Segment '%s' closed during split materialization.",
+                        segmentId));
             }
             throw new IndexException(String.format(
                     "Segment '%s' failed to accept split materialization entry: %s",
@@ -366,33 +458,23 @@ public class PartitionStableSplitCoordinator<K, V> {
         }
     }
 
-    private void flushSegment(final SegmentId segmentId) {
+    private void flushSegment(final Segment<K, V> segment) {
+        final SegmentId segmentId = segment.getId();
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "splitFlush",
-                        segmentId);
-                continue;
-            }
-            if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                    || loaded.getValue() == null) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to load for split flush: %s",
-                        segmentId, loaded.getStatus()));
-            }
-            final Segment<K, V> segment = loaded.getValue();
             final SegmentResult<Void> flushResult = segment.flush();
             if (flushResult.getStatus() == SegmentResultStatus.OK) {
                 awaitSegmentReady(segmentId, "splitFlush", segment);
                 return;
             }
-            if (flushResult.getStatus() == SegmentResultStatus.BUSY
-                    || flushResult.getStatus() == SegmentResultStatus.CLOSED) {
+            if (flushResult.getStatus() == SegmentResultStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "splitFlush",
                         segmentId);
                 continue;
+            }
+            if (flushResult.getStatus() == SegmentResultStatus.CLOSED) {
+                throw new IndexException(String.format(
+                        "Segment '%s' closed during split flush.", segmentId));
             }
             throw new IndexException(String.format(
                     "Segment '%s' failed to flush during split materialization: %s",
@@ -417,15 +499,16 @@ public class PartitionStableSplitCoordinator<K, V> {
         }
     }
 
-    private SegmentId resolveMaterializationTarget(
-            final PartitionSplitApplyPlan<K> plan, final K key) {
+    private Segment<K, V> resolveMaterializationTarget(
+            final PartitionSplitApplyPlan<K> plan, final K key,
+            final Segment<K, V> lowerSegment, final Segment<K, V> upperSegment) {
         if (plan.getStatus() != PartitionSplitResult.PartitionSplitStatus.SPLIT) {
-            return plan.getLowerSegmentId();
+            return lowerSegment;
         }
         if (keyComparator.compare(key, plan.getMaxKey()) <= 0) {
-            return plan.getLowerSegmentId();
+            return lowerSegment;
         }
-        return plan.getUpperSegmentId().orElseGet(plan::getLowerSegmentId);
+        return upperSegment == null ? lowerSegment : upperSegment;
     }
 
     private boolean isIteratorInvalidated(final RuntimeException e) {
