@@ -175,6 +175,40 @@ class SegmentRegistryImplTest {
     }
 
     @Test
+    void pinSegment_preventsEvictionWhileCacheIsOverLimit() {
+        Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
+        registry.close();
+        registry = (SegmentRegistryImpl<Integer, String>) SegmentRegistry
+                .<Integer, String>builder().withDirectoryFacade(directoryFacade)
+                .withKeyTypeDescriptor(KEY_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_DESCRIPTOR)
+                .withConfiguration(conf)
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
+                .withRegistryMaintenanceExecutor(
+                        Executors.newSingleThreadExecutor())
+                .build();
+        stubSegmentConfig();
+        final Segment<Integer, String> first = registry.createSegment()
+                .getValue();
+        final Segment<Integer, String> second = registry.createSegment()
+                .getValue();
+        registry.pinSegment(first.getId());
+
+        final Segment<Integer, String> third = registry.createSegment()
+                .getValue();
+
+        awaitCondition(() -> List.of(second, third).stream().anyMatch(
+                segment -> segment.getState() == SegmentState.CLOSED), 1500L);
+
+        assertTrue(first.getState() != SegmentState.CLOSED,
+                "Pinned segment should stay loaded while peers are evicted");
+        assertTrue(List.of(second, third).stream().anyMatch(
+                segment -> segment.getState() == SegmentState.CLOSED));
+
+        registry.unpinSegment(first.getId());
+    }
+
+    @Test
     void getSegment_returnsBusyWhenSegmentMissing() {
         stubSegmentConfig();
         final Segment<Integer, String> existing = registry.createSegment()
