@@ -2,7 +2,6 @@ package org.hestiastore.benchmark.segmentindex;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.directory.FsDirectory;
