@@ -15,13 +15,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * End-to-end benchmark for SegmentIndex point lookups against an on-disk index.
- *
- * <p>
- * The benchmark intentionally closes and reopens the index after populating it.
- * It can then either read only the persisted view or add a live overlay and
- * measure point lookups that resolve from the active partition layer.
- * </p>
+ * Persisted multi-segment point lookup benchmark with hot and cold working
+ * sets.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -29,13 +24,14 @@ import org.openjdk.jmh.annotations.Warmup;
 @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1)
 @State(Scope.Benchmark)
-public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
+public class SegmentIndexMultiSegmentGetBenchmark
+        extends AbstractSegmentIndexGetBenchmark {
 
-    @Param({ "12000" })
+    @Param({ "32768" })
     private int keyCount;
 
-    @Param({ "256" })
-    private int maxKeysInChunk;
+    @Param({ "1024" })
+    private int maxKeysInSegment;
 
     @Param({ "64" })
     private int valueLength;
@@ -43,37 +39,40 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     @Param({ "false", "true" })
     private boolean snappy;
 
-    @Param({ "persisted", "overlay" })
-    private String readPathMode;
+    @Param({ "hot", "cold" })
+    private String workingSetMode;
+
+    @Param({ "3", "8" })
+    private int maxSegmentsInCache;
 
     @Override
     protected String tempDirPrefix() {
-        return "hestia-jmh-get";
+        return "hestia-jmh-multiget";
     }
 
     @Override
     protected IndexConfiguration<Integer, String> buildConfiguration() {
         final var builder = SegmentIndexBenchmarkSupport
-                .baseBuilder("segment-index-get-benchmark")//
-                .withMaxNumberOfKeysInSegmentCache(8)//
-                .withMaxNumberOfKeysInActivePartition(2048)//
+                .baseBuilder("segment-index-multi-segment-get-benchmark")//
+                .withMaxNumberOfKeysInSegmentCache(32)//
+                .withMaxNumberOfKeysInActivePartition(256)//
                 .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(4096)//
-                .withMaxNumberOfKeysInIndexBuffer(12_288)//
-                .withMaxNumberOfKeysInSegmentChunk(maxKeysInChunk)//
-                .withMaxNumberOfKeysInSegment(keyCount * 2)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(keyCount * 2)//
-                .withMaxNumberOfSegmentsInCache(3)//
+                .withMaxNumberOfKeysInPartitionBuffer(512)//
+                .withMaxNumberOfKeysInIndexBuffer(8_192)//
+                .withMaxNumberOfKeysInSegmentChunk(64)//
+                .withMaxNumberOfKeysInSegment(maxKeysInSegment)//
+                .withMaxNumberOfKeysInPartitionBeforeSplit(maxKeysInSegment)//
+                .withMaxNumberOfSegmentsInCache(maxSegmentsInCache)//
                 .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(Math.max(8192, keyCount / 2))//
+                .withBloomFilterIndexSizeInBytes(Math.max(16_384, keyCount))//
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(8 * 1024)//
                 .withIndexWorkerThreadCount(4)//
                 .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
+                .withNumberOfIndexMaintenanceThreads(2)//
                 .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(false);
+                .withBackgroundMaintenanceAutoEnabled(true);
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);
         return builder.build();
@@ -81,49 +80,44 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
 
     @Override
     protected void populateIndex(final SegmentIndex<Integer, String> created) {
-        final int flushBatchSize = Math.max(1024, maxKeysInChunk * 8);
+        final int flushBatchSize = Math.max(512, maxKeysInSegment / 2);
         SegmentIndexBenchmarkSupport.populateSequential(created, keyCount,
                 flushBatchSize, this::buildValue);
     }
 
     @Override
     protected void afterCreate(final SegmentIndex<Integer, String> created) {
-        created.compactAndWait();
+        SegmentIndexBenchmarkSupport.awaitCondition(
+                () -> created.metricsSnapshot().getSegmentCount() > 1, 15_000L,
+                "Expected persisted multi-segment benchmark layout.");
+        created.flushAndWait();
     }
 
     @Override
     protected void configureReadState(
             final SegmentIndex<Integer, String> openedIndex) {
-        int queryKeyBound = keyCount;
-        if ("overlay".equals(readPathMode)) {
-            queryKeyBound = Math.min(keyCount, 1024);
+        if (openedIndex.metricsSnapshot().getSegmentCount() <= 1) {
+            throw new IllegalStateException(
+                    "Expected reopened multi-segment benchmark layout.");
         }
-        setReadKeyBounds(queryKeyBound, keyCount * 2);
-        if ("overlay".equals(readPathMode)) {
-            populateOverlay(openedIndex, queryKeyBound);
-        }
+        setReadKeyBounds(resolveQueryKeyBound(), keyCount * 4);
     }
 
     @Override
     protected int nextHitKey(final QueryState queryState,
             final int boundExclusive) {
-        return queryState.nextSequential(boundExclusive);
+        return queryState.nextRandom(boundExclusive);
     }
 
-    private String buildOverlayValue(final int key) {
-        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("overlay-", key,
-                valueLength, 'o');
+    private int resolveQueryKeyBound() {
+        if ("cold".equals(workingSetMode)) {
+            return keyCount;
+        }
+        return Math.min(keyCount, Math.max(maxKeysInSegment * 4, 1024));
     }
 
     private String buildValue(final int key) {
-        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("", key,
-                valueLength, 'x');
-    }
-
-    private void populateOverlay(final SegmentIndex<Integer, String> openedIndex,
-            final int queryKeyBound) {
-        for (int key = 0; key < queryKeyBound; key++) {
-            openedIndex.put(Integer.valueOf(key), buildOverlayValue(key));
-        }
+        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("stable-", key,
+                valueLength, 'm');
     }
 }

@@ -37,6 +37,40 @@
       ]
     },
     {
+      "label": "segment-index-get-multisegment-hot",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-t", "4",
+        "-p", "workingSetMode=hot",
+        "-p", "snappy=true",
+        "-p", "keyCount=32768",
+        "-p", "maxKeysInSegment=1024",
+        "-p", "maxSegmentsInCache=3",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "segment-index-persisted-mutation",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "snappy=true",
+        "-p", "walMode=sync",
+        "-p", "seededKeyCount=25000",
+        "-p", "valueLength=64",
+        "-p", "flushBatchSize=256"
+      ]
+    },
+    {
       "label": "segment-index-hot-partition-put",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
       "args": [
