@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -100,7 +101,7 @@ class SegmentRegistryImplCloseTest {
         final IndexRetryPolicy closeRetryPolicy = new IndexRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
-                gate);
+                gate, ConcurrentHashMap.<SegmentId>newKeySet());
     }
 
     @SuppressWarnings("unchecked")

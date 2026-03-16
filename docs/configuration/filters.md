@@ -1,11 +1,11 @@
-# 🧪 Filter Configuration
+# Filter Configuration
 
 This page covers how to configure chunk filter pipelines on `IndexConfiguration`.
 
 For filter behavior, ordering rationale, and integrity semantics, see
 [Filters & Integrity](../architecture/general/filters.md).
 
-## ⚙️ Builder API
+## Builder API
 
 Filters are configured through `IndexConfigurationBuilder`:
 
@@ -14,27 +14,27 @@ Filters are configured through `IndexConfigurationBuilder`:
 - `withEncodingFilters(Collection<ChunkFilter>)`
 - `withDecodingFilters(Collection<ChunkFilter>)`
 
-## ✅ Defaults
+## Defaults
 
 If you do not provide custom filters:
 
 - Encoding defaults: `ChunkFilterCrc32Writing` -> `ChunkFilterMagicNumberWriting`
 - Decoding defaults: `ChunkFilterMagicNumberValidation` -> `ChunkFilterCrc32Validation`
 
-## 🔄 Runtime Wiring
+## Runtime Wiring
 
 Configured filter lists are propagated into segment I/O:
 
 - Writer side: `ChunkStoreWriterTx` -> `ChunkStoreWriterImpl`
 - Reader side: `ChunkStoreReaderImpl`
 
-## ⚠️ Constraints
+## Constraints
 
 - Encoding and decoding filter lists must not be empty.
 - Decoding order must mirror the inverse of encoding for reversible transforms
   (for example Snappy/XOR pairs).
 
-## 📋 Examples
+## Examples
 
 Enable Snappy compression with matching decode order:
 
