@@ -1,4 +1,4 @@
-# 🗄️ Caching Strategy
+# Caching Strategy
 
 HestiaStore uses a few focused caches to deliver read‑after‑write visibility and predictable read latency while keeping memory bounded. This page outlines each layer, how it is populated/evicted, and which configuration knobs control sizing.
 
@@ -6,14 +6,14 @@ For segment internals (delta, Bloom, sparse/scarce structures), use
 [Segment Architecture](../segment/index.md). This page describes cache roles at the
 SegmentIndex integration level.
 
-## 🎯 Goals
+## Goals
 
 - Read‑after‑write consistency without synchronous disk I/O
 - Bound the working set in memory via LRU at the segment layer
 - Keep read I/O predictable: avoid random seeks with Bloom filter + sparse index
 - Make flush/compact operations deterministic and safe
 
-## 🧱 Layers Overview
+## Layers Overview
 
 - Partition overlay: routed in-memory mutable/immutable layers
   - Classes: `segmentindex/partition/PartitionRuntime`, `segmentindex/partition/RangePartition`
@@ -37,7 +37,7 @@ SegmentIndex integration level.
 - Key→segment map: max‑key to SegmentId mapping
   - Class: `segmentindex/mapping/KeyToSegmentMap` (TreeMap, persisted to `index.map`)
 
-## ✍️ Write‑Time Caches
+## Write‑Time Caches
 
 ### Partition overlay
 
@@ -62,7 +62,7 @@ Code:
 
 Code: `segment/SegmentDeltaCacheWriter`, `segment/SegmentDeltaCacheController`, `segment/SegmentCompacter`, `segment/SegmentFullWriterTx#doCommit`.
 
-## 📖 Read‑Time Caches
+## Read‑Time Caches
 
 - Top‑level overlay: `SegmentIndex.get(k)` checks routed partition overlay
   first (active mutable then immutable runs).
@@ -79,7 +79,7 @@ Code:
 `segmentindex/partition/PartitionRuntime`,
 `segmentindex/SegmentDataCache`.
 
-## ♻️ Eviction and Lifecycle
+## Eviction and Lifecycle
 
 - Partition overlay: mutable layer rotates by key budget; immutable runs are
   drained and retired after stable publish.
@@ -87,7 +87,7 @@ Code:
 - SegmentDeltaCache: cleared and files removed after compaction via `SegmentDeltaCacheController.clear()`; rebuilt on demand from delta files.
 - KeyToSegmentMap: persisted via `optionalyFlush()` when updated; survives process restarts by reading `index.map`.
 
-## ⚙️ Configuration Knobs
+## Configuration Knobs
 
 Index‑level:
 - `IndexConfiguration.getMaxNumberOfSegmentsInCache()` — LRU size for `SegmentDataCache`
@@ -108,25 +108,25 @@ I/O buffering:
 
 See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
-## 🔥 Warm‑Up Strategies
+## Warm‑Up Strategies
 
 - Point warm‑up: issue representative `get(key)` calls; this loads the target segments’ Bloom filter and sparse index into the LRU.
 - Segment warm‑up: iterate a small range to prime chunk readers and caches.
 - Global warm‑up: a bounded `index.getStream(SegmentWindow.limit(N))` over initial segments to seed the LRU without scanning the full dataset.
 
-## 🧭 Observability
+## Observability
 
 - Bloom filter effectiveness and false‑positive rate: `bloomfilter/BloomFilterStats`, accessible via `BloomFilter.getStatistics()`.
 - SegmentIndex operation counters (coarse): `segmentindex/Stats` increments on get/put/delete.
 
-## 🛠️ Tuning Guidance
+## Tuning Guidance
 
 - Throughput‑oriented writes: tune `maxNumberOfKeysInActivePartition`, `maxNumberOfKeysInPartitionBuffer`, and `maxNumberOfKeysInIndexBuffer`; monitor memory and drain latency.
 - Read‑heavy workloads touching few segments: increase `maxNumberOfSegmentsInCache` so the working set of segments (Bloom + scarce + delta) stays resident.
 - Space‑sensitive deployments: reduce Bloom filter size (may increase false positives and extra reads) or disable compression filters to trade CPU for I/O.
 - Latency‑sensitive point lookups: ensure Bloom filter is sized adequately; keep segments’ working set in the LRU; consider slightly smaller `maxNumberOfKeysInSegmentChunk` to narrow the local scan window.
 
-## 🧩 Code Pointers
+## Code Pointers
 
 - Partition overlay and drain: `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`,
   `src/main/java/org/hestiastore/index/segmentindex/partition/*`
@@ -136,7 +136,7 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
   `src/main/java/org/hestiastore/index/cache/CacheLruImpl.java`
 - Key→segment map: `src/main/java/org/hestiastore/index/segmentindex/mapping/KeyToSegmentMap.java`
 
-## 🔗 Related Glossary
+## Related Glossary
 
 - [UniqueCache](../general/glossary.md#uniquecache)
 - [Delta Cache](../general/glossary.md#delta-cache)

@@ -1,181 +1,125 @@
-# ⚙️ Configuration
+# Configuration
 
-Don’t be afraid to experiment—if a configuration is missing or invalid, the SegmentIndex will fail fast, helping you catch issues early.
+Use `IndexConfiguration` to define storage behavior, memory limits, type
+handling, and selected runtime features for a `SegmentIndex`.
 
-The index is configured using the `IndexConfiguration` class. All essential index properties are configurable through the builder. See the example below:
+## Start with the minimum configuration
 
 ```java
-IndexConfiguration<Integer, Integer> conf = IndexConfiguration
-    .<Integer, Integer>builder()//
-    .withKeyClass(Integer.class)//
-    .withValueClass(Integer.class)//
-    .withKeyTypeDescriptor(tdi) //
-    .withValueTypeDescriptor(tdi) //
-    .withMaxNumberOfKeysInSegment(4) //
-    .withMaxNumberOfKeysInSegmentCache(10L) //
-    .withMaxNumberOfKeysInSegmentIndexPage(2) //
-    .withBloomFilterIndexSizeInBytes(0) //
-    .withBloomFilterNumberOfHashFunctions(4) //
-    .withContextLoggingEnabled(false) //
-    .withName("test_index") //
+IndexConfiguration<String, String> conf = IndexConfiguration
+    .<String, String>builder()
+    .withKeyClass(String.class)
+    .withValueClass(String.class)
+    .withName("orders")
     .build();
-
-SegmentIndex<Integer, Integer> index = SegmentIndex.<Integer, Integer>create(directory, conf);
 ```
 
-For node management API and direct web console startup, see:
-[Monitoring Console Configuration](monitoring-console.md).
-For chunk filter setup, defaults, and examples, see:
-[Filter Configuration](filters.md).
+That is enough for many first integrations. Tune only after the basic path
+works and you have workload evidence.
 
-Now let's look at particular parameters.
+## Choose a directory implementation
 
-## 📁 SegmentIndex Directory
-
-Place where all data are stored. There are two already prepared types:
-
-## 🧠 In Memory
-
-All data are stored in memory. It's created like this:
+In-memory for tests and short-lived experiments:
 
 ```java
 Directory directory = new MemDirectory();
 ```
 
-It's usefull for testing purposes.
-
-## 💾 File system
-
-Its main purpose is to store index data in the file system. Create a file-system-based directory like this:
+Filesystem-backed for persistence:
 
 ```java
-Directory directory = new FsDirectory(new File('my directory'));
+Directory directory = new FsDirectory(new File("/var/lib/hestiastore/orders"));
 ```
 
-## 🧾 Properties of `IndexConfiguration` class
+## Configuration areas
 
-All properties are required and have the following meanings:
+### Identity and types
 
-## 🧱 SegmentIndex related configuration
+- `withName()` sets the logical index name for diagnostics and logging.
+- `withKeyClass()` and `withValueClass()` declare the key and value types.
+- `withKeyTypeDescriptor()` and `withValueTypeDescriptor()` are required for
+  non-default custom types.
 
-### 🔑 Key class - `withKeyClass()`
+Supported built-in types are the common compact types such as `Integer`,
+`Long`, `String`, and `Byte`. Custom types must provide a
+`TypeDescriptor` with stable serialization and comparison behavior.
 
-A `Class` object that represents the type of keys used in the index. Only instances of this class may be inserted. While any Java class is technically supported, it's recommended to use simple, compact types for performance reasons. Predefined classes are:
+### Segment sizing and cache behavior
 
-* Integer
-* Long
-* String
-* Byte
+- `withMaxNumberOfKeysInSegment()` controls when segments split.
+- `withMaxNumberOfKeysInSegmentCache()` controls how much per-segment data is
+  retained in memory.
+- `withMaxNumberOfSegmentsInCache()` controls how many segments stay cached at
+  the index level.
+- `withMaxNumberOfKeysInSegmentIndexPage()` controls sparse index granularity.
 
-If a different class is used, the key type descriptor must be set using the `withKeyTypeDescriptor()` method from the builder. If you use a custom class, you must implement the `com.hestiastore.index.datatype.TypeDescriptor` interface to describe how the type is serialized and compared.
+These knobs affect memory footprint, lookup cost, and maintenance frequency.
+Change them only with representative load testing or benchmark data.
 
-### 🧲 Value class - `withValueClass()`
+### Bloom filters
 
-Required. Specifies the Java class used for values. The same rules that apply to the key class also apply to the value class.
+Each segment may use a Bloom filter to accelerate negative lookups.
 
-### 🏷️ SegmentIndex name - `withName()`
+- `withBloomFilterIndexSizeInBytes()` sets the Bloom filter size
+- `withBloomFilterNumberOfHashFunctions()` sets the number of hashes
+- `withBloomFilterProbabilityOfFalsePositive()` tunes expected false positives
 
-Required. Assigns a logical name to the index. This can be useful in diagnostics and logging.
+Disable Bloom filters by setting:
 
-### 🧩 Key type descriptor - `withKeyTypeDescriptor()`
+```java
+.withBloomFilterIndexSizeInBytes(0)
+```
 
-Type descriptor for the key class. Required for non-default types.
+### Logging context
 
-### 🧩 Value type descriptor - `withValueTypeDescriptor()`
-
-Type descriptor for the value class. Required for non-default types.
-
-### 🧱 Max number of segments in cache - `withMaxNumberOfSegmentsInCache()`
-
-Limits the number of segments stored in memory. Useful for controlling memory usage.
-
-### 🗒️ Context logging enabled - `withContextLoggingEnabled()`
-
-Controls whether the index wraps operations with MDC context propagation so log statements include the index name. When it's set on 'true' following loog message will contain set 'index' property:
+`withContextLoggingEnabled()` controls MDC context propagation so logs can carry
+the index name.
 
 ```xml
-<Console name="indexAppender" target="SYSTEM_OUT">
-    <PatternLayout
-        pattern="%d{ISO8601} %-5level [%t] index='%X{index.name}' %-C{1.mv}: %msg%n%throwable" />
-</Console>
+<PatternLayout
+    pattern="%d{ISO8601} %-5level [%t] index='%X{index.name}' %-C{1.mv}: %msg%n%throwable" />
 ```
 
-Default value is 'true'.
+This is useful for multi-index services, but high-throughput workloads should
+measure the logging overhead before enabling it everywhere.
 
-Please note, that in highly intensive applications enabling this option could eat up to 40% of CPU time.
+## Configuration pages by topic
 
-## 🧩 Segment related configuration
+- [Filters](filters.md) for chunk filter setup and constraints
+- [Data Types](data-types.md) for custom serialization and comparator contracts
+- [Logging](logging.md) for logger configuration
+- [Monitoring Console](monitoring-console.md) for monitoring-side configuration
 
-### 📏 Max number of keys in segment - `withMaxNumberOfKeysInSegment()`
+## What can be changed when opening an existing index
 
-Sets the maximum number of keys allowed in a single segment. Exceeding this splits the segment.
+Some settings can be overridden when calling `SegmentIndex.open(directory, conf)`.
+Treat the index metadata as the source of truth and use overrides only where
+the implementation supports runtime-safe reopening.
 
-### 🗃️ Max number of keys in segment cache - `withMaxNumberOfKeysInSegmentCache()`
+| Name | Meaning | Reopen override |
+| --- | --- | --- |
+| `indexName` | Logical name of the index | Yes |
+| `keyClass` | Key class | No |
+| `valueClass` | Value class | No |
+| `keyTypeDescriptor` | Key type descriptor | No |
+| `valueTypeDescriptor` | Value type descriptor | No |
+| `maxNumberOfKeysInSegmentIndexPage` | Keys per segment index page | No |
+| `maxNumberOfKeysInSegmentCache` | Keys kept in segment cache | Yes |
+| `maxNumberOfKeysInActivePartition` | Active partition overlay size | Yes |
+| `maxNumberOfImmutableRunsPerPartition` | Immutable runs per partition | Yes |
+| `maxNumberOfKeysInPartitionBuffer` | Buffered keys per partition | Yes |
+| `maxNumberOfKeysInIndexBuffer` | Buffered keys across index | Yes |
+| `maxNumberOfKeysInPartitionBeforeSplit` | Split eligibility threshold | Yes |
+| `maxNumberOfKeysInSegment` | Maximum keys per segment | No |
+| `maxNumberOfSegmentsInCache` | Cached segments | Yes |
+| `bloomFilterNumberOfHashFunctions` | Bloom filter hash count | No |
+| `bloomFilterIndexSizeInBytes` | Bloom filter size | No |
+| `bloomFilterProbabilityOfFalsePositive` | Bloom filter false positive rate | No |
+| `diskIoBufferSize` | Disk I/O buffer size | Yes |
+| `contextLoggingEnabled` | MDC-based context logging | Yes |
 
-Defines how many keys can be cached from a segment during regular operation.
+## Custom data types
 
-### 📑 Max number of keys in segment index page - `withMaxNumberOfKeysInSegmentIndexPage()`
-
-Defines the number of keys in the index page for a segment. This impacts lookup efficiency.
-
-## 🌸 Bloom filter configuration
-
-A Bloom filter is a probabilistic data structure that efficiently tests whether an element is part of a set. You can find a detailed explanation on [Wikipedia](https://en.wikipedia.org/wiki/Bloom_filter). In this context, each segment has its own Bloom filter.
-
-To **disable** bloom filter completle set:
-
-```java
- .withBloomFilterIndexSizeInBytes(0)
-```
-
-The settings for the Bloom filter can be adjusted using the following methods:
-
-### 📦 Bloom filter size - `withBloomFilterIndexSizeInBytes()`
-
-Sets the size of the Bloom filter in bytes. A value of 0 disables the use of the Bloom filter.
-
-### 🔢 Number of hash functions - `withBloomFilterNumberOfHashFunctions()`
-
-Sets the number of hash functions used in the Bloom filter.
-
-### 📈 Probability of false positive - `withBloomFilterProbabilityOfFalsePositive()`
-
-Sets the probability of false positives. When `get(someKey)` is called on a segment, the Bloom filter is checked to determine if the value is not in the segment. It can return `true`, indicating that the key **could be** in the segment. If the Bloom filter indicates the key is in the segment but it's not found, that's a false positive. The probability of this occurring is a value between 0 and 1.
-
-Usually, it's not necessary to adjust the Bloom filter settings.
-
-## ✏️ Changing SegmentIndex propertise
-
-Some parameters can be redefined when the index is opened.
-
-```java
-SegmentIndex<String, String> index = SegmentIndex.<String, String>open(directory, conf);
-```
-
-At allows to pass `IndexConfiguration` object and this way change configuration parameters. Fllowing table shou parameters that can be changed.  
-
-| Name                                        | Meaning                                              | Can be changed | Applies to           |
-| ------------------------------------------- | ---------------------------------------------------- | -------------- | -------------------- |
-| indexName                                   | Logical name of the index                            | 🟩             | index                |
-| keyClass                                    | Key class                                            | 🟥             | index                |
-| valueClass                                  | Value class                                          | 🟥             | index                |
-| keyTypeDescriptor                           | Key class type descriptor                            | 🟥             | index                |
-| valueTypeDescriptor                         | Value class type descriptor                          | 🟥             | index                |
-| maxNumberOfKeysInSegmentIndexPage           | Maximum keys in segment index page                   | 🟥             | segment              |
-| maxNumberOfKeysInSegmentCache               | Maximum number of keys in segment cache              | 🟩             | segment              |
-| maxNumberOfKeysInActivePartition            | Maximum number of keys in active partition overlay   | 🟩             | partition            |
-| maxNumberOfImmutableRunsPerPartition        | Maximum number of immutable runs queued per partition| 🟩             | partition            |
-| maxNumberOfKeysInPartitionBuffer            | Maximum buffered keys allowed per partition          | 🟩             | partition            |
-| maxNumberOfKeysInIndexBuffer                | Maximum buffered keys allowed across the whole index | 🟩             | index                |
-| maxNumberOfKeysInPartitionBeforeSplit       | Threshold after which a partition becomes split-eligible | 🟩         | partition            |
-| maxNumberOfKeysInSegment                    | Maximum keys in a segment                            | 🟥             | segment              |
-| maxNumberOfSegmentsInCache                  | Maximum number of segments in cache                  | 🟩             | index                |
-| bloomFilterNumberOfHashFunctions            | Bloom filter - number of hash functions used         | 🟥             | segment bloom filter |
-| bloomFilterIndexSizeInBytes                 | Bloom filter - index size in bytes                   | 🟥             | segment bloom filter |
-| bloomFilterProbabilityOfFalsePositive       | Bloom filter - probability of false positives        | 🟥             | segment bloom filter |
-| diskIoBufferSize                            | Size of the disk I/O buffer                          | 🟩             | Disk IO              |
-| contextLoggingEnabled                       | If MDC-based context logging is enabled              | 🟩             | index                |
-
-## ➕ Add custom data type
-
-HestiaStore have to know how to work with new data type. So first is create implementatio of `com.hestiastore.index.datatype.TypeDescriptor`. Than during index creation set let index know about your implementation by `withKeyTypeDescriptor`. And it's done.
+If you introduce a custom key or value type, implement
+`com.hestiastore.index.datatype.TypeDescriptor` and wire it through the
+builder. See [Data Types](data-types.md) for the contract details.
