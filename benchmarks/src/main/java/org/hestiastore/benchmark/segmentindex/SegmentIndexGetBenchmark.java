@@ -75,6 +75,7 @@ public class SegmentIndexGetBenchmark {
     private File tempDir;
     private SegmentIndex<Integer, String> index;
     private int queryKeyBound;
+    private int missKeyStart;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
@@ -92,6 +93,7 @@ public class SegmentIndexGetBenchmark {
 
         index = SegmentIndex.open(new FsDirectory(tempDir), conf);
         queryKeyBound = keyCount;
+        missKeyStart = keyCount * 2;
         if ("overlay".equals(readPathMode)) {
             populateOverlay(index);
         }
@@ -117,6 +119,20 @@ public class SegmentIndexGetBenchmark {
     @Benchmark
     public String getHitAsyncJoin(final QueryState queryState) {
         return index.getAsync(Integer.valueOf(queryState.nextKey(queryKeyBound)))
+                .toCompletableFuture().join();
+    }
+
+    @Benchmark
+    public String getMissSync(final QueryState queryState) {
+        return index.get(Integer.valueOf(
+                missKeyStart + queryState.nextKey(queryKeyBound)));
+    }
+
+    @Benchmark
+    public String getMissAsyncJoin(final QueryState queryState) {
+        return index
+                .getAsync(Integer.valueOf(
+                        missKeyStart + queryState.nextKey(queryKeyBound)))
                 .toCompletableFuture().join();
     }
 
