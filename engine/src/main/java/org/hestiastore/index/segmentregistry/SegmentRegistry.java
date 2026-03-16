@@ -99,6 +99,23 @@ public interface SegmentRegistry<K, V> {
     }
 
     /**
+     * Prevents cache eviction/unload for a segment while an internal operation
+     * is in progress.
+     *
+     * @param segmentId segment id to pin
+     */
+    default void pinSegment(final SegmentId segmentId) {
+    }
+
+    /**
+     * Releases a previously pinned segment so normal cache eviction can resume.
+     *
+     * @param segmentId segment id to unpin
+     */
+    default void unpinSegment(final SegmentId segmentId) {
+    }
+
+    /**
      * Returns currently loaded segment instances.
      *
      * @return loaded segment snapshot
