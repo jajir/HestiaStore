@@ -68,8 +68,8 @@
         "137": {
           "channel": "pr-137",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-137/latest.json",
-          "sha": "faeb11f568a9f25cac50f970460ce0b5b659048b",
-          "timestampUtc": "2026-03-16T07:36:42.750190+00:00"
+          "sha": "314ee53176fcebd2eec3e70c90db11224f3812ea",
+          "timestampUtc": "2026-03-16T08:22:15.235451+00:00"
         }
       },
       "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
