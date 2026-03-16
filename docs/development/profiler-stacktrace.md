@@ -1,4 +1,4 @@
-# 🔬 JVM profiler results (YourKit)
+# JVM profiler results (YourKit)
 
 This page summarizes a profiling session focused on read and write performance. The goal was to identify where CPU time is spent and highlight concrete improvements.
 
@@ -8,11 +8,11 @@ Test environment: run on a Mac mini on 24.10.2025.
 
 ![Profiler result](../images/jvm-profiler-2025-10-24.png)
 
-## 🧭 How to read the numbers
+## How to read the numbers
 
 Percentages shown below approximate the share of total CPU time across the whole run spent in each operation/stack. For example, “40% byte array manipulations” means about 40% of all CPU cycles were consumed in copying/transforming byte arrays end-to-end.
 
-## 📈 Key findings (high level)
+## Key findings (high level)
 
 - ~40% in byte array manipulation (ultimately `System.arraycopy`) across several layers while moving data between buffers and chunks.
 - ~21% in sequential reads through stacked streams and iterators, indicating many small reads and buffer boundaries.
@@ -21,7 +21,7 @@ Percentages shown below approximate the share of total CPU time across the whole
 
 These four areas dominate the observed CPU budget for the scenario above.
 
-## 🧵 Detailed stacks and context
+## Detailed stacks and context
 
 ### ~40%: byte array manipulation
 
@@ -174,7 +174,7 @@ com.coroptis.counting.CommandCount.countRound(CommandCount.java:48)
 com.coroptis.counting.Main.main(Main.java:132)
 ```
 
-## 🛠️ What to improve next (actionable)
+## What to improve next (actionable)
 
 - Reduce copies in the read path
 	- Pool and reuse byte buffers across `ChunkStoreReader`/`ChunkEntryFileIterator`.

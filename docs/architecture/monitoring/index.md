@@ -1,4 +1,4 @@
-# 📡 Monitoring
+# Monitoring
 
 Monitoring architecture covers runtime observability and runtime-safe operational
 control.

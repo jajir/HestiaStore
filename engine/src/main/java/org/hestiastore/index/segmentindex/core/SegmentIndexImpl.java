@@ -1390,6 +1390,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             flushSegments(true);
         });
     }
+
     private void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         if (logger.isDebugEnabled()) {

@@ -1,8 +1,8 @@
-# 🛟 Consistency & Recovery
+# Consistency & Recovery
 
 This page explains HestiaStore’s crash safety model and commit semantics. WAL is optional and disabled by default (`Wal.EMPTY`). Without WAL, durability is driven by explicit flushes and by temp-file + atomic-rename commit paths. With WAL enabled, writes are appended before apply and startup replays WAL records above checkpoint (with invalid-tail truncation or fail-fast based on policy).
 
-## 📜 Scope and Guarantees
+## Scope and Guarantees
 
 - WAL-disabled mode: no automatic WAL replay. Durability boundary is `flushAndWait()` (or close).
 - WAL-enabled mode: startup can repair invalid WAL tail and replay durable records above checkpoint.
@@ -10,7 +10,7 @@ This page explains HestiaStore’s crash safety model and commit semantics. WAL 
 - Durability boundary: calling `flushAndWait()` (or closing the index) persists all writes that happened before the call. During `close()`, the index enters `CLOSING` while pending maintenance and WAL/map flush work are finalized. `flush()` only schedules maintenance; wait for completion if you need a durability guarantee.
 - Atomic file replacement: data files are written to `*.tmp` and made visible via `rename` only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.
 
-## 💾 Where Writes Become Durable
+## Where Writes Become Durable
 
 - Index‑level buffer → disk: `SegmentIndex.flush()` schedules draining of the in‑memory unique buffer into segment delta cache files. `flushAndWait()` (and close) wait for completion.
 - Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.
@@ -21,7 +21,7 @@ Relevant code:
 `segmentindex/partition/PartitionRuntime`,
 `segmentindex/mapping/KeyToSegmentMap#optionalyFlush()`.
 
-## ✍️ Transactional Write Primitives
+## Transactional Write Primitives
 
 All main data files follow the same pattern: write to a temporary file, then atomically rename on `commit()`.
 
@@ -35,7 +35,7 @@ Key classes:
 - `chunkstore/ChunkStoreWriterTx` and `chunkentryfile/ChunkEntryFileWriterTx` → layered over `DataBlockWriterTx`
 - `bloomfilter/BloomFilterWriterTx` → writes new filter and swaps it in on commit
 
-## 🗂️ File Types and Commit Paths
+## File Types and Commit Paths
 
 - Segment delta cache files
   - Writer: `segment/SegmentDeltaCacheWriter`
@@ -54,25 +54,25 @@ Key classes:
   - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeyToSegmentMap.optionalyFlush()`
   - Ensures the map is replaced atomically.
 
-## 🚫 What Is Not Transactional
+## What Is Not Transactional
 
 - Segment manifest metadata (counts and delta‑file numbering) is persisted via an overwrite (`Directory.Access.OVERWRITE`). It is updated after data files are committed, and is not critical to data correctness. If a crash corrupts or desynchronizes this metadata, the reader logic remains safe (e.g., missing delta file names yield empty reads) and you can re‑establish consistency via the checker below.
 
 Code: `properties/PropertyStoreImpl` and `SegmentPropertiesManager`.
 
-## 💥 Failure Model (Examples)
+## Failure Model (Examples)
 
 - Crash while writing a delta file before commit: only `*.tmp` exists; it is ignored on boot; prior state remains valid.
 - Crash after committing a Bloom filter but before committing SST/sparse index: Bloom filter is ahead of data, which is safe (may increase positives but never produce false negatives).
 - Crash after committing SST/sparse index but before properties update: data is fully committed; metadata may lag but does not affect correctness.
 
-## 🧰 Consistency Check and Repair
+## Consistency Check and Repair
 
 - Run `SegmentIndex.checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
 
 Key classes: `segmentindex/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
 
-## 👩‍💻 Developer Notes: `open()`/`commit()` and `*.tmp`
+## Developer Notes: `open()`/`commit()` and `*.tmp`
 
 - `open()` returns a writer bound to a temporary file (typically with a `.tmp` suffix). You must close the writer before calling `commit()`.
 - `commit()` performs an atomic `rename(temp, final)` so either the old file or the new file is visible on disk.
@@ -84,7 +84,7 @@ Examples in code:
 - `datablockfile/DataBlockWriterTx#open()` → `commit()` renames temp to final
 - `bloomfilter/BloomFilterWriterTx#open()` → `commit()` renames temp to final and swaps hash
 
-## 🧭 Practical Guidance
+## Practical Guidance
 
 - If WAL is disabled, call `flushAndWait()` on periodic boundaries and always before shutdown to persist in‑memory writes.
 - If another thread observes the index during shutdown, expect `getState()` /
@@ -93,7 +93,7 @@ Examples in code:
 - If WAL is enabled, configure durability mode (`ASYNC`, `GROUP_SYNC`, `SYNC`) based on loss tolerance and latency targets.
 - After a crash, reopen the index; WAL-enabled indexes recover from WAL first, then `checkAndRepairConsistency()` can be run as an additional integrity check.
 
-## 🔗 Related Glossary
+## Related Glossary
 
 - [Flush](glossary.md#flush)
 - [Write Transaction](glossary.md#write-transaction)

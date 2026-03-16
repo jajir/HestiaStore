@@ -1,4 +1,4 @@
-# 📚 SegmentIndex Architecture
+# SegmentIndex Architecture
 
 This section describes the top-level index orchestration layer: how operations
 are routed, cached, and executed across segments.
