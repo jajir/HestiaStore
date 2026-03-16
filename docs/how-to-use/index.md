@@ -1,24 +1,28 @@
-# 🚀 Getting Started
+# Getting Started
 
-> Note: HestiaStore is a library, not a standalone application. It is designed to be integrated into a larger system to provide efficient storage and retrieval of large volumes of key‑value entries.
+HestiaStore is a library, not a standalone server. The goal of this section is
+to get you from dependency installation to a working embedded index with the
+fewest decisions possible.
 
-HestiaStore is a Java library distributed as a JAR. To get started quickly:
+## Recommended path
 
-- [Install](install.md) — add the dependency via Maven/Gradle.
-- [Quick Start](quick-start.md) — minimal in‑memory and filesystem examples.
-- [Troubleshooting](troubleshooting.md) — common issues, .lock files, and how to get help.
-- [WAL Operations](../operations/wal.md) — optional write-ahead logging is implemented and can be enabled per index.
+1. [Install](install.md) the dependency from Maven Central.
+2. Run the [Quick Start](quick-start.md) example with an in-memory directory.
+3. Switch to a filesystem-backed directory when you need persistence.
+4. Use [Configuration](../configuration/index.md) only after the basic path
+   works.
+5. Use [Operations](../operations/index.md) once WAL, monitoring, backup, or
+   tuning become relevant.
 
-## 💡 Use Cases
+## Typical use cases
 
-HestiaStore is especially effective when you need to:
+- large local key-value datasets inside one Java service
+- point lookups with predictable disk layout
+- ordered scans over persisted keys
+- test-friendly storage with `MemDirectory`
 
-- Store billions of key‑value entries on local disks
-- Perform efficient point lookups with bounded memory
-- Persist values to disk without external databases
-- Avoid cloud storage or network‑attached stores
+## When to choose something simpler
 
-When not to use HestiaStore:
-
-- If all key‑value entries fit in RAM, prefer an in‑memory map (e.g., `HashMap` or `ConcurrentHashMap`) for speed and simplicity.
-- For small datasets with relational queries, a traditional RDBMS may be simpler to operate.
+- all data fits comfortably in memory and persistence is not required
+- your main need is SQL or transactional relational behavior
+- you need distributed replication more than embedded storage

@@ -1,74 +1,103 @@
-# 🛠️ Troubleshooting
+# Troubleshooting
 
-Common issues and quick fixes.
+Use this page for the common integration failures seen during first adoption and
+filesystem-backed operation.
 
-## 🔒 ".lock" File Prevents Opening
+## A `.lock` file prevents opening
 
-- Cause: Another process holds the index open, or a previous run did not close cleanly.
-- Fix: Ensure the process using the index has terminated and closed the index. If safe, remove the stale .lock file after verifying no process uses the directory.
+Cause:
 
-## 🧩 Consistency Errors (IndexException)
+- another process still has the index open
+- a previous process exited without cleaning up the lock
 
-- Symptom: Consistency checks fail or reads behave unexpectedly after a crash.
-- Fix: Run checkAndRepairConsistency(). If it still fails, restore from a backup.
+What to do:
 
-## ⚠️ Exception 'Attempt to insert the same key as previous'
+1. Confirm no running process is still using the index directory.
+2. If the process is gone, remove the stale `.lock` file.
+3. Reopen the index.
 
-When followin exception appears in logs. Than it's probably problem with inconsistent implementaion of custom data type. Please look at [custom type configuration](../configuration/data-types.md#custom-data-types)
+## Consistency checks fail after a crash
+
+Symptoms:
+
+- `IndexException`
+- unexpected read behavior after an unclean shutdown
+
+What to do:
+
+1. Open the index.
+2. Run `checkAndRepairConsistency()`.
+3. If repair fails, restore from backup.
+4. If WAL is enabled, inspect the WAL directory with the WAL tooling before
+   discarding evidence.
+
+## `Attempt to insert the same key as previous`
+
+This usually means a custom key type or comparator does not provide a stable,
+strict ordering.
 
 ```text
-xception in thread "main" java.lang.IllegalArgumentException: Attempt to insert the same key as previous. Key(Base64)='QUFHR0JHQkFBVERTU1BTUw==', comparator='DtFixedLengthByteArray$$Lambda/0x0000000800214238'
-    at org.hestiastore.index.sorteddatafile.SortedDataFileWriter.verifyKeyOrder(SortedDataFileWriter.java:76)
-    at org.hestiastore.index.sorteddatafile.SortedDataFileWriter.write(SortedDataFileWriter.java:104)
-    at org.hestiastore.index.GuardedEntryWriter.write(GuardedEntryWriter.java:18)
-    at org.hestiastore.index.segment.SegmentDeltaCacheWriter.lambda$doClose$0(SegmentDeltaCacheWriter.java:87)
-    at org.hestiastore.index.WriteTransaction.execute(WriteTransaction.java:41)
-    at org.hestiastore.index.segment.SegmentDeltaCacheWriter.doClose(SegmentDeltaCacheWriter.java:84)
-    at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
-    at org.hestiastore.index.segment.SegmentDeltaCacheCompactingWriter.doClose(SegmentDeltaCacheCompactingWriter.java:47)
-    at org.hestiastore.index.AbstractCloseableResource.close(AbstractCloseableResource.java:23)
-    at org.hestiastore.index.segmentindex.CompactSupport.flushToCurrentSegment(CompactSupport.java:84)
-    at org.hestiastore.index.segmentindex.CompactSupport.compact(CompactSupport.java:59)
-    at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-    at org.hestiastore.index.segmentindex.SegmentIndexImpl.flushCache(SegmentIndexImpl.java:126)
-    at org.hestiastore.index.segmentindex.SegmentIndexImpl.put(SegmentIndexImpl.java:83)
-    at org.hestiastore.index.segmentindex.SegmentIndex.put(SegmentIndex.java:93)
+Exception in thread "main" java.lang.IllegalArgumentException:
+Attempt to insert the same key as previous
 ```
 
-## 📦 Dependency Resolution Fails
+Check:
 
-- Maven: run the command below and confirm org.hestiastore.index:core is present.
+- your custom type ordering is deterministic
+- `compare(a, b) == 0` only for keys that should be equal
+- serialization and comparator behavior match
 
-    mvn dependency:tree
+See [Data Types](../configuration/data-types.md#custom-data-types).
 
-- Gradle: run the command below for dependency insight.
+## Dependency resolution fails
 
-    ./gradlew dependencyInsight --dependency org.hestiastore.index:core
+For Maven:
 
-- Also verify you used the latest version from Maven Central.
+```bash
+mvn dependency:tree
+```
 
-## ☕ Java Version Mismatch
+For Gradle:
 
-- Ensure Java 17+ is used. HestiaStore targets Java 17 bytecode and is compatible with newer/current JDK releases. Check with `java -version` and align your IDE or CI JDK.
+```bash
+./gradlew dependencyInsight --dependency org.hestiastore:engine
+```
 
-## 📁 Permission or Path Errors
+Confirm `org.hestiastore:engine` is present and the version comes from
+Maven Central.
 
-- Ensure your process has read/write permissions to the target directory.
-- Use absolute paths for clarity in services or containers.
+## Java version mismatch
 
-## 🔄 Stale Streaming Results
+HestiaStore requires Java 17 or newer.
 
-- Call flush() before streaming if you require latest writes.
-- Avoid put() or delete() while iterating a stream.
+```bash
+java -version
+```
 
-## ❓ Need More Help?
+Align your local shell, IDE, CI runner, and container base image to the same
+JDK line.
+
+## Permission or path errors
+
+- confirm the process has read and write permission on the index directory
+- prefer absolute paths in services and containers
+- verify mounted volumes are writable before opening the index
+
+## Streaming does not show recent writes
+
+- call `flush()` before starting the stream when recent writes must be visible
+- avoid mutating the same index while consuming a stream if you need a stable
+  view
+
+## Still blocked
 
 - Search existing tickets: <https://github.com/jajir/HestiaStore/issues?q=is%3Aissue>
 - Open a new ticket: <https://github.com/jajir/HestiaStore/issues/new/choose>
 
-When opening a ticket, please include:
+Include:
 
-- Your Java version (run `java -version`)
-- HestiaStore version and build tool (Maven/Gradle)
-- Minimal code snippet or steps to reproduce
-- Relevant logs/stack traces and OS info
+- Java version
+- HestiaStore version
+- build tool and dependency declaration
+- minimal reproduction
+- relevant logs, stack traces, and OS details

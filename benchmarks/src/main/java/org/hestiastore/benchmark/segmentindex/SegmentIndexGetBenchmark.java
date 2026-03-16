@@ -110,14 +110,14 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
         return queryState.nextSequential(boundExclusive);
     }
 
-    private String buildOverlayValue(final int key) {
-        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("overlay-", key,
-                valueLength, 'o');
-    }
-
     private String buildValue(final int key) {
         return SegmentIndexBenchmarkSupport.buildFixedWidthValue("", key,
                 valueLength, 'x');
+    }
+
+    private String buildOverlayValue(final int key) {
+        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("overlay-", key,
+                valueLength, 'o');
     }
 
     private void populateOverlay(final SegmentIndex<Integer, String> openedIndex,

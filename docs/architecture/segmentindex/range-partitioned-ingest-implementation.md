@@ -66,7 +66,10 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - `compactAndWait()` likewise waits for any split already scheduled by
   background drain before compacting stable segments, so compaction does not
   overlap with split materialization of the same routed range; the same second
-  drain plus wait cycle is repeated before compaction begins
+  drain plus wait cycle is repeated before compaction begins, and if the final
+  idle split-policy scan still publishes child routes, `compactAndWait()`
+  reestablishes the compact/flush boundary on the final mapped segments before
+  returning
 
 ## Drain Contract
 

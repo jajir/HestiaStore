@@ -1,11 +1,11 @@
-# 🚀 Performance Model & Sizing
+# Performance Model & Sizing
 
 This page summarizes how HestiaStore achieves high throughput and predictable latency, and how to size the main knobs. All claims map to code so you can verify behavior.
 
 Segment-specific internals referenced here are centralized in
 [Segment Architecture](../segment/index.md).
 
-## 🧠 Mental Model (Hot Paths)
+## Mental Model (Hot Paths)
 
 - Put/Delete:
   - O(1) to update in‑memory write buffer (`UniqueCache`).
@@ -19,7 +19,7 @@ Segment-specific internals referenced here are centralized in
   - Locate target segment via key→segment map (in‑memory TreeMap ceiling lookup).
   - Seek into `vNN-index.sst` by sparse index pointer, then bounded local scan of at most `maxNumberOfKeysInSegmentChunk` entries in ascending order. Typically one chunk read.
 
-## 💽 I/O Patterns and Amplification
+## I/O Patterns and Amplification
 
 - Sequential writes: delta files and SST chunks append sequentially via transactional writers (`*.tmp` + rename).
 - Sequential reads: positive get reads one chunk and scans ≤ N keys (N = `maxNumberOfKeysInSegmentChunk`).
@@ -28,7 +28,7 @@ Segment-specific internals referenced here are centralized in
   - Chunk store uses fixed 16‑byte cells with data blocks sized by `diskIoBufferSize` (divisible by 1024). Payloads are padded to whole cells for easy positioning.
   - Code: `chunkstore/CellPosition.java`, `datablockfile/DataBlockSize.java`, `Vldtn#requireIoBufferSize`.
 
-## ⚙️ Key Knobs (What They Do)
+## Key Knobs (What They Do)
 
 - `maxNumberOfKeysInSegmentChunk` (sparse index cadence)
   - Lower ⇒ smaller local scan window (read latency) with more sparse‑index entries; slightly more write work during compaction.
@@ -49,19 +49,19 @@ Segment-specific internals referenced here are centralized in
 - Context logging (`isContextLoggingEnabled`)
   - Adds MDC setup/teardown per operation so logs can include `index.name`.
 
-## 🧮 Memory Sizing
+## Memory Sizing
 
 - Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a `UniqueCache`. Upper bound approximates number of unique keys across delta files (see segment properties).
 - Bloom filter: fully memory‑mapped in RAM when present; `indexSizeInBytes` bytes per segment plus metadata. Code: `bloomfilter/BloomFilterImpl.java`.
 - SegmentData LRU: holds delta cache + Bloom + scarce index for up to `maxNumberOfSegmentsInCache` segments; evictions call `close()` to free memory.
 
-## 🧠 CPU Sizing
+## CPU Sizing
 
 - Put path: hashing and HashMap work; occasional sort on flush (parallel sort over entries) and CRC/magic/Snappy filters on compaction.
 - Get path: a few compares, at most N key compares during the bounded scan, optional Snappy decompression on read.
 - Enabling context logging adds a small per‑operation MDC overhead.
 
-## 🧪 Practical Tuning Recipes
+## Practical Tuning Recipes
 
 - Write‑heavy ingestion:
   - Consider enabling Snappy if values are highly compressible and I/O bound.
@@ -75,13 +75,13 @@ Segment-specific internals referenced here are centralized in
 - Mixed workloads:
   - Start with defaults; adjust Bloom size and segment LRU to fit your hot set; validate with counters and filter stats.
 
-## 🔎 Observability and Validation
+## Observability and Validation
 
 - Bloom stats: `BloomFilter.getStatistics()` reports avoided disk accesses and false‑positive rate. Code: `bloomfilter/BloomFilterStats`.
 - Operation counters: `segmentindex/Stats` exposes get/put/delete counts (logged on close in `SegmentIndexImpl#doClose`).
 - Consistency: after unexpected shutdown, run `SegmentIndex.checkAndRepairConsistency()`; optionally `compact()` to reclaim locality.
 
-## 🧩 Code Pointers
+## Code Pointers
 
 - Write buffer, drain, and stable publish:
   `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`,
@@ -94,7 +94,7 @@ Segment-specific internals referenced here are centralized in
   `src/main/java/org/hestiastore/index/segmentindex/split/PartitionStableSplitCoordinator.java`,
   `src/main/java/org/hestiastore/index/segmentindex/core/BackgroundSplitCoordinator.java`
 
-## 🔗 Related Glossary
+## Related Glossary
 
 - [Main SST](../general/glossary.md#main-sst)
 - [Sparse Index](../general/glossary.md#sparse-index-scarce-index)

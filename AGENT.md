@@ -29,6 +29,10 @@
 - Add Javadoc for public types and non-trivial logic; keep methods small and side-effect aware.
 - Do not use fully qualified class names in code.
 - Always use simple class names with explicit `import` statements (e.g. `import package.ConcreteClass`).
+- Before finishing any Java change, remove unused imports in every touched file.
+- Benchmark sources under `benchmarks/src/...` are especially prone to stale
+  imports after refactors; always do a final unused-import pass there before
+  opening or updating a PR.
 - Try to avoid creating class instances in constructors.
 - Try to centralize class instantiation in builder classes.
 - Don't use java records.

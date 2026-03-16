@@ -101,7 +101,7 @@ Current behavior:
   - fail fast when a canonical profile references a missing benchmark class,
     drifts from required SegmentIndex scenarios, or benchmark sources bring
     back removed public config names
-- pull requests to `main`
+- pull requests
   - run `segment-index-pr-smoke`
   - first try to compare PR candidate against the latest canonical baseline
     stored in the `perf-artifacts` branch
