@@ -1,8 +1,8 @@
-# 💾 On-Disk Layout & File Names
+# On-Disk Layout & File Names
 
 This page documents the files HestiaStore writes into an index directory, their naming conventions, how they evolve over time, and the atomic commit pattern used to keep them consistent.
 
-## 📂 Directory Layout (One SegmentIndex per Directory)
+## Directory Layout (One SegmentIndex per Directory)
 
 Top-level files:
 
@@ -27,7 +27,7 @@ Notes:
 - Versions are zero‑padded to 2 digits: `v01`, `v02`, …
 - Delta file counters are padded to 4 digits: `0000`, `0001`, …
 
-## 🏷️ Naming and Extensions
+## Naming and Extensions
 
 - Main data: `vNN-index.sst` (chunked SST)
 - Sparse index: `vNN-scarce.sst` (sorted key→int pointer)
@@ -39,7 +39,7 @@ Notes:
 
 Code: `segment/SegmentFiles.java`, `segmentindex/mapping/KeyToSegmentMap.java`.
 
-## 🧨 Atomic Commit Pattern (`*.tmp` + rename)
+## Atomic Commit Pattern (`*.tmp` + rename)
 
 All persistent writers follow the same pattern:
 
@@ -59,14 +59,14 @@ Code pointers:
 - Sparse index: `scarceindex/ScarceIndexWriterTx`
 - Bloom filter: `bloomfilter/BloomFilterWriterTx`
 
-## 🔄 Segment Lifecycle
+## Segment Lifecycle
 
 1) New writes accumulate in the index write buffer; on flush they are routed by key into per‑segment delta files `vNN-delta-NNNN.cache`.
 2) Reads consult delta cache first, then `vNN-bloom-filter.bin` and `vNN-scarce.sst` to bound the probe into `vNN-index.sst`.
 3) Compaction rewrites `vNN-index.sst`, `vNN-scarce.sst`, and `vNN-bloom-filter.bin` transactionally; on success, delta files are deleted and the in‑memory delta cache is cleared.
 4) When a segment grows beyond the threshold, it is split: a new `segment-xxxxx` appears and `index.map` is updated atomically.
 
-## 🧬 Chunked SST Anatomy
+## Chunked SST Anatomy
 
 The `vNN-index.sst` file is a sequence of fixed‑cell chunks stored in a data‑block file. Each chunk has:
 
@@ -77,12 +77,12 @@ Filters add robustness and optional compression/obfuscation; their flags and ord
 
 Code: `chunkstore/*`, `chunkentryfile/*`.
 
-## 🔁 Compatibility
+## Compatibility
 
 - Header fields (magic, version) allow future readers to validate format.
 - Sparse index and Bloom filter are rebuilt during compaction; no upgrade step is required beyond re‑writing segments if formats change in the future.
 
-## 📁 Example Directory (minimal)
+## Example Directory (minimal)
 
 ```text
 index.map
@@ -95,7 +95,7 @@ segment-00000/
   v01-delta-0000.cache   # present until compaction
 ```
 
-## 🔗 Related Glossary
+## Related Glossary
 
 - [SegmentId](../general/glossary.md#segmentid)
 - [Main SST](../general/glossary.md#main-sst)

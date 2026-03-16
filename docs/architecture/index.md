@@ -1,4 +1,4 @@
-# 🧭 Architecture
+# Architecture
 
 This section is organized by responsibility to keep related topics together and
 to centralize segment internals in one place.

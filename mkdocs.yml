@@ -9,27 +9,35 @@ repo_url: https://github.com/jajir/HestiaStore
 
 nav:
     - Home: README.md
-    - Why HestiaStore:
+    - Evaluate:
         - Overview: why-hestiastore/index.md
         - Alternatives: why-hestiastore/alternatives.md
-        - Benchmarks:
-          - Write test: why-hestiastore/out-write.md
-          - Read test: why-hestiastore/out-read.md
-          - Sequential read test: why-hestiastore/out-sequential.md
-        - Security: SECURITY.md
         - Quality & Testing: why-hestiastore/quality.md
+        - Security: SECURITY.md
+        - Benchmarks:
+            - Overview: why-hestiastore/benchmarks.md
+            - Write Throughput Results: why-hestiastore/out-write.md
+            - Random Read Results: why-hestiastore/out-read.md
+            - Sequential Read Results: why-hestiastore/out-sequential.md
     - Getting Started:
         - Overview: how-to-use/index.md
         - Install: how-to-use/install.md
         - Quick Start: how-to-use/quick-start.md
         - Troubleshooting: how-to-use/troubleshooting.md
-        - API Reference: https://javadoc.io/doc/org.hestiastore.index/core  
+        - API Reference ↗: https://javadoc.io/doc/org.hestiastore/engine
     - Configuration:
         - Overview: configuration/index.md
         - Filters: configuration/filters.md
         - Data Types: configuration/data-types.md
         - Logging: configuration/logging.md
         - Monitoring Console: configuration/monitoring-console.md
+    - Operations:
+        - Overview: operations/index.md
+        - WAL: operations/wal.md
+        - Monitoring: operations/monitoring.md
+        - Performance Tuning: operations/tuning.md
+        - Backup & Restore: operations/backup-restore.md
+        - WAL Canary Runbook: operations/wal-canary-runbook.md
     - Architecture:
         - Overview: architecture/index.md
         - General:
@@ -66,31 +74,24 @@ nav:
         - Registry:
             - Overview: architecture/registry/index.md
             - Segment Registry: architecture/registry/registry.md
-#    - Operations:
-#        - Production Guide: operations/index.md
-#        - Performance Tuning: operations/tuning.md
-#        - Backup & Restore: operations/backup-restore.md
-#        - Observability: operations/monitoring.md
-    - Community:
-        - Changelog: CHANGELOG.md
-        - Development:
-            - Overview: development/index.md
-            - Code Quality Charter: development/code-quality-charter.md
-            - Quality Reporting: development/quality-reporting.md
-            - Documentation: development/documentation.md
-            - Documentation Guidelines: development/documentation-guidelines.md
-            - Guides: development/guides.md
-            - Segment API: development/segment-api.md
-            - JVM Profiling: development/profiler-stacktrace.md
-            - Compatibility Matrix: development/compatibility-matrix.md
-            - Upgrade Notes: development/upgrade-notes-multimodule.md
-            - Rollout Quality Gates: development/rollout-quality-gates.md
-            - Rollback Runbook: development/rollout-rollback-runbook.md
-            - WAL Replication & Fencing Design: development/wal-replication-fencing-design.md
-            - Refactor Backlog: refactor-backlog.md
-        - Release Process: development/release.md
+    - Contribute & Community:
+        - Overview: development/index.md
         - Contributing: CONTRIBUTING.md
         - Code of Conduct: CODE_OF_CONDUCT.md
+        - Changelog: CHANGELOG.md
+        - Release Process: development/release.md
+        - Code Quality Charter: development/code-quality-charter.md
+        - Quality Reporting: development/quality-reporting.md
+        - Documentation Guide: development/documentation-guidelines.md
+        - Developer Guides: development/guides.md
+        - Segment API: development/segment-api.md
+        - JVM Profiling: development/profiler-stacktrace.md
+        - Compatibility Matrix: development/compatibility-matrix.md
+        - Upgrade Notes: development/upgrade-notes-multimodule.md
+        - Rollout Quality Gates: development/rollout-quality-gates.md
+        - Rollback Runbook: development/rollout-rollback-runbook.md
+        - WAL Replication & Fencing Design: development/wal-replication-fencing-design.md
+        - Refactor Backlog: refactor-backlog.md
 
 theme:
     name: material
