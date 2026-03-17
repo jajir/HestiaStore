@@ -6,9 +6,11 @@
 
     <groupId>org.hestiastore</groupId>
     <artifactId>hestiastore-parent</artifactId>
-    <version>0.0.6-SNAPSHOT</version>
+    <version>0.0.7-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>HestiaStore Parent</name>
+    <description>Parent POM for the HestiaStore Maven multi-module Java library project.</description>
+    <url>https://github.com/jajir/HestiaStore</url>
 
     <modules>
         <module>engine</module>
@@ -154,4 +156,60 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.10.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <scm>
+        <connection>scm:git:git://github.com/jajir/HestiaStore.git</connection>
+        <developerConnection>scm:git:ssh://github.com:jajir/HestiaStore.git</developerConnection>
+        <url>https://github.com/jajir/HestiaStore/tree/main</url>
+    </scm>
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Jan Jirout</name>
+            <email>jirout@gmail.com</email>
+            <organization>GitHub</organization>
+            <organizationUrl>https://github.com/jajir</organizationUrl>
+        </developer>
+    </developers>
 </project>
