@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.hestiastore</groupId>
 		<artifactId>hestiastore-parent</artifactId>
-		<version>0.0.6-SNAPSHOT</version>
+		<version>0.0.7-SNAPSHOT</version>
 	</parent>
 	<artifactId>engine</artifactId>
 	<packaging>jar</packaging>
@@ -84,39 +84,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
-	<profiles>
-		<profile>
-			<id>release</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.sonatype.central</groupId>
-						<artifactId>central-publishing-maven-plugin</artifactId>
-						<version>0.7.0</version>
-						<extensions>true</extensions>
-						<configuration>
-							<publishingServerId>central</publishingServerId>
-						</configuration>
-					</plugin>                
-					<plugin>
-					    <groupId>org.apache.maven.plugins</groupId>
-					    <artifactId>maven-gpg-plugin</artifactId>
-					    <version>3.1.0	</version>
-					    <executions>
-					        <execution>
-					            <id>sign-artifacts</id>
-					            <phase>verify</phase>
-					            <goals>
-					                <goal>sign</goal>
-					            </goals>
-					        </execution>
-					    </executions>
-					</plugin>				
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 	
 	<build>
 		<plugins>
@@ -347,8 +314,8 @@
     </scm>
 	<licenses>
 		<license>
-			<name>LGPL-3.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<name>GNU Lesser General Public License v3.0</name>
+			<url>https://www.gnu.org/licenses/lgpl-3.0.txt</url>
 			<distribution>repo</distribution>
 			<comments>GNU LESSER GENERAL PUBLIC LICENSE</comments>
 		</license>
