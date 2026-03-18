@@ -154,6 +154,12 @@
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-153/latest.json",
           "sha": "00a283188c1326e13a357bff82f4ad8e67f9306e",
           "timestampUtc": "2026-03-18T09:55:59.711150+00:00"
+        },
+        "154": {
+          "channel": "pr-154",
+          "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-154/latest.json",
+          "sha": "be37bb33083d98ea01052accaad34b7343dfeb0f",
+          "timestampUtc": "2026-03-18T14:52:44.536192+00:00"
         }
       },
       "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
