@@ -40,16 +40,14 @@ nav:
         - WAL Canary Runbook: operations/wal-canary-runbook.md
     - Architecture:
         - Overview: architecture/index.md
-        - General:
-            - Overview: architecture/general/index.md
-            - Data Block Format: architecture/general/datablock.md
-            - Filters & Integrity: architecture/general/filters.md
-            - Chain of Filters: architecture/general/chain-of-filters.md
-            - Access Model: architecture/general/concurrency.md
-            - Consistency & Recovery: architecture/general/recovery.md
-            - Package layout: architecture/general/package-boundaries.md
-            - Limitations & Trade-offs: architecture/general/limits.md
-            - Glossary: architecture/general/glossary.md
+        - Data Block Format: architecture/datablock.md
+        - Filters & Integrity: architecture/filters.md
+        - Chain of Filters: architecture/chain-of-filters.md
+        - Concurrency Model: architecture/concurrency.md
+        - Consistency & Recovery: architecture/recovery.md
+        - Package Layout: architecture/package-boundaries.md
+        - Limitations & Trade-offs: architecture/limits.md
+        - Glossary: architecture/glossary.md
         - Monitoring:
             - Overview: architecture/monitoring/index.md
             - Monitoring Bridge: architecture/monitoring/monitoring-bridge.md

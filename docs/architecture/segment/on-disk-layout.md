@@ -97,10 +97,10 @@ segment-00000/
 
 ## Related Glossary
 
-- [SegmentId](../general/glossary.md#segmentid)
-- [Main SST](../general/glossary.md#main-sst)
-- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
-- [Bloom Filter](../general/glossary.md#bloom-filter)
-- [Key-to-Segment Map](../general/glossary.md#key-to-segment-map)
-- [Delta Cache](../general/glossary.md#delta-cache)
-- [Write Transaction](../general/glossary.md#write-transaction)
+- [SegmentId](../glossary.md#segmentid)
+- [Main SST](../glossary.md#main-sst)
+- [Sparse Index](../glossary.md#sparse-index-scarce-index)
+- [Bloom Filter](../glossary.md#bloom-filter)
+- [Key-to-Segment Map](../glossary.md#key-to-segment-map)
+- [Delta Cache](../glossary.md#delta-cache)
+- [Write Transaction](../glossary.md#write-transaction)
