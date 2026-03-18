@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -41,6 +41,24 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-        
 
+    - name: Prepare Dependency-Check cache settings
+      if: github.event_name != 'pull_request'
+      id: dependency-check-cache
+      shell: bash
+      run: |
+        echo "path=$HOME/.cache/dependency-check" >> "$GITHUB_OUTPUT"
+        echo "key=${{ runner.os }}-dependency-check-data-v1-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Dependency-Check data
+      if: github.event_name != 'pull_request'
+      id: dependency-check-cache-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.dependency-check-cache.outputs.path }}
+        key: ${{ steps.dependency-check-cache.outputs.key }}
+        restore-keys: |
+          ${{ runner.os }}-dependency-check-data-v1-
+
     - name: Show NVD API key availability
       shell: bash
       run: |
@@ -58,10 +76,17 @@ jobs:
       if: github.event_name != 'pull_request'
       run: mvn -B verify --file pom.xml
 
+    - name: Save Dependency-Check data
+      if: always() && github.event_name != 'pull_request' && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.dependency-check-cache.outputs.path }}
+        key: ${{ steps.dependency-check-cache.outputs.key }}
+
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Update dependency graph
       if: github.event_name != 'pull_request' && github.actor != 'dependabot[bot]'
-      uses: advanced-security/maven-dependency-submission-action@v4
+      uses: advanced-security/maven-dependency-submission-action@v5
 
   wal-tools-smoke:
     name: WAL Tools Smoke (${{ matrix.os }})
@@ -75,7 +100,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
         distribution: 'temurin'

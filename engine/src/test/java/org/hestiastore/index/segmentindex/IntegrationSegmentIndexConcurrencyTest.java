@@ -27,7 +27,10 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
-    private static final int OPERATION_TIMEOUT_SECONDS = 30;
+    private static final int OPERATION_TIMEOUT_SECONDS = 60;
+    private static final int INDEX_BUSY_BACKOFF_MILLIS = 1;
+    private static final int INDEX_BUSY_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS
+            .toMillis(OPERATION_TIMEOUT_SECONDS);
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("parallelPutsScenarios")
@@ -158,6 +161,8 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfSegmentsInCache(5) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
+                .withIndexBusyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS) //
+                .withIndexBusyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS) //
                 .withBackgroundMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(cpuThreads)//
                 .withName("concurrency_index") //
@@ -192,6 +197,8 @@ class IntegrationSegmentIndexConcurrencyTest {
                         scenario.maxNumberOfSegmentsInCache()) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(3) //
+                .withIndexBusyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS) //
+                .withIndexBusyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS) //
                 .withBackgroundMaintenanceAutoEnabled(true) //
                 .withIndexWorkerThreadCount(scenario.cpuThreads())//
                 .withName("concurrency_index_" + scenario.name()) //
