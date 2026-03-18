@@ -1,0 +1,233 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin
+# Parameters: (flushBatchSize = 256, seededKeyCount = 25000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 0.00% complete, ETA 00:00:16
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+<failure>
+
+java.lang.IllegalStateException: source already consumed or closed
+	at java.base/java.util.stream.AbstractPipeline.sourceSpliterator(AbstractPipeline.java:409)
+	at java.base/java.util.stream.AbstractPipeline.evaluateToArrayNode(AbstractPipeline.java:260)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:616)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:622)
+	at java.base/java.util.stream.ReferencePipeline.toList(ReferencePipeline.java:627)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.discoverSegmentsStrict(WalRuntime.java:880)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.recover(WalRuntime.java:267)
+	at org.hestiastore.index.segmentindex.core.IndexWalCoordinator.recover(IndexWalCoordinator.java:69)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.<init>(SegmentIndexImpl.java:219)
+	at org.hestiastore.index.segmentindex.core.IndexInternalConcurrent.<init>(IndexInternalConcurrent.java:41)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.openIndex(SegmentIndexFactory.java:128)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.create(SegmentIndexFactory.java:44)
+	at org.hestiastore.index.segmentindex.SegmentIndex.create(SegmentIndex.java:43)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.setup(SegmentIndexPersistedMutationBenchmark.java:64)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_deleteAsyncJoin_jmhTest._jmh_tryInit_f_segmentindexpersistedmutationbenchmark0_G(SegmentIndexPersistedMutationBenchmark_deleteAsyncJoin_jmhTest.java:612)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_deleteAsyncJoin_jmhTest.deleteAsyncJoin_Throughput(SegmentIndexPersistedMutationBenchmark_deleteAsyncJoin_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync
+# Parameters: (flushBatchSize = 256, seededKeyCount = 25000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 25.00% complete, ETA 00:00:01
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+<failure>
+
+java.lang.IllegalStateException: source already consumed or closed
+	at java.base/java.util.stream.AbstractPipeline.sourceSpliterator(AbstractPipeline.java:409)
+	at java.base/java.util.stream.AbstractPipeline.evaluateToArrayNode(AbstractPipeline.java:260)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:616)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:622)
+	at java.base/java.util.stream.ReferencePipeline.toList(ReferencePipeline.java:627)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.discoverSegmentsStrict(WalRuntime.java:880)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.recover(WalRuntime.java:267)
+	at org.hestiastore.index.segmentindex.core.IndexWalCoordinator.recover(IndexWalCoordinator.java:69)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.<init>(SegmentIndexImpl.java:219)
+	at org.hestiastore.index.segmentindex.core.IndexInternalConcurrent.<init>(IndexInternalConcurrent.java:41)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.openIndex(SegmentIndexFactory.java:128)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.create(SegmentIndexFactory.java:44)
+	at org.hestiastore.index.segmentindex.SegmentIndex.create(SegmentIndex.java:43)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.setup(SegmentIndexPersistedMutationBenchmark.java:64)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_deleteSync_jmhTest._jmh_tryInit_f_segmentindexpersistedmutationbenchmark0_G(SegmentIndexPersistedMutationBenchmark_deleteSync_jmhTest.java:612)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_deleteSync_jmhTest.deleteSync_Throughput(SegmentIndexPersistedMutationBenchmark_deleteSync_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin
+# Parameters: (flushBatchSize = 256, seededKeyCount = 25000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 50.00% complete, ETA 00:00:00
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+<failure>
+
+java.lang.IllegalStateException: source already consumed or closed
+	at java.base/java.util.stream.AbstractPipeline.sourceSpliterator(AbstractPipeline.java:409)
+	at java.base/java.util.stream.AbstractPipeline.evaluateToArrayNode(AbstractPipeline.java:260)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:616)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:622)
+	at java.base/java.util.stream.ReferencePipeline.toList(ReferencePipeline.java:627)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.discoverSegmentsStrict(WalRuntime.java:880)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.recover(WalRuntime.java:267)
+	at org.hestiastore.index.segmentindex.core.IndexWalCoordinator.recover(IndexWalCoordinator.java:69)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.<init>(SegmentIndexImpl.java:219)
+	at org.hestiastore.index.segmentindex.core.IndexInternalConcurrent.<init>(IndexInternalConcurrent.java:41)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.openIndex(SegmentIndexFactory.java:128)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.create(SegmentIndexFactory.java:44)
+	at org.hestiastore.index.segmentindex.SegmentIndex.create(SegmentIndex.java:43)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.setup(SegmentIndexPersistedMutationBenchmark.java:64)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_putAsyncJoin_jmhTest._jmh_tryInit_f_segmentindexpersistedmutationbenchmark0_G(SegmentIndexPersistedMutationBenchmark_putAsyncJoin_jmhTest.java:612)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_putAsyncJoin_jmhTest.putAsyncJoin_Throughput(SegmentIndexPersistedMutationBenchmark_putAsyncJoin_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync
+# Parameters: (flushBatchSize = 256, seededKeyCount = 25000, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 75.00% complete, ETA 00:00:00
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+<failure>
+
+java.lang.IllegalStateException: source already consumed or closed
+	at java.base/java.util.stream.AbstractPipeline.sourceSpliterator(AbstractPipeline.java:409)
+	at java.base/java.util.stream.AbstractPipeline.evaluateToArrayNode(AbstractPipeline.java:260)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:616)
+	at java.base/java.util.stream.ReferencePipeline.toArray(ReferencePipeline.java:622)
+	at java.base/java.util.stream.ReferencePipeline.toList(ReferencePipeline.java:627)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.discoverSegmentsStrict(WalRuntime.java:880)
+	at org.hestiastore.index.segmentindex.wal.WalRuntime.recover(WalRuntime.java:267)
+	at org.hestiastore.index.segmentindex.core.IndexWalCoordinator.recover(IndexWalCoordinator.java:69)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.<init>(SegmentIndexImpl.java:219)
+	at org.hestiastore.index.segmentindex.core.IndexInternalConcurrent.<init>(IndexInternalConcurrent.java:41)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.openIndex(SegmentIndexFactory.java:128)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexFactory.create(SegmentIndexFactory.java:44)
+	at org.hestiastore.index.segmentindex.SegmentIndex.create(SegmentIndex.java:43)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.setup(SegmentIndexPersistedMutationBenchmark.java:64)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_putSync_jmhTest._jmh_tryInit_f_segmentindexpersistedmutationbenchmark0_G(SegmentIndexPersistedMutationBenchmark_putSync_jmhTest.java:612)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexPersistedMutationBenchmark_putSync_jmhTest.putSync_Throughput(SegmentIndexPersistedMutationBenchmark_putSync_jmhTest.java:71)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+# Run complete. Total time: 00:00:01
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark  Mode  Cnt  Score   Error  Units
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-persisted-mutation.json
