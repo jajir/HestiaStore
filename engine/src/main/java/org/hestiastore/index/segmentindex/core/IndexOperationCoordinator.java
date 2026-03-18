@@ -1,0 +1,146 @@
+package org.hestiastore.index.segmentindex.core;
+
+import java.util.function.Supplier;
+
+import org.hestiastore.index.IndexException;
+import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.wal.WalRuntime;
+
+/**
+ * Owns public read/write operations, retry loops, and WAL replay semantics.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+final class IndexOperationCoordinator<K, V> {
+
+    private final TypeDescriptor<V> valueTypeDescriptor;
+    private final Stats stats;
+    private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
+    private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
+    private final IndexWalCoordinator<K, V> walCoordinator;
+    private final IndexRetryPolicy retryPolicy;
+
+    IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
+            final Stats stats,
+            final PartitionWriteCoordinator<K, V> partitionWriteCoordinator,
+            final PartitionReadCoordinator<K, V> partitionReadCoordinator,
+            final IndexWalCoordinator<K, V> walCoordinator,
+            final IndexRetryPolicy retryPolicy) {
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.partitionWriteCoordinator = Vldtn
+                .requireNonNull(partitionWriteCoordinator,
+                        "partitionWriteCoordinator");
+        this.partitionReadCoordinator = Vldtn.requireNonNull(
+                partitionReadCoordinator, "partitionReadCoordinator");
+        this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
+                "walCoordinator");
+        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    }
+
+    void put(final K key, final V value) {
+        final long startedNanos = System.nanoTime();
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
+        stats.incPutCx();
+
+        if (valueTypeDescriptor.isTombstone(value)) {
+            throw new IllegalArgumentException(String.format(
+                    "Can't insert thombstone value '%s' into index", value));
+        }
+        final long walLsn = walCoordinator.appendPut(key, value);
+        finishWriteOperation("put",
+                retryWhileBusy(
+                        () -> partitionWriteCoordinator.putBuffered(key, value),
+                        "put", false),
+                walLsn, startedNanos);
+    }
+
+    V get(final K key) {
+        final long startedNanos = System.nanoTime();
+        Vldtn.requireNonNull(key, "key");
+        stats.incGetCx();
+
+        final IndexResult<V> result = retryWhileBusy(
+                () -> partitionReadCoordinator.get(key), "get", true);
+        if (result.getStatus() == IndexResultStatus.OK) {
+            stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
+            return result.getValue();
+        }
+        stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
+        throw newIndexException("get", null, result.getStatus());
+    }
+
+    void delete(final K key) {
+        final long startedNanos = System.nanoTime();
+        Vldtn.requireNonNull(key, "key");
+        stats.incDeleteCx();
+
+        final long walLsn = walCoordinator.appendDelete(key);
+        finishWriteOperation("delete",
+                retryWhileBusy(
+                        () -> partitionWriteCoordinator.putBuffered(key,
+                                valueTypeDescriptor.getTombstone()),
+                        "delete", false),
+                walLsn, startedNanos);
+    }
+
+    void replayWalRecord(final WalRuntime.ReplayRecord<K, V> replayRecord) {
+        final WalRuntime.ReplayRecord<K, V> nonNullReplayRecord = Vldtn
+                .requireNonNull(replayRecord, "replayRecord");
+        final V value = nonNullReplayRecord
+                .getOperation() == WalRuntime.Operation.PUT
+                        ? nonNullReplayRecord.getValue()
+                        : valueTypeDescriptor.getTombstone();
+        final IndexResult<Void> result = retryWhileBusy(
+                () -> partitionWriteCoordinator
+                        .putBuffered(nonNullReplayRecord.getKey(), value),
+                "walReplay", false);
+        if (result.getStatus() != IndexResultStatus.OK) {
+            throw newIndexException("walReplay", null, result.getStatus());
+        }
+        walCoordinator.recordAppliedLsn(nonNullReplayRecord.getLsn());
+    }
+
+    private void finishWriteOperation(final String operation,
+            final IndexResult<Void> result, final long walLsn,
+            final long startedNanos) {
+        if (result.getStatus() == IndexResultStatus.OK) {
+            walCoordinator.recordAppliedLsn(walLsn);
+            stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
+            return;
+        }
+        stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
+        throw newIndexException(operation, null, result.getStatus());
+    }
+
+    private <T> IndexResult<T> retryWhileBusy(
+            final Supplier<IndexResult<T>> operation, final String opName,
+            final boolean retryClosed) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final IndexResult<T> result = operation.get();
+            final IndexResultStatus status = result.getStatus();
+            if (status == IndexResultStatus.BUSY
+                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
+                retryPolicy.backoffOrThrow(startNanos, opName, null);
+                continue;
+            }
+            return result;
+        }
+    }
+
+    private IndexException newIndexException(final String operation,
+            final SegmentId segmentId, final IndexResultStatus status) {
+        final String target = segmentId == null ? ""
+                : String.format(" on segment '%s'", segmentId);
+        return new IndexException(
+                String.format("Index operation '%s' failed%s: %s", operation,
+                        target, status));
+    }
+}

@@ -48,7 +48,7 @@ final class PartitionWriteCoordinator<K, V> {
                     key);
             if (routeResult.getStatus() != IndexResultStatus.OK
                     || routeResult.getValue() == null) {
-                return SegmentIndexImpl.toVoidResult(routeResult.getStatus());
+                return toVoidResult(routeResult.getStatus());
             }
             final SegmentId segmentId = routeResult.getValue();
             partitionRuntime.ensurePartition(segmentId);
@@ -93,5 +93,19 @@ final class PartitionWriteCoordinator<K, V> {
                         RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
         return new PartitionRuntimeLimits(maxActive, maxImmutableRuns,
                 maxPartitionBuffer, maxIndexBuffer);
+    }
+
+    private static IndexResult<Void> toVoidResult(
+            final IndexResultStatus status) {
+        if (status == IndexResultStatus.BUSY) {
+            return IndexResult.busy();
+        }
+        if (status == IndexResultStatus.CLOSED) {
+            return IndexResult.closed();
+        }
+        if (status == IndexResultStatus.OK) {
+            return IndexResult.ok();
+        }
+        return IndexResult.error();
     }
 }

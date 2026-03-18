@@ -26,6 +26,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  */
 final class PartitionReadCoordinator<K, V> {
 
+    private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
+
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final SegmentRegistry<K, V> segmentRegistry;
@@ -128,8 +130,7 @@ final class PartitionReadCoordinator<K, V> {
                 }
             }
             retryPolicy.backoffOrThrow(startNanos,
-                    SegmentIndexImpl.OPERATION_OPEN_FULL_ISOLATION_ITERATOR,
-                    null);
+                    OPERATION_OPEN_FULL_ISOLATION_ITERATOR, null);
         }
     }
 
