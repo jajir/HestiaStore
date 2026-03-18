@@ -3,7 +3,7 @@
 This page covers how to configure chunk filter pipelines on `IndexConfiguration`.
 
 For filter behavior, ordering rationale, and integrity semantics, see
-[Filters & Integrity](../architecture/general/filters.md).
+[Filters & Integrity](../architecture/filters.md).
 
 ## Builder API
 

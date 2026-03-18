@@ -64,7 +64,7 @@ Attempts to change these raise a validation error in `IndexConfigurationManager`
 
 ## Related Docs
 
-- Recovery: `architecture/general/recovery.md`
-- Concurrency: `architecture/general/concurrency.md`
-- Filters & Integrity: `architecture/general/filters.md`
-- On‑Disk Layout: `architecture/segment/on-disk-layout.md`
+- [Consistency & Recovery](recovery.md)
+- [Concurrency Model](concurrency.md)
+- [Filters & Integrity](filters.md)
+- [On‑Disk Layout & File Names](segment/on-disk-layout.md)

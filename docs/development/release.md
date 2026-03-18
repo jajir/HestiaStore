@@ -1,6 +1,17 @@
 # Releasing a New Version
 
-This is a step-by-step guide for making a new HestiaStore release.
+This is the source-of-truth runbook for making a new HestiaStore release.
+
+When you ask Codex to use the `release-maven-library` skill, it performs the
+full local release workflow described on this page: prerequisite checks,
+pre-release verification, release version bump, release commit, release tag,
+Maven Central deployment, next snapshot bump, next snapshot commit, and Git
+pushes.
+
+The only manual step is publishing the GitHub release on the repository
+homepage at [https://github.com/jajir/HestiaStore/releases](https://github.com/jajir/HestiaStore/releases).
+Codex can prepare the release title and body, but it cannot click `Publish
+release` in the GitHub web UI.
 
 ## Versioning of the project
 
@@ -32,7 +43,9 @@ The deprecated `devel` branch has been removed and is no longer used.
 ## Release prerequisites
 
 The release will be published to Maven Central. Release configuration secrets are placed at the Maven settings file `~/.m2/settings.xml`.
-Adjust `settings.xml` in `~/.m2/settings.xml` as described in [GitHub's official documentation on how to work with the GitHub Maven repository](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry). Generate a valid token and you are done.
+
+Releases must be prepared from a clean `main` branch worktree with push access
+to the repository and tags.
 
 ### Provide correct package signature
 
@@ -52,7 +65,7 @@ In your `~/.m2/settings.xml` file, add the following section:
 </settings>
 ```
 
-### Setup maven central accout secrets
+### Setup Maven Central account secrets
 
 This provides `org.sonatype.central:central-publishing-maven-plugin` plugin secrets to enable login to the Maven Central account where release data will be placed.
 You must have an account with a verified namespace `org.hestiastore` at [central.sonatype.com](https://central.sonatype.com/). From the `Account` section, generate a key and password. These should be added to:
@@ -77,60 +90,91 @@ Perform the following steps to create a new release:
 
 ### 0. Verify module artifacts and tests
 
-Before tagging, run:
+Run the standard release verification script:
+
+```bash
+./.agents/skills/release-maven-library/scripts/verify-release.sh
+```
+
+That script runs the release verification used by the skill:
 
 ```bash
 mvn -N install
-mvn -pl engine,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json-api,monitoring-rest-json,monitoring-console-web -DskipTests package
-mvn -pl monitoring-rest-json,monitoring-console-web,monitoring-prometheus test
+mvn -pl engine,wal-tools,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json-api,monitoring-rest-json,monitoring-console-web -DskipTests package
+mvn -pl wal-tools,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json-api,monitoring-rest-json,monitoring-console-web test
 mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
+mvn clean verify
 ```
 
-### 1. Checkout the `main` branch
+### 1. Checkout and update the `main` branch
 
 ```bash
 git checkout main
+git pull --ff-only
 ```
 
 ### 2. Set the release version
 
 ```bash
-mvn versions:set -DnewVersion=0.0.12
+./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.12
 git commit -am "release: version 0.0.12"
 ```
 
-### 3. Tag and push the release
+### 3. Validate the release profile
+
+Run the root release profile so the parent POM and all release modules are
+validated together:
 
 ```bash
-git tag v0.0.12
-git push --follow-tags
+mvn -P release -DskipTests verify
 ```
 
-### 4. Deploy the release
+Do not deploy `engine` alone. The release must be run from the repository root
+so the parent POM and all publishable modules stay aligned.
 
-Deploy the release (can be later automated via GitHub Actions or done manually):
+### 4. Create the release tag
 
 ```bash
-mvn deploy -P release
+git tag release-0.0.12
 ```
 
-### 5. Bump to the next snapshot version
+### 5. Deploy the release
+
+Deploy the release to Maven Central from the repository root:
 
 ```bash
-mvn versions:set -DnewVersion=0.0.13-SNAPSHOT
+mvn -P release -DskipTests deploy
+```
+
+### 6. Push the release commit and tag
+
+Push both `main` and the release tag after deployment succeeds:
+
+```bash
+git push origin main release-0.0.12
+```
+
+### 7. Bump to the next snapshot version
+
+```bash
+./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh 0.0.13-SNAPSHOT
 git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
-git push
+git push origin main
 ```
 
-### 6. Publish the release on GitHub
+### 8. Publish the release on GitHub
+
+This step is manual and must be completed on the GitHub repository homepage,
+not in the generated documentation site:
 
 1. Go to [https://github.com/jajir/HestiaStore/releases](https://github.com/jajir/HestiaStore/releases) and choose `Draft a new release`.
-1. From the drop-down box `target: main`, select `recent commits` and select the correct one with name `release: version 0.0.12`.
-1. From the drop-down box `Choose a tag` enter `release-0.0.12` and click `Create new tag: release ...`. Now in the repo, the tag clearly signals the new release.
-1. Release title should be `Release 0.0.3` and in the `Write` field, use the text generated from the template below:
-1. Press `Publish release`.
-1. If the release contains breaking changes, add a dedicated `Breaking changes` section in the GitHub release body and include migration steps. For `0.0.6`, include the `TypeEncoder` migration (`encode(...)` only).
+2. Select the existing tag `release-0.0.12`.
+3. Keep `main` as the target branch.
+4. Set the release title to `Release 0.0.12`.
+5. In the `Write` field, use the text generated from the template below.
+6. If the release contains breaking changes, add a dedicated `Breaking changes` section with migration steps.
+7. Press `Publish release`.
 
 Text template:
 
@@ -142,7 +186,7 @@ Release to maven central:
   <dependency>
     <groupId>org.hestiastore</groupId>
     <artifactId>engine</artifactId>
-    <version>0.0.3</version> <!-- Replace with the actual version -->
+    <version>0.0.12</version> <!-- Replace with the actual version -->
   </dependency>
 </dependencies>
 ```
@@ -153,19 +197,24 @@ Release to maven central:
 
 Each release publishes aligned versions of:
 
+- `org.hestiastore:hestiastore-parent` (POM)
 - `org.hestiastore:engine`
+- `org.hestiastore:wal-tools`
 - `org.hestiastore:monitoring-rest-json-api`
 - `org.hestiastore:monitoring-micrometer`
 - `org.hestiastore:monitoring-prometheus`
 - `org.hestiastore:monitoring-rest-json`
 - `org.hestiastore:monitoring-console-web`
 
+The `benchmarks` module participates in the build but is not deployed because
+its POM sets `maven.deploy.skip=true`.
+
 Compatibility and staged upgrade guidance:
 
 - [Compatibility Matrix](compatibility-matrix.md)
 - [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
 
-### 7. Finish the release
+### 9. Finish the release
 
 That's it — the release is live and development can continue.
 

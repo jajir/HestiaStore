@@ -9,7 +9,7 @@ registry).
 
 Segment-level concurrency does not require external locks. `SegmentImpl`
 enforces its own lock-free admission gate (see
-`docs/architecture/segment/segment-concurrency.md`).
+[Segment Concurrency](segment/segment-concurrency.md)).
 
 ## Concurrency Invariants (Target Design)
 
