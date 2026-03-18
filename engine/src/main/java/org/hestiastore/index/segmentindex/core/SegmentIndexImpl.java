@@ -50,8 +50,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
     private final IndexStateCoordinator<K, V> stateCoordinator;
     private final SegmentIndexRuntime<K, V> runtime;
+    private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
     private final IndexCloseCoordinator closeCoordinator;
-    private boolean startupConsistencyCheckForStaleSegmentLocks;
 
     protected SegmentIndexImpl(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -73,7 +73,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
             final boolean contextApplied = applyIndexContext(this.conf);
             try {
-                logger.debug("Opening index '{}'.", conf.getIndexName());
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry");
                 this.runtime = SegmentIndexRuntime.open(logger, nonNullDirectory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
@@ -90,22 +89,21 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         stats::getGetCx, stats::getPutCx, stats::getDeleteCx,
                         () -> stateCoordinator.completeCloseStateTransition(
                                 this));
-                runtime.recover(this::replayWalRecord);
-                runtime.recoveryCleanupCoordinator()
-                        .cleanupOrphanedSegmentDirectories();
-                stateCoordinator.markReady(this);
-                if (openingState.wasStaleLockRecovered()) {
-                    logger.info(
-                            "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.");
-                    startupConsistencyCheckForStaleSegmentLocks = true;
-                    try {
-                        checkAndRepairConsistency();
-                    } finally {
-                        startupConsistencyCheckForStaleSegmentLocks = false;
-                    }
-                }
-                runtime.backgroundSplitPolicyLoop().scheduleScan();
-                logger.debug("Index '{}' opened.", conf.getIndexName());
+                this.consistencyCoordinator = new IndexConsistencyCoordinator<>(
+                        runtime.keyToSegmentMap(), runtime.segmentRegistry(),
+                        keyTypeDescriptor,
+                        runtime.recoveryCleanupCoordinator(),
+                        runtime.backgroundSplitPolicyLoop());
+                final IndexOpenCoordinator openCoordinator = new IndexOpenCoordinator(
+                        logger, conf.getIndexName());
+                openCoordinator.completeOpen(openingState.wasStaleLockRecovered(),
+                        () -> runtime.recover(this::replayWalRecord),
+                        runtime.recoveryCleanupCoordinator()::cleanupOrphanedSegmentDirectories,
+                        () -> stateCoordinator.markReady(this),
+                        () -> consistencyCoordinator
+                                .runStartupConsistencyCheck(
+                                        this::checkAndRepairConsistency),
+                        runtime.backgroundSplitPolicyLoop()::scheduleScan);
             } finally {
                 if (contextApplied) {
                     restorePreviousIndexName(previousIndexName);
@@ -279,16 +277,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void checkAndRepairConsistency() {
         getIndexState().tryPerformOperation();
-        runtime.keyToSegmentMap().checkUniqueSegmentIds();
-        final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
-                runtime.keyToSegmentMap(), runtime.segmentRegistry(),
-                keyTypeDescriptor,
-                startupConsistencyCheckForStaleSegmentLocks
-                        ? runtime.recoveryCleanupCoordinator()::hasSegmentLockFile
-                        : segmentId -> true);
-        checker.checkAndRepairConsistency();
-        runtime.recoveryCleanupCoordinator().cleanupOrphanedSegmentDirectories();
-        runtime.backgroundSplitPolicyLoop().scheduleScan();
+        consistencyCoordinator.checkAndRepairConsistency();
     }
 
     /** {@inheritDoc} */
