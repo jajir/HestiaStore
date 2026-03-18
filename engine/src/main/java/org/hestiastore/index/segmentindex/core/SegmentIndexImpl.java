@@ -80,6 +80,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
     private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
     private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
+    private final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
     private final IndexRetryPolicy retryPolicy;
@@ -194,6 +195,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                             keyToSegmentMap.optionalyFlush();
                         }, this::getState, this::failWithError,
                         lastAppliedWalLsn);
+                this.maintenanceCoordinator = new IndexMaintenanceCoordinator<>(
+                        keyToSegmentMap, partitionRuntime,
+                        partitionDrainCoordinator, backgroundSplitCoordinator,
+                        backgroundSplitPolicyLoop, stableSegmentCoordinator,
+                        walCoordinator);
                 this.metricsCollector = new SegmentIndexMetricsCollector<>(conf,
                         keyToSegmentMap, segmentRegistry, partitionRuntime,
                         runtimeTuningState, walRuntime, stats,
@@ -327,44 +333,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
-        partitionDrainCoordinator.drainPartitions(false);
-        final PartitionRuntimeSnapshot partitionSnapshot = partitionRuntime
-                .snapshot();
-        if (partitionSnapshot.getDrainInFlightCount() > 0
-                || partitionSnapshot.getActivePartitionCount() > 0
-                || partitionSnapshot.getImmutableRunCount() > 0
-                || partitionSnapshot.getBufferedKeyCount() > 0) {
-            return;
-        }
-        if (backgroundSplitCoordinator.splitInFlightCount() > 0) {
-            return;
-        }
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> keyToSegmentMap
-                .getSegmentIds()
-                .forEach(segmentId -> stableSegmentCoordinator.compactSegment(
-                        segmentId, false)));
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        maintenanceCoordinator.compact();
     }
 
     /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
-        partitionDrainCoordinator.drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        partitionDrainCoordinator.drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        stableSegmentCoordinator.compactMappedSegmentsAndFlush();
-        final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
-        backgroundSplitPolicyLoop.awaitExhausted();
-        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
-            partitionDrainCoordinator.drainPartitions(true);
-            backgroundSplitPolicyLoop.awaitExhausted();
-            stableSegmentCoordinator.compactMappedSegmentsAndFlush();
-        }
-        keyToSegmentMap.optionalyFlush();
-        walCoordinator.checkpoint();
+        maintenanceCoordinator.compactAndWait();
     }
 
     /** {@inheritDoc} */
@@ -589,31 +565,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void flush() {
-        partitionDrainCoordinator.drainPartitions(false);
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(
-                () -> stableSegmentCoordinator.flushSegments(false));
-        keyToSegmentMap.optionalyFlush();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        maintenanceCoordinator.flush();
     }
 
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        partitionDrainCoordinator.drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        partitionDrainCoordinator.drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        stableSegmentCoordinator.flushMappedSegmentsAndWait();
-        final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
-        backgroundSplitPolicyLoop.awaitExhausted();
-        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
-            partitionDrainCoordinator.drainPartitions(true);
-            backgroundSplitPolicyLoop.awaitExhausted();
-            stableSegmentCoordinator.flushMappedSegmentsAndWait();
-        }
-        keyToSegmentMap.optionalyFlush();
-        walCoordinator.checkpoint();
+        maintenanceCoordinator.flushAndWait();
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
