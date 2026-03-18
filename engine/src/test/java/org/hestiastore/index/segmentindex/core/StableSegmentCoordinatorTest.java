@@ -38,7 +38,7 @@ class StableSegmentCoordinatorTest {
     private BackgroundSplitCoordinator<String, String> backgroundSplitCoordinator;
 
     @Mock
-    private SegmentIndexCore<String, String> core;
+    private StableSegmentGateway<String, String> stableSegmentGateway;
 
     @Mock
     private Segment<String, String> segment;
@@ -58,7 +58,8 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, core, new IndexRetryPolicy(1, 10),
+                backgroundSplitCoordinator, stableSegmentGateway,
+                new IndexRetryPolicy(1, 10),
                 new Stats());
     }
 
@@ -98,13 +99,14 @@ class StableSegmentCoordinatorTest {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
-        when(core.openIterator(segmentId, SegmentIteratorIsolation.FAIL_FAST))
+        when(stableSegmentGateway.openIterator(segmentId,
+                SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(IndexResult.ok(iterator));
 
         coordinator.openIteratorWithRetry(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST);
 
-        verify(core).openIterator(segmentId,
+        verify(stableSegmentGateway).openIterator(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST);
     }
 }
