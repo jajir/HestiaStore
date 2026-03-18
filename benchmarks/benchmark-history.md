@@ -113,6 +113,13 @@ Current behavior:
     `perf-artifacts`
   - update a sticky PR comment with the canonical baseline comparison,
     previous-PR delta when available, and history links
+- push to `main`
+  - run `segment-index-pr-smoke`
+  - compare `HEAD` against the latest stored canonical smoke baseline from
+    `perf-artifacts`
+  - if no stored baseline exists yet, fall back to `HEAD~1`
+  - publish the new candidate run into `perf-artifacts`, advancing
+    `history/segment-index-pr-smoke/latest-main.json`
 - nightly schedule
   - run `segment-index-nightly`
   - compare `HEAD` against the latest stored nightly baseline from
@@ -162,7 +169,7 @@ history/
 ```
 
 `latest-main.json` remains the canonical baseline pointer used by PR and
-nightly compare runs. PR snapshots publish under
+scheduled compare runs. PR snapshots publish under
 `pull-requests/pr-<number>/latest.json` without overwriting the canonical main
 pointer.
 
@@ -175,7 +182,7 @@ After a PR benchmark run, the same comparison is visible in three places:
   plus previous-PR delta when available, and history links
 - `perf-artifacts/history/<profile>/pull-requests/pr-<number>/...`
 
-After a nightly run on `main`, the canonical baseline moves forward in:
+After a canonical publish on `main`, the baseline moves forward in:
 
 - `perf-artifacts/history/<profile>/latest-main.json`
 - the timestamped run directory referenced by that pointer
@@ -211,7 +218,7 @@ Current default thresholds in the compare script:
 
 This branch-based flow now gives us:
 
-- canonical nightly baselines on `main`
+- canonical `main` baselines for both smoke and nightly profiles
 - durable per-PR snapshots and comments for merged review history
 - raw JMH outputs that remain inspectable after workflow log retention expires
 
