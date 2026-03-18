@@ -20,7 +20,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -43,6 +43,7 @@ jobs:
         fi
 
     - name: Restore Dependency-Check data
+      id: dependency-check-cache-restore
       uses: actions/cache/restore@v4
       with:
         path: ${{ steps.dependency-check-cache.outputs.path }}
@@ -60,7 +61,7 @@ jobs:
           --file pom.xml
 
     - name: Save Dependency-Check data
-      if: always() && !cancelled()
+      if: always() && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
         path: ${{ steps.dependency-check-cache.outputs.path }}
