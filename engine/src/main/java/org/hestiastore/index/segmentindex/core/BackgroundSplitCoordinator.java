@@ -25,6 +25,7 @@ import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
  */
 final class BackgroundSplitCoordinator<K, V> {
 
+    private static final String ACTION_PARAMETER = "action";
     private static final long SPLIT_RESCHEDULE_COOLDOWN_MILLIS = 500L;
     private static final long SPLIT_RESCHEDULE_COOLDOWN_NANOS = TimeUnit.MILLISECONDS
             .toNanos(SPLIT_RESCHEDULE_COOLDOWN_MILLIS);
@@ -174,7 +175,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     <T> T runWithSplitSchedulingPaused(final Supplier<T> action) {
-        Vldtn.requireNonNull(action, "action");
+        Vldtn.requireNonNull(action, ACTION_PARAMETER);
         splitSchedulingPauseCount.incrementAndGet();
         try {
             return action.get();
@@ -184,7 +185,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     void runWithSplitSchedulingPaused(final Runnable action) {
-        Vldtn.requireNonNull(action, "action");
+        Vldtn.requireNonNull(action, ACTION_PARAMETER);
         runWithSplitSchedulingPaused(() -> {
             action.run();
             return null;
@@ -192,7 +193,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     <T> T runWithStableWriteAdmission(final Supplier<T> action) {
-        Vldtn.requireNonNull(action, "action");
+        Vldtn.requireNonNull(action, ACTION_PARAMETER);
         final var readLock = splitGate.readLock();
         readLock.lock();
         try {
@@ -222,10 +223,7 @@ final class BackgroundSplitCoordinator<K, V> {
         if (ignoreCooldown) {
             splitAttemptStates.remove(segmentId);
         }
-        if (scheduleSplitAsync(segment, splitThreshold, totalKeys)) {
-            return true;
-        }
-        return false;
+        return scheduleSplitAsync(segment, splitThreshold, totalKeys);
     }
 
     private boolean scheduleSplitAsync(final Segment<K, V> segment,
@@ -278,7 +276,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     private boolean runWithExclusiveSplitApply(final Supplier<Boolean> action) {
-        Vldtn.requireNonNull(action, "action");
+        Vldtn.requireNonNull(action, ACTION_PARAMETER);
         final var writeLock = splitGate.writeLock();
         writeLock.lock();
         try {

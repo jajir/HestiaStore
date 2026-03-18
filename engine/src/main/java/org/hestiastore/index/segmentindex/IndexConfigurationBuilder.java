@@ -16,6 +16,9 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  */
 public class IndexConfigurationBuilder<K, V> {
 
+    private static final String PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER =
+            "maxNumberOfKeysInPartitionBuffer";
+
     private Integer maxNumberOfKeysInSegmentCache;
     private Integer maxNumberOfKeysInActivePartition;
     private Integer maxNumberOfKeysInPartitionBuffer;
@@ -623,12 +626,12 @@ public class IndexConfigurationBuilder<K, V> {
         if (maxNumberOfKeysInActivePartition == null) {
             return Vldtn.requireGreaterThanZero(
                     maxNumberOfKeysInPartitionBuffer,
-                    "maxNumberOfKeysInPartitionBuffer");
+                    PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER);
         }
         if (maxNumberOfKeysInPartitionBuffer <= maxNumberOfKeysInActivePartition) {
             throw new IllegalArgumentException(String.format(
                     "Property '%s' must be greater than '%s'",
-                    "maxNumberOfKeysInPartitionBuffer",
+                    PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
                     "maxNumberOfKeysInActivePartition"));
         }
         return maxNumberOfKeysInPartitionBuffer;
@@ -643,7 +646,7 @@ public class IndexConfigurationBuilder<K, V> {
                 throw new IllegalArgumentException(String.format(
                         "Property '%s' must be greater than or equal to '%s'",
                         "maxNumberOfKeysInIndexBuffer",
-                        "maxNumberOfKeysInPartitionBuffer"));
+                        PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
             }
             return maxNumberOfKeysInIndexBuffer;
         }

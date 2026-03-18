@@ -25,6 +25,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private static final Logger logger = LoggerFactory
             .getLogger(SegmentRegistryImpl.class);
+    private static final String SEGMENT_ID_PARAMETER = "segmentId";
 
     private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
     private final SegmentRegistryStateMachine gate;
@@ -126,7 +127,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      */
     private SegmentRegistryResult<Segment<K, V>> loadSegment(
             final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
             return SegmentRegistryResult.fromStatus(resultForState(state));
@@ -161,7 +162,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     @Override
     public SegmentRegistryResult<Void> deleteSegment(
             final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
             return SegmentRegistryResult.fromStatus(resultForState(state));
@@ -204,7 +205,8 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     /** {@inheritDoc} */
     @Override
     public void pinSegment(final SegmentId segmentId) {
-        pinnedSegments.add(Vldtn.requireNonNull(segmentId, "segmentId"));
+        pinnedSegments.add(
+                Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER));
     }
 
     /** {@inheritDoc} */
