@@ -1,24 +1,13 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.IndexException;
@@ -29,7 +18,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
@@ -40,12 +28,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionImmutableRun;
-import org.hestiastore.index.segmentindex.partition.PartitionLookupResult;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeLimits;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.partition.PartitionWriteResultStatus;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
@@ -67,15 +50,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
     private static final String OPERATION_DRAIN = "drain";
-    private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
-    private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
+    static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
-    private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
-            .toNanos(5L);
-    private static final Pattern SEGMENT_DIRECTORY_PATTERN = Pattern
-            .compile("^segment-(\\d{5})$");
-    private static final int BOOTSTRAP_SEGMENT_ID = 0;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Directory directoryFacade;
     private final IndexConfiguration<K, V> conf;
@@ -88,6 +65,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
     private final SegmentIndexCore<K, V> core;
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
+    private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
+    private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
+    private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
+    private final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator;
+    private final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
     private final IndexRetryPolicy retryPolicy;
@@ -95,17 +77,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats = new Stats();
     private final SegmentIndexMetricsCollector<K, V> metricsCollector;
+    private final IndexWalCoordinator<K, V> walCoordinator;
     private final IndexControlPlane controlPlane;
+    private final IndexAsyncOperationTracker asyncOperationTracker = new IndexAsyncOperationTracker();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
-    private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
-            0L);
-    private final AtomicBoolean walRetentionPressureWarnActive = new AtomicBoolean(
-            false);
-    private final Object asyncMonitor = new Object();
-    private int asyncInFlight = 0;
-    private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
-            .withInitial(() -> Boolean.FALSE);
     private final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
     private boolean startupConsistencyCheckForStaleSegmentLocks;
     private volatile IndexState<K, V> indexState;
@@ -182,8 +158,37 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         executorRegistry.getSplitPolicyScheduler(), stats,
                         this::getState, this::awaitSplitsIdle,
                         this::failWithError);
+                this.partitionDrainCoordinator = new PartitionDrainCoordinator<>(
+                        partitionRuntime, keyToSegmentMap, drainExecutor,
+                        retryPolicy, stableSegmentCoordinator, stats,
+                        backgroundSplitPolicyLoop::scheduleHint,
+                        this::failWithError);
+                this.partitionWriteCoordinator = new PartitionWriteCoordinator<>(
+                        keyToSegmentMap, partitionRuntime, runtimeTuningState,
+                        backgroundSplitCoordinator,
+                        partitionDrainCoordinator::scheduleDrain);
+                this.partitionReadCoordinator = new PartitionReadCoordinator<>(
+                        keyToSegmentMap, partitionRuntime, segmentRegistry,
+                        core, backgroundSplitCoordinator, keyTypeDescriptor,
+                        valueTypeDescriptor, retryPolicy);
+                this.recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
+                        logger, nonNullDirectory, keyToSegmentMap,
+                        segmentRegistry, retryPolicy);
                 this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
                         keyTypeDescriptor, valueTypeDescriptor);
+                this.walCoordinator = new IndexWalCoordinator<>(logger, conf,
+                        walRuntime, retryPolicy,
+                        () -> partitionDrainCoordinator.drainPartitions(true),
+                        () -> {
+                            stableSegmentCoordinator.flushSegments(true);
+                            keyToSegmentMap.optionalyFlush();
+                        }, this::getState, this::failWithError,
+                        lastAppliedWalLsn);
+                this.maintenanceCoordinator = new IndexMaintenanceCoordinator<>(
+                        keyToSegmentMap, partitionRuntime,
+                        partitionDrainCoordinator, backgroundSplitCoordinator,
+                        backgroundSplitPolicyLoop, stableSegmentCoordinator,
+                        walCoordinator);
                 this.metricsCollector = new SegmentIndexMetricsCollector<>(conf,
                         keyToSegmentMap, segmentRegistry, partitionRuntime,
                         runtimeTuningState, walRuntime, stats,
@@ -195,15 +200,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         metricsCollector::metricsSnapshot,
                         this::applyRuntimeEffectiveLimits,
                         backgroundSplitPolicyLoop::scheduleScan);
-                if (walRuntime.isEnabled()) {
-                    final WalRuntime.RecoveryResult recoveryResult = walRuntime
-                            .recover(this::replayWalRecord);
-                    if (recoveryResult.maxLsn() > 0L) {
-                        lastAppliedWalLsn.set(Math.max(lastAppliedWalLsn.get(),
-                                recoveryResult.maxLsn()));
-                    }
-                }
-                cleanupOrphanedSegmentDirectories();
+                walCoordinator.recover(this::replayWalRecord);
+                recoveryCleanupCoordinator.cleanupOrphanedSegmentDirectories();
                 getIndexState().onReady(this);
                 setSegmentIndexState(SegmentIndexState.READY);
                 if (openingState.wasStaleLockRecovered()) {
@@ -242,12 +240,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             throw new IllegalArgumentException(String.format(
                     "Can't insert thombstone value '%s' into index", value));
         }
-        final long walLsn = appendWalPutWithFailureHandling(key, value);
+        final long walLsn = walCoordinator.appendPut(key, value);
 
         final IndexResult<Void> result = retryWhileBusy(
                 () -> putBuffered(key, value), "put", false);
         if (result.getStatus() == IndexResultStatus.OK) {
-            recordAppliedWalLsn(walLsn);
+            walCoordinator.recordAppliedLsn(walLsn);
             stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
             return;
         }
@@ -312,13 +310,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 : segmentWindows;
         Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> segmentIterator;
-        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
-            segmentIterator = backgroundSplitCoordinator.runWithStableWriteAdmission(
-                    () -> openMergedIteratorWithRouteSnapshot(resolvedWindows,
-                            isolation));
-        } else {
-            segmentIterator = openMergedIterator(resolvedWindows, isolation);
-        }
+        segmentIterator = partitionReadCoordinator.openWindowIterator(
+                resolvedWindows, isolation);
         if (isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         }
@@ -329,44 +322,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void compact() {
         getIndexState().tryPerformOperation();
-        drainPartitions(false);
-        final PartitionRuntimeSnapshot partitionSnapshot = partitionRuntime
-                .snapshot();
-        if (partitionSnapshot.getDrainInFlightCount() > 0
-                || partitionSnapshot.getActivePartitionCount() > 0
-                || partitionSnapshot.getImmutableRunCount() > 0
-                || partitionSnapshot.getBufferedKeyCount() > 0) {
-            return;
-        }
-        if (backgroundSplitCoordinator.splitInFlightCount() > 0) {
-            return;
-        }
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> keyToSegmentMap
-                .getSegmentIds()
-                .forEach(segmentId -> stableSegmentCoordinator.compactSegment(
-                        segmentId, false)));
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        maintenanceCoordinator.compact();
     }
 
     /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
-        drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        stableSegmentCoordinator.compactMappedSegmentsAndFlush();
-        final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
-        backgroundSplitPolicyLoop.awaitExhausted();
-        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
-            drainPartitions(true);
-            backgroundSplitPolicyLoop.awaitExhausted();
-            stableSegmentCoordinator.compactMappedSegmentsAndFlush();
-        }
-        keyToSegmentMap.optionalyFlush();
-        checkpointWal();
+        maintenanceCoordinator.compactAndWait();
     }
 
     /** {@inheritDoc} */
@@ -378,9 +341,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         stats.incGetCx();
 
         final IndexResult<V> result = retryWhileBusy(
-                () -> backgroundSplitCoordinator
-                        .runWithStableWriteAdmission(() -> getBuffered(key)),
-                "get", true);
+                () -> partitionReadCoordinator.get(key), "get", true);
         if (result.getStatus() == IndexResultStatus.OK) {
             stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
             return result.getValue();
@@ -402,12 +363,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         getIndexState().tryPerformOperation();
         Vldtn.requireNonNull(key, "key");
         stats.incDeleteCx();
-        final long walLsn = appendWalDeleteWithFailureHandling(key);
+        final long walLsn = walCoordinator.appendDelete(key);
         final IndexResult<Void> result = retryWhileBusy(
                 () -> putBuffered(key, valueTypeDescriptor.getTombstone()),
                 "delete", false);
         if (result.getStatus() == IndexResultStatus.OK) {
-            recordAppliedWalLsn(walLsn);
+            walCoordinator.recordAppliedLsn(walLsn);
             stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
             return;
         }
@@ -432,25 +393,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
                 keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
                 startupConsistencyCheckForStaleSegmentLocks
-                        ? this::hasSegmentLockFile
+                        ? recoveryCleanupCoordinator::hasSegmentLockFile
                         : segmentId -> true);
         checker.checkAndRepairConsistency();
-        cleanupOrphanedSegmentDirectories();
+        recoveryCleanupCoordinator.cleanupOrphanedSegmentDirectories();
         backgroundSplitPolicyLoop.scheduleScan();
-    }
-
-    private boolean hasSegmentLockFile(final SegmentId segmentId) {
-        final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
-                "segmentId");
-        final String segmentDirectoryName = nonNullSegmentId.getName();
-        if (!directoryFacade.isFileExists(segmentDirectoryName)) {
-            return false;
-        }
-        final Directory segmentDirectory = directoryFacade
-                .openSubDirectory(segmentDirectoryName);
-        final String lockFileName = new SegmentDirectoryLayout(nonNullSegmentId)
-                .getLockFileName();
-        return segmentDirectory.isFileExists(lockFileName);
     }
 
     /** {@inheritDoc} */
@@ -461,9 +408,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             getIndexState().onClose(this);
             setSegmentIndexState(SegmentIndexState.CLOSING);
             awaitAsyncOperations();
-            drainPartitions(true);
+            partitionDrainCoordinator.drainPartitions(true);
             backgroundSplitPolicyLoop.awaitExhausted();
-            drainPartitions(true);
+            partitionDrainCoordinator.drainPartitions(true);
             backgroundSplitPolicyLoop.awaitExhausted();
             setSegmentIndexState(SegmentIndexState.CLOSED);
             backgroundSplitCoordinator.runWithSplitSchedulingPaused(
@@ -478,7 +425,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                                 "close", closeResult.getStatus()));
             }
             keyToSegmentMap.optionalyFlush();
-            checkpointWal();
+            walCoordinator.checkpoint();
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format(
                         "Index is closing, where was %s gets, %s puts and %s deletes.",
@@ -496,54 +443,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
-        incrementAsync();
-        try {
-            return CompletableFuture.supplyAsync(() -> {
-                final boolean previous = inAsyncOperation.get();
-                inAsyncOperation.set(Boolean.TRUE);
-                try {
-                    return task.get();
-                } finally {
-                    inAsyncOperation.set(previous);
-                    decrementAsync();
-                }
-            });
-        } catch (final RuntimeException e) {
-            decrementAsync();
-            throw e;
-        }
-    }
-
-    private void incrementAsync() {
-        synchronized (asyncMonitor) {
-            asyncInFlight++;
-        }
-    }
-
-    private void decrementAsync() {
-        synchronized (asyncMonitor) {
-            asyncInFlight--;
-            asyncMonitor.notifyAll();
-        }
+        return asyncOperationTracker.runAsyncTracked(task);
     }
 
     private void awaitAsyncOperations() {
-        if (Boolean.TRUE.equals(inAsyncOperation.get())) {
-            throw new IllegalStateException(
-                    "close() must not be called from an async index operation.");
-        }
-        synchronized (asyncMonitor) {
-            while (asyncInFlight > 0) {
-                try {
-                    asyncMonitor.wait();
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException(
-                            "Interrupted while waiting for async operations to finish.",
-                            e);
-                }
-            }
-        }
+        asyncOperationTracker.awaitAsyncOperations();
     }
 
     final void setIndexState(final IndexState<K, V> indexState) {
@@ -593,179 +497,17 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void flush() {
-        drainPartitions(false);
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(
-                () -> stableSegmentCoordinator.flushSegments(false));
-        keyToSegmentMap.optionalyFlush();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        maintenanceCoordinator.flush();
     }
 
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        drainPartitions(true);
-        backgroundSplitPolicyLoop.awaitExhausted();
-        stableSegmentCoordinator.flushMappedSegmentsAndWait();
-        final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
-        backgroundSplitPolicyLoop.awaitExhausted();
-        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
-            drainPartitions(true);
-            backgroundSplitPolicyLoop.awaitExhausted();
-            stableSegmentCoordinator.flushMappedSegmentsAndWait();
-        }
-        keyToSegmentMap.optionalyFlush();
-        checkpointWal();
+        maintenanceCoordinator.flushAndWait();
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
-        return backgroundSplitCoordinator.runWithStableWriteAdmission(() -> {
-            final IndexResult<SegmentId> routeResult = resolveWriteSegmentId(
-                    key);
-            if (routeResult.getStatus() != IndexResultStatus.OK
-                    || routeResult.getValue() == null) {
-                return toVoidResult(routeResult.getStatus());
-            }
-            final SegmentId segmentId = routeResult.getValue();
-            partitionRuntime.ensurePartition(segmentId);
-            final var writeResult = partitionRuntime.write(segmentId, key,
-                    value, currentPartitionRuntimeLimits());
-            if (writeResult.getStatus() == PartitionWriteResultStatus.BUSY) {
-                return IndexResult.busy();
-            }
-            if (writeResult.isDrainRecommended()) {
-                schedulePartitionDrain(segmentId);
-            }
-            return IndexResult.ok();
-        });
-    }
-
-    private IndexResult<V> getBuffered(final K key) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        final SegmentId segmentId = snapshot.findSegmentId(key);
-        if (segmentId == null) {
-            return IndexResult.ok(null);
-        }
-        partitionRuntime.ensurePartition(segmentId);
-        final PartitionLookupResult<V> overlay = partitionRuntime.lookup(
-                segmentId, key);
-        if (overlay.isFound()) {
-            final V value = overlay.getValue();
-            return IndexResult.ok(
-                    valueTypeDescriptor.isTombstone(value) ? null : value);
-        }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                snapshot.version())) {
-            return IndexResult.busy();
-        }
-        return core.get(segmentId, key);
-    }
-
-    private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        if (snapshot.findSegmentId(key) == null
-                && !keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
-            return IndexResult.busy();
-        }
-        final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
-                .snapshot();
-        final SegmentId segmentId = stableSnapshot.findSegmentId(key);
-        if (segmentId == null) {
-            return IndexResult.busy();
-        }
-        return IndexResult.ok(segmentId);
-    }
-
-    private PartitionRuntimeLimits currentPartitionRuntimeLimits() {
-        final int maxActive = Math.max(1, runtimeTuningState.effectiveValue(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
-        final int maxImmutableRuns = Math.max(1, runtimeTuningState
-                .effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
-        final int maxPartitionBuffer = Math.max(maxActive + 1,
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
-        final int maxIndexBuffer = Math.max(maxPartitionBuffer, runtimeTuningState
-                .effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
-        return new PartitionRuntimeLimits(maxActive, maxImmutableRuns,
-                maxPartitionBuffer, maxIndexBuffer);
-    }
-
-    private void schedulePartitionDrain(final SegmentId segmentId) {
-        if (!partitionRuntime.markDrainScheduledIfNeeded(segmentId)) {
-            return;
-        }
-        try {
-            drainExecutor.execute(() -> drainPartitionLoop(segmentId));
-        } catch (final RuntimeException e) {
-            partitionRuntime.finishDrainScheduling(segmentId);
-            throw e;
-        }
-    }
-
-    private void drainPartitions(final boolean waitForCompletion) {
-        partitionRuntime.sealAllActivePartitionsForDrain();
-        final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
-        for (final SegmentId segmentId : segmentIds) {
-            if (waitForCompletion) {
-                drainPartitionNow(segmentId);
-            } else {
-                schedulePartitionDrain(segmentId);
-            }
-        }
-        if (!waitForCompletion) {
-            return;
-        }
-        final long startNanos = retryPolicy.startNanos();
-        while (partitionRuntime.snapshot().getDrainInFlightCount() > 0) {
-            retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN, null);
-        }
-    }
-
-    private void drainPartitionNow(final SegmentId segmentId) {
-        if (!partitionRuntime.markDrainScheduledIfNeeded(segmentId)) {
-            return;
-        }
-        drainPartitionLoop(segmentId);
-    }
-
-    private void drainPartitionLoop(final SegmentId segmentId) {
-        boolean drainedAnyRun = false;
-        try {
-            while (true) {
-                final PartitionImmutableRun<K, V> run = partitionRuntime
-                        .peekOldestImmutableRun(segmentId);
-                if (run == null) {
-                    return;
-                }
-                final long drainRunStartNanos = System.nanoTime();
-                drainImmutableRun(segmentId, run);
-                partitionRuntime.completeDrainedRun(segmentId, run);
-                stats.recordDrainLatencyNanos(
-                        System.nanoTime() - drainRunStartNanos);
-                drainedAnyRun = true;
-            }
-        } catch (final RuntimeException e) {
-            failWithError(e);
-            throw e;
-        } finally {
-            partitionRuntime.finishDrainScheduling(segmentId);
-            if (drainedAnyRun) {
-                backgroundSplitPolicyLoop.scheduleHint(segmentId);
-            }
-        }
-    }
-
-    private void drainImmutableRun(final SegmentId segmentId,
-            final PartitionImmutableRun<K, V> run) {
-        for (final Map.Entry<K, V> entry : run.getEntries().entrySet()) {
-            stableSegmentCoordinator.putEntryForDrain(segmentId,
-                    entry.getKey(), entry.getValue());
-        }
-        stableSegmentCoordinator.flushSegment(segmentId, true);
+        return partitionWriteCoordinator.putBuffered(key, value);
     }
 
     private void completeCloseStateTransition() {
@@ -785,125 +527,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         currentState.onClose(this);
     }
 
-    private void cleanupOrphanedSegmentDirectories() {
-        final Set<SegmentId> mappedSegmentIds = new HashSet<>(
-                keyToSegmentMap.getSegmentIds());
-        final List<SegmentId> orphanedSegmentIds = new ArrayList<>();
-        try (var fileNames = directoryFacade.getFileNames()) {
-            fileNames.forEach(name -> {
-                final SegmentId segmentId = parseSegmentDirectoryName(name);
-                if (segmentId != null
-                        && segmentId.getId() != BOOTSTRAP_SEGMENT_ID
-                        && !mappedSegmentIds.contains(segmentId)) {
-                    orphanedSegmentIds.add(segmentId);
-                }
-            });
-        }
-        orphanedSegmentIds.forEach(this::deleteOrphanedSegmentDirectory);
-    }
-
-    private SegmentId parseSegmentDirectoryName(final String name) {
-        if (name == null) {
-            return null;
-        }
-        final var matcher = SEGMENT_DIRECTORY_PATTERN.matcher(name);
-        if (!matcher.matches()) {
-            return null;
-        }
-        try {
-            return SegmentId.of(Integer.parseInt(matcher.group(1)));
-        } catch (final NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private void deleteOrphanedSegmentDirectory(final SegmentId segmentId) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
-                    .deleteSegment(segmentId);
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK
-                    || deleteResult
-                            .getStatus() == SegmentRegistryResultStatus.CLOSED) {
-                logger.info(
-                        "Deleted orphaned segment directory '{}' during recovery/consistency cleanup.",
-                        segmentId);
-                return;
-            }
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                try {
-                    retryPolicy.backoffOrThrow(startNanos,
-                            OPERATION_CLEANUP_ORPHAN_SEGMENT, segmentId);
-                } catch (final IndexException timeout) {
-                    logger.warn(
-                            "Orphaned segment directory '{}' could not be deleted because cleanup timed out.",
-                            segmentId);
-                    return;
-                }
-                continue;
-            }
-            logger.warn(
-                    "Orphaned segment directory '{}' could not be deleted during cleanup: {}",
-                    segmentId, deleteResult.getStatus());
-            return;
-        }
-    }
-
-    private EntryIterator<K, V> openMergedIterator(
-            final SegmentWindow resolvedWindows,
-            final SegmentIteratorIsolation isolation) {
-        final List<SegmentId> segmentIds = keyToSegmentMap
-                .getSegmentIds(resolvedWindows);
-        return openMergedIterator(segmentIds, isolation);
-    }
-
-    private EntryIterator<K, V> openMergedIteratorWithRouteSnapshot(
-            final SegmentWindow resolvedWindows,
-            final SegmentIteratorIsolation isolation) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap
-                    .snapshot();
-            final List<SegmentId> segmentIds = snapshot
-                    .getSegmentIds(resolvedWindows);
-            try {
-                final EntryIterator<K, V> iterator = openMergedIterator(
-                        segmentIds, isolation);
-                if (keyToSegmentMap.isVersion(snapshot.version())) {
-                    return iterator;
-                }
-                iterator.close();
-            } catch (final IndexException e) {
-                if (keyToSegmentMap.isVersion(snapshot.version())) {
-                    throw e;
-                }
-            }
-            retryPolicy.backoffOrThrow(startNanos,
-                    OPERATION_OPEN_FULL_ISOLATION_ITERATOR, null);
-        }
-    }
-
-    private EntryIterator<K, V> openMergedIterator(
-            final List<SegmentId> segmentIds,
-            final SegmentIteratorIsolation isolation) {
-        final NavigableMap<K, V> merged = new TreeMap<>(
-                keyTypeDescriptor.getComparator());
-        try (EntryIterator<K, V> stableIterator = new SegmentsIterator<>(
-                segmentIds, segmentRegistry, isolation, retryPolicy)) {
-            while (stableIterator.hasNext()) {
-                final Entry<K, V> entry = stableIterator.next();
-                merged.put(entry.getKey(), entry.getValue());
-            }
-        }
-        partitionRuntime.applyOverlaySnapshot(segmentIds, merged);
-        final List<Entry<K, V>> visibleEntries = merged.entrySet().stream()
-                .filter(entry -> !valueTypeDescriptor.isTombstone(
-                        entry.getValue()))
-                .map(entry -> Entry.of(entry.getKey(), entry.getValue()))
-                .toList();
-        return new EntryIteratorList<>(visibleEntries);
-    }
-
     private void replayWalRecord(
             final WalRuntime.ReplayRecord<K, V> replayRecord) {
         final V value = replayRecord.getOperation() == WalRuntime.Operation.PUT
@@ -915,139 +538,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         if (result.getStatus() != IndexResultStatus.OK) {
             throw newIndexException("walReplay", null, result.getStatus());
         }
-        recordAppliedWalLsn(replayRecord.getLsn());
-    }
-
-    private void recordAppliedWalLsn(final long walLsn) {
-        if (walLsn <= 0L || !walRuntime.isEnabled()) {
-            return;
-        }
-        while (true) {
-            final long current = lastAppliedWalLsn.get();
-            if (walLsn <= current) {
-                return;
-            }
-            if (lastAppliedWalLsn.compareAndSet(current, walLsn)) {
-                return;
-            }
-        }
-    }
-
-    private void checkpointWal() {
-        if (!walRuntime.isEnabled()) {
-            return;
-        }
-        try {
-            walRuntime.onCheckpoint(lastAppliedWalLsn.get());
-            if (logger.isDebugEnabled()) {
-                final var walStats = walRuntime.statsSnapshot();
-                logger.debug(
-                        "WAL checkpoint: durableLsn={}, checkpointLsn={}, retainedBytes={}, segments={}",
-                        walStats.durableLsn(), walStats.checkpointLsn(),
-                        walStats.retainedBytes(), walStats.segmentCount());
-            }
-        } catch (final RuntimeException failure) {
-            handleWalRuntimeFailure(failure);
-            throw failure;
-        }
-    }
-
-    private void enforceWalRetentionPressureIfNeeded() {
-        if (!walRuntime.isEnabled() || !walRuntime.isRetentionPressure()) {
-            return;
-        }
-        logWalRetentionPressureStartIfNeeded();
-        final long startNanos = retryPolicy.startNanos();
-        int checkpointAttempts = 0;
-        while (walRuntime.isRetentionPressure()) {
-            checkpointAttempts++;
-            drainPartitions(true);
-            stableSegmentCoordinator.flushSegments(true);
-            keyToSegmentMap.optionalyFlush();
-            checkpointWal();
-            if (!walRuntime.isRetentionPressure()) {
-                logWalRetentionPressureCleared(startNanos, checkpointAttempts);
-                return;
-            }
-            retryPolicy.backoffOrThrow(startNanos, "walBackpressure", null);
-        }
-        logWalRetentionPressureCleared(startNanos, checkpointAttempts);
-    }
-
-    private void logWalRetentionPressureStartIfNeeded() {
-        final long nowNanos = System.nanoTime();
-        while (true) {
-            final long previousWarnNanos = walRetentionPressureLastWarnNanos
-                    .get();
-            if (previousWarnNanos != 0L && nowNanos
-                    - previousWarnNanos < WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS) {
-                return;
-            }
-            if (walRetentionPressureLastWarnNanos
-                    .compareAndSet(previousWarnNanos, nowNanos)) {
-                walRetentionPressureWarnActive.set(true);
-                logger.warn(
-                        "event=wal_retention_pressure_start retainedBytes={} threshold={} action=force_checkpoint_backpressure",
-                        walRuntime.retainedBytes(),
-                        conf.getWal().getMaxBytesBeforeForcedCheckpoint());
-                return;
-            }
-        }
-    }
-
-    private void logWalRetentionPressureCleared(final long startNanos,
-            final int checkpointAttempts) {
-        if (!walRetentionPressureWarnActive.compareAndSet(true, false)) {
-            return;
-        }
-        final long elapsedMillis = TimeUnit.NANOSECONDS
-                .toMillis(Math.max(0L, System.nanoTime() - startNanos));
-        logger.info(
-                "event=wal_retention_pressure_cleared retainedBytes={} threshold={} checkpointAttempts={} elapsedMillis={}",
-                walRuntime.retainedBytes(),
-                conf.getWal().getMaxBytesBeforeForcedCheckpoint(),
-                Math.max(0, checkpointAttempts), Math.max(0L, elapsedMillis));
-    }
-
-    private long appendWalPutWithFailureHandling(final K key, final V value) {
-        if (!walRuntime.isEnabled()) {
-            return 0L;
-        }
-        try {
-            enforceWalRetentionPressureIfNeeded();
-            return walRuntime.appendPut(key, value);
-        } catch (final RuntimeException failure) {
-            handleWalRuntimeFailure(failure);
-            throw failure;
-        }
-    }
-
-    private long appendWalDeleteWithFailureHandling(final K key) {
-        if (!walRuntime.isEnabled()) {
-            return 0L;
-        }
-        try {
-            enforceWalRetentionPressureIfNeeded();
-            return walRuntime.appendDelete(key);
-        } catch (final RuntimeException failure) {
-            handleWalRuntimeFailure(failure);
-            throw failure;
-        }
-    }
-
-    private void handleWalRuntimeFailure(final RuntimeException failure) {
-        if (!walRuntime.isEnabled() || !walRuntime.hasSyncFailure()) {
-            return;
-        }
-        final SegmentIndexState state = getState();
-        if (state == SegmentIndexState.CLOSED
-                || state == SegmentIndexState.ERROR) {
-            return;
-        }
-        logger.error(
-                "event=wal_sync_failure_transition state={} action=transition_to_error reason=wal_sync_failure",
-                state, failure);
-        failWithError(failure);
+        walCoordinator.recordAppliedLsn(replayRecord.getLsn());
     }
 
     private <T> IndexResult<T> retryWhileBusy(
@@ -1075,7 +566,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         target, status));
     }
 
-    private static IndexResult<Void> toVoidResult(
+    static IndexResult<Void> toVoidResult(
             final IndexResultStatus status) {
         if (status == IndexResultStatus.BUSY) {
             return IndexResult.busy();
