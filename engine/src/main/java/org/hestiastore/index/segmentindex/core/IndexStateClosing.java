@@ -10,12 +10,11 @@ import org.hestiastore.index.directory.FileLock;
  * @param <K> key type
  * @param <V> value type
  */
-final class IndexStateClosing<K, V> implements IndexState<K, V> {
+final record IndexStateClosing<K, V>(FileLock fileLock)
+        implements IndexState<K, V> {
 
-    private final FileLock fileLock;
-
-    IndexStateClosing(final FileLock fileLock) {
-        this.fileLock = Vldtn.requireNonNull(fileLock, "fileLock");
+    IndexStateClosing {
+        fileLock = Vldtn.requireNonNull(fileLock, "fileLock");
     }
 
     /** {@inheritDoc} */

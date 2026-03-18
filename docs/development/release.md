@@ -1,4 +1,4 @@
-# Releasing a New Version
+# Release Process
 
 This is the source-of-truth runbook for making a new HestiaStore release.
 
@@ -13,55 +13,66 @@ homepage at [https://github.com/jajir/HestiaStore/releases](https://github.com/j
 Codex can prepare the release title and body, but it cannot click `Publish
 release` in the GitHub web UI.
 
-## Versioning of the project
+If you are using Codex in this repository, use the `release-maven-library` skill. The skill follows the same workflow documented here and uses the helper scripts under `.agents/skills/release-maven-library/scripts/`.
 
-The project uses the traditional versioning pattern known as Semantic Versioning, detailed at [https://semver.org](https://semver.org). The version number consists of three components separated by dots:
+## Release Principles
+
+- Keep release work focused on release and versioning changes only.
+- Do not mix unrelated refactors, dependency upgrades, or API changes into a release commit.
+- Stop immediately if the working tree is dirty, the current version is inconsistent, a forbidden snapshot dependency is found, or verification fails.
+
+## Versioning
+
+Hestia Store uses Semantic Versioning:
 
 ```text
-0.3.6
+X.Y.Z
 ```
 
-Each number has the following meaning:
+- `X`: major version for incompatible API changes
+- `Y`: minor version for backward-compatible feature work
+- `Z`: patch version for backward-compatible fixes
 
-* `0` - Major project version. Project API could be incompatible between two major versions.
-* `3` - Minor project version. Contains changes in features, performance optimizations, and small improvements. Minor versions should be compatible.
-* `6` - Patch version. Bug fixing project release.
+Development versions use the `-SNAPSHOT` suffix:
 
-There are also snapshot versions with version number `0.3.6-SNAPSHOT`. Snapshot versions should not be stored in the Maven repository.
+```text
+X.Y.Z-SNAPSHOT
+```
 
-## Branching strategy
-
-![project branching](../images/branching.png)
-
-We use a simplified GitHub Flow:
-
-* `main`: the primary development and release branch. Small changes may be committed directly to `main`, while larger or experimental features must be developed in a separate branch and merged via pull request.
-* Feature branches are created from `main` for larger or isolated changes. Use descriptive names like `feature/compression`, `fix/index-scan`, etc.
-
-The deprecated `devel` branch has been removed and is no longer used.
-
-## Release prerequisites
+Release preparation should start from a snapshot version and convert it to the matching release version.
 
 The release will be published to Maven Central. Release configuration secrets are placed at the Maven settings file `~/.m2/settings.xml`.
 
 Releases must be prepared from a clean `main` branch worktree with push access
 to the repository and tags.
 
-### Provide correct package signature
+- Java 17 and Maven are installed.
+- You are in the repository root.
+- The branch and working tree are clean.
+- Maven Central credentials are configured in `~/.m2/settings.xml`.
+- GPG signing is configured for the Maven `release` profile.
 
-In your `~/.m2/settings.xml` file, add the following section:
+Example `settings.xml` fragments:
 
 ```xml
 <settings>
-    ...
-   <profile>
-     <id>release</id>
-       <properties>
-       <gpg.executable>gpg</gpg.executable>
-       <gpg.passphrase>--pgp-password--</gpg.passphrase>
-     </properties>      
-   </profile>
-    ...
+  <servers>
+    <server>
+      <id>central</id>
+      <username>YOUR_USERNAME</username>
+      <password>YOUR_TOKEN</password>
+    </server>
+  </servers>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <properties>
+        <gpg.executable>gpg</gpg.executable>
+        <gpg.passphrase>YOUR_GPG_PASSPHRASE</gpg.passphrase>
+      </properties>
+    </profile>
+  </profiles>
 </settings>
 ```
 
@@ -70,25 +81,23 @@ In your `~/.m2/settings.xml` file, add the following section:
 This provides `org.sonatype.central:central-publishing-maven-plugin` plugin secrets to enable login to the Maven Central account where release data will be placed.
 You must have an account with a verified namespace `org.hestiastore` at [central.sonatype.com](https://central.sonatype.com/). From the `Account` section, generate a key and password. These should be added to:
 
-```xml
-<settings>
-    ...
-    <servers>
-        <server>
-            <id>central</id>
-           <username>------</username>
-           <password>---------------token---------------</password>
-       </server>
-    </servers>
-    ...
-</settings>
-```
+## Release Checklist
 
-## Perform release
+- Verify the working tree is clean.
+- Detect the current Maven version.
+- Confirm the current version is a snapshot.
+- Run `mvn clean verify`.
+- Confirm there are no forbidden snapshot dependencies or plugins.
+- Bump from `X.Y.Z-SNAPSHOT` to `X.Y.Z`.
+- Run verification again after the release version change.
+- Commit and tag the release.
+- Deploy the release artifact.
+- Bump to the next snapshot version.
+- Verify again after the next snapshot bump.
 
-Perform the following steps to create a new release:
+## Step-by-Step Procedure
 
-### 0. Verify module artifacts and tests
+### 1. Inspect branch and working tree
 
 Run the standard release verification script:
 
@@ -114,7 +123,7 @@ git checkout main
 git pull --ff-only
 ```
 
-### 2. Set the release version
+Expected result:
 
 ```bash
 ./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.12
@@ -176,10 +185,11 @@ not in the generated documentation site:
 6. If the release contains breaking changes, add a dedicated `Breaking changes` section with migration steps.
 7. Press `Publish release`.
 
-Text template:
+```bash
+./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.6
+```
 
-````markdown
-Release to maven central:
+Then verify again:
 
 ```xml
 <dependencies>
@@ -191,11 +201,11 @@ Release to maven central:
 </dependencies>
 ```
 
-````
+After the release bump, there should be no remaining forbidden snapshot versions in the Maven project files.
 
-## Multi-module release artifacts
+### 6. Commit and tag the release
 
-Each release publishes aligned versions of:
+Review the changed files and create a focused release commit:
 
 - `org.hestiastore:hestiastore-parent` (POM)
 - `org.hestiastore:engine`
@@ -211,33 +221,61 @@ its POM sets `maven.deploy.skip=true`.
 
 Compatibility and staged upgrade guidance:
 
-- [Compatibility Matrix](compatibility-matrix.md)
-- [Upgrade Notes (Multi-Module)](upgrade-notes-multimodule.md)
+### 7. Deploy the release
 
 ### 9. Finish the release
 
-That's it — the release is live and development can continue.
-
-## Helpful Commands
-
-At the beginning there may be problems. Here are a few tricks that help to gather more information.
-
-### How to Use a Custom settings.xml File
-
 ```bash
-mvn --settings ./src/main/settings.xml clean deploy
+mvn -pl engine -am -P release deploy
 ```
 
-### How to Set the Maven Project Version
+This matches the current repository configuration, where the `release` profile is defined in `engine/pom.xml`.
+
+### 8. Prepare the next development snapshot
+
+After the release is deployed, bump to the next snapshot version:
 
 ```bash
-mvn versions:set -DnewVersion=1.0.1-SNAPSHOT
+./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh 0.0.7-SNAPSHOT
+./.agents/skills/release-maven-library/scripts/verify-release.sh
+git add pom.xml */pom.xml
+git commit -m "post-release: bumped to 0.0.7-SNAPSHOT"
 ```
 
-### Check dependencies
+### 9. Push commits and tags
 
-Try to update dependencies. Check them with:
+Push both the branch and the release tag:
+
+```bash
+git push origin main
+git push origin release-0.0.6
+```
+
+### 10. Publish release notes
+
+Create the GitHub release from tag `release-0.0.6` and summarize:
+
+- released version
+- notable changes
+- any migration or compatibility notes
+- Maven dependency coordinates consumers should use
+
+## Helper Commands
+
+Display dependency updates:
 
 ```bash
 mvn versions:display-dependency-updates
 ```
+
+Set a version manually without backup POMs:
+
+```bash
+mvn versions:set -DnewVersion=1.0.1-SNAPSHOT -DgenerateBackupPoms=false -DprocessAllModules=true
+```
+
+## Related Files
+
+- `.agents/skills/release-maven-library/SKILL.md`
+- `.agents/skills/release-maven-library/references/release-checklist.md`
+- `AGENTS.md`
