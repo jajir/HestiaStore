@@ -10,31 +10,31 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/general/chain-of-filters/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/datablock/">
       
       
-        <link rel="prev" href="../filters/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../concurrency/">
+        <link rel="next" href="../filters/">
       
       
         
       
       
-      <link rel="icon" href="../../../favicon.ico">
+      <link rel="icon" href="../../favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
-        <title>Chain of Filters - HestiaStore</title>
+        <title>Data Block Format - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#chain-of-filters" class="md-skip">
+        <a href="#data-block-and-chunk-design-in-hestiastore" class="md-skip">
           Skip to content
         </a>
       
@@ -94,9 +94,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Chain of Filters
+              Data Block Format
             
           </span>
         </div>
@@ -235,7 +235,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -256,7 +256,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../why-hestiastore/" class="md-tabs__link">
+        <a href="../../why-hestiastore/" class="md-tabs__link">
           
   
   
@@ -278,7 +278,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../how-to-use/" class="md-tabs__link">
+        <a href="../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -300,7 +300,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../configuration/" class="md-tabs__link">
+        <a href="../../configuration/" class="md-tabs__link">
           
   
   
@@ -322,7 +322,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../operations/" class="md-tabs__link">
+        <a href="../../operations/" class="md-tabs__link">
           
   
   
@@ -346,7 +346,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -368,7 +368,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../development/" class="md-tabs__link">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -410,9 +410,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -439,7 +439,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -499,7 +499,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../why-hestiastore/" class="md-nav__link ">
+            <a href="../../why-hestiastore/" class="md-nav__link ">
               
   
   
@@ -543,7 +543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/alternatives/" class="md-nav__link">
+      <a href="../../why-hestiastore/alternatives/" class="md-nav__link">
         
   
   
@@ -571,7 +571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/quality/" class="md-nav__link">
+      <a href="../../why-hestiastore/quality/" class="md-nav__link">
         
   
   
@@ -599,7 +599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY/" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
@@ -691,7 +691,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/benchmarks/" class="md-nav__link">
+      <a href="../../why-hestiastore/benchmarks/" class="md-nav__link">
         
   
   
@@ -719,7 +719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/out-write/" class="md-nav__link">
+      <a href="../../why-hestiastore/out-write/" class="md-nav__link">
         
   
   
@@ -747,7 +747,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/out-read/" class="md-nav__link">
+      <a href="../../why-hestiastore/out-read/" class="md-nav__link">
         
   
   
@@ -775,7 +775,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/out-sequential/" class="md-nav__link">
+      <a href="../../why-hestiastore/out-sequential/" class="md-nav__link">
         
   
   
@@ -851,7 +851,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../how-to-use/" class="md-nav__link ">
+            <a href="../../how-to-use/" class="md-nav__link ">
               
   
   
@@ -895,7 +895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../how-to-use/install/" class="md-nav__link">
+      <a href="../../how-to-use/install/" class="md-nav__link">
         
   
   
@@ -923,7 +923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../../how-to-use/quick-start/" class="md-nav__link">
         
   
   
@@ -951,7 +951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1047,7 +1047,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../configuration/" class="md-nav__link ">
+            <a href="../../configuration/" class="md-nav__link ">
               
   
   
@@ -1091,7 +1091,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/filters/" class="md-nav__link">
+      <a href="../../configuration/filters/" class="md-nav__link">
         
   
   
@@ -1119,7 +1119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/data-types/" class="md-nav__link">
+      <a href="../../configuration/data-types/" class="md-nav__link">
         
   
   
@@ -1147,7 +1147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/logging/" class="md-nav__link">
+      <a href="../../configuration/logging/" class="md-nav__link">
         
   
   
@@ -1175,7 +1175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/monitoring-console/" class="md-nav__link">
+      <a href="../../configuration/monitoring-console/" class="md-nav__link">
         
   
   
@@ -1245,7 +1245,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../operations/" class="md-nav__link ">
+            <a href="../../operations/" class="md-nav__link ">
               
   
   
@@ -1289,7 +1289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/wal/" class="md-nav__link">
+      <a href="../../operations/wal/" class="md-nav__link">
         
   
   
@@ -1317,7 +1317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/monitoring/" class="md-nav__link">
+      <a href="../../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -1345,7 +1345,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/tuning/" class="md-nav__link">
+      <a href="../../operations/tuning/" class="md-nav__link">
         
   
   
@@ -1373,7 +1373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/backup-restore/" class="md-nav__link">
+      <a href="../../operations/backup-restore/" class="md-nav__link">
         
   
   
@@ -1401,7 +1401,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/wal-canary-runbook/" class="md-nav__link">
+      <a href="../../operations/wal-canary-runbook/" class="md-nav__link">
         
   
   
@@ -1454,6 +1454,20 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1474,7 +1488,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1519,57 +1533,22 @@
   
   
   
-    
-    
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
       
         
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
           
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" checked>
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
-              
   
   
   <span class="md-ellipsis">
     
   
-    General
+    Data Block Format
   
 
     
@@ -1577,36 +1556,10 @@
   
   
 
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6_2">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    General
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../datablock/" class="md-nav__link">
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1622,6 +1575,115 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Block">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Characteristics:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#block-header-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block Header Format:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chunk
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Chunk">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-characteristics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Characteristics:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunk-header-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chunk Header Format:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationships" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationships
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1659,37 +1721,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Chain of Filters
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1705,87 +1740,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mechanics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mechanics
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#typical-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Typical Usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-it-is-used" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where It Is Used
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Where It Is Used">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#segment-searcher-pipeline-read-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Segment Searcher Pipeline (read path)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#guidelines-for-adding-new-pipelines" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Guidelines for Adding New Pipelines
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1805,7 +1759,7 @@
   <span class="md-ellipsis">
     
   
-    Access Model
+    Concurrency Model
   
 
     
@@ -1861,7 +1815,7 @@
   <span class="md-ellipsis">
     
   
-    Package layout
+    Package Layout
   
 
     
@@ -1931,14 +1885,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
               
                 
   
@@ -1974,11 +1920,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_3" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_10" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../monitoring/" class="md-nav__link ">
+            <a href="../monitoring/" class="md-nav__link ">
               
   
   
@@ -1996,14 +1942,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_3" id="__nav_6_3_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2022,7 +1968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -2050,7 +1996,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -2128,11 +2074,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_11" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../segmentindex/" class="md-nav__link ">
+            <a href="../segmentindex/" class="md-nav__link ">
               
   
   
@@ -2150,14 +2096,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_4" id="__nav_6_4_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2176,7 +2122,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/write-path/" class="md-nav__link">
+      <a href="../segmentindex/write-path/" class="md-nav__link">
         
   
   
@@ -2204,7 +2150,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/read-path/" class="md-nav__link">
+      <a href="../segmentindex/read-path/" class="md-nav__link">
         
   
   
@@ -2232,7 +2178,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/range-partitioned-ingest/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest/" class="md-nav__link">
         
   
   
@@ -2260,7 +2206,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
         
   
   
@@ -2288,7 +2234,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/caching/" class="md-nav__link">
+      <a href="../segmentindex/caching/" class="md-nav__link">
         
   
   
@@ -2316,7 +2262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../segmentindex/cache-lru/" class="md-nav__link">
         
   
   
@@ -2344,7 +2290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/performance/" class="md-nav__link">
+      <a href="../segmentindex/performance/" class="md-nav__link">
         
   
   
@@ -2372,7 +2318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../segmentindex/metrics-snapshot/" class="md-nav__link">
         
   
   
@@ -2400,7 +2346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../segmentindex/segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -2468,11 +2414,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../segment/" class="md-nav__link ">
+            <a href="../segment/" class="md-nav__link ">
               
   
   
@@ -2490,14 +2436,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_5" id="__nav_6_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2516,7 +2462,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/segment/" class="md-nav__link">
+      <a href="../segment/segment/" class="md-nav__link">
         
   
   
@@ -2544,7 +2490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/on-disk-layout/" class="md-nav__link">
+      <a href="../segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2572,7 +2518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/arch-index/" class="md-nav__link">
+      <a href="../segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2600,7 +2546,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/segment-concurrency/" class="md-nav__link">
+      <a href="../segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2662,11 +2608,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_13" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../registry/" class="md-nav__link ">
+            <a href="../registry/" class="md-nav__link ">
               
   
   
@@ -2684,14 +2630,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_6" id="__nav_6_6_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2710,7 +2656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../registry/registry/" class="md-nav__link">
+      <a href="../registry/registry/" class="md-nav__link">
         
   
   
@@ -2810,7 +2756,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../development/" class="md-nav__link ">
+            <a href="../../development/" class="md-nav__link ">
               
   
   
@@ -2854,7 +2800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -2882,7 +2828,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -2910,7 +2856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CHANGELOG/" class="md-nav__link">
+      <a href="../../CHANGELOG/" class="md-nav__link">
         
   
   
@@ -2938,7 +2884,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -2966,7 +2912,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
         
   
   
@@ -2994,7 +2940,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/quality-reporting/" class="md-nav__link">
+      <a href="../../development/quality-reporting/" class="md-nav__link">
         
   
   
@@ -3022,7 +2968,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/documentation-guidelines/" class="md-nav__link">
+      <a href="../../development/documentation-guidelines/" class="md-nav__link">
         
   
   
@@ -3050,7 +2996,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -3078,7 +3024,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/segment-api/" class="md-nav__link">
+      <a href="../../development/segment-api/" class="md-nav__link">
         
   
   
@@ -3106,7 +3052,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -3134,7 +3080,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/compatibility-matrix/" class="md-nav__link">
+      <a href="../../development/compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -3162,7 +3108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../../development/upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -3190,7 +3136,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/rollout-quality-gates/" class="md-nav__link">
+      <a href="../../development/rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -3218,7 +3164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../../development/rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -3246,7 +3192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/wal-replication-fencing-design/" class="md-nav__link">
+      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
         
   
   
@@ -3274,7 +3220,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../refactor-backlog/" class="md-nav__link">
+      <a href="../../refactor-backlog/" class="md-nav__link">
         
   
   
@@ -3329,44 +3275,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mechanics" class="md-nav__link">
+  <a href="#block" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mechanics
+        Block
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#typical-usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Typical Usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#where-it-is-used" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where It Is Used
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Where It Is Used">
+    <nav class="md-nav" aria-label="Block">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#segment-searcher-pipeline-read-path" class="md-nav__link">
+  <a href="#key-characteristics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Segment Searcher Pipeline (read path)
+        Key Characteristics:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#block-header-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Block Header Format:
       
     </span>
   </a>
@@ -3379,10 +3314,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#guidelines-for-adding-new-pipelines" class="md-nav__link">
+  <a href="#chunk" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Guidelines for Adding New Pipelines
+        Chunk
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Chunk">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-characteristics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Characteristics:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunk-header-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chunk Header Format:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationships" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationships
       
     </span>
   </a>
@@ -3414,7 +3388,7 @@
   
   
     <li class="md-path__item">
-      <a href="../../.." class="md-path__link">
+      <a href="../.." class="md-path__link">
         
   <span class="md-ellipsis">
     Home
@@ -3432,28 +3406,10 @@
     
     
       <li class="md-path__item">
-        <a href="../../" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    Architecture
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    General
+    Architecture
   </span>
 
         </a>
@@ -3475,67 +3431,119 @@
   
 
 
-<h1 id="chain-of-filters">Chain of Filters</h1>
-<p><code>AbstractChainOfFilters</code> is the small engine that runs ordered pipelines inside the index. It accepts an immutable context object plus a mutable result carrier and iterates over a list of <code>Filter&lt;Context, Result&gt;</code> steps. Each step returns <code>true</code> to continue or <code>false</code> to short-circuit, which is how we cheaply exit when work is already finished (cache hits) or impossible (invalid plan).</p>
-<h2 id="mechanics">Mechanics</h2>
+<h1 id="data-block-and-chunk-design-in-hestiastore">Data Block and Chunk Design in HestiaStore</h1>
+<p>This document describes the structure and purpose of <code>Block</code> and <code>Chunk</code> objects in the HestiaStore storage engine.</p>
+<p><img alt="Data block and chunk class diagram" src="../images/datablock.png" /></p>
+<p>Source: <a href="../images/datablock.plantuml">datablock.plantuml</a></p>
+<hr />
+<h2 id="block">Block</h2>
+<p>A <strong>Block</strong> is the lowest-level physical unit of storage. It has a fixed size (typically a multiple of 4KB) and is directly written to disk.</p>
+<h3 id="key-characteristics">Key Characteristics:</h3>
 <ul>
-<li>The base class keeps the ordered <code>List&lt;Filter&lt;Context, Result&gt;&gt;</code> and exposes a single <code>filter(context, result)</code> method that drives the loop.</li>
-<li>Steps see the immutable context and may update the mutable result; they must return <code>false</code> once they have produced a terminal outcome so the chain stops immediately.</li>
-<li>Subclasses wrap the call to <code>filter</code> so they can prepare state/result objects and handle cleanup.</li>
-<li>Filters are regular classes that implement <code>Filter&lt;Context, Result&gt;</code> and can be reused or composed in different orders when building a pipeline.</li>
+<li><strong>Fixed Size</strong>: Determined by <code>BlockFile#getBlockSize()</code>.</li>
+<li><strong>Header</strong>: Each block includes a header with metadata (e.g. magic number, CRC32 checksum, data length).</li>
+<li><strong>Payload</strong>: The remaining portion of the block contains user data (<code>getPayloadSize()</code> returns the usable size).</li>
 </ul>
-<h2 id="typical-usage">Typical Usage</h2>
-<p>1) Define small, focused filters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ValidateInput</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">Filter</span><span class="o">&lt;</span><span class="n">RequestCtx</span><span class="p">,</span><span class="w"> </span><span class="n">ProcessingState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="nd">@Override</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">boolean</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">RequestCtx</span><span class="w"> </span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProcessingState</span><span class="w"> </span><span class="n">state</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ctx</span><span class="p">.</span><span class="na">isValid</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">            </span><span class="n">state</span><span class="p">.</span><span class="na">fail</span><span class="p">(</span><span class="s">&quot;missing fields&quot;</span><span class="p">);</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="kc">false</span><span class="p">;</span><span class="w"> </span><span class="c1">// stop the chain early</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="kc">true</span><span class="p">;</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
-</code></pre></div>
-<p>2) Compose them into a pipeline subclass that owns setup/teardown:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">final</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProcessingPipeline</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">        </span><span class="kd">extends</span><span class="w"> </span><span class="n">AbstractChainOfFilters</span><span class="o">&lt;</span><span class="n">RequestCtx</span><span class="p">,</span><span class="w"> </span><span class="n">ProcessingState</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">ProcessingPipeline</span><span class="p">(</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">            </span><span class="kd">final</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Filter</span><span class="o">&lt;</span><span class="n">RequestCtx</span><span class="p">,</span><span class="w"> </span><span class="n">ProcessingState</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">steps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="n">List</span><span class="p">.</span><span class="na">copyOf</span><span class="p">(</span><span class="n">steps</span><span class="p">));</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">ProcessingState</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="kd">final</span><span class="w"> </span><span class="n">RequestCtx</span><span class="w"> </span><span class="n">ctx</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="kd">final</span><span class="w"> </span><span class="n">ProcessingState</span><span class="w"> </span><span class="n">state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProcessingState</span><span class="p">();</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="n">filter</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">);</span><span class="w"> </span><span class="c1">// short-circuit rules apply</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">state</span><span class="p">;</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
-</code></pre></div>
-<h2 id="where-it-is-used">Where It Is Used</h2>
-<h3 id="segment-searcher-pipeline-read-path">Segment Searcher Pipeline (read path)</h3>
-<p><code>SegmentSearcherPipeline</code> (<code>src/main/java/org/hestiastore/index/segment/SegmentSearcherPipeline.java</code>) runs a three-step lookup when serving <code>SegmentSearcher#get</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">final</span><span class="w"> </span><span class="n">SegmentSearcherPipeline</span><span class="o">&lt;</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">V</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pipeline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherPipeline</span><span class="o">&lt;&gt;</span><span class="p">(</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">        </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherStepDeltaCache</span><span class="o">&lt;&gt;</span><span class="p">(</span><span class="n">valueTypeDescriptor</span><span class="p">),</span><span class="w"> </span><span class="c1">// stop if cached hit or tombstone</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherStepBloomFilter</span><span class="o">&lt;&gt;</span><span class="p">(),</span><span class="w">                   </span><span class="c1">// stop if bloom says “definitely not”</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">            </span><span class="k">new</span><span class="w"> </span><span class="n">SegmentSearcherStepIndexFile</span><span class="o">&lt;&gt;</span><span class="p">()));</span><span class="w">                   </span><span class="c1">// stop after sparse-index + on-disk read</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">pipeline</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">);</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="na">getValue</span><span class="p">();</span>
-</code></pre></div>
+<h3 id="block-header-format">Block Header Format:</h3>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4 B</td>
+<td><code>magic</code></td>
+<td>Identifier for block integrity check</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4 B</td>
+<td><code>crc32</code></td>
+<td>CRC checksum for payload verification</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4 B</td>
+<td><code>dataLength</code></td>
+<td>Actual size of data in the block</td>
+</tr>
+<tr>
+<td>12+</td>
+<td>N/A</td>
+<td><code>payload</code></td>
+<td>User data payload</td>
+</tr>
+</tbody>
+</table>
+<p>Blocks are stored and retrieved via the <code>BlockFile</code> abstraction.</p>
+<hr />
+<h2 id="chunk">Chunk</h2>
+<p>A <strong>Chunk</strong> represents a variable-sized, logical data unit stored inside a block. It is used to store optionally compressed sets of key-value entries.</p>
+<h3 id="key-characteristics_1">Key Characteristics:</h3>
 <ul>
-<li>Short-circuits: cache hit/tombstone, Bloom filter negative, or sparse-index probe missing/false-positive correction.</li>
-<li>Context/result types: <code>SegmentSearcherContext</code> carries the key plus caches/searcher; <code>SegmentSearcherResult</code> holds the found value (or <code>null</code> when absent).</li>
+<li><strong>Variable Size</strong>: Can be smaller or span multiple blocks depending on compression.</li>
+<li><strong>Stored Inside Blocks</strong>: Uses the <code>BlockFile</code> to persist data.</li>
+<li><strong>Compressible</strong>: Designed for efficient compression and decompression.</li>
+<li><strong>Encapsulated Metadata</strong>: Chunks also have a header to ensure validity and interpretability.</li>
 </ul>
-<h2 id="guidelines-for-adding-new-pipelines">Guidelines for Adding New Pipelines</h2>
+<h3 id="chunk-header-format">Chunk Header Format:</h3>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4 B</td>
+<td><code>magic</code></td>
+<td>Chunk type signature</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4 B</td>
+<td><code>crc32</code></td>
+<td>CRC of compressed payload</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4 B</td>
+<td><code>compressedLength</code></td>
+<td>Length of compressed data</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4 B</td>
+<td><code>uncompressedLength</code></td>
+<td>Length of original (uncompressed) data</td>
+</tr>
+<tr>
+<td>16+</td>
+<td>N/A</td>
+<td><code>payload</code></td>
+<td>Compressed chunk data</td>
+</tr>
+</tbody>
+</table>
+<p>Chunks are managed through the <code>ChunkFileStore</code> and written using <code>ChunkWriter</code>.</p>
+<hr />
+<h2 id="relationships">Relationships</h2>
 <ul>
-<li>Keep steps single-purpose and side-effect aware; ensure they set a final result before returning <code>false</code>.</li>
-<li>Copy the incoming steps list (<code>List.copyOf(...)</code>) to avoid accidental reordering at runtime.</li>
-<li>When resources need cleanup, wrap the <code>filter</code> invocation in a <code>try/finally</code> inside your subclass.</li>
-<li>Pair unit tests with short-circuit cases; see <code>src/test/java/org/hestiastore/index/AbstractChainOfFiltersTest.java</code> for a minimal example.</li>
+<li><code>BlockFile</code> provides the persistent storage mechanism.</li>
+<li><code>ChunkFileStore</code> maps chunk positions to blocks and provides higher-level access.</li>
+<li>CRC validation is used in both blocks and chunks to ensure data consistency and detect corruption.</li>
 </ul>
+<hr />
 
 
 
@@ -3585,10 +3593,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

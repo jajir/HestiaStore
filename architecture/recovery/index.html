@@ -10,9 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/documentation/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/recovery/">
       
       
+        <link rel="prev" href="../concurrency/">
+      
+      
+        <link rel="next" href="../package-boundaries/">
       
       
         
@@ -23,7 +27,7 @@
     
     
       
-        <title>Documentation Workflow - HestiaStore</title>
+        <title>Consistency & Recovery - HestiaStore</title>
       
     
     
@@ -74,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation-workflow" class="md-skip">
+        <a href="#consistency-recovery" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Documentation Workflow
+              Consistency & Recovery
             
           </span>
         </div>
@@ -336,11 +340,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -362,7 +368,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../" class="md-tabs__link">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -1427,6 +1433,8 @@
       
   
   
+    
+  
   
   
     
@@ -1446,26 +1454,41 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1483,13 +1506,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1508,93 +1531,8 @@
   
   
   
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_2" >
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/general/" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    General
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_2">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    General
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
-      <a href="../../architecture/general/datablock/" class="md-nav__link">
+      <a href="../datablock/" class="md-nav__link">
         
   
   
@@ -1622,7 +1560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/filters/" class="md-nav__link">
+      <a href="../filters/" class="md-nav__link">
         
   
   
@@ -1650,7 +1588,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/chain-of-filters/" class="md-nav__link">
+      <a href="../chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1678,14 +1616,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/concurrency/" class="md-nav__link">
+      <a href="../concurrency/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Access Model
+    Concurrency Model
   
 
     
@@ -1703,10 +1641,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../architecture/general/recovery/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consistency & Recovery
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1722,6 +1687,136 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope-and-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope and Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-writes-become-durable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Writes Become Durable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactional-write-primitives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactional Write Primitives
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-types-and-commit-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Types and Commit Paths
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-not-transactional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Is Not Transactional
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-model-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure Model (Examples)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consistency-check-and-repair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consistency Check and Repair
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developer-notes-opencommit-and-tmp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer Notes: open()/commit() and *.tmp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practical Guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Glossary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1734,14 +1829,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/package-boundaries/" class="md-nav__link">
+      <a href="../package-boundaries/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Package layout
+    Package Layout
   
 
     
@@ -1762,7 +1857,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/limits/" class="md-nav__link">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1790,7 +1885,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/general/glossary/" class="md-nav__link">
+      <a href="../glossary/" class="md-nav__link">
         
   
   
@@ -1811,14 +1906,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
               
                 
   
@@ -1842,20 +1929,23 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_3" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_10" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/monitoring/" class="md-nav__link ">
+            <a href="../monitoring/" class="md-nav__link ">
               
   
   
@@ -1873,14 +1963,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1899,7 +1989,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -1927,7 +2017,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -1993,20 +2083,23 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_11" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segmentindex/" class="md-nav__link ">
+            <a href="../segmentindex/" class="md-nav__link ">
               
   
   
@@ -2024,14 +2117,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2050,7 +2143,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/write-path/" class="md-nav__link">
+      <a href="../segmentindex/write-path/" class="md-nav__link">
         
   
   
@@ -2078,7 +2171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/read-path/" class="md-nav__link">
+      <a href="../segmentindex/read-path/" class="md-nav__link">
         
   
   
@@ -2106,7 +2199,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest/" class="md-nav__link">
         
   
   
@@ -2134,7 +2227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
         
   
   
@@ -2162,7 +2255,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/caching/" class="md-nav__link">
+      <a href="../segmentindex/caching/" class="md-nav__link">
         
   
   
@@ -2190,7 +2283,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../segmentindex/cache-lru/" class="md-nav__link">
         
   
   
@@ -2218,7 +2311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/performance/" class="md-nav__link">
+      <a href="../segmentindex/performance/" class="md-nav__link">
         
   
   
@@ -2246,7 +2339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../segmentindex/metrics-snapshot/" class="md-nav__link">
         
   
   
@@ -2274,7 +2367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../segmentindex/segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -2330,20 +2423,23 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/segment/" class="md-nav__link ">
+            <a href="../segment/" class="md-nav__link ">
               
   
   
@@ -2361,14 +2457,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2387,7 +2483,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment/" class="md-nav__link">
+      <a href="../segment/segment/" class="md-nav__link">
         
   
   
@@ -2415,7 +2511,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/on-disk-layout/" class="md-nav__link">
+      <a href="../segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2443,7 +2539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/arch-index/" class="md-nav__link">
+      <a href="../segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2471,7 +2567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/segment/segment-concurrency/" class="md-nav__link">
+      <a href="../segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2521,20 +2617,23 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_13" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../architecture/registry/" class="md-nav__link ">
+            <a href="../registry/" class="md-nav__link ">
               
   
   
@@ -2552,14 +2651,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_6" id="__nav_6_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2578,7 +2677,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/registry/registry/" class="md-nav__link">
+      <a href="../registry/registry/" class="md-nav__link">
         
   
   
@@ -2678,7 +2777,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../development/" class="md-nav__link ">
               
   
   
@@ -2806,7 +2905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -2834,7 +2933,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code-quality-charter/" class="md-nav__link">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
         
   
   
@@ -2862,7 +2961,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quality-reporting/" class="md-nav__link">
+      <a href="../../development/quality-reporting/" class="md-nav__link">
         
   
   
@@ -2890,7 +2989,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../documentation-guidelines/" class="md-nav__link">
+      <a href="../../development/documentation-guidelines/" class="md-nav__link">
         
   
   
@@ -2918,7 +3017,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -2946,7 +3045,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segment-api/" class="md-nav__link">
+      <a href="../../development/segment-api/" class="md-nav__link">
         
   
   
@@ -2974,7 +3073,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiler-stacktrace/" class="md-nav__link">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -3002,7 +3101,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../compatibility-matrix/" class="md-nav__link">
+      <a href="../../development/compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -3030,7 +3129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../../development/upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -3058,7 +3157,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-quality-gates/" class="md-nav__link">
+      <a href="../../development/rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -3086,7 +3185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../../development/rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -3114,7 +3213,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../wal-replication-fencing-design/" class="md-nav__link">
+      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
         
   
   
@@ -3190,6 +3289,124 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope-and-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope and Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-writes-become-durable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where Writes Become Durable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transactional-write-primitives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transactional Write Primitives
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-types-and-commit-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Types and Commit Paths
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-not-transactional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Is Not Transactional
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-model-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure Model (Examples)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#consistency-check-and-repair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Consistency Check and Repair
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developer-notes-opencommit-and-tmp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer Notes: open()/commit() and *.tmp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Practical Guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Glossary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3206,6 +3423,46 @@
   
 
 
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Architecture
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
               
               <article class="md-content__inner md-typeset">
                 
@@ -3216,10 +3473,109 @@
   
 
 
-<h1 id="documentation-workflow">Documentation Workflow</h1>
-<p>This page moved to the canonical <a href="../documentation-guidelines/">Documentation Guide</a>.</p>
-<p>Use that page for structure, writing rules, validation steps, and publication
-workflow.</p>
+<h1 id="consistency-recovery">Consistency &amp; Recovery</h1>
+<p>This page explains HestiaStore’s crash safety model and commit semantics. WAL is optional and disabled by default (<code>Wal.EMPTY</code>). Without WAL, durability is driven by explicit flushes and by temp-file + atomic-rename commit paths. With WAL enabled, writes are appended before apply and startup replays WAL records above checkpoint (with invalid-tail truncation or fail-fast based on policy).</p>
+<h2 id="scope-and-guarantees">Scope and Guarantees</h2>
+<ul>
+<li>WAL-disabled mode: no automatic WAL replay. Durability boundary is <code>flushAndWait()</code> (or close).</li>
+<li>WAL-enabled mode: startup can repair invalid WAL tail and replay durable records above checkpoint.</li>
+<li>No multi-key ACID transactions: operations are per-key, and there is no cross-key atomic batch commit.</li>
+<li>Durability boundary: calling <code>flushAndWait()</code> (or closing the index) persists all writes that happened before the call. During <code>close()</code>, the index enters <code>CLOSING</code> while pending maintenance and WAL/map flush work are finalized. <code>flush()</code> only schedules maintenance; wait for completion if you need a durability guarantee.</li>
+<li>Atomic file replacement: data files are written to <code>*.tmp</code> and made visible via <code>rename</code> only after the writer is closed and the transaction is committed. A crash cannot produce partially written visible files.</li>
+</ul>
+<h2 id="where-writes-become-durable">Where Writes Become Durable</h2>
+<ul>
+<li>Index‑level buffer → disk: <code>SegmentIndex.flush()</code> schedules draining of the in‑memory unique buffer into segment delta cache files. <code>flushAndWait()</code> (and close) wait for completion.</li>
+<li>Segment merge/compaction: when a segment compacts, the new main SST, sparse index, and Bloom filter are built via transactional writers; on commit they atomically replace the old ones.</li>
+<li>Key→segment map (<code>index.map</code>): persisted via a transactional sorted data writer during flush or when updated.</li>
+</ul>
+<p>Relevant code:
+<code>segmentindex/core/SegmentIndexImpl#flush()</code>,
+<code>segmentindex/partition/PartitionRuntime</code>,
+<code>segmentindex/mapping/KeyToSegmentMap#optionalyFlush()</code>.</p>
+<h2 id="transactional-write-primitives">Transactional Write Primitives</h2>
+<p>All main data files follow the same pattern: write to a temporary file, then atomically rename on <code>commit()</code>.</p>
+<ul>
+<li>Guarded transactions: <code>GuardedWriteTransaction</code> requires the resource to be closed before <code>commit()</code> and prevents double‑commit.</li>
+<li>Single‑call helper: <code>WriteTransaction.execute(writer -&gt; { … })</code> does open → write → close → commit.</li>
+</ul>
+<p>Key classes:
+- <code>unsorteddatafile/UnsortedDataFileWriterTx</code> → <code>rename(temp, final)</code> on commit
+- <code>sorteddatafile/SortedDataFileWriterTx</code> → <code>rename(temp, final)</code> on commit
+- <code>datablockfile/DataBlockWriterTx</code> → used by chunk store writers
+- <code>chunkstore/ChunkStoreWriterTx</code> and <code>chunkentryfile/ChunkEntryFileWriterTx</code> → layered over <code>DataBlockWriterTx</code>
+- <code>bloomfilter/BloomFilterWriterTx</code> → writes new filter and swaps it in on commit</p>
+<h2 id="file-types-and-commit-paths">File Types and Commit Paths</h2>
+<ul>
+<li>Segment delta cache files</li>
+<li>Writer: <code>segment/SegmentDeltaCacheWriter</code></li>
+<li>Mechanism: <code>SortedDataFileWriterTx.execute(…)</code></li>
+<li>
+<p>Naming: manifest counter assigns <code>vNN-delta-NNNN.cache</code> before write; if a crash happens before commit, the reader treats missing files as empty, so boot remains safe.</p>
+</li>
+<li>
+<p>Main SST (chunked) + sparse index ("scarce index")</p>
+</li>
+<li>Writers: <code>segment/SegmentFullWriterTx</code> and <code>segment/SegmentFullWriter</code></li>
+<li>Internals: <code>ChunkEntryFileWriterTx</code> for SST, <code>ScarceIndexWriterTx</code> for the sparse index</li>
+<li>
+<p>Bloom filter: <code>BloomFilterWriterTx</code> builds a new filter and commits (rename) before the SST and sparse index are committed. This ordering avoids false negatives on restart.</p>
+</li>
+<li>
+<p>Bloom filter</p>
+</li>
+<li>
+<p>Writes to a temporary file via <code>BloomFilterWriterTx.open()</code> and commits with <code>rename</code>; also updates the in‑memory hash snapshot on commit.</p>
+</li>
+<li>
+<p>Key→segment map (<code>index.map</code>)</p>
+</li>
+<li>Writer: <code>SortedDataFileWriterTx.execute(…)</code> inside <code>KeyToSegmentMap.optionalyFlush()</code></li>
+<li>Ensures the map is replaced atomically.</li>
+</ul>
+<h2 id="what-is-not-transactional">What Is Not Transactional</h2>
+<ul>
+<li>Segment manifest metadata (counts and delta‑file numbering) is persisted via an overwrite (<code>Directory.Access.OVERWRITE</code>). It is updated after data files are committed, and is not critical to data correctness. If a crash corrupts or desynchronizes this metadata, the reader logic remains safe (e.g., missing delta file names yield empty reads) and you can re‑establish consistency via the checker below.</li>
+</ul>
+<p>Code: <code>properties/PropertyStoreImpl</code> and <code>SegmentPropertiesManager</code>.</p>
+<h2 id="failure-model-examples">Failure Model (Examples)</h2>
+<ul>
+<li>Crash while writing a delta file before commit: only <code>*.tmp</code> exists; it is ignored on boot; prior state remains valid.</li>
+<li>Crash after committing a Bloom filter but before committing SST/sparse index: Bloom filter is ahead of data, which is safe (may increase positives but never produce false negatives).</li>
+<li>Crash after committing SST/sparse index but before properties update: data is fully committed; metadata may lag but does not affect correctness.</li>
+</ul>
+<h2 id="consistency-check-and-repair">Consistency Check and Repair</h2>
+<ul>
+<li>Run <code>SegmentIndex.checkAndRepairConsistency()</code> after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.</li>
+</ul>
+<p>Key classes: <code>segmentindex/IndexConsistencyChecker</code>, <code>segment/SegmentConsistencyChecker</code>.</p>
+<h2 id="developer-notes-opencommit-and-tmp">Developer Notes: <code>open()</code>/<code>commit()</code> and <code>*.tmp</code></h2>
+<ul>
+<li><code>open()</code> returns a writer bound to a temporary file (typically with a <code>.tmp</code> suffix). You must close the writer before calling <code>commit()</code>.</li>
+<li><code>commit()</code> performs an atomic <code>rename(temp, final)</code> so either the old file or the new file is visible on disk.</li>
+<li>Prefer <code>execute(writer -&gt; {…})</code> to ensure the correct order: open → write → close → commit.</li>
+</ul>
+<p>Examples in code:
+- <code>sorteddatafile/SortedDataFileWriterTx#open()</code> → <code>commit()</code> renames temp to final
+- <code>unsorteddatafile/UnsortedDataFileWriterTx#open()</code> → <code>commit()</code> renames temp to final
+- <code>datablockfile/DataBlockWriterTx#open()</code> → <code>commit()</code> renames temp to final
+- <code>bloomfilter/BloomFilterWriterTx#open()</code> → <code>commit()</code> renames temp to final and swaps hash</p>
+<h2 id="practical-guidance">Practical Guidance</h2>
+<ul>
+<li>If WAL is disabled, call <code>flushAndWait()</code> on periodic boundaries and always before shutdown to persist in‑memory writes.</li>
+<li>If another thread observes the index during shutdown, expect <code>getState()</code> /
+  <code>metricsSnapshot().getState()</code> to report <code>CLOSING</code> until the final <code>CLOSED</code>
+  transition.</li>
+<li>If WAL is enabled, configure durability mode (<code>ASYNC</code>, <code>GROUP_SYNC</code>, <code>SYNC</code>) based on loss tolerance and latency targets.</li>
+<li>After a crash, reopen the index; WAL-enabled indexes recover from WAL first, then <code>checkAndRepairConsistency()</code> can be run as an additional integrity check.</li>
+</ul>
+<h2 id="related-glossary">Related Glossary</h2>
+<ul>
+<li><a href="../glossary/#flush">Flush</a></li>
+<li><a href="../glossary/#write-transaction">Write Transaction</a></li>
+<li><a href="../glossary/#compaction">Compaction</a></li>
+<li><a href="../glossary/#consistency-checker">Consistency Checker</a></li>
+</ul>
 
 
 

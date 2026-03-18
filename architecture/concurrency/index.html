@@ -10,31 +10,31 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/general/limits/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/concurrency/">
       
       
-        <link rel="prev" href="../package-boundaries/">
+        <link rel="prev" href="../chain-of-filters/">
       
       
-        <link rel="next" href="../glossary/">
+        <link rel="next" href="../recovery/">
       
       
         
       
       
-      <link rel="icon" href="../../../favicon.ico">
+      <link rel="icon" href="../../favicon.ico">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
-        <title>Limitations & Trade-offs - HestiaStore</title>
+        <title>Concurrency Model - HestiaStore</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,7 +53,7 @@
       
     
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#limitations-tradeoffs" class="md-skip">
+        <a href="#concurrency-model" class="md-skip">
           Skip to content
         </a>
       
@@ -94,9 +94,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-header__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Limitations & Trade-offs
+              Concurrency Model
             
           </span>
         </div>
@@ -235,7 +235,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -256,7 +256,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../why-hestiastore/" class="md-tabs__link">
+        <a href="../../why-hestiastore/" class="md-tabs__link">
           
   
   
@@ -278,7 +278,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../how-to-use/" class="md-tabs__link">
+        <a href="../../how-to-use/" class="md-tabs__link">
           
   
   
@@ -300,7 +300,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../configuration/" class="md-tabs__link">
+        <a href="../../configuration/" class="md-tabs__link">
           
   
   
@@ -322,7 +322,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../operations/" class="md-tabs__link">
+        <a href="../../operations/" class="md-tabs__link">
           
   
   
@@ -346,7 +346,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -368,7 +368,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../development/" class="md-tabs__link">
+        <a href="../../development/" class="md-tabs__link">
           
   
   
@@ -410,9 +410,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
+    <a href="../.." title="HestiaStore" class="md-nav__button md-logo" aria-label="HestiaStore" data-md-component="logo">
       
-  <img src="../../../images/logo-square.png" alt="logo">
+  <img src="../../images/logo-square.png" alt="logo">
 
     </a>
     HestiaStore
@@ -439,7 +439,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -499,7 +499,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../why-hestiastore/" class="md-nav__link ">
+            <a href="../../why-hestiastore/" class="md-nav__link ">
               
   
   
@@ -543,7 +543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/alternatives/" class="md-nav__link">
+      <a href="../../why-hestiastore/alternatives/" class="md-nav__link">
         
   
   
@@ -571,7 +571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/quality/" class="md-nav__link">
+      <a href="../../why-hestiastore/quality/" class="md-nav__link">
         
   
   
@@ -599,7 +599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY/" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
@@ -691,7 +691,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/benchmarks/" class="md-nav__link">
+      <a href="../../why-hestiastore/benchmarks/" class="md-nav__link">
         
   
   
@@ -719,7 +719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/out-write/" class="md-nav__link">
+      <a href="../../why-hestiastore/out-write/" class="md-nav__link">
         
   
   
@@ -747,7 +747,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/out-read/" class="md-nav__link">
+      <a href="../../why-hestiastore/out-read/" class="md-nav__link">
         
   
   
@@ -775,7 +775,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../why-hestiastore/out-sequential/" class="md-nav__link">
+      <a href="../../why-hestiastore/out-sequential/" class="md-nav__link">
         
   
   
@@ -851,7 +851,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../how-to-use/" class="md-nav__link ">
+            <a href="../../how-to-use/" class="md-nav__link ">
               
   
   
@@ -895,7 +895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../how-to-use/install/" class="md-nav__link">
+      <a href="../../how-to-use/install/" class="md-nav__link">
         
   
   
@@ -923,7 +923,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../how-to-use/quick-start/" class="md-nav__link">
+      <a href="../../how-to-use/quick-start/" class="md-nav__link">
         
   
   
@@ -951,7 +951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../how-to-use/troubleshooting/" class="md-nav__link">
+      <a href="../../how-to-use/troubleshooting/" class="md-nav__link">
         
   
   
@@ -1047,7 +1047,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../configuration/" class="md-nav__link ">
+            <a href="../../configuration/" class="md-nav__link ">
               
   
   
@@ -1091,7 +1091,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/filters/" class="md-nav__link">
+      <a href="../../configuration/filters/" class="md-nav__link">
         
   
   
@@ -1119,7 +1119,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/data-types/" class="md-nav__link">
+      <a href="../../configuration/data-types/" class="md-nav__link">
         
   
   
@@ -1147,7 +1147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/logging/" class="md-nav__link">
+      <a href="../../configuration/logging/" class="md-nav__link">
         
   
   
@@ -1175,7 +1175,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../configuration/monitoring-console/" class="md-nav__link">
+      <a href="../../configuration/monitoring-console/" class="md-nav__link">
         
   
   
@@ -1245,7 +1245,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../operations/" class="md-nav__link ">
+            <a href="../../operations/" class="md-nav__link ">
               
   
   
@@ -1289,7 +1289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/wal/" class="md-nav__link">
+      <a href="../../operations/wal/" class="md-nav__link">
         
   
   
@@ -1317,7 +1317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/monitoring/" class="md-nav__link">
+      <a href="../../operations/monitoring/" class="md-nav__link">
         
   
   
@@ -1345,7 +1345,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/tuning/" class="md-nav__link">
+      <a href="../../operations/tuning/" class="md-nav__link">
         
   
   
@@ -1373,7 +1373,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/backup-restore/" class="md-nav__link">
+      <a href="../../operations/backup-restore/" class="md-nav__link">
         
   
   
@@ -1401,7 +1401,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../operations/wal-canary-runbook/" class="md-nav__link">
+      <a href="../../operations/wal-canary-runbook/" class="md-nav__link">
         
   
   
@@ -1454,6 +1454,20 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1474,7 +1488,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1504,94 +1518,6 @@
             
   
     Architecture
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-          
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" checked>
-        
-          
-          <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
-              
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    General
-  
-
-    
-  </span>
-  
-  
-
-            </a>
-            
-              
-              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="">
-                <span class="md-nav__icon md-icon"></span>
-              </label>
-            
-          </div>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6_2">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    General
   
 
           </label>
@@ -1687,17 +1613,44 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../concurrency/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concurrency Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    Access Model
+    Concurrency Model
   
 
     
@@ -1706,6 +1659,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrency-invariants-target-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency Invariants (Target Design)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shared-state-that-must-be-protected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared State That Must Be Protected
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ordering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implications
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1753,7 +1792,7 @@
   <span class="md-ellipsis">
     
   
-    Package layout
+    Package Layout
   
 
     
@@ -1771,37 +1810,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Limitations & Trade-offs
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../limits/" class="md-nav__link">
         
   
   
@@ -1817,136 +1829,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#durability-and-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Durability and Recovery
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#concurrency" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Concurrency
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#size-and-addressing-limits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Size and Addressing Limits
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#configuration-immutability" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration Immutability
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#data-model-and-semantics" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Data Model and Semantics
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#security-posture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Security Posture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workloads-that-fit-well" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Workloads That Fit Well
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#antipatterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Anti‑patterns
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mitigations-and-best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mitigations and Best Practices
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related Docs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1975,14 +1857,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -2023,11 +1897,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_3" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_10" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../monitoring/" class="md-nav__link ">
+            <a href="../monitoring/" class="md-nav__link ">
               
   
   
@@ -2045,14 +1919,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_3" id="__nav_6_3_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2071,7 +1945,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -2099,7 +1973,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -2177,11 +2051,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_4" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_11" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../segmentindex/" class="md-nav__link ">
+            <a href="../segmentindex/" class="md-nav__link ">
               
   
   
@@ -2199,14 +2073,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_4" id="__nav_6_4_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2225,7 +2099,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/write-path/" class="md-nav__link">
+      <a href="../segmentindex/write-path/" class="md-nav__link">
         
   
   
@@ -2253,7 +2127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/read-path/" class="md-nav__link">
+      <a href="../segmentindex/read-path/" class="md-nav__link">
         
   
   
@@ -2281,7 +2155,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/range-partitioned-ingest/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest/" class="md-nav__link">
         
   
   
@@ -2309,7 +2183,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+      <a href="../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
         
   
   
@@ -2337,7 +2211,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/caching/" class="md-nav__link">
+      <a href="../segmentindex/caching/" class="md-nav__link">
         
   
   
@@ -2365,7 +2239,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../segmentindex/cache-lru/" class="md-nav__link">
         
   
   
@@ -2393,7 +2267,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/performance/" class="md-nav__link">
+      <a href="../segmentindex/performance/" class="md-nav__link">
         
   
   
@@ -2421,7 +2295,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../segmentindex/metrics-snapshot/" class="md-nav__link">
         
   
   
@@ -2449,7 +2323,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../segmentindex/segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -2517,11 +2391,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../segment/" class="md-nav__link ">
+            <a href="../segment/" class="md-nav__link ">
               
   
   
@@ -2539,14 +2413,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_5" id="__nav_6_5_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2565,7 +2439,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/segment/" class="md-nav__link">
+      <a href="../segment/segment/" class="md-nav__link">
         
   
   
@@ -2593,7 +2467,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/on-disk-layout/" class="md-nav__link">
+      <a href="../segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2621,7 +2495,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/arch-index/" class="md-nav__link">
+      <a href="../segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2649,7 +2523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../segment/segment-concurrency/" class="md-nav__link">
+      <a href="../segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2711,11 +2585,11 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_13" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../registry/" class="md-nav__link ">
+            <a href="../registry/" class="md-nav__link ">
               
   
   
@@ -2733,14 +2607,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_6" id="__nav_6_6_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_13">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2759,7 +2633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../registry/registry/" class="md-nav__link">
+      <a href="../registry/registry/" class="md-nav__link">
         
   
   
@@ -2859,7 +2733,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../../development/" class="md-nav__link ">
+            <a href="../../development/" class="md-nav__link ">
               
   
   
@@ -2903,7 +2777,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
         
   
   
@@ -2931,7 +2805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CODE_OF_CONDUCT/" class="md-nav__link">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
         
   
   
@@ -2959,7 +2833,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../CHANGELOG/" class="md-nav__link">
+      <a href="../../CHANGELOG/" class="md-nav__link">
         
   
   
@@ -2987,7 +2861,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/release/" class="md-nav__link">
+      <a href="../../development/release/" class="md-nav__link">
         
   
   
@@ -3015,7 +2889,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/code-quality-charter/" class="md-nav__link">
+      <a href="../../development/code-quality-charter/" class="md-nav__link">
         
   
   
@@ -3043,7 +2917,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/quality-reporting/" class="md-nav__link">
+      <a href="../../development/quality-reporting/" class="md-nav__link">
         
   
   
@@ -3071,7 +2945,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/documentation-guidelines/" class="md-nav__link">
+      <a href="../../development/documentation-guidelines/" class="md-nav__link">
         
   
   
@@ -3099,7 +2973,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/guides/" class="md-nav__link">
+      <a href="../../development/guides/" class="md-nav__link">
         
   
   
@@ -3127,7 +3001,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/segment-api/" class="md-nav__link">
+      <a href="../../development/segment-api/" class="md-nav__link">
         
   
   
@@ -3155,7 +3029,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/profiler-stacktrace/" class="md-nav__link">
+      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -3183,7 +3057,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/compatibility-matrix/" class="md-nav__link">
+      <a href="../../development/compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -3211,7 +3085,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../../development/upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -3239,7 +3113,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/rollout-quality-gates/" class="md-nav__link">
+      <a href="../../development/rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -3267,7 +3141,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../../development/rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -3295,7 +3169,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../development/wal-replication-fencing-design/" class="md-nav__link">
+      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
         
   
   
@@ -3323,7 +3197,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../refactor-backlog/" class="md-nav__link">
+      <a href="../../refactor-backlog/" class="md-nav__link">
         
   
   
@@ -3378,10 +3252,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#durability-and-recovery" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Durability and Recovery
+        Overview
       
     </span>
   </a>
@@ -3389,10 +3263,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#concurrency" class="md-nav__link">
+  <a href="#concurrency-invariants-target-design" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Concurrency
+        Concurrency Invariants (Target Design)
       
     </span>
   </a>
@@ -3400,10 +3274,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#size-and-addressing-limits" class="md-nav__link">
+  <a href="#shared-state-that-must-be-protected" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Size and Addressing Limits
+        Shared State That Must Be Protected
       
     </span>
   </a>
@@ -3411,10 +3285,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-immutability" class="md-nav__link">
+  <a href="#ordering" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration Immutability
+        Ordering
       
     </span>
   </a>
@@ -3422,10 +3296,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-model-and-semantics" class="md-nav__link">
+  <a href="#threads" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Data Model and Semantics
+        Threads
       
     </span>
   </a>
@@ -3433,54 +3307,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#security-posture" class="md-nav__link">
+  <a href="#implications" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security Posture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workloads-that-fit-well" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Workloads That Fit Well
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#antipatterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Anti‑patterns
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mitigations-and-best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mitigations and Best Practices
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related-docs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Related Docs
+        Implications
       
     </span>
   </a>
@@ -3512,7 +3342,7 @@
   
   
     <li class="md-path__item">
-      <a href="../../.." class="md-path__link">
+      <a href="../.." class="md-path__link">
         
   <span class="md-ellipsis">
     Home
@@ -3530,28 +3360,10 @@
     
     
       <li class="md-path__item">
-        <a href="../../" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    Architecture
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    General
+    Architecture
   </span>
 
         </a>
@@ -3573,72 +3385,60 @@
   
 
 
-<h1 id="limitations-tradeoffs">Limitations &amp; Trade‑offs</h1>
-<p>This page lists the most important constraints and design trade‑offs so you can plan deployments and avoid surprises. Each item links to the code or related docs for verification.</p>
-<h2 id="durability-and-recovery">Durability and Recovery</h2>
+<h1 id="concurrency-model">Concurrency Model</h1>
+<h2 id="overview">Overview</h2>
+<p>SegmentIndex is thread-safe and does not use a global read/write lock. Sync
+operations execute on the caller thread; concurrency is controlled by
+per-segment state machines and minimal shared-structure locks (mapping,
+registry).</p>
+<p>Segment-level concurrency does not require external locks. <code>SegmentImpl</code>
+enforces its own lock-free admission gate (see
+<a href="../segment/segment-concurrency/">Segment Concurrency</a>).</p>
+<h2 id="concurrency-invariants-target-design">Concurrency Invariants (Target Design)</h2>
+<p>These invariants must hold for the current per-segment concurrency design:</p>
 <ul>
-<li>WAL is optional and disabled by default (<code>Wal.EMPTY</code>). With WAL disabled, durability boundaries are explicit <code>flushAndWait()</code> and <code>close()</code>. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.</li>
-<li>Per‑file atomicity only: Writers use temp files + atomic rename; groups of files (e.g., SST + scarce index + bloom) commit in a safe order but not as a single atomic unit. Readers remain consistent because old files stay in place until each rename. See SegmentFullWriterTx, BloomFilterWriterTx.</li>
-<li>Filesystem requirement: Crash safety relies on same‑directory atomic <code>rename</code>. Use local filesystems; be cautious with network filesystems that may not guarantee strict atomicity.</li>
-<li>Stale lock files: A crash can leave <code>.lock</code> behind, preventing open until removed. See <code>directory/FsFileLock.java</code> and IndexState*. Remove the file only when certain no process still uses the directory.</li>
+<li><strong>Mapping integrity:</strong> the key→segment map must always point to an existing
+  segment; updates are atomic and visible to readers.</li>
+<li><strong>Split atomicity:</strong> a segment split must either be fully applied (new
+  segments + updated map) or not applied at all.</li>
+<li><strong>Cache visibility:</strong> reads observe the latest cached writes (read-after-write
+  visibility) and flushes operate on a consistent snapshot.</li>
+<li><strong>Lifecycle linearity:</strong> once close starts, no new operations are accepted;
+  operations in flight either complete before close returns or fail deterministically.</li>
+<li><strong>No use-after-close:</strong> evicted/closed segment data must not be accessed by
+  concurrent readers.</li>
+<li><strong>Stats consistency:</strong> counters reflect all completed operations (exact or
+  eventually consistent by design).</li>
 </ul>
-<h2 id="concurrency">Concurrency</h2>
+<h2 id="shared-state-that-must-be-protected">Shared State That Must Be Protected</h2>
+<p>These structures are shared across threads and require synchronization:</p>
 <ul>
-<li>SegmentIndex is thread‑safe and not globally serialized; heavy concurrent writes can increase contention in shared caches and per-segment state machines.</li>
-<li>No serialized adapter is provided; enforce strict ordering externally if needed.</li>
-<li>Optimistic iteration: Segment iterators may stop early if a write bumps the version during a scan (by design). Re‑open the iterator to continue. See <code>EntryIteratorWithLock</code>.</li>
+<li><code>UniqueCache</code> (index write buffer)</li>
+<li><code>KeyToSegmentMap</code> (key→segment map)</li>
+<li><code>SegmentRegistry</code> and <code>SegmentDataCache</code> (segment lookup + cached data)</li>
+<li><code>BackgroundSplitCoordinator</code> + <code>PartitionStableSplitCoordinator</code> (range topology updates)</li>
+<li><code>IndexState</code> (open/close state) and <code>Stats</code> (counters)</li>
+<li>Any <code>TypeDescriptor</code> implementation with mutable internal state</li>
 </ul>
-<h2 id="size-and-addressing-limits">Size and Addressing Limits</h2>
+<h2 id="ordering">Ordering</h2>
 <ul>
-<li>Per‑segment SST size bounded by 32‑bit positions: Sparse index stores an <code>Integer</code> position and readers cast to <code>int</code> (<code>ChunkEntryFile#openIteratorAtPosition((int)position)</code>). Keep a single <code>vNN-index.sst</code> file below ~2 GiB. Use multiple segments to scale. Code: <code>chunkentryfile/ChunkEntryFile.java</code>, <code>scarceindex/*</code>.</li>
-<li>Data‑block and cell sizing constraints: <code>diskIoBufferSize</code> must be divisible by 1024; chunk cell size is fixed at 16 bytes. Payloads pad to whole cells (space overhead). Code: <code>Vldtn#requireIoBufferSize</code>, <code>chunkstore/CellPosition.java</code>.</li>
+<li>With multiple threads, <strong>operation order is not guaranteed</strong>.</li>
+<li>If strict ordering is required, apply external synchronization at the caller
+  level.</li>
+<li>Across segments, operations can complete in any order.</li>
 </ul>
-<h2 id="configuration-immutability">Configuration Immutability</h2>
-<p>Once an index is created, several properties cannot be changed when reopening with a config:</p>
+<h2 id="threads">Threads</h2>
 <ul>
-<li>Type descriptors (key/value serialization)</li>
-<li>Sparse index cadence (<code>maxNumberOfKeysInSegmentChunk</code>)</li>
-<li>Segment sizing limits (e.g., <code>maxNumberOfKeysInSegment</code>)</li>
-<li>Bloom filter sizing and hash functions</li>
-<li>Encoding/decoding filter lists (order and membership)</li>
+<li>Sync operations run on caller threads.</li>
+<li>Async operations run on background threads via <code>IndexAsyncAdapter</code>.</li>
+<li>Segment maintenance runs on the segment-index maintenance executor.</li>
 </ul>
-<p>Attempts to change these raise a validation error in <code>IndexConfigurationManager</code>. To change them, create a new index and bulk-copy data (read + write) or export/import. See <code>segmentindex/IndexConfigurationManager.java</code>.</p>
-<h2 id="data-model-and-semantics">Data Model and Semantics</h2>
+<h2 id="implications">Implications</h2>
 <ul>
-<li>Strictly increasing keys: All on‑disk structures assume ascending order; compaction and consistency checks enforce it. Incorrect comparators or inconsistent key ordering will fail. Code: <code>segment/SegmentConsistencyChecker.java</code>.</li>
-<li>Tombstones: Deletes are tombstones until compaction merges and drops them. Heavy delete workloads without compaction may grow delta files and increase read work.</li>
-<li>No multi‑key transactions: Writes are per‑key; there is no cross‑key atomic batch. Use application‑level coordination if needed.</li>
-</ul>
-<h2 id="security-posture">Security Posture</h2>
-<ul>
-<li>XOR filter is not encryption: <code>ChunkFilterXorEncrypt</code> provides reversible obfuscation only; do not use as security. For encryption at rest, place HestiaStore on an encrypted volume or add a real crypto layer above. See <code>chunkstore/ChunkFilterXor*</code>.</li>
-<li>No authentication/authorization: HestiaStore is an embedded library and relies on your process/container isolation.</li>
-</ul>
-<h2 id="workloads-that-fit-well">Workloads That Fit Well</h2>
-<ul>
-<li>High‑throughput append/update workloads where read‑after‑write visibility matters and periodic flush/compaction is acceptable.</li>
-<li>Point lookups and ordered scans with predictable latency (Bloom + sparse index bound I/O).</li>
-</ul>
-<h2 id="antipatterns">Anti‑patterns</h2>
-<ul>
-<li>Expecting WAL recovery semantics without enabling WAL via <code>withWal(...)</code>.</li>
-<li>Expecting <code>ASYNC</code> WAL mode to preserve every acknowledged write after OS/power loss.</li>
-<li>Very large single segments (&gt;2 GiB <code>vNN-index.sst</code>); split into more segments.</li>
-<li>Heavy mixed concurrent reads/writes with strict low‑latency tail in synchronized mode (coarse locking).</li>
-</ul>
-<h2 id="mitigations-and-best-practices">Mitigations and Best Practices</h2>
-<ul>
-<li>Plan periodic <code>flushAndWait()</code> and <code>compact()</code> windows; after crashes run consistency check and optionally compact.</li>
-<li>Size Bloom filters for your negative‑lookup rate; monitor <code>BloomFilterStats</code>.</li>
-<li>Tune <code>maxNumberOfKeysInSegmentChunk</code> to balance read scan length vs. sparse index size.</li>
-<li>Use multiple segments to stay under per‑segment limits and to improve compaction parallelism (future).</li>
-</ul>
-<h2 id="related-docs">Related Docs</h2>
-<ul>
-<li>Recovery: <code>architecture/general/recovery.md</code></li>
-<li>Concurrency: <code>architecture/general/concurrency.md</code></li>
-<li>Filters &amp; Integrity: <code>architecture/general/filters.md</code></li>
-<li>On‑Disk Layout: <code>architecture/segment/on-disk-layout.md</code></li>
+<li>Write/write and read/write conflicts are handled by per-segment state
+  machines and shared-structure locks, not a global lock.</li>
+<li>Read-heavy workloads benefit from parallelism.</li>
+<li>Callers should not rely on global ordering across keys.</li>
 </ul>
 
 
@@ -3689,10 +3489,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.indexes", "toc.follow", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

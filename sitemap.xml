@@ -29,47 +29,35 @@
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/chain-of-filters/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/chain-of-filters/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/concurrency/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/concurrency/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/datablock/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/datablock/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/filters/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/filters/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/glossary/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/glossary/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/limits/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/limits/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/package-boundaries/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/management-api/</loc>
-         <lastmod>2026-03-18</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/monitoring-bridge/</loc>
-         <lastmod>2026-03-18</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/package-boundaries/</loc>
-         <lastmod>2026-03-18</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/architecture/general/recovery/</loc>
+         <loc>https://jajir.github.io/HestiaStore/architecture/recovery/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
@@ -186,10 +174,6 @@
     </url>
     <url>
          <loc>https://jajir.github.io/HestiaStore/development/documentation-guidelines/</loc>
-         <lastmod>2026-03-18</lastmod>
-    </url>
-    <url>
-         <loc>https://jajir.github.io/HestiaStore/development/documentation/</loc>
          <lastmod>2026-03-18</lastmod>
     </url>
     <url>
