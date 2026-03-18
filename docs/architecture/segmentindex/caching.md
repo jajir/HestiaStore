@@ -138,9 +138,9 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
 ## Related Glossary
 
-- [UniqueCache](../general/glossary.md#uniquecache)
-- [Delta Cache](../general/glossary.md#delta-cache)
-- [SegmentData](../general/glossary.md#segmentdata-and-provider)
-- [Bloom Filter](../general/glossary.md#bloom-filter)
-- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
-- [Key-to-Segment Map](../general/glossary.md#key-to-segment-map)
+- [UniqueCache](../glossary.md#uniquecache)
+- [Delta Cache](../glossary.md#delta-cache)
+- [SegmentData](../glossary.md#segmentdata-and-provider)
+- [Bloom Filter](../glossary.md#bloom-filter)
+- [Sparse Index](../glossary.md#sparse-index-scarce-index)
+- [Key-to-Segment Map](../glossary.md#key-to-segment-map)
