@@ -379,7 +379,7 @@ class SegmentIndexAsyncMaintenanceTest {
     @SuppressWarnings("unchecked")
     private Segment<Integer, String> mockBlockedDrainSegment(
             final SegmentId segmentId, final CountDownLatch started,
-            final CountDownLatch release) throws Exception {
+            final CountDownLatch release) {
         final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                 SegmentState.READY);
         final Segment<Integer, String> blockedSegment = mock(Segment.class);

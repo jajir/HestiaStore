@@ -174,7 +174,7 @@ class SegmentRegistryImplTest {
         awaitCondition(() -> List.of(second, third).stream().anyMatch(
                 segment -> segment.getState() == SegmentState.CLOSED), 1500L);
 
-        assertTrue(first.getState() != SegmentState.CLOSED,
+        assertNotSame(SegmentState.CLOSED, first.getState(),
                 "Pinned segment should stay loaded while peers are evicted");
         assertTrue(List.of(second, third).stream().anyMatch(
                 segment -> segment.getState() == SegmentState.CLOSED));
