@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
@@ -31,12 +29,6 @@ final class IndexOperationTracker {
         } finally {
             decrementSyncOperations();
         }
-    }
-
-    <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
-        final Supplier<T> nonNullTask = Vldtn.requireNonNull(task, "task");
-        return CompletableFuture.supplyAsync(
-                () -> IndexAsyncExecutionContext.runInAsyncContext(nonNullTask));
     }
 
     void awaitOperations() {
