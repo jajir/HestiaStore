@@ -66,12 +66,14 @@ class IndexAsyncExecutorTest {
     @Test
     void close_throwsWhenCalledFromAsyncTask() {
         asyncExecutor = new IndexAsyncExecutor(buildConf());
-
-        final CompletionException thrown = assertThrows(CompletionException.class,
-                () -> asyncExecutor.runAsync(() -> {
+        final CompletableFuture<?> closeFromAsyncTask = asyncExecutor
+                .runAsync(() -> {
                     asyncExecutor.close();
                     return null;
-                }).toCompletableFuture().join());
+                }).toCompletableFuture();
+
+        final CompletionException thrown = assertThrows(CompletionException.class,
+                closeFromAsyncTask::join);
 
         assertEquals(IllegalStateException.class, thrown.getCause().getClass());
     }

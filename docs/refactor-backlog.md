@@ -637,10 +637,6 @@
     - Centralize segment close/eviction in `SegmentRegistry`.
     - Remove direct `segment.close()` calls from split coordinator.
     - Ensure split outcome updates mapping, eviction, and close are ordered.
-[ ] 45 Replace spin-wait in `SegmentConcurrencyGate.awaitNoInFlight` (Risk: LOW)
-    - Use `wait/notify` or `ManagedBlocker` with timeout.
-    - Preserve FREEZE semantics and early exit on state change.
-    - Add tests for drain behavior under load.
 [ ] 46 Align iterator isolation naming and semantics (Risk: LOW)
     - Choose between `FAIL_FAST`/`FULL_ISOLATION` and the legacy
       `INTERRUPT_FAST`/`STOP_FAST` terminology.
@@ -779,6 +775,16 @@
       `StableSegmentGatewayTest`,
       `IntegrationSegmentIndexConcurrencyTest`,
       `SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall`.
+
+[x] 45 Replace spin-wait in `SegmentConcurrencyGate.awaitNoInFlight` (Risk: LOW)
+    - Replaced the old spin/yield drain loop with a short progressive
+      `LockSupport.parkNanos(...)` wait strategy, keeping FREEZE-only exit
+      semantics without burning CPU during close/maintenance drains.
+    - Removed remaining production `Thread.onSpinWait()` calls from the engine
+      runtime and moved consistency-check BUSY retries onto `IndexRetryPolicy`
+      with bounded jittered backoff.
+    - Tests: `SegmentConcurrencyGateTest`, `IndexConsistencyCheckerTest`,
+      `IndexRetryPolicyTest`, plus full `mvn clean verify`.
 
 [x] 52 Remove automatic compaction from `segmentindex` (Risk: MEDIUM)
     - Drop pre-split compaction in `SegmentSplitCoordinator` and remove
