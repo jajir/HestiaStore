@@ -321,7 +321,7 @@
       - No core imports from monitoring/agent/console packages.
       - Checkstyle/ArchUnit (or similar) rule blocks forbidden imports.
     - Delivered:
-      - Added architecture page: `docs/architecture/general/package-boundaries.md`.
+      - Added architecture page: `docs/architecture/package-boundaries.md`.
       - Added automated guard: `PackageDependencyBoundaryTest`.
 
 [x] 78.2 Add stable core metrics snapshot API (Risk: HIGH)
@@ -490,7 +490,7 @@
       - Release docs include compatibility matrix and upgrade notes.
     - Delivered:
       - Added module target-state documentation:
-        `docs/architecture/general/package-boundaries.md`.
+        `docs/architecture/package-boundaries.md`.
       - Added release compatibility matrix:
         `docs/development/compatibility-matrix.md`.
       - Added multi-module upgrade notes:

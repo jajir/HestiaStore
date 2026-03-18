@@ -44,7 +44,7 @@ jobs:
 
     - name: Restore Dependency-Check data
       id: dependency-check-cache-restore
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: ${{ steps.dependency-check-cache.outputs.path }}
         key: ${{ steps.dependency-check-cache.outputs.key }}
@@ -62,7 +62,7 @@ jobs:
 
     - name: Save Dependency-Check data
       if: always() && !cancelled() && steps.dependency-check-cache-restore.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: ${{ steps.dependency-check-cache.outputs.path }}
         key: ${{ steps.dependency-check-cache.outputs.key }}
