@@ -5,3 +5,4 @@
 - Avoid unnecessary API-breaking changes.
 - Run `mvn clean verify` after non-trivial changes.
 - Use the `release-maven-library` skill for release preparation, versioning, and post-release snapshot tasks.
+- Use the `sonar-smell-cleanup` skill for small, safe SonarCloud code smell cleanup batches.
