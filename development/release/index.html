@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#releasing-a-new-version" class="md-skip">
+        <a href="#release-process" class="md-skip">
           Skip to content
         </a>
       
@@ -2796,10 +2796,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning-of-the-project" class="md-nav__link">
+  <a href="#release-principles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Versioning of the project
+        Release Principles
       
     </span>
   </a>
@@ -2807,38 +2807,16 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#branching-strategy" class="md-nav__link">
+  <a href="#versioning" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branching strategy
+        Versioning
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#release-prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Release prerequisites
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Release prerequisites">
+    <nav class="md-nav" aria-label="Versioning">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#provide-correct-package-signature" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Provide correct package signature
-      
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#setup-maven-central-account-secrets" class="md-nav__link">
@@ -2857,22 +2835,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#perform-release" class="md-nav__link">
+  <a href="#release-checklist" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Perform release
+        Release Checklist
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Perform release">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Procedure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step-by-Step Procedure">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#0-verify-module-artifacts-and-tests" class="md-nav__link">
+  <a href="#1-inspect-branch-and-working-tree" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0. Verify module artifacts and tests
+        1. Inspect branch and working tree
       
     </span>
   </a>
@@ -2884,17 +2873,6 @@
     <span class="md-ellipsis">
       
         1. Checkout and update the main branch
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-set-the-release-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Set the release version
       
     </span>
   </a>
@@ -2967,22 +2945,27 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#multi-module-release-artifacts" class="md-nav__link">
+          <li class="md-nav__item">
+  <a href="#6-commit-and-tag-the-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Multi-module release artifacts
+        6. Commit and tag the release
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Multi-module release artifacts">
-      <ul class="md-nav__list">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-deploy-the-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Deploy the release
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#9-finish-the-release" class="md-nav__link">
@@ -2995,58 +2978,63 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#8-prepare-the-next-development-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Prepare the next development snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-push-commits-and-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Push commits and tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-publish-release-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Publish release notes
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helper-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helper Commands
+      
+    </span>
+  </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#helpful-commands" class="md-nav__link">
+  <a href="#related-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Helpful Commands
+        Related Files
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Helpful Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-to-use-a-custom-settingsxml-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to Use a Custom settings.xml File
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-set-the-maven-project-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to Set the Maven Project Version
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-dependencies" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Check dependencies
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3429,10 +3417,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#versioning-of-the-project" class="md-nav__link">
+  <a href="#release-principles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Versioning of the project
+        Release Principles
       
     </span>
   </a>
@@ -3440,38 +3428,16 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#branching-strategy" class="md-nav__link">
+  <a href="#versioning" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Branching strategy
+        Versioning
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#release-prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Release prerequisites
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Release prerequisites">
+    <nav class="md-nav" aria-label="Versioning">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#provide-correct-package-signature" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Provide correct package signature
-      
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#setup-maven-central-account-secrets" class="md-nav__link">
@@ -3490,22 +3456,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#perform-release" class="md-nav__link">
+  <a href="#release-checklist" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Perform release
+        Release Checklist
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Perform release">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-by-step-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Procedure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step-by-Step Procedure">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#0-verify-module-artifacts-and-tests" class="md-nav__link">
+  <a href="#1-inspect-branch-and-working-tree" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0. Verify module artifacts and tests
+        1. Inspect branch and working tree
       
     </span>
   </a>
@@ -3517,17 +3494,6 @@
     <span class="md-ellipsis">
       
         1. Checkout and update the main branch
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-set-the-release-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Set the release version
       
     </span>
   </a>
@@ -3600,22 +3566,27 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#multi-module-release-artifacts" class="md-nav__link">
+          <li class="md-nav__item">
+  <a href="#6-commit-and-tag-the-release" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Multi-module release artifacts
+        6. Commit and tag the release
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Multi-module release artifacts">
-      <ul class="md-nav__list">
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-deploy-the-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Deploy the release
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#9-finish-the-release" class="md-nav__link">
@@ -3628,58 +3599,63 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#8-prepare-the-next-development-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Prepare the next development snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-push-commits-and-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Push commits and tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-publish-release-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Publish release notes
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#helper-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Helper Commands
+      
+    </span>
+  </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#helpful-commands" class="md-nav__link">
+  <a href="#related-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Helpful Commands
+        Related Files
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Helpful Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-to-use-a-custom-settingsxml-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to Use a Custom settings.xml File
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-set-the-maven-project-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to Set the Maven Project Version
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check-dependencies" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Check dependencies
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3751,7 +3727,7 @@
   
 
 
-<h1 id="releasing-a-new-version">Releasing a New Version</h1>
+<h1 id="release-process">Release Process</h1>
 <p>This is the source-of-truth runbook for making a new HestiaStore release.</p>
 <p>When you ask Codex to use the <code>release-maven-library</code> skill, it performs the
 full local release workflow described on this page: prerequisite checks,
@@ -3762,61 +3738,76 @@ pushes.</p>
 homepage at <a href="https://github.com/jajir/HestiaStore/releases">https://github.com/jajir/HestiaStore/releases</a>.
 Codex can prepare the release title and body, but it cannot click <code>Publish
 release</code> in the GitHub web UI.</p>
-<h2 id="versioning-of-the-project">Versioning of the project</h2>
-<p>The project uses the traditional versioning pattern known as Semantic Versioning, detailed at <a href="https://semver.org">https://semver.org</a>. The version number consists of three components separated by dots:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>0.3.6
+<p>If you are using Codex in this repository, use the <code>release-maven-library</code> skill. The skill follows the same workflow documented here and uses the helper scripts under <code>.agents/skills/release-maven-library/scripts/</code>.</p>
+<h2 id="release-principles">Release Principles</h2>
+<ul>
+<li>Keep release work focused on release and versioning changes only.</li>
+<li>Do not mix unrelated refactors, dependency upgrades, or API changes into a release commit.</li>
+<li>Stop immediately if the working tree is dirty, the current version is inconsistent, a forbidden snapshot dependency is found, or verification fails.</li>
+</ul>
+<h2 id="versioning">Versioning</h2>
+<p>Hestia Store uses Semantic Versioning:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>X.Y.Z
 </code></pre></div>
-<p>Each number has the following meaning:</p>
 <ul>
-<li><code>0</code> - Major project version. Project API could be incompatible between two major versions.</li>
-<li><code>3</code> - Minor project version. Contains changes in features, performance optimizations, and small improvements. Minor versions should be compatible.</li>
-<li><code>6</code> - Patch version. Bug fixing project release.</li>
+<li><code>X</code>: major version for incompatible API changes</li>
+<li><code>Y</code>: minor version for backward-compatible feature work</li>
+<li><code>Z</code>: patch version for backward-compatible fixes</li>
 </ul>
-<p>There are also snapshot versions with version number <code>0.3.6-SNAPSHOT</code>. Snapshot versions should not be stored in the Maven repository.</p>
-<h2 id="branching-strategy">Branching strategy</h2>
-<p><img alt="project branching" src="../../images/branching.png" /></p>
-<p>We use a simplified GitHub Flow:</p>
-<ul>
-<li><code>main</code>: the primary development and release branch. Small changes may be committed directly to <code>main</code>, while larger or experimental features must be developed in a separate branch and merged via pull request.</li>
-<li>Feature branches are created from <code>main</code> for larger or isolated changes. Use descriptive names like <code>feature/compression</code>, <code>fix/index-scan</code>, etc.</li>
-</ul>
-<p>The deprecated <code>devel</code> branch has been removed and is no longer used.</p>
-<h2 id="release-prerequisites">Release prerequisites</h2>
+<p>Development versions use the <code>-SNAPSHOT</code> suffix:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>X.Y.Z-SNAPSHOT
+</code></pre></div>
+<p>Release preparation should start from a snapshot version and convert it to the matching release version.</p>
 <p>The release will be published to Maven Central. Release configuration secrets are placed at the Maven settings file <code>~/.m2/settings.xml</code>.</p>
 <p>Releases must be prepared from a clean <code>main</code> branch worktree with push access
 to the repository and tags.</p>
-<h3 id="provide-correct-package-signature">Provide correct package signature</h3>
-<p>In your <code>~/.m2/settings.xml</code> file, add the following section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&lt;settings&gt;</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span>...
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">   </span><span class="nt">&lt;profile&gt;</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">     </span><span class="nt">&lt;id&gt;</span>release<span class="nt">&lt;/id&gt;</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">       </span><span class="nt">&lt;properties&gt;</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">       </span><span class="nt">&lt;gpg.executable&gt;</span>gpg<span class="nt">&lt;/gpg.executable&gt;</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">       </span><span class="nt">&lt;gpg.passphrase&gt;</span>--pgp-password--<span class="nt">&lt;/gpg.passphrase&gt;</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">     </span><span class="nt">&lt;/properties&gt;</span><span class="w">      </span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">   </span><span class="nt">&lt;/profile&gt;</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span>...
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="nt">&lt;/settings&gt;</span>
+<ul>
+<li>Java 17 and Maven are installed.</li>
+<li>You are in the repository root.</li>
+<li>The branch and working tree are clean.</li>
+<li>Maven Central credentials are configured in <code>~/.m2/settings.xml</code>.</li>
+<li>GPG signing is configured for the Maven <code>release</code> profile.</li>
+</ul>
+<p>Example <code>settings.xml</code> fragments:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;settings&gt;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&lt;servers&gt;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&lt;server&gt;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">&lt;id&gt;</span>central<span class="nt">&lt;/id&gt;</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&lt;username&gt;</span>YOUR_USERNAME<span class="nt">&lt;/username&gt;</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">&lt;password&gt;</span>YOUR_TOKEN<span class="nt">&lt;/password&gt;</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">&lt;/server&gt;</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">&lt;/servers&gt;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="nt">&lt;profiles&gt;</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">&lt;profile&gt;</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">      </span><span class="nt">&lt;id&gt;</span>release<span class="nt">&lt;/id&gt;</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">&lt;properties&gt;</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="nt">&lt;gpg.executable&gt;</span>gpg<span class="nt">&lt;/gpg.executable&gt;</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="nt">&lt;gpg.passphrase&gt;</span>YOUR_GPG_PASSPHRASE<span class="nt">&lt;/gpg.passphrase&gt;</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">&lt;/properties&gt;</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">&lt;/profile&gt;</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">  </span><span class="nt">&lt;/profiles&gt;</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="nt">&lt;/settings&gt;</span>
 </code></pre></div>
 <h3 id="setup-maven-central-account-secrets">Setup Maven Central account secrets</h3>
 <p>This provides <code>org.sonatype.central:central-publishing-maven-plugin</code> plugin secrets to enable login to the Maven Central account where release data will be placed.
 You must have an account with a verified namespace <code>org.hestiastore</code> at <a href="https://central.sonatype.com/">central.sonatype.com</a>. From the <code>Account</code> section, generate a key and password. These should be added to:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;settings&gt;</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span>...
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&lt;servers&gt;</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">        </span><span class="nt">&lt;server&gt;</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">            </span><span class="nt">&lt;id&gt;</span>central<span class="nt">&lt;/id&gt;</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">           </span><span class="nt">&lt;username&gt;</span>------<span class="nt">&lt;/username&gt;</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">           </span><span class="nt">&lt;password&gt;</span>---------------token---------------<span class="nt">&lt;/password&gt;</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">       </span><span class="nt">&lt;/server&gt;</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">&lt;/servers&gt;</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span>...
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="nt">&lt;/settings&gt;</span>
-</code></pre></div>
-<h2 id="perform-release">Perform release</h2>
-<p>Perform the following steps to create a new release:</p>
-<h3 id="0-verify-module-artifacts-and-tests">0. Verify module artifacts and tests</h3>
+<h2 id="release-checklist">Release Checklist</h2>
+<ul>
+<li>Verify the working tree is clean.</li>
+<li>Detect the current Maven version.</li>
+<li>Confirm the current version is a snapshot.</li>
+<li>Run <code>mvn clean verify</code>.</li>
+<li>Confirm there are no forbidden snapshot dependencies or plugins.</li>
+<li>Bump from <code>X.Y.Z-SNAPSHOT</code> to <code>X.Y.Z</code>.</li>
+<li>Run verification again after the release version change.</li>
+<li>Commit and tag the release.</li>
+<li>Deploy the release artifact.</li>
+<li>Bump to the next snapshot version.</li>
+<li>Verify again after the next snapshot bump.</li>
+</ul>
+<h2 id="step-by-step-procedure">Step-by-Step Procedure</h2>
+<h3 id="1-inspect-branch-and-working-tree">1. Inspect branch and working tree</h3>
 <p>Run the standard release verification script:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./.agents/skills/release-maven-library/scripts/verify-release.sh
 </code></pre></div>
@@ -3832,7 +3823,7 @@ You must have an account with a verified namespace <code>org.hestiastore</code> 
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>main
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>git<span class="w"> </span>pull<span class="w"> </span>--ff-only
 </code></pre></div>
-<h3 id="2-set-the-release-version">2. Set the release version</h3>
+<p>Expected result:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./.agents/skills/release-maven-library/scripts/bump-version.sh<span class="w"> </span><span class="m">0</span>.0.12
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-am<span class="w"> </span><span class="s2">&quot;release: version 0.0.12&quot;</span>
 </code></pre></div>
@@ -3871,21 +3862,20 @@ not in the generated documentation site:</p>
 <li>If the release contains breaking changes, add a dedicated <code>Breaking changes</code> section with migration steps.</li>
 <li>Press <code>Publish release</code>.</li>
 </ol>
-<p>Text template:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Release to maven central:
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="sb">```xml</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nt">&lt;dependencies&gt;</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="nt">&lt;dependency&gt;</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.hestiastore<span class="nt">&lt;/groupId&gt;</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>engine<span class="nt">&lt;/artifactId&gt;</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.0.12<span class="nt">&lt;/version&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Replace with the actual version --&gt;</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="nt">&lt;/dependency&gt;</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="nt">&lt;/dependencies&gt;</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="sb">```</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./.agents/skills/release-maven-library/scripts/bump-version.sh<span class="w"> </span><span class="m">0</span>.0.6
 </code></pre></div>
-<h2 id="multi-module-release-artifacts">Multi-module release artifacts</h2>
-<p>Each release publishes aligned versions of:</p>
+<p>Then verify again:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">&lt;dependencies&gt;</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&lt;dependency&gt;</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.hestiastore<span class="nt">&lt;/groupId&gt;</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>engine<span class="nt">&lt;/artifactId&gt;</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">&lt;version&gt;</span>0.0.12<span class="nt">&lt;/version&gt;</span><span class="w"> </span><span class="cm">&lt;!-- Replace with the actual version --&gt;</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="nt">&lt;/dependency&gt;</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="nt">&lt;/dependencies&gt;</span>
+</code></pre></div>
+<p>After the release bump, there should be no remaining forbidden snapshot versions in the Maven project files.</p>
+<h3 id="6-commit-and-tag-the-release">6. Commit and tag the release</h3>
+<p>Review the changed files and create a focused release commit:</p>
 <ul>
 <li><code>org.hestiastore:hestiastore-parent</code> (POM)</li>
 <li><code>org.hestiastore:engine</code></li>
@@ -3899,24 +3889,44 @@ not in the generated documentation site:</p>
 <p>The <code>benchmarks</code> module participates in the build but is not deployed because
 its POM sets <code>maven.deploy.skip=true</code>.</p>
 <p>Compatibility and staged upgrade guidance:</p>
-<ul>
-<li><a href="../compatibility-matrix/">Compatibility Matrix</a></li>
-<li><a href="../upgrade-notes-multimodule/">Upgrade Notes (Multi-Module)</a></li>
-</ul>
+<h3 id="7-deploy-the-release">7. Deploy the release</h3>
 <h3 id="9-finish-the-release">9. Finish the release</h3>
-<p>That's it — the release is live and development can continue.</p>
-<h2 id="helpful-commands">Helpful Commands</h2>
-<p>At the beginning there may be problems. Here are a few tricks that help to gather more information.</p>
-<h3 id="how-to-use-a-custom-settingsxml-file">How to Use a Custom settings.xml File</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>mvn<span class="w"> </span>--settings<span class="w"> </span>./src/main/settings.xml<span class="w"> </span>clean<span class="w"> </span>deploy
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>mvn<span class="w"> </span>-pl<span class="w"> </span>engine<span class="w"> </span>-am<span class="w"> </span>-P<span class="w"> </span>release<span class="w"> </span>deploy
 </code></pre></div>
-<h3 id="how-to-set-the-maven-project-version">How to Set the Maven Project Version</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>mvn<span class="w"> </span>versions:set<span class="w"> </span>-DnewVersion<span class="o">=</span><span class="m">1</span>.0.1-SNAPSHOT
+<p>This matches the current repository configuration, where the <code>release</code> profile is defined in <code>engine/pom.xml</code>.</p>
+<h3 id="8-prepare-the-next-development-snapshot">8. Prepare the next development snapshot</h3>
+<p>After the release is deployed, bump to the next snapshot version:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh<span class="w"> </span><span class="m">0</span>.0.7-SNAPSHOT
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./.agents/skills/release-maven-library/scripts/verify-release.sh
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>git<span class="w"> </span>add<span class="w"> </span>pom.xml<span class="w"> </span>*/pom.xml
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;post-release: bumped to 0.0.7-SNAPSHOT&quot;</span>
 </code></pre></div>
-<h3 id="check-dependencies">Check dependencies</h3>
-<p>Try to update dependencies. Check them with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>mvn<span class="w"> </span>versions:display-dependency-updates
+<h3 id="9-push-commits-and-tags">9. Push commits and tags</h3>
+<p>Push both the branch and the release tag:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>release-0.0.6
 </code></pre></div>
+<h3 id="10-publish-release-notes">10. Publish release notes</h3>
+<p>Create the GitHub release from tag <code>release-0.0.6</code> and summarize:</p>
+<ul>
+<li>released version</li>
+<li>notable changes</li>
+<li>any migration or compatibility notes</li>
+<li>Maven dependency coordinates consumers should use</li>
+</ul>
+<h2 id="helper-commands">Helper Commands</h2>
+<p>Display dependency updates:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>mvn<span class="w"> </span>versions:display-dependency-updates
+</code></pre></div>
+<p>Set a version manually without backup POMs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>mvn<span class="w"> </span>versions:set<span class="w"> </span>-DnewVersion<span class="o">=</span><span class="m">1</span>.0.1-SNAPSHOT<span class="w"> </span>-DgenerateBackupPoms<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-DprocessAllModules<span class="o">=</span><span class="nb">true</span>
+</code></pre></div>
+<h2 id="related-files">Related Files</h2>
+<ul>
+<li><code>.agents/skills/release-maven-library/SKILL.md</code></li>
+<li><code>.agents/skills/release-maven-library/references/release-checklist.md</code></li>
+<li><code>AGENTS.md</code></li>
+</ul>
 
 
 
