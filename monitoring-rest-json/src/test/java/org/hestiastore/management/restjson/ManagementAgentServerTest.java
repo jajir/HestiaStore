@@ -383,7 +383,8 @@ class ManagementAgentServerTest {
                     && snapshot.getDrainInFlightCount() == 0;
         }, 10_000L);
 
-        final SegmentIndexMetricsSnapshot snapshot = extra.metricsSnapshot();
+        final SegmentIndexMetricsSnapshot snapshot = awaitStableSplitMetrics(
+                extra, 10_000L);
         final HttpResponse<String> reportResp = send("GET",
                 ManagementApiPaths.REPORT, null);
         assertEquals(200, reportResp.statusCode());
@@ -473,6 +474,44 @@ class ManagementAgentServerTest {
         }
         assertTrue(condition.get(),
                 "Condition not reached within " + timeoutMillis + " ms.");
+    }
+
+    private static SegmentIndexMetricsSnapshot awaitStableSplitMetrics(
+            final SegmentIndex<Integer, String> index,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        SegmentIndexMetricsSnapshot previous = null;
+        while (System.nanoTime() < deadline) {
+            final SegmentIndexMetricsSnapshot current = index.metricsSnapshot();
+            if (sameSplitMetrics(previous, current)) {
+                return current;
+            }
+            previous = current;
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        assertNotNull(previous,
+                "Split metrics snapshot was never observed while waiting.");
+        assertTrue(false,
+                "Stable split metrics were not observed within "
+                        + timeoutMillis + " ms.");
+        return previous;
+    }
+
+    private static boolean sameSplitMetrics(
+            final SegmentIndexMetricsSnapshot left,
+            final SegmentIndexMetricsSnapshot right) {
+        return left != null && right != null
+                && left.getSegmentCount() == right.getSegmentCount()
+                && left.getSplitScheduleCount() == right.getSplitScheduleCount()
+                && left.getSplitInFlightCount() == right.getSplitInFlightCount()
+                && left.getDrainScheduleCount() == right.getDrainScheduleCount()
+                && left.getDrainInFlightCount() == right.getDrainInFlightCount()
+                && left.getDrainLatencyP95Micros() == right
+                        .getDrainLatencyP95Micros();
     }
 
     private HttpResponse<String> send(final String method, final String path,
