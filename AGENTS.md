@@ -23,6 +23,7 @@
 - Unit tests are in `src/test/java` and follow the same package layout.
 - Integration tests live in `src/integration-test/java`, and Failsafe picks up `*IT` classes.
 - Documentation for architecture, operations, and usage is under `docs/` and is served via `mkdocs.yml`; build outputs land in `target/`.
+- For documentation changes, follow `docs/development/documentation-guidelines.md`.
 - In the parent POM, keep shared library versions in dependency management so versions stay aligned across submodules.
 
 ## Build, Test, and Development Commands
