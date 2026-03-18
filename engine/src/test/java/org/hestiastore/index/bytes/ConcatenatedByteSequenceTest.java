@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +51,7 @@ class ConcatenatedByteSequenceTest {
                 ByteSequences.wrap(new byte[] { 3 }));
         final ByteSequence other = ByteSequences.wrap(new byte[] { 1, 2, 3 });
 
-        assertTrue(one.equals(other));
+        assertEquals(one, other);
         assertEquals(one.hashCode(), other.hashCode());
         assertThrows(IllegalArgumentException.class, () -> one.getByte(3));
         assertThrows(IllegalArgumentException.class, () -> one.slice(-1, 1));
