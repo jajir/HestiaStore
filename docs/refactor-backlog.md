@@ -2,12 +2,6 @@
 
 ## Active
 
-[ ] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
-    - `SegmentIndexCore.get/put`: avoid holding key-map read lock while calling
-      `SegmentRegistry.getSegment` or touching segments.
-    - Use key-map snapshot + version re-check on retry/BUSY paths.
-    - Tests: `IntegrationSegmentIndexConcurrencyTest` + new split/put stress.
-
 ## Planned
 
 ### High
@@ -766,6 +760,18 @@
     - Reserve registry `FREEZE` for split apply only.
     - Tests: split + eviction concurrency (`SegmentRegistryCacheTest`,
       `SegmentSplitCoordinatorConcurrencyTest`, integration stress).
+
+[x] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
+    - Replaced direct stable-read routing through `SegmentIndexCore` with
+      snapshot-based stable gateway reads that do not hold key-map read locks
+      while loading or touching segments.
+    - Stable reads now validate the captured topology version after
+      `SegmentRegistry.getSegment()` + `segment.get(...)`, so route remaps
+      surface as `BUSY` instead of returning stale data.
+    - Tests: `PartitionReadCoordinatorTest`,
+      `StableSegmentGatewayTest`,
+      `IntegrationSegmentIndexConcurrencyTest`,
+      `SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall`.
 
 [x] 52 Remove automatic compaction from `segmentindex` (Risk: MEDIUM)
     - Drop pre-split compaction in `SegmentSplitCoordinator` and remove
