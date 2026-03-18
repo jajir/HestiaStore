@@ -53,7 +53,7 @@ class PartitionReadCoordinatorTest {
     private KeyToSegmentMap<Integer> keyToSegmentMap;
     private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
     private PartitionRuntime<Integer, String> partitionRuntime;
-    private SegmentIndexCore<Integer, String> core;
+    private StableSegmentGateway<Integer, String> stableSegmentGateway;
     private PartitionReadCoordinator<Integer, String> coordinator;
 
     @BeforeEach
@@ -65,12 +65,14 @@ class PartitionReadCoordinatorTest {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
         partitionRuntime = new PartitionRuntime<>(Integer::compareTo);
-        core = new SegmentIndexCore<>(synchronizedKeyToSegmentMap,
+        stableSegmentGateway = new StableSegmentGateway<>(
+                synchronizedKeyToSegmentMap,
                 segmentRegistry);
         coordinator = new PartitionReadCoordinator<>(
                 synchronizedKeyToSegmentMap, partitionRuntime, segmentRegistry,
-                core, backgroundSplitCoordinator, new TypeDescriptorInteger(),
-                valueTypeDescriptor, new IndexRetryPolicy(1, 10));
+                stableSegmentGateway, backgroundSplitCoordinator,
+                new TypeDescriptorInteger(), valueTypeDescriptor,
+                new IndexRetryPolicy(1, 10));
     }
 
     @AfterEach

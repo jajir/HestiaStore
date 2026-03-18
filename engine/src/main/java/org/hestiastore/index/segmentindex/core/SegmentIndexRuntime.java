@@ -33,7 +33,7 @@ final class SegmentIndexRuntime<K, V> {
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
-    private final SegmentIndexCore<K, V> core;
+    private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
     private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
     private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
@@ -55,7 +55,7 @@ final class SegmentIndexRuntime<K, V> {
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop,
-            final SegmentIndexCore<K, V> core,
+            final StableSegmentGateway<K, V> stableSegmentGateway,
             final StableSegmentCoordinator<K, V> stableSegmentCoordinator,
             final PartitionDrainCoordinator<K, V> partitionDrainCoordinator,
             final PartitionWriteCoordinator<K, V> partitionWriteCoordinator,
@@ -75,7 +75,7 @@ final class SegmentIndexRuntime<K, V> {
         this.segmentRegistry = segmentRegistry;
         this.backgroundSplitCoordinator = backgroundSplitCoordinator;
         this.backgroundSplitPolicyLoop = backgroundSplitPolicyLoop;
-        this.core = core;
+        this.stableSegmentGateway = stableSegmentGateway;
         this.stableSegmentCoordinator = stableSegmentCoordinator;
         this.partitionDrainCoordinator = partitionDrainCoordinator;
         this.partitionWriteCoordinator = partitionWriteCoordinator;
