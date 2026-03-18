@@ -206,8 +206,8 @@
         "162": {
           "channel": "pr-162",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-162/latest.json",
-          "sha": "14ff6fc08747435c88e05382bfd45aad108f3202",
-          "timestampUtc": "2026-03-18T17:59:36.938213+00:00"
+          "sha": "a2032cd49c3cf809a7e4588af866ad5645749fe6",
+          "timestampUtc": "2026-03-18T18:19:34.509520+00:00"
         }
       },
       "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
