@@ -105,8 +105,10 @@ PR benchmark runs now surface in three places:
 - the `perf-artifacts` branch under
   `history/<profile>/pull-requests/pr-<number>/...`
 
-Nightly canonical baselines continue to advance only through
-`history/<profile>/latest-main.json`.
+Canonical `main` baselines continue to advance through
+`history/<profile>/latest-main.json`. Today, `segment-index-pr-smoke`
+publishes there on `push` to `main`, while `segment-index-nightly`
+publishes there from the nightly schedule.
 
 Run a profile locally:
 
