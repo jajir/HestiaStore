@@ -37,7 +37,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final Stats stats = new Stats();
-    private final IndexAsyncOperationTracker asyncOperationTracker = new IndexAsyncOperationTracker();
+    private final IndexOperationTracker operationTracker = new IndexOperationTracker();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
     private final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
@@ -74,7 +74,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                                         this::failWithError,
                                         this::onBackgroundSplitApplied,
                                         () -> stateCoordinator.beginClose(this),
-                                        asyncOperationTracker::awaitAsyncOperations,
+                                        operationTracker::awaitOperations,
                                         () -> setSegmentIndexState(
                                                 SegmentIndexState.CLOSED),
                                         stats::getGetCx, stats::getPutCx,
@@ -100,8 +100,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void put(final K key, final V value) {
-        getIndexState().tryPerformOperation();
-        runtime.operationCoordinator().put(key, value);
+        operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            runtime.operationCoordinator().put(key, value);
+            return null;
+        });
     }
 
     /** {@inheritDoc} */
@@ -126,10 +129,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        Vldtn.requireNonNull(isolation, "isolation");
-        return runtime.stableSegmentCoordinator().openIteratorWithRetry(segmentId,
-                isolation);
+        return operationTracker.runTracked(() -> {
+            Vldtn.requireNonNull(segmentId, "segmentId");
+            Vldtn.requireNonNull(isolation, "isolation");
+            getIndexState().tryPerformOperation();
+            return runtime.stableSegmentCoordinator()
+                    .openIteratorWithRetry(segmentId, isolation);
+        });
     }
 
     /**
@@ -156,38 +162,49 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public EntryIterator<K, V> openSegmentIterator(
             final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
-        final SegmentWindow resolvedWindows = segmentWindows == null
-                ? SegmentWindow.unbounded()
-                : segmentWindows;
-        Vldtn.requireNonNull(isolation, "isolation");
-        final EntryIterator<K, V> segmentIterator;
-        segmentIterator = runtime.partitionReadCoordinator().openWindowIterator(
-                resolvedWindows, isolation);
-        if (isContextLoggingEnabled()) {
-            return new EntryIteratorLoggingContext<>(segmentIterator, conf);
-        }
-        return segmentIterator;
+        return operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            final SegmentWindow resolvedWindows = segmentWindows == null
+                    ? SegmentWindow.unbounded()
+                    : segmentWindows;
+            Vldtn.requireNonNull(isolation, "isolation");
+            final EntryIterator<K, V> segmentIterator = runtime
+                    .partitionReadCoordinator()
+                    .openWindowIterator(resolvedWindows, isolation);
+            if (isContextLoggingEnabled()) {
+                return new EntryIteratorLoggingContext<>(segmentIterator, conf);
+            }
+            return segmentIterator;
+        });
     }
 
     /** {@inheritDoc} */
     @Override
     public void compact() {
-        getIndexState().tryPerformOperation();
-        runtime.maintenanceCoordinator().compact();
+        operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            runtime.maintenanceCoordinator().compact();
+            return null;
+        });
     }
 
     /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
-        getIndexState().tryPerformOperation();
-        runtime.maintenanceCoordinator().compactAndWait();
+        operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            runtime.maintenanceCoordinator().compactAndWait();
+            return null;
+        });
     }
 
     /** {@inheritDoc} */
     @Override
     public V get(final K key) {
-        getIndexState().tryPerformOperation();
-        return runtime.operationCoordinator().get(key);
+        return operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            return runtime.operationCoordinator().get(key);
+        });
     }
 
     /** {@inheritDoc} */
@@ -199,8 +216,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void delete(final K key) {
-        getIndexState().tryPerformOperation();
-        runtime.operationCoordinator().delete(key);
+        operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            runtime.operationCoordinator().delete(key);
+            return null;
+        });
     }
 
     /** {@inheritDoc} */
@@ -215,8 +235,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void checkAndRepairConsistency() {
-        getIndexState().tryPerformOperation();
-        consistencyCoordinator.checkAndRepairConsistency();
+        operationTracker.runTracked(() -> {
+            getIndexState().tryPerformOperation();
+            consistencyCoordinator.checkAndRepairConsistency();
+            return null;
+        });
     }
 
     /** {@inheritDoc} */
@@ -226,7 +249,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
-        return asyncOperationTracker.runAsyncTracked(task);
+        return operationTracker.runAsyncTracked(task);
     }
 
     final void setIndexState(final IndexState<K, V> indexState) {

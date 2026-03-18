@@ -43,8 +43,6 @@ class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
     private final SegmentIndex<K, V> index;
     private final ExecutorService executor;
     private final boolean shutdownExecutorOnClose;
-    private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
-            .withInitial(() -> Boolean.FALSE);
 
     IndexAsyncAdapter(final SegmentIndex<K, V> index) {
         this(index,
@@ -178,7 +176,7 @@ class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        if (Boolean.TRUE.equals(inAsyncOperation.get())) {
+        if (IndexAsyncExecutionContext.isAsyncOperationActive()) {
             throw new IllegalStateException(
                     "close() must not be called from an async index operation.");
         }
@@ -190,16 +188,9 @@ class IndexAsyncAdapter<K, V> extends AbstractCloseableResource
 
     private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
         try {
-            return CompletableFuture.supplyAsync(() -> {
-                final boolean previous = Boolean.TRUE
-                        .equals(inAsyncOperation.get());
-                inAsyncOperation.set(Boolean.TRUE);
-                try {
-                    return task.get();
-                } finally {
-                    inAsyncOperation.set(previous);
-                }
-            }, executor);
+            return CompletableFuture.supplyAsync(
+                    () -> IndexAsyncExecutionContext.runInAsyncContext(task),
+                    executor);
         } catch (final RejectedExecutionException e) {
             return CompletableFuture.failedFuture(e);
         }

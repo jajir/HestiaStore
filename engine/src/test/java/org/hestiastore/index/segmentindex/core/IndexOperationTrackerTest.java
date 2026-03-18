@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,14 +15,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
-class IndexAsyncOperationTrackerTest {
+class IndexOperationTrackerTest {
 
     @Test
-    void awaitAsyncOperations_waitsForTrackedTaskToFinish() throws Exception {
-        final IndexAsyncOperationTracker tracker = new IndexAsyncOperationTracker();
+    void awaitOperations_doesNotWaitForTrackedAsyncTask() throws Exception {
+        final IndexOperationTracker tracker = new IndexOperationTracker();
         final CountDownLatch taskStarted = new CountDownLatch(1);
         final CountDownLatch releaseTask = new CountDownLatch(1);
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             tracker.runAsyncTracked(() -> {
                 taskStarted.countDown();
@@ -30,11 +30,34 @@ class IndexAsyncOperationTrackerTest {
             });
             assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
 
-            final Future<?> awaitTask = executor.submit(tracker::awaitAsyncOperations);
+            assertDoesNotThrow(tracker::awaitOperations);
+            releaseTask.countDown();
+        } finally {
+            releaseTask.countDown();
+        }
+    }
+
+    @Test
+    void awaitOperations_waitsForTrackedSyncTaskToFinish() throws Exception {
+        final IndexOperationTracker tracker = new IndexOperationTracker();
+        final CountDownLatch taskStarted = new CountDownLatch(1);
+        final CountDownLatch releaseTask = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            final Future<?> trackedTask = executor.submit(() -> tracker
+                    .runTracked(() -> {
+                        taskStarted.countDown();
+                        await(releaseTask);
+                        return null;
+                    }));
+            assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
+
+            final Future<?> awaitTask = executor.submit(tracker::awaitOperations);
             assertThrows(java.util.concurrent.TimeoutException.class,
                     () -> awaitTask.get(100, TimeUnit.MILLISECONDS));
 
             releaseTask.countDown();
+            trackedTask.get(1, TimeUnit.SECONDS);
             awaitTask.get(1, TimeUnit.SECONDS);
         } finally {
             executor.shutdownNow();
@@ -42,13 +65,13 @@ class IndexAsyncOperationTrackerTest {
     }
 
     @Test
-    void awaitAsyncOperations_throwsWhenCalledFromTrackedAsyncOperation() {
-        final IndexAsyncOperationTracker tracker = new IndexAsyncOperationTracker();
+    void awaitOperations_throwsWhenCalledFromTrackedAsyncOperation() {
+        final IndexOperationTracker tracker = new IndexOperationTracker();
         final AtomicReference<Throwable> failure = new AtomicReference<>();
 
         tracker.runAsyncTracked(() -> {
             try {
-                tracker.awaitAsyncOperations();
+                tracker.awaitOperations();
             } catch (final Throwable e) {
                 failure.set(e);
             }
@@ -60,8 +83,23 @@ class IndexAsyncOperationTrackerTest {
     }
 
     @Test
+    void awaitOperations_throwsWhenCalledFromTrackedSyncOperation() {
+        final IndexOperationTracker tracker = new IndexOperationTracker();
+
+        final IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> tracker.runTracked(() -> {
+                    tracker.awaitOperations();
+                    return null;
+                }));
+
+        assertEquals("close() must not be called from an index operation.",
+                thrown.getMessage());
+    }
+
+    @Test
     void runAsyncTracked_propagatesTaskFailure() {
-        final IndexAsyncOperationTracker tracker = new IndexAsyncOperationTracker();
+        final IndexOperationTracker tracker = new IndexOperationTracker();
 
         final CompletionException thrown = assertThrows(CompletionException.class,
                 () -> tracker.runAsyncTracked(() -> {

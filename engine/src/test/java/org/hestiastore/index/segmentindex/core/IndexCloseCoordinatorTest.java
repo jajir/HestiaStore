@@ -29,7 +29,7 @@ class IndexCloseCoordinatorTest {
     private Runnable beginCloseTransition;
 
     @Mock
-    private Runnable awaitAsyncOperations;
+    private Runnable awaitOperations;
 
     @Mock
     private Runnable drainPartitions;
@@ -72,7 +72,7 @@ class IndexCloseCoordinatorTest {
     @BeforeEach
     void setUp() {
         closeCoordinator = new IndexCloseCoordinator(logger, "test-index",
-                beginCloseTransition, awaitAsyncOperations, drainPartitions,
+                beginCloseTransition, awaitOperations, drainPartitions,
                 awaitBackgroundSplitExhausted, markClosed,
                 flushStableSegmentsWithSplitPaused, closeSegmentRegistry,
                 flushKeyToSegmentMap, checkpointWal, getReadCount,
@@ -91,13 +91,13 @@ class IndexCloseCoordinatorTest {
         closeCoordinator.close();
 
         final InOrder inOrder = inOrder(beginCloseTransition,
-                awaitAsyncOperations, drainPartitions,
+                awaitOperations, drainPartitions,
                 awaitBackgroundSplitExhausted, markClosed,
                 flushStableSegmentsWithSplitPaused, closeSegmentRegistry,
                 flushKeyToSegmentMap, checkpointWal, finishCloseTransition,
                 closeWalRuntime);
         inOrder.verify(beginCloseTransition).run();
-        inOrder.verify(awaitAsyncOperations).run();
+        inOrder.verify(awaitOperations).run();
         inOrder.verify(drainPartitions).run();
         inOrder.verify(awaitBackgroundSplitExhausted).run();
         inOrder.verify(drainPartitions).run();

@@ -197,12 +197,12 @@ final class SegmentIndexRuntime<K, V> {
 
     IndexCloseCoordinator newCloseCoordinator(final Logger logger,
             final String indexName, final Runnable beginCloseTransition,
-            final Runnable awaitAsyncOperations, final Runnable markClosed,
+            final Runnable awaitOperations, final Runnable markClosed,
             final LongSupplier getReadCount, final LongSupplier getWriteCount,
             final LongSupplier getDeleteCount,
             final Runnable finishCloseTransition) {
         return new IndexCloseCoordinator(logger, indexName, beginCloseTransition,
-                awaitAsyncOperations,
+                awaitOperations,
                 () -> partitionDrainCoordinator.drainPartitions(true),
                 backgroundSplitPolicyLoop::awaitExhausted, markClosed,
                 () -> backgroundSplitCoordinator

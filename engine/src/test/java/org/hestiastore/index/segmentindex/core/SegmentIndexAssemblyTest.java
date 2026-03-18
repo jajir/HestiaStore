@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,12 +32,20 @@ class SegmentIndexAssemblyTest {
 
     @AfterEach
     void tearDown() {
+        RuntimeException cleanupFailure = null;
         if (assembly != null) {
-            assembly.closeCoordinator().close();
-            assembly.runtime().keyToSegmentMap().close();
+            cleanupFailure = closeIgnoringAdditionalFailure(
+                    assembly.closeCoordinator()::close, cleanupFailure);
+            cleanupFailure = closeIgnoringAdditionalFailure(
+                    assembly.runtime().keyToSegmentMap()::close,
+                    cleanupFailure);
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
-            executorRegistry.close();
+            cleanupFailure = closeIgnoringAdditionalFailure(
+                    executorRegistry::close, cleanupFailure);
+        }
+        if (cleanupFailure != null) {
+            fail(cleanupFailure);
         }
     }
 
@@ -149,5 +158,19 @@ class SegmentIndexAssemblyTest {
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
                 .build();
+    }
+
+    private RuntimeException closeIgnoringAdditionalFailure(
+            final Runnable action, final RuntimeException failure) {
+        try {
+            action.run();
+            return failure;
+        } catch (final RuntimeException e) {
+            if (failure == null) {
+                return e;
+            }
+            failure.addSuppressed(e);
+            return failure;
+        }
     }
 }
