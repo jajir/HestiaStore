@@ -218,8 +218,8 @@
         "164": {
           "channel": "pr-164",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-164/latest.json",
-          "sha": "bd1eb1115aa9ce7f6fbad23cc4fd897878df59b5",
-          "timestampUtc": "2026-03-18T20:49:30.591029+00:00"
+          "sha": "1f45c35b7dd27fb8d6fcd6efc9880e2b927322f4",
+          "timestampUtc": "2026-03-18T20:59:23.086831+00:00"
         }
       },
       "sha": "52b04525c10e1f18faddd3a3d7f018427f1a5b53",
