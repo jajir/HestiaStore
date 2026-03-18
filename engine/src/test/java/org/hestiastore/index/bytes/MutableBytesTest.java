@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +49,7 @@ class MutableBytesTest {
         final MutableBytes first = MutableBytes.wrap(new byte[] { 1, 2, 3 });
         final ByteSequence second = ByteSequences.wrap(new byte[] { 1, 2, 3 });
 
-        assertTrue(first.equals(second));
+        assertEquals(first, second);
         assertEquals(first.hashCode(), second.hashCode());
         assertSame(first.array(), first.toByteArray());
     }

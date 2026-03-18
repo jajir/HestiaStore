@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.partition;
 
 import java.util.Comparator;
 import java.util.NavigableMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
