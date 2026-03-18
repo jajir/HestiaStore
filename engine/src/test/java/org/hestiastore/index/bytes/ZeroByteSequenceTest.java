@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +47,7 @@ class ZeroByteSequenceTest {
         final ZeroByteSequence zeros = new ZeroByteSequence(2);
         final ByteSequence other = ByteSequences.wrap(new byte[] { 0, 0 });
 
-        assertTrue(zeros.equals(other));
+        assertEquals(zeros, other);
         assertEquals(zeros.hashCode(), other.hashCode());
     }
 }

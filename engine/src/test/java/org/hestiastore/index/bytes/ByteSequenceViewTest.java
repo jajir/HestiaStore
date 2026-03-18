@@ -3,7 +3,6 @@ package org.hestiastore.index.bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +56,7 @@ class ByteSequenceViewTest {
         final ByteSequence second = ByteSequences.viewOf(new byte[] { 9, 1, 2, 3 },
                 1, 4);
 
-        assertTrue(first.equals(second));
+        assertEquals(first, second);
         assertEquals(first.hashCode(), second.hashCode());
     }
 }
