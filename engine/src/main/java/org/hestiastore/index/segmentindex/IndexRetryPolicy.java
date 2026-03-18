@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -13,6 +15,8 @@ public final class IndexRetryPolicy {
 
     private final int backoffMillis;
     private final int timeoutMillis;
+    private final long backoffNanos;
+    private final long maxJitterNanos;
     private final long timeoutNanos;
 
     /**
@@ -27,6 +31,8 @@ public final class IndexRetryPolicy {
                 "indexBusyBackoffMillis");
         this.timeoutMillis = Vldtn.requireGreaterThanZero(timeoutMillis,
                 "indexBusyTimeoutMillis");
+        this.backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoffMillis);
+        this.maxJitterNanos = Math.max(1L, backoffNanos / 4L);
         this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
     }
 
@@ -53,13 +59,21 @@ public final class IndexRetryPolicy {
             throw new IndexException(formatTimeoutMessage(operation,
                     segmentId));
         }
-        try {
-            Thread.sleep(backoffMillis);
-        } catch (final InterruptedException e) {
+        LockSupport.parkNanos(nextBackoffNanos());
+        if (Thread.interrupted()) {
             Thread.currentThread().interrupt();
             throw new IndexException(formatInterruptedMessage(operation,
-                    segmentId), e);
+                    segmentId));
         }
+        if (hasTimedOut(startNanos)) {
+            throw new IndexException(formatTimeoutMessage(operation,
+                    segmentId));
+        }
+    }
+
+    private long nextBackoffNanos() {
+        return backoffNanos + ThreadLocalRandom.current()
+                .nextLong(maxJitterNanos);
     }
 
     private boolean hasTimedOut(final long startNanos) {

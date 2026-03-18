@@ -12,6 +12,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
@@ -31,23 +33,36 @@ import org.slf4j.LoggerFactory;
 class IndexConsistencyChecker<K, V> {
     private static final String ERROR_MSG = "Index is broken. "
             + "File 'index.map' containing information about segments is corrupted. ";
+    private static final IndexRetryPolicy DEFAULT_RETRY_POLICY = new IndexRetryPolicy(
+            IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
+            IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentRegistry<K, V> segmentRegistry;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final Comparator<K> keyComparator;
     private final Predicate<SegmentId> segmentFilter;
+    private final IndexRetryPolicy retryPolicy;
 
     IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
-                segmentId -> true);
+                segmentId -> true, DEFAULT_RETRY_POLICY);
     }
 
     IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor,
             final Predicate<SegmentId> segmentFilter) {
+        this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
+                segmentFilter, DEFAULT_RETRY_POLICY);
+    }
+
+    IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final Predicate<SegmentId> segmentFilter,
+            final IndexRetryPolicy retryPolicy) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -56,6 +71,7 @@ class IndexConsistencyChecker<K, V> {
         this.keyComparator = keyTypeDescriptor.getComparator();
         this.segmentFilter = Vldtn.requireNonNull(segmentFilter,
                 "segmentFilter");
+        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
     private SegmentRegistryResult<Segment<K, V>> loadSegment(
@@ -112,6 +128,7 @@ class IndexConsistencyChecker<K, V> {
     }
 
     private boolean confirmEmptyUnderIsolation(final Segment<K, V> segment) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentResult<EntryIterator<K, V>> result = segment
                     .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
@@ -121,7 +138,8 @@ class IndexConsistencyChecker<K, V> {
                 }
             }
             if (result.getStatus() == SegmentResultStatus.BUSY) {
-                Thread.onSpinWait();
+                retryPolicy.backoffOrThrow(startNanos,
+                        "openConsistencyIterator", segment.getId());
                 continue;
             }
             throw new IndexException(String.format(
@@ -131,11 +149,13 @@ class IndexConsistencyChecker<K, V> {
     }
 
     private Segment<K, V> awaitLoadedSegment(final SegmentId segmentId) {
+        final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
                     segmentId);
             if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                Thread.onSpinWait();
+                retryPolicy.backoffOrThrow(startNanos,
+                        "loadSegmentForConsistency", segmentId);
             } else if (loaded.getStatus() == SegmentRegistryResultStatus.OK
                     && loaded.getValue() != null) {
                 return loaded.getValue();
