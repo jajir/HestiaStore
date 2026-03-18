@@ -73,7 +73,7 @@ class WalToolTest {
                     new byte[] { 0x01, 0x02, 0x03 });
             final WalTool.VerifyResult result = WalTool.verify(walDir);
             assertFalse(result.ok());
-            assertTrue("format.meta".equals(result.errorFile()));
+            assertEquals("format.meta", result.errorFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -137,7 +137,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("checkpoint.meta".equals(result.errorFile()));
+        assertEquals("checkpoint.meta", result.errorFile());
     }
 
     @Test
@@ -159,7 +159,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("checkpoint.meta".equals(result.errorFile()));
+        assertEquals("checkpoint.meta", result.errorFile());
         assertTrue(result.errorMessage() != null
                 && result.errorMessage().contains("checksum"));
     }
@@ -224,7 +224,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("checkpoint.meta".equals(result.errorFile()));
+        assertEquals("checkpoint.meta", result.errorFile());
         assertTrue(result.errorMessage() != null
                 && result.errorMessage().contains("ahead"));
     }
@@ -245,7 +245,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("invalid-segment.wal".equals(result.errorFile()));
+        assertEquals("invalid-segment.wal", result.errorFile());
     }
 
     @Test
@@ -263,7 +263,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("00000000000000000002.wal".equals(result.errorFile()));
+        assertEquals("00000000000000000002.wal", result.errorFile());
         assertTrue(result.errorMessage() != null
                 && result.errorMessage().contains("not a regular file"));
     }
@@ -284,7 +284,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("1.wal".equals(result.errorFile()));
+        assertEquals("1.wal", result.errorFile());
         assertTrue(result.errorMessage() != null
                 && result.errorMessage().contains("Expected 20 numeric digits"));
     }
@@ -305,7 +305,7 @@ class WalToolTest {
 
         final WalTool.VerifyResult result = WalTool.verify(walDir);
         assertFalse(result.ok());
-        assertTrue("00000000000000000002.wal".equals(result.errorFile()));
+        assertEquals("00000000000000000002.wal", result.errorFile());
         assertTrue(result.errorMessage() != null
                 && result.errorMessage().contains("Non-monotonic"));
     }

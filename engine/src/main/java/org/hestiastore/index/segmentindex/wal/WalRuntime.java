@@ -114,7 +114,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      */
     @FunctionalInterface
     public interface ReplayConsumer<K, V> {
-        void accept(ReplayRecord<K, V> record);
+        void accept(ReplayRecord<K, V> replayRecord);
     }
 
     private static final Logger logger = LoggerFactory.getLogger(WalRuntime.class);
