@@ -48,6 +48,7 @@ final class SegmentIndexRuntime<K, V> {
     private final WalRuntime<K, V> walRuntime;
     private final SegmentIndexMetricsCollector<K, V> metricsCollector;
     private final IndexWalCoordinator<K, V> walCoordinator;
+    private final IndexOperationCoordinator<K, V> operationCoordinator;
     private final IndexControlPlane controlPlane;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
 
@@ -69,6 +70,7 @@ final class SegmentIndexRuntime<K, V> {
             final WalRuntime<K, V> walRuntime,
             final SegmentIndexMetricsCollector<K, V> metricsCollector,
             final IndexWalCoordinator<K, V> walCoordinator,
+            final IndexOperationCoordinator<K, V> operationCoordinator,
             final IndexControlPlane controlPlane,
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier) {
         this.runtimeTuningState = runtimeTuningState;
@@ -88,6 +90,7 @@ final class SegmentIndexRuntime<K, V> {
         this.walRuntime = walRuntime;
         this.metricsCollector = metricsCollector;
         this.walCoordinator = walCoordinator;
+        this.operationCoordinator = operationCoordinator;
         this.controlPlane = controlPlane;
         this.runtimeLimitApplier = runtimeLimitApplier;
     }
@@ -171,6 +174,9 @@ final class SegmentIndexRuntime<K, V> {
                     stableSegmentCoordinator.flushSegments(true);
                     keyToSegmentMap.optionalyFlush();
                 }, stateSupplier, failureHandler, lastAppliedWalLsn);
+        final IndexOperationCoordinator<K, V> operationCoordinator = new IndexOperationCoordinator<>(
+                valueTypeDescriptor, stats, partitionWriteCoordinator,
+                partitionReadCoordinator, walCoordinator, retryPolicy);
         final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator = new IndexMaintenanceCoordinator<>(
                 keyToSegmentMap, partitionRuntime, partitionDrainCoordinator,
                 backgroundSplitCoordinator, backgroundSplitPolicyLoop,
@@ -192,7 +198,8 @@ final class SegmentIndexRuntime<K, V> {
                 partitionDrainCoordinator, partitionWriteCoordinator,
                 partitionReadCoordinator, maintenanceCoordinator,
                 recoveryCleanupCoordinator, retryPolicy, walRuntime,
-                metricsCollector, walCoordinator, controlPlane,
+                metricsCollector, walCoordinator, operationCoordinator,
+                controlPlane,
                 runtimeLimitApplier);
     }
 
@@ -250,6 +257,10 @@ final class SegmentIndexRuntime<K, V> {
 
     IndexWalCoordinator<K, V> walCoordinator() {
         return walCoordinator;
+    }
+
+    IndexOperationCoordinator<K, V> operationCoordinator() {
+        return operationCoordinator;
     }
 
     IndexControlPlane controlPlane() {

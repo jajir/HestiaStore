@@ -62,6 +62,7 @@ class SegmentIndexRuntimeTest {
         assertNotNull(runtime.runtimeTuningState());
         assertNotNull(runtime.walRuntime());
         assertNotNull(runtime.walCoordinator());
+        assertNotNull(runtime.operationCoordinator());
         assertNotNull(runtime.metricsCollector());
         assertNotNull(runtime.controlPlane());
     }

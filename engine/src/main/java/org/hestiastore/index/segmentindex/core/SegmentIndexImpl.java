@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -34,13 +33,9 @@ import org.slf4j.LoggerFactory;
 public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
-    private static final String OPERATION_DRAIN = "drain";
-    static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
-    private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
-    private final TypeDescriptor<V> valueTypeDescriptor;
     private final Stats stats = new Stats();
     private final IndexAsyncOperationTracker asyncOperationTracker = new IndexAsyncOperationTracker();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
@@ -65,8 +60,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         try {
             this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                     "keyTypeDescriptor");
-            this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
-                    "valueTypeDescriptor");
+            Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
             try (IndexNameMdcScope ignored = IndexNameMdcScope
                     .openIfConfigured(this.conf)) {
@@ -94,7 +88,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 final IndexOpenCoordinator openCoordinator = new IndexOpenCoordinator(
                         logger, conf.getIndexName());
                 openCoordinator.completeOpen(openingState.wasStaleLockRecovered(),
-                        () -> runtime.recover(this::replayWalRecord),
+                        () -> runtime.recover(
+                                runtime.operationCoordinator()::replayWalRecord),
                         runtime.recoveryCleanupCoordinator()::cleanupOrphanedSegmentDirectories,
                         () -> stateCoordinator.markReady(this),
                         () -> consistencyCoordinator
@@ -111,27 +106,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void put(final K key, final V value) {
-        final long startedNanos = System.nanoTime();
         getIndexState().tryPerformOperation();
-        Vldtn.requireNonNull(key, "key");
-        Vldtn.requireNonNull(value, "value");
-        stats.incPutCx();
-
-        if (valueTypeDescriptor.isTombstone(value)) {
-            throw new IllegalArgumentException(String.format(
-                    "Can't insert thombstone value '%s' into index", value));
-        }
-        final long walLsn = runtime.walCoordinator().appendPut(key, value);
-
-        final IndexResult<Void> result = retryWhileBusy(
-                () -> putBuffered(key, value), "put", false);
-        if (result.getStatus() == IndexResultStatus.OK) {
-            runtime.walCoordinator().recordAppliedLsn(walLsn);
-            stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
-            return;
-        }
-        stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
-        throw newIndexException("put", null, result.getStatus());
+        runtime.operationCoordinator().put(key, value);
     }
 
     /** {@inheritDoc} */
@@ -216,19 +192,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public V get(final K key) {
-        final long startedNanos = System.nanoTime();
         getIndexState().tryPerformOperation();
-        Vldtn.requireNonNull(key, "key");
-        stats.incGetCx();
-
-        final IndexResult<V> result = retryWhileBusy(
-                () -> runtime.partitionReadCoordinator().get(key), "get", true);
-        if (result.getStatus() == IndexResultStatus.OK) {
-            stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
-            return result.getValue();
-        }
-        stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
-        throw newIndexException("get", null, result.getStatus());
+        return runtime.operationCoordinator().get(key);
     }
 
     /** {@inheritDoc} */
@@ -240,21 +205,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void delete(final K key) {
-        final long startedNanos = System.nanoTime();
         getIndexState().tryPerformOperation();
-        Vldtn.requireNonNull(key, "key");
-        stats.incDeleteCx();
-        final long walLsn = runtime.walCoordinator().appendDelete(key);
-        final IndexResult<Void> result = retryWhileBusy(
-                () -> putBuffered(key, valueTypeDescriptor.getTombstone()),
-                "delete", false);
-        if (result.getStatus() == IndexResultStatus.OK) {
-            runtime.walCoordinator().recordAppliedLsn(walLsn);
-            stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
-            return;
-        }
-        stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
-        throw newIndexException("delete", null, result.getStatus());
+        runtime.operationCoordinator().delete(key);
     }
 
     /** {@inheritDoc} */
@@ -327,63 +279,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public void flushAndWait() {
         runtime.maintenanceCoordinator().flushAndWait();
-    }
-
-    private IndexResult<Void> putBuffered(final K key, final V value) {
-        return runtime.partitionWriteCoordinator().putBuffered(key, value);
-    }
-
-    private void replayWalRecord(
-            final WalRuntime.ReplayRecord<K, V> replayRecord) {
-        final V value = replayRecord.getOperation() == WalRuntime.Operation.PUT
-                ? replayRecord.getValue()
-                : valueTypeDescriptor.getTombstone();
-        final IndexResult<Void> result = retryWhileBusy(
-                () -> putBuffered(replayRecord.getKey(), value), "walReplay",
-                false);
-        if (result.getStatus() != IndexResultStatus.OK) {
-            throw newIndexException("walReplay", null, result.getStatus());
-        }
-        runtime.walCoordinator().recordAppliedLsn(replayRecord.getLsn());
-    }
-
-    private <T> IndexResult<T> retryWhileBusy(
-            final Supplier<IndexResult<T>> operation, final String opName,
-            final boolean retryClosed) {
-        final long startNanos = runtime.retryPolicy().startNanos();
-        while (true) {
-            final IndexResult<T> result = operation.get();
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.BUSY
-                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
-                runtime.retryPolicy().backoffOrThrow(startNanos, opName, null);
-                continue;
-            }
-            return result;
-        }
-    }
-
-    private IndexException newIndexException(final String operation,
-            final SegmentId segmentId, final IndexResultStatus status) {
-        final String target = segmentId == null ? ""
-                : String.format(" on segment '%s'", segmentId);
-        return new IndexException(
-                String.format("Index operation '%s' failed%s: %s", operation,
-                        target, status));
-    }
-
-    static IndexResult<Void> toVoidResult(
-            final IndexResultStatus status) {
-        if (status == IndexResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (status == IndexResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        if (status == IndexResultStatus.OK) {
-            return IndexResult.ok();
-        }
-        return IndexResult.error();
     }
 
     protected void invalidateSegmentIterators() {
