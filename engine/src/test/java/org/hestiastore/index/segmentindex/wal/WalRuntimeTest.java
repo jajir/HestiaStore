@@ -158,7 +158,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(ignoredRecord -> {
                     });
             assertTrue(result.truncatedTail());
             assertEquals(0L, result.maxLsn());
@@ -183,7 +183,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -500,7 +500,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(ignoredRecord -> {
                     });
             assertEquals(lsn, result.maxLsn());
             assertEquals(lsn, runtime.statsSnapshot().checkpointLsn());
@@ -617,7 +617,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -632,7 +632,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -653,7 +653,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 duplicateListing, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final IndexException exception = assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
             assertTrue(exception.getMessage()
                     .contains("Duplicate WAL segment base LSN"));
@@ -686,7 +686,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(ignoredRecord -> {
                     });
             assertFalse(result.truncatedTail());
             assertEquals(firstLsn, result.maxLsn());
@@ -698,7 +698,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(ignoredRecord -> {
                     });
             assertEquals(firstLsn, result.maxLsn());
             assertEquals(firstLsn, result.lastReplayedLsn());
@@ -719,7 +719,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -737,7 +737,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -756,7 +756,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -776,7 +776,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -799,7 +799,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -823,7 +823,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(ignoredRecord -> {
                     });
             assertEquals(1L, result.maxLsn());
             assertEquals(1L, runtime.statsSnapshot().checkpointLsn());
@@ -917,7 +917,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -941,7 +941,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
         }
     }
@@ -967,7 +967,7 @@ class WalRuntimeTest {
         final long checkpointLsn = lastLsn;
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.recover(record -> {
+            runtime.recover(ignoredRecord -> {
             });
             assertThrows(IndexException.class,
                     () -> runtime.onCheckpoint(checkpointLsn));
@@ -995,7 +995,7 @@ class WalRuntimeTest {
         final long checkpointLsn = lastLsn;
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
-            runtime.recover(record -> {
+            runtime.recover(ignoredRecord -> {
             });
             assertThrows(IndexException.class,
                     () -> runtime.onCheckpoint(checkpointLsn));
@@ -1012,7 +1012,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final IndexException ex = assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(ignoredRecord -> {
                     }));
             assertTrue(ex.getMessage() != null
                     && ex.getMessage().contains("Invalid WAL segment name"));
@@ -1045,7 +1045,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(ignoredRecord -> {
                     });
             assertTrue(result.truncatedTail());
         }
