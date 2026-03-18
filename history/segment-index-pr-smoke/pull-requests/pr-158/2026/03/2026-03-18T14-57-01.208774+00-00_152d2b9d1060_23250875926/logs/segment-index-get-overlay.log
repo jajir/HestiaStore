@@ -1,0 +1,153 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitAsyncJoin
+# Parameters: (keyCount = 12000, maxKeysInChunk = 256, readPathMode = overlay, snappy = true, valueLength = 64)
+
+# Run progress: 0.00% complete, ETA 00:00:16
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+137152.916 ops/s
+Iteration   1: 169610.082 ops/s
+Iteration   2: 173533.842 ops/s
+Iteration   3: 172740.651 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitAsyncJoin":
+  171961.525 ±(99.9%) 37849.680 ops/s [Average]
+  (min, avg, max) = (169610.082, 171961.525, 173533.842), stdev = 2074.669
+  CI (99.9%): [134111.845, 209811.205] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync
+# Parameters: (keyCount = 12000, maxKeysInChunk = 256, readPathMode = overlay, snappy = true, valueLength = 64)
+
+# Run progress: 25.00% complete, ETA 00:00:17
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+3827556.010 ops/s
+Iteration   1: 5451487.029 ops/s
+Iteration   2: 5434752.400 ops/s
+Iteration   3: 5269041.846 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync":
+  5385093.759 ±(99.9%) 1839908.758 ops/s [Average]
+  (min, avg, max) = (5269041.846, 5385093.759, 5451487.029), stdev = 100851.607
+  CI (99.9%): [3545185.001, 7225002.516] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissAsyncJoin
+# Parameters: (keyCount = 12000, maxKeysInChunk = 256, readPathMode = overlay, snappy = true, valueLength = 64)
+
+# Run progress: 50.00% complete, ETA 00:00:11
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+132564.269 ops/s
+Iteration   1: 168589.728 ops/s
+Iteration   2: 171577.925 ops/s
+Iteration   3: 169517.191 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissAsyncJoin":
+  169894.948 ±(99.9%) 27903.692 ops/s [Average]
+  (min, avg, max) = (168589.728, 169894.948, 171577.925), stdev = 1529.495
+  CI (99.9%): [141991.256, 197798.640] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync
+# Parameters: (keyCount = 12000, maxKeysInChunk = 256, readPathMode = overlay, snappy = true, valueLength = 64)
+
+# Run progress: 75.00% complete, ETA 00:00:05
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
+SLF4J: Defaulting to no-operation MDCAdapter implementation.
+SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
+4429764.368 ops/s
+Iteration   1: 7241006.769 ops/s
+Iteration   2: 6983275.023 ops/s
+Iteration   3: 6477420.564 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync":
+  6900567.452 ±(99.9%) 7086843.987 ops/s [Average]
+  (min, avg, max) = (6477420.564, 6900567.452, 7241006.769), stdev = 388453.832
+  CI (99.9%): [≈ 0, 13987411.439] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:23
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                  (keyCount)  (maxKeysInChunk)  (readPathMode)  (snappy)  (valueLength)   Mode  Cnt        Score         Error  Units
+SegmentIndexGetBenchmark.getHitAsyncJoin        12000               256         overlay      true             64  thrpt    3   171961.525 ±   37849.680  ops/s
+SegmentIndexGetBenchmark.getHitSync             12000               256         overlay      true             64  thrpt    3  5385093.759 ± 1839908.758  ops/s
+SegmentIndexGetBenchmark.getMissAsyncJoin       12000               256         overlay      true             64  thrpt    3   169894.948 ±   27903.692  ops/s
+SegmentIndexGetBenchmark.getMissSync            12000               256         overlay      true             64  thrpt    3  6900567.452 ± 7086843.987  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-get-overlay.json
