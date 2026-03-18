@@ -31,7 +31,7 @@
         <junit.jupiter.version>5.14.1</junit.jupiter.version>
         <junit.platform.version>1.14.1</junit.platform.version>
         <failsafe.plugin.version>3.5.3</failsafe.plugin.version>
-        <surefire.plugin.version>3.5.3</surefire.plugin.version>
+        <surefire.plugin.version>3.5.5</surefire.plugin.version>
         <mockito.version>5.23.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
         <pmd.plugin.version>3.21.2</pmd.plugin.version>
