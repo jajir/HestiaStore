@@ -5,7 +5,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.slf4j.MDC;
 
 /**
  * Entry iterator decorator that sets the {@code index.name} MDC key while
@@ -18,51 +17,37 @@ class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
     private final EntryIterator<K, V> entryIterator;
-    private final IndexConfiguration<K, V> indexConf;
+    private final String indexName;
 
     EntryIteratorLoggingContext(final EntryIterator<K, V> entryIterator,
             final IndexConfiguration<K, V> indexConf) {
         this.entryIterator = Vldtn.requireNonNull(entryIterator, "entryIterator");
-        this.indexConf = Vldtn.requireNonNull(indexConf, "indexConf");
+        final IndexConfiguration<K, V> configuration = Vldtn
+                .requireNonNull(indexConf, "indexConf");
+        this.indexName = Vldtn.requireNotBlank(configuration.getIndexName(),
+                "indexName");
     }
 
     /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
-        setContext();
-        try {
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
             return entryIterator.hasNext();
-        } finally {
-            clearContext();
         }
     }
 
     /** {@inheritDoc} */
     @Override
     public Entry<K, V> next() {
-        setContext();
-        try {
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
             return entryIterator.next();
-        } finally {
-            clearContext();
         }
     }
 
     @Override
     protected void doClose() {
-        setContext();
-        try {
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
             entryIterator.close();
-        } finally {
-            clearContext();
         }
-    }
-
-    private void setContext() {
-        MDC.put("index.name", indexConf.getIndexName());
-    }
-
-    private void clearContext() {
-        MDC.remove("index.name");
     }
 }

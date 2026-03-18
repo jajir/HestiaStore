@@ -23,7 +23,6 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAda
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 /**
  * Base implementation of the segment index that manages stable segment
@@ -37,7 +36,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private static final String OPERATION_DRAIN = "drain";
     static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
-    private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
@@ -70,9 +68,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                     "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
-            final boolean contextApplied = applyIndexContext(this.conf);
-            try {
+            try (IndexNameMdcScope ignored = IndexNameMdcScope
+                    .openIfConfigured(this.conf)) {
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry");
                 this.runtime = SegmentIndexRuntime.open(logger, nonNullDirectory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
@@ -104,10 +101,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                                 .runStartupConsistencyCheck(
                                         this::checkAndRepairConsistency),
                         runtime.backgroundSplitPolicyLoop()::scheduleScan);
-            } finally {
-                if (contextApplied) {
-                    restorePreviousIndexName(previousIndexName);
-                }
             }
         } catch (final RuntimeException e) {
             failWithError(e);
@@ -415,36 +408,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     final IndexStateCoordinator<K, V> stateCoordinator() {
         return stateCoordinator;
-    }
-
-    private static boolean applyIndexContext(
-            final IndexConfiguration<?, ?> conf) {
-        if (!Boolean.TRUE.equals(conf.isContextLoggingEnabled())) {
-            return false;
-        }
-        final String indexName = normalizeIndexName(conf.getIndexName());
-        if (indexName == null) {
-            return false;
-        }
-        MDC.put(INDEX_NAME_MDC_KEY, indexName);
-        return true;
-    }
-
-    private static String normalizeIndexName(final String indexName) {
-        if (indexName == null) {
-            return null;
-        }
-        final String normalized = indexName.trim();
-        return normalized.isEmpty() ? null : normalized;
-    }
-
-    private static void restorePreviousIndexName(
-            final String previousIndexName) {
-        if (previousIndexName == null) {
-            MDC.remove(INDEX_NAME_MDC_KEY);
-            return;
-        }
-        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 
     private boolean isContextLoggingEnabled() {
