@@ -180,14 +180,14 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         .withRegistryMaintenanceExecutor(
                                 executorRegistry.getRegistryMaintenanceExecutor())
                         .build();
-                final PartitionRuntime<K, V> partitionRuntime = new PartitionRuntime<>(
+                final PartitionRuntime<K, V> runtime = new PartitionRuntime<>(
                         keyTypeDescriptor.getComparator());
-                this.partitionRuntime = partitionRuntime;
+                this.partitionRuntime = runtime;
                 final PartitionStableSplitCoordinator<K, V> splitCoordinator = new PartitionStableSplitCoordinator<>(
                         conf, keyTypeDescriptor.getComparator(), keyToSegmentMap, segmentRegistry,
-                        partitionRuntime);
+                        runtime);
                 this.backgroundSplitCoordinator = new BackgroundSplitCoordinator<>(
-                        keyToSegmentMap, partitionRuntime, splitCoordinator,
+                        keyToSegmentMap, runtime, splitCoordinator,
                         executorRegistry.getSplitMaintenanceExecutor(),
                         this::failWithError,
                         this::scheduleBackgroundSplitPolicyScanIfIdle);
@@ -253,7 +253,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final long walLsn = appendWalPutWithFailureHandling(key, value);
 
         final IndexResult<Void> result = retryWhileBusy(
-                () -> putBuffered(key, value), "put", key, false);
+                () -> putBuffered(key, value), "put", false);
         if (result.getStatus() == IndexResultStatus.OK) {
             recordAppliedWalLsn(walLsn);
             stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
@@ -386,7 +386,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final IndexResult<V> result = retryWhileBusy(
                 () -> backgroundSplitCoordinator
                         .runWithStableWriteAdmission(() -> getBuffered(key)),
-                "get", key, true);
+                "get", true);
         if (result.getStatus() == IndexResultStatus.OK) {
             stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
             return result.getValue();
@@ -411,7 +411,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final long walLsn = appendWalDeleteWithFailureHandling(key);
         final IndexResult<Void> result = retryWhileBusy(
                 () -> putBuffered(key, valueTypeDescriptor.getTombstone()),
-                "delete", key, false);
+                "delete", false);
         if (result.getStatus() == IndexResultStatus.OK) {
             recordAppliedWalLsn(walLsn);
             stats.recordWriteLatencyNanos(System.nanoTime() - startedNanos);
@@ -534,7 +534,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private void awaitAsyncOperations() {
-        if (inAsyncOperation.get()) {
+        if (Boolean.TRUE.equals(inAsyncOperation.get())) {
             throw new IllegalStateException(
                     "close() must not be called from an async index operation.");
         }
@@ -860,28 +860,27 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
                         segmentId);
-                continue;
-            }
-            if (loaded.getStatus() != SegmentRegistryResultStatus.OK
+            } else if (loaded.getStatus() != SegmentRegistryResultStatus.OK
                     || loaded.getValue() == null) {
                 throw new IndexException(String.format(
                         "Segment '%s' failed to load for drain: %s", segmentId,
                         loaded.getStatus()));
+            } else {
+                final SegmentResult<Void> putResult = loaded.getValue().put(key,
+                        value);
+                if (putResult.getStatus() == SegmentResultStatus.OK) {
+                    return;
+                }
+                if (putResult.getStatus() == SegmentResultStatus.BUSY
+                        || putResult.getStatus() == SegmentResultStatus.CLOSED) {
+                    retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
+                            segmentId);
+                } else {
+                    throw new IndexException(String.format(
+                            "Segment '%s' failed to accept drain entry: %s",
+                            segmentId, putResult.getStatus()));
+                }
             }
-            final SegmentResult<Void> putResult = loaded.getValue().put(key,
-                    value);
-            if (putResult.getStatus() == SegmentResultStatus.OK) {
-                return;
-            }
-            if (putResult.getStatus() == SegmentResultStatus.BUSY
-                    || putResult.getStatus() == SegmentResultStatus.CLOSED) {
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
-                        segmentId);
-                continue;
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to accept drain entry: %s", segmentId,
-                    putResult.getStatus()));
         }
     }
 
@@ -1020,17 +1019,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return;
         }
         for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
-            if (!isSegmentStillMapped(segmentId)) {
-                continue;
-            }
-            final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
-            if (segment == null) {
-                continue;
-            }
-            if (backgroundSplitCoordinator.handleSplitCandidate(segment,
-                    (long) threshold)) {
-                stats.incSplitScheduleCx();
-            }
+            scheduleSplitCandidateIfEligible(segmentId, threshold, false);
         }
     }
 
@@ -1045,18 +1034,28 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 backgroundSplitHintedSegments.keySet());
         for (final SegmentId segmentId : hintedSegmentIds) {
             backgroundSplitHintedSegments.remove(segmentId);
-            if (!isSegmentStillMapped(segmentId)) {
-                continue;
-            }
-            final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
-            if (segment == null) {
-                continue;
-            }
-            if (backgroundSplitCoordinator.handleSplitCandidate(segment,
-                    (long) threshold)) {
-                stats.incSplitScheduleCx();
-            }
+            scheduleSplitCandidateIfEligible(segmentId, threshold, false);
         }
+    }
+
+    private boolean scheduleSplitCandidateIfEligible(final SegmentId segmentId,
+            final int threshold, final boolean forceRetry) {
+        if (!isSegmentStillMapped(segmentId)) {
+            return false;
+        }
+        final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
+        if (segment == null) {
+            return false;
+        }
+        final boolean scheduled = forceRetry
+                ? backgroundSplitCoordinator.forceHandleSplitCandidate(segment,
+                        threshold)
+                : backgroundSplitCoordinator.handleSplitCandidate(segment,
+                        threshold);
+        if (scheduled) {
+            stats.incSplitScheduleCx();
+        }
+        return scheduled;
     }
 
     private boolean hasPendingSplitHints() {
@@ -1228,17 +1227,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return new EntryIteratorList<>(visibleEntries);
     }
 
-    private void replayWalRecord(final WalRuntime.ReplayRecord<K, V> record) {
-        final V value = record.getOperation() == WalRuntime.Operation.PUT
-                ? record.getValue()
+    private void replayWalRecord(
+            final WalRuntime.ReplayRecord<K, V> replayRecord) {
+        final V value = replayRecord.getOperation() == WalRuntime.Operation.PUT
+                ? replayRecord.getValue()
                 : valueTypeDescriptor.getTombstone();
         final IndexResult<Void> result = retryWhileBusy(
-                () -> putBuffered(record.getKey(), value), "walReplay",
-                record.getKey(), false);
+                () -> putBuffered(replayRecord.getKey(), value), "walReplay",
+                false);
         if (result.getStatus() != IndexResultStatus.OK) {
             throw newIndexException("walReplay", null, result.getStatus());
         }
-        recordAppliedWalLsn(record.getLsn());
+        recordAppliedWalLsn(replayRecord.getLsn());
     }
 
     private void recordAppliedWalLsn(final long walLsn) {
@@ -1583,7 +1583,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private <T> IndexResult<T> retryWhileBusy(
             final Supplier<IndexResult<T>> operation, final String opName,
-            final K key, final boolean retryClosed) {
+            final boolean retryClosed) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final IndexResult<T> result = operation.get();
@@ -1690,18 +1690,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         boolean scheduledAny = false;
         for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
-            if (!isSegmentStillMapped(segmentId)) {
-                continue;
-            }
-            final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
-            if (segment == null) {
-                continue;
-            }
-            if (backgroundSplitCoordinator.forceHandleSplitCandidate(segment,
-                    (long) threshold)) {
-                stats.incSplitScheduleCx();
-                scheduledAny = true;
-            }
+            scheduledAny |= scheduleSplitCandidateIfEligible(segmentId,
+                    threshold, true);
         }
         return scheduledAny;
     }
