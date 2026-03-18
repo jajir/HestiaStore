@@ -26,10 +26,12 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  */
 final class PartitionReadCoordinator<K, V> {
 
+    private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
+
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final SegmentIndexCore<K, V> core;
+    private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -39,7 +41,7 @@ final class PartitionReadCoordinator<K, V> {
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final PartitionRuntime<K, V> partitionRuntime,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SegmentIndexCore<K, V> core,
+            final StableSegmentGateway<K, V> stableSegmentGateway,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
@@ -50,7 +52,8 @@ final class PartitionReadCoordinator<K, V> {
                 "partitionRuntime");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.core = Vldtn.requireNonNull(core, "core");
+        this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
+                "stableSegmentGateway");
         this.backgroundSplitCoordinator = Vldtn.requireNonNull(
                 backgroundSplitCoordinator, "backgroundSplitCoordinator");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -95,7 +98,7 @@ final class PartitionReadCoordinator<K, V> {
                 snapshot.version())) {
             return IndexResult.busy();
         }
-        return core.get(segmentId, key);
+        return stableSegmentGateway.get(segmentId, key);
     }
 
     private EntryIterator<K, V> openMergedIterator(
@@ -128,8 +131,7 @@ final class PartitionReadCoordinator<K, V> {
                 }
             }
             retryPolicy.backoffOrThrow(startNanos,
-                    SegmentIndexImpl.OPERATION_OPEN_FULL_ISOLATION_ITERATOR,
-                    null);
+                    OPERATION_OPEN_FULL_ISOLATION_ITERATOR, null);
         }
     }
 
