@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -16,8 +14,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIteratorList;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.IndexException;
@@ -39,7 +35,6 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionLookupResult;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
@@ -63,7 +58,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
     private static final String OPERATION_DRAIN = "drain";
-    private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
+    static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
     private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
@@ -84,6 +79,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
     private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
     private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
+    private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
     private final IndexRetryPolicy retryPolicy;
@@ -184,6 +180,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         keyToSegmentMap, partitionRuntime, runtimeTuningState,
                         backgroundSplitCoordinator,
                         partitionDrainCoordinator::scheduleDrain);
+                this.partitionReadCoordinator = new PartitionReadCoordinator<>(
+                        keyToSegmentMap, partitionRuntime, segmentRegistry,
+                        core, backgroundSplitCoordinator, keyTypeDescriptor,
+                        valueTypeDescriptor, retryPolicy);
                 this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
                         keyTypeDescriptor, valueTypeDescriptor);
                 this.walCoordinator = new IndexWalCoordinator<>(logger, conf,
@@ -315,13 +315,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 : segmentWindows;
         Vldtn.requireNonNull(isolation, "isolation");
         final EntryIterator<K, V> segmentIterator;
-        if (isolation == SegmentIteratorIsolation.FULL_ISOLATION) {
-            segmentIterator = backgroundSplitCoordinator.runWithStableWriteAdmission(
-                    () -> openMergedIteratorWithRouteSnapshot(resolvedWindows,
-                            isolation));
-        } else {
-            segmentIterator = openMergedIterator(resolvedWindows, isolation);
-        }
+        segmentIterator = partitionReadCoordinator.openWindowIterator(
+                resolvedWindows, isolation);
         if (isContextLoggingEnabled()) {
             return new EntryIteratorLoggingContext<>(segmentIterator, conf);
         }
@@ -381,9 +376,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         stats.incGetCx();
 
         final IndexResult<V> result = retryWhileBusy(
-                () -> backgroundSplitCoordinator
-                        .runWithStableWriteAdmission(() -> getBuffered(key)),
-                "get", true);
+                () -> partitionReadCoordinator.get(key), "get", true);
         if (result.getStatus() == IndexResultStatus.OK) {
             stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
             return result.getValue();
@@ -627,27 +620,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return partitionWriteCoordinator.putBuffered(key, value);
     }
 
-    private IndexResult<V> getBuffered(final K key) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        final SegmentId segmentId = snapshot.findSegmentId(key);
-        if (segmentId == null) {
-            return IndexResult.ok(null);
-        }
-        partitionRuntime.ensurePartition(segmentId);
-        final PartitionLookupResult<V> overlay = partitionRuntime.lookup(
-                segmentId, key);
-        if (overlay.isFound()) {
-            final V value = overlay.getValue();
-            return IndexResult.ok(
-                    valueTypeDescriptor.isTombstone(value) ? null : value);
-        }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                snapshot.version())) {
-            return IndexResult.busy();
-        }
-        return core.get(segmentId, key);
-    }
-
     private void completeCloseStateTransition() {
         if (getState() != SegmentIndexState.ERROR) {
             setSegmentIndexState(SegmentIndexState.CLOSED);
@@ -727,61 +699,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     segmentId, deleteResult.getStatus());
             return;
         }
-    }
-
-    private EntryIterator<K, V> openMergedIterator(
-            final SegmentWindow resolvedWindows,
-            final SegmentIteratorIsolation isolation) {
-        final List<SegmentId> segmentIds = keyToSegmentMap
-                .getSegmentIds(resolvedWindows);
-        return openMergedIterator(segmentIds, isolation);
-    }
-
-    private EntryIterator<K, V> openMergedIteratorWithRouteSnapshot(
-            final SegmentWindow resolvedWindows,
-            final SegmentIteratorIsolation isolation) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap
-                    .snapshot();
-            final List<SegmentId> segmentIds = snapshot
-                    .getSegmentIds(resolvedWindows);
-            try {
-                final EntryIterator<K, V> iterator = openMergedIterator(
-                        segmentIds, isolation);
-                if (keyToSegmentMap.isVersion(snapshot.version())) {
-                    return iterator;
-                }
-                iterator.close();
-            } catch (final IndexException e) {
-                if (keyToSegmentMap.isVersion(snapshot.version())) {
-                    throw e;
-                }
-            }
-            retryPolicy.backoffOrThrow(startNanos,
-                    OPERATION_OPEN_FULL_ISOLATION_ITERATOR, null);
-        }
-    }
-
-    private EntryIterator<K, V> openMergedIterator(
-            final List<SegmentId> segmentIds,
-            final SegmentIteratorIsolation isolation) {
-        final NavigableMap<K, V> merged = new TreeMap<>(
-                keyTypeDescriptor.getComparator());
-        try (EntryIterator<K, V> stableIterator = new SegmentsIterator<>(
-                segmentIds, segmentRegistry, isolation, retryPolicy)) {
-            while (stableIterator.hasNext()) {
-                final Entry<K, V> entry = stableIterator.next();
-                merged.put(entry.getKey(), entry.getValue());
-            }
-        }
-        partitionRuntime.applyOverlaySnapshot(segmentIds, merged);
-        final List<Entry<K, V>> visibleEntries = merged.entrySet().stream()
-                .filter(entry -> !valueTypeDescriptor.isTombstone(
-                        entry.getValue()))
-                .map(entry -> Entry.of(entry.getKey(), entry.getValue()))
-                .toList();
-        return new EntryIteratorList<>(visibleEntries);
     }
 
     private void replayWalRecord(
