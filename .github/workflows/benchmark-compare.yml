@@ -2,6 +2,9 @@ name: Benchmark Compare
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       profile:
@@ -96,6 +99,11 @@ jobs:
 
         if [ "${{ github.event_name }}" = "schedule" ]; then
           PROFILE="segment-index-nightly"
+          CANDIDATE_REF="${GITHUB_SHA}"
+          FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
+          PUBLISH_HISTORY="true"
+        elif [ "${{ github.event_name }}" = "push" ]; then
+          PROFILE="segment-index-pr-smoke"
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
           PUBLISH_HISTORY="true"
