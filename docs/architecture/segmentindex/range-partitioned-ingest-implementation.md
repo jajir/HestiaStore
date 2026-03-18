@@ -13,11 +13,11 @@ runtime introduced above stable segment storage.
 
 The current implementation changes the user write path first. It still uses
 the existing stable-segment split execution primitives, but the runtime no
-longer depends on the historical `SegmentSplitCoordinator` wrapper.
+longer depends on the historical segment-split wrapper layer.
 
 ## Transitional Split Behavior
 
-- live-segment split is no longer triggered directly from `put()`
+- split is no longer triggered directly from `put()`
 - the current transition slice evaluates partition-aware stable split
   scheduling from a coalesced background policy scan over current routed
   partitions
@@ -52,8 +52,8 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
 - `FULL_ISOLATION` index streaming now opens against a split-safe route
   snapshot and retries if the segment map changes underneath the open; it no
   longer falls back to the historical split-idle barrier on the read path
-- point operations no longer wait explicitly for background live-segment split
-  completion before retrying a `BUSY` path
+- point operations no longer wait explicitly for background split completion
+  before retrying a `BUSY` path
 - `flushAndWait()` seals active partition data, drains immutable runs into
   stable segment storage, waits for any partition-aware stable splits already
   scheduled by background drain, drains again if split apply reassigned overlay
@@ -108,7 +108,7 @@ longer depends on the historical `SegmentSplitCoordinator` wrapper.
   after explicit maintenance completes so split materialization does not race
   against that maintenance on the same routed range
 - if the overlay exceeds local or global limits, writes receive bounded
-  backpressure instead of waiting on a live segment split
+  backpressure instead of waiting on background split completion
 - during the brief split-apply window itself, write admission is still gated
   so route remap and overlay reassignment stay atomic, but explicit
   `flushAndWait()` / `compactAndWait()` no longer need a whole-operation global
@@ -135,17 +135,6 @@ New partition-oriented settings:
 - `maxNumberOfKeysInIndexBuffer`
 - `maxNumberOfKeysInPartitionBeforeSplit`
 
-Compatibility fallbacks during load map older or cross-version settings to the
-new partition keys:
-
-- `maxNumberOfKeysInSegmentWriteCache` ->
-  `maxNumberOfKeysInActivePartition`
-- `maxNumberOfKeysInSegmentWriteCacheDuringMaintenance` ->
-  `maxNumberOfKeysInPartitionBuffer`
-- `maxNumberOfKeysInSegment` (when
-  `maxNumberOfKeysInPartitionBeforeSplit` is absent) ->
-  `maxNumberOfKeysInPartitionBeforeSplit`
-- `segmentMaintenanceAutoEnabled` ->
-  `backgroundMaintenanceAutoEnabled`
-
-New manifests are written with the partition-oriented names only.
+Legacy manifests are migrated during load to these canonical names, and newly
+written manifests persist only the canonical partition-oriented keys plus the
+canonical `backgroundMaintenanceAutoEnabled` flag.

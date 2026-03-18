@@ -1,19 +1,19 @@
 @startuml
 
 class           Segment {
-  + SegmentId SegmentId
+  + SegmentId getId()
+  + SegmentResult get()
+  + SegmentResult put()
   + EntryIterator openIterator()
-  + void openWriter()
-  + void forceCompact()
-  + SegmentSearcher openSearcher()
-  + EntryWriter openWriter()
-  + void optionallyCompact()
-  + SegmentSplitter.Result split()
+  + SegmentResult flush()
+  + SegmentResult compact()
+  + long getNumberOfKeys()
+  + void close()
 }
 
 note right of Segment
-  Entry class for working
-  with segment data.
+  Public contract for a single
+  durable segment.
 end note
 
 class           SegmentId {
