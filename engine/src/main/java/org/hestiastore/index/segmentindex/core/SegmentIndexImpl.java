@@ -39,12 +39,9 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionImmutableRun;
 import org.hestiastore.index.segmentindex.partition.PartitionLookupResult;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeLimits;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.partition.PartitionWriteResultStatus;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
@@ -86,6 +83,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentIndexCore<K, V> core;
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
     private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
+    private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
     private final IndexRetryPolicy retryPolicy;
@@ -182,6 +180,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         retryPolicy, stableSegmentCoordinator, stats,
                         backgroundSplitPolicyLoop::scheduleHint,
                         this::failWithError);
+                this.partitionWriteCoordinator = new PartitionWriteCoordinator<>(
+                        keyToSegmentMap, partitionRuntime, runtimeTuningState,
+                        backgroundSplitCoordinator,
+                        partitionDrainCoordinator::scheduleDrain);
                 this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
                         keyTypeDescriptor, valueTypeDescriptor);
                 this.walCoordinator = new IndexWalCoordinator<>(logger, conf,
@@ -622,25 +624,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private IndexResult<Void> putBuffered(final K key, final V value) {
-        return backgroundSplitCoordinator.runWithStableWriteAdmission(() -> {
-            final IndexResult<SegmentId> routeResult = resolveWriteSegmentId(
-                    key);
-            if (routeResult.getStatus() != IndexResultStatus.OK
-                    || routeResult.getValue() == null) {
-                return toVoidResult(routeResult.getStatus());
-            }
-            final SegmentId segmentId = routeResult.getValue();
-            partitionRuntime.ensurePartition(segmentId);
-            final var writeResult = partitionRuntime.write(segmentId, key,
-                    value, currentPartitionRuntimeLimits());
-            if (writeResult.getStatus() == PartitionWriteResultStatus.BUSY) {
-                return IndexResult.busy();
-            }
-            if (writeResult.isDrainRecommended()) {
-                partitionDrainCoordinator.scheduleDrain(segmentId);
-            }
-            return IndexResult.ok();
-        });
+        return partitionWriteCoordinator.putBuffered(key, value);
     }
 
     private IndexResult<V> getBuffered(final K key) {
@@ -662,37 +646,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return IndexResult.busy();
         }
         return core.get(segmentId, key);
-    }
-
-    private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        if (snapshot.findSegmentId(key) == null
-                && !keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
-            return IndexResult.busy();
-        }
-        final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
-                .snapshot();
-        final SegmentId segmentId = stableSnapshot.findSegmentId(key);
-        if (segmentId == null) {
-            return IndexResult.busy();
-        }
-        return IndexResult.ok(segmentId);
-    }
-
-    private PartitionRuntimeLimits currentPartitionRuntimeLimits() {
-        final int maxActive = Math.max(1, runtimeTuningState.effectiveValue(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
-        final int maxImmutableRuns = Math.max(1, runtimeTuningState
-                .effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
-        final int maxPartitionBuffer = Math.max(maxActive + 1,
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
-        final int maxIndexBuffer = Math.max(maxPartitionBuffer, runtimeTuningState
-                .effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
-        return new PartitionRuntimeLimits(maxActive, maxImmutableRuns,
-                maxPartitionBuffer, maxIndexBuffer);
     }
 
     private void completeCloseStateTransition() {
@@ -870,7 +823,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         target, status));
     }
 
-    private static IndexResult<Void> toVoidResult(
+    static IndexResult<Void> toVoidResult(
             final IndexResultStatus status) {
         if (status == IndexResultStatus.BUSY) {
             return IndexResult.busy();
