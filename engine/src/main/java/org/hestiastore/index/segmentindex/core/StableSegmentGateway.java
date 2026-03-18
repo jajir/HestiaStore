@@ -16,17 +16,18 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 
 /**
- * Single-attempt core for segment-index operations that returns status
+ * Single-attempt gateway for stable-segment operations that returns status
  * wrappers instead of blocking on BUSY.
  */
-final class SegmentIndexCore<K, V> {
+final class StableSegmentGateway<K, V> {
 
     private static final String SEGMENT_ID_ARG = "segmentId";
 
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
 
-    SegmentIndexCore(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+    StableSegmentGateway(
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");

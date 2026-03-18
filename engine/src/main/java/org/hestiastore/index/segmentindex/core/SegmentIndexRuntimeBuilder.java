@@ -141,7 +141,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                 executorRegistry.getSplitMaintenanceExecutor(),
                 callbacks.failureHandler(),
                 callbacks.onBackgroundSplitApplied());
-        final SegmentIndexCore<K, V> core = new SegmentIndexCore<>(
+        final StableSegmentGateway<K, V> stableSegmentGateway = new StableSegmentGateway<>(
                 keyToSegmentMap, segmentRegistry);
         final Executor drainExecutor = executorRegistry
                 .getIndexMaintenanceExecutor();
@@ -150,7 +150,8 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                 conf.getIndexBusyTimeoutMillis());
         final StableSegmentCoordinator<K, V> stableSegmentCoordinator = new StableSegmentCoordinator<>(
                 logger, keyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, core, retryPolicy, stats);
+                backgroundSplitCoordinator, stableSegmentGateway, retryPolicy,
+                stats);
         final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop = new BackgroundSplitPolicyLoop<>(
                 conf, runtimeTuningState, keyToSegmentMap, segmentRegistry,
                 partitionRuntime, backgroundSplitCoordinator, drainExecutor,
@@ -167,7 +168,8 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                 backgroundSplitCoordinator,
                 partitionDrainCoordinator::scheduleDrain);
         final PartitionReadCoordinator<K, V> partitionReadCoordinator = new PartitionReadCoordinator<>(
-                keyToSegmentMap, partitionRuntime, segmentRegistry, core,
+                keyToSegmentMap, partitionRuntime, segmentRegistry,
+                stableSegmentGateway,
                 backgroundSplitCoordinator, keyTypeDescriptor,
                 valueTypeDescriptor, retryPolicy);
         final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
@@ -202,8 +204,9 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                 backgroundSplitPolicyLoop::scheduleScan);
         return new SegmentIndexRuntime<>(runtimeTuningState, keyToSegmentMap,
                 segmentFactory, segmentRegistry, backgroundSplitCoordinator,
-                backgroundSplitPolicyLoop, core, stableSegmentCoordinator,
-                partitionDrainCoordinator, partitionWriteCoordinator,
+                backgroundSplitPolicyLoop, stableSegmentGateway,
+                stableSegmentCoordinator, partitionDrainCoordinator,
+                partitionWriteCoordinator,
                 partitionReadCoordinator, maintenanceCoordinator,
                 recoveryCleanupCoordinator, retryPolicy, walRuntime,
                 metricsCollector, walCoordinator, operationCoordinator,

@@ -32,7 +32,7 @@ final class StableSegmentCoordinator<K, V> {
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
-    private final SegmentIndexCore<K, V> core;
+    private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats;
 
@@ -40,7 +40,7 @@ final class StableSegmentCoordinator<K, V> {
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
-            final SegmentIndexCore<K, V> core,
+            final StableSegmentGateway<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats) {
         this.logger = Vldtn.requireNonNull(logger, "logger");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -49,7 +49,8 @@ final class StableSegmentCoordinator<K, V> {
                 "segmentRegistry");
         this.backgroundSplitCoordinator = Vldtn.requireNonNull(
                 backgroundSplitCoordinator, "backgroundSplitCoordinator");
-        this.core = Vldtn.requireNonNull(core, "core");
+        this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
+                "stableSegmentGateway");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         this.stats = Vldtn.requireNonNull(stats, "stats");
     }
@@ -108,21 +109,23 @@ final class StableSegmentCoordinator<K, V> {
     void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         runStableSegmentOperation(segmentId, waitForCompletion,
-                OPERATION_COMPACT, OPERATION_LABEL_COMPACT, core::compact);
+                OPERATION_COMPACT, OPERATION_LABEL_COMPACT,
+                stableSegmentGateway::compact);
     }
 
     void flushSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         stats.incFlushRequestCx();
         runStableSegmentOperation(segmentId, waitForCompletion,
-                OPERATION_FLUSH, OPERATION_LABEL_FLUSH, core::flush);
+                OPERATION_FLUSH, OPERATION_LABEL_FLUSH,
+                stableSegmentGateway::flush);
     }
 
     EntryIterator<K, V> openIteratorWithRetry(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<EntryIterator<K, V>> result = core
+            final IndexResult<EntryIterator<K, V>> result = stableSegmentGateway
                     .openIterator(segmentId, isolation);
             if (result.getStatus() == IndexResultStatus.OK) {
                 return result.getValue();

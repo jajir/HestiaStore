@@ -29,7 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentIndexCoreTest {
+class StableSegmentGatewayTest {
 
     @Mock
     private SegmentRegistry<String, String> segmentRegistry;
@@ -40,7 +40,7 @@ class SegmentIndexCoreTest {
     private Directory asyncDirectory;
     private KeyToSegmentMap<String> keyToSegmentMap;
     private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
-    private SegmentIndexCore<String, String> core;
+    private StableSegmentGateway<String, String> stableSegmentGateway;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +49,8 @@ class SegmentIndexCoreTest {
                 new TypeDescriptorShortString());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
-        core = new SegmentIndexCore<>(synchronizedKeyToSegmentMap,
+        stableSegmentGateway = new StableSegmentGateway<>(
+                synchronizedKeyToSegmentMap,
                 segmentRegistry);
     }
 
@@ -59,7 +60,7 @@ class SegmentIndexCoreTest {
                 && !synchronizedKeyToSegmentMap.wasClosed()) {
             synchronizedKeyToSegmentMap.close();
         }
-        core = null;
+        stableSegmentGateway = null;
         keyToSegmentMap = null;
         synchronizedKeyToSegmentMap = null;
         asyncDirectory = null;
@@ -67,7 +68,7 @@ class SegmentIndexCoreTest {
 
     @Test
     void get_returnsOkNullWhenNoSegmentMapping() {
-        final IndexResult<String> result = core.get("missing");
+        final IndexResult<String> result = stableSegmentGateway.get("missing");
 
         assertEquals(IndexResultStatus.OK, result.getStatus());
         assertNull(result.getValue());
@@ -81,7 +82,7 @@ class SegmentIndexCoreTest {
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.get("key")).thenReturn(SegmentResult.busy());
 
-        final IndexResult<String> result = core.get("key");
+        final IndexResult<String> result = stableSegmentGateway.get("key");
 
         assertEquals(IndexResultStatus.BUSY, result.getStatus());
     }
@@ -95,7 +96,7 @@ class SegmentIndexCoreTest {
         });
         when(segment.get("key")).thenReturn(SegmentResult.ok("value"));
 
-        final IndexResult<String> result = core.get("key");
+        final IndexResult<String> result = stableSegmentGateway.get("key");
 
         assertEquals(IndexResultStatus.BUSY, result.getStatus());
     }
@@ -110,7 +111,7 @@ class SegmentIndexCoreTest {
         when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 
-        final IndexResult<EntryIterator<String, String>> result = core
+        final IndexResult<EntryIterator<String, String>> result = stableSegmentGateway
                 .openIterator(segmentId, SegmentIteratorIsolation.FAIL_FAST);
 
         assertEquals(IndexResultStatus.OK, result.getStatus());
