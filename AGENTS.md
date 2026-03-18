@@ -9,3 +9,5 @@
 - Use the `java-code-review` skill for reviewing diffs, branches, and pull requests.
 - Use the `investigate-test-flake` skill for intermittent or nondeterministic test failures.
 - Use the `benchmark-regression-check` skill for benchmark drift and performance regression investigation.
+- Use the `release-maven-library` skill for release preparation, versioning, and post-release snapshot tasks.
+- Use the `sonar-smell-cleanup` skill for small, safe SonarCloud code smell cleanup batches.
