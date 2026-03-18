@@ -1,14 +1,19 @@
 package org.hestiastore.index.segment;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Admission gate that coordinates state transitions with in-flight counters.
  */
 final class SegmentConcurrencyGate {
 
-    private static final int SPIN_LIMIT = 1_000;
+    private static final long INITIAL_WAIT_NANOS = TimeUnit.MICROSECONDS
+            .toNanos(50);
+    private static final long MAX_WAIT_NANOS = TimeUnit.MILLISECONDS
+            .toNanos(1);
 
     private final SegmentStateMachine stateMachine = new SegmentStateMachine();
     private final AtomicInteger inFlightOperations = new AtomicInteger();
@@ -158,17 +163,13 @@ final class SegmentConcurrencyGate {
      * @return true when drained successfully
      */
     private boolean awaitNoInFlight() {
-        int spins = 0;
+        long waitNanos = INITIAL_WAIT_NANOS;
         while (hasInFlight()) {
             if (stateMachine.getState() != SegmentState.FREEZE) {
                 return false;
             }
-            if (spins++ < SPIN_LIMIT) {
-                Thread.onSpinWait();
-            } else {
-                Thread.yield();
-                spins = 0;
-            }
+            LockSupport.parkNanos(waitNanos);
+            waitNanos = Math.min(MAX_WAIT_NANOS, waitNanos << 1);
         }
         return stateMachine.getState() == SegmentState.FREEZE;
     }
