@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.IndexException;
@@ -72,8 +71,22 @@ public final class IndexRetryPolicy {
     }
 
     private long nextBackoffNanos() {
-        return backoffNanos + ThreadLocalRandom.current()
-                .nextLong(maxJitterNanos);
+        if (maxJitterNanos <= 1L) {
+            return backoffNanos;
+        }
+        return backoffNanos + Long.remainderUnsigned(
+                mix64(System.nanoTime() ^ Thread.currentThread().getId()),
+                maxJitterNanos);
+    }
+
+    private long mix64(final long value) {
+        long mixed = value;
+        mixed ^= mixed >>> 33;
+        mixed *= 0xff51afd7ed558ccdL;
+        mixed ^= mixed >>> 33;
+        mixed *= 0xc4ceb9fe1a85ec53L;
+        mixed ^= mixed >>> 33;
+        return mixed;
     }
 
     private boolean hasTimedOut(final long startNanos) {

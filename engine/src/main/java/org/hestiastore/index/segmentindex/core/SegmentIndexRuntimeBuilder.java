@@ -45,6 +45,11 @@ final class SegmentIndexRuntimeBuilder<K, V> {
         }
     }
 
+    static <K, V> BuildObserver<K, V> noOpBuildObserver() {
+        return new BuildObserver<>() {
+        };
+    }
+
     /**
      * Callback bundle used while assembling runtime collaborators.
      */
@@ -86,68 +91,129 @@ final class SegmentIndexRuntimeBuilder<K, V> {
         }
     }
 
-    private final Logger logger;
-    private final Directory directoryFacade;
-    private final TypeDescriptor<K> keyTypeDescriptor;
-    private final TypeDescriptor<V> valueTypeDescriptor;
-    private final IndexConfiguration<K, V> conf;
-    private final IndexExecutorRegistry executorRegistry;
-    private final Stats stats;
-    private final AtomicLong compactRequestHighWaterMark;
-    private final AtomicLong flushRequestHighWaterMark;
-    private final AtomicLong lastAppliedWalLsn;
+    static final class RuntimeEnvironment<K, V> {
+
+        private final Logger logger;
+        private final Directory directoryFacade;
+        private final TypeDescriptor<K> keyTypeDescriptor;
+        private final TypeDescriptor<V> valueTypeDescriptor;
+        private final IndexConfiguration<K, V> conf;
+        private final IndexExecutorRegistry executorRegistry;
+
+        RuntimeEnvironment(final Logger logger,
+                final Directory directoryFacade,
+                final TypeDescriptor<K> keyTypeDescriptor,
+                final TypeDescriptor<V> valueTypeDescriptor,
+                final IndexConfiguration<K, V> conf,
+                final IndexExecutorRegistry executorRegistry) {
+            this.logger = Vldtn.requireNonNull(logger, "logger");
+            this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                    "directoryFacade");
+            this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                    "keyTypeDescriptor");
+            this.valueTypeDescriptor = Vldtn.requireNonNull(
+                    valueTypeDescriptor, "valueTypeDescriptor");
+            this.conf = Vldtn.requireNonNull(conf, "conf");
+            this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                    "executorRegistry");
+        }
+
+        Logger logger() {
+            return logger;
+        }
+
+        Directory directoryFacade() {
+            return directoryFacade;
+        }
+
+        TypeDescriptor<K> keyTypeDescriptor() {
+            return keyTypeDescriptor;
+        }
+
+        TypeDescriptor<V> valueTypeDescriptor() {
+            return valueTypeDescriptor;
+        }
+
+        IndexConfiguration<K, V> conf() {
+            return conf;
+        }
+
+        IndexExecutorRegistry executorRegistry() {
+            return executorRegistry;
+        }
+    }
+
+    static final class RuntimeStateRefs {
+
+        private final Stats stats;
+        private final AtomicLong compactRequestHighWaterMark;
+        private final AtomicLong flushRequestHighWaterMark;
+        private final AtomicLong lastAppliedWalLsn;
+
+        RuntimeStateRefs(final Stats stats,
+                final AtomicLong compactRequestHighWaterMark,
+                final AtomicLong flushRequestHighWaterMark,
+                final AtomicLong lastAppliedWalLsn) {
+            this.stats = Vldtn.requireNonNull(stats, "stats");
+            this.compactRequestHighWaterMark = Vldtn.requireNonNull(
+                    compactRequestHighWaterMark,
+                    "compactRequestHighWaterMark");
+            this.flushRequestHighWaterMark = Vldtn.requireNonNull(
+                    flushRequestHighWaterMark, "flushRequestHighWaterMark");
+            this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
+                    "lastAppliedWalLsn");
+        }
+
+        Stats stats() {
+            return stats;
+        }
+
+        AtomicLong compactRequestHighWaterMark() {
+            return compactRequestHighWaterMark;
+        }
+
+        AtomicLong flushRequestHighWaterMark() {
+            return flushRequestHighWaterMark;
+        }
+
+        AtomicLong lastAppliedWalLsn() {
+            return lastAppliedWalLsn;
+        }
+    }
+
+    private final RuntimeEnvironment<K, V> environment;
+    private final RuntimeStateRefs runtimeStateRefs;
     private final Callbacks callbacks;
     private final BuildObserver<K, V> buildObserver;
 
-    SegmentIndexRuntimeBuilder(final Logger logger,
-            final Directory directoryFacade,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final IndexExecutorRegistry executorRegistry, final Stats stats,
-            final AtomicLong compactRequestHighWaterMark,
-            final AtomicLong flushRequestHighWaterMark,
-            final AtomicLong lastAppliedWalLsn, final Callbacks callbacks) {
-        this(logger, directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                conf, executorRegistry, stats, compactRequestHighWaterMark,
-                flushRequestHighWaterMark, lastAppliedWalLsn, callbacks,
-                new BuildObserver<>() {
-                });
-    }
-
-    SegmentIndexRuntimeBuilder(final Logger logger,
-            final Directory directoryFacade,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final IndexExecutorRegistry executorRegistry, final Stats stats,
-            final AtomicLong compactRequestHighWaterMark,
-            final AtomicLong flushRequestHighWaterMark,
-            final AtomicLong lastAppliedWalLsn, final Callbacks callbacks,
+    SegmentIndexRuntimeBuilder(final RuntimeEnvironment<K, V> environment,
+            final RuntimeStateRefs runtimeStateRefs, final Callbacks callbacks,
             final BuildObserver<K, V> buildObserver) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
-        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
-                "directoryFacade");
-        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                "keyTypeDescriptor");
-        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
-                "valueTypeDescriptor");
-        this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
-                "executorRegistry");
-        this.stats = Vldtn.requireNonNull(stats, "stats");
-        this.compactRequestHighWaterMark = Vldtn.requireNonNull(
-                compactRequestHighWaterMark, "compactRequestHighWaterMark");
-        this.flushRequestHighWaterMark = Vldtn.requireNonNull(
-                flushRequestHighWaterMark, "flushRequestHighWaterMark");
-        this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
-                "lastAppliedWalLsn");
+        this.environment = Vldtn.requireNonNull(environment, "environment");
+        this.runtimeStateRefs = Vldtn.requireNonNull(runtimeStateRefs,
+                "runtimeStateRefs");
         this.callbacks = Vldtn.requireNonNull(callbacks, "callbacks");
         this.buildObserver = Vldtn.requireNonNull(buildObserver,
                 "buildObserver");
     }
 
     SegmentIndexRuntime<K, V> build() {
+        final Logger logger = environment.logger();
+        final Directory directoryFacade = environment.directoryFacade();
+        final TypeDescriptor<K> keyTypeDescriptor = environment
+                .keyTypeDescriptor();
+        final TypeDescriptor<V> valueTypeDescriptor = environment
+                .valueTypeDescriptor();
+        final IndexConfiguration<K, V> conf = environment.conf();
+        final IndexExecutorRegistry executorRegistry = environment
+                .executorRegistry();
+        final Stats stats = runtimeStateRefs.stats();
+        final AtomicLong compactRequestHighWaterMark = runtimeStateRefs
+                .compactRequestHighWaterMark();
+        final AtomicLong flushRequestHighWaterMark = runtimeStateRefs
+                .flushRequestHighWaterMark();
+        final AtomicLong lastAppliedWalLsn = runtimeStateRefs
+                .lastAppliedWalLsn();
         KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap = null;
         SegmentRegistry<K, V> segmentRegistry = null;
         WalRuntime<K, V> walRuntime = null;

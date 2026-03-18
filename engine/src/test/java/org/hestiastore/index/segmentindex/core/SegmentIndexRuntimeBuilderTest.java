@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -40,14 +41,8 @@ class SegmentIndexRuntimeBuilderTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         executorRegistry = new IndexExecutorRegistry(conf);
-        runtime = new SegmentIndexRuntimeBuilder<>(logger, new MemDirectory(),
-                tdi, tds, conf, executorRegistry, new Stats(),
-                new AtomicLong(), new AtomicLong(), new AtomicLong(),
-                new SegmentIndexRuntimeBuilder.Callbacks(
-                        () -> SegmentIndexState.READY, () -> {
-                        }, failureRef::set, () -> {
-                        }))
-                                .build();
+        runtime = newBuilder(conf, failureRef::set,
+                SegmentIndexRuntimeBuilder.noOpBuildObserver()).build();
     }
 
     @AfterEach
@@ -80,38 +75,51 @@ class SegmentIndexRuntimeBuilderTest {
         final AtomicReference<KeyToSegmentMapSynchronizedAdapter<Integer>> keyToSegmentMapRef = new AtomicReference<>();
         final AtomicReference<WalRuntime<Integer, String>> walRuntimeRef = new AtomicReference<>();
         final RuntimeException failure = new IllegalStateException("boom");
+        final SegmentIndexRuntimeBuilder<Integer, String> builder = newBuilder(
+                buildWalEnabledConf(), ignored -> {
+                }, new SegmentIndexRuntimeBuilder.BuildObserver<>() {
+                    @Override
+                    public void onKeyToSegmentMapCreated(
+                            final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap) {
+                        keyToSegmentMapRef.set(keyToSegmentMap);
+                    }
+
+                    @Override
+                    public void onWalRuntimeCreated(
+                            final WalRuntime<Integer, String> walRuntime) {
+                        walRuntimeRef.set(walRuntime);
+                        throw failure;
+                    }
+                });
 
         final RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> new SegmentIndexRuntimeBuilder<>(logger,
-                        new MemDirectory(), tdi, tds, buildWalEnabledConf(),
-                        executorRegistry, new Stats(), new AtomicLong(),
-                        new AtomicLong(), new AtomicLong(),
-                        new SegmentIndexRuntimeBuilder.Callbacks(
-                                () -> SegmentIndexState.READY, () -> {
-                                }, ignored -> {
-                                }, () -> {
-                                }),
-                        new SegmentIndexRuntimeBuilder.BuildObserver<>() {
-                            @Override
-                            public void onKeyToSegmentMapCreated(
-                                    final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap) {
-                                keyToSegmentMapRef.set(keyToSegmentMap);
-                            }
-
-                            @Override
-                            public void onWalRuntimeCreated(
-                                    final WalRuntime<Integer, String> walRuntime) {
-                                walRuntimeRef.set(walRuntime);
-                                throw failure;
-                            }
-                        }).build());
+                builder::build);
 
         assertSame(failure, thrown);
         assertTrue(keyToSegmentMapRef.get().wasClosed());
+        final WalRuntime<Integer, String> createdWalRuntime = walRuntimeRef
+                .get();
         final IndexException walClosedFailure = assertThrows(
                 IndexException.class,
-                () -> walRuntimeRef.get().appendPut(1, "one"));
+                () -> createdWalRuntime.appendPut(1, "one"));
         assertTrue(walClosedFailure.getMessage().contains("already closed"));
+    }
+
+    private SegmentIndexRuntimeBuilder<Integer, String> newBuilder(
+            final IndexConfiguration<Integer, String> conf,
+            final Consumer<RuntimeException> failureHandler,
+            final SegmentIndexRuntimeBuilder.BuildObserver<Integer, String> buildObserver) {
+        return new SegmentIndexRuntimeBuilder<>(
+                new SegmentIndexRuntimeBuilder.RuntimeEnvironment<>(logger,
+                        new MemDirectory(), tdi, tds, conf, executorRegistry),
+                new SegmentIndexRuntimeBuilder.RuntimeStateRefs(new Stats(),
+                        new AtomicLong(), new AtomicLong(),
+                        new AtomicLong()),
+                new SegmentIndexRuntimeBuilder.Callbacks(
+                        () -> SegmentIndexState.READY, () -> {
+                        }, failureHandler, () -> {
+                        }),
+                buildObserver);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
