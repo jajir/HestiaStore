@@ -33,7 +33,6 @@ import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +78,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentIndexMetricsCollector<K, V> metricsCollector;
     private final IndexWalCoordinator<K, V> walCoordinator;
     private final IndexControlPlane controlPlane;
+    private final IndexCloseCoordinator closeCoordinator;
     private final IndexAsyncOperationTracker asyncOperationTracker = new IndexAsyncOperationTracker();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
@@ -200,6 +200,22 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         metricsCollector::metricsSnapshot,
                         this::applyRuntimeEffectiveLimits,
                         backgroundSplitPolicyLoop::scheduleScan);
+                this.closeCoordinator = new IndexCloseCoordinator(logger,
+                        conf.getIndexName(), () -> {
+                            getIndexState().onClose(this);
+                            setSegmentIndexState(SegmentIndexState.CLOSING);
+                        }, asyncOperationTracker::awaitAsyncOperations,
+                        () -> partitionDrainCoordinator.drainPartitions(true),
+                        backgroundSplitPolicyLoop::awaitExhausted,
+                        () -> setSegmentIndexState(SegmentIndexState.CLOSED),
+                        () -> backgroundSplitCoordinator
+                                .runWithSplitSchedulingPaused(() -> stableSegmentCoordinator
+                                        .flushSegments(true)),
+                        segmentRegistry::close, keyToSegmentMap::optionalyFlush,
+                        walCoordinator::checkpoint, stats::getGetCx,
+                        stats::getPutCx, stats::getDeleteCx,
+                        this::completeCloseStateTransition,
+                        walRuntime::close);
                 walCoordinator.recover(this::replayWalRecord);
                 recoveryCleanupCoordinator.cleanupOrphanedSegmentDirectories();
                 getIndexState().onReady(this);
@@ -403,51 +419,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        logger.debug("Closing index '{}'.", conf.getIndexName());
-        try {
-            getIndexState().onClose(this);
-            setSegmentIndexState(SegmentIndexState.CLOSING);
-            awaitAsyncOperations();
-            partitionDrainCoordinator.drainPartitions(true);
-            backgroundSplitPolicyLoop.awaitExhausted();
-            partitionDrainCoordinator.drainPartitions(true);
-            backgroundSplitPolicyLoop.awaitExhausted();
-            setSegmentIndexState(SegmentIndexState.CLOSED);
-            backgroundSplitCoordinator.runWithSplitSchedulingPaused(
-                    () -> stableSegmentCoordinator.flushSegments(true));
-            final SegmentRegistryResult<Void> closeResult = segmentRegistry
-                    .close();
-            if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
-                    && closeResult
-                            .getStatus() != SegmentRegistryResultStatus.CLOSED) {
-                throw new IndexException(
-                        String.format("Index operation '%s' failed: %s",
-                                "close", closeResult.getStatus()));
-            }
-            keyToSegmentMap.optionalyFlush();
-            walCoordinator.checkpoint();
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format(
-                        "Index is closing, where was %s gets, %s puts and %s deletes.",
-                        F.fmt(stats.getGetCx()), F.fmt(stats.getPutCx()),
-                        F.fmt(stats.getDeleteCx())));
-            }
-            logger.debug("Index '{}' closed.", conf.getIndexName());
-        } finally {
-            try {
-                completeCloseStateTransition();
-            } finally {
-                walRuntime.close();
-            }
-        }
+        closeCoordinator.close();
     }
 
     private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
         return asyncOperationTracker.runAsyncTracked(task);
-    }
-
-    private void awaitAsyncOperations() {
-        asyncOperationTracker.awaitAsyncOperations();
     }
 
     final void setIndexState(final IndexState<K, V> indexState) {
