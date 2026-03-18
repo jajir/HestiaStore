@@ -64,38 +64,32 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.conf = Vldtn.requireNonNull(conf, "conf");
             try (IndexNameMdcScope ignored = IndexNameMdcScope
                     .openIfConfigured(this.conf)) {
-                Vldtn.requireNonNull(executorRegistry, "executorRegistry");
-                this.runtime = SegmentIndexRuntime.open(logger, nonNullDirectory,
-                        keyTypeDescriptor, valueTypeDescriptor, conf,
-                        executorRegistry, stats,
-                        compactRequestHighWaterMark,
-                        flushRequestHighWaterMark, lastAppliedWalLsn,
-                        this::getState, this::awaitSplitsIdle,
-                        this::failWithError, this::onBackgroundSplitApplied);
-                this.closeCoordinator = runtime.newCloseCoordinator(logger,
-                        conf.getIndexName(),
-                        () -> stateCoordinator.beginClose(this),
-                        asyncOperationTracker::awaitAsyncOperations,
-                        () -> setSegmentIndexState(SegmentIndexState.CLOSED),
-                        stats::getGetCx, stats::getPutCx, stats::getDeleteCx,
-                        () -> stateCoordinator.completeCloseStateTransition(
-                                this));
-                this.consistencyCoordinator = new IndexConsistencyCoordinator<>(
-                        runtime.keyToSegmentMap(), runtime.segmentRegistry(),
-                        keyTypeDescriptor,
-                        runtime.recoveryCleanupCoordinator(),
-                        runtime.backgroundSplitPolicyLoop());
-                final IndexOpenCoordinator openCoordinator = new IndexOpenCoordinator(
-                        logger, conf.getIndexName());
-                openCoordinator.completeOpen(openingState.wasStaleLockRecovered(),
-                        () -> runtime.recover(
-                                runtime.operationCoordinator()::replayWalRecord),
-                        runtime.recoveryCleanupCoordinator()::cleanupOrphanedSegmentDirectories,
+                final SegmentIndexAssembly<K, V> assembly = SegmentIndexAssembly
+                        .open(logger, nonNullDirectory, keyTypeDescriptor,
+                                valueTypeDescriptor, conf, executorRegistry,
+                                stats, compactRequestHighWaterMark,
+                                flushRequestHighWaterMark, lastAppliedWalLsn,
+                                new SegmentIndexAssembly.Callbacks(
+                                        this::getState, this::awaitSplitsIdle,
+                                        this::failWithError,
+                                        this::onBackgroundSplitApplied,
+                                        () -> stateCoordinator.beginClose(this),
+                                        asyncOperationTracker::awaitAsyncOperations,
+                                        () -> setSegmentIndexState(
+                                                SegmentIndexState.CLOSED),
+                                        stats::getGetCx, stats::getPutCx,
+                                        stats::getDeleteCx,
+                                        () -> stateCoordinator
+                                                .completeCloseStateTransition(
+                                                        this)));
+                this.runtime = assembly.runtime();
+                this.closeCoordinator = assembly.closeCoordinator();
+                this.consistencyCoordinator = assembly
+                        .consistencyCoordinator();
+                assembly.completeOpen(logger, conf.getIndexName(),
+                        openingState.wasStaleLockRecovered(),
                         () -> stateCoordinator.markReady(this),
-                        () -> consistencyCoordinator
-                                .runStartupConsistencyCheck(
-                                        this::checkAndRepairConsistency),
-                        runtime.backgroundSplitPolicyLoop()::scheduleScan);
+                        this::checkAndRepairConsistency);
             }
         } catch (final RuntimeException e) {
             failWithError(e);
