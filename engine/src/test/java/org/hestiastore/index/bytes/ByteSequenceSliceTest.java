@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +63,7 @@ class ByteSequenceSliceTest {
 
         assertEquals(6, first.getByte(0));
         assertEquals(7, first.getByte(1));
-        assertTrue(first.equals(second));
+        assertEquals(first, second);
         assertEquals(first.hashCode(), second.hashCode());
         assertThrows(IllegalArgumentException.class, () -> first.getByte(2));
     }
