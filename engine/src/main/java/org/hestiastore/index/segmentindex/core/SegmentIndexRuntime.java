@@ -1,10 +1,9 @@
 package org.hestiastore.index.segmentindex.core;
 
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.LongSupplier;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.control.IndexControlPlane;
@@ -14,17 +13,14 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 
 /**
- * Aggregates runtime collaborators and centralizes their creation.
+ * Aggregates runtime collaborators created for a running index instance.
  *
  * @param <K> key type
  * @param <V> value type
@@ -52,7 +48,7 @@ final class SegmentIndexRuntime<K, V> {
     private final IndexControlPlane controlPlane;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
 
-    private SegmentIndexRuntime(
+    SegmentIndexRuntime(
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentFactory<K, V> segmentFactory,
@@ -108,99 +104,14 @@ final class SegmentIndexRuntime<K, V> {
             final Runnable awaitSplitsIdle,
             final Consumer<RuntimeException> failureHandler,
             final Runnable onBackgroundSplitApplied) {
-        final RuntimeTuningState runtimeTuningState = RuntimeTuningState
-                .fromConfiguration(conf);
-        final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
-                directoryFacade, keyTypeDescriptor);
-        final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
-                keyToSegmentMapDelegate);
-        final SegmentFactory<K, V> segmentFactory = new SegmentFactory<>(
-                directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
-                executorRegistry.getStableSegmentMaintenanceExecutor());
-        final SegmentRegistry<K, V> segmentRegistry = SegmentRegistry.<K, V>builder()
-                .withDirectoryFacade(directoryFacade)
-                .withKeyTypeDescriptor(keyTypeDescriptor)
-                .withValueTypeDescriptor(valueTypeDescriptor)
-                .withConfiguration(conf)
-                .withSegmentMaintenanceExecutor(
-                        executorRegistry.getStableSegmentMaintenanceExecutor())
-                .withRegistryMaintenanceExecutor(
-                        executorRegistry.getRegistryMaintenanceExecutor())
-                .build();
-        final PartitionRuntime<K, V> partitionRuntime = new PartitionRuntime<>(
-                keyTypeDescriptor.getComparator());
-        final PartitionStableSplitCoordinator<K, V> splitCoordinator = new PartitionStableSplitCoordinator<>(
-                conf, keyTypeDescriptor.getComparator(), keyToSegmentMap,
-                segmentRegistry, partitionRuntime);
-        final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator = new BackgroundSplitCoordinator<>(
-                keyToSegmentMap, partitionRuntime, splitCoordinator,
-                executorRegistry.getSplitMaintenanceExecutor(), failureHandler,
-                onBackgroundSplitApplied);
-        final SegmentIndexCore<K, V> core = new SegmentIndexCore<>(
-                keyToSegmentMap, segmentRegistry);
-        final Executor drainExecutor = executorRegistry
-                .getIndexMaintenanceExecutor();
-        final IndexRetryPolicy retryPolicy = new IndexRetryPolicy(
-                conf.getIndexBusyBackoffMillis(),
-                conf.getIndexBusyTimeoutMillis());
-        final StableSegmentCoordinator<K, V> stableSegmentCoordinator = new StableSegmentCoordinator<>(
-                logger, keyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, core, retryPolicy, stats);
-        final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop = new BackgroundSplitPolicyLoop<>(
-                conf, runtimeTuningState, keyToSegmentMap, segmentRegistry,
-                partitionRuntime, backgroundSplitCoordinator, drainExecutor,
-                executorRegistry.getSplitPolicyScheduler(), stats,
-                stateSupplier, awaitSplitsIdle, failureHandler);
-        final PartitionDrainCoordinator<K, V> partitionDrainCoordinator = new PartitionDrainCoordinator<>(
-                partitionRuntime, keyToSegmentMap, drainExecutor, retryPolicy,
-                stableSegmentCoordinator, stats,
-                backgroundSplitPolicyLoop::scheduleHint, failureHandler);
-        final PartitionWriteCoordinator<K, V> partitionWriteCoordinator = new PartitionWriteCoordinator<>(
-                keyToSegmentMap, partitionRuntime, runtimeTuningState,
-                backgroundSplitCoordinator,
-                partitionDrainCoordinator::scheduleDrain);
-        final PartitionReadCoordinator<K, V> partitionReadCoordinator = new PartitionReadCoordinator<>(
-                keyToSegmentMap, partitionRuntime, segmentRegistry, core,
-                backgroundSplitCoordinator, keyTypeDescriptor,
-                valueTypeDescriptor, retryPolicy);
-        final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
-                logger, directoryFacade, keyToSegmentMap, segmentRegistry,
-                retryPolicy);
-        final WalRuntime<K, V> walRuntime = WalRuntime.open(directoryFacade,
-                conf.getWal(), keyTypeDescriptor, valueTypeDescriptor);
-        final IndexWalCoordinator<K, V> walCoordinator = new IndexWalCoordinator<>(
-                logger, conf, walRuntime, retryPolicy,
-                () -> partitionDrainCoordinator.drainPartitions(true), () -> {
-                    stableSegmentCoordinator.flushSegments(true);
-                    keyToSegmentMap.optionalyFlush();
-                }, stateSupplier, failureHandler, lastAppliedWalLsn);
-        final IndexOperationCoordinator<K, V> operationCoordinator = new IndexOperationCoordinator<>(
-                valueTypeDescriptor, stats, partitionWriteCoordinator,
-                partitionReadCoordinator, walCoordinator, retryPolicy);
-        final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator = new IndexMaintenanceCoordinator<>(
-                keyToSegmentMap, partitionRuntime, partitionDrainCoordinator,
-                backgroundSplitCoordinator, backgroundSplitPolicyLoop,
-                stableSegmentCoordinator, walCoordinator);
-        final SegmentIndexMetricsCollector<K, V> metricsCollector = new SegmentIndexMetricsCollector<>(
-                conf, keyToSegmentMap, segmentRegistry, partitionRuntime,
-                runtimeTuningState, walRuntime, stats,
-                compactRequestHighWaterMark, flushRequestHighWaterMark,
-                lastAppliedWalLsn, stateSupplier);
-        final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier = new SegmentRuntimeLimitApplier<>(
-                segmentRegistry, segmentFactory);
-        final IndexControlPlane controlPlane = new IndexRuntimeControlPlane(
-                conf, runtimeTuningState, stateSupplier,
-                metricsCollector::metricsSnapshot, runtimeLimitApplier::apply,
-                backgroundSplitPolicyLoop::scheduleScan);
-        return new SegmentIndexRuntime<>(runtimeTuningState, keyToSegmentMap,
-                segmentFactory, segmentRegistry, backgroundSplitCoordinator,
-                backgroundSplitPolicyLoop, core, stableSegmentCoordinator,
-                partitionDrainCoordinator, partitionWriteCoordinator,
-                partitionReadCoordinator, maintenanceCoordinator,
-                recoveryCleanupCoordinator, retryPolicy, walRuntime,
-                metricsCollector, walCoordinator, operationCoordinator,
-                controlPlane,
-                runtimeLimitApplier);
+        return new SegmentIndexRuntimeBuilder<>(logger, directoryFacade,
+                keyTypeDescriptor, valueTypeDescriptor, conf, executorRegistry,
+                stats, compactRequestHighWaterMark,
+                flushRequestHighWaterMark, lastAppliedWalLsn,
+                new SegmentIndexRuntimeBuilder.Callbacks(stateSupplier,
+                        awaitSplitsIdle, failureHandler,
+                        onBackgroundSplitApplied))
+                                .build();
     }
 
     RuntimeTuningState runtimeTuningState() {
