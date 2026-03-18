@@ -1128,10 +1128,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 
-    private boolean isSegmentStillMapped(final SegmentId segmentId) {
-        return keyToSegmentMap.getSegmentIds().contains(segmentId);
-    }
-
     private boolean isContextLoggingEnabled() {
         final Boolean enabled = conf.isContextLoggingEnabled();
         return enabled != null && enabled;

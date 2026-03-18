@@ -25,6 +25,8 @@ final class StableSegmentCoordinator<K, V> {
     private static final String OPERATION_COMPACT = "compact";
     private static final String OPERATION_FLUSH = "flush";
     private static final String OPERATION_DRAIN = "drain";
+    private static final String OPERATION_LABEL_COMPACT = "Compact";
+    private static final String OPERATION_LABEL_FLUSH = "Flush";
 
     private final Logger logger;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
@@ -105,156 +107,15 @@ final class StableSegmentCoordinator<K, V> {
 
     void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Compact attempt started: segment='{}' wait='{}'",
-                    segmentId, waitForCompletion);
-        }
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<Segment<K, V>> result = core.compact(segmentId);
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.OK) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Compact accepted: segment='{}' wait='{}' state='{}'",
-                            segmentId, waitForCompletion,
-                            result.getValue() == null ? null
-                                    : result.getValue().getState());
-                }
-                if (waitForCompletion) {
-                    final Segment<K, V> segment = result.getValue();
-                    if (segment != null) {
-                        awaitSegmentReady(segmentId, OPERATION_COMPACT,
-                                segment);
-                    }
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Compact completed: segment='{}' wait='{}'",
-                            segmentId, waitForCompletion);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.CLOSED) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Compact skipped because segment is closed: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.BUSY) {
-                if (!isSegmentStillMapped(segmentId)) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Compact aborted because segment is no longer mapped: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (!waitForCompletion) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Compact coalesced because segment is already busy: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Compact busy, retrying: segment='{}'",
-                            segmentId);
-                }
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_COMPACT,
-                        segmentId);
-                continue;
-            }
-            if (status == IndexResultStatus.ERROR
-                    && !isSegmentStillMapped(segmentId)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Compact ignored error because segment is no longer mapped: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            throw newIndexException(OPERATION_COMPACT, segmentId, status);
-        }
+        runStableSegmentOperation(segmentId, waitForCompletion,
+                OPERATION_COMPACT, OPERATION_LABEL_COMPACT, core::compact);
     }
 
     void flushSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         stats.incFlushRequestCx();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Flush attempt started: segment='{}' wait='{}'",
-                    segmentId, waitForCompletion);
-        }
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<Segment<K, V>> result = core.flush(segmentId);
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.OK) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Flush accepted: segment='{}' wait='{}' state='{}'",
-                            segmentId, waitForCompletion,
-                            result.getValue() == null ? null
-                                    : result.getValue().getState());
-                }
-                if (waitForCompletion) {
-                    final Segment<K, V> segment = result.getValue();
-                    if (segment != null) {
-                        awaitSegmentReady(segmentId, OPERATION_FLUSH, segment);
-                    }
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Flush completed: segment='{}' wait='{}'",
-                            segmentId, waitForCompletion);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.CLOSED) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Flush skipped because segment is closed: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.BUSY) {
-                if (!isSegmentStillMapped(segmentId)) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Flush aborted because segment is no longer mapped: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (!waitForCompletion) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Flush coalesced because segment is already busy: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Flush busy, retrying: segment='{}'",
-                            segmentId);
-                }
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_FLUSH,
-                        segmentId);
-                continue;
-            }
-            if (status == IndexResultStatus.ERROR
-                    && !isSegmentStillMapped(segmentId)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Flush ignored error because segment is no longer mapped: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            throw newIndexException(OPERATION_FLUSH, segmentId, status);
-        }
+        runStableSegmentOperation(segmentId, waitForCompletion,
+                OPERATION_FLUSH, OPERATION_LABEL_FLUSH, core::flush);
     }
 
     EntryIterator<K, V> openIteratorWithRetry(final SegmentId segmentId,
@@ -317,6 +178,85 @@ final class StableSegmentCoordinator<K, V> {
         }
     }
 
+    private void runStableSegmentOperation(final SegmentId segmentId,
+            final boolean waitForCompletion, final String operation,
+            final String operationLabel,
+            final StableSegmentOperation<K, V> operationRunner) {
+        logOperation("{} attempt started: segment='{}' wait='{}'",
+                operationLabel, segmentId, waitForCompletion);
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final IndexResult<Segment<K, V>> result = operationRunner
+                    .run(segmentId);
+            final IndexResultStatus status = result.getStatus();
+            if (status == IndexResultStatus.OK) {
+                completeAcceptedOperation(segmentId, waitForCompletion,
+                        operation, operationLabel, result.getValue());
+                return;
+            }
+            if (status == IndexResultStatus.CLOSED) {
+                logOperation(
+                        "{} skipped because segment is closed: segment='{}'",
+                        operationLabel, segmentId);
+                return;
+            }
+            if (status == IndexResultStatus.BUSY) {
+                if (handleBusyOperation(segmentId, waitForCompletion,
+                        operationLabel)) {
+                    return;
+                }
+                retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
+                continue;
+            }
+            if (status == IndexResultStatus.ERROR
+                    && !isSegmentStillMapped(segmentId)) {
+                logOperation(
+                        "{} ignored error because segment is no longer mapped: segment='{}'",
+                        operationLabel, segmentId);
+                return;
+            }
+            throw newIndexException(operation, segmentId, status);
+        }
+    }
+
+    private void completeAcceptedOperation(final SegmentId segmentId,
+            final boolean waitForCompletion, final String operation,
+            final String operationLabel, final Segment<K, V> segment) {
+        logOperation("{} accepted: segment='{}' wait='{}' state='{}'",
+                operationLabel, segmentId, waitForCompletion,
+                segment == null ? null : segment.getState());
+        if (waitForCompletion && segment != null) {
+            awaitSegmentReady(segmentId, operation, segment);
+        }
+        logOperation("{} completed: segment='{}' wait='{}'", operationLabel,
+                segmentId, waitForCompletion);
+    }
+
+    private boolean handleBusyOperation(final SegmentId segmentId,
+            final boolean waitForCompletion, final String operationLabel) {
+        if (!isSegmentStillMapped(segmentId)) {
+            logOperation(
+                    "{} aborted because segment is no longer mapped: segment='{}'",
+                    operationLabel, segmentId);
+            return true;
+        }
+        if (!waitForCompletion) {
+            logOperation(
+                    "{} coalesced because segment is already busy: segment='{}'",
+                    operationLabel, segmentId);
+            return true;
+        }
+        logOperation("{} busy, retrying: segment='{}'", operationLabel,
+                segmentId);
+        return false;
+    }
+
+    private void logOperation(final String message, final Object... args) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(message, args);
+        }
+    }
+
     private boolean isSegmentStillMapped(final SegmentId segmentId) {
         return keyToSegmentMap.getSegmentIds().contains(segmentId);
     }
@@ -328,5 +268,10 @@ final class StableSegmentCoordinator<K, V> {
         return new IndexException(
                 String.format("Index operation '%s' failed%s: %s", operation,
                         target, status));
+    }
+
+    @FunctionalInterface
+    private interface StableSegmentOperation<K, V> {
+        IndexResult<Segment<K, V>> run(SegmentId segmentId);
     }
 }
