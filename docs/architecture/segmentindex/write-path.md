@@ -21,11 +21,13 @@ Writes become durable when flushed to segment files. Closing the index performs 
 - `SegmentIndex.put(K,V)` and `SegmentIndex.delete(K)` validate input, update counters, and delegate to the internal implementation.
 - Internal implementation: `IndexInternalConcurrent` (caller-thread execution,
   thread-safe without global serialization).
-- Async operations are provided by `IndexAsyncAdapter`; logging context by
-  `IndexContextLoggingAdapter`.
+- Async operations are executed by the dedicated `IndexAsyncExecutor` inside
+  the internal implementation; `IndexAsyncAdapter` is a thin async-facing
+  wrapper and `IndexContextLoggingAdapter` adds MDC correlation.
 
 Key classes: `segmentindex/SegmentIndex.java`,
 `segmentindex/IndexInternalConcurrent.java`,
+`segmentindex/IndexAsyncExecutor.java`,
 `segmentindex/IndexAsyncAdapter.java`,
 `segmentindex/IndexContextLoggingAdapter.java`.
 

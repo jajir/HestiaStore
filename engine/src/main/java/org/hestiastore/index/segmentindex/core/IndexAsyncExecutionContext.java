@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Marks threads currently executing index work through the async adapter.
+ * Marks threads currently executing index work through async API executors.
  */
 final class IndexAsyncExecutionContext {
 
