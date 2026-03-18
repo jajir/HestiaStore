@@ -1,3 +1,1 @@
-architecture/general/management-api.md
-architecture/general/monitoring-bridge.md
-development/documentation.md
+# No explicit documentation exclusions.
