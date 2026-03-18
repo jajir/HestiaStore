@@ -15,7 +15,7 @@ final class IndexOpenCoordinator {
 
     IndexOpenCoordinator(final Logger logger, final String indexName) {
         this.logger = Vldtn.requireNonNull(logger, "logger");
-        this.indexName = indexName;
+        this.indexName = Vldtn.requireNonNull(indexName, "indexName");
     }
 
     void completeOpen(final boolean staleLockRecovered,
