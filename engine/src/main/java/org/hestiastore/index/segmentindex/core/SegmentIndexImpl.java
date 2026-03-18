@@ -1,17 +1,13 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
@@ -24,7 +20,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
@@ -36,7 +31,6 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
@@ -59,12 +53,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     private static final String OPERATION_DRAIN = "drain";
     static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
-    private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
-    private static final Pattern SEGMENT_DIRECTORY_PATTERN = Pattern
-            .compile("^segment-(\\d{5})$");
-    private static final int BOOTSTRAP_SEGMENT_ID = 0;
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Directory directoryFacade;
     private final IndexConfiguration<K, V> conf;
@@ -81,6 +71,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
     private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
     private final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator;
+    private final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
     private final IndexRetryPolicy retryPolicy;
@@ -185,6 +176,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         keyToSegmentMap, partitionRuntime, segmentRegistry,
                         core, backgroundSplitCoordinator, keyTypeDescriptor,
                         valueTypeDescriptor, retryPolicy);
+                this.recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
+                        logger, nonNullDirectory, keyToSegmentMap,
+                        segmentRegistry, retryPolicy);
                 this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
                         keyTypeDescriptor, valueTypeDescriptor);
                 this.walCoordinator = new IndexWalCoordinator<>(logger, conf,
@@ -212,7 +206,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         this::applyRuntimeEffectiveLimits,
                         backgroundSplitPolicyLoop::scheduleScan);
                 walCoordinator.recover(this::replayWalRecord);
-                cleanupOrphanedSegmentDirectories();
+                recoveryCleanupCoordinator.cleanupOrphanedSegmentDirectories();
                 getIndexState().onReady(this);
                 setSegmentIndexState(SegmentIndexState.READY);
                 if (openingState.wasStaleLockRecovered()) {
@@ -404,25 +398,11 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         final IndexConsistencyChecker<K, V> checker = new IndexConsistencyChecker<>(
                 keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
                 startupConsistencyCheckForStaleSegmentLocks
-                        ? this::hasSegmentLockFile
+                        ? recoveryCleanupCoordinator::hasSegmentLockFile
                         : segmentId -> true);
         checker.checkAndRepairConsistency();
-        cleanupOrphanedSegmentDirectories();
+        recoveryCleanupCoordinator.cleanupOrphanedSegmentDirectories();
         backgroundSplitPolicyLoop.scheduleScan();
-    }
-
-    private boolean hasSegmentLockFile(final SegmentId segmentId) {
-        final SegmentId nonNullSegmentId = Vldtn.requireNonNull(segmentId,
-                "segmentId");
-        final String segmentDirectoryName = nonNullSegmentId.getName();
-        if (!directoryFacade.isFileExists(segmentDirectoryName)) {
-            return false;
-        }
-        final Directory segmentDirectory = directoryFacade
-                .openSubDirectory(segmentDirectoryName);
-        final String lockFileName = new SegmentDirectoryLayout(nonNullSegmentId)
-                .getLockFileName();
-        return segmentDirectory.isFileExists(lockFileName);
     }
 
     /** {@inheritDoc} */
@@ -593,70 +573,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             return;
         }
         currentState.onClose(this);
-    }
-
-    private void cleanupOrphanedSegmentDirectories() {
-        final Set<SegmentId> mappedSegmentIds = new HashSet<>(
-                keyToSegmentMap.getSegmentIds());
-        final List<SegmentId> orphanedSegmentIds = new ArrayList<>();
-        try (var fileNames = directoryFacade.getFileNames()) {
-            fileNames.forEach(name -> {
-                final SegmentId segmentId = parseSegmentDirectoryName(name);
-                if (segmentId != null
-                        && segmentId.getId() != BOOTSTRAP_SEGMENT_ID
-                        && !mappedSegmentIds.contains(segmentId)) {
-                    orphanedSegmentIds.add(segmentId);
-                }
-            });
-        }
-        orphanedSegmentIds.forEach(this::deleteOrphanedSegmentDirectory);
-    }
-
-    private SegmentId parseSegmentDirectoryName(final String name) {
-        if (name == null) {
-            return null;
-        }
-        final var matcher = SEGMENT_DIRECTORY_PATTERN.matcher(name);
-        if (!matcher.matches()) {
-            return null;
-        }
-        try {
-            return SegmentId.of(Integer.parseInt(matcher.group(1)));
-        } catch (final NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private void deleteOrphanedSegmentDirectory(final SegmentId segmentId) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
-                    .deleteSegment(segmentId);
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK
-                    || deleteResult
-                            .getStatus() == SegmentRegistryResultStatus.CLOSED) {
-                logger.info(
-                        "Deleted orphaned segment directory '{}' during recovery/consistency cleanup.",
-                        segmentId);
-                return;
-            }
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                try {
-                    retryPolicy.backoffOrThrow(startNanos,
-                            OPERATION_CLEANUP_ORPHAN_SEGMENT, segmentId);
-                } catch (final IndexException timeout) {
-                    logger.warn(
-                            "Orphaned segment directory '{}' could not be deleted because cleanup timed out.",
-                            segmentId);
-                    return;
-                }
-                continue;
-            }
-            logger.warn(
-                    "Orphaned segment directory '{}' could not be deleted during cleanup: {}",
-                    segmentId, deleteResult.getStatus());
-            return;
-        }
     }
 
     private void replayWalRecord(
