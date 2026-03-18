@@ -115,7 +115,8 @@ public final class SegmentFactory<K, V> {
                                 ? conf.getIndexName()
                                 : null)//
                 .withMaintenancePolicy(stableSegmentMaintenancePolicy)//
-                // Stable segment builder still uses legacy write-cache naming.
+                // Stable segment builder still exposes segment-local
+                // write-buffer limit names.
                 .withMaxNumberOfKeysInSegmentWriteCache(
                         mapActivePartitionKeyLimitToStableWriteBuffer(
                                 activePartitionKeyLimit))//

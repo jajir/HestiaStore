@@ -172,6 +172,13 @@
         current split-vs-drain responsibilities, so the documentation no
         longer points at deleted segment-era coordinator classes after the
         rename sweep.
+      - Removed the last public doc examples that still enumerated legacy
+        partition-migration aliases (`segmentMaintenanceAutoEnabled` and
+        segment-write fallback keys); docs now describe compatibility only as
+        load-time manifest migration plus canonical rewrite-on-save.
+      - Updated the segment overview diagram and historical segment API notes
+        so they reflect the current public `Segment` contract and no longer
+        point at deleted `SegmentSplitter.Result` / split-wrapper APIs.
 
 [ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
     - Add a dedicated unit suite for partition runtime, route snapshots, drain
