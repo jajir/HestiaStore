@@ -103,7 +103,7 @@ mvn help:evaluate -Dexpression=project.version -q -DforceStdout
 Expected result:
 
 ```text
-0.0.6-SNAPSHOT
+X.Y.Z-SNAPSHOT
 ```
 
 If the version does not end with `-SNAPSHOT`, do not continue with release preparation until the intended state is clear.
@@ -139,7 +139,7 @@ Before the release bump, the current project version is expected to appear as a 
 Convert `X.Y.Z-SNAPSHOT` to `X.Y.Z` using the helper script:
 
 ```bash
-./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.6
+./.agents/skills/release-maven-library/scripts/bump-version.sh X.Y.Z
 ```
 
 Then verify again:
@@ -158,8 +158,8 @@ Review the changed files and create a focused release commit:
 
 ```bash
 git add pom.xml */pom.xml
-git commit -m "release: version 0.0.6"
-git tag release-0.0.6
+git commit -m "release: version X.Y.Z"
+git tag release-X.Y.Z
 ```
 
 Use the `release-X.Y.Z` tag format. Create the tag on the release commit, not on the later post-release snapshot commit.
@@ -179,10 +179,10 @@ This matches the current repository configuration, where the `release` profile i
 After the release is deployed, bump to the next snapshot version:
 
 ```bash
-./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh 0.0.7-SNAPSHOT
+./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh X.Y.(Z+1)-SNAPSHOT
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
 git add pom.xml */pom.xml
-git commit -m "post-release: bumped to 0.0.7-SNAPSHOT"
+git commit -m "post-release: bumped to X.Y.(Z+1)-SNAPSHOT"
 ```
 
 ### 9. Push commits and tags
@@ -191,12 +191,12 @@ Push both the branch and the release tag:
 
 ```bash
 git push origin main
-git push origin release-0.0.6
+git push origin release-X.Y.Z
 ```
 
 ### 10. Publish release notes
 
-Create the GitHub release from tag `release-0.0.6` and summarize:
+Create the GitHub release from tag `release-X.Y.Z` and summarize:
 
 - released version
 - notable changes
