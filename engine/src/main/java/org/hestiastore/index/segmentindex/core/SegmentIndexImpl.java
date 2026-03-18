@@ -1,8 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,14 +8,11 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -28,16 +23,8 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.F;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexConfigurationManagement;
 import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.control.IndexRuntimeView;
-import org.hestiastore.index.control.model.ConfigurationSnapshot;
-import org.hestiastore.index.control.model.IndexRuntimeSnapshot;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimePatchValidation;
 import org.hestiastore.index.control.model.RuntimeSettingKey;
-import org.hestiastore.index.control.model.ValidationIssue;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
@@ -45,11 +32,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
-import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
@@ -67,7 +50,6 @@ import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
@@ -84,14 +66,11 @@ import org.slf4j.MDC;
 public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
-    private static final String OPERATION_COMPACT = "compact";
-    private static final String OPERATION_FLUSH = "flush";
     private static final String OPERATION_DRAIN = "drain";
     private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
     private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
     private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
-    private static final long BACKGROUND_SPLIT_POLICY_INTERVAL_MILLIS = 250L;
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
     private static final Pattern SEGMENT_DIRECTORY_PATTERN = Pattern
@@ -106,28 +85,23 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentFactory<K, V> segmentFactory;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
+    private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
     private final SegmentIndexCore<K, V> core;
+    private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
     private final PartitionRuntime<K, V> partitionRuntime;
     private final Executor drainExecutor;
-    private final ScheduledExecutorService splitPolicyScheduler;
     private final IndexRetryPolicy retryPolicy;
     private final RuntimeTuningState runtimeTuningState;
-    private final IndexControlPlane controlPlane;
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats = new Stats();
+    private final SegmentIndexMetricsCollector<K, V> metricsCollector;
+    private final IndexControlPlane controlPlane;
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
     private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
             0L);
     private final AtomicBoolean walRetentionPressureWarnActive = new AtomicBoolean(
             false);
-    private final AtomicBoolean backgroundSplitScanScheduled = new AtomicBoolean(
-            false);
-    private final AtomicBoolean backgroundSplitScanRequested = new AtomicBoolean(
-            false);
-    private final AtomicBoolean backgroundSplitPolicyTickScheduled = new AtomicBoolean(
-            false);
-    private final ConcurrentHashMap<SegmentId, Boolean> backgroundSplitHintedSegments = new ConcurrentHashMap<>();
     private final Object asyncMonitor = new Object();
     private int asyncInFlight = 0;
     private final ThreadLocal<Boolean> inAsyncOperation = ThreadLocal
@@ -190,19 +164,37 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         keyToSegmentMap, runtime, splitCoordinator,
                         executorRegistry.getSplitMaintenanceExecutor(),
                         this::failWithError,
-                        this::scheduleBackgroundSplitPolicyScanIfIdle);
+                        this::onBackgroundSplitApplied);
                 this.core = new SegmentIndexCore<>(keyToSegmentMap,
                         segmentRegistry);
                 this.drainExecutor = executorRegistry
                         .getIndexMaintenanceExecutor();
-                this.splitPolicyScheduler = executorRegistry
-                        .getSplitPolicyScheduler();
                 this.retryPolicy = new IndexRetryPolicy(
                         conf.getIndexBusyBackoffMillis(),
                         conf.getIndexBusyTimeoutMillis());
-                this.controlPlane = new IndexControlPlaneImpl();
+                this.stableSegmentCoordinator = new StableSegmentCoordinator<>(
+                        logger, keyToSegmentMap, segmentRegistry,
+                        backgroundSplitCoordinator, core, retryPolicy, stats);
+                this.backgroundSplitPolicyLoop = new BackgroundSplitPolicyLoop<>(
+                        conf, runtimeTuningState, keyToSegmentMap,
+                        segmentRegistry, partitionRuntime,
+                        backgroundSplitCoordinator, drainExecutor,
+                        executorRegistry.getSplitPolicyScheduler(), stats,
+                        this::getState, this::awaitSplitsIdle,
+                        this::failWithError);
                 this.walRuntime = WalRuntime.open(nonNullDirectory, conf.getWal(),
                         keyTypeDescriptor, valueTypeDescriptor);
+                this.metricsCollector = new SegmentIndexMetricsCollector<>(conf,
+                        keyToSegmentMap, segmentRegistry, partitionRuntime,
+                        runtimeTuningState, walRuntime, stats,
+                        compactRequestHighWaterMark,
+                        flushRequestHighWaterMark, lastAppliedWalLsn,
+                        this::getState);
+                this.controlPlane = new IndexRuntimeControlPlane(conf,
+                        runtimeTuningState, this::getState,
+                        metricsCollector::metricsSnapshot,
+                        this::applyRuntimeEffectiveLimits,
+                        backgroundSplitPolicyLoop::scheduleScan);
                 if (walRuntime.isEnabled()) {
                     final WalRuntime.RecoveryResult recoveryResult = walRuntime
                             .recover(this::replayWalRecord);
@@ -224,7 +216,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         startupConsistencyCheckForStaleSegmentLocks = false;
                     }
                 }
-                scheduleBackgroundSplitPolicyScan();
+                backgroundSplitPolicyLoop.scheduleScan();
                 logger.debug("Index '{}' opened.", conf.getIndexName());
             } finally {
                 if (contextApplied) {
@@ -287,7 +279,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         Vldtn.requireNonNull(isolation, "isolation");
-        return openIteratorWithRetry(segmentId, isolation);
+        return stableSegmentCoordinator.openIteratorWithRetry(segmentId,
+                isolation);
     }
 
     /**
@@ -350,8 +343,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         }
         backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> keyToSegmentMap
                 .getSegmentIds()
-                .forEach(segmentId -> compactSegment(segmentId, false)));
-        scheduleBackgroundSplitPolicyScanIfIdle();
+                .forEach(segmentId -> stableSegmentCoordinator.compactSegment(
+                        segmentId, false)));
+        backgroundSplitPolicyLoop.scheduleScanIfIdle();
     }
 
     /** {@inheritDoc} */
@@ -359,17 +353,17 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public void compactAndWait() {
         getIndexState().tryPerformOperation();
         drainPartitions(true);
-        awaitBackgroundSplitPolicyExhausted();
+        backgroundSplitPolicyLoop.awaitExhausted();
         drainPartitions(true);
-        awaitBackgroundSplitPolicyExhausted();
-        compactMappedSegmentsAndFlush();
+        backgroundSplitPolicyLoop.awaitExhausted();
+        stableSegmentCoordinator.compactMappedSegmentsAndFlush();
         final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
-        scheduleBackgroundSplitPolicyScanIfIdle();
-        awaitBackgroundSplitPolicyExhausted();
+        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        backgroundSplitPolicyLoop.awaitExhausted();
         if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
             drainPartitions(true);
-            awaitBackgroundSplitPolicyExhausted();
-            compactMappedSegmentsAndFlush();
+            backgroundSplitPolicyLoop.awaitExhausted();
+            stableSegmentCoordinator.compactMappedSegmentsAndFlush();
         }
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
@@ -442,7 +436,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         : segmentId -> true);
         checker.checkAndRepairConsistency();
         cleanupOrphanedSegmentDirectories();
-        scheduleBackgroundSplitPolicyScan();
+        backgroundSplitPolicyLoop.scheduleScan();
     }
 
     private boolean hasSegmentLockFile(final SegmentId segmentId) {
@@ -468,12 +462,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             setSegmentIndexState(SegmentIndexState.CLOSING);
             awaitAsyncOperations();
             drainPartitions(true);
-            awaitBackgroundSplitPolicyExhausted();
+            backgroundSplitPolicyLoop.awaitExhausted();
             drainPartitions(true);
-            awaitBackgroundSplitPolicyExhausted();
+            backgroundSplitPolicyLoop.awaitExhausted();
             setSegmentIndexState(SegmentIndexState.CLOSED);
-            backgroundSplitCoordinator
-                    .runWithSplitSchedulingPaused(() -> flushSegments(true));
+            backgroundSplitCoordinator.runWithSplitSchedulingPaused(
+                    () -> stableSegmentCoordinator.flushSegments(true));
             final SegmentRegistryResult<Void> closeResult = segmentRegistry
                     .close();
             if (closeResult.getStatus() != SegmentRegistryResultStatus.OK
@@ -569,91 +563,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        final SegmentRegistryCacheStats cacheStats = segmentRegistry
-                .metricsSnapshot();
-        final StableSegmentRuntimeAggregate stableSegmentRuntime =
-                collectStableSegmentRuntime();
-        final PartitionRuntimeSnapshot partitionSnapshot = partitionRuntime
-                .snapshot();
-        final var walStats = walRuntime.statsSnapshot();
-        final long compactRequestCount = Math.max(stats.getCompactRequestCx(),
-                updateHighWaterMark(compactRequestHighWaterMark,
-                        stableSegmentRuntime.totalCompactRequestCount));
-        final long flushRequestCount = Math.max(stats.getFlushRequestCx(),
-                updateHighWaterMark(flushRequestHighWaterMark,
-                        stableSegmentRuntime.totalFlushRequestCount));
-        // Keep legacy segment-centric metric field names for snapshot/API
-        // compatibility while the implementation is partition-first.
-        return new SegmentIndexMetricsSnapshot(stats.getGetCx(),
-                stats.getPutCx(), stats.getDeleteCx(), cacheStats.hitCount(),
-                cacheStats.missCount(), cacheStats.loadCount(),
-                cacheStats.evictionCount(), cacheStats.size(),
-                cacheStats.limit(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER),
-                stableSegmentRuntime.totalMappedStableSegmentCount,
-                stableSegmentRuntime.readyStableSegmentCount,
-                stableSegmentRuntime.stableSegmentsInMaintenanceStateCount,
-                stableSegmentRuntime.errorStableSegmentCount,
-                stableSegmentRuntime.closedStableSegmentCount,
-                stableSegmentRuntime.unloadedMappedStableSegmentCount,
-                stableSegmentRuntime.totalStableSegmentKeyCount,
-                stableSegmentRuntime.totalStableSegmentCacheKeyCount,
-                stableSegmentRuntime.totalStableSegmentWriteBufferKeyCount
-                        + partitionSnapshot.getBufferedKeyCount(),
-                stableSegmentRuntime.totalStableSegmentDeltaCacheFileCount,
-                compactRequestCount, flushRequestCount,
-                partitionSnapshot.getDrainScheduleCount(),
-                partitionSnapshot.getDrainInFlightCount(),
-                partitionSnapshot.getImmutableRunCount(),
-                runtimeTuningState
-                        .effectiveValue(
-                                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
-                partitionSnapshot.getDrainingPartitionCount(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
-                stats.getReadLatencyP50Micros(),
-                stats.getReadLatencyP95Micros(),
-                stats.getReadLatencyP99Micros(),
-                stats.getWriteLatencyP50Micros(),
-                stats.getWriteLatencyP95Micros(),
-                stats.getWriteLatencyP99Micros(),
-                conf.getBloomFilterNumberOfHashFunctions(),
-                conf.getBloomFilterIndexSizeInBytes(),
-                conf.getBloomFilterProbabilityOfFalsePositive(),
-                stableSegmentRuntime.totalBloomFilterRequestCount,
-                stableSegmentRuntime.totalBloomFilterRefusedCount,
-                stableSegmentRuntime.totalBloomFilterPositiveCount,
-                stableSegmentRuntime.totalBloomFilterFalsePositiveCount,
-                walRuntime.isEnabled(), walStats.appendCount(),
-                walStats.appendBytes(), walStats.syncCount(),
-                walStats.syncFailureCount(), walStats.corruptionCount(),
-                walStats.truncationCount(), walStats.retainedBytes(),
-                walStats.segmentCount(), walStats.durableLsn(),
-                walStats.checkpointLsn(), walStats.pendingSyncBytes(),
-                lastAppliedWalLsn.get(), walStats.syncTotalNanos(),
-                walStats.syncMaxNanos(), walStats.syncBatchBytesTotal(),
-                walStats.syncBatchBytesMax(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
-                partitionSnapshot.getPartitionCount(),
-                partitionSnapshot.getActivePartitionCount(),
-                partitionSnapshot.getDrainingPartitionCount(),
-                partitionSnapshot.getImmutableRunCount(),
-                partitionSnapshot.getBufferedKeyCount(),
-                partitionSnapshot.getLocalThrottleCount(),
-                partitionSnapshot.getGlobalThrottleCount(),
-                partitionSnapshot.getDrainScheduleCount(),
-                partitionSnapshot.getDrainInFlightCount(),
-                stats.getDrainLatencyP95Micros(),
-                stableSegmentRuntime.stableSegmentMetricsSnapshots,
-                getState());
+        return metricsCollector.metricsSnapshot();
     }
 
     final void setSegmentIndexState(final SegmentIndexState state) {
@@ -674,31 +584,37 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         setIndexState(new IndexStateError<>(failure, fileLock));
     }
 
+    private void onBackgroundSplitApplied() {
+        if (backgroundSplitPolicyLoop != null) {
+            backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        }
+    }
+
     /** {@inheritDoc} */
     @Override
     public void flush() {
         drainPartitions(false);
-        backgroundSplitCoordinator
-                .runWithSplitSchedulingPaused(() -> flushSegments(false));
+        backgroundSplitCoordinator.runWithSplitSchedulingPaused(
+                () -> stableSegmentCoordinator.flushSegments(false));
         keyToSegmentMap.optionalyFlush();
-        scheduleBackgroundSplitPolicyScanIfIdle();
+        backgroundSplitPolicyLoop.scheduleScanIfIdle();
     }
 
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
         drainPartitions(true);
-        awaitBackgroundSplitPolicyExhausted();
+        backgroundSplitPolicyLoop.awaitExhausted();
         drainPartitions(true);
-        awaitBackgroundSplitPolicyExhausted();
-        flushMappedSegmentsAndWait();
+        backgroundSplitPolicyLoop.awaitExhausted();
+        stableSegmentCoordinator.flushMappedSegmentsAndWait();
         final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
-        scheduleBackgroundSplitPolicyScanIfIdle();
-        awaitBackgroundSplitPolicyExhausted();
+        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        backgroundSplitPolicyLoop.awaitExhausted();
         if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
             drainPartitions(true);
-            awaitBackgroundSplitPolicyExhausted();
-            flushMappedSegmentsAndWait();
+            backgroundSplitPolicyLoop.awaitExhausted();
+            stableSegmentCoordinator.flushMappedSegmentsAndWait();
         }
         keyToSegmentMap.optionalyFlush();
         checkpointWal();
@@ -837,8 +753,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             throw e;
         } finally {
             partitionRuntime.finishDrainScheduling(segmentId);
-            if (drainedAnyRun && isBackgroundSplitPolicyEnabled()) {
-                scheduleBackgroundSplitPolicyHint(segmentId);
+            if (drainedAnyRun) {
+                backgroundSplitPolicyLoop.scheduleHint(segmentId);
             }
         }
     }
@@ -846,249 +762,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private void drainImmutableRun(final SegmentId segmentId,
             final PartitionImmutableRun<K, V> run) {
         for (final Map.Entry<K, V> entry : run.getEntries().entrySet()) {
-            putStableEntry(segmentId, entry.getKey(), entry.getValue());
+            stableSegmentCoordinator.putEntryForDrain(segmentId,
+                    entry.getKey(), entry.getValue());
         }
-        flushSegment(segmentId, true);
-    }
-
-    private void putStableEntry(final SegmentId segmentId, final K key,
-            final V value) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
-                        segmentId);
-            } else if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                    || loaded.getValue() == null) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to load for drain: %s", segmentId,
-                        loaded.getStatus()));
-            } else {
-                final SegmentResult<Void> putResult = loaded.getValue().put(key,
-                        value);
-                if (putResult.getStatus() == SegmentResultStatus.OK) {
-                    return;
-                }
-                if (putResult.getStatus() == SegmentResultStatus.BUSY
-                        || putResult.getStatus() == SegmentResultStatus.CLOSED) {
-                    retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
-                            segmentId);
-                } else {
-                    throw new IndexException(String.format(
-                            "Segment '%s' failed to accept drain entry: %s",
-                            segmentId, putResult.getStatus()));
-                }
-            }
-        }
-    }
-
-    private void scheduleBackgroundSplitPolicyScan() {
-        if (!isBackgroundSplitPolicyEnabled()) {
-            return;
-        }
-        ensureAutonomousBackgroundSplitPolicyLoop();
-        backgroundSplitScanRequested.set(true);
-        scheduleBackgroundSplitPolicyWorker();
-    }
-
-    private void scheduleBackgroundSplitPolicyScanIfIdle() {
-        if (!isBackgroundSplitPolicyEnabled()) {
-            return;
-        }
-        ensureAutonomousBackgroundSplitPolicyLoop();
-        if (!isAutonomousSplitPolicyIdle()) {
-            return;
-        }
-        scheduleBackgroundSplitPolicyScan();
-    }
-
-    private void scheduleBackgroundSplitPolicyHint(final SegmentId segmentId) {
-        if (!isBackgroundSplitPolicyEnabled()) {
-            return;
-        }
-        if (segmentId == null || !isSegmentStillMapped(segmentId)) {
-            return;
-        }
-        backgroundSplitHintedSegments.put(segmentId, Boolean.TRUE);
-        ensureAutonomousBackgroundSplitPolicyLoop();
-        scheduleBackgroundSplitPolicyWorker();
-    }
-
-    private void scheduleBackgroundSplitPolicyWorker() {
-        if (!backgroundSplitScanScheduled.compareAndSet(false, true)) {
-            return;
-        }
-        try {
-            drainExecutor.execute(this::runBackgroundSplitPolicyLoop);
-        } catch (final RuntimeException e) {
-            backgroundSplitScanScheduled.set(false);
-            if (isClosedOrClosingState()) {
-                return;
-            }
-            throw e;
-        }
-    }
-
-    private void runBackgroundSplitPolicyLoop() {
-        try {
-            if (!isBackgroundSplitPolicyEnabled()) {
-                return;
-            }
-            do {
-                final boolean fullScanRequested = backgroundSplitScanRequested
-                        .getAndSet(false);
-                scanHintedSplitCandidates();
-                if (fullScanRequested) {
-                    scanCurrentSplitCandidates();
-                }
-            } while (backgroundSplitScanRequested.get()
-                    || hasPendingSplitHints());
-        } catch (final RuntimeException e) {
-            if (!isClosedOrClosingState()) {
-                failWithError(e);
-                throw e;
-            }
-        } finally {
-            backgroundSplitScanScheduled.set(false);
-            if ((backgroundSplitScanRequested.get()
-                    || hasPendingSplitHints())
-                    && isBackgroundSplitPolicyEnabled()) {
-                scheduleBackgroundSplitPolicyWorker();
-            }
-        }
-    }
-
-    private void ensureAutonomousBackgroundSplitPolicyLoop() {
-        if (!isBackgroundSplitPolicyEnabled()) {
-            return;
-        }
-        if (!backgroundSplitPolicyTickScheduled.compareAndSet(false, true)) {
-            return;
-        }
-        try {
-            splitPolicyScheduler.schedule(
-                    this::runAutonomousBackgroundSplitPolicyTick,
-                    BACKGROUND_SPLIT_POLICY_INTERVAL_MILLIS,
-                    TimeUnit.MILLISECONDS);
-        } catch (final RuntimeException e) {
-            backgroundSplitPolicyTickScheduled.set(false);
-            if (isClosedOrClosingState()) {
-                return;
-            }
-            throw e;
-        }
-    }
-
-    private void runAutonomousBackgroundSplitPolicyTick() {
-        backgroundSplitPolicyTickScheduled.set(false);
-        try {
-            if (!isBackgroundSplitPolicyEnabled()) {
-                return;
-            }
-            if (isAutonomousSplitPolicyIdle()) {
-                scheduleBackgroundSplitPolicyScan();
-            }
-        } catch (final RuntimeException e) {
-            if (!isClosedOrClosingState()) {
-                failWithError(e);
-                throw e;
-            }
-        } finally {
-            if (isBackgroundSplitPolicyEnabled()) {
-                ensureAutonomousBackgroundSplitPolicyLoop();
-            }
-        }
-    }
-
-    private boolean isAutonomousSplitPolicyIdle() {
-        final PartitionRuntimeSnapshot snapshot = partitionRuntime.snapshot();
-        return snapshot.getBufferedKeyCount() == 0
-                && snapshot.getActivePartitionCount() == 0
-                && snapshot.getImmutableRunCount() == 0
-                && snapshot.getDrainInFlightCount() == 0
-                && snapshot.getDrainingPartitionCount() == 0
-                && backgroundSplitCoordinator.splitInFlightCount() == 0;
-    }
-
-    private void scanCurrentSplitCandidates() {
-        final int threshold = runtimeTuningState.effectiveValue(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
-        if (threshold < 1) {
-            return;
-        }
-        for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
-            scheduleSplitCandidateIfEligible(segmentId, threshold, false);
-        }
-    }
-
-    private void scanHintedSplitCandidates() {
-        final int threshold = runtimeTuningState.effectiveValue(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
-        if (threshold < 1) {
-            backgroundSplitHintedSegments.clear();
-            return;
-        }
-        final List<SegmentId> hintedSegmentIds = new ArrayList<>(
-                backgroundSplitHintedSegments.keySet());
-        for (final SegmentId segmentId : hintedSegmentIds) {
-            backgroundSplitHintedSegments.remove(segmentId);
-            scheduleSplitCandidateIfEligible(segmentId, threshold, false);
-        }
-    }
-
-    private boolean scheduleSplitCandidateIfEligible(final SegmentId segmentId,
-            final int threshold, final boolean forceRetry) {
-        if (!isSegmentStillMapped(segmentId)) {
-            return false;
-        }
-        final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
-        if (segment == null) {
-            return false;
-        }
-        final boolean scheduled = forceRetry
-                ? backgroundSplitCoordinator.forceHandleSplitCandidate(segment,
-                        threshold)
-                : backgroundSplitCoordinator.handleSplitCandidate(segment,
-                        threshold);
-        if (scheduled) {
-            stats.incSplitScheduleCx();
-        }
-        return scheduled;
-    }
-
-    private boolean hasPendingSplitHints() {
-        return !backgroundSplitHintedSegments.isEmpty();
-    }
-
-    private Segment<K, V> tryLoadSplitCandidate(final SegmentId segmentId) {
-        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                .getSegment(segmentId);
-        if (loaded.getStatus() == SegmentRegistryResultStatus.OK) {
-            return loaded.getValue();
-        }
-        if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY
-                || loaded.getStatus() == SegmentRegistryResultStatus.CLOSED) {
-            return null;
-        }
-        if (!isSegmentStillMapped(segmentId)) {
-            return null;
-        }
-        throw new IndexException(String.format(
-                "Segment '%s' failed to load for split scheduling: %s",
-                segmentId, loaded.getStatus()));
-    }
-
-    private boolean isBackgroundSplitPolicyEnabled() {
-        return Boolean.TRUE.equals(conf.isBackgroundMaintenanceAutoEnabled())
-                && !isClosedOrClosingState();
-    }
-
-    private boolean isClosedOrClosingState() {
-        final SegmentIndexState state = getState();
-        return state == SegmentIndexState.CLOSED
-                || state == SegmentIndexState.ERROR;
+        stableSegmentCoordinator.flushSegment(segmentId, true);
     }
 
     private void completeCloseStateTransition() {
@@ -1285,7 +962,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         while (walRuntime.isRetentionPressure()) {
             checkpointAttempts++;
             drainPartitions(true);
-            flushSegments(true);
+            stableSegmentCoordinator.flushSegments(true);
             keyToSegmentMap.optionalyFlush();
             checkpointWal();
             if (!walRuntime.isRetentionPressure()) {
@@ -1373,214 +1050,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         failWithError(failure);
     }
 
-    private void flushSegments(final boolean waitForCompletion) {
-        keyToSegmentMap.getSegmentIds().forEach(
-                segmentId -> flushSegment(segmentId, waitForCompletion));
-    }
-
-    private void flushMappedSegmentsAndWait() {
-        backgroundSplitCoordinator
-                .runWithSplitSchedulingPaused(() -> flushSegments(true));
-    }
-
-    private void compactMappedSegmentsAndFlush() {
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(() -> {
-            keyToSegmentMap.getSegmentIds()
-                    .forEach(segmentId -> compactSegment(segmentId, true));
-            flushSegments(true);
-        });
-    }
-
-    private void compactSegment(final SegmentId segmentId,
-            final boolean waitForCompletion) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Compact attempt started: segment='{}' wait='{}'",
-                    segmentId, waitForCompletion);
-        }
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<Segment<K, V>> result = core.compact(segmentId);
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.OK) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Compact accepted: segment='{}' wait='{}' state='{}'",
-                            segmentId, waitForCompletion,
-                            result.getValue() == null ? null
-                                    : result.getValue().getState());
-                }
-                if (waitForCompletion) {
-                    final Segment<K, V> segment = result.getValue();
-                    if (segment != null) {
-                        awaitSegmentReady(segmentId, OPERATION_COMPACT,
-                                segment);
-                    }
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Compact completed: segment='{}' wait='{}'",
-                            segmentId, waitForCompletion);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.CLOSED) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Compact skipped because segment is closed: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.BUSY) {
-                if (!isSegmentStillMapped(segmentId)) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Compact aborted because segment is no longer mapped: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (!waitForCompletion) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Compact coalesced because segment is already busy: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Compact busy, retrying: segment='{}'",
-                            segmentId);
-                }
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_COMPACT,
-                        segmentId);
-                continue;
-            }
-            if (status == IndexResultStatus.ERROR
-                    && !isSegmentStillMapped(segmentId)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Compact ignored error because segment is no longer mapped: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            throw newIndexException(OPERATION_COMPACT, segmentId, status);
-        }
-    }
-
-    private void flushSegment(final SegmentId segmentId,
-            final boolean waitForCompletion) {
-        stats.incFlushRequestCx();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Flush attempt started: segment='{}' wait='{}'",
-                    segmentId, waitForCompletion);
-        }
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<Segment<K, V>> result = core.flush(segmentId);
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.OK) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Flush accepted: segment='{}' wait='{}' state='{}'",
-                            segmentId, waitForCompletion,
-                            result.getValue() == null ? null
-                                    : result.getValue().getState());
-                }
-                if (waitForCompletion) {
-                    final Segment<K, V> segment = result.getValue();
-                    if (segment != null) {
-                        awaitSegmentReady(segmentId, OPERATION_FLUSH, segment);
-                    }
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Flush completed: segment='{}' wait='{}'",
-                            segmentId, waitForCompletion);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.CLOSED) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Flush skipped because segment is closed: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            if (status == IndexResultStatus.BUSY) {
-                if (!isSegmentStillMapped(segmentId)) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Flush aborted because segment is no longer mapped: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (!waitForCompletion) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(
-                                "Flush coalesced because segment is already busy: segment='{}'",
-                                segmentId);
-                    }
-                    return;
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Flush busy, retrying: segment='{}'",
-                            segmentId);
-                }
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_FLUSH,
-                        segmentId);
-                continue;
-            }
-            if (status == IndexResultStatus.ERROR
-                    && !isSegmentStillMapped(segmentId)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Flush ignored error because segment is no longer mapped: segment='{}'",
-                            segmentId);
-                }
-                return;
-            }
-            throw newIndexException(OPERATION_FLUSH, segmentId, status);
-        }
-    }
-
-    private void awaitSegmentReady(final SegmentId segmentId,
-            final String operation, final Segment<K, V> segment) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentState state = segment.getState();
-            if (state == SegmentState.READY || state == SegmentState.CLOSED) {
-                return;
-            }
-            if (state == SegmentState.ERROR) {
-                throw new IndexException(
-                        String.format("Segment '%s' failed during %s.",
-                                segmentId, operation));
-            }
-            retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
-        }
-    }
-
-    private EntryIterator<K, V> openIteratorWithRetry(final SegmentId segmentId,
-            final SegmentIteratorIsolation isolation) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<EntryIterator<K, V>> result = core
-                    .openIterator(segmentId, isolation);
-            if (result.getStatus() == IndexResultStatus.OK) {
-                return result.getValue();
-            }
-            if (result.getStatus() == IndexResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                        segmentId);
-                continue;
-            }
-            throw newIndexException("openIterator", segmentId,
-                    result.getStatus());
-        }
-    }
-
     private <T> IndexResult<T> retryWhileBusy(
             final Supplier<IndexResult<T>> operation, final String opName,
             final boolean retryClosed) {
@@ -1621,79 +1090,12 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     protected void invalidateSegmentIterators() {
-        keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
-                    && loaded.getValue() != null) {
-                loaded.getValue().invalidateIterators();
-                return;
-            }
-            if (!isSegmentStillMapped(segmentId)) {
-                return;
-            }
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                logger.debug(
-                        "Skipping iterator invalidation for segment '{}' because it is BUSY.",
-                        segmentId);
-                return;
-            }
-            logger.debug(
-                    "Skipping iterator invalidation for segment '{}' because registry returned status '{}'.",
-                    segmentId, loaded.getStatus());
-        });
+        stableSegmentCoordinator.invalidateIterators();
     }
 
     protected void awaitSplitsIdle() {
         backgroundSplitCoordinator
                 .awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
-    }
-
-    private void awaitBackgroundSplitPolicySettled() {
-        final long timeoutMillis = conf.getIndexBusyTimeoutMillis();
-        final long deadline = System.nanoTime()
-                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        while (true) {
-            awaitSplitsIdle();
-            if (!backgroundSplitScanRequested.get()
-                    && !backgroundSplitScanScheduled.get()
-                    && !hasPendingSplitHints()
-                    && backgroundSplitCoordinator.splitInFlightCount() == 0) {
-                return;
-            }
-            if (System.nanoTime() >= deadline) {
-                throw new IndexException(String.format(
-                        "Background split policy completion timed out after %d ms.",
-                        timeoutMillis));
-            }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10L));
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.currentThread().interrupt();
-                throw new IndexException(
-                        "Interrupted while waiting for background split policy completion.");
-            }
-        }
-    }
-
-    private void awaitBackgroundSplitPolicyExhausted() {
-        awaitBackgroundSplitPolicySettled();
-        if (forceRetryEligibleSplitCandidates()) {
-            awaitBackgroundSplitPolicySettled();
-        }
-    }
-
-    private boolean forceRetryEligibleSplitCandidates() {
-        final int threshold = runtimeTuningState.effectiveValue(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
-        if (threshold < 1) {
-            return false;
-        }
-        boolean scheduledAny = false;
-        for (final SegmentId segmentId : keyToSegmentMap.getSegmentIds()) {
-            scheduledAny |= scheduleSplitCandidateIfEligible(segmentId,
-                    threshold, true);
-        }
-        return scheduledAny;
     }
 
     private static boolean applyIndexContext(
@@ -1735,163 +1137,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return enabled != null && enabled;
     }
 
-    private static long updateHighWaterMark(final AtomicLong highWaterMark,
-            final long observedValue) {
-        final long sanitizedValue = Math.max(0L, observedValue);
-        while (true) {
-            final long currentValue = highWaterMark.get();
-            if (sanitizedValue <= currentValue) {
-                return currentValue;
-            }
-            if (highWaterMark.compareAndSet(currentValue, sanitizedValue)) {
-                return sanitizedValue;
-            }
-        }
-    }
-
-    private StableSegmentRuntimeAggregate collectStableSegmentRuntime() {
-        final StableSegmentRuntimeAggregate aggregate =
-                new StableSegmentRuntimeAggregate();
-        final List<SegmentId> mappedSegmentIds = keyToSegmentMap
-                .getSegmentIds();
-        aggregate.totalMappedStableSegmentCount = mappedSegmentIds.size();
-        if (mappedSegmentIds.isEmpty()) {
-            return aggregate;
-        }
-        final Set<SegmentId> mappedSegmentIdSet = new HashSet<>(
-                mappedSegmentIds);
-        int accountedSegments = 0;
-        for (final Segment<K, V> segment : segmentRegistry
-                .loadedSegmentsSnapshot()) {
-            if (segment != null) {
-                final SegmentRuntimeSnapshot segmentRuntime = segment
-                        .getRuntimeSnapshot();
-                final SegmentId segmentId = segmentRuntime.getSegmentId();
-                if (mappedSegmentIdSet.contains(segmentId)) {
-                    accountedSegments++;
-                    final SegmentState state = segmentRuntime.getState();
-                    if (state == SegmentState.READY) {
-                        aggregate.readyStableSegmentCount++;
-                    } else if (state == SegmentState.MAINTENANCE_RUNNING
-                            || state == SegmentState.FREEZE) {
-                        aggregate.stableSegmentsInMaintenanceStateCount++;
-                    } else if (state == SegmentState.ERROR) {
-                        aggregate.errorStableSegmentCount++;
-                    } else if (state == SegmentState.CLOSED) {
-                        aggregate.closedStableSegmentCount++;
-                    }
-                    aggregate.totalStableSegmentKeyCount += Math.max(0L,
-                            segmentRuntime.getNumberOfKeys());
-                    aggregate.totalStableSegmentCacheKeyCount += Math.max(0L,
-                            segmentRuntime.getNumberOfKeysInSegmentCache());
-                    aggregate.totalStableSegmentWriteBufferKeyCount += Math.max(
-                            0L,
-                            segmentRuntime.getNumberOfKeysInWriteCache());
-                    aggregate.totalStableSegmentDeltaCacheFileCount += Math.max(
-                            0,
-                            segmentRuntime.getNumberOfDeltaCacheFiles());
-                    aggregate.stableSegmentMetricsSnapshots.add(
-                            new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
-                                    segmentRuntime));
-                    aggregate.totalCompactRequestCount += Math.max(0L,
-                            segmentRuntime.getNumberOfCompacts());
-                    aggregate.totalFlushRequestCount += Math.max(0L,
-                            segmentRuntime.getNumberOfFlushes());
-                    aggregate.totalBloomFilterRequestCount += Math.max(0L,
-                            segmentRuntime.getBloomFilterRequestCount());
-                    aggregate.totalBloomFilterRefusedCount += Math.max(0L,
-                            segmentRuntime.getBloomFilterRefusedCount());
-                    aggregate.totalBloomFilterPositiveCount += Math.max(0L,
-                            segmentRuntime.getBloomFilterPositiveCount());
-                    aggregate.totalBloomFilterFalsePositiveCount += Math.max(
-                            0L,
-                            segmentRuntime.getBloomFilterFalsePositiveCount());
-                }
-            }
-        }
-        aggregate.unloadedMappedStableSegmentCount = Math.max(0,
-                aggregate.totalMappedStableSegmentCount - accountedSegments);
-        return aggregate;
-    }
-
     /** {@inheritDoc} */
     @Override
     public IndexControlPlane controlPlane() {
         return controlPlane;
-    }
-
-    private RuntimePatchValidation validateRuntimePatch(
-            final RuntimeConfigPatch patch) {
-        final List<ValidationIssue> issues = new ArrayList<>();
-        final EnumMap<RuntimeSettingKey, Integer> normalized = new EnumMap<>(
-                RuntimeSettingKey.class);
-        if (patch == null) {
-            issues.add(new ValidationIssue(null, "patch must not be null"));
-            return new RuntimePatchValidation(false, issues, normalized);
-        }
-        if (patch.expectedRevision() != null && patch.expectedRevision()
-                .longValue() != runtimeTuningState.revision()) {
-            issues.add(new ValidationIssue(null,
-                    "expectedRevision does not match current revision"));
-        }
-        for (final Map.Entry<RuntimeSettingKey, Integer> entry : patch.values()
-                .entrySet()) {
-            final RuntimeSettingKey key = entry.getKey();
-            final int value = entry.getValue().intValue();
-            if (value < 1) {
-                issues.add(new ValidationIssue(key, "value must be >= 1"));
-            } else if (key == RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
-                    && value < 3) {
-                issues.add(new ValidationIssue(key, "value must be >= 3"));
-            } else {
-                normalized.put(key, Integer.valueOf(value));
-            }
-        }
-        final Map<RuntimeSettingKey, Integer> effective = runtimeTuningState
-                .previewEffective(normalized);
-        final int activePartition = effective.get(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION)
-                .intValue();
-        final int partitionBuffer = effective.get(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER)
-                .intValue();
-        final int indexBuffer = effective
-                .get(RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER)
-                .intValue();
-        if (partitionBuffer <= activePartition) {
-            issues.add(new ValidationIssue(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                    "value must be greater than maxNumberOfKeysInActivePartition"));
-        }
-        if (indexBuffer < partitionBuffer) {
-            issues.add(new ValidationIssue(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
-                    "value must be >= maxNumberOfKeysInPartitionBuffer"));
-        }
-        return new RuntimePatchValidation(issues.isEmpty(), issues, normalized);
-    }
-
-    private RuntimePatchResult applyRuntimePatch(
-            final RuntimeConfigPatch patch) {
-        final RuntimePatchValidation validation = validateRuntimePatch(patch);
-        if (!validation.valid()) {
-            return new RuntimePatchResult(false, validation,
-                    runtimeTuningState.snapshotCurrent());
-        }
-        if (patch.dryRun()) {
-            return new RuntimePatchResult(false, validation,
-                    runtimeTuningState.snapshotCurrent());
-        }
-        final Map<RuntimeSettingKey, Integer> effective = runtimeTuningState
-                .previewEffective(validation.normalizedValues());
-        applyRuntimeEffectiveLimits(effective);
-        final ConfigurationSnapshot snapshot = runtimeTuningState
-                .apply(validation.normalizedValues());
-        if (validation.normalizedValues().containsKey(
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT)) {
-            scheduleBackgroundSplitPolicyScan();
-        }
-        return new RuntimePatchResult(true, validation, snapshot);
     }
 
     private void applyRuntimeEffectiveLimits(
@@ -1917,171 +1166,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 .loadedSegmentsSnapshot()) {
             segment.applyRuntimeLimits(limits);
         }
-    }
-
-    private final class IndexControlPlaneImpl implements IndexControlPlane {
-        private final IndexRuntimeView runtime = new IndexRuntimeViewImpl();
-        private final IndexConfigurationManagement configuration = new IndexConfigurationManagementImpl();
-
-        @Override
-        public String indexName() {
-            return conf.getIndexName();
-        }
-
-        @Override
-        public IndexRuntimeView runtime() {
-            return runtime;
-        }
-
-        @Override
-        public IndexConfigurationManagement configuration() {
-            return configuration;
-        }
-    }
-
-    private final class IndexRuntimeViewImpl implements IndexRuntimeView {
-
-        @Override
-        public IndexRuntimeSnapshot snapshot() {
-            return new IndexRuntimeSnapshot(conf.getIndexName(), getState(),
-                    metricsSnapshot(), Instant.now());
-        }
-    }
-
-    private final class IndexConfigurationManagementImpl
-            implements IndexConfigurationManagement {
-        @Override
-        public ConfigurationSnapshot getConfigurationActual() {
-            return runtimeTuningState.snapshotCurrent();
-        }
-
-        @Override
-        public ConfigurationSnapshot getConfigurationOriginal() {
-            return runtimeTuningState.snapshotOriginal();
-        }
-
-        @Override
-        public RuntimePatchValidation validate(final RuntimeConfigPatch patch) {
-            return validateRuntimePatch(patch);
-        }
-
-        @Override
-        public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
-            return applyRuntimePatch(patch);
-        }
-    }
-
-    private static final class RuntimeTuningState {
-        private final String indexName;
-        private final EnumMap<RuntimeSettingKey, Integer> baseline;
-        private final EnumMap<RuntimeSettingKey, Integer> overrides = new EnumMap<>(
-                RuntimeSettingKey.class);
-        private final AtomicLong revision = new AtomicLong(0L);
-
-        private RuntimeTuningState(final String indexName,
-                final EnumMap<RuntimeSettingKey, Integer> baseline) {
-            this.indexName = Vldtn.requireNonNull(indexName, "indexName");
-            this.baseline = Vldtn.requireNonNull(baseline, "baseline");
-        }
-
-        private static <K, V> RuntimeTuningState fromConfiguration(
-                final IndexConfiguration<K, V> configuration) {
-            final EnumMap<RuntimeSettingKey, Integer> baselineValues = new EnumMap<>(
-                    RuntimeSettingKey.class);
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                    configuration.getMaxNumberOfSegmentsInCache());
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
-                    configuration.getMaxNumberOfKeysInSegmentCache());
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                    configuration.getMaxNumberOfKeysInActivePartition());
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
-                    configuration.getMaxNumberOfImmutableRunsPerPartition());
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                    configuration.getMaxNumberOfKeysInPartitionBuffer());
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
-                    configuration.getMaxNumberOfKeysInIndexBuffer());
-            baselineValues.put(
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                    configuration.getMaxNumberOfKeysInPartitionBeforeSplit());
-            return new RuntimeTuningState(configuration.getIndexName(),
-                    baselineValues);
-        }
-
-        private synchronized ConfigurationSnapshot snapshotCurrent() {
-            return new ConfigurationSnapshot(indexName,
-                    effectiveFromOverrides(overrides), revision.get(),
-                    Instant.now());
-        }
-
-        private synchronized ConfigurationSnapshot snapshotOriginal() {
-            return new ConfigurationSnapshot(indexName, baseline,
-                    revision.get(), Instant.now());
-        }
-
-        private synchronized ConfigurationSnapshot apply(
-                final Map<RuntimeSettingKey, Integer> patchValues) {
-            overrides.putAll(patchValues);
-            final long nextRevision = revision.incrementAndGet();
-            return new ConfigurationSnapshot(indexName,
-                    effectiveFromOverrides(overrides), nextRevision,
-                    Instant.now());
-        }
-
-        private synchronized Map<RuntimeSettingKey, Integer> previewEffective(
-                final Map<RuntimeSettingKey, Integer> patchValues) {
-            final EnumMap<RuntimeSettingKey, Integer> mergedOverrides = new EnumMap<>(
-                    RuntimeSettingKey.class);
-            mergedOverrides.putAll(overrides);
-            mergedOverrides.putAll(patchValues);
-            return effectiveFromOverrides(mergedOverrides);
-        }
-
-        private synchronized int effectiveValue(final RuntimeSettingKey key) {
-            final Integer override = overrides.get(key);
-            if (override != null) {
-                return override.intValue();
-            }
-            return baseline.get(key).intValue();
-        }
-
-        private synchronized long revision() {
-            return revision.get();
-        }
-
-        private EnumMap<RuntimeSettingKey, Integer> effectiveFromOverrides(
-                final Map<RuntimeSettingKey, Integer> overrideValues) {
-            final EnumMap<RuntimeSettingKey, Integer> effective = new EnumMap<>(
-                    RuntimeSettingKey.class);
-            effective.putAll(baseline);
-            effective.putAll(overrideValues);
-            return effective;
-        }
-    }
-
-    private static final class StableSegmentRuntimeAggregate {
-        private int totalMappedStableSegmentCount;
-        private int readyStableSegmentCount;
-        private int stableSegmentsInMaintenanceStateCount;
-        private int errorStableSegmentCount;
-        private int closedStableSegmentCount;
-        private int unloadedMappedStableSegmentCount;
-        private long totalStableSegmentKeyCount;
-        private long totalStableSegmentCacheKeyCount;
-        private long totalStableSegmentWriteBufferKeyCount;
-        private long totalStableSegmentDeltaCacheFileCount;
-        private long totalCompactRequestCount;
-        private long totalFlushRequestCount;
-        private long totalBloomFilterRequestCount;
-        private long totalBloomFilterRefusedCount;
-        private long totalBloomFilterPositiveCount;
-        private long totalBloomFilterFalsePositiveCount;
-        private final List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> stableSegmentMetricsSnapshots = new ArrayList<>();
     }
 
     /** {@inheritDoc} */
