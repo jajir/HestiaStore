@@ -1,4 +1,4 @@
-AGENTS.md
+AGENT.md
 architecture/general/management-api.md
 architecture/general/monitoring-bridge.md
 development/documentation.md
