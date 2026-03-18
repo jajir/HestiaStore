@@ -3,6 +3,16 @@
 Monitoring architecture covers runtime observability and runtime-safe operational
 control.
 
+## High-level runtime flow
+
+Runtime monitoring data comes from the Segment API surface on
+`SegmentIndex.metricsSnapshot()`. The management agent reads snapshots for
+`/api/v1/report`, and runtime-safe config overrides are applied in-memory only
+for the running process. Monitoring and management APIs do not directly access
+index files.
+
+![Monitoring runtime flow](images/monitoring-runtime-flow.png)
+
 ## Scope
 
 - **Monitoring Bridge**: optional adapters that export runtime snapshots to
@@ -21,15 +31,12 @@ control.
 
 ## Runtime model
 
-- `SegmentIndex.metricsSnapshot()` provides immutable runtime snapshots.
 - `monitoring-rest-json` aggregates snapshots from all monitored indexes in one JVM.
 - `monitoring-console-web` consumes the API and renders node/index runtime views.
 - Runtime config overrides are applied **in memory only** and do not rewrite
   persisted index metadata.
 - `GET /api/v1/config` exposes `supportedKeys`; the same list defines which
   keys are accepted by `PATCH /api/v1/config`.
-
-![Monitoring runtime flow](images/monitoring-runtime-flow.png)
 
 ## Pages
 

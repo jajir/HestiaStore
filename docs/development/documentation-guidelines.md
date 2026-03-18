@@ -42,11 +42,12 @@ Use a light Diataxis split:
 
 Architecture placement rules:
 
+- `docs/architecture` root for cross-cutting topics shared across the engine
 - `docs/architecture/segmentindex` for routing, buffering, concurrency, and
   orchestration
 - `docs/architecture/segment` for stable segment internals and on-disk behavior
 - `docs/architecture/registry` for registry state and cache lifecycle
-- `docs/architecture/general` for cross-cutting topics
+- `docs/architecture/monitoring` for monitoring and management API design
 
 ## Navigation and exclusions
 
