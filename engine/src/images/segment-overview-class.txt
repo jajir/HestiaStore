@@ -2,13 +2,13 @@
 
 class           Segment {
   + SegmentId getId()
-  + SegmentResult get()
-  + SegmentResult put()
-  + EntryIterator openIterator()
-  + SegmentResult flush()
-  + SegmentResult compact()
+  + SegmentResult<V> get(K key)
+  + SegmentResult<Void> put(K key, V value)
+  + SegmentResult<EntryIterator<K, V>> openIterator()
+  + SegmentResult<Void> flush()
+  + SegmentResult<Void> compact()
   + long getNumberOfKeys()
-  + void close()
+  + SegmentResult<Void> close()
 }
 
 note right of Segment

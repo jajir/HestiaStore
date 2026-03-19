@@ -19,17 +19,21 @@ class IndexOperationTrackerTest {
         final IndexOperationTracker tracker = new IndexOperationTracker();
         final CountDownLatch taskStarted = new CountDownLatch(1);
         final CountDownLatch releaseTask = new CountDownLatch(1);
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final ExecutorService trackedExecutor = Executors
+                .newSingleThreadExecutor();
+        final ExecutorService waiterExecutor = Executors
+                .newSingleThreadExecutor();
         try {
-            final Future<?> trackedTask = executor.submit(() -> tracker
-                    .runTracked(() -> {
+            final Future<?> trackedTask = trackedExecutor.submit(
+                    () -> tracker.runTracked(() -> {
                         taskStarted.countDown();
                         await(releaseTask);
                         return null;
                     }));
             assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
 
-            final Future<?> awaitTask = executor.submit(tracker::awaitOperations);
+            final Future<?> awaitTask = waiterExecutor
+                    .submit(tracker::awaitOperations);
             assertThrows(java.util.concurrent.TimeoutException.class,
                     () -> awaitTask.get(100, TimeUnit.MILLISECONDS));
 
@@ -37,7 +41,8 @@ class IndexOperationTrackerTest {
             trackedTask.get(1, TimeUnit.SECONDS);
             awaitTask.get(1, TimeUnit.SECONDS);
         } finally {
-            executor.shutdownNow();
+            trackedExecutor.shutdownNow();
+            waiterExecutor.shutdownNow();
         }
     }
 
