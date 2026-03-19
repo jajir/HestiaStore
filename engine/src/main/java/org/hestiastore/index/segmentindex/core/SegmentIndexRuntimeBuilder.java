@@ -254,10 +254,6 @@ final class SegmentIndexRuntimeBuilder<K, V> {
         final IndexExecutorRegistry executorRegistry = environment
                 .executorRegistry();
         final Stats stats = runtimeStateRefs.stats();
-        final AtomicLong compactRequestHighWaterMark = runtimeStateRefs
-                .compactRequestHighWaterMark();
-        final AtomicLong flushRequestHighWaterMark = runtimeStateRefs
-                .flushRequestHighWaterMark();
         final AtomicLong lastAppliedWalLsn = runtimeStateRefs
                 .lastAppliedWalLsn();
         KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap = null;

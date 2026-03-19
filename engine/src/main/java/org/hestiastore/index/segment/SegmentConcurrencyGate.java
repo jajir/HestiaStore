@@ -169,9 +169,20 @@ final class SegmentConcurrencyGate {
                 return false;
             }
             LockSupport.parkNanos(waitNanos);
+            if (wasInterruptedWhileWaiting()) {
+                return false;
+            }
             waitNanos = Math.min(MAX_WAIT_NANOS, waitNanos << 1);
         }
         return stateMachine.getState() == SegmentState.FREEZE;
+    }
+
+    private static boolean wasInterruptedWhileWaiting() {
+        if (!Thread.interrupted()) {
+            return false;
+        }
+        Thread.currentThread().interrupt();
+        return true;
     }
 
     /**

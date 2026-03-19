@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -69,17 +70,17 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
-        return supplyWithContext(() -> index.putAsync(key, value));
+        return supplyStageWithContext(() -> index.putAsync(key, value));
     }
 
     @Override
     public CompletionStage<V> getAsync(final K key) {
-        return supplyWithContext(() -> index.getAsync(key));
+        return supplyStageWithContext(() -> index.getAsync(key));
     }
 
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
-        return supplyWithContext(() -> index.deleteAsync(key));
+        return supplyStageWithContext(() -> index.deleteAsync(key));
     }
 
     @Override
@@ -167,6 +168,34 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         Vldtn.requireNonNull(action, "action");
         try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
             return action.get();
+        }
+    }
+
+    private <T> CompletionStage<T> supplyStageWithContext(
+            final Supplier<CompletionStage<T>> action) {
+        return wrapStageWithContext(supplyWithContext(action));
+    }
+
+    private <T> CompletionStage<T> wrapStageWithContext(
+            final CompletionStage<T> stage) {
+        final CompletionStage<T> nonNullStage = Vldtn.requireNonNull(stage,
+                "stage");
+        final CompletableFuture<T> wrappedStage = new CompletableFuture<>();
+        nonNullStage.whenComplete(
+                (value, error) -> completeStageWithContext(wrappedStage, value,
+                        error));
+        return wrappedStage;
+    }
+
+    private <T> void completeStageWithContext(
+            final CompletableFuture<T> wrappedStage, final T value,
+            final Throwable error) {
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
+            if (error == null) {
+                wrappedStage.complete(value);
+                return;
+            }
+            wrappedStage.completeExceptionally(error);
         }
     }
 

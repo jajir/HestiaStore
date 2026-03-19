@@ -8,6 +8,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -312,5 +316,33 @@ class IndexContextLoggingAdapterTest {
         assertEquals("idx", mdcAtGetStreamIsolation.get());
         assertEquals("idx", mdcAtGetStreamDefault.get());
         assertEquals("idx", mdcAtGetStreamDefaultIsolation.get());
+    }
+
+    @Test
+    void propagatesMdcToCompletionStageCallbacks() throws Exception {
+        final CompletableFuture<String> delegateStage = new CompletableFuture<>();
+        final AtomicReference<String> mdcAtCompletion = new AtomicReference<>();
+
+        when(delegate.getAsync("k")).thenReturn(delegateStage);
+
+        final CompletableFuture<String> wrappedStage = adapter.getAsync("k")
+                .thenApply(value -> {
+                    mdcAtCompletion.set(MDC.get("index.name"));
+                    return value;
+                }).toCompletableFuture();
+
+        final ExecutorService completionExecutor = Executors
+                .newSingleThreadExecutor();
+        try {
+            final Future<?> completionFuture = completionExecutor
+                    .submit(() -> delegateStage.complete("value"));
+            completionFuture.get(5, TimeUnit.SECONDS);
+        } finally {
+            completionExecutor.shutdownNow();
+        }
+
+        assertEquals("value", wrappedStage.get(5, TimeUnit.SECONDS));
+        assertEquals("idx", mdcAtCompletion.get());
+        assertNull(MDC.get("index.name"));
     }
 }
