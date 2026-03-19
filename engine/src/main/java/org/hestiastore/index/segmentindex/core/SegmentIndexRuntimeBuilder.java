@@ -103,6 +103,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     private final Callbacks callbacks;
     private final BuildObserver<K, V> buildObserver;
 
+    @SuppressWarnings("java:S107")
     SegmentIndexRuntimeBuilder(final Logger logger,
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
