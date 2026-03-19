@@ -297,7 +297,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
         @Override
         public void write(final byte[] bytes) {
-            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final byte[] in = Vldtn.requireNonNull(bytes, BYTES_PROPERTY);
             ensureCapacity(in.length);
             System.arraycopy(in, 0, destination, position, in.length);
             position += in.length;
@@ -306,7 +306,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         @Override
         public void write(final byte[] bytes, final int offset,
                 final int length) {
-            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final byte[] in = Vldtn.requireNonNull(bytes, BYTES_PROPERTY);
             final int from = Vldtn.requireGreaterThanOrEqualToZero(offset,
                     "offset");
             final int len = Vldtn.requireGreaterThanOrEqualToZero(length,
