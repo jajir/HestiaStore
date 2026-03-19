@@ -59,6 +59,7 @@ Use this skill when the task is to reduce SonarCloud code smells in Hestia Store
    - Replace duplicated logic carefully and only when the resulting diff stays easy to review.
 7. Verify the batch.
    - Run targeted verification first when the affected module or tests are obvious.
+   - If the batch touches the `benchmarks` module, remember that it sets `skipTests=true` by default; pass `-DskipTests=false` when targeted benchmark tests or script smoke tests are meant to execute.
    - Run `mvn clean verify` before finishing the batch.
    - If verification fails, stop and report the failure instead of widening the cleanup.
 8. Summarize the result.

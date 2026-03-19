@@ -41,28 +41,28 @@ final class StableSegmentGateway<K, V> {
         if (segmentId == null) {
             return IndexResult.ok(null);
         }
-        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry.getSegment(
-                segmentId);
+        return get(key, segmentId, snapshot.version());
+    }
+
+    IndexResult<V> get(final K key, final SegmentId segmentId,
+            final long expectedTopologyVersion) {
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
+        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+                .getSegment(segmentId);
         if (loaded.getStatus() != SegmentRegistryResultStatus.OK
                 || loaded.getValue() == null) {
             return fromRegistryStatus(loaded.getStatus());
         }
-        final Segment<K, V> segment = loaded.getValue();
-        final SegmentResult<V> result = segment.get(key);
+        final SegmentResult<V> result = loaded.getValue().get(key);
         if (result.getStatus() == SegmentResultStatus.OK) {
             if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                    snapshot.version())) {
+                    expectedTopologyVersion)) {
                 return IndexResult.busy();
             }
             return IndexResult.ok(result.getValue());
         }
-        if (result.getStatus() == SegmentResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (result.getStatus() == SegmentResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        return IndexResult.error();
+        return fromSegmentResult(result);
     }
 
     IndexResult<V> get(final SegmentId segmentId, final K key) {
