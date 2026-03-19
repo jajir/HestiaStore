@@ -3416,10 +3416,10 @@ runtime introduced above stable segment storage.</p>
 </ul>
 <p>The current implementation changes the user write path first. It still uses
 the existing stable-segment split execution primitives, but the runtime no
-longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</p>
+longer depends on the historical segment-split wrapper layer.</p>
 <h2 id="transitional-split-behavior">Transitional Split Behavior</h2>
 <ul>
-<li>live-segment split is no longer triggered directly from <code>put()</code></li>
+<li>split is no longer triggered directly from <code>put()</code></li>
 <li>the current transition slice evaluates partition-aware stable split
   scheduling from a coalesced background policy scan over current routed
   partitions</li>
@@ -3454,8 +3454,8 @@ longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</
 <li><code>FULL_ISOLATION</code> index streaming now opens against a split-safe route
   snapshot and retries if the segment map changes underneath the open; it no
   longer falls back to the historical split-idle barrier on the read path</li>
-<li>point operations no longer wait explicitly for background live-segment split
-  completion before retrying a <code>BUSY</code> path</li>
+<li>point operations no longer wait explicitly for background split completion
+  before retrying a <code>BUSY</code> path</li>
 <li><code>flushAndWait()</code> seals active partition data, drains immutable runs into
   stable segment storage, waits for any partition-aware stable splits already
   scheduled by background drain, drains again if split apply reassigned overlay
@@ -3510,7 +3510,7 @@ longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</
   after explicit maintenance completes so split materialization does not race
   against that maintenance on the same routed range</li>
 <li>if the overlay exceeds local or global limits, writes receive bounded
-  backpressure instead of waiting on a live segment split</li>
+  backpressure instead of waiting on background split completion</li>
 <li>during the brief split-apply window itself, write admission is still gated
   so route remap and overlay reassignment stay atomic, but explicit
   <code>flushAndWait()</code> / <code>compactAndWait()</code> no longer need a whole-operation global
@@ -3536,20 +3536,9 @@ longer depends on the historical <code>SegmentSplitCoordinator</code> wrapper.</
 <li><code>maxNumberOfKeysInIndexBuffer</code></li>
 <li><code>maxNumberOfKeysInPartitionBeforeSplit</code></li>
 </ul>
-<p>Compatibility fallbacks during load map older or cross-version settings to the
-new partition keys:</p>
-<ul>
-<li><code>maxNumberOfKeysInSegmentWriteCache</code> -&gt;
-  <code>maxNumberOfKeysInActivePartition</code></li>
-<li><code>maxNumberOfKeysInSegmentWriteCacheDuringMaintenance</code> -&gt;
-  <code>maxNumberOfKeysInPartitionBuffer</code></li>
-<li><code>maxNumberOfKeysInSegment</code> (when
-  <code>maxNumberOfKeysInPartitionBeforeSplit</code> is absent) -&gt;
-  <code>maxNumberOfKeysInPartitionBeforeSplit</code></li>
-<li><code>segmentMaintenanceAutoEnabled</code> -&gt;
-  <code>backgroundMaintenanceAutoEnabled</code></li>
-</ul>
-<p>New manifests are written with the partition-oriented names only.</p>
+<p>Legacy manifests are migrated during load to these canonical names, and newly
+written manifests persist only the canonical partition-oriented keys plus the
+canonical <code>backgroundMaintenanceAutoEnabled</code> flag.</p>
 
 
 

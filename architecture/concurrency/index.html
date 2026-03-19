@@ -3430,7 +3430,9 @@ enforces its own lock-free admission gate (see
 <h2 id="threads">Threads</h2>
 <ul>
 <li>Sync operations run on caller threads.</li>
-<li>Async operations run on background threads via <code>IndexAsyncAdapter</code>.</li>
+<li>Async operations run on dedicated index-worker threads owned by the
+  segment-index runtime; <code>IndexAsyncAdapter</code> is only a thin facade over that
+  async path.</li>
 <li>Segment maintenance runs on the segment-index maintenance executor.</li>
 </ul>
 <h2 id="implications">Implications</h2>

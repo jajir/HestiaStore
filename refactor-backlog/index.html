@@ -3507,11 +3507,6 @@
 
 <h1 id="refactor-backlog">Refactor backlog</h1>
 <h2 id="active">Active</h2>
-<p>[ ] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
-    - <code>SegmentIndexCore.get/put</code>: avoid holding key-map read lock while calling
-      <code>SegmentRegistry.getSegment</code> or touching segments.
-    - Use key-map snapshot + version re-check on retry/BUSY paths.
-    - Tests: <code>IntegrationSegmentIndexConcurrencyTest</code> + new split/put stress.</p>
 <h2 id="planned">Planned</h2>
 <h3 id="high">High</h3>
 <p>[ ] 79 Replace live-segment write path with range-partitioned ingest (Risk: HIGH)
@@ -3673,7 +3668,14 @@
         <code>BackgroundSplitCoordinator</code> / <code>PartitionSplitApplyPlan</code> and the
         current split-vs-drain responsibilities, so the documentation no
         longer points at deleted segment-era coordinator classes after the
-        rename sweep.</p>
+        rename sweep.
+      - Removed the last public doc examples that still enumerated legacy
+        partition-migration aliases (<code>segmentMaintenanceAutoEnabled</code> and
+        segment-write fallback keys); docs now describe compatibility only as
+        load-time manifest migration plus canonical rewrite-on-save.
+      - Updated the segment overview diagram and historical segment API notes
+        so they reflect the current public <code>Segment</code> contract and no longer
+        point at deleted <code>SegmentSplitter.Result</code> / split-wrapper APIs.</p>
 <p>[ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
     - Add a dedicated unit suite for partition runtime, route snapshots, drain
       publish ordering, backpressure, iterator snapshots, and crash cleanup.
@@ -4111,10 +4113,6 @@
     - Centralize segment close/eviction in <code>SegmentRegistry</code>.
     - Remove direct <code>segment.close()</code> calls from split coordinator.
     - Ensure split outcome updates mapping, eviction, and close are ordered.
-[ ] 45 Replace spin-wait in <code>SegmentConcurrencyGate.awaitNoInFlight</code> (Risk: LOW)
-    - Use <code>wait/notify</code> or <code>ManagedBlocker</code> with timeout.
-    - Preserve FREEZE semantics and early exit on state change.
-    - Add tests for drain behavior under load.
 [ ] 46 Align iterator isolation naming and semantics (Risk: LOW)
     - Choose between <code>FAIL_FAST</code>/<code>FULL_ISOLATION</code> and the legacy
       <code>INTERRUPT_FAST</code>/<code>STOP_FAST</code> terminology.
@@ -4228,6 +4226,26 @@
     - Reserve registry <code>FREEZE</code> for split apply only.
     - Tests: split + eviction concurrency (<code>SegmentRegistryCacheTest</code>,
       <code>SegmentSplitCoordinatorConcurrencyTest</code>, integration stress).</p>
+<p>[x] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
+    - Replaced direct stable-read routing through <code>SegmentIndexCore</code> with
+      snapshot-based stable gateway reads that do not hold key-map read locks
+      while loading or touching segments.
+    - Stable reads now validate the captured topology version after
+      <code>SegmentRegistry.getSegment()</code> + <code>segment.get(...)</code>, so route remaps
+      surface as <code>BUSY</code> instead of returning stale data.
+    - Tests: <code>PartitionReadCoordinatorTest</code>,
+      <code>StableSegmentGatewayTest</code>,
+      <code>IntegrationSegmentIndexConcurrencyTest</code>,
+      <code>SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall</code>.</p>
+<p>[x] 45 Replace spin-wait in <code>SegmentConcurrencyGate.awaitNoInFlight</code> (Risk: LOW)
+    - Replaced the old spin/yield drain loop with a short progressive
+      <code>LockSupport.parkNanos(...)</code> wait strategy, keeping FREEZE-only exit
+      semantics without burning CPU during close/maintenance drains.
+    - Removed remaining production <code>Thread.onSpinWait()</code> calls from the engine
+      runtime and moved consistency-check BUSY retries onto <code>IndexRetryPolicy</code>
+      with bounded jittered backoff.
+    - Tests: <code>SegmentConcurrencyGateTest</code>, <code>IndexConsistencyCheckerTest</code>,
+      <code>IndexRetryPolicyTest</code>, plus full <code>mvn clean verify</code>.</p>
 <p>[x] 52 Remove automatic compaction from <code>segmentindex</code> (Risk: MEDIUM)
     - Drop pre-split compaction in <code>SegmentSplitCoordinator</code> and remove
       <code>SegmentSplitterPolicy.shouldBeCompactedBeforeSplitting</code> + related retry

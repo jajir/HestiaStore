@@ -3534,8 +3534,10 @@
 <li>put/get/delete: retry on per-segment BUSY using IndexRetryPolicy
   (indexBusyBackoffMillis + indexBusyTimeoutMillis); mapping version mismatch
   triggers a retry with a fresh snapshot. Timeouts throw IndexException.</li>
-<li>putAsync/getAsync/deleteAsync: run the synchronous operation on a background
-  thread via IndexAsyncAdapter and return a CompletionStage.</li>
+<li>putAsync/getAsync/deleteAsync: submit the synchronous operation to the
+  dedicated index-worker executor owned by SegmentIndexImpl and return a
+  CompletionStage. <code>IndexAsyncAdapter</code> preserves the async-facing API but does
+  not own a separate executor.</li>
 <li>flush/compact: start maintenance on each segment and return once accepted;
   do not wait for IO completion; BUSY retries follow IndexRetryPolicy.</li>
 <li>flushAndWait/compactAndWait: wait for each segment to return to <code>READY</code>
@@ -3602,10 +3604,10 @@
 <ul>
 <li>SegmentIndex (public API): thread-safe entry point.</li>
 <li>SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
-  maintenance.</li>
-<li>IndexAsyncAdapter: provides async operations by running sync calls on a
-  background thread and waiting for in-flight async calls on close.</li>
-<li>SegmentIndexCore: single-attempt mapping + segment selection.</li>
+  maintenance, including the dedicated async API executor.</li>
+<li>IndexAsyncAdapter: thin facade that forwards async API calls to the wrapped
+  index.</li>
+<li>StableSegmentGateway: single-attempt mapping + stable-segment selection.</li>
 <li>IndexRetryPolicy: backoff + timeout for BUSY retries.</li>
 <li>IndexResult/IndexResultStatus: internal OK/BUSY/CLOSED/ERROR wrapper.</li>
 <li>KeyToSegmentMap: mapping, snapshot versioning, and persistence of segment ids.</li>

@@ -3620,11 +3620,13 @@ orchestration and operation flow.</p>
 <li><code>SegmentIndex.put(K,V)</code> and <code>SegmentIndex.delete(K)</code> validate input, update counters, and delegate to the internal implementation.</li>
 <li>Internal implementation: <code>IndexInternalConcurrent</code> (caller-thread execution,
   thread-safe without global serialization).</li>
-<li>Async operations are provided by <code>IndexAsyncAdapter</code>; logging context by
-  <code>IndexContextLoggingAdapter</code>.</li>
+<li>Async operations are executed by the dedicated <code>IndexAsyncExecutor</code> inside
+  the internal implementation; <code>IndexAsyncAdapter</code> is a thin async-facing
+  wrapper and <code>IndexContextLoggingAdapter</code> adds MDC correlation.</li>
 </ul>
 <p>Key classes: <code>segmentindex/SegmentIndex.java</code>,
 <code>segmentindex/IndexInternalConcurrent.java</code>,
+<code>segmentindex/core/IndexAsyncExecutor.java</code>,
 <code>segmentindex/IndexAsyncAdapter.java</code>,
 <code>segmentindex/IndexContextLoggingAdapter.java</code>.</p>
 <h2 id="optional-logging-context">Optional Logging Context</h2>

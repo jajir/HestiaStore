@@ -3856,8 +3856,8 @@ unbounded, so if writes outpace maintenance, memory can grow.</p>
 <ul>
 <li><code>flush()</code>, <code>compact()</code>, and split are exclusive. The write lock serializes
   them, so parallel calls run one after another.</li>
-<li>Split uses <code>FULL_ISOLATION</code> iterators and is wrapped in the write lock by
-  the historical <code>SegmentSplitCoordinator</code> when the segment is a
+<li>Split uses <code>FULL_ISOLATION</code> iterators and was wrapped in the write lock by
+  the removed segment-index split wrapper when the segment was a
   <code>SegmentImplSynchronizationAdapter</code>.</li>
 </ul>
 <p>Different segments:</p>
