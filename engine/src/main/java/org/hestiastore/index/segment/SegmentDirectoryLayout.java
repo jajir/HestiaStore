@@ -6,6 +6,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Provides file naming helpers for segment-related files.
  */
+@SuppressWarnings("java:S6206")
 public final class SegmentDirectoryLayout {
 
     private static final String INDEX_FILE_NAME_SUFFIX = "-index.sst";

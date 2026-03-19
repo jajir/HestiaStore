@@ -137,12 +137,13 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @Test
-    void closeStopsAutonomousSplitPolicyLoop() throws Exception {
+    void closeStopsAutonomousSplitPolicyLoop() {
         index.put(1, "one");
         index.flushAndWait();
 
         index.close();
-        TimeUnit.MILLISECONDS.sleep(750L);
+        awaitCondition(() -> index.getState() == SegmentIndexState.CLOSED,
+                750L);
 
         assertEquals(SegmentIndexState.CLOSED, index.getState());
     }

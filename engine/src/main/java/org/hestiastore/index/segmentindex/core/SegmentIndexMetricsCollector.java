@@ -26,6 +26,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 /**
  * Collects immutable metrics snapshots for the index runtime.
  */
+@SuppressWarnings("java:S107")
 final class SegmentIndexMetricsCollector<K, V> {
 
     private final IndexConfiguration<K, V> conf;
@@ -170,54 +171,58 @@ final class SegmentIndexMetricsCollector<K, V> {
         int accountedSegments = 0;
         for (final Segment<K, V> segment : segmentRegistry
                 .loadedSegmentsSnapshot()) {
-            if (segment == null) {
-                continue;
+            if (segment != null) {
+                final SegmentRuntimeSnapshot segmentRuntime = segment
+                        .getRuntimeSnapshot();
+                final SegmentId segmentId = segmentRuntime.getSegmentId();
+                if (mappedSegmentIdSet.contains(segmentId)) {
+                    accountedSegments++;
+                    accumulateSegmentMetrics(aggregate, segmentRuntime);
+                }
             }
-            final SegmentRuntimeSnapshot segmentRuntime = segment
-                    .getRuntimeSnapshot();
-            final SegmentId segmentId = segmentRuntime.getSegmentId();
-            if (!mappedSegmentIdSet.contains(segmentId)) {
-                continue;
-            }
-            accountedSegments++;
-            final SegmentState state = segmentRuntime.getState();
-            if (state == SegmentState.READY) {
-                aggregate.readyStableSegmentCount++;
-            } else if (state == SegmentState.MAINTENANCE_RUNNING
-                    || state == SegmentState.FREEZE) {
-                aggregate.stableSegmentsInMaintenanceStateCount++;
-            } else if (state == SegmentState.ERROR) {
-                aggregate.errorStableSegmentCount++;
-            } else if (state == SegmentState.CLOSED) {
-                aggregate.closedStableSegmentCount++;
-            }
-            aggregate.totalStableSegmentKeyCount += Math.max(0L,
-                    segmentRuntime.getNumberOfKeys());
-            aggregate.totalStableSegmentCacheKeyCount += Math.max(0L,
-                    segmentRuntime.getNumberOfKeysInSegmentCache());
-            aggregate.totalStableSegmentWriteBufferKeyCount += Math.max(0L,
-                    segmentRuntime.getNumberOfKeysInWriteCache());
-            aggregate.totalStableSegmentDeltaCacheFileCount += Math.max(0,
-                    segmentRuntime.getNumberOfDeltaCacheFiles());
-            aggregate.stableSegmentMetricsSnapshots.add(
-                    new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
-                            segmentRuntime));
-            aggregate.totalCompactRequestCount += Math.max(0L,
-                    segmentRuntime.getNumberOfCompacts());
-            aggregate.totalFlushRequestCount += Math.max(0L,
-                    segmentRuntime.getNumberOfFlushes());
-            aggregate.totalBloomFilterRequestCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterRequestCount());
-            aggregate.totalBloomFilterRefusedCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterRefusedCount());
-            aggregate.totalBloomFilterPositiveCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterPositiveCount());
-            aggregate.totalBloomFilterFalsePositiveCount += Math.max(0L,
-                    segmentRuntime.getBloomFilterFalsePositiveCount());
         }
         aggregate.unloadedMappedStableSegmentCount = Math.max(0,
                 aggregate.totalMappedStableSegmentCount - accountedSegments);
         return aggregate;
+    }
+
+    private static void accumulateSegmentMetrics(
+            final StableSegmentRuntimeAggregate aggregate,
+            final SegmentRuntimeSnapshot segmentRuntime) {
+        final SegmentState state = segmentRuntime.getState();
+        if (state == SegmentState.READY) {
+            aggregate.readyStableSegmentCount++;
+        } else if (state == SegmentState.MAINTENANCE_RUNNING
+                || state == SegmentState.FREEZE) {
+            aggregate.stableSegmentsInMaintenanceStateCount++;
+        } else if (state == SegmentState.ERROR) {
+            aggregate.errorStableSegmentCount++;
+        } else if (state == SegmentState.CLOSED) {
+            aggregate.closedStableSegmentCount++;
+        }
+        aggregate.totalStableSegmentKeyCount += Math.max(0L,
+                segmentRuntime.getNumberOfKeys());
+        aggregate.totalStableSegmentCacheKeyCount += Math.max(0L,
+                segmentRuntime.getNumberOfKeysInSegmentCache());
+        aggregate.totalStableSegmentWriteBufferKeyCount += Math.max(0L,
+                segmentRuntime.getNumberOfKeysInWriteCache());
+        aggregate.totalStableSegmentDeltaCacheFileCount += Math.max(0,
+                segmentRuntime.getNumberOfDeltaCacheFiles());
+        aggregate.stableSegmentMetricsSnapshots
+                .add(new SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot(
+                        segmentRuntime));
+        aggregate.totalCompactRequestCount += Math.max(0L,
+                segmentRuntime.getNumberOfCompacts());
+        aggregate.totalFlushRequestCount += Math.max(0L,
+                segmentRuntime.getNumberOfFlushes());
+        aggregate.totalBloomFilterRequestCount += Math.max(0L,
+                segmentRuntime.getBloomFilterRequestCount());
+        aggregate.totalBloomFilterRefusedCount += Math.max(0L,
+                segmentRuntime.getBloomFilterRefusedCount());
+        aggregate.totalBloomFilterPositiveCount += Math.max(0L,
+                segmentRuntime.getBloomFilterPositiveCount());
+        aggregate.totalBloomFilterFalsePositiveCount += Math.max(0L,
+                segmentRuntime.getBloomFilterFalsePositiveCount());
     }
 
     private static long updateHighWaterMark(final AtomicLong highWaterMark,

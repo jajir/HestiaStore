@@ -11,6 +11,9 @@ import org.hestiastore.index.Vldtn;
  */
 public final class ByteSequences {
 
+    private static final String ARRAY_PROPERTY = "array";
+    private static final String SEQUENCE_PROPERTY = "sequence";
+
     private ByteSequences() {
         // utility class
     }
@@ -22,7 +25,7 @@ public final class ByteSequences {
      * @return {@link ByteSequence} view over {@code array}
      */
     public static ByteSequence wrap(final byte[] array) {
-        final byte[] validated = Vldtn.requireNonNull(array, "array");
+        final byte[] validated = Vldtn.requireNonNull(array, ARRAY_PROPERTY);
         if (validated.length == 0) {
             return ByteSequence.EMPTY;
         }
@@ -39,7 +42,7 @@ public final class ByteSequences {
      */
     public static ByteSequence viewOf(final byte[] array,
             final int fromInclusive, final int toExclusive) {
-        final byte[] validated = Vldtn.requireNonNull(array, "array");
+        final byte[] validated = Vldtn.requireNonNull(array, ARRAY_PROPERTY);
         if (fromInclusive < 0 || toExclusive < fromInclusive
                 || toExclusive > validated.length) {
             throw new IllegalArgumentException(String.format(
@@ -63,7 +66,7 @@ public final class ByteSequences {
      * @return {@link ByteSequence} backed by a defensive copy
      */
     public static ByteSequence copyOf(final byte[] array) {
-        final byte[] validated = Vldtn.requireNonNull(array, "array");
+        final byte[] validated = Vldtn.requireNonNull(array, ARRAY_PROPERTY);
         if (validated.length == 0) {
             return ByteSequence.EMPTY;
         }
@@ -83,7 +86,7 @@ public final class ByteSequences {
      */
     public static ByteSequence copyOf(final ByteSequence sequence) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
-                "sequence");
+                SEQUENCE_PROPERTY);
         if (validated.isEmpty()) {
             return ByteSequence.EMPTY;
         }
@@ -104,7 +107,7 @@ public final class ByteSequences {
     public static ByteSequence padToLength(final ByteSequence sequence,
             final int targetLength) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
-                "sequence");
+                SEQUENCE_PROPERTY);
         if (targetLength < 0) {
             throw new IllegalArgumentException(
                     "Property 'targetLength' must not be negative.");
@@ -129,7 +132,7 @@ public final class ByteSequences {
     public static ByteSequence padToCell(final ByteSequence sequence,
             final int cellSize) {
         final ByteSequence validated = Vldtn.requireNonNull(sequence,
-                "sequence");
+                SEQUENCE_PROPERTY);
         Vldtn.requireGreaterThanZero(cellSize, "cellSize");
         final int currentLength = validated.length();
         if (currentLength == 0) {
@@ -159,7 +162,7 @@ public final class ByteSequences {
         final List<ByteSequence> parts = new ArrayList<>();
         for (ByteSequence sequence : validated) {
             final ByteSequence validatedPart = Vldtn.requireNonNull(sequence,
-                    "sequence");
+                    SEQUENCE_PROPERTY);
             if (!validatedPart.isEmpty()) {
                 parts.add(validatedPart);
             }
@@ -187,7 +190,7 @@ public final class ByteSequences {
         }
         if (validated.size() == 1) {
             final ByteSequence only = Vldtn.requireNonNull(validated.get(0),
-                    "sequence");
+                    SEQUENCE_PROPERTY);
             if (only.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Property 'sequences' must not contain empty sequence.");
@@ -196,7 +199,7 @@ public final class ByteSequences {
         }
         for (ByteSequence sequence : validated) {
             final ByteSequence part = Vldtn.requireNonNull(sequence,
-                    "sequence");
+                    SEQUENCE_PROPERTY);
             if (part.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Property 'sequences' must not contain empty sequence.");
@@ -237,19 +240,19 @@ public final class ByteSequences {
         if (length == 0) {
             return;
         }
-        if (validatedSource instanceof ByteSequenceView) {
-            ((ByteSequenceView) validatedSource).copyTo(sourceOffset,
+        if (validatedSource instanceof ByteSequenceView byteSequenceView) {
+            byteSequenceView.copyTo(sourceOffset,
                     validatedTarget, targetOffset, length);
             return;
         }
-        if (validatedSource instanceof ByteSequenceSlice) {
-            ((ByteSequenceSlice) validatedSource).copyTo(sourceOffset,
+        if (validatedSource instanceof ByteSequenceSlice byteSequenceSlice) {
+            byteSequenceSlice.copyTo(sourceOffset,
                     validatedTarget, targetOffset, length);
             return;
         }
-        if (validatedSource instanceof MutableBytes) {
-            ((MutableBytes) validatedSource).copyTo(sourceOffset, validatedTarget,
-                    targetOffset, length);
+        if (validatedSource instanceof MutableBytes mutableBytes) {
+            mutableBytes.copyTo(sourceOffset, validatedTarget, targetOffset,
+                    length);
             return;
         }
         for (int index = 0; index < length; index++) {

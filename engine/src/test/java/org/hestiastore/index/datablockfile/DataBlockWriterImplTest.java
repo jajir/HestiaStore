@@ -61,9 +61,10 @@ class DataBlockWriterImplTest {
 
     @Test
     void test_write_invalidSize() {
+        final var payload = TestData.PAYLOAD_1024.getBytesSequence();
+
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> writer.writeSequence(
-                        TestData.PAYLOAD_1024.getBytesSequence()));
+                () -> writer.writeSequence(payload));
 
         assertEquals(
                 "Payload size '1024' does not match expected payload size '1008'",

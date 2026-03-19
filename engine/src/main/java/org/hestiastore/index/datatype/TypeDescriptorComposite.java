@@ -23,6 +23,8 @@ import org.hestiastore.index.directory.MemFileReader;
  */
 public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
+    private static final String BYTES_PROPERTY = "bytes";
+
     private final TypeEncoder<CompositeValue> convertorToBytes = new TypeEncoder<CompositeValue>() {
         @Override
         public EncodedBytes encode(final CompositeValue object,
@@ -208,7 +210,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
      */
     @SuppressWarnings("unchecked")
     public CompositeValue fromBytes(final byte[] bytes) {
-        Vldtn.requireNonNull(bytes, "bytes");
+        Vldtn.requireNonNull(bytes, BYTES_PROPERTY);
         final FileReader fileReader = new MemFileReader(bytes);
         final Object[] out = new Object[elementTypes.size()];
         for (int i = 0; i < elementTypes.size(); i++) {
@@ -241,13 +243,13 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
         @Override
         public void write(final byte[] bytes) {
-            add(Vldtn.requireNonNull(bytes, "bytes").length);
+            add(Vldtn.requireNonNull(bytes, BYTES_PROPERTY).length);
         }
 
         @Override
         public void write(final byte[] bytes, final int offset,
                 final int length) {
-            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final byte[] in = Vldtn.requireNonNull(bytes, BYTES_PROPERTY);
             final int from = Vldtn.requireGreaterThanOrEqualToZero(offset,
                     "offset");
             final int len = Vldtn.requireGreaterThanOrEqualToZero(length,
@@ -295,7 +297,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
 
         @Override
         public void write(final byte[] bytes) {
-            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final byte[] in = Vldtn.requireNonNull(bytes, BYTES_PROPERTY);
             ensureCapacity(in.length);
             System.arraycopy(in, 0, destination, position, in.length);
             position += in.length;
@@ -304,7 +306,7 @@ public class TypeDescriptorComposite implements TypeDescriptor<CompositeValue> {
         @Override
         public void write(final byte[] bytes, final int offset,
                 final int length) {
-            final byte[] in = Vldtn.requireNonNull(bytes, "bytes");
+            final byte[] in = Vldtn.requireNonNull(bytes, BYTES_PROPERTY);
             final int from = Vldtn.requireGreaterThanOrEqualToZero(offset,
                     "offset");
             final int len = Vldtn.requireGreaterThanOrEqualToZero(length,

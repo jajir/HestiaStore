@@ -8,6 +8,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
 /**
  * Immutable configuration values for a segment instance.
  */
+@SuppressWarnings({ "java:S107", "java:S1133" })
 public class SegmentConf {
 
     /**
@@ -102,7 +103,7 @@ public class SegmentConf {
      * @param decodingChunkFilters chunk filters applied during decoding
      * @deprecated use {@link #builder()} for clearer named configuration
      */
-    @Deprecated
+    @Deprecated(since = "0.0.7")
     public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
             final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
             final int maxNumberOfKeysInSegmentCache,

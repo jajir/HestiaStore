@@ -120,8 +120,8 @@ public final class WalBuilder {
         final WalCorruptionPolicy effectiveCorruptionPolicy = corruptionPolicy == null
                 ? Wal.DEFAULT_CORRUPTION_POLICY
                 : corruptionPolicy;
-        final boolean effectiveEpochSupport = epochSupport == null ? false
-                : epochSupport.booleanValue();
+        final boolean effectiveEpochSupport = epochSupport != null
+                && epochSupport.booleanValue();
         Vldtn.requireTrue(effectiveSegmentSizeBytes > 0L,
                 "segmentSizeBytes must be greater than 0");
         Vldtn.requireTrue(effectiveMaxBytesBeforeForcedCheckpoint > 0L,

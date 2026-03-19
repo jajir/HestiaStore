@@ -5,6 +5,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Converts strings using ISO-8859-1 and supports writing into reusable buffers.
  */
+@SuppressWarnings("java:S6548")
 final class Iso88591StringConvertor implements TypeEncoder<String> {
 
     static final Iso88591StringConvertor INSTANCE = new Iso88591StringConvertor();
@@ -30,18 +31,23 @@ final class Iso88591StringConvertor implements TypeEncoder<String> {
     private int encodeToBuffer(final String value, final byte[] destination) {
         final int inputLength = value.length();
         int out = 0;
-        for (int i = 0; i < inputLength; i++) {
-            final char c = value.charAt(i);
+        int index = 0;
+        while (index < inputLength) {
+            final char c = value.charAt(index);
             if (c <= 0x00FF) {
                 destination[out++] = (byte) c;
+                index++;
                 continue;
             }
             destination[out++] = REPLACEMENT_BYTE;
-            if (Character.isHighSurrogate(c) && i + 1 < inputLength
-                    && Character.isLowSurrogate(value.charAt(i + 1))) {
-                i++;
-            }
+            index += consumesSurrogatePair(value, index, c) ? 2 : 1;
         }
         return out;
+    }
+
+    private static boolean consumesSurrogatePair(final String value,
+            final int index, final char currentChar) {
+        return Character.isHighSurrogate(currentChar) && index + 1 < value.length()
+                && Character.isLowSurrogate(value.charAt(index + 1));
     }
 }

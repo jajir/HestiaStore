@@ -6,6 +6,7 @@ import org.hestiastore.index.Vldtn;
  * Lightweight immutable sequence that represents a configurable number of zero
  * bytes. Useful for padding without allocating new arrays for each request.
  */
+@SuppressWarnings("java:S6206")
 public final class ZeroByteSequence implements ByteSequence {
 
     private final int length;

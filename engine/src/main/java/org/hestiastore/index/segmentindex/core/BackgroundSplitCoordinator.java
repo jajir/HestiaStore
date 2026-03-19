@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -275,12 +276,13 @@ final class BackgroundSplitCoordinator<K, V> {
         }
     }
 
-    private boolean runWithExclusiveSplitApply(final Supplier<Boolean> action) {
+    private boolean runWithExclusiveSplitApply(
+            final BooleanSupplier action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         final var writeLock = splitGate.writeLock();
         writeLock.lock();
         try {
-            return action.get();
+            return action.getAsBoolean();
         } finally {
             writeLock.unlock();
         }
@@ -318,13 +320,6 @@ final class BackgroundSplitCoordinator<K, V> {
                                 * SPLIT_COOLDOWN_SMOOTHING_WEIGHT_OBSERVED)
                         / (SPLIT_COOLDOWN_SMOOTHING_WEIGHT_PREVIOUS
                                 + SPLIT_COOLDOWN_SMOOTHING_WEIGHT_OBSERVED)));
-    }
-
-    private static long splitRetryGrowthThreshold(final long splitThreshold) {
-        final long byThreshold = Math.max(1L,
-                splitThreshold / SPLIT_RETRY_GROWTH_DIVISOR);
-        return Math.min(SPLIT_RETRY_GROWTH_MAX_KEYS,
-                Math.max(SPLIT_RETRY_GROWTH_MIN_KEYS, byThreshold));
     }
 
     private static long clampCooldownNanos(final long candidateNanos) {
@@ -388,6 +383,14 @@ final class BackgroundSplitCoordinator<K, V> {
                 return true;
             }
             return nowNanos - lastAttemptNanos >= cooldownNanos;
+        }
+
+        private static long splitRetryGrowthThreshold(
+                final long splitThreshold) {
+            final long byThreshold = Math.max(1L,
+                    splitThreshold / SPLIT_RETRY_GROWTH_DIVISOR);
+            return Math.min(SPLIT_RETRY_GROWTH_MAX_KEYS,
+                    Math.max(SPLIT_RETRY_GROWTH_MIN_KEYS, byThreshold));
         }
     }
 }

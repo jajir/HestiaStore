@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings({ "java:S3776", "java:S6541", "java:S6206" })
 public final class WalRuntime<K, V> implements AutoCloseable {
 
     /**
@@ -1147,7 +1148,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             final String value = parts[1].trim();
             if ("version".equals(key)) {
                 version = parseFormatInt(key, value);
-            } else if ("checksum".equals(key)) {
+            } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
                 checksum = parseFormatInt(key, value);
             }
         }

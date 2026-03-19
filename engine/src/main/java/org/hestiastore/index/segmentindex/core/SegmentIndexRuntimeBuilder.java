@@ -27,6 +27,7 @@ import org.slf4j.Logger;
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings({ "java:S6206", "java:S6539" })
 final class SegmentIndexRuntimeBuilder<K, V> {
 
     interface BuildObserver<K, V> {
@@ -89,187 +90,66 @@ final class SegmentIndexRuntimeBuilder<K, V> {
         }
     }
 
-    static final class RuntimeEnvironment<K, V> {
-
-        private final Logger logger;
-        private final Directory directoryFacade;
-        private final TypeDescriptor<K> keyTypeDescriptor;
-        private final TypeDescriptor<V> valueTypeDescriptor;
-        private final IndexConfiguration<K, V> conf;
-        private final IndexExecutorRegistry executorRegistry;
-
-        RuntimeEnvironment(final Logger logger,
-                final Directory directoryFacade,
-                final TypeDescriptor<K> keyTypeDescriptor,
-                final TypeDescriptor<V> valueTypeDescriptor,
-                final IndexConfiguration<K, V> conf,
-                final IndexExecutorRegistry executorRegistry) {
-            this.logger = Vldtn.requireNonNull(logger, "logger");
-            this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
-                    "directoryFacade");
-            this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                    "keyTypeDescriptor");
-            this.valueTypeDescriptor = Vldtn.requireNonNull(
-                    valueTypeDescriptor, "valueTypeDescriptor");
-            this.conf = Vldtn.requireNonNull(conf, "conf");
-            this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
-                    "executorRegistry");
-        }
-
-        Logger logger() {
-            return logger;
-        }
-
-        Directory directoryFacade() {
-            return directoryFacade;
-        }
-
-        TypeDescriptor<K> keyTypeDescriptor() {
-            return keyTypeDescriptor;
-        }
-
-        TypeDescriptor<V> valueTypeDescriptor() {
-            return valueTypeDescriptor;
-        }
-
-        IndexConfiguration<K, V> conf() {
-            return conf;
-        }
-
-        IndexExecutorRegistry executorRegistry() {
-            return executorRegistry;
-        }
-
-        RuntimeTuningState runtimeTuningState() {
-            return RuntimeTuningState.fromConfiguration(conf);
-        }
-
-        SegmentFactory<K, V> newSegmentFactory() {
-            return new SegmentFactory<>(directoryFacade, keyTypeDescriptor,
-                    valueTypeDescriptor, conf,
-                    executorRegistry.getStableSegmentMaintenanceExecutor());
-        }
-
-        SegmentRegistry<K, V> newSegmentRegistry() {
-            return SegmentRegistry.<K, V>builder()
-                    .withDirectoryFacade(directoryFacade)
-                    .withKeyTypeDescriptor(keyTypeDescriptor)
-                    .withValueTypeDescriptor(valueTypeDescriptor)
-                    .withConfiguration(conf)
-                    .withSegmentMaintenanceExecutor(executorRegistry
-                            .getStableSegmentMaintenanceExecutor())
-                    .withRegistryMaintenanceExecutor(
-                            executorRegistry.getRegistryMaintenanceExecutor())
-                    .build();
-        }
-
-        IndexRetryPolicy newRetryPolicy() {
-            return new IndexRetryPolicy(conf.getIndexBusyBackoffMillis(),
-                    conf.getIndexBusyTimeoutMillis());
-        }
-
-        WalRuntime<K, V> openWalRuntime() {
-            return WalRuntime.open(directoryFacade, conf.getWal(),
-                    keyTypeDescriptor, valueTypeDescriptor);
-        }
-    }
-
-    static final class RuntimeStateRefs {
-
-        private final Stats stats;
-        private final AtomicLong compactRequestHighWaterMark;
-        private final AtomicLong flushRequestHighWaterMark;
-        private final AtomicLong lastAppliedWalLsn;
-
-        RuntimeStateRefs(final Stats stats,
-                final AtomicLong compactRequestHighWaterMark,
-                final AtomicLong flushRequestHighWaterMark,
-                final AtomicLong lastAppliedWalLsn) {
-            this.stats = Vldtn.requireNonNull(stats, "stats");
-            this.compactRequestHighWaterMark = Vldtn.requireNonNull(
-                    compactRequestHighWaterMark,
-                    "compactRequestHighWaterMark");
-            this.flushRequestHighWaterMark = Vldtn.requireNonNull(
-                    flushRequestHighWaterMark, "flushRequestHighWaterMark");
-            this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
-                    "lastAppliedWalLsn");
-        }
-
-        Stats stats() {
-            return stats;
-        }
-
-        AtomicLong compactRequestHighWaterMark() {
-            return compactRequestHighWaterMark;
-        }
-
-        AtomicLong flushRequestHighWaterMark() {
-            return flushRequestHighWaterMark;
-        }
-
-        AtomicLong lastAppliedWalLsn() {
-            return lastAppliedWalLsn;
-        }
-
-        <K, V> SegmentIndexMetricsCollector<K, V> newMetricsCollector(
-                final IndexConfiguration<K, V> conf,
-                final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-                final SegmentRegistry<K, V> segmentRegistry,
-                final PartitionRuntime<K, V> partitionRuntime,
-                final RuntimeTuningState runtimeTuningState,
-                final WalRuntime<K, V> walRuntime,
-                final Supplier<SegmentIndexState> stateSupplier) {
-            return new SegmentIndexMetricsCollector<>(conf, keyToSegmentMap,
-                    segmentRegistry, partitionRuntime, runtimeTuningState,
-                    walRuntime, stats, compactRequestHighWaterMark,
-                    flushRequestHighWaterMark, lastAppliedWalLsn,
-                    stateSupplier);
-        }
-    }
-
-    private final RuntimeEnvironment<K, V> environment;
-    private final RuntimeStateRefs runtimeStateRefs;
+    private final Logger logger;
+    private final Directory directoryFacade;
+    private final TypeDescriptor<K> keyTypeDescriptor;
+    private final TypeDescriptor<V> valueTypeDescriptor;
+    private final IndexConfiguration<K, V> conf;
+    private final IndexExecutorRegistry executorRegistry;
+    private final Stats stats;
+    private final AtomicLong compactRequestHighWaterMark;
+    private final AtomicLong flushRequestHighWaterMark;
+    private final AtomicLong lastAppliedWalLsn;
     private final Callbacks callbacks;
     private final BuildObserver<K, V> buildObserver;
 
-    SegmentIndexRuntimeBuilder(final RuntimeEnvironment<K, V> environment,
-            final RuntimeStateRefs runtimeStateRefs, final Callbacks callbacks,
+    @SuppressWarnings("java:S107")
+    SegmentIndexRuntimeBuilder(final Logger logger,
+            final Directory directoryFacade,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final IndexConfiguration<K, V> conf,
+            final IndexExecutorRegistry executorRegistry, final Stats stats,
+            final AtomicLong compactRequestHighWaterMark,
+            final AtomicLong flushRequestHighWaterMark,
+            final AtomicLong lastAppliedWalLsn, final Callbacks callbacks,
             final BuildObserver<K, V> buildObserver) {
-        this.environment = Vldtn.requireNonNull(environment, "environment");
-        this.runtimeStateRefs = Vldtn.requireNonNull(runtimeStateRefs,
-                "runtimeStateRefs");
+        this.logger = Vldtn.requireNonNull(logger, "logger");
+        this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
+                "directoryFacade");
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
+                "valueTypeDescriptor");
+        this.conf = Vldtn.requireNonNull(conf, "conf");
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
+        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.compactRequestHighWaterMark = Vldtn.requireNonNull(
+                compactRequestHighWaterMark, "compactRequestHighWaterMark");
+        this.flushRequestHighWaterMark = Vldtn.requireNonNull(
+                flushRequestHighWaterMark, "flushRequestHighWaterMark");
+        this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
+                "lastAppliedWalLsn");
         this.callbacks = Vldtn.requireNonNull(callbacks, "callbacks");
         this.buildObserver = Vldtn.requireNonNull(buildObserver,
                 "buildObserver");
     }
 
     SegmentIndexRuntime<K, V> build() {
-        final Logger logger = environment.logger();
-        final Directory directoryFacade = environment.directoryFacade();
-        final TypeDescriptor<K> keyTypeDescriptor = environment
-                .keyTypeDescriptor();
-        final TypeDescriptor<V> valueTypeDescriptor = environment
-                .valueTypeDescriptor();
-        final IndexConfiguration<K, V> conf = environment.conf();
-        final IndexExecutorRegistry executorRegistry = environment
-                .executorRegistry();
-        final Stats stats = runtimeStateRefs.stats();
-        final AtomicLong lastAppliedWalLsn = runtimeStateRefs
-                .lastAppliedWalLsn();
         KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap = null;
         SegmentRegistry<K, V> segmentRegistry = null;
         WalRuntime<K, V> walRuntime = null;
         try {
-            final RuntimeTuningState runtimeTuningState = environment
-                    .runtimeTuningState();
+            final RuntimeTuningState runtimeTuningState = RuntimeTuningState
+                    .fromConfiguration(conf);
             final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
                     directoryFacade, keyTypeDescriptor);
             keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
             buildObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
-            final SegmentFactory<K, V> segmentFactory = environment
-                    .newSegmentFactory();
-            segmentRegistry = environment.newSegmentRegistry();
+            final SegmentFactory<K, V> segmentFactory = newSegmentFactory();
+            segmentRegistry = newSegmentRegistry();
             buildObserver.onSegmentRegistryCreated(segmentRegistry);
             final PartitionRuntime<K, V> partitionRuntime = new PartitionRuntime<>(
                     keyTypeDescriptor.getComparator());
@@ -283,7 +163,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                     callbacks.onBackgroundSplitApplied());
             final StableSegmentGateway<K, V> stableSegmentGateway = new StableSegmentGateway<>(
                     keyToSegmentMap, segmentRegistry);
-            final IndexRetryPolicy retryPolicy = environment.newRetryPolicy();
+            final IndexRetryPolicy retryPolicy = newRetryPolicy();
             final StableSegmentCoordinator<K, V> stableSegmentCoordinator = new StableSegmentCoordinator<>(
                     logger, keyToSegmentMap, segmentRegistry,
                     backgroundSplitCoordinator, stableSegmentGateway,
@@ -314,7 +194,8 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
                     logger, directoryFacade, keyToSegmentMap, segmentRegistry,
                     retryPolicy);
-            walRuntime = environment.openWalRuntime();
+            walRuntime = WalRuntime.open(directoryFacade, conf.getWal(),
+                    keyTypeDescriptor, valueTypeDescriptor);
             buildObserver.onWalRuntimeCreated(walRuntime);
             final KeyToSegmentMapSynchronizedAdapter<K> builtKeyToSegmentMap = keyToSegmentMap;
             final IndexWalCoordinator<K, V> walCoordinator = new IndexWalCoordinator<>(
@@ -333,10 +214,9 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                     partitionDrainCoordinator, backgroundSplitCoordinator,
                     backgroundSplitPolicyLoop, stableSegmentCoordinator,
                     walCoordinator);
-            final SegmentIndexMetricsCollector<K, V> metricsCollector = runtimeStateRefs
-                    .newMetricsCollector(conf, keyToSegmentMap, segmentRegistry,
-                            partitionRuntime, runtimeTuningState, walRuntime,
-                            callbacks.stateSupplier());
+            final SegmentIndexMetricsCollector<K, V> metricsCollector = newMetricsCollector(
+                    keyToSegmentMap, segmentRegistry, partitionRuntime,
+                    runtimeTuningState, walRuntime);
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier = new SegmentRuntimeLimitApplier<>(
                     segmentRegistry, segmentFactory);
             return new SegmentIndexRuntime<>(runtimeTuningState,
@@ -357,6 +237,43 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             throw cleanupFailedBuild(failure, walRuntime, segmentRegistry,
                     keyToSegmentMap);
         }
+    }
+
+    private SegmentFactory<K, V> newSegmentFactory() {
+        return new SegmentFactory<>(directoryFacade, keyTypeDescriptor,
+                valueTypeDescriptor, conf,
+                executorRegistry.getStableSegmentMaintenanceExecutor());
+    }
+
+    private SegmentRegistry<K, V> newSegmentRegistry() {
+        return SegmentRegistry.<K, V>builder()
+                .withDirectoryFacade(directoryFacade)
+                .withKeyTypeDescriptor(keyTypeDescriptor)
+                .withValueTypeDescriptor(valueTypeDescriptor)
+                .withConfiguration(conf)
+                .withSegmentMaintenanceExecutor(
+                        executorRegistry.getStableSegmentMaintenanceExecutor())
+                .withRegistryMaintenanceExecutor(
+                        executorRegistry.getRegistryMaintenanceExecutor())
+                .build();
+    }
+
+    private IndexRetryPolicy newRetryPolicy() {
+        return new IndexRetryPolicy(conf.getIndexBusyBackoffMillis(),
+                conf.getIndexBusyTimeoutMillis());
+    }
+
+    private SegmentIndexMetricsCollector<K, V> newMetricsCollector(
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final PartitionRuntime<K, V> partitionRuntime,
+            final RuntimeTuningState runtimeTuningState,
+            final WalRuntime<K, V> walRuntime) {
+        return new SegmentIndexMetricsCollector<>(conf, keyToSegmentMap,
+                segmentRegistry, partitionRuntime, runtimeTuningState,
+                walRuntime, stats, compactRequestHighWaterMark,
+                flushRequestHighWaterMark, lastAppliedWalLsn,
+                callbacks.stateSupplier());
     }
 
     private RuntimeException cleanupFailedBuild(final RuntimeException failure,
