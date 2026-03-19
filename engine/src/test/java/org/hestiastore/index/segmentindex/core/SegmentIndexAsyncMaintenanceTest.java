@@ -137,7 +137,7 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @Test
-    void closeStopsAutonomousSplitPolicyLoop() throws Exception {
+    void closeStopsAutonomousSplitPolicyLoop() {
         index.put(1, "one");
         index.flushAndWait();
 
