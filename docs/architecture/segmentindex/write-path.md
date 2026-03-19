@@ -27,7 +27,7 @@ Writes become durable when flushed to segment files. Closing the index performs 
 
 Key classes: `segmentindex/SegmentIndex.java`,
 `segmentindex/IndexInternalConcurrent.java`,
-`segmentindex/IndexAsyncExecutor.java`,
+`segmentindex/core/IndexAsyncExecutor.java`,
 `segmentindex/IndexAsyncAdapter.java`,
 `segmentindex/IndexContextLoggingAdapter.java`.
 
