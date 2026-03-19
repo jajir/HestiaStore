@@ -15,6 +15,11 @@ Use this skill when the task is to reduce SonarCloud code smells in Hestia Store
 - Do not make unrelated refactors.
 - Do not change public API behavior unless required and explicitly justified.
 - Do not suppress warnings unless a true code fix would be materially worse and the reason is explained.
+- Ignore high-complexity complaints unless the user explicitly asks for complexity reduction work.
+- Ignore complaints that only target a high number of constructor parameters unless the user explicitly asks for constructor redesign.
+- If a Sonar suggestion conflicts with repository-wide coding rules, follow the repository rules and skip that suggestion instead of forcing the code to match Sonar mechanically.
+- Do not stop to ask the user for routine batch selection or next-step confirmation when the issue source can be discovered locally or from CI/PR tooling.
+- When working on an active PR branch, push safe verified batches to that PR branch as progress accumulates instead of waiting for a single large cleanup.
 - Stop if the issue source is missing, the next fixes require architecture changes, or verification fails.
 
 ## Branching Guidance
