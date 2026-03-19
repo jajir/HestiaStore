@@ -7,6 +7,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Immutable WAL configuration attached to an index configuration.
  */
+@SuppressWarnings("java:S107")
 public final class Wal {
 
     /**

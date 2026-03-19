@@ -82,25 +82,36 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             logger.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
-            final Segment<K, V> segment = awaitSegment(segmentId);
-            if (segment == null) {
-                logger.debug(
-                        "Skipping segment '{}' because it is not available in '{}' isolation mode.",
-                        segmentId, isolation);
-                continue;
-            }
-            final EntryIterator<K, V> iterator = awaitOpenIterator(segment);
-            if (iterator == null) {
-                logger.debug(
-                        "Skipping segment '{}' because iterator cannot be opened in '{}' isolation mode.",
-                        segmentId, isolation);
-                continue;
-            }
-            if (iterator.hasNext()) {
+            final EntryIterator<K, V> iterator = openSegmentIterator(segmentId);
+            if (iterator != null && iterator.hasNext()) {
                 currentIterator = iterator;
                 nextEntry = currentIterator.next();
                 return;
             }
+            closeIterator(iterator);
+        }
+    }
+
+    private EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
+        final Segment<K, V> segment = awaitSegment(segmentId);
+        if (segment == null) {
+            logger.debug(
+                    "Skipping segment '{}' because it is not available in '{}' isolation mode.",
+                    segmentId, isolation);
+            return null;
+        }
+        final EntryIterator<K, V> iterator = awaitOpenIterator(segment);
+        if (iterator == null) {
+            logger.debug(
+                    "Skipping segment '{}' because iterator cannot be opened in '{}' isolation mode.",
+                    segmentId, isolation);
+        }
+        return iterator;
+    }
+
+    private static <K, V> void closeIterator(
+            final EntryIterator<K, V> iterator) {
+        if (iterator != null) {
             iterator.close();
         }
     }

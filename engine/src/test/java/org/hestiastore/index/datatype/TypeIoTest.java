@@ -35,9 +35,11 @@ class TypeIoTest {
 
     @Test
     void readFullyOrNull_throwsOnTruncatedData() {
+        final MemFileReader reader = new MemFileReader(new byte[] { 1, 2, 3 });
+        final byte[] destination = new byte[4];
+
         final IndexException error = assertThrows(IndexException.class,
-                () -> TypeIo.readFullyOrNull(new MemFileReader(new byte[] { 1,
-                        2, 3 }), new byte[4]));
+                () -> TypeIo.readFullyOrNull(reader, destination));
 
         assertTrue(error.getMessage().contains("Expected '4' bytes"));
         assertTrue(error.getMessage().contains("EOF"));
@@ -45,9 +47,11 @@ class TypeIoTest {
 
     @Test
     void readFullyRequired_throwsWhenNoDataAreAvailable() {
+        final MemFileReader reader = new MemFileReader(new byte[0]);
+        final byte[] destination = new byte[1];
+
         final IndexException error = assertThrows(IndexException.class,
-                () -> TypeIo.readFullyRequired(new MemFileReader(new byte[0]),
-                        new byte[1]));
+                () -> TypeIo.readFullyRequired(reader, destination));
 
         assertTrue(error.getMessage().contains("before reading any data"));
     }

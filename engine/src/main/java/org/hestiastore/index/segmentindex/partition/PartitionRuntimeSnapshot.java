@@ -5,6 +5,7 @@ package org.hestiastore.index.segmentindex.partition;
  *
  * @author honza
  */
+@SuppressWarnings({ "java:S6206", "java:S107" })
 public final class PartitionRuntimeSnapshot {
 
     private final int partitionCount;

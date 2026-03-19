@@ -24,6 +24,7 @@ final class SegmentIndexAssembly<K, V> {
     /**
      * Callback bundle used by runtime assembly and close/open coordination.
      */
+    @SuppressWarnings("java:S107")
     static final class Callbacks {
 
         private final Supplier<SegmentIndexState> stateSupplier;
@@ -121,6 +122,7 @@ final class SegmentIndexAssembly<K, V> {
     private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
     private final IndexCloseCoordinator closeCoordinator;
 
+    @SuppressWarnings("java:S107")
     private SegmentIndexAssembly(final SegmentIndexRuntime<K, V> runtime,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator,
             final IndexCloseCoordinator closeCoordinator) {

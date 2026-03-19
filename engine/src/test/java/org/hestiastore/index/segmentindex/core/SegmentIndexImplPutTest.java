@@ -153,12 +153,11 @@ class SegmentIndexImplPutTest {
         resetIndex(10, 1, Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.SYNC).build());
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
+        final var putFuture = index.putAsync(1, "one").toCompletableFuture();
 
         try {
             final CompletionException exception = assertThrows(
-                    CompletionException.class,
-                    () -> index.putAsync(1, "one").toCompletableFuture()
-                            .join());
+                    CompletionException.class, putFuture::join);
             assertTrue(exception.getCause().getMessage()
                     .contains("WAL sync failure"));
             assertEquals(SegmentIndexState.ERROR, index.getState());
@@ -174,11 +173,11 @@ class SegmentIndexImplPutTest {
                 .withDurabilityMode(WalDurabilityMode.SYNC).build());
         index.put(1, "one");
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
+        final var deleteFuture = index.deleteAsync(1).toCompletableFuture();
 
         try {
             final CompletionException exception = assertThrows(
-                    CompletionException.class,
-                    () -> index.deleteAsync(1).toCompletableFuture().join());
+                    CompletionException.class, deleteFuture::join);
             assertTrue(exception.getCause().getMessage()
                     .contains("WAL sync failure"));
             assertEquals(SegmentIndexState.ERROR, index.getState());

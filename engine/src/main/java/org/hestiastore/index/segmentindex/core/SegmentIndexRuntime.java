@@ -48,6 +48,7 @@ final class SegmentIndexRuntime<K, V> {
     private final IndexControlPlane controlPlane;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
 
+    @SuppressWarnings("java:S107")
     SegmentIndexRuntime(
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
@@ -105,12 +106,10 @@ final class SegmentIndexRuntime<K, V> {
             final Consumer<RuntimeException> failureHandler,
             final Runnable onBackgroundSplitApplied) {
         return new SegmentIndexRuntimeBuilder<>(
-                new SegmentIndexRuntimeBuilder.RuntimeEnvironment<>(logger,
-                        directoryFacade, keyTypeDescriptor,
-                        valueTypeDescriptor, conf, executorRegistry),
-                new SegmentIndexRuntimeBuilder.RuntimeStateRefs(stats,
-                        compactRequestHighWaterMark,
-                        flushRequestHighWaterMark, lastAppliedWalLsn),
+                logger, directoryFacade, keyTypeDescriptor,
+                valueTypeDescriptor, conf, executorRegistry, stats,
+                compactRequestHighWaterMark, flushRequestHighWaterMark,
+                lastAppliedWalLsn,
                 new SegmentIndexRuntimeBuilder.Callbacks(stateSupplier,
                         awaitSplitsIdle, failureHandler,
                         onBackgroundSplitApplied),

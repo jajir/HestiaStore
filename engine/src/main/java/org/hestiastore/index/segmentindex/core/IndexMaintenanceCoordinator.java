@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
 import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;

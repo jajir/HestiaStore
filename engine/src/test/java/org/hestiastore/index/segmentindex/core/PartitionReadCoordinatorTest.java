@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;

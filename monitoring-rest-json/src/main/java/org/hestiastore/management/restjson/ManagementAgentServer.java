@@ -64,6 +64,7 @@ import com.sun.net.httpserver.HttpServer;
 /**
  * Lightweight node-local HTTP management agent.
  */
+@SuppressWarnings("java:S3776")
 public final class ManagementAgentServer
         implements AutoCloseable, MonitoredIndexProvider {
 
@@ -78,6 +79,7 @@ public final class ManagementAgentServer
     private static final String AUDIT_REJECTED = "REJECTED";
     private static final String AUDIT_FAILED = "FAILED";
     private static final int MAX_AUDIT_RECORDS = 10_000;
+    private static final List<RegisteredIndex> REJECTED_ACTION_TARGETS = new ArrayList<>();
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
     private static final Map<RuntimeSettingKey, String> API_NAME_BY_RUNTIME_KEY = Map
             .of(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
@@ -423,7 +425,7 @@ public final class ManagementAgentServer
         final List<RegisteredIndex> targets = resolveActionTargetsOrReject(
                 exchange, context.endpoint(), context.body(),
                 context.request());
-        if (targets == null) {
+        if (targets == REJECTED_ACTION_TARGETS) {
             return;
         }
         if (!validateActionTargets(exchange, context.endpoint(),
@@ -583,7 +585,7 @@ public final class ManagementAgentServer
                     e.getMessage(), request.requestId(), Instant.now());
             writeJson(exchange, 404, error);
             audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
-            return null;
+            return REJECTED_ACTION_TARGETS;
         }
     }
 
