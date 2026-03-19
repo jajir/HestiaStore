@@ -51,7 +51,7 @@ final class IndexOperationCoordinator<K, V> {
 
         if (valueTypeDescriptor.isTombstone(value)) {
             throw new IllegalArgumentException(String.format(
-                    "Can't insert thombstone value '%s' into index", value));
+                    "Can't insert tombstone value '%s' into index", value));
         }
         final long walLsn = walCoordinator.appendPut(key, value);
         finishWriteOperation("put",

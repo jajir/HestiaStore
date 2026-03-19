@@ -94,11 +94,7 @@ final class PartitionReadCoordinator<K, V> {
             return IndexResult.ok(
                     valueTypeDescriptor.isTombstone(value) ? null : value);
         }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                snapshot.version())) {
-            return IndexResult.busy();
-        }
-        return stableSegmentGateway.get(segmentId, key);
+        return stableSegmentGateway.get(key, segmentId, snapshot.version());
     }
 
     private EntryIterator<K, V> openMergedIterator(

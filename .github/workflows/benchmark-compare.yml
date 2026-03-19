@@ -215,6 +215,7 @@ jobs:
         if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
+          --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
           --channel main > "${RUNNER_TEMP}/baseline-summary-path.txt"; then
           BASELINE_SUMMARY="$(cat "${RUNNER_TEMP}/baseline-summary-path.txt")"
         fi
@@ -232,6 +233,7 @@ jobs:
         if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
+          --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
           --channel "pr-${{ github.event.pull_request.number }}" > "${RUNNER_TEMP}/previous-pr-summary-path.txt"; then
           PREVIOUS_PR_SUMMARY="$(cat "${RUNNER_TEMP}/previous-pr-summary-path.txt")"
         fi

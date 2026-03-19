@@ -165,7 +165,8 @@ final class WalStorageFs implements WalStorage {
     public Stream<String> listFileNames() {
         try (final Stream<Path> listing = Files.list(walDirectory)) {
             return listing.sorted(Comparator.comparing(Path::getFileName))
-                    .map(path -> path.getFileName().toString());
+                    .map(path -> path.getFileName().toString()).toList()
+                    .stream();
         } catch (IOException e) {
             throw new IndexException("Unable to list WAL files.", e);
         }

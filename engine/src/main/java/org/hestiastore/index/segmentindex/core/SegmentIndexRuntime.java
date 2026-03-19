@@ -104,14 +104,17 @@ final class SegmentIndexRuntime<K, V> {
             final Runnable awaitSplitsIdle,
             final Consumer<RuntimeException> failureHandler,
             final Runnable onBackgroundSplitApplied) {
-        return new SegmentIndexRuntimeBuilder<>(logger, directoryFacade,
-                keyTypeDescriptor, valueTypeDescriptor, conf, executorRegistry,
-                stats, compactRequestHighWaterMark,
-                flushRequestHighWaterMark, lastAppliedWalLsn,
+        return new SegmentIndexRuntimeBuilder<>(
+                new SegmentIndexRuntimeBuilder.RuntimeEnvironment<>(logger,
+                        directoryFacade, keyTypeDescriptor,
+                        valueTypeDescriptor, conf, executorRegistry),
+                new SegmentIndexRuntimeBuilder.RuntimeStateRefs(stats,
+                        compactRequestHighWaterMark,
+                        flushRequestHighWaterMark, lastAppliedWalLsn),
                 new SegmentIndexRuntimeBuilder.Callbacks(stateSupplier,
                         awaitSplitsIdle, failureHandler,
-                        onBackgroundSplitApplied))
-                                .build();
+                        onBackgroundSplitApplied),
+                SegmentIndexRuntimeBuilder.noOpBuildObserver()).build();
     }
 
     RuntimeTuningState runtimeTuningState() {
@@ -197,12 +200,12 @@ final class SegmentIndexRuntime<K, V> {
 
     IndexCloseCoordinator newCloseCoordinator(final Logger logger,
             final String indexName, final Runnable beginCloseTransition,
-            final Runnable awaitAsyncOperations, final Runnable markClosed,
+            final Runnable awaitOperations, final Runnable markClosed,
             final LongSupplier getReadCount, final LongSupplier getWriteCount,
             final LongSupplier getDeleteCount,
             final Runnable finishCloseTransition) {
         return new IndexCloseCoordinator(logger, indexName, beginCloseTransition,
-                awaitAsyncOperations,
+                awaitOperations,
                 () -> partitionDrainCoordinator.drainPartitions(true),
                 backgroundSplitPolicyLoop::awaitExhausted, markClosed,
                 () -> backgroundSplitCoordinator

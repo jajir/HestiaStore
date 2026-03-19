@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -71,5 +72,11 @@ class IndexOpenCoordinatorTest {
         inOrder.verify(scheduleBackgroundSplitScan).run();
         verify(logger).info(
                 "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.");
+    }
+
+    @Test
+    void constructorRejectsNullIndexName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new IndexOpenCoordinator(logger, null));
     }
 }
