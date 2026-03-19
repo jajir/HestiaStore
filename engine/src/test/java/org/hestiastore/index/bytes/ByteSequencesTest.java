@@ -139,12 +139,15 @@ class ByteSequencesTest {
 
     @Test
     void test_concatNonEmpty_validates_input() {
+        final List<ByteSequence> emptySequences = List.of();
+        final List<ByteSequence> emptyByteSequence = List.of(ByteSequence.EMPTY);
+
         assertThrows(IllegalArgumentException.class,
                 () -> ByteSequences.concatNonEmpty(null));
         assertThrows(IllegalArgumentException.class,
-                () -> ByteSequences.concatNonEmpty(List.of()));
+                () -> ByteSequences.concatNonEmpty(emptySequences));
         assertThrows(IllegalArgumentException.class,
-                () -> ByteSequences.concatNonEmpty(List.of(ByteSequence.EMPTY)));
+                () -> ByteSequences.concatNonEmpty(emptyByteSequence));
     }
 
     @Test

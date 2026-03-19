@@ -27,6 +27,7 @@ import org.slf4j.Logger;
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings({ "java:S6206", "java:S6539" })
 final class SegmentIndexRuntimeBuilder<K, V> {
 
     interface BuildObserver<K, V> {

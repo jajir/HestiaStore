@@ -52,10 +52,12 @@ class TypeWritersTest {
     void varShortLengthWriter_rejectsLengthOver127() {
         final VarShortLengthWriter<String> writer = new VarShortLengthWriter<>(
                 new TypeDescriptorString().getTypeEncoder());
+        final CollectingFileWriter fileWriter = new CollectingFileWriter();
+        final String tooLongValue = "a".repeat(128);
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> writer
-                        .write(new CollectingFileWriter(), "a".repeat(128)));
+                IllegalArgumentException.class,
+                () -> writer.write(fileWriter, tooLongValue));
         assertEquals("Converted type is too big", error.getMessage());
     }
 
@@ -84,10 +86,11 @@ class TypeWritersTest {
                         throw new IllegalArgumentException("bad payload");
                     }
                 });
+        final CollectingFileWriter fileWriter = new CollectingFileWriter();
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class,
-                () -> writer.write(new CollectingFileWriter(), "abc"));
+                IllegalArgumentException.class, () -> writer.write(fileWriter,
+                        "abc"));
         assertEquals("bad payload", error.getMessage());
     }
 
@@ -204,10 +207,11 @@ class TypeWritersTest {
                         throw new IllegalArgumentException("bad short payload");
                     }
                 });
+        final CollectingFileWriter fileWriter = new CollectingFileWriter();
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class,
-                () -> writer.write(new CollectingFileWriter(), "abc"));
+                IllegalArgumentException.class, () -> writer.write(fileWriter,
+                        "abc"));
         assertEquals("bad short payload", error.getMessage());
     }
 
@@ -221,10 +225,11 @@ class TypeWritersTest {
                         throw new IllegalArgumentException("bad fixed payload");
                     }
                 });
+        final CollectingFileWriter fileWriter = new CollectingFileWriter();
 
         final IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
-                () -> writer.write(new CollectingFileWriter(), "ABCD"));
+                () -> writer.write(fileWriter, "ABCD"));
         assertEquals("bad fixed payload", error.getMessage());
     }
 

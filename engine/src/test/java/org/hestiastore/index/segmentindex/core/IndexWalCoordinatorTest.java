@@ -66,7 +66,7 @@ class IndexWalCoordinatorTest {
                 .thenReturn(new WalRuntime.RecoveryResult(3L, 7L, false));
         lastAppliedWalLsn.set(5L);
 
-        coordinator.recover(record -> {
+        coordinator.recover(replayRecord -> {
         });
 
         assertEquals(7L, lastAppliedWalLsn.get());

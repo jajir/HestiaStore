@@ -48,6 +48,7 @@ final class SegmentIndexRuntime<K, V> {
     private final IndexControlPlane controlPlane;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
 
+    @SuppressWarnings("java:S107")
     SegmentIndexRuntime(
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,

@@ -14,6 +14,8 @@ import org.hestiastore.index.directory.FileReaderSeekable;
 public class DataBlockReaderImpl extends AbstractCloseableResource
         implements DataBlockReader {
 
+    private static final byte[] EOF = new byte[0];
+
     private final FileReaderSeekable fileReader;
     private final DataBlockSize blockSize;
     private final boolean closeReaderOnClose;
@@ -40,7 +42,7 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
     @Override
     public DataBlock read() {
         final byte[] buffer = readFullBlockData();
-        if (buffer == null) {
+        if (buffer.length == 0) {
             return null;
         }
         final DataBlockPosition blockPosition = DataBlockPosition.of(position);
@@ -53,7 +55,7 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
     @Override
     public ByteSequence readPayloadSequence() {
         final byte[] buffer = readFullBlockData();
-        if (buffer == null) {
+        if (buffer.length == 0) {
             return null;
         }
         validateBlockData(buffer);
@@ -71,7 +73,7 @@ public class DataBlockReaderImpl extends AbstractCloseableResource
                     blockDataSize - offset);
             if (bytesRead < 0) {
                 if (offset == 0) {
-                    return null; // End of file reached before reading block.
+                    return EOF; // End of file reached before reading block.
                 }
                 throw new IndexException("Unable to read full block");
             }

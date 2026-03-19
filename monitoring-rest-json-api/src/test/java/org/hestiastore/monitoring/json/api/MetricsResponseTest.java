@@ -39,6 +39,8 @@ class MetricsResponseTest {
 
     @Test
     void rejectsNegativeCounters() {
+        final Instant capturedAt = Instant.now();
+
         assertThrows(IllegalArgumentException.class,
                 () -> new MetricsResponse("idx", "READY",
                         -1L, 0L, 0L,
@@ -53,6 +55,6 @@ class MetricsResponseTest {
                         0, 0, 0D,
                         0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L,
-                        Instant.now()));
+                        capturedAt));
     }
 }

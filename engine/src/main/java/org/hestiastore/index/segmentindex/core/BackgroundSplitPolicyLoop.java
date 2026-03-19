@@ -29,6 +29,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
  * Owns the autonomous background split-policy scan loop and its coordination
  * state.
  */
+@SuppressWarnings("java:S107")
 final class BackgroundSplitPolicyLoop<K, V> {
 
     private static final long BACKGROUND_SPLIT_POLICY_INTERVAL_MILLIS = 250L;

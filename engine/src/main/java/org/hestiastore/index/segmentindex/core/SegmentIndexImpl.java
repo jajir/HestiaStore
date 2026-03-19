@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;

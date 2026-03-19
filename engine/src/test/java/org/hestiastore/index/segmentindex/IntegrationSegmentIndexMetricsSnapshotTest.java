@@ -53,47 +53,11 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
             final SegmentIndexMetricsSnapshot snapshot = index
                     .metricsSnapshot();
-            assertEquals(2L, snapshot.getPutOperationCount());
-            assertEquals(4L, snapshot.getGetOperationCount());
-            assertEquals(1L, snapshot.getDeleteOperationCount());
-            assertTrue(snapshot.getTotalBufferedWriteKeys() >= 2L);
-            assertTrue(snapshot.getPartitionCount() >= 1);
-            assertTrue(snapshot.getActivePartitionCount() >= 1);
-            assertTrue(snapshot.getPartitionBufferedKeyCount() >= 1);
-            assertTrue(snapshot.getLocalThrottleCount() >= 0L);
-            assertTrue(snapshot.getGlobalThrottleCount() >= 0L);
-            assertTrue(snapshot.getDrainLatencyP95Micros() >= 0L);
-            assertTrue(snapshot.getRegistryCacheHitCount() >= 0L);
-            assertTrue(snapshot.getRegistryCacheMissCount() >= 0L);
-            assertTrue(snapshot.getRegistryCacheLoadCount() >= 0L);
-            assertTrue(snapshot.getRegistryCacheLimit() >= 1);
-            assertTrue(snapshot.getBloomFilterRequestCount() >= 0L);
-            assertTrue(snapshot.getBloomFilterRefusedCount() >= 0L);
-            assertTrue(snapshot.getBloomFilterPositiveCount() >= 0L);
-            assertTrue(snapshot.getBloomFilterFalsePositiveCount() >= 0L);
-            assertEquals(false, snapshot.isWalEnabled());
-            assertEquals(0L, snapshot.getWalAppendCount());
-            assertEquals(0L, snapshot.getWalAppendBytes());
-            assertEquals(0L, snapshot.getWalSyncCount());
-            assertEquals(0L, snapshot.getWalSyncFailureCount());
-            assertEquals(0L, snapshot.getWalCorruptionCount());
-            assertEquals(0L, snapshot.getWalTruncationCount());
-            assertEquals(0L, snapshot.getWalRetainedBytes());
-            assertEquals(0, snapshot.getWalSegmentCount());
-            assertEquals(0L, snapshot.getWalDurableLsn());
-            assertEquals(0L, snapshot.getWalCheckpointLsn());
-            assertEquals(0L, snapshot.getWalPendingSyncBytes());
-            assertEquals(0L, snapshot.getWalAppliedLsn());
-            assertEquals(0L, snapshot.getWalCheckpointLagLsn());
-            assertEquals(0L, snapshot.getWalSyncTotalNanos());
-            assertEquals(0L, snapshot.getWalSyncMaxNanos());
-            assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
-            assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
-            assertEquals(0L, snapshot.getWalSyncAvgNanos());
-            assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
-            assertTrue(snapshot.getSegmentRuntimeSnapshots()
-                    .size() <= snapshot.getSegmentCount());
-            assertEquals(SegmentIndexState.READY, snapshot.getState());
+            assertOperationCounts(snapshot, 2L, 4L, 1L);
+            assertBufferedPartitionMetrics(snapshot);
+            assertRegistryAndBloomMetrics(snapshot);
+            assertWalDisabledSnapshot(snapshot);
+            assertReadySnapshot(snapshot);
         }
     }
 
@@ -496,5 +460,67 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         }
         assertTrue(condition.get(),
                 "Condition not reached within " + timeoutMillis + " ms.");
+    }
+
+    private static void assertOperationCounts(
+            final SegmentIndexMetricsSnapshot snapshot, final long putCount,
+            final long getCount, final long deleteCount) {
+        assertEquals(putCount, snapshot.getPutOperationCount());
+        assertEquals(getCount, snapshot.getGetOperationCount());
+        assertEquals(deleteCount, snapshot.getDeleteOperationCount());
+    }
+
+    private static void assertBufferedPartitionMetrics(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertTrue(snapshot.getTotalBufferedWriteKeys() >= 2L);
+        assertTrue(snapshot.getPartitionCount() >= 1);
+        assertTrue(snapshot.getActivePartitionCount() >= 1);
+        assertTrue(snapshot.getPartitionBufferedKeyCount() >= 1);
+        assertTrue(snapshot.getLocalThrottleCount() >= 0L);
+        assertTrue(snapshot.getGlobalThrottleCount() >= 0L);
+        assertTrue(snapshot.getDrainLatencyP95Micros() >= 0L);
+    }
+
+    private static void assertRegistryAndBloomMetrics(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertTrue(snapshot.getRegistryCacheHitCount() >= 0L);
+        assertTrue(snapshot.getRegistryCacheMissCount() >= 0L);
+        assertTrue(snapshot.getRegistryCacheLoadCount() >= 0L);
+        assertTrue(snapshot.getRegistryCacheLimit() >= 1);
+        assertTrue(snapshot.getBloomFilterRequestCount() >= 0L);
+        assertTrue(snapshot.getBloomFilterRefusedCount() >= 0L);
+        assertTrue(snapshot.getBloomFilterPositiveCount() >= 0L);
+        assertTrue(snapshot.getBloomFilterFalsePositiveCount() >= 0L);
+    }
+
+    private static void assertWalDisabledSnapshot(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertEquals(false, snapshot.isWalEnabled());
+        assertEquals(0L, snapshot.getWalAppendCount());
+        assertEquals(0L, snapshot.getWalAppendBytes());
+        assertEquals(0L, snapshot.getWalSyncCount());
+        assertEquals(0L, snapshot.getWalSyncFailureCount());
+        assertEquals(0L, snapshot.getWalCorruptionCount());
+        assertEquals(0L, snapshot.getWalTruncationCount());
+        assertEquals(0L, snapshot.getWalRetainedBytes());
+        assertEquals(0, snapshot.getWalSegmentCount());
+        assertEquals(0L, snapshot.getWalDurableLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLsn());
+        assertEquals(0L, snapshot.getWalPendingSyncBytes());
+        assertEquals(0L, snapshot.getWalAppliedLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+        assertEquals(0L, snapshot.getWalSyncTotalNanos());
+        assertEquals(0L, snapshot.getWalSyncMaxNanos());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
+        assertEquals(0L, snapshot.getWalSyncAvgNanos());
+        assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
+    }
+
+    private static void assertReadySnapshot(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertTrue(snapshot.getSegmentRuntimeSnapshots()
+                .size() <= snapshot.getSegmentCount());
+        assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
 }

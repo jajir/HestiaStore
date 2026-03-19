@@ -76,8 +76,7 @@ class SegmentIndexAssemblyTest {
         final AtomicInteger beginCloseCalls = new AtomicInteger();
         final AtomicInteger markClosedCalls = new AtomicInteger();
         final AtomicInteger finishCloseCalls = new AtomicInteger();
-        assembly = openAssembly(() -> {
-        }, () -> beginCloseCalls.incrementAndGet(),
+        assembly = openAssembly(() -> beginCloseCalls.incrementAndGet(),
                 () -> markClosedCalls.incrementAndGet(),
                 () -> finishCloseCalls.incrementAndGet());
 
@@ -119,14 +118,6 @@ class SegmentIndexAssemblyTest {
                         }, beginCloseTransition, () -> {
                         }, markClosed, () -> 0L, () -> 0L,
                         () -> 0L, finishCloseTransition));
-    }
-
-    private SegmentIndexAssembly<Integer, String> openAssembly(
-            final Runnable ignoredMarkReady,
-            final Runnable beginCloseTransition,
-            final Runnable markClosed, final Runnable finishCloseTransition) {
-        return openAssembly(beginCloseTransition, markClosed,
-                finishCloseTransition);
     }
 
     private SegmentIndexAssembly<Integer, String> openAssembly(

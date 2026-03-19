@@ -166,36 +166,15 @@ class ManagementAgentServerTest {
     }
 
     @Test
-    void configPatchRejectsForbiddenKey() throws Exception {
-        final HttpResponse<String> response = send("PATCH",
-                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
-                "{\"values\":{\"forbidden.key\":\"1\"},\"dryRun\":false}");
-        assertEquals(400, response.statusCode());
-        final ErrorResponse payload = objectMapper.readValue(response.body(),
-                ErrorResponse.class);
-        assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
-    }
-
-    @Test
-    void configPatchRejectsLegacyPartitionAliasKey() throws Exception {
-        final HttpResponse<String> response = send("PATCH",
-                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
-                "{\"values\":{\"maxNumberOfKeysInSegmentWriteCache\":\"16\"},\"dryRun\":false}");
-        assertEquals(400, response.statusCode());
-        final ErrorResponse payload = objectMapper.readValue(response.body(),
-                ErrorResponse.class);
-        assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
-    }
-
-    @Test
-    void configPatchRequiresIndexName() throws Exception {
-        final HttpResponse<String> response = send("PATCH",
-                ManagementApiPaths.CONFIG,
-                "{\"values\":{\"maxNumberOfSegmentsInCache\":\"16\"},\"dryRun\":true}");
-        assertEquals(400, response.statusCode());
-        final ErrorResponse payload = objectMapper.readValue(response.body(),
-                ErrorResponse.class);
-        assertEquals("INVALID_REQUEST", payload.code());
+    void configPatchRejectsInvalidRequest() throws Exception {
+        for (final String[] invalidRequest : invalidConfigPatchRequests()) {
+            final HttpResponse<String> response = send("PATCH",
+                    invalidRequest[0], invalidRequest[1]);
+            assertEquals(400, response.statusCode());
+            final ErrorResponse payload = objectMapper
+                    .readValue(response.body(), ErrorResponse.class);
+            assertEquals(invalidRequest[2], payload.code());
+        }
     }
 
     @Test
@@ -526,5 +505,18 @@ class ManagementAgentServerTest {
                 .header("Content-Type", "application/json")
                 .method(method, publisher).build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private static String[][] invalidConfigPatchRequests() {
+        return new String[][] {
+                { ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                        "{\"values\":{\"forbidden.key\":\"1\"},\"dryRun\":false}",
+                        "CONFIG_KEY_NOT_SUPPORTED" },
+                { ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                        "{\"values\":{\"maxNumberOfKeysInSegmentWriteCache\":\"16\"},\"dryRun\":false}",
+                        "CONFIG_KEY_NOT_SUPPORTED" },
+                { ManagementApiPaths.CONFIG,
+                        "{\"values\":{\"maxNumberOfSegmentsInCache\":\"16\"},\"dryRun\":true}",
+                        "INVALID_REQUEST" } };
     }
 }

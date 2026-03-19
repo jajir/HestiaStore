@@ -300,22 +300,12 @@ class IndexContextLoggingAdapterTest {
             assertEquals("outer", MDC.get("index.name"));
         }
 
-        assertEquals("idx", mdcAtCompact.get());
-        assertEquals("idx", mdcAtCompactAndWait.get());
-        assertEquals("idx", mdcAtFlush.get());
-        assertEquals("idx", mdcAtFlushAndWait.get());
-        assertEquals("idx", mdcAtCheck.get());
-        assertEquals("idx", mdcAtPutAsync.get());
-        assertEquals("idx", mdcAtGetAsync.get());
-        assertEquals("idx", mdcAtDeleteAsync.get());
-        assertEquals("idx", mdcAtGetConfiguration.get());
-        assertEquals("idx", mdcAtGetState.get());
-        assertEquals("idx", mdcAtMetricsSnapshot.get());
-        assertEquals("idx", mdcAtPutEntry.get());
-        assertEquals("idx", mdcAtGetStream.get());
-        assertEquals("idx", mdcAtGetStreamIsolation.get());
-        assertEquals("idx", mdcAtGetStreamDefault.get());
-        assertEquals("idx", mdcAtGetStreamDefaultIsolation.get());
+        assertDelegatedMdcValues(mdcAtCompact, mdcAtCompactAndWait, mdcAtFlush,
+                mdcAtFlushAndWait, mdcAtCheck, mdcAtPutAsync, mdcAtGetAsync,
+                mdcAtDeleteAsync, mdcAtGetConfiguration, mdcAtGetState,
+                mdcAtMetricsSnapshot, mdcAtPutEntry, mdcAtGetStream,
+                mdcAtGetStreamIsolation, mdcAtGetStreamDefault,
+                mdcAtGetStreamDefaultIsolation);
     }
 
     @Test
@@ -344,5 +334,13 @@ class IndexContextLoggingAdapterTest {
         assertEquals("value", wrappedStage.get(5, TimeUnit.SECONDS));
         assertEquals("idx", mdcAtCompletion.get());
         assertNull(MDC.get("index.name"));
+    }
+
+    @SafeVarargs
+    private static void assertDelegatedMdcValues(
+            final AtomicReference<String>... mdcValues) {
+        for (final AtomicReference<String> mdcValue : mdcValues) {
+            assertEquals("idx", mdcValue.get());
+        }
     }
 }
