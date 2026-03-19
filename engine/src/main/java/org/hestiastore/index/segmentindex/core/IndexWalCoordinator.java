@@ -17,6 +17,7 @@ import org.slf4j.Logger;
  * Owns WAL replay, checkpointing, retention pressure handling, and failure
  * transition coordination for the segment index runtime.
  */
+@SuppressWarnings("java:S107")
 final class IndexWalCoordinator<K, V> {
 
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS

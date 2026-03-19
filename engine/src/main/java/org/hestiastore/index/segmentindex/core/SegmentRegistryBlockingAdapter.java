@@ -20,6 +20,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
  */
 final class SegmentRegistryBlockingAdapter<K, V> {
 
+    private static final String SEGMENT_ID_PROPERTY = "segmentId";
+
     private final SegmentRegistry<K, V> segmentRegistry;
     private final IndexRetryPolicy retryPolicy;
 
@@ -31,7 +33,7 @@ final class SegmentRegistryBlockingAdapter<K, V> {
     }
 
     Segment<K, V> awaitSegment(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
@@ -51,7 +53,7 @@ final class SegmentRegistryBlockingAdapter<K, V> {
     }
 
     Segment<K, V> awaitSegmentFailFast(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();
         for (int attempt = 0; attempt < 2; attempt++) {
             final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
@@ -71,7 +73,7 @@ final class SegmentRegistryBlockingAdapter<K, V> {
     }
 
     void awaitDeleteSegment(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentRegistryResult<Void> deleted = segmentRegistry

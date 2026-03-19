@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.split;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -51,7 +51,7 @@ public class PartitionStableSplitCoordinator<K, V> {
 
     @FunctionalInterface
     public interface SplitApplyRunner {
-        boolean run(Supplier<Boolean> action);
+        boolean run(BooleanSupplier action);
     }
 
     public PartitionStableSplitCoordinator(final IndexConfiguration<K, V> conf,
@@ -88,7 +88,7 @@ public class PartitionStableSplitCoordinator<K, V> {
     public boolean optionallySplit(final Segment<K, V> segment,
             final long maxNumberOfKeysInSegment) {
         return optionallySplit(segment, maxNumberOfKeysInSegment,
-                Supplier::get);
+                BooleanSupplier::getAsBoolean);
     }
 
     public boolean optionallySplit(final Segment<K, V> segment,

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 /**
  * Owns the ordered close sequence for index runtime collaborators.
  */
+@SuppressWarnings("java:S107")
 final class IndexCloseCoordinator {
 
     private static final String CLOSE_OPERATION = "close";

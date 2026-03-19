@@ -53,36 +53,9 @@ class ConsoleBackendClientTest {
         assertTrue(detailsOptional.isPresent());
         final ConsoleBackendClient.NodeDetails details = detailsOptional
                 .orElseThrow();
-        assertEquals("READY", details.node().state());
-        assertTrue(details.node().reachable());
-        assertTrue(details.node().ready());
-        assertEquals("orders", details.node().indexName());
-        assertEquals(37L, details.node().splitScheduleCount());
-        assertEquals(2, details.node().splitInFlightCount());
-
+        assertNode(details.node());
         assertEquals(1, details.indexes().size());
-        final ConsoleBackendClient.IndexRow row = details.indexes().get(0);
-        assertEquals("orders", row.indexName());
-        assertEquals("READY", row.state());
-        assertTrue(row.ready());
-        assertEquals(7, row.maxNumberOfKeysInActivePartition());
-        assertEquals(2, row.maxNumberOfImmutableRunsPerPartition());
-        assertEquals(11, row.maxNumberOfKeysInPartitionBuffer());
-        assertEquals(29, row.maxNumberOfKeysInIndexBuffer());
-        assertEquals(3, row.partitionCount());
-        assertEquals(2, row.activePartitionCount());
-        assertEquals(1, row.drainingPartitionCount());
-        assertEquals(4, row.immutableRunCount());
-        assertEquals(17, row.partitionBufferedKeyCount());
-        assertEquals(19L, row.localThrottleCount());
-        assertEquals(23L, row.globalThrottleCount());
-        assertEquals(31L, row.drainScheduleCount());
-        assertEquals(5, row.drainInFlightCount());
-        assertEquals(43L, row.drainLatencyP95Micros());
-        assertEquals(37L, row.splitScheduleCount());
-        assertEquals(2, row.splitInFlightCount());
-        assertEquals(1, row.segmentRuntimeSnapshots().size());
-        assertEquals("seg-1", row.segmentRuntimeSnapshots().get(0).segmentId());
+        assertIndexRow(details.indexes().get(0));
     }
 
     private void handleReportRequest(final HttpExchange exchange)
@@ -191,5 +164,38 @@ class ConsoleBackendClientTest {
                   "capturedAt": "2026-03-12T12:00:00Z"
                 }
                 """;
+    }
+
+    private static void assertNode(final ConsoleBackendClient.NodeRow node) {
+        assertEquals("READY", node.state());
+        assertTrue(node.reachable());
+        assertTrue(node.ready());
+        assertEquals("orders", node.indexName());
+        assertEquals(37L, node.splitScheduleCount());
+        assertEquals(2, node.splitInFlightCount());
+    }
+
+    private static void assertIndexRow(final ConsoleBackendClient.IndexRow row) {
+        assertEquals("orders", row.indexName());
+        assertEquals("READY", row.state());
+        assertTrue(row.ready());
+        assertEquals(7, row.maxNumberOfKeysInActivePartition());
+        assertEquals(2, row.maxNumberOfImmutableRunsPerPartition());
+        assertEquals(11, row.maxNumberOfKeysInPartitionBuffer());
+        assertEquals(29, row.maxNumberOfKeysInIndexBuffer());
+        assertEquals(3, row.partitionCount());
+        assertEquals(2, row.activePartitionCount());
+        assertEquals(1, row.drainingPartitionCount());
+        assertEquals(4, row.immutableRunCount());
+        assertEquals(17, row.partitionBufferedKeyCount());
+        assertEquals(19L, row.localThrottleCount());
+        assertEquals(23L, row.globalThrottleCount());
+        assertEquals(31L, row.drainScheduleCount());
+        assertEquals(5, row.drainInFlightCount());
+        assertEquals(43L, row.drainLatencyP95Micros());
+        assertEquals(37L, row.splitScheduleCount());
+        assertEquals(2, row.splitInFlightCount());
+        assertEquals(1, row.segmentRuntimeSnapshots().size());
+        assertEquals("seg-1", row.segmentRuntimeSnapshots().get(0).segmentId());
     }
 }

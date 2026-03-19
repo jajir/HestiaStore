@@ -20,6 +20,7 @@ Use this skill when the task is to reduce SonarCloud code smells in Hestia Store
 - If a Sonar suggestion conflicts with repository-wide coding rules, follow the repository rules and skip that suggestion instead of forcing the code to match Sonar mechanically.
 - Do not stop to ask the user for routine batch selection or next-step confirmation when the issue source can be discovered locally or from CI/PR tooling.
 - When working on an active PR branch, push safe verified batches to that PR branch as progress accumulates instead of waiting for a single large cleanup.
+- If the user gives a target smell threshold, continue in verified batches until the threshold is reached or a real blocker is hit; do not stop after the first successful batch.
 - Stop if the issue source is missing, the next fixes require architecture changes, or verification fails.
 
 ## Branching Guidance

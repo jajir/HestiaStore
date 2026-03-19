@@ -16,6 +16,7 @@ import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
  * Owns partition drain scheduling and immutable-run publishing into stable
  * segments.
  */
+@SuppressWarnings("java:S107")
 final class PartitionDrainCoordinator<K, V> {
 
     private static final String OPERATION_DRAIN = "drain";

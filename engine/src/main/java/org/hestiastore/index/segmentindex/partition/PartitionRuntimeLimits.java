@@ -7,6 +7,7 @@ import org.hestiastore.index.Vldtn;
  *
  * @author honza
  */
+@SuppressWarnings("java:S6206")
 public final class PartitionRuntimeLimits {
 
     private final int maxNumberOfKeysInActivePartition;
