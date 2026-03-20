@@ -153,12 +153,11 @@ class SegmentIndexImplPutTest {
         resetIndex(10, 1, Wal.builder()
                 .withDurabilityMode(WalDurabilityMode.SYNC).build());
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
+        final var putFuture = index.putAsync(1, "one").toCompletableFuture();
 
         try {
             final CompletionException exception = assertThrows(
-                    CompletionException.class,
-                    () -> index.putAsync(1, "one").toCompletableFuture()
-                            .join());
+                    CompletionException.class, putFuture::join);
             assertTrue(exception.getCause().getMessage()
                     .contains("WAL sync failure"));
             assertEquals(SegmentIndexState.ERROR, index.getState());
@@ -174,11 +173,11 @@ class SegmentIndexImplPutTest {
                 .withDurabilityMode(WalDurabilityMode.SYNC).build());
         index.put(1, "one");
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
+        final var deleteFuture = index.deleteAsync(1).toCompletableFuture();
 
         try {
             final CompletionException exception = assertThrows(
-                    CompletionException.class,
-                    () -> index.deleteAsync(1).toCompletableFuture().join());
+                    CompletionException.class, deleteFuture::join);
             assertTrue(exception.getCause().getMessage()
                     .contains("WAL sync failure"));
             assertEquals(SegmentIndexState.ERROR, index.getState());
@@ -322,29 +321,13 @@ class SegmentIndexImplPutTest {
     @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
-        try {
-            final Field field = SegmentIndexImpl.class
-                    .getDeclaredField("keyToSegmentMap");
-            field.setAccessible(true);
-            return (KeyToSegmentMapSynchronizedAdapter<K>) field.get(index);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read keyToSegmentMap for test", ex);
-        }
+        return index.keyToSegmentMap();
     }
 
     @SuppressWarnings("unchecked")
     private static <K, V> SegmentRegistryImpl<K, V> readSegmentRegistry(
             final SegmentIndexImpl<K, V> index) {
-        try {
-            final Field field = SegmentIndexImpl.class
-                    .getDeclaredField("segmentRegistry");
-            field.setAccessible(true);
-            return (SegmentRegistryImpl<K, V>) field.get(index);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read segmentRegistry for test", ex);
-        }
+        return (SegmentRegistryImpl<K, V>) index.segmentRegistry();
     }
 
     private static void injectWalSyncFailure(final SegmentIndexImpl<?, ?> index,
@@ -359,10 +342,7 @@ class SegmentIndexImplPutTest {
     private static void setWalSyncFailure(final SegmentIndexImpl<?, ?> index,
             final RuntimeException failure) {
         try {
-            final Field walRuntimeField = SegmentIndexImpl.class
-                    .getDeclaredField("walRuntime");
-            walRuntimeField.setAccessible(true);
-            final Object walRuntime = walRuntimeField.get(index);
+            final Object walRuntime = index.walRuntime();
             final Field syncFailureField = walRuntime.getClass()
                     .getDeclaredField("syncFailure");
             syncFailureField.setAccessible(true);

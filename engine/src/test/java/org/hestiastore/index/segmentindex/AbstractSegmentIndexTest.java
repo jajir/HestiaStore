@@ -20,6 +20,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.core.SegmentIndexImpl;
+import org.hestiastore.index.segmentindex.core.SegmentIndexTestAccess;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -170,16 +171,8 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
 
     private static SegmentRegistryImpl<?, ?> readSegmentRegistry(
             final SegmentIndex<?, ?> index) {
-        try {
-            final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
-            final Field field = SegmentIndexImpl.class
-                    .getDeclaredField("segmentRegistry");
-            field.setAccessible(true);
-            return (SegmentRegistryImpl<?, ?>) field.get(impl);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read segmentRegistry for test", ex);
-        }
+        final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
+        return SegmentIndexTestAccess.segmentRegistry(impl);
     }
 
     @SuppressWarnings("unchecked")

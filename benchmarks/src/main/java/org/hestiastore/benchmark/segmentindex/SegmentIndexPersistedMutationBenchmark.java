@@ -61,9 +61,9 @@ public class SegmentIndexPersistedMutationBenchmark {
     public void setup() throws IOException {
         tempDir = SegmentIndexBenchmarkSupport
                 .createTempDir("hestia-jmh-mutation");
-        index = SegmentIndex.create(new FsDirectory(tempDir),
-                buildConfiguration());
         seedStableBase();
+        index = SegmentIndex.create(new FsDirectory(tempDir),
+                buildConfiguration(resolveWal()));
     }
 
     @Setup(Level.Iteration)
@@ -127,11 +127,12 @@ public class SegmentIndexPersistedMutationBenchmark {
         flushIfNeeded();
     }
 
-    private IndexConfiguration<Integer, String> buildConfiguration() {
+    private IndexConfiguration<Integer, String> buildConfiguration(
+            final Wal wal) {
         final int maxKeysBeforeSplit = Math.max(65_536, seededKeyCount * 8);
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-persisted-mutation-benchmark")//
-                .withWal(resolveWal())//
+                .withWal(wal)//
                 .withMaxNumberOfKeysInSegmentCache(32)//
                 .withMaxNumberOfKeysInActivePartition(512)//
                 .withMaxNumberOfImmutableRunsPerPartition(2)//
@@ -166,19 +167,27 @@ public class SegmentIndexPersistedMutationBenchmark {
     }
 
     private void seedStableBase() {
+        try (SegmentIndex<Integer, String> seedingIndex = SegmentIndex.create(
+                new FsDirectory(tempDir), buildConfiguration(Wal.EMPTY))) {
+            seedStableBase(seedingIndex);
+        }
+    }
+
+    private void seedStableBase(final SegmentIndex<Integer, String> seedingIndex) {
         int pending = 0;
         for (int key = 0; key < seededKeyCount; key++) {
-            index.put(Integer.valueOf(key), buildValue("seed-", key, 's'));
+            seedingIndex.put(Integer.valueOf(key),
+                    buildValue("seed-", key, 's'));
             pending++;
             if (pending >= flushBatchSize) {
-                index.flushAndWait();
+                seedingIndex.flushAndWait();
                 pending = 0;
             }
         }
         if (pending > 0) {
-            index.flushAndWait();
+            seedingIndex.flushAndWait();
         }
-        index.compactAndWait();
+        seedingIndex.compactAndWait();
     }
 
     private int advanceDeleteCursor(final int currentKey) {

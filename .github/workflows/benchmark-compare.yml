@@ -223,6 +223,7 @@ jobs:
         if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
+          --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
           --channel main > "${RUNNER_TEMP}/baseline-summary-path.txt"; then
           BASELINE_SUMMARY="$(cat "${RUNNER_TEMP}/baseline-summary-path.txt")"
         fi
@@ -240,6 +241,7 @@ jobs:
         if python3 benchmarks/scripts/resolve_jmh_history_baseline.py \
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
+          --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
           --channel "pr-${{ github.event.pull_request.number }}" > "${RUNNER_TEMP}/previous-pr-summary-path.txt"; then
           PREVIOUS_PR_SUMMARY="$(cat "${RUNNER_TEMP}/previous-pr-summary-path.txt")"
         fi
@@ -487,7 +489,7 @@ jobs:
 
     - name: Upsert PR benchmark comment
       if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         COMMENT_PATH: ${{ steps.prepare-pr-comment.outputs.comment_path }}
       with:

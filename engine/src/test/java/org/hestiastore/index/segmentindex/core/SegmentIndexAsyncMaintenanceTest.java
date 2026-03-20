@@ -137,12 +137,13 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @Test
-    void closeStopsAutonomousSplitPolicyLoop() throws Exception {
+    void closeStopsAutonomousSplitPolicyLoop() {
         index.put(1, "one");
         index.flushAndWait();
 
         index.close();
-        TimeUnit.MILLISECONDS.sleep(750L);
+        awaitCondition(() -> index.getState() == SegmentIndexState.CLOSED,
+                750L);
 
         assertEquals(SegmentIndexState.CLOSED, index.getState());
     }
@@ -453,29 +454,13 @@ class SegmentIndexAsyncMaintenanceTest {
     @SuppressWarnings("unchecked")
     private static <K, V> SegmentRegistryImpl<K, V> readSegmentRegistry(
             final SegmentIndexImpl<K, V> index) {
-        try {
-            final Field field = SegmentIndexImpl.class
-                    .getDeclaredField("segmentRegistry");
-            field.setAccessible(true);
-            return (SegmentRegistryImpl<K, V>) field.get(index);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read segmentRegistry for test", ex);
-        }
+        return (SegmentRegistryImpl<K, V>) index.segmentRegistry();
     }
 
     @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
-        try {
-            final Field field = SegmentIndexImpl.class
-                    .getDeclaredField("keyToSegmentMap");
-            field.setAccessible(true);
-            return (KeyToSegmentMapSynchronizedAdapter<K>) field.get(index);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to read keyToSegmentMap for test", ex);
-        }
+        return index.keyToSegmentMap();
     }
 
     @SuppressWarnings("unchecked")

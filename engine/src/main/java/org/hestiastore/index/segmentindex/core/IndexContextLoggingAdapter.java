@@ -1,7 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.ArrayDeque;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -21,17 +22,11 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.slf4j.MDC;
 
 /**
  * Adapter that wraps a {@link SegmentIndex} and ensures that the
  * {@code index.name} MDC key is present for every operation executed against
  * the wrapped index.
- *
- * <p>
- * This allows downstream logging to consistently include the index name no
- * matter which thread initiates the call.
- * </p>
  *
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
@@ -39,21 +34,11 @@ import org.slf4j.MDC;
 class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         implements SegmentIndex<K, V> {
 
-    private static final String INDEX_NAME_MDC_KEY = "index.name";
     private static final String DELEGATE = "delegate";
+
     private final String indexName;
     private final SegmentIndex<K, V> index;
-    private static final Object NULL_INDEX_NAME = new Object();
-    private final ThreadLocal<ArrayDeque<Object>> previousIndexNameStack = ThreadLocal
-            .withInitial(ArrayDeque::new);
 
-    /**
-     * Creates a new adapter that augments the provided index with MDC context
-     * handling.
-     *
-     * @param indexConf configuration that supplies the index name
-     * @param index     delegate that performs the actual index operations
-     */
     IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
             final SegmentIndex<K, V> index) {
         final IndexConfiguration<K, V> configuration = Vldtn
@@ -63,304 +48,154 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
         this.index = Vldtn.requireNonNull(index, "index");
     }
 
-    /** Sets the {@code index.name} MDC key for the current thread. */
-    private void setContext() {
-        final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
-        previousIndexNameStack.get().push(
-                previousIndexName == null ? NULL_INDEX_NAME
-                        : previousIndexName);
-        MDC.put(INDEX_NAME_MDC_KEY, indexName);
-    }
-
-    /** Restores the previous {@code index.name} MDC key for this thread. */
-    private void clearContext() {
-        final ArrayDeque<Object> stack = previousIndexNameStack.get();
-        final Object previous = stack.isEmpty() ? NULL_INDEX_NAME : stack.pop();
-        if (stack.isEmpty()) {
-            previousIndexNameStack.remove();
-        }
-        restorePreviousIndexName(
-                previous == NULL_INDEX_NAME ? null : (String) previous);
-    }
-
-    private static void restorePreviousIndexName(
-            final String previousIndexName) {
-        if (previousIndexName == null) {
-            MDC.remove(INDEX_NAME_MDC_KEY);
-            return;
-        }
-        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
-    }
-
-    /**
-     * Delegates to {@link SegmentIndex#put(Object, Object)} while ensuring the
-     * name is present in the MDC for any resulting log statements.
-     *
-     * @param key   key to store
-     * @param value value to associate with the key
-     */
     @Override
     public void put(final K key, final V value) {
-        setContext();
-        try {
-            index.put(key, value);
-        } finally {
-            clearContext();
-        }
+        runWithContext(() -> index.put(key, value));
     }
 
-    /** {@inheritDoc} */
     @Override
     public void put(final Entry<K, V> entry) {
-        setContext();
-        try {
-            index.put(entry);
-        } finally {
-            clearContext();
-        }
+        runWithContext(() -> index.put(entry));
     }
 
-    /**
-     * Retrieves a value by key while populating the MDC with the index name.
-     *
-     * @param key key whose value should be retrieved
-     * @return value associated with the key, or {@code null} if the key is
-     *         absent
-     */
     @Override
     public V get(final K key) {
-        setContext();
-        try {
-            return index.get(key);
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(() -> index.get(key));
     }
 
-    /**
-     * Removes the mapping for a key while ensuring the {@code index.name} MDC
-     * context is active.
-     *
-     * @param key key to remove
-     */
     @Override
     public void delete(final K key) {
-        setContext();
-        try {
-            index.delete(key);
-        } finally {
-            clearContext();
-        }
+        runWithContext(() -> index.delete(key));
     }
 
-    /** {@inheritDoc} */
     @Override
     public CompletionStage<Void> putAsync(final K key, final V value) {
-        setContext();
-        try {
-            return index.putAsync(key, value);
-        } finally {
-            clearContext();
-        }
+        return supplyStageWithContext(() -> index.putAsync(key, value));
     }
 
-    /** {@inheritDoc} */
     @Override
     public CompletionStage<V> getAsync(final K key) {
-        setContext();
-        try {
-            return index.getAsync(key);
-        } finally {
-            clearContext();
-        }
+        return supplyStageWithContext(() -> index.getAsync(key));
     }
 
-    /** {@inheritDoc} */
     @Override
     public CompletionStage<Void> deleteAsync(final K key) {
-        setContext();
-        try {
-            return index.deleteAsync(key);
-        } finally {
-            clearContext();
-        }
+        return supplyStageWithContext(() -> index.deleteAsync(key));
     }
 
-    /**
-     * Triggers compaction on the delegate index while applying the MDC context.
-     */
     @Override
     public void compact() {
-        setContext();
-        try {
-            index.compact();
-        } finally {
-            clearContext();
-        }
+        runWithContext(index::compact);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
-        setContext();
-        try {
-            index.compactAndWait();
-        } finally {
-            clearContext();
-        }
+        runWithContext(index::compactAndWait);
     }
 
-    /**
-     * Flushes any pending index changes while keeping the {@code index.name} in
-     * the MDC.
-     */
     @Override
     public void flush() {
-        setContext();
-        try {
-            index.flush();
-        } finally {
-            clearContext();
-        }
+        runWithContext(index::flush);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        setContext();
-        try {
-            index.flushAndWait();
-        } finally {
-            clearContext();
-        }
+        runWithContext(index::flushAndWait);
     }
 
-    /**
-     * Returns a stream of index entries with the MDC populated so any
-     * streaming-related logs include the index name.
-     *
-     * @param segmentWindows segment selection to stream
-     * @return stream of key-value entries from the selected segments
-     */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
-        setContext();
-        try {
-            return index.getStream(segmentWindows);
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(() -> index.getStream(segmentWindows));
     }
 
-    /** {@inheritDoc} */
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
-        setContext();
-        try {
-            return index.getStream(segmentWindows, isolation);
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(
+                () -> index.getStream(segmentWindows, isolation));
     }
 
-    /** {@inheritDoc} */
     @Override
     public Stream<Entry<K, V>> getStream() {
-        setContext();
-        try {
-            return index.getStream();
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(() -> index.getStream());
     }
 
-    /** {@inheritDoc} */
     @Override
     public Stream<Entry<K, V>> getStream(
             final SegmentIteratorIsolation isolation) {
-        setContext();
-        try {
-            return index.getStream(isolation);
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(() -> index.getStream(isolation));
     }
 
-    /**
-     * Verifies and repairs index consistency while guaranteeing the index name
-     * appears in log statements.
-     */
     @Override
     public void checkAndRepairConsistency() {
-        setContext();
-        try {
-            index.checkAndRepairConsistency();
-        } finally {
-            clearContext();
-        }
+        runWithContext(index::checkAndRepairConsistency);
     }
 
-    /**
-     * Returns the configuration of the delegate index while applying the MDC
-     * context.
-     *
-     * @return configuration of the wrapped index
-     */
     @Override
     public IndexConfiguration<K, V> getConfiguration() {
-        setContext();
-        try {
-            return index.getConfiguration();
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(index::getConfiguration);
     }
 
-    /** {@inheritDoc} */
     @Override
     public SegmentIndexState getState() {
-        setContext();
-        try {
-            return index.getState();
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(index::getState);
     }
 
-    /** {@inheritDoc} */
     @Override
     public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        setContext();
-        try {
-            return index.metricsSnapshot();
-        } finally {
-            clearContext();
-        }
+        return supplyWithContext(index::metricsSnapshot);
     }
 
-    /** {@inheritDoc} */
     @Override
     public IndexControlPlane controlPlane() {
-        setContext();
-        try {
-            return new ContextLoggingIndexControlPlane(index.controlPlane());
-        } finally {
-            clearContext();
+        return supplyWithContext(
+                () -> new ContextLoggingIndexControlPlane(index.controlPlane()));
+    }
+
+    @Override
+    protected void doClose() {
+        runWithContext(index::close);
+    }
+
+    private void runWithContext(final Runnable action) {
+        Vldtn.requireNonNull(action, "action");
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
+            action.run();
         }
     }
 
-    /**
-     * Closes the wrapped index while maintaining the {@code index.name} MDC
-     * context.
-     */
-    @Override
-    protected void doClose() {
-        setContext();
-        try {
-            index.close();
-        } finally {
-            clearContext();
+    private <T> T supplyWithContext(final Supplier<T> action) {
+        Vldtn.requireNonNull(action, "action");
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
+            return action.get();
+        }
+    }
+
+    private <T> CompletionStage<T> supplyStageWithContext(
+            final Supplier<CompletionStage<T>> action) {
+        return wrapStageWithContext(supplyWithContext(action));
+    }
+
+    private <T> CompletionStage<T> wrapStageWithContext(
+            final CompletionStage<T> stage) {
+        final CompletionStage<T> nonNullStage = Vldtn.requireNonNull(stage,
+                "stage");
+        final CompletableFuture<T> wrappedStage = new CompletableFuture<>();
+        nonNullStage.whenComplete(
+                (value, error) -> completeStageWithContext(wrappedStage, value,
+                        error));
+        return wrappedStage;
+    }
+
+    private <T> void completeStageWithContext(
+            final CompletableFuture<T> wrappedStage, final T value,
+            final Throwable error) {
+        try (IndexNameMdcScope ignored = IndexNameMdcScope.open(indexName)) {
+            if (error == null) {
+                wrappedStage.complete(value);
+                return;
+            }
+            wrappedStage.completeExceptionally(error);
         }
     }
 
@@ -376,33 +211,20 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
         @Override
         public String indexName() {
-            setContext();
-            try {
-                return delegate.indexName();
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(delegate::indexName);
         }
 
         @Override
         public IndexRuntimeView runtime() {
-            setContext();
-            try {
-                return new ContextLoggingIndexRuntimeView(delegate.runtime());
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(
+                    () -> new ContextLoggingIndexRuntimeView(delegate.runtime()));
         }
 
         @Override
         public IndexConfigurationManagement configuration() {
-            setContext();
-            try {
-                return new ContextLoggingIndexConfigurationManagement(
-                        delegate.configuration());
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(
+                    () -> new ContextLoggingIndexConfigurationManagement(
+                            delegate.configuration()));
         }
     }
 
@@ -417,12 +239,7 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
         @Override
         public IndexRuntimeSnapshot snapshot() {
-            setContext();
-            try {
-                return delegate.snapshot();
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(delegate::snapshot);
         }
     }
 
@@ -438,42 +255,22 @@ class IndexContextLoggingAdapter<K, V> extends AbstractCloseableResource
 
         @Override
         public ConfigurationSnapshot getConfigurationActual() {
-            setContext();
-            try {
-                return delegate.getConfigurationActual();
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(delegate::getConfigurationActual);
         }
 
         @Override
         public ConfigurationSnapshot getConfigurationOriginal() {
-            setContext();
-            try {
-                return delegate.getConfigurationOriginal();
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(delegate::getConfigurationOriginal);
         }
 
         @Override
         public RuntimePatchValidation validate(final RuntimeConfigPatch patch) {
-            setContext();
-            try {
-                return delegate.validate(patch);
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(() -> delegate.validate(patch));
         }
 
         @Override
         public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
-            setContext();
-            try {
-                return delegate.apply(patch);
-            } finally {
-                clearContext();
-            }
+            return supplyWithContext(() -> delegate.apply(patch));
         }
     }
 }

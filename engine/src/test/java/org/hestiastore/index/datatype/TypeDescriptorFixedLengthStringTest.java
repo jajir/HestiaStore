@@ -38,10 +38,11 @@ class TypeDescriptorFixedLengthStringTest {
     void encoderRejectsWrongStringLength() {
         final TypeDescriptorFixedLengthString descriptor = new TypeDescriptorFixedLengthString(
                 3);
+        final TypeEncoder<String> encoder = descriptor.getTypeEncoder();
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class,
-                () -> descriptor.getTypeEncoder().encode("ABCD", new byte[0]));
+                IllegalArgumentException.class, () -> encoder.encode("ABCD",
+                        new byte[0]));
         assertTrue(error.getMessage().contains("String length"));
     }
 
@@ -63,10 +64,11 @@ class TypeDescriptorFixedLengthStringTest {
     void decoderRejectsWrongByteArrayLength() {
         final TypeDescriptorFixedLengthString descriptor = new TypeDescriptorFixedLengthString(
                 4);
+        final TypeDecoder<String> decoder = descriptor.getTypeDecoder();
+        final byte[] bytes = new byte[3];
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class,
-                () -> descriptor.getTypeDecoder().decode(new byte[3]));
+                IllegalArgumentException.class, () -> decoder.decode(bytes));
         assertTrue(error.getMessage().contains("Byte array length should be"));
     }
 
@@ -74,10 +76,12 @@ class TypeDescriptorFixedLengthStringTest {
     void encoderRejectsSurrogatePairWhenFixedLengthCannotBeSatisfied() {
         final TypeDescriptorFixedLengthString descriptor = new TypeDescriptorFixedLengthString(
                 2);
+        final TypeEncoder<String> encoder = descriptor.getTypeEncoder();
+        final byte[] reusableBuffer = new byte[2];
 
         final IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
-                () -> descriptor.getTypeEncoder().encode("🙂", new byte[2]));
+                () -> encoder.encode("🙂", reusableBuffer));
         assertTrue(error.getMessage().contains("should be encoded"));
     }
 }

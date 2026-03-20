@@ -21,11 +21,13 @@ Writes become durable when flushed to segment files. Closing the index performs 
 - `SegmentIndex.put(K,V)` and `SegmentIndex.delete(K)` validate input, update counters, and delegate to the internal implementation.
 - Internal implementation: `IndexInternalConcurrent` (caller-thread execution,
   thread-safe without global serialization).
-- Async operations are provided by `IndexAsyncAdapter`; logging context by
-  `IndexContextLoggingAdapter`.
+- Async operations are executed by the dedicated `IndexAsyncExecutor` inside
+  the internal implementation; `IndexAsyncAdapter` is a thin async-facing
+  wrapper and `IndexContextLoggingAdapter` adds MDC correlation.
 
 Key classes: `segmentindex/SegmentIndex.java`,
 `segmentindex/IndexInternalConcurrent.java`,
+`segmentindex/core/IndexAsyncExecutor.java`,
 `segmentindex/IndexAsyncAdapter.java`,
 `segmentindex/IndexContextLoggingAdapter.java`.
 
@@ -170,18 +172,18 @@ Key classes: `chunkstore/ChunkProcessor`, `chunkstore/ChunkFilterMagicNumberWrit
 
 For the read path and on‑disk layout, see the related pages:
 
-- Read Path: `architecture/segmentindex/read-path.md`
-- On‑Disk Layout & File Names: `architecture/segment/on-disk-layout.md`
-- Filters & Integrity: `architecture/general/filters.md`
+- [Read Path](read-path.md)
+- [On‑Disk Layout & File Names](../segment/on-disk-layout.md)
+- [Filters & Integrity](../filters.md)
 
 ## Related Glossary
 
-- [Segment](../general/glossary.md#segment)
-- [UniqueCache](../general/glossary.md#uniquecache)
-- [Delta Cache](../general/glossary.md#delta-cache)
-- [Flush](../general/glossary.md#flush)
-- [Compaction](../general/glossary.md#compaction)
-- [Split](../general/glossary.md#split)
-- [Write Transaction](../general/glossary.md#write-transaction)
-- [Filters](../general/glossary.md#filters-chunk-filters)
-- [Tombstone](../general/glossary.md#tombstone)
+- [Segment](../glossary.md#segment)
+- [UniqueCache](../glossary.md#uniquecache)
+- [Delta Cache](../glossary.md#delta-cache)
+- [Flush](../glossary.md#flush)
+- [Compaction](../glossary.md#compaction)
+- [Split](../glossary.md#split)
+- [Write Transaction](../glossary.md#write-transaction)
+- [Filters](../glossary.md#filters-chunk-filters)
+- [Tombstone](../glossary.md#tombstone)

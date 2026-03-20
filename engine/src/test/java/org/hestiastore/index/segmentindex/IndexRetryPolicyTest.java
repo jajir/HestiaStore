@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,10 +31,27 @@ class IndexRetryPolicyTest {
 
     @Test
     void backoffOrThrow_doesNotThrowBeforeTimeout() {
-        assertTrue(true);
         final IndexRetryPolicy policy = new IndexRetryPolicy(1, 10);
         final long startNanos = policy.startNanos();
 
-        policy.backoffOrThrow(startNanos, "get", null);
+        assertDoesNotThrow(() -> policy.backoffOrThrow(startNanos, "get",
+                null));
+    }
+
+    @Test
+    void backoffOrThrow_preservesInterruptStatus() {
+        final IndexRetryPolicy policy = new IndexRetryPolicy(1, 10);
+        final long startNanos = policy.startNanos();
+        Thread.currentThread().interrupt();
+        try {
+            final IndexException ex = assertThrows(IndexException.class,
+                    () -> policy.backoffOrThrow(startNanos, "get", null));
+
+            assertEquals("Index operation 'get' was interrupted",
+                    ex.getMessage());
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
     }
 }

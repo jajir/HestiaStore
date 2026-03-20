@@ -37,6 +37,7 @@ public class SegmentIndexHotPartitionPutBenchmark {
     private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
     private static final int HOT_KEY_SPACE = 256;
+    private static final int ACTIVE_PARTITION_CAPACITY = 1024;
 
     private SegmentIndex<Integer, String> index;
     private AtomicInteger sequence;
@@ -82,10 +83,13 @@ public class SegmentIndexHotPartitionPutBenchmark {
                 .withName("segment-index-hot-partition-put-benchmark")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(512)//
-                .withMaxNumberOfKeysInActivePartition(128)//
+                // Keep the active partition above the hot key space so this
+                // benchmark measures the hot write path instead of drain churn.
+                .withMaxNumberOfKeysInActivePartition(
+                        ACTIVE_PARTITION_CAPACITY)//
                 .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(512)//
-                .withMaxNumberOfKeysInIndexBuffer(4096)//
+                .withMaxNumberOfKeysInPartitionBuffer(2048)//
+                .withMaxNumberOfKeysInIndexBuffer(8192)//
                 .withMaxNumberOfKeysInPartitionBeforeSplit(1_000_000)//
                 .withMaxNumberOfKeysInSegmentChunk(64)//
                 .withMaxNumberOfSegmentsInCache(8)//

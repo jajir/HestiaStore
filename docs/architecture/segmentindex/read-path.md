@@ -103,10 +103,10 @@ Key classes: `chunkstore/ChunkStoreReaderImpl`, `chunkstore/ChunkFilterMagicNumb
  
 ## Related Glossary
 
-- [Segment](../general/glossary.md#segment)
-- [Delta Cache](../general/glossary.md#delta-cache)
-- [Bloom Filter](../general/glossary.md#bloom-filter)
-- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
-- [UniqueCache](../general/glossary.md#uniquecache)
-- [EntryIterator](../general/glossary.md#entryiterator)
-- [SegmentWindow](../general/glossary.md#segmentwindow)
+- [Segment](../glossary.md#segment)
+- [Delta Cache](../glossary.md#delta-cache)
+- [Bloom Filter](../glossary.md#bloom-filter)
+- [Sparse Index](../glossary.md#sparse-index-scarce-index)
+- [UniqueCache](../glossary.md#uniquecache)
+- [EntryIterator](../glossary.md#entryiterator)
+- [SegmentWindow](../glossary.md#segmentwindow)

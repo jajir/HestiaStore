@@ -35,7 +35,7 @@ public final class PartitionSplitResult<K> {
      * @param segmentId segment id for the lower segment
      * @param minKey minimum key of the lower segment
      * @param maxKey maximum key of the lower segment
-     * @param segmentSplittingStatus split status
+     * @param partitionSplitStatus split status
      */
     public PartitionSplitResult(final SegmentId segmentId, final K minKey,
             final K maxKey, final PartitionSplitStatus partitionSplitStatus) {

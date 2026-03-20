@@ -28,12 +28,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>3.0.0-beta2</log4j.version>
-        <junit.jupiter.version>5.14.1</junit.jupiter.version>
-        <junit.platform.version>1.14.1</junit.platform.version>
+        <junit.jupiter.version>6.0.3</junit.jupiter.version>
+        <junit.platform.version>6.0.3</junit.platform.version>
         <failsafe.plugin.version>3.5.3</failsafe.plugin.version>
         <surefire.plugin.version>3.5.3</surefire.plugin.version>
         <mockito.version>5.23.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
+        <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
+        <project.info.reports.plugin.version>3.5.0</project.info.reports.plugin.version>
         <pmd.plugin.version>3.21.2</pmd.plugin.version>
         <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
         <micrometer.version>1.15.5</micrometer.version>
@@ -109,6 +111,38 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${maven.site.plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>prepare-site-resources</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-site-classes</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>${pmd.plugin.version}</version>
                 <configuration>
@@ -156,6 +190,32 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>${project.info.reports.plugin.version}</version>
+                <configuration>
+                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>index</report>
+                            <report>licenses</report>
+                            <report>modules</report>
+                            <report>plugin-management</report>
+                            <report>plugins</report>
+                            <report>scm</report>
+                            <report>summary</report>
+                            <report>team</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <profiles>
         <profile>

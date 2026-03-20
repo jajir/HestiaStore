@@ -113,6 +113,33 @@ class ManagementAgentServerSecurityTest {
     }
 
     @Test
+    void duplicateRequestIdDoesNotConsumeAdditionalRateLimitQuota()
+            throws Exception {
+        final HttpResponse<String> first = send("POST",
+                ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"dup-1\"}",
+                "admin-token");
+        final HttpResponse<String> replay = send("POST",
+                ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"dup-1\"}",
+                "admin-token");
+        final HttpResponse<String> secondUnique = send("POST",
+                ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"dup-2\"}",
+                "admin-token");
+        final HttpResponse<String> limited = send("POST",
+                ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"dup-3\"}",
+                "admin-token");
+
+        assertEquals(200, first.statusCode());
+        assertEquals(200, replay.statusCode());
+        assertEquals(first.body(), replay.body());
+        assertEquals(200, secondUnique.statusCode());
+        assertEquals(429, limited.statusCode());
+    }
+
+    @Test
     void mutatingCallsProduceImmutableAuditEntries() throws Exception {
         send("POST", ManagementApiPaths.ACTION_FLUSH, "{\"requestId\":\"a\"}",
                 "admin-token");

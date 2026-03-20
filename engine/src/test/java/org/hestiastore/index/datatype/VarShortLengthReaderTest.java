@@ -23,10 +23,11 @@ class VarShortLengthReaderTest {
     @Test
     void read_throwsWhenLengthIsGreaterThan127() {
         final VarShortLengthReader<String> reader = createStringReader();
+        final MemFileReader fileReader = new MemFileReader(
+                new byte[] { (byte) 0x80 });
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class,
-                () -> reader.read(new MemFileReader(new byte[] { (byte) 0x80 })));
+                IllegalArgumentException.class, () -> reader.read(fileReader));
 
         assertEquals("Converted type is too big", error.getMessage());
     }
@@ -34,9 +35,11 @@ class VarShortLengthReaderTest {
     @Test
     void read_throwsOnTruncatedPayload() {
         final VarShortLengthReader<String> reader = createStringReader();
+        final MemFileReader fileReader = new MemFileReader(
+                new byte[] { 3, 'a', 'b' });
 
         final IndexException error = assertThrows(IndexException.class,
-                () -> reader.read(new MemFileReader(new byte[] { 3, 'a', 'b' })));
+                () -> reader.read(fileReader));
 
         assertTrue(error.getMessage().contains("Expected '3' bytes"));
     }

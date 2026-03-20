@@ -1,15 +1,21 @@
 # Release Checklist
 
-- Verify the working tree is clean before changing versions.
+- Verify the working tree is clean and the release is being prepared from `main`.
+- Fast-forward the local branch with `git pull --ff-only`.
 - Confirm the current Maven version and whether it is a `-SNAPSHOT`.
 - Confirm `~/.m2/settings.xml` has the `central` server credentials and `release` profile GPG settings.
 - Confirm a usable GPG secret key exists locally.
-- Run `mvn clean verify`.
+- Run `./.agents/skills/release-maven-library/scripts/verify-release.sh`.
 - Confirm the intended release version.
 - Confirm there are no forbidden snapshot dependencies or plugins.
-- Confirm the release deploy includes the parent POM and does not deploy `engine` alone.
-- Run `mvn -pl .,:engine -P release -DskipTests verify` before deployment.
-- Tag the release after the release version is verified.
-- Deploy to Sonatype Central and watch for `PUBLISHING` or `PUBLISHED`.
+- Commit the release version change with `release: version X.Y.Z`.
+- Confirm the release deploy runs from the repository root and does not deploy `engine` alone.
+- Run `mvn -P release -DskipTests verify` before deployment.
+- Create the local tag `release-X.Y.Z` after the release version is verified.
+- Deploy to Sonatype Central with `mvn -P release -DskipTests deploy` and watch for `PUBLISHING` or `PUBLISHED`.
+- Push `main` and the release tag after deployment succeeds.
 - Bump the project to the next snapshot version.
-- Verify again after the next snapshot bump.
+- Verify again after the next snapshot bump when the task includes the full post-release flow.
+- Commit the next snapshot bump with `post-release: bumped to X.Y.(Z+1)-SNAPSHOT`.
+- Push `main` again after the post-release commit.
+- Publish the GitHub release manually on `https://github.com/jajir/HestiaStore/releases` using the existing `release-X.Y.Z` tag.

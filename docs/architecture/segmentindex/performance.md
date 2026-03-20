@@ -96,10 +96,10 @@ Segment-specific internals referenced here are centralized in
 
 ## Related Glossary
 
-- [Main SST](../general/glossary.md#main-sst)
-- [Sparse Index](../general/glossary.md#sparse-index-scarce-index)
-- [Bloom Filter](../general/glossary.md#bloom-filter)
-- [UniqueCache](../general/glossary.md#uniquecache)
-- [Delta Cache](../general/glossary.md#delta-cache)
-- [Compaction](../general/glossary.md#compaction)
-- [Write Transaction](../general/glossary.md#write-transaction)
+- [Main SST](../glossary.md#main-sst)
+- [Sparse Index](../glossary.md#sparse-index-scarce-index)
+- [Bloom Filter](../glossary.md#bloom-filter)
+- [UniqueCache](../glossary.md#uniquecache)
+- [Delta Cache](../glossary.md#delta-cache)
+- [Compaction](../glossary.md#compaction)
+- [Write Transaction](../glossary.md#write-transaction)

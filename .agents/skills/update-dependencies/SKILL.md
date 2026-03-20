@@ -32,6 +32,7 @@ Use this skill when the task is to refresh Maven dependencies or plugins in Hest
 5. Verify the batch.
    - Run targeted module verification first when appropriate.
    - Run `mvn clean verify` before finishing non-trivial updates.
+   - Check that `mvn site` still works before finishing so reporting and site generation remain healthy.
 6. Summarize the result.
    - List updated dependencies or plugins.
    - Note compatibility risk.

@@ -20,49 +20,9 @@ class SegmentIndexMetricsSnapshotTest {
                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L,
                 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, List.of(), SegmentIndexState.READY);
 
-        assertEquals(0L, snapshot.getGetOperationCount());
-        assertEquals(0L, snapshot.getPutOperationCount());
-        assertEquals(0L, snapshot.getDeleteOperationCount());
-        assertEquals(0L, snapshot.getRegistryCacheHitCount());
-        assertEquals(0L, snapshot.getRegistryCacheMissCount());
-        assertEquals(0L, snapshot.getRegistryCacheLoadCount());
-        assertEquals(0L, snapshot.getRegistryCacheEvictionCount());
-        assertEquals(0, snapshot.getRegistryCacheSize());
-        assertEquals(0, snapshot.getRegistryCacheLimit());
-        assertEquals(false, snapshot.isWalEnabled());
-        assertEquals(0L, snapshot.getWalAppendCount());
-        assertEquals(0L, snapshot.getWalAppendBytes());
-        assertEquals(0L, snapshot.getWalSyncCount());
-        assertEquals(0L, snapshot.getWalSyncFailureCount());
-        assertEquals(0L, snapshot.getWalCorruptionCount());
-        assertEquals(0L, snapshot.getWalTruncationCount());
-        assertEquals(0L, snapshot.getWalRetainedBytes());
-        assertEquals(0, snapshot.getWalSegmentCount());
-        assertEquals(0L, snapshot.getWalDurableLsn());
-        assertEquals(0L, snapshot.getWalCheckpointLsn());
-        assertEquals(0L, snapshot.getWalPendingSyncBytes());
-        assertEquals(0L, snapshot.getWalAppliedLsn());
-        assertEquals(0L, snapshot.getWalCheckpointLagLsn());
-        assertEquals(0L, snapshot.getWalSyncTotalNanos());
-        assertEquals(0L, snapshot.getWalSyncMaxNanos());
-        assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
-        assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
-        assertEquals(0L, snapshot.getWalSyncAvgNanos());
-        assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
-        assertEquals(0, snapshot.getMaxNumberOfImmutableRunsPerPartition());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInIndexBuffer());
-        assertEquals(0, snapshot.getPartitionCount());
-        assertEquals(0, snapshot.getActivePartitionCount());
-        assertEquals(0, snapshot.getDrainingPartitionCount());
-        assertEquals(0, snapshot.getImmutableRunCount());
-        assertEquals(0, snapshot.getPartitionBufferedKeyCount());
-        assertEquals(0L, snapshot.getLocalThrottleCount());
-        assertEquals(0L, snapshot.getGlobalThrottleCount());
-        assertEquals(0L, snapshot.getDrainScheduleCount());
-        assertEquals(0, snapshot.getDrainInFlightCount());
-        assertEquals(0L, snapshot.getDrainLatencyP95Micros());
+        assertZeroOperationAndCacheMetrics(snapshot);
+        assertZeroWalMetrics(snapshot);
+        assertZeroPartitionMetrics(snapshot);
         assertTrue(snapshot.getSegmentRuntimeSnapshots().isEmpty());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
@@ -196,5 +156,60 @@ class SegmentIndexMetricsSnapshotTest {
                 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L,
                 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
                 0D, 0L, 0L, 0L, 0L, NO_SEGMENTS, SegmentIndexState.READY);
+    }
+
+    private static void assertZeroOperationAndCacheMetrics(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertEquals(0L, snapshot.getGetOperationCount());
+        assertEquals(0L, snapshot.getPutOperationCount());
+        assertEquals(0L, snapshot.getDeleteOperationCount());
+        assertEquals(0L, snapshot.getRegistryCacheHitCount());
+        assertEquals(0L, snapshot.getRegistryCacheMissCount());
+        assertEquals(0L, snapshot.getRegistryCacheLoadCount());
+        assertEquals(0L, snapshot.getRegistryCacheEvictionCount());
+        assertEquals(0, snapshot.getRegistryCacheSize());
+        assertEquals(0, snapshot.getRegistryCacheLimit());
+    }
+
+    private static void assertZeroWalMetrics(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertEquals(false, snapshot.isWalEnabled());
+        assertEquals(0L, snapshot.getWalAppendCount());
+        assertEquals(0L, snapshot.getWalAppendBytes());
+        assertEquals(0L, snapshot.getWalSyncCount());
+        assertEquals(0L, snapshot.getWalSyncFailureCount());
+        assertEquals(0L, snapshot.getWalCorruptionCount());
+        assertEquals(0L, snapshot.getWalTruncationCount());
+        assertEquals(0L, snapshot.getWalRetainedBytes());
+        assertEquals(0, snapshot.getWalSegmentCount());
+        assertEquals(0L, snapshot.getWalDurableLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLsn());
+        assertEquals(0L, snapshot.getWalPendingSyncBytes());
+        assertEquals(0L, snapshot.getWalAppliedLsn());
+        assertEquals(0L, snapshot.getWalCheckpointLagLsn());
+        assertEquals(0L, snapshot.getWalSyncTotalNanos());
+        assertEquals(0L, snapshot.getWalSyncMaxNanos());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesTotal());
+        assertEquals(0L, snapshot.getWalSyncBatchBytesMax());
+        assertEquals(0L, snapshot.getWalSyncAvgNanos());
+        assertEquals(0L, snapshot.getWalSyncAvgBatchBytes());
+    }
+
+    private static void assertZeroPartitionMetrics(
+            final SegmentIndexMetricsSnapshot snapshot) {
+        assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
+        assertEquals(0, snapshot.getMaxNumberOfImmutableRunsPerPartition());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(0, snapshot.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(0, snapshot.getPartitionCount());
+        assertEquals(0, snapshot.getActivePartitionCount());
+        assertEquals(0, snapshot.getDrainingPartitionCount());
+        assertEquals(0, snapshot.getImmutableRunCount());
+        assertEquals(0, snapshot.getPartitionBufferedKeyCount());
+        assertEquals(0L, snapshot.getLocalThrottleCount());
+        assertEquals(0L, snapshot.getGlobalThrottleCount());
+        assertEquals(0L, snapshot.getDrainScheduleCount());
+        assertEquals(0, snapshot.getDrainInFlightCount());
+        assertEquals(0L, snapshot.getDrainLatencyP95Micros());
     }
 }
