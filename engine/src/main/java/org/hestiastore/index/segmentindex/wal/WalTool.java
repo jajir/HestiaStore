@@ -17,6 +17,7 @@ import org.hestiastore.index.IndexException;
 /**
  * Command-line helper for WAL inspection and verification.
  */
+@SuppressWarnings({ "java:S3776", "java:S6541" })
 public final class WalTool {
 
     private static final String SEGMENT_SUFFIX = ".wal";
@@ -27,6 +28,8 @@ public final class WalTool {
     private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
     private static final String CHECKPOINT_KEY_LSN = "lsn";
     private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
+    private static final String JSON_FILE_FIELD = "\"file\":";
+    private static final String INVALID_CHECKPOINT_METADATA = "Invalid checkpoint metadata.";
     private static final int FORMAT_VERSION = 1;
     private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
     private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
@@ -39,6 +42,7 @@ public final class WalTool {
     private WalTool() {
     }
 
+    @SuppressWarnings("java:S106")
     public static void main(final String[] args) {
         final int exitCode = run(args, System.out, System.err);
         if (exitCode != 0) {
@@ -174,6 +178,7 @@ public final class WalTool {
                 null);
     }
 
+    @SuppressWarnings("java:S106")
     static void dump(final Path walDirectory) {
         dump(walDirectory, System.out);
     }
@@ -430,7 +435,7 @@ public final class WalTool {
             final long lsn, final String operation, final int keyLen,
             final int valueLen, final int bodyLen) {
         return "{\"type\":\"record\","
-                + "\"file\":" + toJsonString(fileName) + ","
+                + JSON_FILE_FIELD + toJsonString(fileName) + ","
                 + "\"offset\":" + offset + ","
                 + "\"lsn\":" + lsn + ","
                 + "\"op\":" + toJsonString(operation) + ","
@@ -442,7 +447,7 @@ public final class WalTool {
     private static String jsonInvalidTail(final String fileName,
             final long invalidOffset, final String reason) {
         return "{\"type\":\"invalid_tail\","
-                + "\"file\":" + toJsonString(fileName) + ","
+                + JSON_FILE_FIELD + toJsonString(fileName) + ","
                 + "\"offset\":" + invalidOffset + ","
                 + "\"reason\":" + toJsonString(reason) + "}";
     }
@@ -450,7 +455,7 @@ public final class WalTool {
     private static String jsonSummary(final String fileName, final long size,
             final long records, final long firstLsn, final long lastLsn) {
         return "{\"type\":\"summary\","
-                + "\"file\":" + toJsonString(fileName) + ","
+                + JSON_FILE_FIELD + toJsonString(fileName) + ","
                 + "\"size\":" + size + ","
                 + "\"records\":" + records + ","
                 + "\"firstLsn\":" + firstLsn + ","
@@ -519,7 +524,7 @@ public final class WalTool {
             try {
                 if ("version".equals(key)) {
                     version = Integer.valueOf(value);
-                } else if ("checksum".equals(key)) {
+                } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
                     checksum = Integer.valueOf(value);
                 }
             } catch (RuntimeException e) {
@@ -578,7 +583,7 @@ public final class WalTool {
                         null);
             } catch (RuntimeException e) {
                 return checkpointValidationError(errorFile,
-                        "Invalid checkpoint metadata.",
+                        INVALID_CHECKPOINT_METADATA,
                         failOnInvalidMetadata);
             }
         }
@@ -600,11 +605,11 @@ public final class WalTool {
             }
         } catch (RuntimeException e) {
             return checkpointValidationError(errorFile,
-                    "Invalid checkpoint metadata.", failOnInvalidMetadata);
+                    INVALID_CHECKPOINT_METADATA, failOnInvalidMetadata);
         }
         if (lsn == null || checksum == null) {
             return checkpointValidationError(errorFile,
-                    "Invalid checkpoint metadata.", failOnInvalidMetadata);
+                    INVALID_CHECKPOINT_METADATA, failOnInvalidMetadata);
         }
         if (lsn.longValue() < 0L) {
             return checkpointValidationError(errorFile,

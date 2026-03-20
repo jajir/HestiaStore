@@ -91,9 +91,10 @@ class TypeReadersBoundaryTest {
             final TypeDescriptor<T> descriptor, final int bytesAvailable) {
         final byte[] data = new byte[bytesAvailable];
         final TypeReader<T> reader = descriptor.getTypeReader();
+        final MemFileReader fileReader = new MemFileReader(data);
 
         final IndexException error = assertThrows(IndexException.class,
-                () -> reader.read(new MemFileReader(data)));
+                () -> reader.read(fileReader));
 
         assertTrue(error.getMessage().contains("Expected"));
         assertTrue(error.getMessage().contains("EOF"));

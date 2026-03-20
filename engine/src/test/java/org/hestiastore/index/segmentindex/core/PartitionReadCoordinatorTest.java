@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -127,6 +126,23 @@ class PartitionReadCoordinatorTest {
 
         assertEquals(List.of(Entry.of(1, "stable-1"),
                 Entry.of(2, "overlay-2")), entries);
+    }
+
+    @Test
+    void get_returnsBusyWhenTopologyChangesDuringStableRead() {
+        stubAdmissionRunner();
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment(10);
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segment.get(10)).thenAnswer(invocation -> {
+            synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, 11);
+            return SegmentResult.ok("stable-10");
+        });
+
+        final IndexResult<String> result = coordinator.get(10);
+
+        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+        assertNull(result.getValue());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

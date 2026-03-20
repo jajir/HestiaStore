@@ -32,6 +32,7 @@
 - `mvn verify` runs the full pipeline: unit tests, integration tests, JaCoCo coverage checks, and dependency checks.
 - `mvn clean site` generates static analysis reports, coverage reports, and site documentation.
 - `mvn clean package -DskipTests` builds artifacts for fast local iteration, but avoid using it as final verification for PRs.
+- The `benchmarks` module sets `skipTests=true` by default; use `-DskipTests=false` when you need benchmark module tests or Python script smoke tests to actually execute.
 
 ## Coding Style & Naming Conventions
 

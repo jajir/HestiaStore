@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 /**
  * Owns the ordered close sequence for index runtime collaborators.
  */
+@SuppressWarnings("java:S107")
 final class IndexCloseCoordinator {
 
     private static final String CLOSE_OPERATION = "close";
@@ -19,7 +20,7 @@ final class IndexCloseCoordinator {
     private final Logger logger;
     private final String indexName;
     private final Runnable beginCloseTransition;
-    private final Runnable awaitAsyncOperations;
+    private final Runnable awaitOperations;
     private final Runnable drainPartitions;
     private final Runnable awaitBackgroundSplitExhausted;
     private final Runnable markClosed;
@@ -35,7 +36,7 @@ final class IndexCloseCoordinator {
 
     IndexCloseCoordinator(final Logger logger, final String indexName,
             final Runnable beginCloseTransition,
-            final Runnable awaitAsyncOperations,
+            final Runnable awaitOperations,
             final Runnable drainPartitions,
             final Runnable awaitBackgroundSplitExhausted,
             final Runnable markClosed,
@@ -50,7 +51,7 @@ final class IndexCloseCoordinator {
         this.logger = logger;
         this.indexName = indexName;
         this.beginCloseTransition = beginCloseTransition;
-        this.awaitAsyncOperations = awaitAsyncOperations;
+        this.awaitOperations = awaitOperations;
         this.drainPartitions = drainPartitions;
         this.awaitBackgroundSplitExhausted = awaitBackgroundSplitExhausted;
         this.markClosed = markClosed;
@@ -69,7 +70,7 @@ final class IndexCloseCoordinator {
         logger.debug("Closing index '{}'.", indexName);
         try {
             beginCloseTransition.run();
-            awaitAsyncOperations.run();
+            awaitOperations.run();
             settleBackgroundWork();
             markClosed.run();
             flushStableSegmentsWithSplitPaused.run();

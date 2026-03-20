@@ -13,6 +13,7 @@ Use this skill when the task is to assess possible performance regressions in He
 - Prefer comparing like-for-like runs, commands, and environments.
 - Focus on explaining signal versus noise before proposing fixes.
 - Keep follow-up code changes minimal and justified by evidence.
+- The `benchmarks` module has `skipTests=true` by default, so benchmark module tests and Python script smoke tests need `-DskipTests=false` when you expect them to run.
 
 ## Workflow
 

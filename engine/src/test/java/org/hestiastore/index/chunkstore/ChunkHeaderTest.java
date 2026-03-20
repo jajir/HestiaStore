@@ -37,9 +37,10 @@ class ChunkHeaderTest {
     @Test
     void test_of_invalid_header_size() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE + 1];
+        final ByteSequence sequence = ByteSequences.wrap(data);
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.ofSequence(ByteSequences.wrap(data)));
+                () -> ChunkHeader.ofSequence(sequence));
 
         assertEquals("Invalid chunk header size '33', expected '32'",
                 e.getMessage());
@@ -48,9 +49,10 @@ class ChunkHeaderTest {
     @Test
     void test_of_invalid_magic_number() {
         final byte[] data = new byte[ChunkHeader.HEADER_SIZE];
+        final ByteSequence sequence = ByteSequences.wrap(data);
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.ofSequence(ByteSequences.wrap(data)));
+                () -> ChunkHeader.ofSequence(sequence));
 
         assertEquals("Invalid chunk magic number '0', "
                 + "expected '8388065835078349409'", e.getMessage());
@@ -139,9 +141,10 @@ class ChunkHeaderTest {
         buffer.putLong(CRC);
         buffer.putLong(0L);
         final byte[] invalidHeader = buffer.array();
+        final ByteSequence sequence = ByteSequences.wrap(invalidHeader);
 
         final Exception e = assertThrows(IllegalArgumentException.class,
-                () -> ChunkHeader.ofSequence(ByteSequences.wrap(invalidHeader)));
+                () -> ChunkHeader.ofSequence(sequence));
         assertEquals("Property 'payloadLength' must be greater than 0",
                 e.getMessage());
     }

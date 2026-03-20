@@ -24,6 +24,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * Owns overlay-first reads and merged iterators across stable segments and
  * partition overlays.
  */
+@SuppressWarnings("java:S107")
 final class PartitionReadCoordinator<K, V> {
 
     private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
@@ -94,11 +95,7 @@ final class PartitionReadCoordinator<K, V> {
             return IndexResult.ok(
                     valueTypeDescriptor.isTombstone(value) ? null : value);
         }
-        if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                snapshot.version())) {
-            return IndexResult.busy();
-        }
-        return stableSegmentGateway.get(segmentId, key);
+        return stableSegmentGateway.get(key, segmentId, snapshot.version());
     }
 
     private EntryIterator<K, V> openMergedIterator(

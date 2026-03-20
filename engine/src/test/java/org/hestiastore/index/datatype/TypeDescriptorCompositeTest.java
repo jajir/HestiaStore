@@ -61,25 +61,29 @@ class TypeDescriptorCompositeTest {
 
     @Test
     void test_comparator_sizeMismatch_throws() {
+        final CompositeValue shorter = CompositeValue.of("A", 1.0D);
+        final CompositeValue full = CompositeValue.of("A", 1.0D, 1);
+
         assertThrows(IndexException.class,
-                () -> TDC.getComparator().compare(CompositeValue.of("A", 1.0D),
-                        CompositeValue.of("A", 1.0D, 1)));
+                () -> TDC.getComparator().compare(shorter, full));
     }
 
     @Test
     void test_comparator_typeMismatch_throws() {
+        final CompositeValue mismatched = CompositeValue.of(1, 1.0D, 1);
+
         assertThrows(IndexException.class,
-                () -> TDC.getComparator()
-                        .compare(CompositeValue.of(1, 1.0D, 1),
-                                CompositeValue.of(1, 1.0D, 1)));
+                () -> TDC.getComparator().compare(mismatched, mismatched));
     }
 
     @Test
     void test_comparator_nullValue_throws() {
+        final CompositeValue invalid = CompositeValue.of((Object) null, 1.0D,
+                1);
+        final CompositeValue valid = CompositeValue.of("A", 1.0D, 1);
+
         assertThrows(IndexException.class,
-                () -> TDC.getComparator().compare(
-                        CompositeValue.of((Object) null, 1.0D, 1),
-                        CompositeValue.of("A", 1.0D, 1)));
+                () -> TDC.getComparator().compare(invalid, valid));
     }
 
     @Test

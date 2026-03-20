@@ -25,6 +25,7 @@ import org.hestiastore.index.sorteddatafile.SortedDataFile;
  * @param <K> key type stored in the segment
  * @param <V> value type stored in the segment
  */
+@SuppressWarnings("java:S107")
 public final class SegmentFiles<K, V> {
 
     static final String CACHE_FILE_NAME_EXTENSION = ".cache";

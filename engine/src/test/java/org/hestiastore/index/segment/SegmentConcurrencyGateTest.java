@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.jupiter.api.AfterEach;
@@ -91,6 +92,33 @@ class SegmentConcurrencyGateTest {
 
         assertTrue(result.get(1, TimeUnit.SECONDS));
         assertEquals(SegmentState.FREEZE, gate.getState());
+        assertTrue(gate.finishFreezeToReady());
+        waiter.join(1_000);
+    }
+
+    @Test
+    void freeze_drain_preserves_interrupt_and_stops_waiting() throws Exception {
+        assertTrue(gate.tryEnterRead());
+
+        final CountDownLatch started = new CountDownLatch(1);
+        final CompletableFuture<Boolean> result = new CompletableFuture<>();
+        final AtomicBoolean interruptPreserved = new AtomicBoolean();
+        final Thread waiter = new Thread(() -> {
+            started.countDown();
+            final boolean freezeResult = gate.tryEnterFreezeAndDrain();
+            interruptPreserved.set(Thread.currentThread().isInterrupted());
+            result.complete(freezeResult);
+        });
+        waiter.start();
+
+        assertTrue(started.await(1, TimeUnit.SECONDS));
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
+        waiter.interrupt();
+
+        assertFalse(result.get(1, TimeUnit.SECONDS));
+        assertTrue(interruptPreserved.get());
+
+        gate.exitRead();
         assertTrue(gate.finishFreezeToReady());
         waiter.join(1_000);
     }

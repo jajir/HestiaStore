@@ -17,6 +17,7 @@ print_usage() {
   cat <<'USAGE'
 Usage: wal_tool.sh <verify|dump> <walDirectoryPath> [--json]
 USAGE
+  return 0
 }
 
 if [[ $# -lt 2 ]]; then

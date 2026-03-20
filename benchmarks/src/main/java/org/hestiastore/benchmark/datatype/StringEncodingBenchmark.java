@@ -110,17 +110,16 @@ public class StringEncodingBenchmark {
 
         int bytesLength(final String object) {
             int out = 0;
-            for (int i = 0; i < object.length(); i++) {
-                final char c = object.charAt(i);
+            int index = 0;
+            while (index < object.length()) {
+                final char c = object.charAt(index);
                 if (c <= 0x00FF) {
                     out++;
+                    index++;
                     continue;
                 }
                 out++;
-                if (Character.isHighSurrogate(c) && i + 1 < object.length()
-                        && Character.isLowSurrogate(object.charAt(i + 1))) {
-                    i++;
-                }
+                index += consumesSurrogatePair(object, index, c) ? 2 : 1;
             }
             return out;
         }
@@ -133,19 +132,25 @@ public class StringEncodingBenchmark {
                         required, destination.length));
             }
             int out = 0;
-            for (int i = 0; i < object.length(); i++) {
-                final char c = object.charAt(i);
+            int index = 0;
+            while (index < object.length()) {
+                final char c = object.charAt(index);
                 if (c <= 0x00FF) {
                     destination[out++] = (byte) c;
+                    index++;
                     continue;
                 }
                 destination[out++] = REPLACEMENT_BYTE;
-                if (Character.isHighSurrogate(c) && i + 1 < object.length()
-                        && Character.isLowSurrogate(object.charAt(i + 1))) {
-                    i++;
-                }
+                index += consumesSurrogatePair(object, index, c) ? 2 : 1;
             }
             return out;
+        }
+
+        private static boolean consumesSurrogatePair(final String object,
+                final int index, final char currentChar) {
+            return Character.isHighSurrogate(currentChar)
+                    && index + 1 < object.length()
+                    && Character.isLowSurrogate(object.charAt(index + 1));
         }
     }
 }

@@ -5,6 +5,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Holds encoded byte payload and effective encoded length.
  */
+@SuppressWarnings("java:S6206")
 public final class EncodedBytes {
 
     private final byte[] bytes;
