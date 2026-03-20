@@ -1,0 +1,4 @@
+[alias]
+    wt-start = "!f() { repo=$(git rev-parse --show-toplevel) || exit 1; \"$repo/scripts/git-worktree-start.sh\" \"$@\"; }; f"
+    wt-hotfix = "!f() { repo=$(git rev-parse --show-toplevel) || exit 1; \"$repo/scripts/git-worktree-start.sh\" hotfix \"$@\"; }; f"
+    wt-clean = "!f() { repo=$(git rev-parse --show-toplevel) || exit 1; \"$repo/scripts/git-worktree-clean.sh\" \"$@\"; }; f"

@@ -43,8 +43,10 @@ range scans, and operational simplicity inside a single application process.
   tuning guidance.
 - [Architecture](architecture/index.md) if you need implementation detail and
   internal contracts.
-- [Contribute & Community](development/index.md) if you are contributing code,
-  documentation, or release work.
+- [Contribute & Community](community/index.md) if you need contribution
+  workflow, community policy, or changelog history.
+- [Development](development/index.md) if you need maintainer runbooks, release
+  workflow, or engineering references.
 
 ## Key capabilities
 
@@ -108,6 +110,8 @@ For the next step after this example, go to [Quick Start](how-to-use/quick-start
 - [Benchmarks](why-hestiastore/benchmarks.md) for evaluation
 - [Quality & Testing](why-hestiastore/quality.md) for delivery confidence
 - [Security](SECURITY.md) for reporting and posture
+- [Contribute & Community](community/index.md) for contributor process and
+  project history
 - [Release Process](development/release.md) for maintainers
 
 ## Support

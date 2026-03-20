@@ -2,6 +2,21 @@
 
 This is the source-of-truth runbook for making a new HestiaStore release.
 
+For contribution workflow, community standards, and project history, use
+[Contribute and Community](../community/index.md).
+
+For day-to-day branch selection, task worktrees, and pull request targeting,
+use [Git and Worktree Workflow](git-workflow.md). This page covers the
+release-specific exception: a clean dedicated `main` worktree.
+
+## Branching model
+
+![Branching and release flow](../images/branching.png)
+
+Normal work starts from `devel`, merges back to `devel`, and reaches `main`
+through the release flow. Hotfixes start from `main`, merge back to `main`, and
+must then be synced into `devel`.
+
 When you ask Codex to use the `release-maven-library` skill, it performs the
 full local release workflow described on this page: prerequisite checks,
 pre-release verification, release version bump, release commit, release tag,
@@ -86,7 +101,8 @@ Example `settings.xml` fragments:
 ```
 
 Generate the Maven Central credentials from your account at
-[central.sonatype.com](https://central.sonatype.com/), and make sure a usable
+[central.sonatype.com](https://central.sonatype.com/), make sure the
+`org.hestiastore` namespace is verified for that account, and confirm a usable
 GPG secret key exists locally before starting a release.
 
 ## Release Checklist
@@ -102,15 +118,18 @@ GPG secret key exists locally before starting a release.
 - Commit and tag the release.
 - Run `mvn -P release -DskipTests verify`.
 - Deploy the release artifact from the repository root.
+- Push the release commit and tag.
 - Bump to the next snapshot version.
 - Verify again after the next snapshot bump.
+- Push the post-release snapshot commit.
 - Publish the GitHub release manually.
 
 ## Step-by-Step Procedure
 
-### 1. Inspect branch and working tree
+### 1. Checkout and update the `main` branch
 
-Use the intended release branch, usually `main`, and make sure it is clean:
+Release work is the main branching exception to the normal `devel` flow. Start
+from a clean `main` worktree and fast-forward it before changing versions:
 
 ```bash
 git checkout main
@@ -145,7 +164,8 @@ Use the helper script:
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
 ```
 
-If verification fails, stop and fix the problem before changing versions.
+That script runs the standard release verification used by the skill. If
+verification fails, stop and fix the problem before changing versions.
 
 ### 4. Check for forbidden snapshot dependencies or plugins
 
@@ -168,7 +188,7 @@ Convert `X.Y.Z-SNAPSHOT` to `X.Y.Z` using the helper script:
 ./.agents/skills/release-maven-library/scripts/bump-version.sh X.Y.Z
 ```
 
-Then verify again:
+Review the changed `pom.xml` files, then verify again:
 
 ```bash
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
@@ -192,9 +212,6 @@ git tag release-X.Y.Z
 Use the `release-X.Y.Z` tag format. Create the tag on the release commit, not
 on the later post-release snapshot commit.
 
-The `benchmarks` module participates in the build but is not deployed because
-its POM sets `maven.deploy.skip=true`.
-
 ### 7. Validate the release profile
 
 Run the root release profile so the parent POM and all release modules are
@@ -207,6 +224,9 @@ mvn -P release -DskipTests verify
 Do not deploy `engine` alone. The release must be run from the repository root
 so the parent POM and all publishable modules stay aligned.
 
+The `benchmarks` module participates in the build but is not deployed because
+its POM sets `maven.deploy.skip=true`.
+
 ### 8. Deploy the release
 
 Deploy the release to Maven Central from the repository root:
@@ -215,7 +235,16 @@ Deploy the release to Maven Central from the repository root:
 mvn -P release -DskipTests deploy
 ```
 
-### 9. Prepare the next development snapshot
+### 9. Push the release commit and tag
+
+After deployment succeeds, push both the branch and the release tag:
+
+```bash
+git push origin main
+git push origin release-X.Y.Z
+```
+
+### 10. Prepare the next development snapshot
 
 After the release is deployed, bump to the next snapshot version:
 
@@ -224,18 +253,10 @@ After the release is deployed, bump to the next snapshot version:
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
 git add pom.xml */pom.xml
 git commit -m "post-release: bumped to X.Y.(Z+1)-SNAPSHOT"
-```
-
-### 10. Push commits and tags
-
-Push both the branch and the release tag:
-
-```bash
 git push origin main
-git push origin release-X.Y.Z
 ```
 
-### 11. Publish release notes
+### 11. Publish the release on GitHub
 
 This step is manual and must be completed on the GitHub repository homepage,
 not in the generated documentation site:
