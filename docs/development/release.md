@@ -94,7 +94,7 @@ Example `settings.xml` fragments:
 ### Setup Maven Central account secrets
 
 This provides `org.sonatype.central:central-publishing-maven-plugin` plugin secrets to enable login to the Maven Central account where release data will be placed.
-You must have an account with a verified namespace `org.hestiastore` at [central.sonatype.com](https://central.sonatype.com/). From the `Account` section, generate a key and password. These should be added to:
+You must have an account with a verified namespace `org.hestiastore` at [central.sonatype.com](https://central.sonatype.com/). From the `Account` section, generate a key and password and place them in the `central` server entry shown above.
 
 ## Release Checklist
 
@@ -112,7 +112,18 @@ You must have an account with a verified namespace `org.hestiastore` at [central
 
 ## Step-by-Step Procedure
 
-### 1. Inspect branch and working tree
+### 1. Checkout and update the `main` branch
+
+Release work is the main branching exception to the normal `devel` flow. Start
+from a clean `main` worktree and fast-forward it before changing versions:
+
+```bash
+git checkout main
+git pull --ff-only
+git status --short --branch
+```
+
+### 2. Run the standard release verification
 
 Run the standard release verification script:
 
@@ -131,21 +142,29 @@ mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
 mvn clean verify
 ```
 
-### 1. Checkout and update the `main` branch
+### 3. Bump to the release version and commit it
 
-```bash
-git checkout main
-git pull --ff-only
-```
-
-Expected result:
+Review the changed `pom.xml` files, then convert the snapshot version to the
+release version and commit it:
 
 ```bash
 ./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.12
 git commit -am "release: version 0.0.12"
 ```
 
-### 3. Validate the release profile
+The release commit should remain focused on versioning files only. Review at
+least these modules before committing:
+
+- `org.hestiastore:hestiastore-parent`
+- `org.hestiastore:engine`
+- `org.hestiastore:wal-tools`
+- `org.hestiastore:monitoring-rest-json-api`
+- `org.hestiastore:monitoring-micrometer`
+- `org.hestiastore:monitoring-prometheus`
+- `org.hestiastore:monitoring-rest-json`
+- `org.hestiastore:monitoring-console-web`
+
+### 4. Validate the release profile
 
 Run the root release profile so the parent POM and all release modules are
 validated together:
@@ -157,13 +176,16 @@ mvn -P release -DskipTests verify
 Do not deploy `engine` alone. The release must be run from the repository root
 so the parent POM and all publishable modules stay aligned.
 
-### 4. Create the release tag
+The `benchmarks` module participates in the build but is not deployed because
+its POM sets `maven.deploy.skip=true`.
+
+### 5. Create the release tag
 
 ```bash
 git tag release-0.0.12
 ```
 
-### 5. Deploy the release
+### 6. Deploy the release from the repository root
 
 Deploy the release to Maven Central from the repository root:
 
@@ -171,7 +193,7 @@ Deploy the release to Maven Central from the repository root:
 mvn -P release -DskipTests deploy
 ```
 
-### 6. Push the release commit and tag
+### 7. Push the release commit and tag
 
 Push both `main` and the release tag after deployment succeeds:
 
@@ -179,15 +201,16 @@ Push both `main` and the release tag after deployment succeeds:
 git push origin main release-0.0.12
 ```
 
-### 7. Bump to the next snapshot version
+### 8. Bump to the next snapshot version and verify again
 
 ```bash
 ./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh 0.0.13-SNAPSHOT
+./.agents/skills/release-maven-library/scripts/verify-release.sh
 git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
 git push origin main
 ```
 
-### 8. Publish the release on GitHub
+### 9. Publish the release on GitHub
 
 This step is manual and must be completed on the GitHub repository homepage,
 not in the generated documentation site:
@@ -200,12 +223,6 @@ not in the generated documentation site:
 6. If the release contains breaking changes, add a dedicated `Breaking changes` section with migration steps.
 7. Press `Publish release`.
 
-```bash
-./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.6
-```
-
-Then verify again:
-
 ```xml
 <dependencies>
   <dependency>
@@ -217,63 +234,6 @@ Then verify again:
 ```
 
 After the release bump, there should be no remaining forbidden snapshot versions in the Maven project files.
-
-### 6. Commit and tag the release
-
-Review the changed files and create a focused release commit:
-
-- `org.hestiastore:hestiastore-parent` (POM)
-- `org.hestiastore:engine`
-- `org.hestiastore:wal-tools`
-- `org.hestiastore:monitoring-rest-json-api`
-- `org.hestiastore:monitoring-micrometer`
-- `org.hestiastore:monitoring-prometheus`
-- `org.hestiastore:monitoring-rest-json`
-- `org.hestiastore:monitoring-console-web`
-
-The `benchmarks` module participates in the build but is not deployed because
-its POM sets `maven.deploy.skip=true`.
-
-Compatibility and staged upgrade guidance:
-
-### 7. Deploy the release
-
-### 9. Finish the release
-
-```bash
-mvn -pl engine -am -P release deploy
-```
-
-This matches the current repository configuration, where the `release` profile is defined in `engine/pom.xml`.
-
-### 8. Prepare the next development snapshot
-
-After the release is deployed, bump to the next snapshot version:
-
-```bash
-./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh 0.0.7-SNAPSHOT
-./.agents/skills/release-maven-library/scripts/verify-release.sh
-git add pom.xml */pom.xml
-git commit -m "post-release: bumped to 0.0.7-SNAPSHOT"
-```
-
-### 9. Push commits and tags
-
-Push both the branch and the release tag:
-
-```bash
-git push origin main
-git push origin release-0.0.6
-```
-
-### 10. Publish release notes
-
-Create the GitHub release from tag `release-0.0.6` and summarize:
-
-- released version
-- notable changes
-- any migration or compatibility notes
-- Maven dependency coordinates consumers should use
 
 ## Helper Commands
 
