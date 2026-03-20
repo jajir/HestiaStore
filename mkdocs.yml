@@ -73,10 +73,13 @@ nav:
             - Overview: architecture/registry/index.md
             - Segment Registry: architecture/registry/registry.md
     - Contribute & Community:
+        - Overview: community/index.md
+        - Contributing: community/contributing.md
+        - Code of Conduct: community/code-of-conduct.md
+        - Changelog: community/changelog.md
+    - Development:
         - Overview: development/index.md
-        - Contributing: CONTRIBUTING.md
-        - Code of Conduct: CODE_OF_CONDUCT.md
-        - Changelog: CHANGELOG.md
+        - Git and Worktree Workflow: development/git-workflow.md
         - Release Process: development/release.md
         - Code Quality Charter: development/code-quality-charter.md
         - Quality Reporting: development/quality-reporting.md
