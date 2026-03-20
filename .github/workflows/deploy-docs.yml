@@ -25,6 +25,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      MKDOCS_SITE_URL: https://jajir.github.io/HestiaStore/
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
