@@ -145,7 +145,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-site-plugin</artifactId>
-				<version>4.0.0-M16</version>
+				<version>${maven.site.plugin.version}</version>
 			</plugin>
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
@@ -243,7 +243,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>3.4.5</version>
+				<version>${project.info.reports.plugin.version}</version>
 				<configuration>
 					<dependencyLocationsEnabled>false</dependencyLocationsEnabled>
 				</configuration>
@@ -279,18 +279,6 @@
 			<plugin>
 				<artifactId>maven-surefire-report-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
-			</plugin>
-				<plugin>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.4.1</version>
-					<configuration>
-						<quiet>true</quiet>
-						<additionalOptions>-Xdoclint:none</additionalOptions>
-					</configuration>
-				</plugin>
-			<plugin>
-				<artifactId>maven-jxr-plugin</artifactId>
-				<version>3.6.0</version>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
