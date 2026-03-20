@@ -15,7 +15,9 @@ We follow a consistent Java coding style defined by the Eclipse formatter settin
 Before submitting your code, please verify the following:
 
 - ✅ **Run Site Checks**
-  Execute `mvn clean site` to generate the project site and perform static analysis. This will highlight issues reported by:
+  Execute `mvn clean site` to generate the module-local Maven sites, then run
+  `scripts/stage-maven-site.sh` to assemble the combined local site tree. This
+  will highlight issues reported by:
   - PMD
   - Checkstyle
   - SpotBugs (formerly FindBugs)

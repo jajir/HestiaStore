@@ -19,7 +19,10 @@ HestiaStore uses the following tools to enforce code quality and detect potentia
 - **PMD**: Checks for common coding errors, best practices violations, and potential bugs.
 - **SpotBugs** (formerly FindBugs): Performs bytecode-level bug detection for possible concurrency issues, null pointer dereferences, etc.
 
-Both reports are available through the Maven Site (`mvn site`).
+Both reports are available through the Maven Site. In this multi-module build,
+`mvn site` writes module-local sites such as `engine/target/site/`. To browse
+the combined site tree locally, run `scripts/stage-maven-site.sh` after
+generating the reports.
 
 ## Testing and Coverage
 
@@ -27,9 +30,11 @@ The project includes a comprehensive suite of unit tests. Test coverage is measu
 
 ```bash
 mvn clean verify site
+scripts/stage-maven-site.sh
 ```
 
-This will generate the full set of reports under `target/site/`.
+This generates the engine reports under `engine/target/site/` and stages the
+combined site tree under `target/staging/`.
 
 ## Threat Model
 
