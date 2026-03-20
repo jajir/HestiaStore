@@ -131,9 +131,11 @@ public final class SegmentRegistryCache<K, V> {
         }
         final V value = entry.getValueForUnload();
         if (value == null) {
+            entry.cancelUnload();
             return InvalidateStatus.BUSY;
         }
         if (!unloadValue(value)) {
+            entry.cancelUnload();
             return InvalidateStatus.BUSY;
         }
         return finalizeRemoval(key, entry, false) ? InvalidateStatus.REMOVED

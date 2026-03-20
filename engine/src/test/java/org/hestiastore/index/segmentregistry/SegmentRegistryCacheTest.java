@@ -348,6 +348,21 @@ class SegmentRegistryCacheTest {
     }
 
     @Test
+    void failedExplicitInvalidateCancelsUnloadAndKeepsEntryAvailable() {
+        final AtomicInteger loads = new AtomicInteger();
+        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
+                2, key -> "value-" + loads.incrementAndGet(), value -> {
+                    throw new IllegalStateException("close failed");
+                });
+
+        assertEquals("value-1", cache.get(1));
+        assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
+                cache.invalidate(1));
+        assertEquals("value-1", cache.get(1));
+        assertEquals(1, loads.get());
+    }
+
+    @Test
     void getReturnsBusyWhileSameKeyIsUnloadingThenReloadsAfterRemoval()
             throws Exception {
         final AtomicInteger loads = new AtomicInteger();

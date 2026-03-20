@@ -8,10 +8,18 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.FileReader;
+import org.hestiastore.index.directory.FileWriter;
+import org.hestiastore.index.directory.MemFileReader;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
@@ -242,12 +250,79 @@ class DiffKeyReaderTest {
         assertThrows(IndexException.class, () -> reader.read(fileReader));
     }
 
+    @Test
+    void test_reading_unsigned_header_lengths() {
+        final TypeDescriptor<String> longStringDescriptor = new TypeDescriptorString();
+        final DiffKeyWriter<String> writer = new DiffKeyWriter<>(
+                longStringDescriptor.getTypeEncoder(),
+                Comparator.naturalOrder());
+        final String firstKey = "a".repeat(130);
+        final String secondKey = firstKey + "b".repeat(5);
+        final byte[] encoded = concat(writeSingle(writer, firstKey),
+                writeSingle(writer, secondKey));
+        final DiffKeyReader<String> reader = new DiffKeyReader<>(
+                longStringDescriptor.getTypeDecoder());
+
+        try (MemFileReader memFileReader = new MemFileReader(encoded)) {
+            assertEquals(firstKey, reader.read(memFileReader));
+            assertEquals(secondKey, reader.read(memFileReader));
+            assertNull(reader.read(memFileReader));
+        }
+    }
+
     private void loadStringToByteArray(final InvocationOnMock invocation,
             final String str) {
         final byte[] bytes = (byte[]) invocation.getArguments()[0];
-        final byte[] p = str.getBytes();
+        final byte[] p = str.getBytes(StandardCharsets.ISO_8859_1);
         for (int i = 0; i < p.length; i++) {
             bytes[i] = p[i];
+        }
+    }
+
+    private static <K> byte[] writeSingle(final DiffKeyWriter<K> writer,
+            final K key) {
+        final CollectingFileWriter collectingWriter = new CollectingFileWriter();
+        final int written = writer.writeTo(collectingWriter, key);
+        final byte[] encoded = collectingWriter.toByteArray();
+        assertEquals(encoded.length, written);
+        return encoded;
+    }
+
+    private static byte[] concat(final byte[] first, final byte[] second) {
+        final byte[] out = new byte[first.length + second.length];
+        System.arraycopy(first, 0, out, 0, first.length);
+        System.arraycopy(second, 0, out, first.length, second.length);
+        return out;
+    }
+
+    private static final class CollectingFileWriter
+            extends AbstractCloseableResource implements FileWriter {
+
+        private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        @Override
+        public void write(final byte b) {
+            out.write(b);
+        }
+
+        @Override
+        public void write(final byte[] bytes) {
+            out.write(bytes, 0, bytes.length);
+        }
+
+        @Override
+        public void write(final byte[] bytes, final int offset,
+                final int length) {
+            out.write(bytes, offset, length);
+        }
+
+        byte[] toByteArray() {
+            return out.toByteArray();
+        }
+
+        @Override
+        protected void doClose() {
+            // no-op
         }
     }
 }
