@@ -28,13 +28,18 @@ homepage at [https://github.com/jajir/HestiaStore/releases](https://github.com/j
 Codex can prepare the release title and body, but it cannot click `Publish
 release` in the GitHub web UI.
 
-If you are using Codex in this repository, use the `release-maven-library` skill. The skill follows the same workflow documented here and uses the helper scripts under `.agents/skills/release-maven-library/scripts/`.
+If you are using Codex in this repository, use the `release-maven-library`
+skill. The skill follows the same workflow documented here and uses the helper
+scripts under `.agents/skills/release-maven-library/scripts/`.
 
 ## Release Principles
 
 - Keep release work focused on release and versioning changes only.
-- Do not mix unrelated refactors, dependency upgrades, or API changes into a release commit.
-- Stop immediately if the working tree is dirty, the current version is inconsistent, a forbidden snapshot dependency is found, or verification fails.
+- Do not mix unrelated refactors, dependency upgrades, or API changes into a
+  release commit.
+- Stop immediately if the working tree is dirty, the current version is
+  inconsistent, a forbidden snapshot dependency is found, or verification
+  fails.
 
 ## Versioning
 
@@ -54,12 +59,16 @@ Development versions use the `-SNAPSHOT` suffix:
 X.Y.Z-SNAPSHOT
 ```
 
-Release preparation should start from a snapshot version and convert it to the matching release version.
+Release preparation should start from a snapshot version and convert it to the
+matching release version.
 
-The release will be published to Maven Central. Release configuration secrets are placed at the Maven settings file `~/.m2/settings.xml`.
+Releases are published to Maven Central. Release credentials and signing
+configuration live in `~/.m2/settings.xml`.
 
 Releases must be prepared from a clean `main` branch worktree with push access
 to the repository and tags.
+
+## Prerequisites
 
 - Java 17 and Maven are installed.
 - You are in the repository root.
@@ -91,24 +100,29 @@ Example `settings.xml` fragments:
 </settings>
 ```
 
-### Setup Maven Central account secrets
-
-This provides `org.sonatype.central:central-publishing-maven-plugin` plugin secrets to enable login to the Maven Central account where release data will be placed.
-You must have an account with a verified namespace `org.hestiastore` at [central.sonatype.com](https://central.sonatype.com/). From the `Account` section, generate a key and password and place them in the `central` server entry shown above.
+Generate the Maven Central credentials from your account at
+[central.sonatype.com](https://central.sonatype.com/), make sure the
+`org.hestiastore` namespace is verified for that account, and confirm a usable
+GPG secret key exists locally before starting a release.
 
 ## Release Checklist
 
-- Verify the working tree is clean.
+- Verify the working tree is clean and the release is being prepared from
+  `main`.
 - Detect the current Maven version.
 - Confirm the current version is a snapshot.
-- Run `mvn clean verify`.
+- Run `./.agents/skills/release-maven-library/scripts/verify-release.sh`.
 - Confirm there are no forbidden snapshot dependencies or plugins.
 - Bump from `X.Y.Z-SNAPSHOT` to `X.Y.Z`.
 - Run verification again after the release version change.
 - Commit and tag the release.
-- Deploy the release artifact.
+- Run `mvn -P release -DskipTests verify`.
+- Deploy the release artifact from the repository root.
+- Push the release commit and tag.
 - Bump to the next snapshot version.
 - Verify again after the next snapshot bump.
+- Push the post-release snapshot commit.
+- Publish the GitHub release manually.
 
 ## Step-by-Step Procedure
 
@@ -123,48 +137,82 @@ git pull --ff-only
 git status --short --branch
 ```
 
-### 2. Run the standard release verification
+If the working tree is not clean, stop and resolve that first.
 
-Run the standard release verification script:
+### 2. Detect the current project version
+
+Run:
+
+```bash
+mvn help:evaluate -Dexpression=project.version -q -DforceStdout
+```
+
+Expected result:
+
+```text
+X.Y.Z-SNAPSHOT
+```
+
+If the version does not end with `-SNAPSHOT`, do not continue with release
+preparation until the intended state is clear.
+
+### 3. Run pre-release verification
+
+Use the helper script:
 
 ```bash
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
 ```
 
-That script runs the release verification used by the skill:
+That script runs the standard release verification used by the skill. If
+verification fails, stop and fix the problem before changing versions.
+
+### 4. Check for forbidden snapshot dependencies or plugins
+
+Search all Maven project files for snapshot versions:
 
 ```bash
-mvn -N install
-mvn -pl engine,wal-tools,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json-api,monitoring-rest-json,monitoring-console-web -DskipTests package
-mvn -pl wal-tools,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json-api,monitoring-rest-json,monitoring-console-web test
-mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
-mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
-mvn clean verify
+rg -n --glob 'pom.xml' 'SNAPSHOT'
 ```
 
-### 3. Bump to the release version and commit it
+Before the release bump, the current project version is expected to appear as a
+snapshot. Any unrelated snapshot dependency, plugin, or version property is a
+release blocker and must be removed or intentionally approved before
+continuing.
 
-Review the changed `pom.xml` files, then convert the snapshot version to the
-release version and commit it:
+### 5. Prepare the release version
+
+Convert `X.Y.Z-SNAPSHOT` to `X.Y.Z` using the helper script:
 
 ```bash
-./.agents/skills/release-maven-library/scripts/bump-version.sh 0.0.12
-git commit -am "release: version 0.0.12"
+./.agents/skills/release-maven-library/scripts/bump-version.sh X.Y.Z
 ```
 
-The release commit should remain focused on versioning files only. Review at
-least these modules before committing:
+Review the changed `pom.xml` files, then verify again:
 
-- `org.hestiastore:hestiastore-parent`
-- `org.hestiastore:engine`
-- `org.hestiastore:wal-tools`
-- `org.hestiastore:monitoring-rest-json-api`
-- `org.hestiastore:monitoring-micrometer`
-- `org.hestiastore:monitoring-prometheus`
-- `org.hestiastore:monitoring-rest-json`
-- `org.hestiastore:monitoring-console-web`
+```bash
+./.agents/skills/release-maven-library/scripts/verify-release.sh
+rg -n --glob 'pom.xml' 'SNAPSHOT'
+git status --short
+```
 
-### 4. Validate the release profile
+After the release bump, there should be no remaining forbidden snapshot
+versions in the Maven project files.
+
+### 6. Commit and tag the release
+
+Review the changed files and create a focused release commit:
+
+```bash
+git add pom.xml */pom.xml
+git commit -m "release: version X.Y.Z"
+git tag release-X.Y.Z
+```
+
+Use the `release-X.Y.Z` tag format. Create the tag on the release commit, not
+on the later post-release snapshot commit.
+
+### 7. Validate the release profile
 
 Run the root release profile so the parent POM and all release modules are
 validated together:
@@ -179,13 +227,7 @@ so the parent POM and all publishable modules stay aligned.
 The `benchmarks` module participates in the build but is not deployed because
 its POM sets `maven.deploy.skip=true`.
 
-### 5. Create the release tag
-
-```bash
-git tag release-0.0.12
-```
-
-### 6. Deploy the release from the repository root
+### 8. Deploy the release
 
 Deploy the release to Maven Central from the repository root:
 
@@ -193,47 +235,53 @@ Deploy the release to Maven Central from the repository root:
 mvn -P release -DskipTests deploy
 ```
 
-### 7. Push the release commit and tag
+### 9. Push the release commit and tag
 
-Push both `main` and the release tag after deployment succeeds:
+After deployment succeeds, push both the branch and the release tag:
 
 ```bash
-git push origin main release-0.0.12
+git push origin main
+git push origin release-X.Y.Z
 ```
 
-### 8. Bump to the next snapshot version and verify again
+### 10. Prepare the next development snapshot
+
+After the release is deployed, bump to the next snapshot version:
 
 ```bash
-./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh 0.0.13-SNAPSHOT
+./.agents/skills/release-maven-library/scripts/prepare-next-snapshot.sh X.Y.(Z+1)-SNAPSHOT
 ./.agents/skills/release-maven-library/scripts/verify-release.sh
-git commit -am "post-release: bumped to 0.0.13-SNAPSHOT"
+git add pom.xml */pom.xml
+git commit -m "post-release: bumped to X.Y.(Z+1)-SNAPSHOT"
 git push origin main
 ```
 
-### 9. Publish the release on GitHub
+### 11. Publish the release on GitHub
 
 This step is manual and must be completed on the GitHub repository homepage,
 not in the generated documentation site:
 
 1. Go to [https://github.com/jajir/HestiaStore/releases](https://github.com/jajir/HestiaStore/releases) and choose `Draft a new release`.
-2. Select the existing tag `release-0.0.12`.
+2. Select the existing tag `release-X.Y.Z`.
 3. Keep `main` as the target branch.
-4. Set the release title to `Release 0.0.12`.
-5. In the `Write` field, use the text generated from the template below.
-6. If the release contains breaking changes, add a dedicated `Breaking changes` section with migration steps.
+4. Set the release title to `Release X.Y.Z`.
+5. In the description, include notable changes, any migration or compatibility
+   notes, and the dependency snippet below.
+6. If the release contains breaking changes, add a dedicated `Breaking changes`
+   section with migration steps.
 7. Press `Publish release`.
+
+Suggested dependency snippet:
 
 ```xml
 <dependencies>
   <dependency>
     <groupId>org.hestiastore</groupId>
     <artifactId>engine</artifactId>
-    <version>0.0.12</version> <!-- Replace with the actual version -->
+    <version>X.Y.Z</version>
   </dependency>
 </dependencies>
 ```
-
-After the release bump, there should be no remaining forbidden snapshot versions in the Maven project files.
 
 ## Helper Commands
 
