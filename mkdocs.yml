@@ -1,7 +1,7 @@
 # https://squidfunk.github.io/mkdocs-material/
 
 site_name: HestiaStore
-site_url: https://jajir.github.io/HestiaStore/
+site_url: !ENV [MKDOCS_SITE_URL, "http://127.0.0.1:8080/"]
 site_author: Jan Jirout
 
 repo_name: jajir/HestiaStore
@@ -96,6 +96,7 @@ nav:
 
 theme:
     name: material
+    custom_dir: overrides
     logo: images/logo-square.png
     favicon: favicon.ico
     font:
