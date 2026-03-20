@@ -68,15 +68,12 @@ final class WalStorageDirectory implements WalStorage {
         try (FileReader reader = walDirectory.getFileReader(fileName)) {
             final ByteArrayOutputStream out = new ByteArrayOutputStream();
             final byte[] buffer = new byte[BUFFER_SIZE];
-            while (true) {
-                final int read = reader.read(buffer, 0, buffer.length);
-                if (read < 0) {
-                    break;
+            int read = reader.read(buffer, 0, buffer.length);
+            while (read >= 0) {
+                if (read > 0) {
+                    out.write(buffer, 0, read);
                 }
-                if (read == 0) {
-                    continue;
-                }
-                out.write(buffer, 0, read);
+                read = reader.read(buffer, 0, buffer.length);
             }
             return out.toByteArray();
         }

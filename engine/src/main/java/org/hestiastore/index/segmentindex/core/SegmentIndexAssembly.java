@@ -24,6 +24,7 @@ final class SegmentIndexAssembly<K, V> {
     /**
      * Callback bundle used by runtime assembly and close/open coordination.
      */
+    @SuppressWarnings("java:S107")
     static final class Callbacks {
 
         private final Supplier<SegmentIndexState> stateSupplier;
@@ -31,7 +32,7 @@ final class SegmentIndexAssembly<K, V> {
         private final Consumer<RuntimeException> failureHandler;
         private final Runnable onBackgroundSplitApplied;
         private final Runnable beginCloseTransition;
-        private final Runnable awaitAsyncOperations;
+        private final Runnable awaitOperations;
         private final Runnable markClosed;
         private final LongSupplier getReadCount;
         private final LongSupplier getWriteCount;
@@ -43,7 +44,7 @@ final class SegmentIndexAssembly<K, V> {
                 final Consumer<RuntimeException> failureHandler,
                 final Runnable onBackgroundSplitApplied,
                 final Runnable beginCloseTransition,
-                final Runnable awaitAsyncOperations,
+                final Runnable awaitOperations,
                 final Runnable markClosed,
                 final LongSupplier getReadCount,
                 final LongSupplier getWriteCount,
@@ -59,8 +60,8 @@ final class SegmentIndexAssembly<K, V> {
                     onBackgroundSplitApplied, "onBackgroundSplitApplied");
             this.beginCloseTransition = Vldtn.requireNonNull(
                     beginCloseTransition, "beginCloseTransition");
-            this.awaitAsyncOperations = Vldtn.requireNonNull(
-                    awaitAsyncOperations, "awaitAsyncOperations");
+            this.awaitOperations = Vldtn.requireNonNull(awaitOperations,
+                    "awaitOperations");
             this.markClosed = Vldtn.requireNonNull(markClosed, "markClosed");
             this.getReadCount = Vldtn.requireNonNull(getReadCount,
                     "getReadCount");
@@ -92,8 +93,8 @@ final class SegmentIndexAssembly<K, V> {
             return beginCloseTransition;
         }
 
-        Runnable awaitAsyncOperations() {
-            return awaitAsyncOperations;
+        Runnable awaitOperations() {
+            return awaitOperations;
         }
 
         Runnable markClosed() {
@@ -121,6 +122,7 @@ final class SegmentIndexAssembly<K, V> {
     private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
     private final IndexCloseCoordinator closeCoordinator;
 
+    @SuppressWarnings("java:S107")
     private SegmentIndexAssembly(final SegmentIndexRuntime<K, V> runtime,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator,
             final IndexCloseCoordinator closeCoordinator) {
@@ -181,7 +183,7 @@ final class SegmentIndexAssembly<K, V> {
         final IndexCloseCoordinator closeCoordinator = runtime
                 .newCloseCoordinator(nonNullLogger, nonNullConf.getIndexName(),
                         nonNullCallbacks.beginCloseTransition(),
-                        nonNullCallbacks.awaitAsyncOperations(),
+                        nonNullCallbacks.awaitOperations(),
                         nonNullCallbacks.markClosed(),
                         nonNullCallbacks.getReadCount(),
                         nonNullCallbacks.getWriteCount(),

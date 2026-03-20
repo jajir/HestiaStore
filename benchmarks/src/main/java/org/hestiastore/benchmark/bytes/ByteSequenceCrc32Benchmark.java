@@ -61,6 +61,7 @@ public class ByteSequenceCrc32Benchmark {
     }
 
     @Benchmark
+    @SuppressWarnings("java:S100")
     public long baseline_previous_loop() {
         baseline.reset();
         baseline.update(sequence);
@@ -68,6 +69,7 @@ public class ByteSequenceCrc32Benchmark {
     }
 
     @Benchmark
+    @SuppressWarnings("java:S100")
     public long optimized_fast_path() {
         optimized.reset();
         optimized.update(sequence);

@@ -31,84 +31,14 @@ class HestiaStoreMicrometerBinderTest {
                 new MicrometerSegmentIndexSource("orders", index))
                         .bindTo(registry);
 
-        assertEquals(1D,
-                registry.get("hestiastore_ops_get_total").tag("index", "orders")
-                        .functionCounter().count());
-        assertEquals(2D,
-                registry.get("hestiastore_ops_put_total").tag("index", "orders")
-                        .functionCounter().count());
-        assertEquals(3D, registry.get("hestiastore_ops_delete_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(7D, registry.get("hestiastore_partition_active_limit")
-                .tag("index", "orders").gauge().value());
-        assertEquals(2D, registry
-                .get("hestiastore_partition_immutable_run_limit")
-                .tag("index", "orders").gauge().value());
-        assertEquals(11D, registry.get("hestiastore_partition_buffer_limit")
-                .tag("index", "orders").gauge().value());
-        assertEquals(29D, registry.get("hestiastore_index_buffer_limit")
-                .tag("index", "orders").gauge().value());
-        assertEquals(3D, registry.get("hestiastore_partition_count")
-                .tag("index", "orders").gauge().value());
-        assertEquals(2D, registry.get("hestiastore_partition_active_count")
-                .tag("index", "orders").gauge().value());
-        assertEquals(1D, registry.get("hestiastore_partition_draining_count")
-                .tag("index", "orders").gauge().value());
-        assertEquals(4D, registry
-                .get("hestiastore_partition_immutable_run_count")
-                .tag("index", "orders").gauge().value());
-        assertEquals(17D, registry.get("hestiastore_partition_buffered_key_count")
-                .tag("index", "orders").gauge().value());
-        assertEquals(19D, registry
-                .get("hestiastore_partition_throttle_local_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(23D, registry
-                .get("hestiastore_partition_throttle_global_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(31D, registry
-                .get("hestiastore_partition_drain_schedule_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(5D, registry.get("hestiastore_partition_drain_in_flight")
-                .tag("index", "orders").gauge().value());
-        assertEquals(43D, registry
-                .get("hestiastore_partition_drain_latency_p95_micros")
-                .tag("index", "orders").gauge().value());
-        assertEquals(37D, registry.get("hestiastore_split_schedule_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(2D, registry.get("hestiastore_split_in_flight")
-                .tag("index", "orders").gauge().value());
-        assertEquals(1D, registry.get("hestiastore_index_up")
-                .tag("index", "orders").gauge().value());
+        assertMetrics(registry, 1D, 2D, 3D, 7D, 2D, 11D, 29D, 3D, 2D, 1D, 4D,
+                17D, 19D, 23D, 31D, 5D, 43D, 37D, 2D, 1D);
 
         snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 3,
                 15, 41, 4, 1, 0, 2, 5, 29L, 31L, 37L, 0, 0L, 41L, 0));
 
-        assertEquals(5D,
-                registry.get("hestiastore_ops_get_total").tag("index", "orders")
-                        .functionCounter().count());
-        assertEquals(8D,
-                registry.get("hestiastore_ops_put_total").tag("index", "orders")
-                        .functionCounter().count());
-        assertEquals(13D, registry.get("hestiastore_ops_delete_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(9D, registry.get("hestiastore_partition_active_limit")
-                .tag("index", "orders").gauge().value());
-        assertEquals(4D, registry.get("hestiastore_partition_count")
-                .tag("index", "orders").gauge().value());
-        assertEquals(31D, registry
-                .get("hestiastore_partition_throttle_global_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(0D, registry.get("hestiastore_partition_drain_in_flight")
-                .tag("index", "orders").gauge().value());
-        assertEquals(0D, registry
-                .get("hestiastore_partition_drain_latency_p95_micros")
-                .tag("index", "orders").gauge().value());
-        assertEquals(41D, registry.get("hestiastore_split_schedule_total")
-                .tag("index", "orders").functionCounter().count());
-        assertEquals(0D, registry.get("hestiastore_split_in_flight")
-                .tag("index", "orders").gauge().value());
-        assertEquals(0D, registry.get("hestiastore_index_up")
-                .tag("index", "orders").gauge().value());
+        assertMetrics(registry, 5D, 8D, 13D, 9D, 3D, 15D, 41D, 4D, 1D, 0D, 2D,
+                5D, 29D, 31D, 37D, 0D, 0D, 41D, 0D, 0D);
     }
 
     private SegmentIndexMetricsSnapshot snapshot(final long getCount,
@@ -146,5 +76,74 @@ class HestiaStoreMicrometerBinderTest {
                 localThrottleCount, globalThrottleCount, drainScheduleCount,
                 drainInFlightCount, drainLatencyP95Micros, List.of(),
                 state);
+    }
+
+    private static void assertMetrics(final SimpleMeterRegistry registry,
+            final double getCount, final double putCount,
+            final double deleteCount, final double activePartitionLimit,
+            final double immutableRunLimit,
+            final double partitionBufferLimit, final double indexBufferLimit,
+            final double partitionCount, final double activePartitionCount,
+            final double drainingPartitionCount,
+            final double immutableRunCount,
+            final double partitionBufferedKeyCount,
+            final double localThrottleCount,
+            final double globalThrottleCount,
+            final double drainScheduleCount, final double drainInFlightCount,
+            final double drainLatencyP95Micros,
+            final double splitScheduleCount, final double splitInFlightCount,
+            final double indexUp) {
+        assertFunctionCounter(registry, "hestiastore_ops_get_total", getCount);
+        assertFunctionCounter(registry, "hestiastore_ops_put_total", putCount);
+        assertFunctionCounter(registry, "hestiastore_ops_delete_total",
+                deleteCount);
+        assertGauge(registry, "hestiastore_partition_active_limit",
+                activePartitionLimit);
+        assertGauge(registry, "hestiastore_partition_immutable_run_limit",
+                immutableRunLimit);
+        assertGauge(registry, "hestiastore_partition_buffer_limit",
+                partitionBufferLimit);
+        assertGauge(registry, "hestiastore_index_buffer_limit",
+                indexBufferLimit);
+        assertGauge(registry, "hestiastore_partition_count", partitionCount);
+        assertGauge(registry, "hestiastore_partition_active_count",
+                activePartitionCount);
+        assertGauge(registry, "hestiastore_partition_draining_count",
+                drainingPartitionCount);
+        assertGauge(registry, "hestiastore_partition_immutable_run_count",
+                immutableRunCount);
+        assertGauge(registry, "hestiastore_partition_buffered_key_count",
+                partitionBufferedKeyCount);
+        assertFunctionCounter(registry,
+                "hestiastore_partition_throttle_local_total",
+                localThrottleCount);
+        assertFunctionCounter(registry,
+                "hestiastore_partition_throttle_global_total",
+                globalThrottleCount);
+        assertFunctionCounter(registry,
+                "hestiastore_partition_drain_schedule_total",
+                drainScheduleCount);
+        assertGauge(registry, "hestiastore_partition_drain_in_flight",
+                drainInFlightCount);
+        assertGauge(registry, "hestiastore_partition_drain_latency_p95_micros",
+                drainLatencyP95Micros);
+        assertFunctionCounter(registry, "hestiastore_split_schedule_total",
+                splitScheduleCount);
+        assertGauge(registry, "hestiastore_split_in_flight", splitInFlightCount);
+        assertGauge(registry, "hestiastore_index_up", indexUp);
+    }
+
+    private static void assertFunctionCounter(
+            final SimpleMeterRegistry registry, final String meterName,
+            final double expected) {
+        assertEquals(expected,
+                registry.get(meterName).tag("index", "orders")
+                        .functionCounter().count());
+    }
+
+    private static void assertGauge(final SimpleMeterRegistry registry,
+            final String meterName, final double expected) {
+        assertEquals(expected,
+                registry.get(meterName).tag("index", "orders").gauge().value());
     }
 }

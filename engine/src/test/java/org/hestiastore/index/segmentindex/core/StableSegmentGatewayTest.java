@@ -90,11 +90,12 @@ class StableSegmentGatewayTest {
     @Test
     void get_returnsBusyWhenMappingChangesDuringRead() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenAnswer(invocation -> {
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segment.get("key")).thenAnswer(invocation -> {
             synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
-            return SegmentRegistryResult.ok(segment);
+            return SegmentResult.ok("value");
         });
-        when(segment.get("key")).thenReturn(SegmentResult.ok("value"));
 
         final IndexResult<String> result = stableSegmentGateway.get("key");
 
