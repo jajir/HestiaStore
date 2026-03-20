@@ -1,5 +1,6 @@
 package org.hestiastore.index.sorteddatafile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 
 import org.hestiastore.index.Vldtn;
@@ -18,6 +19,8 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  */
 public class DiffKeyWriter<K> {
+
+    private static final int MAX_HEADER_BYTE_LENGTH = 0xFF;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -61,8 +64,10 @@ public class DiffKeyWriter<K> {
         final FileWriter validatedWriter = Vldtn.requireNonNull(writer,
                 "writer");
         final EncodedDiffKey diff = encodeDiffKey(key);
-        validatedWriter.write((byte) diff.sharedByteLength);
-        validatedWriter.write((byte) diff.diffByteLength);
+        validatedWriter.write((byte) toHeaderByteLength(diff.sharedByteLength,
+                "sharedByteLength"));
+        validatedWriter.write((byte) toHeaderByteLength(diff.diffByteLength,
+                "diffByteLength"));
         final byte[] keyBytes = diff.keyBytes.toByteArray();
         validatedWriter.write(keyBytes, diff.sharedByteLength,
                 diff.diffByteLength);
@@ -98,7 +103,8 @@ public class DiffKeyWriter<K> {
         }
         final int cmp = keyComparator.compare(previousKey, key);
         if (cmp == 0) {
-            final String keyAsString = new String(keyBytes.toByteArray());
+            final String keyAsString = new String(keyBytes.toByteArray(),
+                    StandardCharsets.ISO_8859_1);
             final String keyComparatorClassName = keyComparator.getClass()
                     .getSimpleName();
             throw new IllegalArgumentException(String.format(
@@ -107,8 +113,10 @@ public class DiffKeyWriter<K> {
         }
         if (cmp > 0) {
             final String previousKeyAsString = new String(
-                    previousKeyBytes.toByteArray());
-            final String keyAsString = new String(keyBytes.toByteArray());
+                    previousKeyBytes.toByteArray(),
+                    StandardCharsets.ISO_8859_1);
+            final String keyAsString = new String(keyBytes.toByteArray(),
+                    StandardCharsets.ISO_8859_1);
             final String keyComparatorClassName = keyComparator.getClass()
                     .getSimpleName();
             throw new IllegalArgumentException(String.format(
@@ -116,6 +124,18 @@ public class DiffKeyWriter<K> {
                             + "Previous key is '%s', inserted key is '%s' and comparator is '%s'",
                     previousKeyAsString, keyAsString, keyComparatorClassName));
         }
+    }
+
+    private static int toHeaderByteLength(final int length,
+            final String propertyName) {
+        final int validatedLength = Vldtn.requireGreaterThanOrEqualToZero(
+                length, propertyName);
+        if (validatedLength > MAX_HEADER_BYTE_LENGTH) {
+            throw new IllegalArgumentException(String.format(
+                    "Property '%s' must be between 0 and %d bytes. Got: %d",
+                    propertyName, MAX_HEADER_BYTE_LENGTH, validatedLength));
+        }
+        return validatedLength;
     }
 
     private static final class EncodedDiffKey {

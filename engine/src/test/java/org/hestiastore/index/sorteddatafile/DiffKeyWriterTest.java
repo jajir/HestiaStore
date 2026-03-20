@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -13,6 +14,7 @@ import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.datatype.TypeEncoder;
 import org.hestiastore.index.directory.FileWriter;
 import org.junit.jupiter.api.Test;
@@ -150,6 +152,42 @@ class DiffKeyWriterTest {
     }
 
     @Test
+    void test_write_encodes_unsigned_header_lengths() {
+        final TypeDescriptor<String> longStringDescriptor = new TypeDescriptorString();
+        final DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
+                longStringDescriptor.getTypeEncoder(),
+                Comparator.naturalOrder());
+
+        final String firstKey = "a".repeat(130);
+        final String secondKey = firstKey + "b".repeat(5);
+
+        final byte[] first = writeSingle(diffWriter, firstKey);
+        assertEquals(0, Byte.toUnsignedInt(first[0]), "shared byte length");
+        assertEquals(130, Byte.toUnsignedInt(first[1]), "byte length");
+
+        final byte[] second = writeSingle(diffWriter, secondKey);
+        assertEquals(130, Byte.toUnsignedInt(second[0]),
+                "shared byte length");
+        assertEquals(5, Byte.toUnsignedInt(second[1]), "byte length");
+    }
+
+    @Test
+    void test_write_rejects_diff_header_longer_than_255_bytes() {
+        final TypeDescriptor<String> longStringDescriptor = new TypeDescriptorString();
+        final DiffKeyWriter<String> diffWriter = new DiffKeyWriter<>(
+                longStringDescriptor.getTypeEncoder(),
+                Comparator.naturalOrder());
+
+        final IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> writeSingle(diffWriter, "a".repeat(256)));
+
+        assertEquals(
+                "Property 'diffByteLength' must be between 0 and 255 bytes. Got: 256",
+                error.getMessage());
+    }
+
+    @Test
     void test_write_propagatesEncoderValidationErrors() {
         final DiffKeyWriter<Integer> diffWriter = new DiffKeyWriter<>(
                 new TypeEncoder<Integer>() {
@@ -200,7 +238,7 @@ class DiffKeyWriterTest {
         assertEquals(expectedBytesLength, (int) bytes[1], "byte length");
         byte[] b = new byte[bytes.length - 2];
         System.arraycopy(bytes, 2, b, 0, b.length);
-        String str = new String(b);
+        String str = new String(b, StandardCharsets.ISO_8859_1);
         assertEquals(expectedString, str, "string");
     }
 
