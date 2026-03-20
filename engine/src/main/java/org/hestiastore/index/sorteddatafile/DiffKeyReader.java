@@ -1,5 +1,7 @@
 package org.hestiastore.index.sorteddatafile;
 
+import java.nio.charset.StandardCharsets;
+
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDecoder;
 import org.hestiastore.index.datatype.TypeReader;
@@ -69,8 +71,8 @@ public class DiffKeyReader<K> implements TypeReader<K> {
         if (2 != fileReader.read(header)) {
             return null;
         }
-        final int sharedByteLength = header[0];
-        final int keyLengthInBytes = header[1]; // number of suffix bytes
+        final int sharedByteLength = Byte.toUnsignedInt(header[0]);
+        final int keyLengthInBytes = Byte.toUnsignedInt(header[1]);
         if (sharedByteLength == 0) {
             final byte[] keyBytes = new byte[keyLengthInBytes];
             read(fileReader, keyBytes, 0, keyLengthInBytes);
@@ -84,7 +86,8 @@ public class DiffKeyReader<K> implements TypeReader<K> {
                             + " previous key", sharedByteLength));
         }
         if (previousKeyBytes.length < sharedByteLength) {
-            final String s1 = new String(previousKeyBytes);
+            final String s1 = new String(previousKeyBytes,
+                    StandardCharsets.ISO_8859_1);
             throw new IndexException(String.format(
                     "Previous key is '%s' with length '%s'. "
                             + "Current key should share '%s' with previous key.",

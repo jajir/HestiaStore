@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -79,7 +81,7 @@ public final class ManagementAgentServer
     private static final String AUDIT_REJECTED = "REJECTED";
     private static final String AUDIT_FAILED = "FAILED";
     private static final int MAX_AUDIT_RECORDS = 10_000;
-    private static final List<RegisteredIndex> REJECTED_ACTION_TARGETS = new ArrayList<>();
+    private static final int MAX_ACTION_REPLAYS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
     private static final Map<RuntimeSettingKey, String> API_NAME_BY_RUNTIME_KEY = Map
             .of(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
@@ -105,6 +107,9 @@ public final class ManagementAgentServer
     private final ManagementAgentSecurityPolicy securityPolicy;
     private final FixedWindowRateLimiter mutatingRateLimiter;
     private final ConcurrentLinkedDeque<AuditRecord> auditTrail = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<ActionRequestKey> actionReplayOrder = new ConcurrentLinkedDeque<>();
+    private final ConcurrentMap<ActionRequestKey, CompletableFuture<ActionReplay>> actionReplays = new ConcurrentHashMap<>();
+    private final int maxActionReplays;
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
     private final HttpServer server;
@@ -123,7 +128,8 @@ public final class ManagementAgentServer
             final SegmentIndex<?, ?> index, final String indexName)
             throws IOException {
         this(bindAddress, bindPort,
-                ManagementAgentSecurityPolicy.permissive());
+                ManagementAgentSecurityPolicy.permissive(),
+                MAX_ACTION_REPLAYS);
         addIndex(indexName, index);
     }
 
@@ -141,7 +147,7 @@ public final class ManagementAgentServer
             final SegmentIndex<?, ?> index, final String indexName,
             final ManagementAgentSecurityPolicy securityPolicy)
             throws IOException {
-        this(bindAddress, bindPort, securityPolicy);
+        this(bindAddress, bindPort, securityPolicy, MAX_ACTION_REPLAYS);
         addIndex(indexName, index);
     }
 
@@ -155,7 +161,8 @@ public final class ManagementAgentServer
     public ManagementAgentServer(final String bindAddress, final int bindPort)
             throws IOException {
         this(bindAddress, bindPort,
-                ManagementAgentSecurityPolicy.permissive());
+                ManagementAgentSecurityPolicy.permissive(),
+                MAX_ACTION_REPLAYS);
     }
 
     /**
@@ -169,8 +176,20 @@ public final class ManagementAgentServer
     public ManagementAgentServer(final String bindAddress, final int bindPort,
             final ManagementAgentSecurityPolicy securityPolicy)
             throws IOException {
+        this(bindAddress, bindPort, securityPolicy, MAX_ACTION_REPLAYS);
+    }
+
+    ManagementAgentServer(final String bindAddress, final int bindPort,
+            final ManagementAgentSecurityPolicy securityPolicy,
+            final int maxActionReplays)
+            throws IOException {
         this.securityPolicy = Objects.requireNonNull(securityPolicy,
                 "securityPolicy");
+        if (maxActionReplays < 1) {
+            throw new IllegalArgumentException(
+                    "maxActionReplays must be greater than zero");
+        }
+        this.maxActionReplays = maxActionReplays;
         this.mutatingRateLimiter = new FixedWindowRateLimiter(
                 securityPolicy.maxMutatingRequestsPerMinute());
         this.server = HttpServer.create(new InetSocketAddress(
@@ -422,18 +441,47 @@ public final class ManagementAgentServer
         if (context == null) {
             return;
         }
-        final List<RegisteredIndex> targets = resolveActionTargetsOrReject(
-                exchange, context.endpoint(), context.body(),
-                context.request());
-        if (targets == REJECTED_ACTION_TARGETS) {
+        final ActionRequestKey replayKey = new ActionRequestKey(
+                replayActor(exchange, context.principal()), context.endpoint(),
+                context.request().requestId());
+        final CompletableFuture<ActionReplay> createdReplay = new CompletableFuture<>();
+        final CompletableFuture<ActionReplay> existingReplay = actionReplays
+                .putIfAbsent(replayKey, createdReplay);
+        if (existingReplay != null) {
+            replayAction(exchange, context, existingReplay);
             return;
         }
-        if (!validateActionTargets(exchange, context.endpoint(),
-                context.body(), context.request(), targets)) {
-            return;
+        boolean keepReplay = false;
+        try {
+            if (!mutatingRateLimiter.tryAcquire(
+                    context.principal().actor() + ":" + context.endpoint())) {
+                final ActionReplay replay = new ActionReplay(
+                        context.request().indexName(), 429,
+                        new ErrorResponse("RATE_LIMITED",
+                                "Mutating request rate limit exceeded.",
+                                context.request().requestId(), Instant.now()),
+                        "REJECTED_RATE_LIMIT");
+                createdReplay.complete(replay);
+                writeActionReplay(exchange, context.endpoint(), context.body(),
+                        replay, replay.auditOutcome());
+                return;
+            }
+            final ActionReplay replay = resolveAndExecuteAction(
+                    context.request(), action, operation);
+            createdReplay.complete(replay);
+            keepReplay = true;
+            writeActionReplay(exchange, context.endpoint(), context.body(),
+                    replay, replay.auditOutcome());
+        } catch (final RuntimeException | IOException e) {
+            createdReplay.completeExceptionally(e);
+            throw e;
+        } finally {
+            if (keepReplay) {
+                retainReplay(replayKey);
+            } else {
+                actionReplays.remove(replayKey, createdReplay);
+            }
         }
-        executeAction(exchange, context.endpoint(), context.body(),
-                context.request(), action, operation, targets);
     }
 
     private MutatingRequestContext prepareMutatingRequest(
@@ -447,15 +495,18 @@ public final class ManagementAgentServer
         if (body == null) {
             return null;
         }
-        if (!authorize(exchange, AgentRole.OPERATE, true, endpoint, body)) {
-            return null;
-        }
         final ActionRequest request = parseActionRequest(exchange, endpoint,
                 body);
         if (request == null) {
             return null;
         }
-        return new MutatingRequestContext(endpoint, body, request);
+        final AuthorizationPrincipal principal = authorizePrincipal(exchange,
+                AgentRole.OPERATE, true, endpoint, body, request.requestId(),
+                false);
+        if (principal == null) {
+            return null;
+        }
+        return new MutatingRequestContext(endpoint, body, request, principal);
     }
 
     private String readBodyOrRejectTooLarge(final HttpExchange exchange,
@@ -575,65 +626,142 @@ public final class ManagementAgentServer
         }
     }
 
-    private List<RegisteredIndex> resolveActionTargetsOrReject(
-            final HttpExchange exchange, final String endpoint,
-            final String body, final ActionRequest request) throws IOException {
+    private ActionReplay resolveAndExecuteAction(final ActionRequest request,
+            final ActionType action, final IndexOperation operation) {
         try {
-            return resolveActionTargets(request);
+            final List<RegisteredIndex> targets = resolveActionTargets(request);
+            if (targets.isEmpty()) {
+                return actionErrorReplay(request, 409, ERROR_INVALID_STATE,
+                        "No monitored indexes available.", AUDIT_REJECTED);
+            }
+            final List<String> notReady = notReadyIndexes(targets);
+            if (!notReady.isEmpty()) {
+                return actionErrorReplay(request, 409, ERROR_INVALID_STATE,
+                        "Indexes are not in READY state: "
+                                + String.join(",", notReady),
+                        AUDIT_REJECTED);
+            }
+            return executeAction(request, action, operation, targets);
         } catch (final IllegalStateException e) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INDEX_NOT_FOUND,
-                    e.getMessage(), request.requestId(), Instant.now());
-            writeJson(exchange, 404, error);
-            audit(exchange, endpoint, body, 404, AUDIT_REJECTED);
-            return REJECTED_ACTION_TARGETS;
+            return actionErrorReplay(request, 404, ERROR_INDEX_NOT_FOUND,
+                    e.getMessage(), AUDIT_REJECTED);
         }
     }
 
-    private boolean validateActionTargets(final HttpExchange exchange,
-            final String endpoint, final String body, final ActionRequest request,
-            final List<RegisteredIndex> targets) throws IOException {
-        if (targets.isEmpty()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
-                    "No monitored indexes available.", request.requestId(),
-                    Instant.now());
-            writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
-            return false;
-        }
-        final List<String> notReady = notReadyIndexes(targets);
-        if (!notReady.isEmpty()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
-                    "Indexes are not in READY state: "
-                            + String.join(",", notReady),
-                    request.requestId(), Instant.now());
-            writeJson(exchange, 409, error);
-            audit(exchange, endpoint, body, 409, AUDIT_REJECTED);
-            return false;
-        }
-        return true;
-    }
-
-    private void executeAction(final HttpExchange exchange,
-            final String endpoint, final String body, final ActionRequest request,
+    private ActionReplay executeAction(final ActionRequest request,
             final ActionType action, final IndexOperation operation,
-            final List<RegisteredIndex> targets) throws IOException {
+            final List<RegisteredIndex> targets) {
+        int appliedCount = 0;
+        String failedIndexName = null;
         try {
             for (final RegisteredIndex target : targets) {
+                failedIndexName = target.indexName();
                 operation.run(target);
+                appliedCount++;
             }
-            final ActionResponse response = new ActionResponse(
-                    request.requestId(), action, ActionStatus.COMPLETED,
-                    "Applied to " + targets.size() + " index(es).",
-                    Instant.now());
-            writeJson(exchange, 200, response);
-            audit(exchange, endpoint, body, 200, "COMPLETED");
+            return new ActionReplay(request.indexName(), 200,
+                    new ActionResponse(
+                            request.requestId(), action,
+                            ActionStatus.COMPLETED,
+                            "Applied to " + targets.size() + " index(es).",
+                            Instant.now()),
+                    "COMPLETED");
         } catch (final RuntimeException e) {
-            final ActionResponse response = new ActionResponse(
-                    request.requestId(), action, ActionStatus.FAILED,
-                    e.getMessage(), Instant.now());
-            writeJson(exchange, 500, response);
-            audit(exchange, endpoint, body, 500, AUDIT_FAILED);
+            return new ActionReplay(request.indexName(), 500,
+                    new ActionResponse(
+                            request.requestId(), action, ActionStatus.FAILED,
+                            formatActionFailureMessage(appliedCount,
+                                    targets.size(), failedIndexName, e),
+                            Instant.now()),
+                    appliedCount > 0 ? "FAILED_PARTIAL" : AUDIT_FAILED);
         }
+    }
+
+    private ActionReplay actionErrorReplay(final ActionRequest request,
+            final int statusCode, final String code, final String message,
+            final String auditOutcome) {
+        return new ActionReplay(request.indexName(), statusCode,
+                new ErrorResponse(code, message, request.requestId(),
+                        Instant.now()),
+                auditOutcome);
+    }
+
+    private void replayAction(final HttpExchange exchange,
+            final MutatingRequestContext context,
+            final CompletableFuture<ActionReplay> existingReplay)
+            throws IOException {
+        final ActionReplay replay = awaitReplay(existingReplay);
+        if (!Objects.equals(replay.indexName(),
+                context.request().indexName())) {
+            final ErrorResponse error = new ErrorResponse(
+                    "REQUEST_ID_CONFLICT",
+                    "requestId is already in use for a different action target.",
+                    context.request().requestId(), Instant.now());
+            writeJson(exchange, 409, error);
+            audit(exchange, context.endpoint(), context.body(), 409,
+                    "REJECTED_REQUEST_ID_CONFLICT");
+            return;
+        }
+        writeActionReplay(exchange, context.endpoint(), context.body(), replay,
+                "REPLAYED");
+    }
+
+    private ActionReplay awaitReplay(
+            final CompletableFuture<ActionReplay> existingReplay) {
+        try {
+            return existingReplay.join();
+        } catch (final CompletionException e) {
+            final Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new IllegalStateException(
+                    "Unable to replay action response.", cause);
+        }
+    }
+
+    private void writeActionReplay(final HttpExchange exchange,
+            final String endpoint, final String body,
+            final ActionReplay replay, final String auditOutcome)
+            throws IOException {
+        writeJson(exchange, replay.statusCode(), replay.payload());
+        audit(exchange, endpoint, body, replay.statusCode(), auditOutcome);
+    }
+
+    private void retainReplay(final ActionRequestKey replayKey) {
+        actionReplayOrder.addLast(replayKey);
+        while (actionReplays.size() > maxActionReplays) {
+            final ActionRequestKey oldestReplay = actionReplayOrder.pollFirst();
+            if (oldestReplay == null) {
+                return;
+            }
+            actionReplays.remove(oldestReplay);
+        }
+    }
+
+    private String formatActionFailureMessage(final int appliedCount,
+            final int totalTargets, final String failedIndexName,
+            final RuntimeException error) {
+        final String errorMessage = error.getMessage() == null
+                || error.getMessage().isBlank()
+                        ? error.getClass().getSimpleName()
+                        : error.getMessage();
+        if (appliedCount <= 0) {
+            return "Action failed before applying to any index"
+                    + formatFailedIndexSuffix(failedIndexName) + ": "
+                    + errorMessage;
+        }
+        return "Applied to " + appliedCount + " of " + totalTargets
+                + " index(es) before failure"
+                + formatFailedIndexSuffix(failedIndexName) + ": "
+                + errorMessage;
+    }
+
+    private String formatFailedIndexSuffix(final String failedIndexName) {
+        if (failedIndexName == null || failedIndexName.isBlank()) {
+            return "";
+        }
+        return " on index '" + failedIndexName + "'";
     }
 
     private List<RegisteredIndex> resolveActionTargets(
@@ -980,36 +1108,47 @@ public final class ManagementAgentServer
             final AgentRole requiredRole, final boolean mutating,
             final String endpoint, final String requestBody)
             throws IOException {
+        return authorizePrincipal(exchange, requiredRole, mutating, endpoint,
+                requestBody, "", true) != null;
+    }
+
+    private AuthorizationPrincipal authorizePrincipal(
+            final HttpExchange exchange, final AgentRole requiredRole,
+            final boolean mutating, final String endpoint,
+            final String requestBody, final String requestId,
+            final boolean applyRateLimit)
+            throws IOException {
         if (securityPolicy.requireTls() && !isSecureTransport(exchange)) {
             rejectAuthorization(exchange, mutating, endpoint, requestBody, 400,
                     "TLS_REQUIRED", "HTTPS transport is required.",
-                    "REJECTED_TLS");
-            return false;
+                    "REJECTED_TLS", requestId);
+            return null;
         }
         final AuthorizationPrincipal principal = resolveAuthorizationPrincipal(
-                exchange, mutating, endpoint, requestBody);
+                exchange, mutating, endpoint, requestBody, requestId);
         if (principal == null) {
-            return false;
+            return null;
         }
         if (!principal.role().allows(requiredRole)) {
             rejectAuthorization(exchange, mutating, endpoint, requestBody, 403,
                     "FORBIDDEN", "Insufficient privileges for endpoint.",
-                    "REJECTED_FORBIDDEN");
-            return false;
+                    "REJECTED_FORBIDDEN", requestId);
+            return null;
         }
-        if (mutating && !mutatingRateLimiter
+        if (applyRateLimit && mutating && !mutatingRateLimiter
                 .tryAcquire(principal.actor() + ":" + endpoint)) {
             rejectAuthorization(exchange, true, endpoint, requestBody, 429,
                     "RATE_LIMITED", "Mutating request rate limit exceeded.",
-                    "REJECTED_RATE_LIMIT");
-            return false;
+                    "REJECTED_RATE_LIMIT", requestId);
+            return null;
         }
-        return true;
+        return principal;
     }
 
     private AuthorizationPrincipal resolveAuthorizationPrincipal(
             final HttpExchange exchange, final boolean mutating,
-            final String endpoint, final String requestBody)
+            final String endpoint, final String requestBody,
+            final String requestId)
             throws IOException {
         if (securityPolicy.tokenRoles().isEmpty()) {
             return new AuthorizationPrincipal(AgentRole.ADMIN, "anonymous");
@@ -1018,14 +1157,14 @@ public final class ManagementAgentServer
         if (token == null) {
             rejectAuthorization(exchange, mutating, endpoint, requestBody, 401,
                     "UNAUTHORIZED", "Authentication token is required.",
-                    "REJECTED_UNAUTHORIZED");
+                    "REJECTED_UNAUTHORIZED", requestId);
             return null;
         }
         final AgentRole actualRole = securityPolicy.tokenRoles().get(token);
         if (actualRole == null) {
             rejectAuthorization(exchange, mutating, endpoint, requestBody, 401,
                     "UNAUTHORIZED", "Authentication token is invalid.",
-                    "REJECTED_UNAUTHORIZED");
+                    "REJECTED_UNAUTHORIZED", requestId);
             return null;
         }
         return new AuthorizationPrincipal(actualRole, token);
@@ -1034,9 +1173,10 @@ public final class ManagementAgentServer
     private boolean rejectAuthorization(final HttpExchange exchange,
             final boolean mutating, final String endpoint,
             final String requestBody, final int statusCode, final String code,
-            final String message, final String auditOutcome)
+            final String message, final String auditOutcome,
+            final String requestId)
             throws IOException {
-        writeError(exchange, statusCode, code, message, "");
+        writeError(exchange, statusCode, code, message, requestId);
         if (mutating) {
             audit(exchange, endpoint, requestBody, statusCode, auditOutcome);
         }
@@ -1104,6 +1244,17 @@ public final class ManagementAgentServer
         return normalized;
     }
 
+    private String replayActor(final HttpExchange exchange,
+            final AuthorizationPrincipal principal) {
+        if (!"anonymous".equals(principal.actor())) {
+            return principal.actor();
+        }
+        if (exchange.getRemoteAddress() == null) {
+            return "anonymous";
+        }
+        return "anonymous@" + exchange.getRemoteAddress().getHostString();
+    }
+
     @FunctionalInterface
     private interface Handler {
         void handle(HttpExchange exchange) throws IOException;
@@ -1115,10 +1266,18 @@ public final class ManagementAgentServer
     }
 
     private record MutatingRequestContext(String endpoint, String body,
-            ActionRequest request) {
+            ActionRequest request, AuthorizationPrincipal principal) {
     }
 
     private record AuthorizationPrincipal(AgentRole role, String actor) {
+    }
+
+    private record ActionRequestKey(String actor, String endpoint,
+            String requestId) {
+    }
+
+    private record ActionReplay(String indexName, int statusCode, Object payload,
+            String auditOutcome) {
     }
 
     private static final class RequestBodyTooLargeException
