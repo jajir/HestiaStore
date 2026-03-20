@@ -17,8 +17,8 @@
       "channels": {
         "main": {
           "latestPointerPath": "history/segment-index-pr-smoke/latest-main.json",
-          "sha": "243589024837d3a342dfac1a029bea50b0292dac",
-          "timestampUtc": "2026-03-20T10:42:42.187072+00:00"
+          "sha": "e6adc34214c9ff0a3d8eae146bfacb8b07282732",
+          "timestampUtc": "2026-03-20T20:47:11.949953+00:00"
         }
       },
       "latestChannel": "main",
@@ -271,8 +271,8 @@
           "timestampUtc": "2026-03-20T20:40:03.602787+00:00"
         }
       },
-      "sha": "243589024837d3a342dfac1a029bea50b0292dac",
-      "timestampUtc": "2026-03-20T10:42:42.187072+00:00"
+      "sha": "e6adc34214c9ff0a3d8eae146bfacb8b07282732",
+      "timestampUtc": "2026-03-20T20:47:11.949953+00:00"
     }
   }
 }
