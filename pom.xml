@@ -143,6 +143,35 @@
                 </executions>
             </plugin>
             <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>mirror-module-site-under-root</id>
+                        <phase>site</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target xmlns:if="ant:if">
+                                <condition property="isChildModule">
+                                    <not>
+                                        <equals arg1="${project.basedir}"
+                                            arg2="${maven.multiModuleProjectDirectory}" />
+                                    </not>
+                                </condition>
+                                <mkdir dir="${maven.multiModuleProjectDirectory}/target/site/${project.artifactId}"
+                                    if:set="isChildModule" />
+                                <copy todir="${maven.multiModuleProjectDirectory}/target/site/${project.artifactId}"
+                                    overwrite="true" if:set="isChildModule">
+                                    <fileset dir="${project.reporting.outputDirectory}" />
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>${pmd.plugin.version}</version>
                 <configuration>

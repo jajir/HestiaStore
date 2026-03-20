@@ -20,9 +20,9 @@ HestiaStore uses the following tools to enforce code quality and detect potentia
 - **SpotBugs** (formerly FindBugs): Performs bytecode-level bug detection for possible concurrency issues, null pointer dereferences, etc.
 
 Both reports are available through the Maven Site. In this multi-module build,
-`mvn site` writes module-local sites such as `engine/target/site/`. To browse
-the combined site tree locally, run `scripts/stage-maven-site.sh` after
-generating the reports.
+`mvn site` also mirrors module sites into the root tree so local browsing works
+from `target/site/index.html`, while keeping the original module output in
+paths such as `engine/target/site/`.
 
 ## Testing and Coverage
 
@@ -30,11 +30,10 @@ The project includes a comprehensive suite of unit tests. Test coverage is measu
 
 ```bash
 mvn clean verify site
-scripts/stage-maven-site.sh
 ```
 
-This generates the engine reports under `engine/target/site/` and stages the
-combined site tree under `target/staging/`.
+This generates the combined local site under `target/site/`, with the engine
+reports also available under `engine/target/site/`.
 
 ## Threat Model
 
