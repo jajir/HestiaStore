@@ -6,15 +6,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Vldtn;
-import org.slf4j.MDC;
 
 /**
  * Executor service decorator that enforces {@code index.name} MDC for every
  * executed task.
  */
 final class IndexNameMdcExecutorService extends AbstractExecutorService {
-
-    private static final String INDEX_NAME_MDC_KEY = "index.name";
 
     private final String indexName;
     private final ExecutorService delegate;
@@ -59,22 +56,10 @@ final class IndexNameMdcExecutorService extends AbstractExecutorService {
     private Runnable withIndexContext(final Runnable command) {
         final Runnable task = Vldtn.requireNonNull(command, "command");
         return () -> {
-            final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
-            MDC.put(INDEX_NAME_MDC_KEY, indexName);
-            try {
+            try (IndexNameMdcScope ignored = IndexNameMdcScope
+                    .open(indexName)) {
                 task.run();
-            } finally {
-                restorePreviousIndexName(previousIndexName);
             }
         };
-    }
-
-    private static void restorePreviousIndexName(
-            final String previousIndexName) {
-        if (previousIndexName == null) {
-            MDC.remove(INDEX_NAME_MDC_KEY);
-            return;
-        }
-        MDC.put(INDEX_NAME_MDC_KEY, previousIndexName);
     }
 }

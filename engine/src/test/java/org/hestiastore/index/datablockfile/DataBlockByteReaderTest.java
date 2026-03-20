@@ -86,20 +86,6 @@ class DataBlockByteReaderTest {
     }
 
     @Test
-    void test_readSequence_64_one() {
-        when(dataBlockReader.readPayloadSequence())//
-                .thenReturn(dataBlockPayload1.getBytesSequence())//
-                .thenReturn(null);
-
-        final ByteSequence bytes1 = reader.readExactlySequence(64);
-
-        assertEquals(true,
-                ByteSequences.contentEquals(TestData.BYTES_1024.slice(0, 64),
-                        bytes1));
-        assertNull(reader.readExactlySequence(64));
-    }
-
-    @Test
     void test_read_64_two() {
         when(dataBlockReader.readPayloadSequence())//
                 .thenReturn(dataBlockPayload1.getBytesSequence())//

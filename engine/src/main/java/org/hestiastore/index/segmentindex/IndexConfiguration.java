@@ -16,6 +16,7 @@ import org.hestiastore.index.chunkstore.ChunkFilter;
  * @param <V> value type
  * @see IndexConfigurationBuilder
  */
+@SuppressWarnings("java:S107")
 public class IndexConfiguration<K, V> {
 
     /**

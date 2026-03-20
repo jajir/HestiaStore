@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.control.model.RuntimeConfigPatch;
@@ -154,6 +158,84 @@ class ManagementAgentServerTest {
     }
 
     @Test
+    void duplicateRequestIdReplaysCompletedActionWithoutRunningAgain()
+            throws Exception {
+        final AtomicInteger flushCalls = new AtomicInteger();
+        server.addIndex(INDEX_1, instrumentAction(indexes.get(0),
+                "flushAndWait", flushCalls, null));
+
+        final String requestBody = "{\"requestId\":\"req-replay\",\"indexName\":\""
+                + INDEX_1 + "\"}";
+        final HttpResponse<String> first = send("POST",
+                ManagementApiPaths.ACTION_FLUSH, requestBody);
+        final HttpResponse<String> second = send("POST",
+                ManagementApiPaths.ACTION_FLUSH, requestBody);
+
+        assertEquals(200, first.statusCode());
+        assertEquals(200, second.statusCode());
+        assertEquals(first.body(), second.body());
+        assertEquals(1, flushCalls.get());
+    }
+
+    @Test
+    void oldestReplayEntryIsEvictedWhenReplayRetentionLimitIsReached()
+            throws Exception {
+        server.close();
+        final AtomicInteger flushCalls = new AtomicInteger();
+        server = new ManagementAgentServer("127.0.0.1", 0,
+                ManagementAgentSecurityPolicy.permissive(), 2);
+        server.addIndex(INDEX_1, instrumentAction(indexes.get(0),
+                "flushAndWait", flushCalls, null));
+        server.start();
+        baseUrl = "http://127.0.0.1:" + server.getPort();
+
+        assertEquals(200, send("POST", ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"req-1\",\"indexName\":\"" + INDEX_1 + "\"}")
+                .statusCode());
+        assertEquals(200, send("POST", ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"req-2\",\"indexName\":\"" + INDEX_1 + "\"}")
+                .statusCode());
+        assertEquals(200, send("POST", ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"req-3\",\"indexName\":\"" + INDEX_1 + "\"}")
+                .statusCode());
+        assertEquals(200, send("POST", ManagementApiPaths.ACTION_FLUSH,
+                "{\"requestId\":\"req-1\",\"indexName\":\"" + INDEX_1 + "\"}")
+                .statusCode());
+        assertEquals(4, flushCalls.get());
+    }
+
+    @Test
+    void bulkActionFailureReportsPartialProgressAndReplaysByRequestId()
+            throws Exception {
+        final AtomicInteger successfulFlushCalls = new AtomicInteger();
+        final AtomicInteger failingFlushCalls = new AtomicInteger();
+        server.addIndex(INDEX_1, instrumentAction(indexes.get(0),
+                "flushAndWait", successfulFlushCalls, null));
+        server.addIndex(INDEX_2, instrumentAction(indexes.get(1),
+                "flushAndWait", failingFlushCalls,
+                new IllegalStateException("simulated failure")));
+
+        final String requestBody = "{\"requestId\":\"req-partial\"}";
+        final HttpResponse<String> first = send("POST",
+                ManagementApiPaths.ACTION_FLUSH, requestBody);
+        final HttpResponse<String> second = send("POST",
+                ManagementApiPaths.ACTION_FLUSH, requestBody);
+
+        assertEquals(500, first.statusCode());
+        assertEquals(500, second.statusCode());
+        assertEquals(first.body(), second.body());
+
+        final ActionResponse payload = objectMapper.readValue(first.body(),
+                ActionResponse.class);
+        assertEquals(ActionStatus.FAILED, payload.status());
+        assertTrue(payload.message()
+                .contains("Applied to 1 of 2 index(es) before failure"));
+        assertTrue(payload.message().contains(INDEX_2));
+        assertEquals(1, successfulFlushCalls.get());
+        assertEquals(1, failingFlushCalls.get());
+    }
+
+    @Test
     void targetedActionReturnsNotFoundForUnknownIndex() throws Exception {
         final HttpResponse<String> response = send("POST",
                 ManagementApiPaths.ACTION_FLUSH,
@@ -166,36 +248,15 @@ class ManagementAgentServerTest {
     }
 
     @Test
-    void configPatchRejectsForbiddenKey() throws Exception {
-        final HttpResponse<String> response = send("PATCH",
-                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
-                "{\"values\":{\"forbidden.key\":\"1\"},\"dryRun\":false}");
-        assertEquals(400, response.statusCode());
-        final ErrorResponse payload = objectMapper.readValue(response.body(),
-                ErrorResponse.class);
-        assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
-    }
-
-    @Test
-    void configPatchRejectsLegacyPartitionAliasKey() throws Exception {
-        final HttpResponse<String> response = send("PATCH",
-                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
-                "{\"values\":{\"maxNumberOfKeysInSegmentWriteCache\":\"16\"},\"dryRun\":false}");
-        assertEquals(400, response.statusCode());
-        final ErrorResponse payload = objectMapper.readValue(response.body(),
-                ErrorResponse.class);
-        assertEquals("CONFIG_KEY_NOT_SUPPORTED", payload.code());
-    }
-
-    @Test
-    void configPatchRequiresIndexName() throws Exception {
-        final HttpResponse<String> response = send("PATCH",
-                ManagementApiPaths.CONFIG,
-                "{\"values\":{\"maxNumberOfSegmentsInCache\":\"16\"},\"dryRun\":true}");
-        assertEquals(400, response.statusCode());
-        final ErrorResponse payload = objectMapper.readValue(response.body(),
-                ErrorResponse.class);
-        assertEquals("INVALID_REQUEST", payload.code());
+    void configPatchRejectsInvalidRequest() throws Exception {
+        for (final String[] invalidRequest : invalidConfigPatchRequests()) {
+            final HttpResponse<String> response = send("PATCH",
+                    invalidRequest[0], invalidRequest[1]);
+            assertEquals(400, response.statusCode());
+            final ErrorResponse payload = objectMapper
+                    .readValue(response.body(), ErrorResponse.class);
+            assertEquals(invalidRequest[2], payload.code());
+        }
     }
 
     @Test
@@ -383,13 +444,10 @@ class ManagementAgentServerTest {
                     && snapshot.getDrainInFlightCount() == 0;
         }, 10_000L);
 
-        final SegmentIndexMetricsSnapshot snapshot = extra.metricsSnapshot();
-        final HttpResponse<String> reportResp = send("GET",
-                ManagementApiPaths.REPORT, null);
-        assertEquals(200, reportResp.statusCode());
-        final JsonNode reportJson = objectMapper.readTree(reportResp.body());
-        final JsonNode indexNode = findIndexNode(reportJson,
-                extra.getConfiguration().getIndexName());
+        final SegmentIndexMetricsSnapshot snapshot = awaitStableSplitMetrics(
+                extra, 10_000L);
+        final JsonNode indexNode = awaitIndexNodeWithMatchingSplitMetrics(extra,
+                extra.getConfiguration().getIndexName(), 10_000L);
 
         assertEquals(snapshot.getSegmentCount(),
                 indexNode.path("segmentCount").asInt());
@@ -475,6 +533,116 @@ class ManagementAgentServerTest {
                 "Condition not reached within " + timeoutMillis + " ms.");
     }
 
+    private static SegmentIndexMetricsSnapshot awaitStableSplitMetrics(
+            final SegmentIndex<Integer, String> index,
+            final long timeoutMillis) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        SegmentIndexMetricsSnapshot previous = null;
+        while (System.nanoTime() < deadline) {
+            final SegmentIndexMetricsSnapshot current = index.metricsSnapshot();
+            if (sameSplitMetrics(previous, current)) {
+                return current;
+            }
+            previous = current;
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        assertNotNull(previous,
+                "Split metrics snapshot was never observed while waiting.");
+        assertTrue(false,
+                "Stable split metrics were not observed within "
+                        + timeoutMillis + " ms.");
+        return previous;
+    }
+
+    private static boolean sameSplitMetrics(
+            final SegmentIndexMetricsSnapshot left,
+            final SegmentIndexMetricsSnapshot right) {
+        return left != null && right != null
+                && left.getSegmentCount() == right.getSegmentCount()
+                && left.getSplitScheduleCount() == right.getSplitScheduleCount()
+                && left.getSplitInFlightCount() == right.getSplitInFlightCount()
+                && left.getDrainScheduleCount() == right.getDrainScheduleCount()
+                && left.getDrainInFlightCount() == right.getDrainInFlightCount()
+                && left.getDrainLatencyP95Micros() == right
+                        .getDrainLatencyP95Micros();
+    }
+
+    private JsonNode awaitIndexNodeWithMatchingSplitMetrics(
+            final SegmentIndex<Integer, String> index, final String indexName,
+            final long timeoutMillis) throws Exception {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        JsonNode lastIndexNode = null;
+        while (System.nanoTime() < deadline) {
+            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
+            final HttpResponse<String> reportResp = send("GET",
+                    ManagementApiPaths.REPORT, null);
+            assertEquals(200, reportResp.statusCode());
+            final JsonNode reportJson = objectMapper.readTree(reportResp.body());
+            final JsonNode indexNode = findIndexNode(reportJson, indexName);
+            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+            if (sameSplitMetrics(before, after)
+                    && splitMetricsMatch(indexNode, after)) {
+                return indexNode;
+            }
+            lastIndexNode = indexNode;
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
+            if (Thread.currentThread().isInterrupted()) {
+                throw new AssertionError("Interrupted while waiting");
+            }
+        }
+        assertNotNull(lastIndexNode,
+                "Index report was never observed while waiting.");
+        assertTrue(false,
+                "Index report split metrics did not match a stable snapshot within "
+                        + timeoutMillis + " ms.");
+        return lastIndexNode;
+    }
+
+    private static boolean splitMetricsMatch(final JsonNode indexNode,
+            final SegmentIndexMetricsSnapshot snapshot) {
+        return snapshot.getSegmentCount() == indexNode.path("segmentCount")
+                .asInt()
+                && snapshot.getSplitScheduleCount() == indexNode
+                        .path("splitScheduleCount").asLong()
+                && snapshot.getSplitInFlightCount() == indexNode
+                        .path("splitInFlightCount").asInt()
+                && snapshot.getDrainScheduleCount() == indexNode
+                        .path("drainScheduleCount").asLong()
+                && snapshot.getDrainInFlightCount() == indexNode
+                        .path("drainInFlightCount").asInt()
+                && snapshot.getDrainLatencyP95Micros() == indexNode
+                        .path("drainLatencyP95Micros").asLong();
+    }
+
+    @SuppressWarnings("unchecked")
+    private SegmentIndex<Integer, String> instrumentAction(
+            final SegmentIndex<Integer, String> delegate,
+            final String actionMethodName,
+            final AtomicInteger invocationCount,
+            final RuntimeException failure) {
+        final InvocationHandler handler = (proxy, method, args) -> {
+            if (actionMethodName.equals(method.getName())) {
+                invocationCount.incrementAndGet();
+                if (failure != null) {
+                    throw failure;
+                }
+            }
+            try {
+                return method.invoke(delegate, args);
+            } catch (final InvocationTargetException e) {
+                throw e.getCause();
+            }
+        };
+        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
+                SegmentIndex.class.getClassLoader(),
+                new Class<?>[] { SegmentIndex.class }, handler);
+    }
+
     private HttpResponse<String> send(final String method, final String path,
             final String body) throws Exception {
         HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers
@@ -487,5 +655,18 @@ class ManagementAgentServerTest {
                 .header("Content-Type", "application/json")
                 .method(method, publisher).build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private static String[][] invalidConfigPatchRequests() {
+        return new String[][] {
+                { ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                        "{\"values\":{\"forbidden.key\":\"1\"},\"dryRun\":false}",
+                        "CONFIG_KEY_NOT_SUPPORTED" },
+                { ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                        "{\"values\":{\"maxNumberOfKeysInSegmentWriteCache\":\"16\"},\"dryRun\":false}",
+                        "CONFIG_KEY_NOT_SUPPORTED" },
+                { ManagementApiPaths.CONFIG,
+                        "{\"values\":{\"maxNumberOfSegmentsInCache\":\"16\"},\"dryRun\":true}",
+                        "INVALID_REQUEST" } };
     }
 }

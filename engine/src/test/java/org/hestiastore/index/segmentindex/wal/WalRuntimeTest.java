@@ -1058,7 +1058,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(recoveredRecord -> {
                     });
             assertFalse(result.truncatedTail());
         }
@@ -1091,7 +1091,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 failingStorage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(recoveredRecord -> {
                     }));
         }
     }
@@ -1125,7 +1125,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(recoveredRecord -> {
                     });
             assertTrue(result.truncatedTail());
         }
@@ -1140,7 +1140,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult result = runtime
-                    .recover(record -> {
+                    .recover(recoveredRecord -> {
                     });
             assertFalse(result.truncatedTail());
         }
@@ -1210,7 +1210,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(recoveredRecord -> {
                     }));
         }
         assertEquals(before, walSegmentNames(root));
@@ -1239,7 +1239,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(recoveredRecord -> {
                     }));
         }
         assertWalSnapshotsEqual(expectedSnapshot, walSegmentSnapshot(root));
@@ -1247,7 +1247,7 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.open(root, wal,
                 STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             assertThrows(IndexException.class,
-                    () -> runtime.recover(record -> {
+                    () -> runtime.recover(recoveredRecord -> {
                     }));
         }
         assertWalSnapshotsEqual(expectedSnapshot, walSegmentSnapshot(root));
@@ -1616,8 +1616,8 @@ class WalRuntimeTest {
             try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                     storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
                 final WalRuntime.RecoveryResult recovery = runtime
-                        .recover(record -> applyReplayRecord(recoveredState,
-                                record));
+                        .recover(replayRecord -> applyReplayRecord(
+                                recoveredState, replayRecord));
                 assertEquals(expectedState, recoveredState);
                 assertEquals(expectedMaxLsn, recovery.maxLsn());
                 long cycleMaxLsn = expectedMaxLsn;
@@ -1646,19 +1646,20 @@ class WalRuntimeTest {
         try (WalRuntime<String, String> runtime = WalRuntime.openForTests(wal,
                 storage, STRING_DESCRIPTOR, STRING_DESCRIPTOR)) {
             final WalRuntime.RecoveryResult recovery = runtime
-                    .recover(record -> applyReplayRecord(finalRecovered, record));
+                    .recover(replayRecord -> applyReplayRecord(finalRecovered,
+                            replayRecord));
             assertEquals(expectedState, finalRecovered);
             assertEquals(expectedMaxLsn, recovery.maxLsn());
         }
     }
 
     private static void applyReplayRecord(final Map<String, String> state,
-            final WalRuntime.ReplayRecord<String, String> record) {
-        if (record.getOperation() == WalRuntime.Operation.DELETE) {
-            state.remove(record.getKey());
+            final WalRuntime.ReplayRecord<String, String> replayRecord) {
+        if (replayRecord.getOperation() == WalRuntime.Operation.DELETE) {
+            state.remove(replayRecord.getKey());
             return;
         }
-        state.put(record.getKey(), record.getValue());
+        state.put(replayRecord.getKey(), replayRecord.getValue());
     }
 
     private static final class TestLogAppender extends AbstractAppender {

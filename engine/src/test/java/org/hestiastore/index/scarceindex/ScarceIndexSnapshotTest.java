@@ -108,8 +108,10 @@ class ScarceIndexSnapshotTest {
 
     @Test
     void test_constructor_requiresComparator() {
+        final List<Entry<String, Integer>> entries = List.of();
+
         assertThrows(IllegalArgumentException.class,
-                () -> new ScarceIndexSnapshot<>(null, List.of()));
+                () -> new ScarceIndexSnapshot<>(null, entries));
     }
 
     @Test

@@ -10,6 +10,7 @@ import org.hestiastore.index.segment.SegmentState;
 /**
  * Immutable snapshot of index and segment runtime metrics.
  */
+@SuppressWarnings("java:S107")
 public final class SegmentIndexMetricsSnapshot {
 
     private final long getOperationCount;

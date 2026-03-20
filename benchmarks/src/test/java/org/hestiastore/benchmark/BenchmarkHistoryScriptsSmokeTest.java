@@ -174,6 +174,105 @@ class BenchmarkHistoryScriptsSmokeTest {
     }
 
     @Test
+    void resolveScriptRejectsIncompleteBaselineWhenProfileSpecRequiresMoreCoverage()
+            throws Exception {
+        assumePython3Available();
+        final Path sourceDir = tempDir.resolve("candidate-run-incomplete");
+        final Path historyDir = tempDir.resolve("perf-artifacts-incomplete");
+        final Path profileSpec = tempDir.resolve("profile.json");
+        Files.createDirectories(sourceDir.resolve("raw"));
+        Files.createDirectories(sourceDir.resolve("logs"));
+        writeSummary(sourceDir.resolve("summary.json"), baselineSummaryModel());
+        Files.writeString(sourceDir.resolve("raw/sample.json"), "{}",
+                StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("logs/sample.log"), "ok\n",
+                StandardCharsets.UTF_8);
+        Files.writeString(profileSpec, """
+                {
+                  "profile": "segment-index-pr-smoke",
+                  "benchmarks": [
+                    { "label": "segment-index-get-overlay" },
+                    { "label": "segment-index-get-persisted" },
+                    { "label": "segment-index-hot-partition-put" }
+                  ]
+                }
+                """, StandardCharsets.UTF_8);
+
+        final ProcessResult publishResult = runPythonScript(
+                "publish_jmh_history.py",
+                "--source-dir", sourceDir.toString(),
+                "--history-dir", historyDir.toString(),
+                "--channel", "main",
+                "--run-suffix", "unit");
+
+        assertEquals(0, publishResult.exitCode(), publishResult.output());
+
+        final ProcessResult resolveResult = runPythonScript(
+                "resolve_jmh_history_baseline.py",
+                "--history-dir", historyDir.toString(),
+                "--profile", PROFILE,
+                "--profile-spec", profileSpec.toString(),
+                "--channel", "main");
+
+        assertEquals(1, resolveResult.exitCode(), resolveResult.output());
+    }
+
+    @Test
+    void resolveScriptRejectsInvalidProfileSpec() throws Exception {
+        assumePython3Available();
+        final Path sourceDir = tempDir.resolve("candidate-run-invalid-spec");
+        final Path historyDir = tempDir.resolve("perf-artifacts-invalid-spec");
+        Files.createDirectories(sourceDir.resolve("raw"));
+        Files.createDirectories(sourceDir.resolve("logs"));
+        writeSummary(sourceDir.resolve("summary.json"), candidateSummaryModel());
+        Files.writeString(sourceDir.resolve("raw/sample.json"), "{}",
+                StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("logs/sample.log"), "ok\n",
+                StandardCharsets.UTF_8);
+
+        final ProcessResult publishResult = runPythonScript(
+                "publish_jmh_history.py",
+                "--source-dir", sourceDir.toString(),
+                "--history-dir", historyDir.toString(),
+                "--channel", "main",
+                "--run-suffix", "invalid-spec");
+
+        assertEquals(0, publishResult.exitCode(), publishResult.output());
+
+        final List<String> invalidSpecs = List.of(
+                "{}",
+                """
+                        {
+                          "profile": "segment-index-pr-smoke",
+                          "benchmarks": []
+                        }
+                        """,
+                """
+                        {
+                          "profile": "segment-index-pr-smoke",
+                          "benchmarks": [
+                            { "label": "" }
+                          ]
+                        }
+                        """);
+        for (int i = 0; i < invalidSpecs.size(); i++) {
+            final Path profileSpec = tempDir.resolve(
+                    "invalid-profile-spec-" + i + ".json");
+            Files.writeString(profileSpec, invalidSpecs.get(i),
+                    StandardCharsets.UTF_8);
+
+            final ProcessResult resolveResult = runPythonScript(
+                    "resolve_jmh_history_baseline.py",
+                    "--history-dir", historyDir.toString(),
+                    "--profile", PROFILE,
+                    "--profile-spec", profileSpec.toString(),
+                    "--channel", "main");
+
+            assertEquals(1, resolveResult.exitCode(), resolveResult.output());
+        }
+    }
+
+    @Test
     void publishScriptStoresPrScopedHistoryWithoutOverwritingCanonicalMainPointer()
             throws Exception {
         assumePython3Available();

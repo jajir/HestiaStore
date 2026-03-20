@@ -5,6 +5,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Immutable runtime metrics snapshot for one segment.
  */
+@SuppressWarnings({ "java:S6206", "java:S107" })
 public final class SegmentRuntimeSnapshot {
 
     private final SegmentId segmentId;

@@ -3,8 +3,8 @@
 HestiaStore persists segment data in chunked files. Each chunk carries a header and a payload processed by an ordered filter pipeline. Filters provide integrity (magic number, CRC32), optional compression, and optional reversible transformations.
 
 This page focuses on filter behavior and ordering. For byte-level block/chunk
-structure see [Data Block Format](datablock.md). For builder setup and examples,
-see [Filter Configuration](../../configuration/filters.md).
+structure see [Data Block Format](datablock.md). For builder setup and
+examples, see [Filter Configuration](../configuration/filters.md).
 
 ## Chunk Flags Used by Filters
 
@@ -97,7 +97,7 @@ Notes:
 ## Configuration
 
 Filter setup, defaults, constraints, and code examples are documented in
-[Filter Configuration](../../configuration/filters.md).
+[Filter Configuration](../configuration/filters.md).
 
 ## Error Handling and Safety
 

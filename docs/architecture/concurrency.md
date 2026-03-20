@@ -9,7 +9,7 @@ registry).
 
 Segment-level concurrency does not require external locks. `SegmentImpl`
 enforces its own lock-free admission gate (see
-`docs/architecture/segment/segment-concurrency.md`).
+[Segment Concurrency](segment/segment-concurrency.md)).
 
 ## Concurrency Invariants (Target Design)
 
@@ -49,7 +49,9 @@ These structures are shared across threads and require synchronization:
 ## Threads
 
 - Sync operations run on caller threads.
-- Async operations run on background threads via `IndexAsyncAdapter`.
+- Async operations run on dedicated index-worker threads owned by the
+  segment-index runtime; `IndexAsyncAdapter` is only a thin facade over that
+  async path.
 - Segment maintenance runs on the segment-index maintenance executor.
 
 ## Implications

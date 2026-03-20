@@ -28,9 +28,11 @@ class VarLengthReaderTest {
     @Test
     void read_throwsOnTruncatedLengthPrefix() {
         final VarLengthReader<String> reader = createStringReader();
+        final MemFileReader fileReader = new MemFileReader(
+                new byte[] { 0, 0, 0 });
 
         final IndexException error = assertThrows(IndexException.class,
-                () -> reader.read(new MemFileReader(new byte[] { 0, 0, 0 })));
+                () -> reader.read(fileReader));
 
         assertTrue(error.getMessage().contains("Expected '4' bytes"));
     }
@@ -52,10 +54,11 @@ class VarLengthReaderTest {
         final byte[] encodedLength = TestEncoding.toByteArray(INTEGER_ENCODER,
                 3);
         final byte[] payload = new byte[] { 'a', 'b' };
+        final byte[] input = concat(encodedLength, payload);
+        final MemFileReader fileReader = new MemFileReader(input);
 
         final IndexException error = assertThrows(IndexException.class,
-                () -> reader.read(new MemFileReader(concat(encodedLength,
-                        payload))));
+                () -> reader.read(fileReader));
 
         assertTrue(error.getMessage().contains("Expected '3' bytes"));
     }

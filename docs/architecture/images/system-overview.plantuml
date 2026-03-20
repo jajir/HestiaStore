@@ -1,0 +1,37 @@
+@startuml
+title HestiaStore High-Level Architecture
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+
+actor "Application" as app
+
+rectangle "HestiaStore Engine" {
+  component "SegmentIndex\nAPI and orchestration" as segmentIndex
+  component "Write buffer / partitioned ingest" as ingest
+  component "Key-to-segment map" as keyMap
+  component "SegmentRegistry\nlifecycle + cache" as registry
+
+  frame "Stable segment storage" {
+    component "Segment\nmain SST + sparse index\nBloom + delta cache" as segment
+  }
+
+  component "metricsSnapshot()" as metrics
+}
+
+database "Index directory\nsegment files" as files
+cloud "Monitoring adapters\nMicrometer / Prometheus /\nREST JSON / console" as monitoring
+
+app --> segmentIndex : get / put / delete / scan
+segmentIndex --> ingest : buffer writes\nschedule drain
+segmentIndex --> keyMap : route keys
+segmentIndex --> registry : load / reuse segment data
+registry --> segment : acquire ready segment
+segment --> files : read / rewrite\nsegment artifacts
+segmentIndex --> metrics : expose runtime state
+metrics --> monitoring : report / export
+ingest --> segment : flush / compaction
+
+@enduml

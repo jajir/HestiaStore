@@ -45,9 +45,7 @@ public final class ByteSequenceCrc32 implements Checksum {
         if (length == 0) {
             return;
         }
-        if (sequence instanceof ConcatenatedByteSequence) {
-            final ConcatenatedByteSequence concatenated =
-                    (ConcatenatedByteSequence) sequence;
+        if (sequence instanceof ConcatenatedByteSequence concatenated) {
             updateInternal(concatenated.firstPart());
             updateInternal(concatenated.secondPart());
             return;
@@ -57,14 +55,12 @@ public final class ByteSequenceCrc32 implements Checksum {
             delegate.update(bytes, 0, bytes.length);
             return;
         }
-        if (sequence instanceof ByteSequenceSlice) {
-            final ByteSequenceSlice slice = (ByteSequenceSlice) sequence;
+        if (sequence instanceof ByteSequenceSlice slice) {
             delegate.update(slice.backingArray(), slice.backingOffset(),
                     length);
             return;
         }
-        if (sequence instanceof MutableBytes) {
-            final MutableBytes mutable = (MutableBytes) sequence;
+        if (sequence instanceof MutableBytes mutable) {
             delegate.update(mutable.array(), 0, length);
             return;
         }

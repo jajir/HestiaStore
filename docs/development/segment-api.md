@@ -120,8 +120,8 @@ Same segment:
 
 - `flush()`, `compact()`, and split are exclusive. The write lock serializes
   them, so parallel calls run one after another.
-- Split uses `FULL_ISOLATION` iterators and is wrapped in the write lock by
-  the historical `SegmentSplitCoordinator` when the segment is a
+- Split uses `FULL_ISOLATION` iterators and was wrapped in the write lock by
+  the removed segment-index split wrapper when the segment was a
   `SegmentImplSynchronizationAdapter`.
 
 Different segments:

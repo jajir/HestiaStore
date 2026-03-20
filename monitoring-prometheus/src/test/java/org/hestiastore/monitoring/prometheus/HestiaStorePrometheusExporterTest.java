@@ -56,42 +56,8 @@ class HestiaStorePrometheusExporterTest {
         String scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
 
-        assertSampleValue(scrape, "hestiastore_ops_get_total", "orders", 1D);
-        assertSampleValue(scrape, "hestiastore_ops_put_total", "orders", 2D);
-        assertSampleValue(scrape, "hestiastore_ops_delete_total", "orders", 3D);
-        assertSampleValue(scrape, "hestiastore_partition_active_limit",
-                "orders", 7D);
-        assertSampleValue(scrape, "hestiastore_partition_immutable_run_limit",
-                "orders", 2D);
-        assertSampleValue(scrape, "hestiastore_partition_buffer_limit",
-                "orders", 11D);
-        assertSampleValue(scrape, "hestiastore_index_buffer_limit", "orders",
-                29D);
-        assertSampleValue(scrape, "hestiastore_partition_count", "orders", 3D);
-        assertSampleValue(scrape, "hestiastore_partition_active_count",
-                "orders", 2D);
-        assertSampleValue(scrape, "hestiastore_partition_draining_count",
-                "orders", 1D);
-        assertSampleValue(scrape, "hestiastore_partition_immutable_run_count",
-                "orders", 4D);
-        assertSampleValue(scrape, "hestiastore_partition_buffered_key_count",
-                "orders", 17D);
-        assertSampleValue(scrape, "hestiastore_partition_throttle_local_total",
-                "orders", 19D);
-        assertSampleValue(scrape, "hestiastore_partition_throttle_global_total",
-                "orders", 23D);
-        assertSampleValue(scrape, "hestiastore_partition_drain_schedule_total",
-                "orders", 31D);
-        assertSampleValue(scrape, "hestiastore_partition_drain_in_flight",
-                "orders", 5D);
-        assertSampleValue(scrape,
-                "hestiastore_partition_drain_latency_p95_micros", "orders",
-                43D);
-        assertSampleValue(scrape, "hestiastore_split_schedule_total", "orders",
-                37D);
-        assertSampleValue(scrape, "hestiastore_split_in_flight", "orders",
-                2D);
-        assertSampleValue(scrape, "hestiastore_index_up", "orders", 1D);
+        assertSamples(scrape, 1D, 2D, 3D, 7D, 2D, 11D, 29D, 3D, 2D, 1D, 4D,
+                17D, 19D, 23D, 31D, 5D, 43D, 37D, 2D, 1D);
 
         snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 3,
                 15, 41, 4, 1, 0, 2, 5, 29L, 31L, 37L, 0, 0L, 41L, 0));
@@ -99,29 +65,8 @@ class HestiaStorePrometheusExporterTest {
         scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
 
-        assertSampleValue(scrape, "hestiastore_ops_get_total", "orders", 5D);
-        assertSampleValue(scrape, "hestiastore_ops_put_total", "orders", 8D);
-        assertSampleValue(scrape, "hestiastore_ops_delete_total", "orders",
-                13D);
-        assertSampleValue(scrape, "hestiastore_partition_active_limit",
-                "orders", 9D);
-        assertSampleValue(scrape, "hestiastore_partition_count", "orders", 4D);
-        assertSampleValue(scrape, "hestiastore_partition_draining_count",
-                "orders", 0D);
-        assertSampleValue(scrape, "hestiastore_partition_buffered_key_count",
-                "orders", 5D);
-        assertSampleValue(scrape, "hestiastore_partition_throttle_global_total",
-                "orders", 31D);
-        assertSampleValue(scrape, "hestiastore_partition_drain_in_flight",
-                "orders", 0D);
-        assertSampleValue(scrape,
-                "hestiastore_partition_drain_latency_p95_micros", "orders",
-                0D);
-        assertSampleValue(scrape, "hestiastore_split_schedule_total", "orders",
-                41D);
-        assertSampleValue(scrape, "hestiastore_split_in_flight", "orders",
-                0D);
-        assertSampleValue(scrape, "hestiastore_index_up", "orders", 0D);
+        assertSamples(scrape, 5D, 8D, 13D, 9D, 3D, 15D, 41D, 4D, 1D, 0D, 2D,
+                5D, 29D, 31D, 37D, 0D, 0D, 41D, 0D, 0D);
     }
 
     private void assertSampleValue(final String scrape, final String metricName,
@@ -201,5 +146,62 @@ class HestiaStorePrometheusExporterTest {
                 localThrottleCount, globalThrottleCount, drainScheduleCount,
                 drainInFlightCount, drainLatencyP95Micros, List.of(),
                 state);
+    }
+
+    private void assertSamples(final String scrape, final double getCount,
+            final double putCount, final double deleteCount,
+            final double activePartitionLimit,
+            final double immutableRunLimit,
+            final double partitionBufferLimit, final double indexBufferLimit,
+            final double partitionCount, final double activePartitionCount,
+            final double drainingPartitionCount,
+            final double immutableRunCount,
+            final double partitionBufferedKeyCount,
+            final double localThrottleCount,
+            final double globalThrottleCount,
+            final double drainScheduleCount, final double drainInFlightCount,
+            final double drainLatencyP95Micros,
+            final double splitScheduleCount, final double splitInFlightCount,
+            final double indexUp) {
+        assertSampleValue(scrape, "hestiastore_ops_get_total", "orders",
+                getCount);
+        assertSampleValue(scrape, "hestiastore_ops_put_total", "orders",
+                putCount);
+        assertSampleValue(scrape, "hestiastore_ops_delete_total", "orders",
+                deleteCount);
+        assertSampleValue(scrape, "hestiastore_partition_active_limit",
+                "orders", activePartitionLimit);
+        assertSampleValue(scrape, "hestiastore_partition_immutable_run_limit",
+                "orders", immutableRunLimit);
+        assertSampleValue(scrape, "hestiastore_partition_buffer_limit",
+                "orders", partitionBufferLimit);
+        assertSampleValue(scrape, "hestiastore_index_buffer_limit", "orders",
+                indexBufferLimit);
+        assertSampleValue(scrape, "hestiastore_partition_count", "orders",
+                partitionCount);
+        assertSampleValue(scrape, "hestiastore_partition_active_count",
+                "orders", activePartitionCount);
+        assertSampleValue(scrape, "hestiastore_partition_draining_count",
+                "orders", drainingPartitionCount);
+        assertSampleValue(scrape, "hestiastore_partition_immutable_run_count",
+                "orders", immutableRunCount);
+        assertSampleValue(scrape, "hestiastore_partition_buffered_key_count",
+                "orders", partitionBufferedKeyCount);
+        assertSampleValue(scrape, "hestiastore_partition_throttle_local_total",
+                "orders", localThrottleCount);
+        assertSampleValue(scrape, "hestiastore_partition_throttle_global_total",
+                "orders", globalThrottleCount);
+        assertSampleValue(scrape, "hestiastore_partition_drain_schedule_total",
+                "orders", drainScheduleCount);
+        assertSampleValue(scrape, "hestiastore_partition_drain_in_flight",
+                "orders", drainInFlightCount);
+        assertSampleValue(scrape,
+                "hestiastore_partition_drain_latency_p95_micros", "orders",
+                drainLatencyP95Micros);
+        assertSampleValue(scrape, "hestiastore_split_schedule_total", "orders",
+                splitScheduleCount);
+        assertSampleValue(scrape, "hestiastore_split_in_flight", "orders",
+                splitInFlightCount);
+        assertSampleValue(scrape, "hestiastore_index_up", "orders", indexUp);
     }
 }
