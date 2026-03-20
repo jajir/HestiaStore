@@ -10,13 +10,13 @@
         <meta name="author" content="Jan Jirout">
       
       
-        <link rel="canonical" href="https://jajir.github.io/HestiaStore/architecture/segment/">
+        <link rel="canonical" href="https://jajir.github.io/HestiaStore/development/git-workflow/">
       
       
-        <link rel="prev" href="../segmentindex/segment-index-concurrency/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="segment/">
+        <link rel="next" href="../release/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Overview - HestiaStore</title>
+        <title>Git and Worktree Workflow - HestiaStore</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#segment-architecture" class="md-skip">
+        <a href="#git-and-worktree-workflow" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Git and Worktree Workflow
             
           </span>
         </div>
@@ -340,13 +340,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../architecture/" class="md-tabs__link">
           
   
   
@@ -386,11 +384,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../development/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -1455,8 +1455,6 @@
       
   
   
-    
-  
   
   
     
@@ -1494,23 +1492,22 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../architecture/" class="md-nav__link ">
               
   
   
@@ -1528,13 +1525,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1554,7 +1551,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datablock/" class="md-nav__link">
+      <a href="../../architecture/datablock/" class="md-nav__link">
         
   
   
@@ -1582,7 +1579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../filters/" class="md-nav__link">
+      <a href="../../architecture/filters/" class="md-nav__link">
         
   
   
@@ -1610,7 +1607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chain-of-filters/" class="md-nav__link">
+      <a href="../../architecture/chain-of-filters/" class="md-nav__link">
         
   
   
@@ -1638,7 +1635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../concurrency/" class="md-nav__link">
+      <a href="../../architecture/concurrency/" class="md-nav__link">
         
   
   
@@ -1666,7 +1663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../recovery/" class="md-nav__link">
+      <a href="../../architecture/recovery/" class="md-nav__link">
         
   
   
@@ -1694,7 +1691,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../package-boundaries/" class="md-nav__link">
+      <a href="../../architecture/package-boundaries/" class="md-nav__link">
         
   
   
@@ -1722,7 +1719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../limits/" class="md-nav__link">
+      <a href="../../architecture/limits/" class="md-nav__link">
         
   
   
@@ -1750,7 +1747,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../glossary/" class="md-nav__link">
+      <a href="../../architecture/glossary/" class="md-nav__link">
         
   
   
@@ -1794,13 +1791,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -1810,7 +1804,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../monitoring/" class="md-nav__link ">
+            <a href="../../architecture/monitoring/" class="md-nav__link ">
               
   
   
@@ -1828,7 +1822,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_10" id="__nav_6_10_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -1854,7 +1848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/monitoring-bridge/" class="md-nav__link">
+      <a href="../../architecture/monitoring/monitoring-bridge/" class="md-nav__link">
         
   
   
@@ -1882,7 +1876,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/monitoring-api/" class="md-nav__link">
+      <a href="../../architecture/monitoring/monitoring-api/" class="md-nav__link">
         
   
   
@@ -1948,13 +1942,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -1964,7 +1955,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../segmentindex/" class="md-nav__link ">
+            <a href="../../architecture/segmentindex/" class="md-nav__link ">
               
   
   
@@ -1982,7 +1973,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_11" id="__nav_6_11_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2008,7 +1999,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/write-path/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/write-path/" class="md-nav__link">
         
   
   
@@ -2036,7 +2027,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/read-path/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/read-path/" class="md-nav__link">
         
   
   
@@ -2064,7 +2055,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/range-partitioned-ingest/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest/" class="md-nav__link">
         
   
   
@@ -2092,7 +2083,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/range-partitioned-ingest-implementation/" class="md-nav__link">
         
   
   
@@ -2120,7 +2111,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/caching/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/caching/" class="md-nav__link">
         
   
   
@@ -2148,7 +2139,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/cache-lru/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/cache-lru/" class="md-nav__link">
         
   
   
@@ -2176,7 +2167,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/performance/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/performance/" class="md-nav__link">
         
   
   
@@ -2204,7 +2195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/metrics-snapshot/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/metrics-snapshot/" class="md-nav__link">
         
   
   
@@ -2232,7 +2223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../segmentindex/segment-index-concurrency/" class="md-nav__link">
+      <a href="../../architecture/segmentindex/segment-index-concurrency/" class="md-nav__link">
         
   
   
@@ -2265,8 +2256,6 @@
                 
   
   
-    
-  
   
   
     
@@ -2290,21 +2279,20 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_12" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_12" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../../architecture/segment/" class="md-nav__link ">
               
   
   
@@ -2322,13 +2310,13 @@
             </a>
             
               
-              <label class="md-nav__link md-nav__link--active" for="__nav_6_12" id="__nav_6_12_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_12" id="__nav_6_12_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2348,7 +2336,7 @@
   
   
     <li class="md-nav__item">
-      <a href="segment/" class="md-nav__link">
+      <a href="../../architecture/segment/segment/" class="md-nav__link">
         
   
   
@@ -2376,7 +2364,7 @@
   
   
     <li class="md-nav__item">
-      <a href="on-disk-layout/" class="md-nav__link">
+      <a href="../../architecture/segment/on-disk-layout/" class="md-nav__link">
         
   
   
@@ -2404,7 +2392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="arch-index/" class="md-nav__link">
+      <a href="../../architecture/segment/arch-index/" class="md-nav__link">
         
   
   
@@ -2432,7 +2420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="segment-concurrency/" class="md-nav__link">
+      <a href="../../architecture/segment/segment-concurrency/" class="md-nav__link">
         
   
   
@@ -2482,13 +2470,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -2498,7 +2483,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../registry/" class="md-nav__link ">
+            <a href="../../architecture/registry/" class="md-nav__link ">
               
   
   
@@ -2516,7 +2501,7 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="">
+              <label class="md-nav__link " for="__nav_6_13" id="__nav_6_13_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
@@ -2542,7 +2527,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../registry/registry/" class="md-nav__link">
+      <a href="../../architecture/registry/registry/" class="md-nav__link">
         
   
   
@@ -2748,6 +2733,8 @@
       
   
   
+    
+  
   
   
     
@@ -2789,22 +2776,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../development/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -2822,13 +2810,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2845,10 +2833,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../development/git-workflow/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git and Worktree Workflow
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2864,6 +2879,164 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#branch-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch roles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pull-request-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pull request targeting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branch-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch naming
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worktree-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worktree standard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-helper-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended helper commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#daily-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Daily flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-a-normal-task-from-devel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a normal task from devel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-a-hotfix-from-main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a hotfix from main
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-a-docs-or-chore-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a docs or chore task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clean-up-after-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clean up after merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rules-that-prevent-merge-noise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules that prevent merge noise
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2876,7 +3049,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/release/" class="md-nav__link">
+      <a href="../release/" class="md-nav__link">
         
   
   
@@ -2904,7 +3077,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/code-quality-charter/" class="md-nav__link">
+      <a href="../code-quality-charter/" class="md-nav__link">
         
   
   
@@ -2932,7 +3105,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/quality-reporting/" class="md-nav__link">
+      <a href="../quality-reporting/" class="md-nav__link">
         
   
   
@@ -2960,7 +3133,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/documentation-guidelines/" class="md-nav__link">
+      <a href="../documentation-guidelines/" class="md-nav__link">
         
   
   
@@ -2988,7 +3161,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/guides/" class="md-nav__link">
+      <a href="../guides/" class="md-nav__link">
         
   
   
@@ -3016,7 +3189,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/segment-api/" class="md-nav__link">
+      <a href="../segment-api/" class="md-nav__link">
         
   
   
@@ -3044,7 +3217,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/profiler-stacktrace/" class="md-nav__link">
+      <a href="../profiler-stacktrace/" class="md-nav__link">
         
   
   
@@ -3072,7 +3245,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/compatibility-matrix/" class="md-nav__link">
+      <a href="../compatibility-matrix/" class="md-nav__link">
         
   
   
@@ -3100,7 +3273,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/upgrade-notes-multimodule/" class="md-nav__link">
+      <a href="../upgrade-notes-multimodule/" class="md-nav__link">
         
   
   
@@ -3128,7 +3301,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/rollout-quality-gates/" class="md-nav__link">
+      <a href="../rollout-quality-gates/" class="md-nav__link">
         
   
   
@@ -3156,7 +3329,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/rollout-rollback-runbook/" class="md-nav__link">
+      <a href="../rollout-rollback-runbook/" class="md-nav__link">
         
   
   
@@ -3184,7 +3357,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../development/wal-replication-fencing-design/" class="md-nav__link">
+      <a href="../wal-replication-fencing-design/" class="md-nav__link">
         
   
   
@@ -3267,10 +3440,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-a-segment-contains" class="md-nav__link">
+  <a href="#branch-roles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What a Segment Contains
+        Branch roles
       
     </span>
   </a>
@@ -3278,10 +3451,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-segment-structures" class="md-nav__link">
+  <a href="#pull-request-targeting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Core Segment Structures
+        Pull request targeting
       
     </span>
   </a>
@@ -3289,10 +3462,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#topics" class="md-nav__link">
+  <a href="#branch-naming" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Topics
+        Branch naming
       
     </span>
   </a>
@@ -3300,10 +3473,104 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#diagrams" class="md-nav__link">
+  <a href="#worktree-standard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Diagrams
+        Worktree standard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-helper-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended helper commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#daily-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Daily flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-a-normal-task-from-devel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a normal task from devel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-a-hotfix-from-main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a hotfix from main
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-a-docs-or-chore-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a docs or chore task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clean-up-after-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clean up after merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rules-that-prevent-merge-noise" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules that prevent merge noise
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related docs
       
     </span>
   </a>
@@ -3356,25 +3623,7 @@
         <a href="../" class="md-path__link">
           
   <span class="md-ellipsis">
-    Architecture
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-    
-    
-      <li class="md-path__item">
-        <a href="./" class="md-path__link">
-          
-  <span class="md-ellipsis">
-    Segment
+    Development
   </span>
 
         </a>
@@ -3396,37 +3645,108 @@
   
 
 
-<h1 id="segment-architecture">Segment Architecture</h1>
-<p>This is the central place for segment-specific internals.</p>
-<h2 id="what-a-segment-contains">What a Segment Contains</h2>
+<h1 id="git-and-worktree-workflow">Git and Worktree Workflow</h1>
+<p>This page defines the daily git standard for contributors and maintainers. Use
+it to start task worktrees, target pull requests, and clean up branches without
+mixing unrelated changes.</p>
+<h2 id="branch-roles">Branch roles</h2>
+<ol>
+<li><code>main</code> stays release-ready. Use it for release work and urgent hotfixes
+   only.</li>
+<li><code>devel</code> is the default integration base for normal feature, fix, docs, and
+   chore work.</li>
+<li>Topic branches are short-lived and map to exactly one pull request.</li>
+<li>Release work is the main exception. Prepare it in a clean <code>main</code> worktree
+   and follow <a href="../release/">Release Process</a>.</li>
+</ol>
+<h2 id="pull-request-targeting">Pull request targeting</h2>
+<ol>
+<li>Start normal work from <code>devel</code> and open the PR back to <code>devel</code>.</li>
+<li>Start hotfix work from <code>main</code> and open the PR back to <code>main</code>.</li>
+<li>After a hotfix lands on <code>main</code>, sync it back into <code>devel</code> before continuing
+   normal development.</li>
+<li>Do not open the same branch as separate PRs to both <code>devel</code> and <code>main</code>.</li>
+<li>Promote accumulated work to <code>main</code> through the release flow instead of
+   reviewing the same change twice.</li>
+</ol>
+<h2 id="branch-naming">Branch naming</h2>
+<p>Use lowercase, hyphenated branch names that describe one concern. Prefer an
+issue identifier first when one exists.</p>
 <ul>
-<li>Main SST file: <code>vNN-index.sst</code></li>
-<li>Sparse (scarce) index: <code>vNN-scarce.sst</code></li>
-<li>Bloom filter: <code>vNN-bloom-filter.bin</code></li>
-<li>Manifest: <code>manifest.txt</code></li>
-<li>Lock file: <code>.lock</code></li>
-<li>Delta cache files: <code>vNN-delta-NNNN.cache</code></li>
+<li><code>feature/hs-123-segment-cache</code></li>
+<li><code>fix/hs-141-release-tag-cleanup</code></li>
+<li><code>docs/git-workflow</code></li>
+<li><code>chore/dependency-check-tuning</code></li>
+<li><code>hotfix/0.0.13-npe-on-open</code></li>
+<li><code>release/0.0.13</code></li>
+<li><code>codex/segment-metrics-cleanup</code> for Codex-created branches when automation
+  owns the branch</li>
 </ul>
-<h2 id="core-segment-structures">Core Segment Structures</h2>
+<h2 id="worktree-standard">Worktree standard</h2>
+<ol>
+<li>Treat the repository root as a control checkout. Keep it clean and use it
+   for coordination, not long-running edits.</li>
+<li>Do active development in dedicated worktrees under a single sibling
+   directory such as <code>../worktrees</code>.</li>
+<li>Use one worktree per active task, one branch per worktree, and one PR per
+   branch.</li>
+<li>Do not switch an existing task worktree to a different branch.</li>
+<li>Do not develop in a detached <code>HEAD</code> worktree.</li>
+<li>Remove merged worktrees and delete merged local branches as soon as the PR
+   is finished.</li>
+</ol>
+<h2 id="recommended-helper-commands">Recommended helper commands</h2>
+<p>The repository includes helper scripts:</p>
 <ul>
-<li><strong>Delta cache</strong>: in-memory and on-disk overlay for recent updates.</li>
-<li><strong>Bloom filter</strong>: fast negative lookup guard before on-disk scans.</li>
-<li><strong>Sparse/scarce index</strong>: maps sampled keys to chunk positions in main SST.</li>
+<li><code>scripts/git-worktree-start.sh</code></li>
+<li><code>scripts/git-worktree-clean.sh</code></li>
 </ul>
-<h2 id="topics">Topics</h2>
+<p>It also includes a reusable git alias snippet at
+<code>config/git/aliases.gitconfig</code>.</p>
+<p>Install the aliases once:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>include.path<span class="w"> </span>/absolute/path/to/HestiaStore/config/git/aliases.gitconfig
+</code></pre></div>
+<p>The helpers use <code>../worktrees</code> by default. Override that location with
+<code>HESTIASTORE_WORKTREE_ROOT</code> if you want a different parent directory.</p>
+<h2 id="daily-flows">Daily flows</h2>
+<h3 id="start-a-normal-task-from-devel">Start a normal task from <code>devel</code></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>wt-start<span class="w"> </span>feature<span class="w"> </span>hs-123-segment-cache
+</code></pre></div>
+<p>This fetches the latest refs, creates <code>feature/hs-123-segment-cache</code> from
+<code>origin/devel</code>, and creates a worktree at
+<code>../worktrees/feature-hs-123-segment-cache</code>.</p>
+<h3 id="start-a-hotfix-from-main">Start a hotfix from <code>main</code></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>wt-hotfix<span class="w"> </span><span class="m">0</span>.0.13-npe-on-open
+</code></pre></div>
+<p>This creates <code>hotfix/0.0.13-npe-on-open</code> from <code>origin/main</code>.</p>
+<h3 id="start-a-docs-or-chore-task">Start a docs or chore task</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>wt-start<span class="w"> </span>docs<span class="w"> </span>git-workflow
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>wt-start<span class="w"> </span>chore<span class="w"> </span>build-cache-tuning
+</code></pre></div>
+<h3 id="clean-up-after-merge">Clean up after merge</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>wt-clean<span class="w"> </span>feature/hs-123-segment-cache
+</code></pre></div>
+<p>The cleanup helper removes the matching worktree, prunes stale worktree
+metadata, and deletes the local branch when it is already merged into <code>main</code>,
+<code>devel</code>, <code>origin/main</code>, or <code>origin/devel</code>.</p>
+<h2 id="rules-that-prevent-merge-noise">Rules that prevent merge noise</h2>
+<ol>
+<li>Never start a new task by committing on whatever branch is currently open.</li>
+<li>Never mix unrelated fixes into an existing task branch because it is already
+   checked out.</li>
+<li>If a second task appears while the first is in review, create a second
+   worktree instead of rebasing both tasks together.</li>
+<li>If a task must change target from <code>devel</code> to <code>main</code>, create a new hotfix
+   branch from <code>main</code> and cherry-pick the minimal commits instead of retargeting
+   a large mixed branch.</li>
+<li>Before opening the PR, verify that <code>git diff --stat origin/&lt;target&gt;...HEAD</code>
+   shows only the intended concern.</li>
+</ol>
+<h2 id="related-docs">Related docs</h2>
 <ul>
-<li><a href="segment/">Segment Design</a> — segment behavior and implementation notes.</li>
-<li><a href="on-disk-layout/">On-Disk Layout &amp; File Names</a> — naming, directory
-  examples, and transactional file writes.</li>
-<li><a href="arch-index/">Sparse Index</a> — sparse/scarce index structure and lookup
-  role.</li>
-<li><a href="segment-concurrency/">Segment Concurrency</a> — state machine and
-  operation gating.</li>
-</ul>
-<h2 id="diagrams">Diagrams</h2>
-<ul>
-<li><a href="images/segment-state-machine.plantuml">Segment state machine source</a></li>
-<li><a href="images/segment-writing-seq.txt">Segment write sequence source</a></li>
+<li><a href="../release/">Release Process</a></li>
+<li><a href="../../community/contributing/">Contributing</a></li>
+<li><a href="../guides/">Developer Guides</a></li>
 </ul>
 
 
@@ -3434,6 +3754,9 @@
 
 
 
+
+  
+  
 
 
 
