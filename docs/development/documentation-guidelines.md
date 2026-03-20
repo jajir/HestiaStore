@@ -13,7 +13,10 @@ The published docs are organized around the external journey first:
 - `Configuration` for builder-level settings
 - `Operations` for WAL, monitoring, backup, and tuning
 - `Architecture` for source-of-truth explanations
-- `Contribute & Community` for maintainer and contributor workflows
+- `Contribute & Community` for contributor workflow, community policy, and
+  project history
+- `Development` for maintainer runbooks, release work, and engineering
+  references
 
 Use a light Diataxis split:
 
@@ -35,10 +38,12 @@ Use a light Diataxis split:
 ## File placement
 
 - `docs/architecture`: explanation and source-of-truth design material
+- `docs/community`: contributor workflow, code of conduct, and changelog pages
 - `docs/configuration`: builder settings and runtime configuration reference
 - `docs/operations`: runbooks, monitoring, tuning, and backup guidance
 - `docs/how-to-use`: installation and early integration path
-- `docs/development`: contributor and maintainer material
+- `docs/development`: maintainer guides, release work, documentation rules, and
+  engineering references
 
 Architecture placement rules:
 
@@ -109,7 +114,8 @@ Preferred pattern:
 ![Short diagram description](images/example-diagram.png)
 ```
 
-On this workstation, use `rp` to render PlantUML sources to PNG files.
+On this workstation, use `rp` when it is available. If it is not installed,
+render PlantUML diagrams with `plantuml -tpng path/to/file.plantuml`.
 
 ## Page template
 

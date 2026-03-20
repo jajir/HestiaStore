@@ -2,6 +2,21 @@
 
 This is the source-of-truth runbook for making a new HestiaStore release.
 
+For contribution workflow, community standards, and project history, use
+[Contribute and Community](../community/index.md).
+
+For day-to-day branch selection, task worktrees, and pull request targeting,
+use [Git and Worktree Workflow](git-workflow.md). This page covers the
+release-specific exception: a clean dedicated `main` worktree.
+
+## Branching model
+
+![Branching and release flow](../images/branching.png)
+
+Normal work starts from `devel`, merges back to `devel`, and reaches `main`
+through the release flow. Hotfixes start from `main`, merge back to `main`, and
+must then be synced into `devel`.
+
 When you ask Codex to use the `release-maven-library` skill, it performs the
 full local release workflow described on this page: prerequisite checks,
 pre-release verification, release version bump, release commit, release tag,

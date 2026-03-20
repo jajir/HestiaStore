@@ -88,6 +88,22 @@
 - Completed tasks move to `## Done (Archive)` and are marked done.
 - Tasks with IDs starting with `M` are maintenance tasks; they remain repeatable and should not be archived after one pass.
 
+## Git, Branch, and Worktree Workflow
+
+- Treat the repository root checkout as a control checkout and keep it clean when practical.
+- Start normal `feature`, `fix`, `docs`, and `chore` work from `devel` and target PRs back to `devel`.
+- Start `hotfix` work from `main` and target PRs back to `main`; sync merged hotfixes back into `devel`.
+- Do not open the same branch as separate PRs to both `devel` and `main`.
+- Use one branch per task, one worktree per branch, and one PR per branch.
+- Use descriptive lowercase branch names such as `feature/<topic>`, `fix/<topic>`, `docs/<topic>`, `chore/<topic>`, `hotfix/<topic>`, or `release/<version>`.
+- Codex-created branches may use `codex/<topic>` when automation owns the branch.
+- Prefer `scripts/git-worktree-start.sh`, `scripts/git-worktree-clean.sh`, or the aliases in `config/git/aliases.gitconfig` when starting and cleaning task worktrees.
+- Keep task worktrees under a dedicated sibling `worktrees/` directory when practical.
+- Do not develop in detached `HEAD` worktrees.
+- Do not switch an existing task worktree to a different branch.
+- Remove merged worktrees and delete merged local branches promptly.
+- For release work, use a clean `main` worktree and follow `docs/development/release.md`.
+
 ## Commit & Pull Request Guidelines
 
 - Follow the existing log style: short, imperative titles under roughly 72 characters.
