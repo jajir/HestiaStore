@@ -127,7 +127,7 @@ final class IndexOperationCoordinator<K, V> {
             final IndexResult<T> result = operation.get();
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.BUSY
-                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
+                    || retryClosed && status == IndexResultStatus.CLOSED) {
                 retryPolicy.backoffOrThrow(startNanos, opName, null);
                 continue;
             }

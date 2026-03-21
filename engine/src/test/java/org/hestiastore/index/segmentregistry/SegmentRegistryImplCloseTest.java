@@ -88,11 +88,42 @@ class SegmentRegistryImplCloseTest {
                 "Close should retry until timeout budget is consumed");
     }
 
+    @Test
+    void deleteSegmentReturnsErrorWhenFileSystemCannotRemoveDirectory() {
+        final FailingRootDeleteDirectory directory = new FailingRootDeleteDirectory(
+                "segment-00007");
+        directory.mkdir("segment-00007");
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
+                4, id -> {
+                    throw new IllegalStateException("Loader should not be used");
+                }, segment -> {
+                });
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(
+                directory, cache, gate, 1, 100);
+
+        final SegmentRegistryResult<Void> result = registry
+                .deleteSegment(SegmentId.of(7));
+
+        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
+        assertTrue(cache.isEmpty(),
+                "Delete should leave cache unchanged when no entries exist.");
+        assertTrue(directory.isFileExists("segment-00007"));
+    }
+
     private static SegmentRegistryImpl<Integer, String> newRegistry(
             final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
             final SegmentRegistryStateMachine gate, final int backoffMillis,
             final int timeoutMillis) {
-        final Directory directory = new MemDirectory();
+        return newRegistry(new MemDirectory(), cache, gate, backoffMillis,
+                timeoutMillis);
+    }
+
+    private static SegmentRegistryImpl<Integer, String> newRegistry(
+            final Directory directory,
+            final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
+            final SegmentRegistryStateMachine gate, final int backoffMillis,
+            final int timeoutMillis) {
         final SegmentRegistryFileSystem fs = new SegmentRegistryFileSystem(
                 directory);
         final AtomicInteger counter = new AtomicInteger();
@@ -102,6 +133,23 @@ class SegmentRegistryImplCloseTest {
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
                 gate, ConcurrentHashMap.<SegmentId>newKeySet());
+    }
+
+    private static final class FailingRootDeleteDirectory extends MemDirectory {
+        private final String failingDirectoryName;
+
+        private FailingRootDeleteDirectory(final String failingDirectoryName) {
+            this.failingDirectoryName = failingDirectoryName;
+        }
+
+        @Override
+        public boolean rmdir(final String directoryName) {
+            if (failingDirectoryName.equals(directoryName)) {
+                throw new IllegalStateException(
+                        "Simulated root delete failure.");
+            }
+            return super.rmdir(directoryName);
+        }
     }
 
     @SuppressWarnings("unchecked")

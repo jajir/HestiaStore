@@ -195,7 +195,7 @@ public final class IndexPropertiesSchema {
         }
         final String value = provider.provide(view);
         if (value == null
-                || (value.isBlank() && !blankAllowedKeys.contains(key))) {
+                || value.isBlank() && !blankAllowedKeys.contains(key)) {
             return null;
         }
         return value;

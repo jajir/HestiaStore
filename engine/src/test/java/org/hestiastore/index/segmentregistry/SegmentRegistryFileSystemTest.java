@@ -37,8 +37,37 @@ class SegmentRegistryFileSystemTest {
         final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);
 
-        fileSystem.deleteSegmentFiles(SegmentId.of(1));
+        assertTrue(fileSystem.deleteSegmentFiles(SegmentId.of(1)));
 
         assertFalse(directory.isFileExists("segment-00001"));
+    }
+
+    @Test
+    void deleteSegmentFilesReturnsFalseWhenRootDirectoryRemains() {
+        final FailingRootDeleteDirectory directory = new FailingRootDeleteDirectory(
+                "segment-00001");
+        directory.openSubDirectory("segment-00001").touch("data.bin");
+        final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
+                directory);
+
+        assertFalse(fileSystem.deleteSegmentFiles(SegmentId.of(1)));
+        assertTrue(directory.isFileExists("segment-00001"));
+    }
+
+    private static final class FailingRootDeleteDirectory extends MemDirectory {
+        private final String failingDirectoryName;
+
+        private FailingRootDeleteDirectory(final String failingDirectoryName) {
+            this.failingDirectoryName = failingDirectoryName;
+        }
+
+        @Override
+        public boolean rmdir(final String directoryName) {
+            if (failingDirectoryName.equals(directoryName)) {
+                throw new IllegalStateException(
+                        "Simulated root delete failure.");
+            }
+            return super.rmdir(directoryName);
+        }
     }
 }

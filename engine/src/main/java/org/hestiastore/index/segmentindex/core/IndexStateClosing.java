@@ -10,7 +10,7 @@ import org.hestiastore.index.directory.FileLock;
  * @param <K> key type
  * @param <V> value type
  */
-final record IndexStateClosing<K, V>(FileLock fileLock)
+record IndexStateClosing<K, V>(FileLock fileLock)
         implements IndexState<K, V> {
 
     IndexStateClosing {

@@ -216,13 +216,12 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                     walCoordinator);
             final SegmentIndexMetricsCollector<K, V> metricsCollector = newMetricsCollector(
                     keyToSegmentMap, segmentRegistry, partitionRuntime,
-                    runtimeTuningState, walRuntime);
+                    backgroundSplitCoordinator, runtimeTuningState, walRuntime);
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier = new SegmentRuntimeLimitApplier<>(
                     segmentRegistry, segmentFactory);
             return new SegmentIndexRuntime<>(runtimeTuningState,
-                    keyToSegmentMap, segmentFactory, segmentRegistry,
-                    backgroundSplitCoordinator, backgroundSplitPolicyLoop,
-                    stableSegmentGateway, stableSegmentCoordinator,
+                    keyToSegmentMap, segmentRegistry, backgroundSplitCoordinator,
+                    backgroundSplitPolicyLoop, stableSegmentCoordinator,
                     partitionDrainCoordinator, partitionWriteCoordinator,
                     partitionReadCoordinator, maintenanceCoordinator,
                     recoveryCleanupCoordinator, retryPolicy, walRuntime,
@@ -267,11 +266,13 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final PartitionRuntime<K, V> partitionRuntime,
+            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime) {
         return new SegmentIndexMetricsCollector<>(conf, keyToSegmentMap,
-                segmentRegistry, partitionRuntime, runtimeTuningState,
-                walRuntime, stats, compactRequestHighWaterMark,
+                segmentRegistry, partitionRuntime, backgroundSplitCoordinator,
+                executorRegistry, runtimeTuningState, walRuntime, stats,
+                compactRequestHighWaterMark,
                 flushRequestHighWaterMark, lastAppliedWalLsn,
                 callbacks.stateSupplier());
     }

@@ -15,7 +15,6 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 
@@ -29,11 +28,9 @@ final class SegmentIndexRuntime<K, V> {
 
     private final RuntimeTuningState runtimeTuningState;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final SegmentFactory<K, V> segmentFactory;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
-    private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
     private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
     private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
@@ -52,11 +49,9 @@ final class SegmentIndexRuntime<K, V> {
     SegmentIndexRuntime(
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final SegmentFactory<K, V> segmentFactory,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop,
-            final StableSegmentGateway<K, V> stableSegmentGateway,
             final StableSegmentCoordinator<K, V> stableSegmentCoordinator,
             final PartitionDrainCoordinator<K, V> partitionDrainCoordinator,
             final PartitionWriteCoordinator<K, V> partitionWriteCoordinator,
@@ -72,11 +67,9 @@ final class SegmentIndexRuntime<K, V> {
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier) {
         this.runtimeTuningState = runtimeTuningState;
         this.keyToSegmentMap = keyToSegmentMap;
-        this.segmentFactory = segmentFactory;
         this.segmentRegistry = segmentRegistry;
         this.backgroundSplitCoordinator = backgroundSplitCoordinator;
         this.backgroundSplitPolicyLoop = backgroundSplitPolicyLoop;
-        this.stableSegmentGateway = stableSegmentGateway;
         this.stableSegmentCoordinator = stableSegmentCoordinator;
         this.partitionDrainCoordinator = partitionDrainCoordinator;
         this.partitionWriteCoordinator = partitionWriteCoordinator;

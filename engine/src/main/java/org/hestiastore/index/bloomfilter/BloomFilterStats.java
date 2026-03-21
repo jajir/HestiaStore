@@ -32,7 +32,7 @@ public class BloomFilterStats {
         if (bloomFilterCalls == 0) {
             return 0;
         }
-        return (keyIsNotStored / (double) bloomFilterCalls * 100);
+        return keyIsNotStored / (double) bloomFilterCalls * 100;
     }
 
     String getStatsString() {
