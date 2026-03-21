@@ -23,8 +23,8 @@ class SegmentIndexPersistedMutationBenchmarkTest {
         configureBenchmark(benchmark);
         final SegmentIndexPersistedMutationBenchmark.MutationDiagnostics diagnostics = new SegmentIndexPersistedMutationBenchmark.MutationDiagnostics();
 
-        benchmark.setup();
         try {
+            benchmark.setup();
             benchmark.resetIterationState();
             diagnostics.captureIterationStart(benchmark);
             final int seededKeyCount = intField(benchmark, "seededKeyCount");
