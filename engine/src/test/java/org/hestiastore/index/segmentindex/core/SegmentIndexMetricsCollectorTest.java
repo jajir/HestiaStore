@@ -242,6 +242,10 @@ class SegmentIndexMetricsCollectorTest {
                 "Condition not reached within " + timeoutMillis + " ms.");
     }
 
+    // Reflection keeps this test focused on metrics wiring even though it
+    // currently depends on the private splitInFlightCount field name in
+    // BackgroundSplitCoordinator. TODO add a package-private setter or test
+    // hook on BackgroundSplitCoordinator to remove this reflective coupling.
     private static void setSplitInFlightCount(
             final BackgroundSplitCoordinator<?, ?> coordinator,
             final int splitInFlightCount) {

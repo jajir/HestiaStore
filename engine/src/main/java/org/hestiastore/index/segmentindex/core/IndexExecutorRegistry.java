@@ -253,6 +253,17 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 configuration.getIndexName(), ARG_INDEX_NAME), delegate);
     }
 
+    /**
+     * Returns a snapshot of queue capacity for {@code queueCapacity} by
+     * summing the current queued element count and the free slots reported by
+     * the {@link ThreadPoolExecutor} queue. For bounded queues, {@code size()}
+     * plus {@code remainingCapacity()} approximates total capacity. Unbounded
+     * queues may report effectively unbounded remaining capacity, and
+     * concurrent queue mutations can make this snapshot slightly racey.
+     *
+     * @param executor executor whose queue capacity snapshot is needed
+     * @return queued elements plus currently available queue slots
+     */
     private static int queueCapacity(final ThreadPoolExecutor executor) {
         return executor.getQueue().size()
                 + executor.getQueue().remainingCapacity();

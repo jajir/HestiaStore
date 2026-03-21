@@ -2,6 +2,7 @@ package org.hestiastore.benchmark.segmentindex;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.directory.FsDirectory;
@@ -9,6 +10,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.openjdk.jmh.annotations.AuxCounters;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -51,7 +53,8 @@ public class SegmentIndexPersistedMutationBenchmark {
     @Param({ "256" })
     private int flushBatchSize;
 
-    private File tempDir;
+    private File seededBaseDir;
+    private File iterationDir;
     private SegmentIndex<Integer, String> index;
     private int putSequence;
     private int deleteSequence;
@@ -59,15 +62,19 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        tempDir = SegmentIndexBenchmarkSupport
-                .createTempDir("hestia-jmh-mutation");
-        seedStableBase();
-        index = SegmentIndex.create(new FsDirectory(tempDir),
-                buildConfiguration(resolveWal()));
+        seededBaseDir = SegmentIndexBenchmarkSupport
+                .createTempDir("hestia-jmh-mutation-seed");
+        seedStableBase(seededBaseDir);
     }
 
     @Setup(Level.Iteration)
-    public void resetIterationState() {
+    public void resetIterationState() throws IOException {
+        iterationDir = SegmentIndexBenchmarkSupport
+                .createTempDir("hestia-jmh-mutation-iter");
+        SegmentIndexBenchmarkSupport.copyDirectory(seededBaseDir.toPath(),
+                iterationDir.toPath());
+        index = SegmentIndex.create(new FsDirectory(iterationDir),
+                buildConfiguration(resolveWal()));
         putSequence = seededKeyCount;
         deleteSequence = 0;
         pendingMutationCount = 0;
@@ -75,27 +82,24 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     @TearDown(Level.Iteration)
     public void flushAfterIteration() {
-        if (index != null && pendingMutationCount > 0) {
-            index.flushAndWait();
-            pendingMutationCount = 0;
-        }
+        closeIterationIndex();
+        deleteIterationDir();
     }
 
     @TearDown(Level.Trial)
     public void tearDown() {
-        if (index != null) {
-            index.close();
-            index = null;
-        }
-        if (tempDir != null) {
-            SegmentIndexBenchmarkSupport.deleteRecursively(tempDir);
-            tempDir = null;
+        flushPendingMutations();
+        closeIterationIndex();
+        deleteIterationDir();
+        if (seededBaseDir != null) {
+            SegmentIndexBenchmarkSupport.deleteRecursively(seededBaseDir);
+            seededBaseDir = null;
         }
     }
 
     @Benchmark
     @Threads(1)
-    public void putSync() {
+    public void putSync(final MutationDiagnostics diagnostics) {
         final int key = putSequence++;
         index.put(Integer.valueOf(key), buildValue("put-", key, 'p'));
         flushIfNeeded();
@@ -103,7 +107,7 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     @Benchmark
     @Threads(1)
-    public void putAsyncJoin() {
+    public void putAsyncJoin(final MutationDiagnostics diagnostics) {
         final int key = putSequence++;
         index.putAsync(Integer.valueOf(key), buildValue("put-", key, 'a'))
                 .toCompletableFuture().join();
@@ -112,7 +116,7 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     @Benchmark
     @Threads(1)
-    public void deleteSync() {
+    public void deleteSync(final MutationDiagnostics diagnostics) {
         index.delete(Integer.valueOf(deleteSequence));
         deleteSequence = advanceDeleteCursor(deleteSequence);
         flushIfNeeded();
@@ -120,7 +124,7 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     @Benchmark
     @Threads(1)
-    public void deleteAsyncJoin() {
+    public void deleteAsyncJoin(final MutationDiagnostics diagnostics) {
         index.deleteAsync(Integer.valueOf(deleteSequence)).toCompletableFuture()
                 .join();
         deleteSequence = advanceDeleteCursor(deleteSequence);
@@ -166,9 +170,9 @@ public class SegmentIndexPersistedMutationBenchmark {
         return Wal.EMPTY;
     }
 
-    private void seedStableBase() {
+    private void seedStableBase(final File directory) {
         try (SegmentIndex<Integer, String> seedingIndex = SegmentIndex.create(
-                new FsDirectory(tempDir), buildConfiguration(Wal.EMPTY))) {
+                new FsDirectory(directory), buildConfiguration(Wal.EMPTY))) {
             seedStableBase(seedingIndex);
         }
     }
@@ -200,8 +204,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     private void flushIfNeeded() {
         pendingMutationCount++;
         if (pendingMutationCount >= flushBatchSize) {
-            index.flushAndWait();
-            pendingMutationCount = 0;
+            flushPendingMutations();
         }
     }
 
@@ -209,5 +212,82 @@ public class SegmentIndexPersistedMutationBenchmark {
             final char fillChar) {
         return SegmentIndexBenchmarkSupport.buildFixedWidthValue(prefix, key,
                 valueLength, fillChar);
+    }
+
+    private void closeIterationIndex() {
+        if (index != null) {
+            index.close();
+            index = null;
+        }
+    }
+
+    private void deleteIterationDir() {
+        if (iterationDir != null) {
+            SegmentIndexBenchmarkSupport.deleteRecursively(iterationDir);
+            iterationDir = null;
+        }
+    }
+
+    Path iterationDirectoryPath() {
+        if (iterationDir == null) {
+            return null;
+        }
+        return iterationDir.toPath();
+    }
+
+    void flushPendingMutations() {
+        if (index != null && pendingMutationCount > 0) {
+            index.flushAndWait();
+            pendingMutationCount = 0;
+        }
+    }
+
+    @State(Scope.Thread)
+    @AuxCounters(AuxCounters.Type.OPERATIONS)
+    public static class MutationDiagnostics {
+
+        public long diag_directoryCountDelta;
+        public long diag_fileBytesDelta;
+        public long diag_fileCountDelta;
+
+        private SegmentIndexBenchmarkSupport.DirectoryTreeStats iterationStartStats;
+
+        @Setup(Level.Iteration)
+        public void captureIterationStart(
+                final SegmentIndexPersistedMutationBenchmark benchmark)
+                throws IOException {
+            diag_directoryCountDelta = 0L;
+            diag_fileBytesDelta = 0L;
+            diag_fileCountDelta = 0L;
+            iterationStartStats = null;
+            final Path directory = benchmark.iterationDirectoryPath();
+            if (directory == null) {
+                return;
+            }
+            iterationStartStats = SegmentIndexBenchmarkSupport
+                    .captureDirectoryTreeStats(directory);
+        }
+
+        @TearDown(Level.Iteration)
+        public void captureIterationEnd(
+                final SegmentIndexPersistedMutationBenchmark benchmark)
+                throws IOException {
+            benchmark.flushPendingMutations();
+            final Path directory = benchmark.iterationDirectoryPath();
+            if (directory == null || iterationStartStats == null) {
+                return;
+            }
+            final SegmentIndexBenchmarkSupport.DirectoryTreeStats endStats = SegmentIndexBenchmarkSupport
+                    .captureDirectoryTreeStats(directory);
+            diag_directoryCountDelta = Math.max(0L,
+                    endStats.getDirectoryCount()
+                            - iterationStartStats.getDirectoryCount());
+            diag_fileBytesDelta = Math.max(0L,
+                    endStats.getTotalFileBytes()
+                            - iterationStartStats.getTotalFileBytes());
+            diag_fileCountDelta = Math.max(0L,
+                    endStats.getRegularFileCount()
+                            - iterationStartStats.getRegularFileCount());
+        }
     }
 }

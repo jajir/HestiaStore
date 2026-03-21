@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import platform
 import subprocess
@@ -133,13 +134,15 @@ def normalize_result(result_path: Path) -> dict[str, Any]:
             "params": row.get("params", {}),
             "primaryMetric": {
                 "score": row["primaryMetric"]["score"],
-                "scoreError": row["primaryMetric"].get("scoreError"),
+                "scoreError": normalize_optional_number(
+                    row["primaryMetric"].get("scoreError")),
                 "scoreUnit": row["primaryMetric"]["scoreUnit"],
             },
             "secondaryMetrics": {
                 name: {
                     "score": metric["score"],
-                    "scoreError": metric.get("scoreError"),
+                    "scoreError": normalize_optional_number(
+                        metric.get("scoreError")),
                     "scoreUnit": metric["scoreUnit"],
                 }
                 for name, metric in row.get("secondaryMetrics", {}).items()
@@ -148,6 +151,23 @@ def normalize_result(result_path: Path) -> dict[str, Any]:
             "vmVersion": row.get("vmVersion"),
         })
     return {"results": normalized_rows}
+
+
+def normalize_optional_number(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        numeric = float(value)
+    elif isinstance(value, str):
+        try:
+            numeric = float(value)
+        except ValueError:
+            return None
+    else:
+        return None
+    if not math.isfinite(numeric):
+        return None
+    return numeric
 
 
 def main() -> int:

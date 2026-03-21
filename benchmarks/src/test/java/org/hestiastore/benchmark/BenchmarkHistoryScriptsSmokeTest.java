@@ -61,14 +61,23 @@ class BenchmarkHistoryScriptsSmokeTest {
         assertEquals(1, comparison.path("removedMetricCount").asInt());
         assertTrue(hasMetricWithStatus(comparison, "segment-index-get-overlay:getHit:overlayProbe",
                 "better"));
+        assertFalse(hasMetricWithDisplayName(comparison,
+                "segment-index-get-overlay:getHit:diag_fileBytesDelta"));
         assertTrue(hasMetricWithStatus(comparison,
                 "segment-index-mixed-drain:putWorkload", "new"));
         assertTrue(hasMetricWithStatus(comparison,
                 "segment-index-get-persisted:getMiss", "removed"));
+        assertTrue(firstMetricByDisplayName(comparison,
+                "segment-index-get-overlay:getHit")
+                        .path("baselineScoreErrorPct").isNumber());
+        assertTrue(firstMetricByDisplayName(comparison,
+                "segment-index-get-persisted:getMiss")
+                        .path("baselineScoreErrorPct").isNull());
 
         final String markdown = Files.readString(markdownOut,
                 StandardCharsets.UTF_8);
         assertTrue(markdown.contains("segment-index-get-overlay:getHit"));
+        assertFalse(markdown.contains("diag_fileBytesDelta"));
         assertTrue(markdown.contains("segment-index-mixed-drain:putWorkload"));
         assertTrue(markdown.contains("segment-index-get-persisted:getMiss"));
     }
@@ -363,6 +372,96 @@ class BenchmarkHistoryScriptsSmokeTest {
                 .contains("/pull-requests/"));
     }
 
+    @Test
+    void filterProfileScriptRetainsOnlyRequestedLabelsInSourceOrder()
+            throws Exception {
+        assumePython3Available();
+        final Path profilePath = tempDir.resolve("profile.json");
+        final Path outputPath = tempDir.resolve("profile-filtered.json");
+        Files.writeString(profilePath, """
+                {
+                  "profile": "segment-index-pr-smoke",
+                  "benchmarks": [
+                    { "label": "alpha", "include": "Alpha", "args": ["-i", "1"] },
+                    { "label": "beta", "include": "Beta", "args": ["-i", "1"] },
+                    { "label": "gamma", "include": "Gamma", "args": ["-i", "1"] }
+                  ]
+                }
+                """, StandardCharsets.UTF_8);
+
+        final ProcessResult result = runPythonScript(
+                "filter_jmh_profile.py",
+                "--profile", profilePath.toString(),
+                "--labels", "gamma,alpha",
+                "--output", outputPath.toString());
+
+        assertEquals(0, result.exitCode(), result.output());
+        final JsonNode filtered = OBJECT_MAPPER.readTree(outputPath.toFile());
+        assertEquals(List.of("alpha", "gamma"),
+                benchmarkLabels(filtered));
+    }
+
+    @Test
+    void aggregateSummariesScriptMedianMergesSelectedLabels() throws Exception {
+        assumePython3Available();
+        final Path baseSummary = tempDir.resolve("base-summary.json");
+        final Path rerunOneSummary = tempDir.resolve("rerun-one-summary.json");
+        final Path rerunTwoSummary = tempDir.resolve("rerun-two-summary.json");
+        final Path outputSummary = tempDir.resolve("merged-summary.json");
+
+        writeSummary(baseSummary, summary("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                List.of(
+                        benchmark("segment-index-get-overlay",
+                                BENCHMARK_GET_HIT,
+                                metric(100D, 10D, "ops/s"),
+                                Map.of("overlayProbe", metric(10D, 1D, "ops/s"))),
+                        benchmark("segment-index-mixed-drain",
+                                BENCHMARK_MIXED_PUT,
+                                metric(210D, 5D, "ops/s"), Map.of()))));
+        writeSummary(rerunOneSummary, summary("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                List.of(benchmark("segment-index-get-overlay",
+                        BENCHMARK_GET_HIT,
+                        metric(60D, 6D, "ops/s"),
+                        Map.of("overlayProbe", metric(30D, 3D, "ops/s"))))));
+        writeSummary(rerunTwoSummary, summary("cccccccccccccccccccccccccccccccccccccccc",
+                List.of(benchmark("segment-index-get-overlay",
+                        BENCHMARK_GET_HIT,
+                        metric(80D, 8D, "ops/s"),
+                        Map.of("overlayProbe",
+                                metricWithLiteralScoreError(20D, "NaN",
+                                        "ops/s"))))));
+
+        final ProcessResult result = runPythonScript(
+                "aggregate_jmh_profile_summaries.py",
+                "--base-summary", baseSummary.toString(),
+                "--supplemental-summary", rerunOneSummary.toString(),
+                "--supplemental-summary", rerunTwoSummary.toString(),
+                "--labels", "segment-index-get-overlay",
+                "--output", outputSummary.toString());
+
+        assertEquals(0, result.exitCode(), result.output());
+
+        final JsonNode merged = OBJECT_MAPPER.readTree(outputSummary.toFile());
+        final JsonNode overlay = benchmarkByLabel(merged,
+                "segment-index-get-overlay");
+        final JsonNode overlayRow = overlay.path("normalized").path("results")
+                .get(0);
+        assertEquals(80D,
+                overlayRow.path("primaryMetric").path("score").asDouble());
+        assertEquals(8D,
+                overlayRow.path("primaryMetric").path("scoreError")
+                        .asDouble());
+        assertEquals(20D, overlayRow.path("secondaryMetrics")
+                .path("overlayProbe").path("score").asDouble());
+        assertEquals(2D, overlayRow.path("secondaryMetrics")
+                .path("overlayProbe").path("scoreError").asDouble());
+        assertEquals(210D, benchmarkByLabel(merged, "segment-index-mixed-drain")
+                .path("normalized").path("results").get(0)
+                .path("primaryMetric").path("score").asDouble());
+        assertEquals(3,
+                merged.path("aggregation").path("candidateRunCount").asInt());
+    }
+
     private boolean hasMetricWithStatus(final JsonNode comparison,
             final String displayName, final String status) {
         for (final JsonNode metric : comparison.path("metrics")) {
@@ -372,6 +471,21 @@ class BenchmarkHistoryScriptsSmokeTest {
             }
         }
         return false;
+    }
+
+    private boolean hasMetricWithDisplayName(final JsonNode comparison,
+            final String displayName) {
+        return firstMetricByDisplayName(comparison, displayName) != null;
+    }
+
+    private JsonNode firstMetricByDisplayName(final JsonNode comparison,
+            final String displayName) {
+        for (final JsonNode metric : comparison.path("metrics")) {
+            if (displayName.equals(metric.path("displayName").asText())) {
+                return metric;
+            }
+        }
+        return null;
     }
 
     private void assumePython3Available() throws Exception {
@@ -411,20 +525,34 @@ class BenchmarkHistoryScriptsSmokeTest {
         return summary("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 List.of(
                         benchmark("segment-index-get-overlay",
-                                BENCHMARK_GET_HIT, 100D,
-                                Map.of("overlayProbe", metric(10D, "ops/s"))),
+                                BENCHMARK_GET_HIT,
+                                metric(100D, 10D, "ops/s"),
+                                Map.of(
+                                        "overlayProbe", metric(10D, 1D,
+                                                "ops/s"),
+                                        "diag_fileBytesDelta", metric(1000D, 50D,
+                                                "ops/s"))),
                         benchmark("segment-index-get-persisted",
-                                BENCHMARK_GET_MISS, 90D, Map.of())));
+                                BENCHMARK_GET_MISS,
+                                metricWithLiteralScoreError(90D, "NaN",
+                                        "ops/s"),
+                                Map.of())));
     }
 
     private Map<String, Object> candidateSummaryModel() {
         return summary("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                 List.of(
                         benchmark("segment-index-get-overlay",
-                                BENCHMARK_GET_HIT, 80D,
-                                Map.of("overlayProbe", metric(12D, "ops/s"))),
+                                BENCHMARK_GET_HIT,
+                                metric(80D, 8D, "ops/s"),
+                                Map.of(
+                                        "overlayProbe", metric(12D, 1.2D,
+                                                "ops/s"),
+                                        "diag_fileBytesDelta", metric(800D, 40D,
+                                                "ops/s"))),
                         benchmark("segment-index-mixed-drain",
-                                BENCHMARK_MIXED_PUT, 210D, Map.of())));
+                                BENCHMARK_MIXED_PUT,
+                                metric(210D, 21D, "ops/s"), Map.of())));
     }
 
     private Map<String, Object> summary(final String sha,
@@ -438,20 +566,58 @@ class BenchmarkHistoryScriptsSmokeTest {
     }
 
     private Map<String, Object> benchmark(final String label,
-            final String benchmarkName, final double primaryScore,
+            final String benchmarkName, final Map<String, Object> primaryMetric,
             final Map<String, Object> secondaryMetrics) {
         return Map.of(
                 "label", label,
                 "normalized", Map.of(
                         "results", List.of(Map.of(
                                 "benchmark", benchmarkName,
-                                "primaryMetric", metric(primaryScore, "ops/s"),
+                                "primaryMetric", new LinkedHashMap<>(
+                                        primaryMetric),
                                 "secondaryMetrics",
                                 new LinkedHashMap<>(secondaryMetrics)))));
     }
 
     private Map<String, Object> metric(final double score, final String unit) {
-        return Map.of("score", Double.valueOf(score), "scoreUnit", unit);
+        return metric(score, null, unit);
+    }
+
+    private Map<String, Object> metric(final double score,
+            final Double scoreError, final String unit) {
+        final Map<String, Object> metric = new LinkedHashMap<>();
+        metric.put("score", Double.valueOf(score));
+        metric.put("scoreUnit", unit);
+        if (scoreError != null) {
+            metric.put("scoreError", scoreError);
+        }
+        return metric;
+    }
+
+    private Map<String, Object> metricWithLiteralScoreError(final double score,
+            final String scoreError, final String unit) {
+        final Map<String, Object> metric = new LinkedHashMap<>();
+        metric.put("score", Double.valueOf(score));
+        metric.put("scoreUnit", unit);
+        metric.put("scoreError", scoreError);
+        return metric;
+    }
+
+    private List<String> benchmarkLabels(final JsonNode profile) {
+        final List<String> labels = new ArrayList<>();
+        for (final JsonNode benchmark : profile.path("benchmarks")) {
+            labels.add(benchmark.path("label").asText());
+        }
+        return labels;
+    }
+
+    private JsonNode benchmarkByLabel(final JsonNode summary, final String label) {
+        for (final JsonNode benchmark : summary.path("benchmarks")) {
+            if (label.equals(benchmark.path("label").asText())) {
+                return benchmark;
+            }
+        }
+        return null;
     }
 
     private Path repoRoot() {

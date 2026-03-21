@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hestiastore.index.segmentregistry.SegmentTestFixtures.SEGMENT_DIR_NAME;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentregistry.SegmentTestFixtures.FailingRootDeleteDirectory;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -91,8 +93,8 @@ class SegmentRegistryImplCloseTest {
     @Test
     void deleteSegmentReturnsErrorWhenFileSystemCannotRemoveDirectory() {
         final FailingRootDeleteDirectory directory = new FailingRootDeleteDirectory(
-                "segment-00007");
-        directory.mkdir("segment-00007");
+                SEGMENT_DIR_NAME);
+        directory.mkdir(SEGMENT_DIR_NAME);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
                 4, id -> {
@@ -103,12 +105,12 @@ class SegmentRegistryImplCloseTest {
                 directory, cache, gate, 1, 100);
 
         final SegmentRegistryResult<Void> result = registry
-                .deleteSegment(SegmentId.of(7));
+                .deleteSegment(SegmentId.of(1));
 
         assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
         assertTrue(cache.isEmpty(),
                 "Delete should leave cache unchanged when no entries exist.");
-        assertTrue(directory.isFileExists("segment-00007"));
+        assertTrue(directory.isFileExists(SEGMENT_DIR_NAME));
     }
 
     private static SegmentRegistryImpl<Integer, String> newRegistry(
@@ -133,23 +135,6 @@ class SegmentRegistryImplCloseTest {
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
                 gate, ConcurrentHashMap.<SegmentId>newKeySet());
-    }
-
-    private static final class FailingRootDeleteDirectory extends MemDirectory {
-        private final String failingDirectoryName;
-
-        private FailingRootDeleteDirectory(final String failingDirectoryName) {
-            this.failingDirectoryName = failingDirectoryName;
-        }
-
-        @Override
-        public boolean rmdir(final String directoryName) {
-            if (failingDirectoryName.equals(directoryName)) {
-                throw new IllegalStateException(
-                        "Simulated root delete failure.");
-            }
-            return super.rmdir(directoryName);
-        }
     }
 
     @SuppressWarnings("unchecked")

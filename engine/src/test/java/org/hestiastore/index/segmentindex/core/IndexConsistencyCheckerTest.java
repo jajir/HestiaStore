@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -69,12 +71,15 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(Stream.of(Entry.of(10, SegmentId.of(1))));
         when(segmentRegistry.getSegment(SegmentId.of(1)))
                 .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.deleteSegment(SegmentId.of(1)))
+                .thenReturn(SegmentRegistryResult.ok());
 
         checker.checkAndRepairConsistency();
 
-        verify(keyToSegmentMap).removeSegment(SegmentId.of(1));
-        verify(keyToSegmentMap).optionallyFlush();
-        verify(segmentRegistry).deleteSegment(SegmentId.of(1));
+        final InOrder inOrder = inOrder(segmentRegistry, keyToSegmentMap);
+        inOrder.verify(segmentRegistry).deleteSegment(SegmentId.of(1));
+        inOrder.verify(keyToSegmentMap).removeSegment(SegmentId.of(1));
+        inOrder.verify(keyToSegmentMap).optionallyFlush();
     }
 
     @Test
@@ -107,6 +112,8 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(Stream.of(Entry.of(10, SegmentId.of(1))));
         when(segmentRegistry.getSegment(SegmentId.of(1)))
                 .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.deleteSegment(SegmentId.of(1)))
+                .thenReturn(SegmentRegistryResult.ok());
 
         checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
                 segmentRegistry, new TypeDescriptorInteger(),
@@ -116,6 +123,54 @@ class IndexConsistencyCheckerTest {
 
         verify(segment, times(2))
                 .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+    }
+
+    @Test
+    void busySegmentDelete_retriesUntilSegmentIsRemoved() {
+        when(segment.checkAndRepairConsistency()).thenReturn(null);
+        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.ok(iterator));
+        when(iterator.hasNext()).thenReturn(false);
+        when(keyToSegmentMap.getSegmentsAsStream())
+                .thenReturn(Stream.of(Entry.of(10, SegmentId.of(1))));
+        when(segmentRegistry.getSegment(SegmentId.of(1)))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.deleteSegment(SegmentId.of(1)))
+                .thenReturn(SegmentRegistryResult
+                        .fromStatus(SegmentRegistryResultStatus.BUSY))
+                .thenReturn(SegmentRegistryResult.ok());
+
+        checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
+                segmentRegistry, new TypeDescriptorInteger(),
+                segmentId -> true, new IndexRetryPolicy(1, 20));
+
+        checker.checkAndRepairConsistency();
+
+        verify(segmentRegistry, times(2)).deleteSegment(SegmentId.of(1));
+        verify(keyToSegmentMap).removeSegment(SegmentId.of(1));
+        verify(keyToSegmentMap).optionallyFlush();
+    }
+
+    @Test
+    void deleteErrorPreventsRemovingEmptySegmentFromIndexMap() {
+        when(segment.checkAndRepairConsistency()).thenReturn(null);
+        when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(SegmentResult.ok(iterator));
+        when(iterator.hasNext()).thenReturn(false);
+        when(keyToSegmentMap.getSegmentsAsStream())
+                .thenReturn(Stream.of(Entry.of(10, SegmentId.of(1))));
+        when(segmentRegistry.getSegment(SegmentId.of(1)))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.deleteSegment(SegmentId.of(1)))
+                .thenReturn(SegmentRegistryResult.error());
+
+        final IndexException ex = assertThrows(IndexException.class,
+                () -> checker.checkAndRepairConsistency());
+
+        verify(segmentRegistry).deleteSegment(SegmentId.of(1));
+        verify(keyToSegmentMap, times(0)).removeSegment(SegmentId.of(1));
+        verify(keyToSegmentMap, times(0)).optionallyFlush();
+        assertTrue(ex.getMessage().contains("delete returned 'ERROR'"));
     }
 
     @Test

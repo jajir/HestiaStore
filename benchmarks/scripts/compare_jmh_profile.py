@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+DIAGNOSTIC_SECONDARY_PREFIX = "diag_"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -40,15 +42,19 @@ def flatten(summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
                 "metric": "primary",
                 "benchmark": row["benchmark"],
                 "score": row["primaryMetric"]["score"],
+                "scoreError": row["primaryMetric"].get("scoreError"),
                 "unit": row["primaryMetric"]["scoreUnit"],
             }
             for secondary_name, secondary_metric in row.get("secondaryMetrics", {}).items():
+                if secondary_name.startswith(DIAGNOSTIC_SECONDARY_PREFIX):
+                    continue
                 metrics[f"{label}::{method}::secondary::{secondary_name}"] = {
                     "label": label,
                     "method": method,
                     "metric": secondary_name,
                     "benchmark": row["benchmark"],
                     "score": secondary_metric["score"],
+                    "scoreError": secondary_metric.get("scoreError"),
                     "unit": secondary_metric["scoreUnit"],
                 }
     return metrics
@@ -74,6 +80,33 @@ def display_metric_name(metric_key: str, metric: dict[str, Any]) -> str:
     if len(parts) == 4:
         return f"{parts[0]}:{parts[1]}:{parts[-1]}"
     return metric_key
+
+
+def relative_error_pct(score: float | None, score_error: float | None) -> float | None:
+    numeric_score = optional_float(score)
+    numeric_score_error = optional_float(score_error)
+    if numeric_score is None or numeric_score_error is None:
+        return None
+    if math.isclose(numeric_score, 0.0, abs_tol=1e-12):
+        return None
+    return abs(numeric_score_error / numeric_score) * 100.0
+
+
+def optional_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        numeric = float(value)
+    elif isinstance(value, str):
+        try:
+            numeric = float(value)
+        except ValueError:
+            return None
+    else:
+        return None
+    if not math.isfinite(numeric):
+        return None
+    return numeric
 
 
 def markdown_report(
@@ -139,6 +172,8 @@ def main() -> int:
             raise ValueError(f"Metric unit mismatch for {key}: {baseline_metric['unit']} vs {candidate_metric['unit']}")
         baseline_score = baseline_metric["score"]
         candidate_score = candidate_metric["score"]
+        baseline_score_error = baseline_metric.get("scoreError")
+        candidate_score_error = candidate_metric.get("scoreError")
         if baseline_score == 0:
             delta_pct = 0.0 if candidate_score == 0 else 100.0
         else:
@@ -149,8 +184,15 @@ def main() -> int:
         comparison_rows.append({
             "key": key,
             "displayName": display_metric_name(key, candidate_metric),
+            "label": candidate_metric["label"],
+            "method": candidate_metric["method"],
+            "metric": candidate_metric["metric"],
             "baselineScore": baseline_score,
+            "baselineScoreError": baseline_score_error,
+            "baselineScoreErrorPct": relative_error_pct(baseline_score, baseline_score_error),
             "candidateScore": candidate_score,
+            "candidateScoreError": candidate_score_error,
+            "candidateScoreErrorPct": relative_error_pct(candidate_score, candidate_score_error),
             "deltaPct": delta_pct,
             "status": status,
             "unit": candidate_metric["unit"],
@@ -162,8 +204,15 @@ def main() -> int:
         comparison_rows.append({
             "key": key,
             "displayName": display_metric_name(key, candidate_metric),
+            "label": candidate_metric["label"],
+            "method": candidate_metric["method"],
+            "metric": candidate_metric["metric"],
             "baselineScore": None,
+            "baselineScoreError": None,
+            "baselineScoreErrorPct": None,
             "candidateScore": candidate_metric["score"],
+            "candidateScoreError": candidate_metric.get("scoreError"),
+            "candidateScoreErrorPct": relative_error_pct(candidate_metric["score"], candidate_metric.get("scoreError")),
             "deltaPct": None,
             "status": "new",
             "unit": candidate_metric["unit"],
@@ -175,8 +224,15 @@ def main() -> int:
         comparison_rows.append({
             "key": key,
             "displayName": display_metric_name(key, baseline_metric),
+            "label": baseline_metric["label"],
+            "method": baseline_metric["method"],
+            "metric": baseline_metric["metric"],
             "baselineScore": baseline_metric["score"],
+            "baselineScoreError": baseline_metric.get("scoreError"),
+            "baselineScoreErrorPct": relative_error_pct(baseline_metric["score"], baseline_metric.get("scoreError")),
             "candidateScore": None,
+            "candidateScoreError": None,
+            "candidateScoreErrorPct": None,
             "deltaPct": None,
             "status": "removed",
             "unit": baseline_metric["unit"],
