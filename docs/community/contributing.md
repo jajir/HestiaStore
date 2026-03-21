@@ -17,7 +17,7 @@ Before submitting your code, please verify the following:
 - ✅ **Run Site Checks**
   Execute `mvn clean site` to generate the project site and perform static analysis. This will highlight issues reported by:
   - PMD
-  - Checkstyle
+  - CPD
   - SpotBugs (formerly FindBugs)
   Please ensure your changes do not introduce new warnings or violations.
 

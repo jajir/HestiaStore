@@ -11,7 +11,7 @@
 - Run `mvn clean verify` after non-trivial changes.
 - Use the `fix-ci-failure` skill for failing CI jobs and broken local verification runs.
 - Use the `update-dependencies` skill for Maven dependency and plugin refresh work.
-- Use the `java-code-review` skill for reviewing diffs, branches, and pull requests.
+- Use the `java-code-review` skill for reviewing diffs, branches, pull requests, and actionable PMD/CPD findings from module site reports.
 - Use the `investigate-test-flake` skill for intermittent or nondeterministic test failures.
 - Use the `benchmark-regression-check` skill for benchmark drift and performance regression investigation.
 - Use the `release-maven-library` skill for release preparation, versioning, and post-release snapshot tasks.
@@ -31,6 +31,7 @@
 - `mvn clean test` runs unit tests with Surefire.
 - `mvn verify` runs the full pipeline: unit tests, integration tests, JaCoCo coverage checks, and dependency checks.
 - `mvn clean site` generates static analysis reports, coverage reports, and site documentation.
+- During review, check relevant module PMD and CPD reports under `target/site/<module>/pmd.html` and `target/site/<module>/cpd.html` when those artifacts are available.
 - `mvn clean package -DskipTests` builds artifacts for fast local iteration, but avoid using it as final verification for PRs.
 - The `benchmarks` module sets `skipTests=true` by default; use `-DskipTests=false` when you need benchmark module tests or Python script smoke tests to actually execute.
 
