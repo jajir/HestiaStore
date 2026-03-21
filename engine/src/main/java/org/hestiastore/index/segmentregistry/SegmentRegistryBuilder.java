@@ -171,10 +171,11 @@ public final class SegmentRegistryBuilder<K, V> {
                 maxNumberOfSegmentsInCache, maintenance::loadSegment,
                 maintenance::closeSegmentIfNeeded,
                 resolvedRegistryMaintenanceExecutor,
-                segment -> segment != null && (segment.getState() == SegmentState.CLOSED
-                        || (!pinnedSegments.contains(segment.getId())
-                                && segment.getState() == SegmentState.READY
-                                && segment.getNumberOfKeysInWriteCache() == 0)));
+                segment -> segment != null
+                        && (segment.getState() == SegmentState.CLOSED
+                                || !pinnedSegments.contains(segment.getId())
+                                        && segment.getState() == SegmentState.READY
+                                        && segment.getNumberOfKeysInWriteCache() == 0));
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate,
                 pinnedSegments);

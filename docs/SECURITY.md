@@ -17,9 +17,13 @@ Currently, HestiaStore does **not** support a persistent, remote or encrypted st
 HestiaStore uses the following tools to enforce code quality and detect potential bugs:
 
 - **PMD**: Checks for common coding errors, best practices violations, and potential bugs.
+- **CPD**: Detects copy/paste duplication that can make changes harder to maintain safely.
 - **SpotBugs** (formerly FindBugs): Performs bytecode-level bug detection for possible concurrency issues, null pointer dereferences, etc.
 
-Both reports are available through the Maven Site (`mvn site`).
+These reports are available through the Maven Site. In this multi-module build,
+`mvn site` also mirrors module sites into the root tree so local browsing works
+from `target/site/index.html`, while keeping the original module output in
+paths such as `engine/target/site/`.
 
 ## Testing and Coverage
 
@@ -103,7 +107,7 @@ Planned or considered improvements include:
 ## Summary
 
 - ✅ Vulnerability scanning via OWASP Dependency Check
-- ✅ Static analysis via PMD and SpotBugs
+- ✅ Static analysis via PMD, CPD, and SpotBugs
 - ✅ Unit tests with coverage reporting via JaCoCo
 - ⏳ Persistent encrypted storage is not yet supported
 - ✅ Basic threat model documented

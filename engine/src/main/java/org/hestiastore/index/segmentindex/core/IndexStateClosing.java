@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
+import java.util.Objects;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.FileLock;
 
@@ -10,11 +12,20 @@ import org.hestiastore.index.directory.FileLock;
  * @param <K> key type
  * @param <V> value type
  */
-final record IndexStateClosing<K, V>(FileLock fileLock)
-        implements IndexState<K, V> {
+final class IndexStateClosing<K, V> implements IndexState<K, V> {
 
-    IndexStateClosing {
-        fileLock = Vldtn.requireNonNull(fileLock, "fileLock");
+    private final FileLock fileLock;
+
+    public IndexStateClosing(final FileLock fileLock) {
+        this.fileLock = Vldtn.requireNonNull(fileLock, "fileLock");
+    }
+
+    public FileLock fileLock() {
+        return fileLock;
+    }
+
+    FileLock getFileLock() {
+        return fileLock();
     }
 
     /** {@inheritDoc} */
@@ -44,7 +55,24 @@ final record IndexStateClosing<K, V>(FileLock fileLock)
         index.setIndexState(new IndexStateClosed<>());
     }
 
-    FileLock getFileLock() {
-        return fileLock;
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof IndexStateClosing<?, ?> other)) {
+            return false;
+        }
+        return Objects.equals(fileLock, other.fileLock);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileLock);
+    }
+
+    @Override
+    public String toString() {
+        return "IndexStateClosing[fileLock=" + fileLock + "]";
     }
 }

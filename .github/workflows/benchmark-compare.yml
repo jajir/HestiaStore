@@ -291,6 +291,7 @@ jobs:
           --output-dir "${RUNNER_TEMP}/benchmark-results/candidate"
 
     - name: Compare baseline and candidate
+      id: compare
       shell: bash
       run: |
         set -euo pipefail
@@ -308,10 +309,81 @@ jobs:
             BASELINE_SUMMARY="${RUNNER_TEMP}/benchmark-results/candidate/summary.json"
           fi
         fi
+        FINAL_CANDIDATE_SUMMARY="${RUNNER_TEMP}/benchmark-results/candidate/summary.json"
+        INITIAL_COMPARISON_MD="${RUNNER_TEMP}/benchmark-results/comparison.initial.md"
+        INITIAL_COMPARISON_JSON="${RUNNER_TEMP}/benchmark-results/comparison.initial.json"
+        NOISY_REGRESSION_RELATIVE_ERROR_PCT=25
+        MAX_CANDIDATE_RUNS=3
 
         python3 benchmarks/scripts/compare_jmh_profile.py \
           --baseline "${BASELINE_SUMMARY}" \
-          --candidate "${RUNNER_TEMP}/benchmark-results/candidate/summary.json" \
+          --candidate "${FINAL_CANDIDATE_SUMMARY}" \
+          --markdown-out "${INITIAL_COMPARISON_MD}" \
+          --json-out "${INITIAL_COMPARISON_JSON}"
+
+        export INITIAL_COMPARISON_JSON
+        export NOISY_REGRESSION_RELATIVE_ERROR_PCT
+        RERUN_LABELS="$(python3 - <<'PY'
+        import json
+        import os
+
+        comparison_path = os.environ["INITIAL_COMPARISON_JSON"]
+        relative_error_threshold = float(
+            os.environ["NOISY_REGRESSION_RELATIVE_ERROR_PCT"])
+        with open(comparison_path, "r", encoding="utf-8") as handle:
+            comparison = json.load(handle)
+
+        labels = []
+        for metric in comparison.get("metrics", []):
+            if metric.get("status") != "worse":
+                continue
+            if metric.get("metric") != "primary":
+                continue
+            relative_errors = [
+                value
+                for value in (
+                    metric.get("baselineScoreErrorPct"),
+                    metric.get("candidateScoreErrorPct"),
+                )
+                if value is not None
+            ]
+            if relative_errors and max(relative_errors) >= relative_error_threshold:
+                labels.append(metric["label"])
+        print(",".join(sorted(set(labels))))
+        PY
+        )"
+        RERUN_NOTE=""
+
+        if [ -n "${RERUN_LABELS}" ]; then
+          SUBSET_PROFILE="${RUNNER_TEMP}/benchmark-results/rerun-profile.json"
+          python3 benchmarks/scripts/filter_jmh_profile.py \
+            --profile "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
+            --labels "${RERUN_LABELS}" \
+            --output "${SUBSET_PROFILE}"
+
+          for rerun_index in $(seq 2 "${MAX_CANDIDATE_RUNS}"); do
+            RERUN_DIR="${RUNNER_TEMP}/benchmark-results/candidate/reruns/run-${rerun_index}"
+            python3 benchmarks/scripts/run_jmh_profile.py \
+              --repo-root "${{ steps.candidate-worktree.outputs.candidate_dir }}" \
+              --profile "${SUBSET_PROFILE}" \
+              --output-dir "${RERUN_DIR}"
+          done
+
+          python3 benchmarks/scripts/aggregate_jmh_profile_summaries.py \
+            --base-summary "${FINAL_CANDIDATE_SUMMARY}" \
+            --supplemental-summary "${RUNNER_TEMP}/benchmark-results/candidate/reruns/run-2/summary.json" \
+            --supplemental-summary "${RUNNER_TEMP}/benchmark-results/candidate/reruns/run-3/summary.json" \
+            --labels "${RERUN_LABELS}" \
+            --output "${RUNNER_TEMP}/benchmark-results/candidate/summary.median.json"
+          mv "${RUNNER_TEMP}/benchmark-results/candidate/summary.median.json" \
+            "${FINAL_CANDIDATE_SUMMARY}"
+
+          RERUN_NOTE="- Candidate labels rerun 3x total and median-merged because the initial regression exceeded threshold with high relative score error: \`${RERUN_LABELS}\`"
+        fi
+
+        python3 benchmarks/scripts/compare_jmh_profile.py \
+          --baseline "${BASELINE_SUMMARY}" \
+          --candidate "${FINAL_CANDIDATE_SUMMARY}" \
           --markdown-out "${RUNNER_TEMP}/benchmark-results/comparison.md" \
           --json-out "${RUNNER_TEMP}/benchmark-results/comparison.json" \
           "${EXTRA_ARGS[@]}"
@@ -329,14 +401,39 @@ jobs:
           mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison.md"
         fi
 
+        if [ -n "${RERUN_NOTE}" ]; then
+          TMP_FILE="${RUNNER_TEMP}/benchmark-results/comparison.rerun.md"
+          {
+            echo "# Benchmark Comparison"
+            echo
+            echo "${RERUN_NOTE}"
+            echo
+            tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison.md"
+          } > "${TMP_FILE}"
+          mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison.md"
+        fi
+
         PREVIOUS_PR_SUMMARY="${{ steps.previous-pr-baseline.outputs.summary }}"
         if [ -n "${PREVIOUS_PR_SUMMARY}" ]; then
           python3 benchmarks/scripts/compare_jmh_profile.py \
             --baseline "${PREVIOUS_PR_SUMMARY}" \
-            --candidate "${RUNNER_TEMP}/benchmark-results/candidate/summary.json" \
+            --candidate "${FINAL_CANDIDATE_SUMMARY}" \
             --markdown-out "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md" \
             --json-out "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.json"
+          if [ -n "${RERUN_NOTE}" ]; then
+            TMP_FILE="${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.rerun.md"
+            {
+              echo "# Benchmark Comparison"
+              echo
+              echo "${RERUN_NOTE}"
+              echo
+              tail -n +2 "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md"
+            } > "${TMP_FILE}"
+            mv "${TMP_FILE}" "${RUNNER_TEMP}/benchmark-results/comparison-previous-pr.md"
+          fi
         fi
+
+        echo "rerun_labels=${RERUN_LABELS}" >> "${GITHUB_OUTPUT}"
 
     - name: Add job summary
       shell: bash

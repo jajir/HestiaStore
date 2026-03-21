@@ -38,7 +38,9 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
     private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
 
+    private final ThreadPoolExecutor indexMaintenanceExecutorDelegate;
     private final ExecutorService indexMaintenanceExecutor;
+    private final ThreadPoolExecutor splitMaintenanceExecutorDelegate;
     private final ExecutorService splitMaintenanceExecutor;
     private final ScheduledExecutorService splitPolicyScheduler;
     private final ExecutorService stableSegmentMaintenanceExecutor;
@@ -52,10 +54,14 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     IndexExecutorRegistry(final IndexConfiguration<?, ?> indexConfiguration) {
         final IndexConfiguration<?, ?> conf = Vldtn
                 .requireNonNull(indexConfiguration, ARG_INDEX_CONFIGURATION);
+        this.indexMaintenanceExecutorDelegate = createIndexMaintenanceExecutor(
+                conf);
         this.indexMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
-                createIndexMaintenanceExecutor(conf));
+                indexMaintenanceExecutorDelegate);
+        this.splitMaintenanceExecutorDelegate = createSplitMaintenanceExecutor(
+                conf);
         this.splitMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
-                createSplitMaintenanceExecutor(conf));
+                splitMaintenanceExecutorDelegate);
         this.splitPolicyScheduler = createSplitPolicyScheduler();
         this.stableSegmentMaintenanceExecutor = wrapWithIndexContextIfEnabled(
                 conf, createStableSegmentMaintenanceExecutor(conf));
@@ -118,7 +124,27 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         return registryMaintenanceExecutor;
     }
 
-    private static ExecutorService createIndexMaintenanceExecutor(
+    int indexMaintenanceQueueSize() {
+        checkNotClosed();
+        return indexMaintenanceExecutorDelegate.getQueue().size();
+    }
+
+    int indexMaintenanceQueueCapacity() {
+        checkNotClosed();
+        return queueCapacity(indexMaintenanceExecutorDelegate);
+    }
+
+    int splitMaintenanceQueueSize() {
+        checkNotClosed();
+        return splitMaintenanceExecutorDelegate.getQueue().size();
+    }
+
+    int splitMaintenanceQueueCapacity() {
+        checkNotClosed();
+        return queueCapacity(splitMaintenanceExecutorDelegate);
+    }
+
+    private static ThreadPoolExecutor createIndexMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int indexMaintenanceThreads = Vldtn
                 .requireGreaterThanZero(
@@ -142,7 +168,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 }, new ThreadPoolExecutor.AbortPolicy());
     }
 
-    private static ExecutorService createStableSegmentMaintenanceExecutor(
+    private static ThreadPoolExecutor createStableSegmentMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int stableSegmentMaintenanceThreads = Vldtn.requireGreaterThanZero(
                 Vldtn.requireNonNull(
@@ -164,7 +190,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 }, new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
-    private static ExecutorService createSplitMaintenanceExecutor(
+    private static ThreadPoolExecutor createSplitMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int splitMaintenanceThreads = Vldtn
                 .requireGreaterThanZero(
@@ -225,6 +251,22 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         }
         return new IndexNameMdcExecutorService(Vldtn.requireNotBlank(
                 configuration.getIndexName(), ARG_INDEX_NAME), delegate);
+    }
+
+    /**
+     * Returns a snapshot of queue capacity for {@code queueCapacity} by
+     * summing the current queued element count and the free slots reported by
+     * the {@link ThreadPoolExecutor} queue. For bounded queues, {@code size()}
+     * plus {@code remainingCapacity()} approximates total capacity. Unbounded
+     * queues may report effectively unbounded remaining capacity, and
+     * concurrent queue mutations can make this snapshot slightly racey.
+     *
+     * @param executor executor whose queue capacity snapshot is needed
+     * @return queued elements plus currently available queue slots
+     */
+    private static int queueCapacity(final ThreadPoolExecutor executor) {
+        return executor.getQueue().size()
+                + executor.getQueue().remainingCapacity();
     }
 
     private static ExecutorService createFixedDaemonExecutor(

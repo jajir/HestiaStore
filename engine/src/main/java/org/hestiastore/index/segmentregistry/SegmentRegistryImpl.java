@@ -173,7 +173,9 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             return SegmentRegistryResult.busy();
         }
         try {
-            fileSystem.deleteSegmentFiles(segmentId);
+            if (!fileSystem.deleteSegmentFiles(segmentId)) {
+                return SegmentRegistryResult.error();
+            }
         } catch (final RuntimeException ex) {
             return SegmentRegistryResult.error();
         }

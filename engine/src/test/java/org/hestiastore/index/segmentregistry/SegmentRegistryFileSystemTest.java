@@ -2,10 +2,12 @@ package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hestiastore.index.segmentregistry.SegmentTestFixtures.SEGMENT_DIR_NAME;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentTestFixtures.FailingRootDeleteDirectory;
 import org.junit.jupiter.api.Test;
 
 class SegmentRegistryFileSystemTest {
@@ -18,7 +20,7 @@ class SegmentRegistryFileSystemTest {
 
         assertFalse(fileSystem.segmentDirectoryExists(SegmentId.of(1)));
 
-        directory.mkdir("segment-00001");
+        directory.mkdir(SEGMENT_DIR_NAME);
 
         assertTrue(fileSystem.segmentDirectoryExists(SegmentId.of(1)));
     }
@@ -27,7 +29,7 @@ class SegmentRegistryFileSystemTest {
     void deleteSegmentFilesRemovesNestedDirectoryTree() {
         final MemDirectory directory = new MemDirectory();
         final Directory segmentDirectory = directory
-                .openSubDirectory("segment-00001");
+                .openSubDirectory(SEGMENT_DIR_NAME);
         segmentDirectory.touch("data.bin");
         final Directory nestedDirectory = segmentDirectory
                 .openSubDirectory("sub");
@@ -37,8 +39,20 @@ class SegmentRegistryFileSystemTest {
         final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);
 
-        fileSystem.deleteSegmentFiles(SegmentId.of(1));
+        assertTrue(fileSystem.deleteSegmentFiles(SegmentId.of(1)));
 
-        assertFalse(directory.isFileExists("segment-00001"));
+        assertFalse(directory.isFileExists(SEGMENT_DIR_NAME));
+    }
+
+    @Test
+    void deleteSegmentFilesReturnsFalseWhenRootDirectoryRemains() {
+        final FailingRootDeleteDirectory directory = new FailingRootDeleteDirectory(
+                SEGMENT_DIR_NAME);
+        directory.openSubDirectory(SEGMENT_DIR_NAME).touch("data.bin");
+        final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
+                directory);
+
+        assertFalse(fileSystem.deleteSegmentFiles(SegmentId.of(1)));
+        assertTrue(directory.isFileExists(SEGMENT_DIR_NAME));
     }
 }

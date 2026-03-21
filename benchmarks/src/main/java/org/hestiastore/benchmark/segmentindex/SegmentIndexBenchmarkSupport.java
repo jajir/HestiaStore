@@ -145,4 +145,54 @@ final class SegmentIndexBenchmarkSupport {
             }
         }
     }
+
+    static DirectoryTreeStats captureDirectoryTreeStats(final Path root)
+            throws IOException {
+        long regularFileCount = 0L;
+        long directoryCount = 0L;
+        long totalFileBytes = 0L;
+        try (var paths = Files.walk(root)) {
+            for (final Path path : paths.toList()) {
+                if (path.equals(root)) {
+                    continue;
+                }
+                if (Files.isDirectory(path)) {
+                    directoryCount++;
+                    continue;
+                }
+                if (Files.isRegularFile(path)) {
+                    regularFileCount++;
+                    totalFileBytes += Files.size(path);
+                }
+            }
+        }
+        return new DirectoryTreeStats(totalFileBytes, regularFileCount,
+                directoryCount);
+    }
+
+    static final class DirectoryTreeStats {
+
+        private final long totalFileBytes;
+        private final long regularFileCount;
+        private final long directoryCount;
+
+        DirectoryTreeStats(final long totalFileBytes,
+                final long regularFileCount, final long directoryCount) {
+            this.totalFileBytes = totalFileBytes;
+            this.regularFileCount = regularFileCount;
+            this.directoryCount = directoryCount;
+        }
+
+        long getTotalFileBytes() {
+            return totalFileBytes;
+        }
+
+        long getRegularFileCount() {
+            return regularFileCount;
+        }
+
+        long getDirectoryCount() {
+            return directoryCount;
+        }
+    }
 }

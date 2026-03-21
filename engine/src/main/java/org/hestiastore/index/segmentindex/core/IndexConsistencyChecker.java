@@ -120,11 +120,11 @@ class IndexConsistencyChecker<K, V> {
         if (!confirmEmptyUnderIsolation(segment)) {
             return;
         }
+        awaitDeletedSegment(segmentId);
         logger.warn("Segment '{}' is empty. Removing it from index map.",
                 segmentId);
         keyToSegmentMap.removeSegment(segmentId);
         keyToSegmentMap.optionalyFlush();
-        segmentRegistry.deleteSegment(segmentId);
     }
 
     private boolean confirmEmptyUnderIsolation(final Segment<K, V> segment) {
@@ -164,6 +164,26 @@ class IndexConsistencyChecker<K, V> {
                         ERROR_MSG + "Segment '%s' is not found in index.",
                         segmentId));
             }
+        }
+    }
+
+    private void awaitDeletedSegment(final SegmentId segmentId) {
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
+                    .deleteSegment(segmentId);
+            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK) {
+                return;
+            }
+            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos,
+                        "deleteSegmentForConsistency", segmentId);
+                continue;
+            }
+            throw new IndexException(String.format(ERROR_MSG
+                    + "Segment '%s' could not be removed during consistency "
+                    + "repair because delete returned '%s'.",
+                    segmentId, deleteResult.getStatus()));
         }
     }
 

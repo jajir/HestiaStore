@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hestiastore.index.segmentregistry.SegmentTestFixtures.SEGMENT_DIR_NAME;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentregistry.SegmentTestFixtures.FailingRootDeleteDirectory;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -88,11 +90,42 @@ class SegmentRegistryImplCloseTest {
                 "Close should retry until timeout budget is consumed");
     }
 
+    @Test
+    void deleteSegmentReturnsErrorWhenFileSystemCannotRemoveDirectory() {
+        final FailingRootDeleteDirectory directory = new FailingRootDeleteDirectory(
+                SEGMENT_DIR_NAME);
+        directory.mkdir(SEGMENT_DIR_NAME);
+        final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
+        final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
+                4, id -> {
+                    throw new IllegalStateException("Loader should not be used");
+                }, segment -> {
+                });
+        final SegmentRegistryImpl<Integer, String> registry = newRegistry(
+                directory, cache, gate, 1, 100);
+
+        final SegmentRegistryResult<Void> result = registry
+                .deleteSegment(SegmentId.of(1));
+
+        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
+        assertTrue(cache.isEmpty(),
+                "Delete should leave cache unchanged when no entries exist.");
+        assertTrue(directory.isFileExists(SEGMENT_DIR_NAME));
+    }
+
     private static SegmentRegistryImpl<Integer, String> newRegistry(
             final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
             final SegmentRegistryStateMachine gate, final int backoffMillis,
             final int timeoutMillis) {
-        final Directory directory = new MemDirectory();
+        return newRegistry(new MemDirectory(), cache, gate, backoffMillis,
+                timeoutMillis);
+    }
+
+    private static SegmentRegistryImpl<Integer, String> newRegistry(
+            final Directory directory,
+            final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache,
+            final SegmentRegistryStateMachine gate, final int backoffMillis,
+            final int timeoutMillis) {
         final SegmentRegistryFileSystem fs = new SegmentRegistryFileSystem(
                 directory);
         final AtomicInteger counter = new AtomicInteger();

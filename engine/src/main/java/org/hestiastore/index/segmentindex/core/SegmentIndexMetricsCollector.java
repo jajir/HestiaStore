@@ -33,6 +33,8 @@ final class SegmentIndexMetricsCollector<K, V> {
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final PartitionRuntime<K, V> partitionRuntime;
+    private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
+    private final IndexExecutorRegistry executorRegistry;
     private final RuntimeTuningState runtimeTuningState;
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats;
@@ -45,6 +47,8 @@ final class SegmentIndexMetricsCollector<K, V> {
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final PartitionRuntime<K, V> partitionRuntime,
+            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final IndexExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
@@ -58,6 +62,10 @@ final class SegmentIndexMetricsCollector<K, V> {
                 "segmentRegistry");
         this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
                 "partitionRuntime");
+        this.backgroundSplitCoordinator = Vldtn.requireNonNull(
+                backgroundSplitCoordinator, "backgroundSplitCoordinator");
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
@@ -99,24 +107,22 @@ final class SegmentIndexMetricsCollector<K, V> {
                         RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER),
                 stableSegmentRuntime.totalMappedStableSegmentCount,
                 stableSegmentRuntime.readyStableSegmentCount,
-                stableSegmentRuntime.stableSegmentsInMaintenanceStateCount,
+                stableSegmentRuntime.maintenanceRunningStableSegmentCount,
                 stableSegmentRuntime.errorStableSegmentCount,
                 stableSegmentRuntime.closedStableSegmentCount,
-                stableSegmentRuntime.unloadedMappedStableSegmentCount,
+                stableSegmentRuntime.busyStableSegmentCount,
                 stableSegmentRuntime.totalStableSegmentKeyCount,
                 stableSegmentRuntime.totalStableSegmentCacheKeyCount,
                 stableSegmentRuntime.totalStableSegmentWriteBufferKeyCount
                         + partitionSnapshot.getBufferedKeyCount(),
                 stableSegmentRuntime.totalStableSegmentDeltaCacheFileCount,
                 compactRequestCount, flushRequestCount,
-                partitionSnapshot.getDrainScheduleCount(),
-                partitionSnapshot.getDrainInFlightCount(),
-                partitionSnapshot.getImmutableRunCount(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
-                partitionSnapshot.getDrainingPartitionCount(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
+                stats.getSplitScheduleCx(),
+                backgroundSplitCoordinator.splitInFlightCount(),
+                executorRegistry.indexMaintenanceQueueSize(),
+                executorRegistry.indexMaintenanceQueueCapacity(),
+                executorRegistry.splitMaintenanceQueueSize(),
+                executorRegistry.splitMaintenanceQueueCapacity(),
                 stats.getReadLatencyP50Micros(),
                 stats.getReadLatencyP95Micros(),
                 stats.getReadLatencyP99Micros(),
@@ -168,7 +174,6 @@ final class SegmentIndexMetricsCollector<K, V> {
         }
         final Set<SegmentId> mappedSegmentIdSet = new HashSet<>(
                 mappedSegmentIds);
-        int accountedSegments = 0;
         for (final Segment<K, V> segment : segmentRegistry
                 .loadedSegmentsSnapshot()) {
             if (segment != null) {
@@ -176,13 +181,10 @@ final class SegmentIndexMetricsCollector<K, V> {
                         .getRuntimeSnapshot();
                 final SegmentId segmentId = segmentRuntime.getSegmentId();
                 if (mappedSegmentIdSet.contains(segmentId)) {
-                    accountedSegments++;
                     accumulateSegmentMetrics(aggregate, segmentRuntime);
                 }
             }
         }
-        aggregate.unloadedMappedStableSegmentCount = Math.max(0,
-                aggregate.totalMappedStableSegmentCount - accountedSegments);
         return aggregate;
     }
 
@@ -192,9 +194,10 @@ final class SegmentIndexMetricsCollector<K, V> {
         final SegmentState state = segmentRuntime.getState();
         if (state == SegmentState.READY) {
             aggregate.readyStableSegmentCount++;
-        } else if (state == SegmentState.MAINTENANCE_RUNNING
-                || state == SegmentState.FREEZE) {
-            aggregate.stableSegmentsInMaintenanceStateCount++;
+        } else if (state == SegmentState.MAINTENANCE_RUNNING) {
+            aggregate.maintenanceRunningStableSegmentCount++;
+        } else if (state == SegmentState.FREEZE) {
+            aggregate.busyStableSegmentCount++;
         } else if (state == SegmentState.ERROR) {
             aggregate.errorStableSegmentCount++;
         } else if (state == SegmentState.CLOSED) {
@@ -242,10 +245,10 @@ final class SegmentIndexMetricsCollector<K, V> {
     private static final class StableSegmentRuntimeAggregate {
         private int totalMappedStableSegmentCount;
         private int readyStableSegmentCount;
-        private int stableSegmentsInMaintenanceStateCount;
+        private int maintenanceRunningStableSegmentCount;
         private int errorStableSegmentCount;
         private int closedStableSegmentCount;
-        private int unloadedMappedStableSegmentCount;
+        private int busyStableSegmentCount;
         private long totalStableSegmentKeyCount;
         private long totalStableSegmentCacheKeyCount;
         private long totalStableSegmentWriteBufferKeyCount;

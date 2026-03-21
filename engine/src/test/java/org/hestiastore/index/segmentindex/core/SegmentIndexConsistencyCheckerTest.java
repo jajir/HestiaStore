@@ -116,6 +116,8 @@ class SegmentIndexConsistencyCheckerTest {
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(EntryIterator
                         .make(List.<Entry<Integer, String>>of().iterator())));
+        when(segmentRegistry.deleteSegment(SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok());
 
         checker.checkAndRepairConsistency();
 
