@@ -3686,9 +3686,13 @@
 <p>HestiaStore uses the following tools to enforce code quality and detect potential bugs:</p>
 <ul>
 <li><strong>PMD</strong>: Checks for common coding errors, best practices violations, and potential bugs.</li>
+<li><strong>CPD</strong>: Detects copy/paste duplication that can make changes harder to maintain safely.</li>
 <li><strong>SpotBugs</strong> (formerly FindBugs): Performs bytecode-level bug detection for possible concurrency issues, null pointer dereferences, etc.</li>
 </ul>
-<p>Both reports are available through the Maven Site (<code>mvn site</code>).</p>
+<p>These reports are available through the Maven Site. In this multi-module build,
+<code>mvn site</code> also mirrors module sites into the root tree so local browsing works
+from <code>target/site/index.html</code>, while keeping the original module output in
+paths such as <code>engine/target/site/</code>.</p>
 <h2 id="testing-and-coverage">Testing and Coverage</h2>
 <p>The project includes a comprehensive suite of unit tests. Test coverage is measured using <strong>JaCoCo</strong>, and the coverage report is also published as part of the Maven Site.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>mvn<span class="w"> </span>clean<span class="w"> </span>verify<span class="w"> </span>site
@@ -3785,7 +3789,7 @@
 <h2 id="summary">Summary</h2>
 <ul>
 <li>✅ Vulnerability scanning via OWASP Dependency Check</li>
-<li>✅ Static analysis via PMD and SpotBugs</li>
+<li>✅ Static analysis via PMD, CPD, and SpotBugs</li>
 <li>✅ Unit tests with coverage reporting via JaCoCo</li>
 <li>⏳ Persistent encrypted storage is not yet supported</li>
 <li>✅ Basic threat model documented</li>
