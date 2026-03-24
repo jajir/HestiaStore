@@ -17,14 +17,14 @@ Profile definitions live in [profiles](/Users/jan/projects/HestiaStore/benchmark
 
 - `segment-index-pr-smoke`
   - short per-change profile for PRs and local refactor validation
+  - includes SegmentIndex hot paths plus the storage-core diff-key read and
+    chunk-entry write checks
 - `segment-index-nightly`
   - longer profile for trend tracking on `main`
-- `storage-core-pr-smoke`
-  - short per-change profile for diff-key read and chunk-entry write checks
-- `storage-core-nightly`
-  - longer profile for broader storage trend tracking on `main`
+  - extends the same coverage with broader SegmentIndex and storage-core
+    parameter sets
 
-The SegmentIndex smoke and nightly profiles currently include:
+The profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
@@ -34,19 +34,15 @@ The SegmentIndex smoke and nightly profiles currently include:
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
 
-The SegmentIndex nightly profile additionally includes:
+The nightly profile additionally includes:
 
 - `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=cold`
 - `SegmentIndexLifecycleBenchmark` for `open`, `checkAndRepairConsistency`,
   and `compactAndWait`
 
-The storage-core profiles include:
-
 - `DiffKeyReaderBenchmark`
 - `SingleChunkEntryWriterBenchmark`
-
-The storage-core nightly profile additionally expands coverage with compact and
-large parameter sets for both benchmarks.
+- compact and large storage-core parameter sets for both benchmarks
 
 ## Runner and Compare Scripts
 
@@ -115,7 +111,6 @@ Current behavior:
     back removed public config names
 - pull requests
   - run `segment-index-pr-smoke`
-  - run `storage-core-pr-smoke`
   - first try to compare PR candidate against the latest canonical baseline
     stored in the `perf-artifacts` branch
   - if no stored baseline exists yet, fall back to merge-base with the target
@@ -124,23 +119,21 @@ Current behavior:
     stored PR snapshot from the same PR number
   - publish the candidate run into a PR-scoped history path on
     `perf-artifacts`
-  - update sticky PR comments with the canonical baseline comparison,
+  - update one sticky PR comment with the canonical baseline comparison,
     previous-PR delta when available, and history links
 - push to `main`
   - run `segment-index-pr-smoke`
-  - run `storage-core-pr-smoke`
-  - compare each `HEAD` result against the latest stored canonical smoke
-    baseline from `perf-artifacts`
+  - compare `HEAD` against the latest stored canonical smoke baseline from
+    `perf-artifacts`
   - if no stored baseline exists yet, fall back to `HEAD~1`
-  - publish each new candidate run into `perf-artifacts`, advancing the
-    matching `history/<profile>/latest-main.json`
+  - publish the new candidate run into `perf-artifacts`, advancing
+    `history/segment-index-pr-smoke/latest-main.json`
 - nightly schedule
   - run `segment-index-nightly`
-  - run `storage-core-nightly`
-  - compare each `HEAD` result against the latest stored nightly baseline
-    from `perf-artifacts`
+  - compare `HEAD` against the latest stored nightly baseline from
+    `perf-artifacts`
   - if no stored baseline exists yet, fall back to `HEAD~1`
-  - publish each new candidate run into `perf-artifacts`
+  - publish the new candidate run into `perf-artifacts`
 - manual dispatch
   - can override profile, history branch, history channel, optional PR number,
     baseline ref, candidate ref, fail policy, and whether to publish into
@@ -190,7 +183,7 @@ pointer.
 
 ## Where To Look
 
-After a PR benchmark run, each profile comparison is visible in three places:
+After a PR benchmark run, the comparison is visible in three places:
 
 - Actions job summary for the `Benchmark Compare` run
 - a sticky PR comment with the latest delta table against canonical `main`,

@@ -116,11 +116,9 @@ Current canonical CI profiles are:
 
 - `segment-index-pr-smoke`
 - `segment-index-nightly`
-- `storage-core-pr-smoke`
-- `storage-core-nightly`
 
-On `pull_request` and `push` to `main`, the workflow runs both smoke
-profiles. On the nightly schedule, it runs both nightly profiles.
+The PR workflow runs `segment-index-pr-smoke` on every commit pushed to the
+PR branch. The nightly schedule runs `segment-index-nightly`.
 
 Run a profile locally:
 

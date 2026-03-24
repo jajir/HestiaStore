@@ -1,6 +1,6 @@
 {
   "profile": "segment-index-pr-smoke",
-  "description": "Short canonical SegmentIndex benchmark set for per-change comparison.",
+  "description": "Short canonical hot-path benchmark set for per-change comparison.",
   "benchmarks": [
     {
       "label": "segment-index-get-persisted",
@@ -105,6 +105,33 @@
         "-w", "1s",
         "-p", "hotKeySpace=256",
         "-p", "workloadMode=splitHeavy"
+      ]
+    },
+    {
+      "label": "sorted-data-diff-key-read",
+      "include": "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "entryCount=8192",
+        "-p", "keyLength=48",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "single-chunk-entry-write",
+      "include": "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "entriesPerChunk=256",
+        "-p", "valueLength=64"
       ]
     }
   ]
