@@ -279,8 +279,8 @@
         "173": {
           "channel": "pr-173",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-173/latest.json",
-          "sha": "8e93de0edb4cf85b6be304f6d6ddd4df7921d6fb",
-          "timestampUtc": "2026-03-24T08:50:11.575452+00:00"
+          "sha": "ad0bb250c916e65c29bdeedc80e25018224ac737",
+          "timestampUtc": "2026-03-24T09:09:44.602458+00:00"
         }
       },
       "sha": "9d5a339a22a9b41105834c8ae9ce3405bf76481c",
