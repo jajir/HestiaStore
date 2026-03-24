@@ -1,0 +1,33 @@
+{
+  "profile": "storage-core-pr-smoke",
+  "description": "Short canonical storage benchmark set for per-change comparison.",
+  "benchmarks": [
+    {
+      "label": "sorted-data-diff-key-read",
+      "include": "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "entryCount=8192",
+        "-p", "keyLength=48",
+        "-p", "valueLength=64"
+      ]
+    },
+    {
+      "label": "single-chunk-entry-write",
+      "include": "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "entriesPerChunk=256",
+        "-p", "valueLength=64"
+      ]
+    }
+  ]
+}

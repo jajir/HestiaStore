@@ -55,7 +55,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  resolve-profile-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - name: Resolve benchmark profile matrix
+      id: set-matrix
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if [ "${{ github.event_name }}" = "schedule" ]; then
+          MATRIX='{"include":[{"profile":"segment-index-nightly"},{"profile":"storage-core-nightly"}]}'
+        elif [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
+          MATRIX='{"include":[{"profile":"segment-index-pr-smoke"},{"profile":"storage-core-pr-smoke"}]}'
+        else
+          PROFILE_INPUT="${{ inputs.profile }}"
+          if [ -z "${PROFILE_INPUT}" ]; then
+            PROFILE_INPUT="segment-index-pr-smoke"
+          fi
+          MATRIX="$(printf '{"include":[{"profile":"%s"}]}' "${PROFILE_INPUT}")"
+        fi
+
+        echo "matrix=${MATRIX}" >> "${GITHUB_OUTPUT}"
+
   compare:
+    name: Compare (${{ matrix.profile }})
+    needs: resolve-profile-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve-profile-matrix.outputs.matrix) }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -89,7 +119,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        PROFILE="segment-index-pr-smoke"
+        PROFILE="${{ matrix.profile }}"
         FAIL_ON_REGRESSION="false"
         HISTORY_BRANCH="perf-artifacts"
         HISTORY_CHANNEL="main"
@@ -98,12 +128,10 @@ jobs:
         FALLBACK_BASELINE_REF=""
 
         if [ "${{ github.event_name }}" = "schedule" ]; then
-          PROFILE="segment-index-nightly"
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
           PUBLISH_HISTORY="true"
         elif [ "${{ github.event_name }}" = "push" ]; then
-          PROFILE="segment-index-pr-smoke"
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
           PUBLISH_HISTORY="true"
@@ -118,7 +146,6 @@ jobs:
           git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}" "${CANDIDATE_REF}"
           FALLBACK_BASELINE_REF="$(git merge-base "${CANDIDATE_REF}" "${BASE_BRANCH}")"
         else
-          PROFILE="${{ inputs.profile }}"
           FAIL_ON_REGRESSION="${{ inputs.fail_on_regression }}"
           HISTORY_BRANCH="${{ inputs.history_branch }}"
           HISTORY_CHANNEL="${{ inputs.history_channel }}"

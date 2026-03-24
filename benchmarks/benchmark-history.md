@@ -5,8 +5,8 @@ results across changes instead of relying only on ad-hoc local JMH runs.
 
 ## Goals
 
-- Show what a specific change did to the most important SegmentIndex
-  performance scenarios.
+- Show what a specific change did to the most important SegmentIndex and
+  storage hot-path scenarios.
 - Keep the comparison reproducible by using fixed benchmark profiles.
 - Preserve raw JMH JSON and machine-readable metadata for later inspection.
 - Separate short per-change checks from longer nightly trend runs.
@@ -19,8 +19,12 @@ Profile definitions live in [profiles](/Users/jan/projects/HestiaStore/benchmark
   - short per-change profile for PRs and local refactor validation
 - `segment-index-nightly`
   - longer profile for trend tracking on `main`
+- `storage-core-pr-smoke`
+  - short per-change profile for diff-key read and chunk-entry write checks
+- `storage-core-nightly`
+  - longer profile for broader storage trend tracking on `main`
 
-Both profiles currently include:
+The SegmentIndex smoke and nightly profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
@@ -30,11 +34,19 @@ Both profiles currently include:
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
 
-The nightly profile additionally includes:
+The SegmentIndex nightly profile additionally includes:
 
 - `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=cold`
 - `SegmentIndexLifecycleBenchmark` for `open`, `checkAndRepairConsistency`,
   and `compactAndWait`
+
+The storage-core profiles include:
+
+- `DiffKeyReaderBenchmark`
+- `SingleChunkEntryWriterBenchmark`
+
+The storage-core nightly profile additionally expands coverage with compact and
+large parameter sets for both benchmarks.
 
 ## Runner and Compare Scripts
 
@@ -103,6 +115,7 @@ Current behavior:
     back removed public config names
 - pull requests
   - run `segment-index-pr-smoke`
+  - run `storage-core-pr-smoke`
   - first try to compare PR candidate against the latest canonical baseline
     stored in the `perf-artifacts` branch
   - if no stored baseline exists yet, fall back to merge-base with the target
@@ -111,21 +124,23 @@ Current behavior:
     stored PR snapshot from the same PR number
   - publish the candidate run into a PR-scoped history path on
     `perf-artifacts`
-  - update a sticky PR comment with the canonical baseline comparison,
+  - update sticky PR comments with the canonical baseline comparison,
     previous-PR delta when available, and history links
 - push to `main`
   - run `segment-index-pr-smoke`
-  - compare `HEAD` against the latest stored canonical smoke baseline from
-    `perf-artifacts`
+  - run `storage-core-pr-smoke`
+  - compare each `HEAD` result against the latest stored canonical smoke
+    baseline from `perf-artifacts`
   - if no stored baseline exists yet, fall back to `HEAD~1`
-  - publish the new candidate run into `perf-artifacts`, advancing
-    `history/segment-index-pr-smoke/latest-main.json`
+  - publish each new candidate run into `perf-artifacts`, advancing the
+    matching `history/<profile>/latest-main.json`
 - nightly schedule
   - run `segment-index-nightly`
-  - compare `HEAD` against the latest stored nightly baseline from
-    `perf-artifacts`
+  - run `storage-core-nightly`
+  - compare each `HEAD` result against the latest stored nightly baseline
+    from `perf-artifacts`
   - if no stored baseline exists yet, fall back to `HEAD~1`
-  - publish the new candidate run into `perf-artifacts`
+  - publish each new candidate run into `perf-artifacts`
 - manual dispatch
   - can override profile, history branch, history channel, optional PR number,
     baseline ref, candidate ref, fail policy, and whether to publish into
@@ -175,7 +190,7 @@ pointer.
 
 ## Where To Look
 
-After a PR benchmark run, the same comparison is visible in three places:
+After a PR benchmark run, each profile comparison is visible in three places:
 
 - Actions job summary for the `Benchmark Compare` run
 - a sticky PR comment with the latest delta table against canonical `main`,

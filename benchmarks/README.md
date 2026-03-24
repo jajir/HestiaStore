@@ -32,7 +32,9 @@ This produces a runnable JMH fat-jar:
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreWriteBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ChunkStoreSteadyWriteBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DataBlockByteReaderBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DiffKeyReaderBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryIteratorBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryWriterBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SortedDataFileWriterBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Benchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
@@ -54,7 +56,9 @@ Read-path only (recommended for byte-slice migration checks):
 
 ```sh
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar DiffKeyReaderBenchmark -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SingleChunkEntryWriterBenchmark -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=overlay -prof gc
@@ -106,9 +110,17 @@ PR benchmark runs now surface in three places:
   `history/<profile>/pull-requests/pr-<number>/...`
 
 Canonical `main` baselines continue to advance through
-`history/<profile>/latest-main.json`. Today, `segment-index-pr-smoke`
-publishes there on `push` to `main`, while `segment-index-nightly`
-publishes there from the nightly schedule.
+`history/<profile>/latest-main.json`.
+
+Current canonical CI profiles are:
+
+- `segment-index-pr-smoke`
+- `segment-index-nightly`
+- `storage-core-pr-smoke`
+- `storage-core-nightly`
+
+On `pull_request` and `push` to `main`, the workflow runs both smoke
+profiles. On the nightly schedule, it runs both nightly profiles.
 
 Run a profile locally:
 
