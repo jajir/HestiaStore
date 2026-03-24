@@ -1,12 +1,12 @@
 {
   "branch": "HEAD",
   "channel": "main",
-  "comparisonJsonPath": "history/segment-index-nightly/2026/03/2026-03-23T04-08-29.619018+00-00_9d5a339a22a9_23420708905/comparison-vs-previous.json",
-  "comparisonMarkdownPath": "history/segment-index-nightly/2026/03/2026-03-23T04-08-29.619018+00-00_9d5a339a22a9_23420708905/comparison-vs-previous.md",
+  "comparisonJsonPath": "history/segment-index-nightly/2026/03/2026-03-24T03-49-31.922686+00-00_9d5a339a22a9_23472156538/comparison-vs-previous.json",
+  "comparisonMarkdownPath": "history/segment-index-nightly/2026/03/2026-03-24T03-49-31.922686+00-00_9d5a339a22a9_23472156538/comparison-vs-previous.md",
   "prNumber": null,
   "profile": "segment-index-nightly",
-  "runPath": "history/segment-index-nightly/2026/03/2026-03-23T04-08-29.619018+00-00_9d5a339a22a9_23420708905",
+  "runPath": "history/segment-index-nightly/2026/03/2026-03-24T03-49-31.922686+00-00_9d5a339a22a9_23472156538",
   "sha": "9d5a339a22a9b41105834c8ae9ce3405bf76481c",
-  "summaryPath": "history/segment-index-nightly/2026/03/2026-03-23T04-08-29.619018+00-00_9d5a339a22a9_23420708905/summary.json",
-  "timestampUtc": "2026-03-23T04:08:29.619018+00:00"
+  "summaryPath": "history/segment-index-nightly/2026/03/2026-03-24T03-49-31.922686+00-00_9d5a339a22a9_23472156538/summary.json",
+  "timestampUtc": "2026-03-24T03:49:31.922686+00:00"
 }
