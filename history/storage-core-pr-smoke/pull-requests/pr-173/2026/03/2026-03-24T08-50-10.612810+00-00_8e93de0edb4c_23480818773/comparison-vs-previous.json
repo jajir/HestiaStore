@@ -1,0 +1,44 @@
+{
+  "baselineSha": "8e93de0edb4cf85b6be304f6d6ddd4df7921d6fb",
+  "candidateSha": "8e93de0edb4cf85b6be304f6d6ddd4df7921d6fb",
+  "failThresholdPct": 7.0,
+  "metrics": [
+    {
+      "baselineScore": 7819438.857271641,
+      "baselineScoreError": 901097.5417905694,
+      "baselineScoreErrorPct": 11.523813386591023,
+      "candidateScore": 7819438.857271641,
+      "candidateScoreError": 901097.5417905694,
+      "candidateScoreErrorPct": 11.523813386591023,
+      "deltaPct": 0.0,
+      "displayName": "single-chunk-entry-write:writeEntrySteadyState",
+      "key": "single-chunk-entry-write::writeEntrySteadyState::primary",
+      "label": "single-chunk-entry-write",
+      "method": "writeEntrySteadyState",
+      "metric": "primary",
+      "status": "neutral",
+      "unit": "ops/s"
+    },
+    {
+      "baselineScore": 6709511.296881507,
+      "baselineScoreError": 2244196.633467675,
+      "baselineScoreErrorPct": 33.44798949084039,
+      "candidateScore": 6709511.296881507,
+      "candidateScoreError": 2244196.633467675,
+      "candidateScoreErrorPct": 33.44798949084039,
+      "deltaPct": 0.0,
+      "displayName": "sorted-data-diff-key-read:readNextKey",
+      "key": "sorted-data-diff-key-read::readNextKey::primary",
+      "label": "sorted-data-diff-key-read",
+      "method": "readNextKey",
+      "metric": "primary",
+      "status": "neutral",
+      "unit": "ops/s"
+    }
+  ],
+  "neutralThresholdPct": 3.0,
+  "newMetricCount": 0,
+  "profile": "storage-core-pr-smoke",
+  "removedMetricCount": 0,
+  "worseCount": 0
+}

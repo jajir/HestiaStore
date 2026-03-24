@@ -279,6 +279,16 @@
       },
       "sha": "9d5a339a22a9b41105834c8ae9ce3405bf76481c",
       "timestampUtc": "2026-03-21T09:01:23.211935+00:00"
+    },
+    "storage-core-pr-smoke": {
+      "pullRequests": {
+        "173": {
+          "channel": "pr-173",
+          "latestPointerPath": "history/storage-core-pr-smoke/pull-requests/pr-173/latest.json",
+          "sha": "8e93de0edb4cf85b6be304f6d6ddd4df7921d6fb",
+          "timestampUtc": "2026-03-24T08:50:10.612810+00:00"
+        }
+      }
     }
   }
 }
