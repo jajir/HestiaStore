@@ -103,7 +103,6 @@ jobs:
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
           PUBLISH_HISTORY="true"
         elif [ "${{ github.event_name }}" = "push" ]; then
-          PROFILE="segment-index-pr-smoke"
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
           PUBLISH_HISTORY="true"
@@ -118,7 +117,6 @@ jobs:
           git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}" "${CANDIDATE_REF}"
           FALLBACK_BASELINE_REF="$(git merge-base "${CANDIDATE_REF}" "${BASE_BRANCH}")"
         else
-          PROFILE="${{ inputs.profile }}"
           FAIL_ON_REGRESSION="${{ inputs.fail_on_regression }}"
           HISTORY_BRANCH="${{ inputs.history_branch }}"
           HISTORY_CHANNEL="${{ inputs.history_channel }}"

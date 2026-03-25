@@ -34,7 +34,9 @@ class BenchmarkProfileContractTest {
             "segment-index-persisted-mutation",
             "segment-index-hot-partition-put",
             "segment-index-mixed-drain",
-            "segment-index-mixed-split-heavy");
+            "segment-index-mixed-split-heavy",
+            "sorted-data-diff-key-read",
+            "single-chunk-entry-write");
     private static final Set<String> REQUIRED_NIGHTLY_SEGMENT_INDEX_LABELS = Set.of(
             "segment-index-get-persisted",
             "segment-index-get-overlay",
@@ -44,7 +46,11 @@ class BenchmarkProfileContractTest {
             "segment-index-lifecycle",
             "segment-index-hot-partition-put",
             "segment-index-mixed-drain",
-            "segment-index-mixed-split-heavy");
+            "segment-index-mixed-split-heavy",
+            "sorted-data-diff-key-read-compact",
+            "sorted-data-diff-key-read-large",
+            "single-chunk-entry-write-compact",
+            "single-chunk-entry-write-large");
 
     @Test
     void allBenchmarkProfilesUseUniqueLabelsAndResolvableBenchmarkClasses()
@@ -77,7 +83,7 @@ class BenchmarkProfileContractTest {
     }
 
     @Test
-    void canonicalSegmentIndexProfilesCoverRequiredScenarios() throws Exception {
+    void canonicalBenchmarkProfilesCoverRequiredScenarios() throws Exception {
         final Map<String, BenchmarkProfile> profilesByName = new HashMap<>();
         for (final BenchmarkProfile profile : loadProfiles()) {
             profilesByName.put(profile.profile(), profile);
@@ -136,6 +142,13 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-mixed-split-heavy"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "splitHeavy"));
+        assertEntry(byLabel.get("sorted-data-diff-key-read"),
+                "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
+                Map.of("entryCount", "8192", "keyLength", "48", "valueLength",
+                        "64"));
+        assertEntry(byLabel.get("single-chunk-entry-write"),
+                "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
+                Map.of("entriesPerChunk", "256", "valueLength", "64"));
     }
 
     private void assertCanonicalNightlySegmentIndexProfile(
@@ -176,6 +189,20 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-mixed-split-heavy"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "splitHeavy"));
+        assertEntry(byLabel.get("sorted-data-diff-key-read-compact"),
+                "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
+                Map.of("entryCount", "1024", "keyLength", "24", "valueLength",
+                        "16"));
+        assertEntry(byLabel.get("sorted-data-diff-key-read-large"),
+                "org.hestiastore.benchmark.sorteddatafile.DiffKeyReaderBenchmark",
+                Map.of("entryCount", "8192", "keyLength", "48", "valueLength",
+                        "64"));
+        assertEntry(byLabel.get("single-chunk-entry-write-compact"),
+                "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
+                Map.of("entriesPerChunk", "64", "valueLength", "16"));
+        assertEntry(byLabel.get("single-chunk-entry-write-large"),
+                "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark",
+                Map.of("entriesPerChunk", "1024", "valueLength", "64"));
     }
 
     private void assertEntry(final BenchmarkEntry entry, final String include,

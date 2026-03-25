@@ -5,8 +5,8 @@ results across changes instead of relying only on ad-hoc local JMH runs.
 
 ## Goals
 
-- Show what a specific change did to the most important SegmentIndex
-  performance scenarios.
+- Show what a specific change did to the most important SegmentIndex and
+  storage hot-path scenarios.
 - Keep the comparison reproducible by using fixed benchmark profiles.
 - Preserve raw JMH JSON and machine-readable metadata for later inspection.
 - Separate short per-change checks from longer nightly trend runs.
@@ -17,10 +17,14 @@ Profile definitions live in [profiles](/Users/jan/projects/HestiaStore/benchmark
 
 - `segment-index-pr-smoke`
   - short per-change profile for PRs and local refactor validation
+  - includes SegmentIndex hot paths plus the storage-core diff-key read and
+    chunk-entry write checks
 - `segment-index-nightly`
   - longer profile for trend tracking on `main`
+  - extends the same coverage with broader SegmentIndex and storage-core
+    parameter sets
 
-Both profiles currently include:
+The profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
@@ -35,6 +39,10 @@ The nightly profile additionally includes:
 - `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=cold`
 - `SegmentIndexLifecycleBenchmark` for `open`, `checkAndRepairConsistency`,
   and `compactAndWait`
+
+- `DiffKeyReaderBenchmark`
+- `SingleChunkEntryWriterBenchmark`
+- compact and large storage-core parameter sets for both benchmarks
 
 ## Runner and Compare Scripts
 
@@ -111,7 +119,7 @@ Current behavior:
     stored PR snapshot from the same PR number
   - publish the candidate run into a PR-scoped history path on
     `perf-artifacts`
-  - update a sticky PR comment with the canonical baseline comparison,
+  - update one sticky PR comment with the canonical baseline comparison,
     previous-PR delta when available, and history links
 - push to `main`
   - run `segment-index-pr-smoke`
@@ -175,7 +183,7 @@ pointer.
 
 ## Where To Look
 
-After a PR benchmark run, the same comparison is visible in three places:
+After a PR benchmark run, the comparison is visible in three places:
 
 - Actions job summary for the `Benchmark Compare` run
 - a sticky PR comment with the latest delta table against canonical `main`,
