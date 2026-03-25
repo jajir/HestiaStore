@@ -35,7 +35,7 @@
         <mockito.version>5.23.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
         <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
-        <project.info.reports.plugin.version>3.5.0</project.info.reports.plugin.version>
+        <project.info.reports.plugin.version>3.9.0</project.info.reports.plugin.version>
         <pmd.plugin.version>3.21.2</pmd.plugin.version>
         <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
         <micrometer.version>1.15.5</micrometer.version>
