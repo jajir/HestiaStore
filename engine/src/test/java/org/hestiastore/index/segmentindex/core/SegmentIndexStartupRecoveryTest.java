@@ -72,6 +72,7 @@ class SegmentIndexStartupRecoveryTest {
                 final IndexConfiguration<Integer, String> conf) {
             super(directoryFacade, new TypeDescriptorInteger(),
                     new TypeDescriptorShortString(), conf,
+                    conf.resolveRuntimeConfiguration(),
                     new IndexExecutorRegistry(conf));
         }
 

@@ -110,7 +110,8 @@ class SegmentIndexRuntimeBuilderTest {
             final Consumer<RuntimeException> failureHandler,
             final SegmentIndexRuntimeBuilder.BuildObserver<Integer, String> buildObserver) {
         return new SegmentIndexRuntimeBuilder<>(
-                logger, new MemDirectory(), tdi, tds, conf, executorRegistry,
+                logger, new MemDirectory(), tdi, tds, conf,
+                conf.resolveRuntimeConfiguration(), executorRegistry,
                 new Stats(), new AtomicLong(), new AtomicLong(),
                 new AtomicLong(),
                 new SegmentIndexRuntimeBuilder.Callbacks(

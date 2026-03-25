@@ -3,9 +3,14 @@ package org.hestiastore.index.segmentindex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterRegistration;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.datatype.TypeDescriptor;
 
 /**
@@ -50,8 +55,8 @@ public class IndexConfigurationBuilder<K, V> {
     private String valueTypeDescriptor;
     private Boolean contextLoggingEnabled;
     private Wal wal = Wal.EMPTY;
-    private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
-    private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
+    private final List<ChunkFilterSpec> encodingChunkFilters = new ArrayList<>();
+    private final List<ChunkFilterSpec> decodingChunkFilters = new ArrayList<>();
 
     IndexConfigurationBuilder() {
 
@@ -432,8 +437,10 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter filter) {
-        encodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
-        return this;
+        final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
+                "filter");
+        return addEncodingFilter(() -> requiredFilter,
+                resolvePersistableInstanceSpec(requiredFilter, true));
     }
 
     /**
@@ -444,7 +451,75 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> addEncodingFilter(
             final Class<? extends ChunkFilter> filterClass) {
-        return addEncodingFilter(instantiateFilter(filterClass));
+        final Class<? extends ChunkFilter> requiredClass = Vldtn
+                .requireNonNull(filterClass, "filterClass");
+        return addEncodingFilter(() -> instantiateFilter(requiredClass),
+                ChunkFilterSpecs.forEncodingFilter(requiredClass));
+    }
+
+    /**
+     * Adds an encoding filter described by persisted metadata.
+     *
+     * <p>
+     * The supplier parameter is accepted for compatibility with existing
+     * builder call sites, but {@link IndexConfiguration} persists only the
+     * provided {@link ChunkFilterSpec}. Runtime suppliers are resolved later
+     * through {@link IndexRuntimeConfiguration}.
+     * </p>
+     *
+     * @param supplier runtime filter supplier
+     * @param spec persisted filter spec
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+            final Supplier<? extends ChunkFilter> supplier,
+            final ChunkFilterSpec spec) {
+        Vldtn.requireNonNull(supplier, "supplier");
+        return addEncodingFilter(spec);
+    }
+
+    /**
+     * Adds an encoding filter descriptor to the persisted filter pipeline.
+     *
+     * @param spec persisted filter spec
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+            final ChunkFilterSpec spec) {
+        return addEncodingFilterSpec(Vldtn.requireNonNull(spec, "spec"));
+    }
+
+    /**
+     * Replaces the encoding filter pipeline with the supplied registrations.
+     *
+     * @param registrations filter registrations to use
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withEncodingFilterRegistrations(
+            final Collection<ChunkFilterRegistration> registrations) {
+        Vldtn.requireNonNull(registrations, "registrations");
+        encodingChunkFilters.clear();
+        for (final ChunkFilterRegistration registration : registrations) {
+            addEncodingFilterSpec(Vldtn.requireNonNull(registration,
+                    "registration").getSpec());
+        }
+        return this;
+    }
+
+    /**
+     * Replaces the encoding filter pipeline with the supplied specs.
+     *
+     * @param specs filter specs to use
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withEncodingFilterSpecs(
+            final Collection<ChunkFilterSpec> specs) {
+        Vldtn.requireNonNull(specs, "specs");
+        encodingChunkFilters.clear();
+        for (final ChunkFilterSpec spec : specs) {
+            addEncodingFilterSpec(spec);
+        }
+        return this;
     }
 
     /**
@@ -487,8 +562,10 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> addDecodingFilter(
             final ChunkFilter filter) {
-        decodingChunkFilters.add(Vldtn.requireNonNull(filter, "filter"));
-        return this;
+        final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
+                "filter");
+        return addDecodingFilter(() -> requiredFilter,
+                resolvePersistableInstanceSpec(requiredFilter, false));
     }
 
     /**
@@ -499,7 +576,75 @@ public class IndexConfigurationBuilder<K, V> {
      */
     public IndexConfigurationBuilder<K, V> addDecodingFilter(
             final Class<? extends ChunkFilter> filterClass) {
-        return addDecodingFilter(instantiateFilter(filterClass));
+        final Class<? extends ChunkFilter> requiredClass = Vldtn
+                .requireNonNull(filterClass, "filterClass");
+        return addDecodingFilter(() -> instantiateFilter(requiredClass),
+                ChunkFilterSpecs.forDecodingFilter(requiredClass));
+    }
+
+    /**
+     * Adds a decoding filter described by persisted metadata.
+     *
+     * <p>
+     * The supplier parameter is accepted for compatibility with existing
+     * builder call sites, but {@link IndexConfiguration} persists only the
+     * provided {@link ChunkFilterSpec}. Runtime suppliers are resolved later
+     * through {@link IndexRuntimeConfiguration}.
+     * </p>
+     *
+     * @param supplier runtime filter supplier
+     * @param spec persisted filter spec
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+            final Supplier<? extends ChunkFilter> supplier,
+            final ChunkFilterSpec spec) {
+        Vldtn.requireNonNull(supplier, "supplier");
+        return addDecodingFilter(spec);
+    }
+
+    /**
+     * Adds a decoding filter descriptor to the persisted filter pipeline.
+     *
+     * @param spec persisted filter spec
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+            final ChunkFilterSpec spec) {
+        return addDecodingFilterSpec(Vldtn.requireNonNull(spec, "spec"));
+    }
+
+    /**
+     * Replaces the decoding filter pipeline with the supplied registrations.
+     *
+     * @param registrations filter registrations to use
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withDecodingFilterRegistrations(
+            final Collection<ChunkFilterRegistration> registrations) {
+        Vldtn.requireNonNull(registrations, "registrations");
+        decodingChunkFilters.clear();
+        for (final ChunkFilterRegistration registration : registrations) {
+            addDecodingFilterSpec(Vldtn.requireNonNull(registration,
+                    "registration").getSpec());
+        }
+        return this;
+    }
+
+    /**
+     * Replaces the decoding filter pipeline with the supplied specs.
+     *
+     * @param specs filter specs to use
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withDecodingFilterSpecs(
+            final Collection<ChunkFilterSpec> specs) {
+        Vldtn.requireNonNull(specs, "specs");
+        decodingChunkFilters.clear();
+        for (final ChunkFilterSpec spec : specs) {
+            addDecodingFilterSpec(spec);
+        }
+        return this;
     }
 
     /**
@@ -598,6 +743,18 @@ public class IndexConfigurationBuilder<K, V> {
                 encodingChunkFilters, decodingChunkFilters);
     }
 
+    private IndexConfigurationBuilder<K, V> addEncodingFilterSpec(
+            final ChunkFilterSpec spec) {
+        encodingChunkFilters.add(Vldtn.requireNonNull(spec, "spec"));
+        return this;
+    }
+
+    private IndexConfigurationBuilder<K, V> addDecodingFilterSpec(
+            final ChunkFilterSpec spec) {
+        decodingChunkFilters.add(Vldtn.requireNonNull(spec, "spec"));
+        return this;
+    }
+
     private Integer resolveEffectiveMaxNumberOfKeysInSegment() {
         if (maxNumberOfKeysInSegment != null) {
             return maxNumberOfKeysInSegment;
@@ -672,6 +829,26 @@ public class IndexConfigurationBuilder<K, V> {
                             requiredClass.getName()),
                     ex);
         }
+    }
+
+    private ChunkFilterSpec resolvePersistableInstanceSpec(
+            final ChunkFilter filter, final boolean encoding) {
+        final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
+                "filter");
+        final ChunkFilterSpec spec = encoding
+                ? ChunkFilterSpecs.forEncodingFilter(requiredFilter)
+                : ChunkFilterSpecs.forDecodingFilter(requiredFilter);
+        if (ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS
+                .equals(spec.getProviderId())) {
+            throw new IllegalArgumentException(String.format(
+                    "Custom %s chunk filter instances require explicit persisted metadata. "
+                            + "Use %s(Supplier<? extends ChunkFilter>, ChunkFilterSpec) "
+                            + "or %s(Class<? extends ChunkFilter>) for no-arg filters.",
+                    encoding ? "encoding" : "decoding",
+                    encoding ? "addEncodingFilter" : "addDecodingFilter",
+                    encoding ? "addEncodingFilter" : "addDecodingFilter"));
+        }
+        return spec;
     }
 
 }

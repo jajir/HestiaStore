@@ -85,7 +85,8 @@ measure the logging overhead before enabling it everywhere.
 
 ## Configuration pages by topic
 
-- [Filters](filters.md) for chunk filter setup and constraints
+- [Filters](filters.md) for chunk filter setup, provider-backed custom filters,
+  and registry wiring
 - [Data Types](data-types.md) for custom serialization and comparator contracts
 - [Logging](logging.md) for logger configuration
 - [Monitoring Console](monitoring-console.md) for monitoring-side configuration

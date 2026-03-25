@@ -26,7 +26,8 @@ class IndexStateCoordinatorTest {
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         index = new IndexInternalConcurrent<>(new MemDirectory(), tdi, tds,
-                conf, new IndexExecutorRegistry(conf));
+                conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     @AfterEach

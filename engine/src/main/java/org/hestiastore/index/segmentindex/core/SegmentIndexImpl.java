@@ -13,6 +13,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -50,6 +51,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry) {
         IndexAsyncExecutor createdAsyncExecutor = null;
         final Directory nonNullDirectory = Vldtn.requireNonNull(directoryFacade,
@@ -69,7 +71,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     .openIfConfigured(this.conf)) {
                 final SegmentIndexAssembly<K, V> assembly = SegmentIndexAssembly
                         .open(logger, nonNullDirectory, keyTypeDescriptor,
-                                valueTypeDescriptor, conf, executorRegistry,
+                                valueTypeDescriptor, conf, runtimeConfiguration,
+                                executorRegistry,
                                 stats, compactRequestHighWaterMark,
                                 flushRequestHighWaterMark, lastAppliedWalLsn,
                                 new SegmentIndexAssembly.Callbacks(

@@ -1,10 +1,13 @@
 package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -93,5 +96,86 @@ class SegmentFilesTest {
         assertEquals(1L, files.getActiveVersion());
         assertEquals(3L, copy.getActiveVersion());
         assertSame(files.getDirectory(), copy.getDirectory());
+    }
+
+    @Test
+    void fromSuppliersMaterializesFreshFiltersForEachAccess() {
+        final AtomicInteger sequence = new AtomicInteger();
+        final SegmentFiles<Integer, String> files = SegmentFiles.fromSuppliers(
+                new MemDirectory(), SegmentId.of(1),
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(),
+                1024,
+                List.of(() -> new TrackingChunkFilter(sequence.incrementAndGet())),
+                List.of(() -> new TrackingChunkFilter(sequence.incrementAndGet())),
+                1L);
+
+        final TrackingChunkFilter first = (TrackingChunkFilter) files
+                .getEncodingChunkFilters().get(0);
+        final TrackingChunkFilter second = (TrackingChunkFilter) files
+                .getEncodingChunkFilters().get(0);
+
+        assertEquals(1, first.getId());
+        assertEquals(2, second.getId());
+        assertNotSame(first, second);
+    }
+
+    @Test
+    void supplierListsAreImmutableWhenCreatedFromSuppliers() {
+        final SegmentFiles<Integer, String> files = SegmentFiles.fromSuppliers(
+                new MemDirectory(), SegmentId.of(1),
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(),
+                1024, List.of(ChunkFilterDoNothing::new),
+                List.of(ChunkFilterDoNothing::new), 1L);
+        final List<Supplier<? extends ChunkFilter>> encodingSuppliers = files
+                .getEncodingChunkFilterSuppliers();
+        final List<Supplier<? extends ChunkFilter>> decodingSuppliers = files
+                .getDecodingChunkFilterSuppliers();
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> encodingSuppliers.add(ChunkFilterDoNothing::new));
+        assertThrows(UnsupportedOperationException.class,
+                () -> decodingSuppliers.add(ChunkFilterDoNothing::new));
+    }
+
+    @Test
+    void copyWithVersionPreservesSupplierBackedMaterialization() {
+        final AtomicInteger sequence = new AtomicInteger();
+        final SegmentFiles<Integer, String> files = SegmentFiles.fromSuppliers(
+                new MemDirectory(), SegmentId.of(1),
+                new TypeDescriptorInteger(), new TypeDescriptorShortString(),
+                1024,
+                List.of(() -> new TrackingChunkFilter(sequence.incrementAndGet())),
+                List.of(() -> new TrackingChunkFilter(sequence.incrementAndGet())),
+                1L);
+
+        final SegmentFiles<Integer, String> copy = files.copyWithVersion(2L);
+        final TrackingChunkFilter originalFilter = (TrackingChunkFilter) files
+                .getEncodingChunkFilters().get(0);
+        final TrackingChunkFilter copiedFilter = (TrackingChunkFilter) copy
+                .getEncodingChunkFilters().get(0);
+
+        assertEquals(1L, files.getActiveVersion());
+        assertEquals(2L, copy.getActiveVersion());
+        assertEquals(1, originalFilter.getId());
+        assertEquals(2, copiedFilter.getId());
+    }
+
+    private static final class TrackingChunkFilter implements ChunkFilter {
+
+        private final int id;
+
+        private TrackingChunkFilter(final int id) {
+            this.id = id;
+        }
+
+        private int getId() {
+            return id;
+        }
+
+        @Override
+        public org.hestiastore.index.chunkstore.ChunkData apply(
+                final org.hestiastore.index.chunkstore.ChunkData input) {
+            return input;
+        }
     }
 }
