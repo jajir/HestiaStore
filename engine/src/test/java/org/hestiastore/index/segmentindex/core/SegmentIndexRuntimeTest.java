@@ -33,7 +33,8 @@ class SegmentIndexRuntimeTest {
         executorRegistry = new IndexExecutorRegistry(conf);
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         runtime = SegmentIndexRuntime.open(logger, new MemDirectory(), tdi, tds,
-                conf, executorRegistry, new Stats(), new AtomicLong(),
+                conf, conf.resolveRuntimeConfiguration(), executorRegistry,
+                new Stats(), new AtomicLong(),
                 new AtomicLong(), new AtomicLong(),
                 () -> SegmentIndexState.READY, () -> {
                 }, failureRef::set, () -> {

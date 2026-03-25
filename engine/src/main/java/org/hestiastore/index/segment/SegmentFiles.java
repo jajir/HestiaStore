@@ -1,11 +1,13 @@
 package org.hestiastore.index.segment;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkentryfile.ChunkEntryFile;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterChainFactory;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datatype.TypeDescriptor;
@@ -37,8 +39,8 @@ public final class SegmentFiles<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final int diskIoBufferSize;
-    private final List<ChunkFilter> encodingChunkFilters;
-    private final List<ChunkFilter> decodingChunkFilters;
+    private final ChunkFilterChainFactory encodingChunkFilters;
+    private final ChunkFilterChainFactory decodingChunkFilters;
 
     /**
      * Create accessor for segment files stored in a single segment directory.
@@ -62,7 +64,47 @@ public final class SegmentFiles<K, V> {
             final long activeVersion) {
         this(directoryFacade, new SegmentDirectoryLayout(id), activeVersion,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
-                encodingChunkFilters, decodingChunkFilters);
+                createFilterChainFactory(encodingChunkFilters,
+                        "encodingChunkFilters"),
+                createFilterChainFactory(decodingChunkFilters,
+                        "decodingChunkFilters"));
+    }
+
+    /**
+     * Creates a segment-file accessor backed by runtime filter suppliers.
+     *
+     * <p>
+     * This variant is used when chunk filters should be materialized lazily for
+     * each file handle opened from the segment.
+     * </p>
+     *
+     * @param directoryFacade directory facade used for I/O
+     * @param id unique segment identifier
+     * @param keyTypeDescriptor descriptor for key serialization and comparison
+     * @param valueTypeDescriptor descriptor for value serialization
+     * @param diskIoBufferSize buffer size in bytes for on-disk operations
+     * @param encodingChunkFilters write-path filter suppliers
+     * @param decodingChunkFilters read-path filter suppliers
+     * @param activeVersion active on-disk version
+     * @param <K> key type stored in the segment
+     * @param <V> value type stored in the segment
+     * @return new segment-file accessor
+     */
+    static <K, V> SegmentFiles<K, V> fromSuppliers(
+            final Directory directoryFacade, final SegmentId id,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final List<? extends Supplier<? extends ChunkFilter>> encodingChunkFilters,
+            final List<? extends Supplier<? extends ChunkFilter>> decodingChunkFilters,
+            final long activeVersion) {
+        return new SegmentFiles<>(directoryFacade, new SegmentDirectoryLayout(id),
+                activeVersion,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                createFilterChainFactoryFromSuppliers(encodingChunkFilters,
+                        "encodingChunkFilters"),
+                createFilterChainFactoryFromSuppliers(decodingChunkFilters,
+                        "decodingChunkFilters"));
     }
 
     /**
@@ -86,6 +128,55 @@ public final class SegmentFiles<K, V> {
             final int diskIoBufferSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
+        this(directoryFacade, layout, activeVersion, keyTypeDescriptor,
+                valueTypeDescriptor, diskIoBufferSize,
+                createFilterChainFactory(encodingChunkFilters,
+                        "encodingChunkFilters"),
+                createFilterChainFactory(decodingChunkFilters,
+                        "decodingChunkFilters"));
+    }
+
+    /**
+     * Creates a segment-file accessor with explicit layout and runtime filter
+     * suppliers.
+     *
+     * @param directoryFacade directory facade used for I/O
+     * @param layout segment file naming layout
+     * @param activeVersion active on-disk version
+     * @param keyTypeDescriptor descriptor for key serialization and comparison
+     * @param valueTypeDescriptor descriptor for value serialization
+     * @param diskIoBufferSize buffer size in bytes for on-disk operations
+     * @param encodingChunkFilters write-path filter suppliers
+     * @param decodingChunkFilters read-path filter suppliers
+     * @param <K> key type stored in the segment
+     * @param <V> value type stored in the segment
+     * @return new segment-file accessor
+     */
+    static <K, V> SegmentFiles<K, V> fromSuppliers(
+            final Directory directoryFacade,
+            final SegmentDirectoryLayout layout,
+            final long activeVersion,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final List<? extends Supplier<? extends ChunkFilter>> encodingChunkFilters,
+            final List<? extends Supplier<? extends ChunkFilter>> decodingChunkFilters) {
+        return new SegmentFiles<>(directoryFacade, layout, activeVersion,
+                keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
+                createFilterChainFactoryFromSuppliers(encodingChunkFilters,
+                        "encodingChunkFilters"),
+                createFilterChainFactoryFromSuppliers(decodingChunkFilters,
+                        "decodingChunkFilters"));
+    }
+
+    private SegmentFiles(final Directory directoryFacade,
+            final SegmentDirectoryLayout layout,
+            final long activeVersion,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final int diskIoBufferSize,
+            final ChunkFilterChainFactory encodingChunkFilters,
+            final ChunkFilterChainFactory decodingChunkFilters) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         this.activeVersion = activeVersion;
@@ -96,10 +187,10 @@ public final class SegmentFiles<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.diskIoBufferSize = diskIoBufferSize;
-        this.encodingChunkFilters = List.copyOf(Vldtn
-                .requireNotEmpty(encodingChunkFilters, "encodingChunkFilters"));
-        this.decodingChunkFilters = List.copyOf(Vldtn
-                .requireNotEmpty(decodingChunkFilters, "decodingChunkFilters"));
+        this.encodingChunkFilters = Vldtn.requireNonNull(encodingChunkFilters,
+                "encodingChunkFilters");
+        this.decodingChunkFilters = Vldtn.requireNonNull(decodingChunkFilters,
+                "decodingChunkFilters");
     }
 
     /**
@@ -156,10 +247,11 @@ public final class SegmentFiles<K, V> {
      * @return chunk-entry file handle
      */
     ChunkEntryFile<K, V> getDeltaCacheChunkEntryFile(final String fileName) {
-        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+        final ChunkStoreFile chunkStoreFile = ChunkStoreFile.fromSuppliers(
                 directoryFacade, fileName,
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize),
-                encodingChunkFilters, decodingChunkFilters);
+                encodingChunkFilters.getSuppliers(),
+                decodingChunkFilters.getSuppliers());
         return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
                 valueTypeDescriptor,
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
@@ -185,10 +277,11 @@ public final class SegmentFiles<K, V> {
      * @return chunk-entry file for the index
      */
     ChunkEntryFile<K, V> getIndexFile() {
-        final ChunkStoreFile chunkStoreFile = new ChunkStoreFile(
+        final ChunkStoreFile chunkStoreFile = ChunkStoreFile.fromSuppliers(
                 directoryFacade, getIndexFileName(),
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize),
-                encodingChunkFilters, decodingChunkFilters);
+                encodingChunkFilters.getSuppliers(),
+                decodingChunkFilters.getSuppliers());
         return new ChunkEntryFile<>(chunkStoreFile, keyTypeDescriptor,
                 valueTypeDescriptor,
                 DataBlockSize.ofDataBlockSize(diskIoBufferSize));
@@ -203,14 +296,31 @@ public final class SegmentFiles<K, V> {
         return directoryFacade;
     }
 
+    /**
+     * Returns the version currently used to resolve active segment file names.
+     *
+     * @return active version number
+     */
     long getActiveVersion() {
         return activeVersion;
     }
 
+    /**
+     * Switches the active on-disk version used by this accessor.
+     *
+     * @param version new active version
+     */
     void switchActiveVersion(final long version) {
         this.activeVersion = version;
     }
 
+    /**
+     * Creates a copy of this accessor pointing to the same segment files but a
+     * different active version.
+     *
+     * @param version target active version
+     * @return copied accessor bound to the requested version
+     */
     SegmentFiles<K, V> copyWithVersion(final long version) {
         return new SegmentFiles<>(directoryFacade, layout, version,
                 keyTypeDescriptor, valueTypeDescriptor, diskIoBufferSize,
@@ -259,7 +369,7 @@ public final class SegmentFiles<K, V> {
      * @return immutable list of encoding filters
      */
     List<ChunkFilter> getEncodingChunkFilters() {
-        return encodingChunkFilters;
+        return encodingChunkFilters.materialize();
     }
 
     /**
@@ -268,7 +378,40 @@ public final class SegmentFiles<K, V> {
      * @return immutable list of decoding filters
      */
     List<ChunkFilter> getDecodingChunkFilters() {
-        return decodingChunkFilters;
+        return decodingChunkFilters.materialize();
+    }
+
+    /**
+     * Returns encoding suppliers used to create runtime write-path filters for
+     * files opened from this segment accessor.
+     *
+     * @return immutable encoding supplier list
+     */
+    List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
+        return encodingChunkFilters.getSuppliers();
+    }
+
+    /**
+     * Returns decoding suppliers used to create runtime read-path filters for
+     * files opened from this segment accessor.
+     *
+     * @return immutable decoding supplier list
+     */
+    List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
+        return decodingChunkFilters.getSuppliers();
+    }
+
+    private static ChunkFilterChainFactory createFilterChainFactory(
+            final List<ChunkFilter> filters, final String propertyName) {
+        return ChunkFilterChainFactory
+                .fromFilters(Vldtn.requireNotEmpty(filters, propertyName));
+    }
+
+    private static ChunkFilterChainFactory createFilterChainFactoryFromSuppliers(
+            final List<? extends Supplier<? extends ChunkFilter>> filters,
+            final String propertyName) {
+        return ChunkFilterChainFactory
+                .fromSuppliers(Vldtn.requireNotEmpty(filters, propertyName));
     }
 
     /**

@@ -2,6 +2,7 @@ package org.hestiastore.index.segment;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 
@@ -35,8 +36,8 @@ public class SegmentConf {
     private final int bloomFilterIndexSizeInBytes;
     private final double bloomFilterProbabilityOfFalsePositive;
     private final int diskIoBufferSize;
-    private final List<ChunkFilter> encodingChunkFilters;
-    private final List<ChunkFilter> decodingChunkFilters;
+    private final List<Supplier<? extends ChunkFilter>> encodingChunkFilters;
+    private final List<Supplier<? extends ChunkFilter>> decodingChunkFilters;
 
     private SegmentConf(final Builder builder) {
         maxNumberOfKeysInSegmentWriteCache = requireSet(
@@ -266,7 +267,8 @@ public class SegmentConf {
      * @return encoding filters
      */
     public List<ChunkFilter> getEncodingChunkFilters() {
-        return encodingChunkFilters;
+        return encodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
     }
 
     /**
@@ -275,6 +277,15 @@ public class SegmentConf {
      * @return decoding filters
      */
     public List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
+    }
+
+    List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
+        return encodingChunkFilters;
+    }
+
+    List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
         return decodingChunkFilters;
     }
 
@@ -292,8 +303,8 @@ public class SegmentConf {
         private int bloomFilterIndexSizeInBytes = UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
         private double bloomFilterProbabilityOfFalsePositive = UNSET_BLOOM_FILTER_PROBABILITY;
         private Integer diskIoBufferSize;
-        private List<ChunkFilter> encodingChunkFilters;
-        private List<ChunkFilter> decodingChunkFilters;
+        private List<Supplier<? extends ChunkFilter>> encodingChunkFilters;
+        private List<Supplier<? extends ChunkFilter>> decodingChunkFilters;
 
         private Builder() {
         }
@@ -357,23 +368,78 @@ public class SegmentConf {
             return this;
         }
 
+        /**
+         * Sets disk I/O buffer size in bytes.
+         *
+         * @param value buffer size in bytes
+         * @return this builder
+         */
         public Builder withDiskIoBufferSize(final int value) {
             diskIoBufferSize = value;
             return this;
         }
 
+        /**
+         * Sets fixed encoding filters for the segment configuration.
+         *
+         * @param filters ordered encoding filters
+         * @return this builder
+         */
         public Builder withEncodingChunkFilters(
                 final List<ChunkFilter> filters) {
-            encodingChunkFilters = filters;
+            encodingChunkFilters = List
+                    .copyOf(Objects.requireNonNull(filters, "filters").stream()
+                            .map(filter -> (Supplier<? extends ChunkFilter>) () -> filter)
+                            .toList());
             return this;
         }
 
+        /**
+         * Sets fixed decoding filters for the segment configuration.
+         *
+         * @param filters ordered decoding filters
+         * @return this builder
+         */
         public Builder withDecodingChunkFilters(
                 final List<ChunkFilter> filters) {
-            decodingChunkFilters = filters;
+            decodingChunkFilters = List
+                    .copyOf(Objects.requireNonNull(filters, "filters").stream()
+                            .map(filter -> (Supplier<? extends ChunkFilter>) () -> filter)
+                            .toList());
             return this;
         }
 
+        /**
+         * Sets encoding filters as runtime suppliers.
+         *
+         * @param filters ordered encoding filter suppliers
+         * @return this builder
+         */
+        Builder withEncodingChunkFilterSuppliers(
+                final List<Supplier<? extends ChunkFilter>> filters) {
+            encodingChunkFilters = List.copyOf(
+                    Objects.requireNonNull(filters, "filters"));
+            return this;
+        }
+
+        /**
+         * Sets decoding filters as runtime suppliers.
+         *
+         * @param filters ordered decoding filter suppliers
+         * @return this builder
+         */
+        Builder withDecodingChunkFilterSuppliers(
+                final List<Supplier<? extends ChunkFilter>> filters) {
+            decodingChunkFilters = List.copyOf(
+                    Objects.requireNonNull(filters, "filters"));
+            return this;
+        }
+
+        /**
+         * Builds an immutable segment configuration snapshot.
+         *
+         * @return immutable configuration
+         */
         public SegmentConf build() {
             return new SegmentConf(this);
         }

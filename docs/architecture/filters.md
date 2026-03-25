@@ -4,7 +4,9 @@ HestiaStore persists segment data in chunked files. Each chunk carries a header 
 
 This page focuses on filter behavior and ordering. For byte-level block/chunk
 structure see [Data Block Format](datablock.md). For builder setup and
-examples, see [Filter Configuration](../configuration/filters.md).
+examples, see [Filter Configuration](../configuration/filters.md). For
+provider/spec persistence and runtime resolution, see
+[Chunk Filter Provider Model](chunk-filter-provider-model.md).
 
 ## Chunk Flags Used by Filters
 
@@ -97,7 +99,8 @@ Notes:
 ## Configuration
 
 Filter setup, defaults, constraints, and code examples are documented in
-[Filter Configuration](../configuration/filters.md).
+[Filter Configuration](../configuration/filters.md). Provider/spec lifecycle is
+documented in [Chunk Filter Provider Model](chunk-filter-provider-model.md).
 
 ## Error Handling and Safety
 

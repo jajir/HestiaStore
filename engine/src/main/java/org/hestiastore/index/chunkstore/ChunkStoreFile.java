@@ -2,6 +2,7 @@ package org.hestiastore.index.chunkstore;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
@@ -14,14 +15,20 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReaderSeekable;
 
 /**
- * A file that stores chunks of data in a chunk store.
+ * Accessor and factory for chunk data stored in a single chunk-store file.
+ *
+ * <p>
+ * This type keeps long-lived file configuration together with chunk filter
+ * chain factories. Concrete filter instances are materialized only when a
+ * reader, payload reader, or writer transaction is opened.
+ * </p>
  */
 public class ChunkStoreFile {
 
     private final DataBlockFile dataBlockFile;
     private final DataBlockSize dataBlockSize;
-    private final List<ChunkFilter> encodingChunkFilters;
-    private final List<ChunkFilter> decodingChunkFilters;
+    private final ChunkFilterChainFactory encodingChunkFilters;
+    private final ChunkFilterChainFactory decodingChunkFilters;
 
     /**
      * Constructs a new ChunkStoreFile.
@@ -37,12 +44,49 @@ public class ChunkStoreFile {
             final DataBlockSize dataBlockSize,
             final List<ChunkFilter> encodingChunkFilters,
             final List<ChunkFilter> decodingChunkFilters) {
+        this(directoryFacade, fileName, dataBlockSize,
+                ChunkFilterChainFactory.fromFilters(encodingChunkFilters),
+                ChunkFilterChainFactory.fromFilters(decodingChunkFilters));
+    }
+
+    /**
+     * Creates a chunk-store accessor backed by runtime filter suppliers.
+     *
+     * <p>
+     * Use this variant when a fresh filter instance may be needed for each
+     * reader or writer, for example for stateful or non-thread-safe filters.
+     * </p>
+     *
+     * @param directoryFacade required directory containing the file
+     * @param fileName required chunk-store file name
+     * @param dataBlockSize required data block size
+     * @param encodingChunkFilters required write-path filter suppliers
+     * @param decodingChunkFilters required read-path filter suppliers
+     * @return new chunk-store accessor
+     */
+    public static ChunkStoreFile fromSuppliers(final Directory directoryFacade,
+            final String fileName,
+            final DataBlockSize dataBlockSize,
+            final List<? extends Supplier<? extends ChunkFilter>> encodingChunkFilters,
+            final List<? extends Supplier<? extends ChunkFilter>> decodingChunkFilters) {
+        return new ChunkStoreFile(directoryFacade, fileName, dataBlockSize,
+                ChunkFilterChainFactory.fromSuppliers(encodingChunkFilters),
+                ChunkFilterChainFactory.fromSuppliers(decodingChunkFilters));
+    }
+
+    private ChunkStoreFile(final Directory directoryFacade,
+            final String fileName,
+            final DataBlockSize dataBlockSize,
+            final ChunkFilterChainFactory encodingChunkFilters,
+            final ChunkFilterChainFactory decodingChunkFilters) {
         this.dataBlockFile = new DataBlockFile(directoryFacade, fileName,
                 dataBlockSize);
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
-        this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
-        this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
+        this.encodingChunkFilters = Vldtn.requireNonNull(encodingChunkFilters,
+                "encodingChunkFilters");
+        this.decodingChunkFilters = Vldtn.requireNonNull(decodingChunkFilters,
+                "decodingChunkFilters");
     }
 
     /**
@@ -55,6 +99,20 @@ public class ChunkStoreFile {
         return openReader(chunkPosition, null);
     }
 
+    /**
+     * Opens a chunk reader, optionally reusing an externally owned seekable
+     * reader.
+     *
+     * <p>
+     * The decoding filter chain is materialized for the returned runtime
+     * reader.
+     * </p>
+     *
+     * @param chunkPosition required position of the chunk to read
+     * @param seekableReader optional externally managed seekable reader;
+     *                       {@code null} creates a dedicated reader
+     * @return reader positioned at the requested chunk
+     */
     public ChunkStoreReader openReader(final CellPosition chunkPosition,
             final FileReaderSeekable seekableReader) {
         final DataBlockByteReader dataBlockByteReader = new DataBlockByteReaderImpl(
@@ -63,7 +121,7 @@ public class ChunkStoreFile {
                                 seekableReader),
                 dataBlockSize, chunkPosition.getCellIndex());
         return new ChunkStoreReaderImpl(dataBlockByteReader,
-                decodingChunkFilters);
+                decodingChunkFilters.materialize());
     }
 
     /**
@@ -91,7 +149,7 @@ public class ChunkStoreFile {
                         resolvedSeekableReader),
                 dataBlockSize, resolvedChunkPosition.getCellIndex());
         final ChunkProcessor decodingProcessor = new ChunkProcessor(
-                decodingChunkFilters);
+                decodingChunkFilters.materialize());
         return () -> {
             final Optional<ChunkData> optionalChunkData = ChunkData
                     .read(dataBlockByteReader);
@@ -110,7 +168,7 @@ public class ChunkStoreFile {
      */
     public ChunkStoreWriterTx openWriteTx() {
         return new ChunkStoreWriterTx(dataBlockFile, dataBlockSize,
-                encodingChunkFilters);
+                encodingChunkFilters.materialize());
     }
 
     /**
@@ -122,12 +180,44 @@ public class ChunkStoreFile {
         return CellPosition.of(dataBlockSize, 0);
     }
 
+    /**
+     * Materializes the encoding filter chain currently configured for this
+     * file.
+     *
+     * @return encoding filters for one runtime use
+     */
     List<ChunkFilter> getEncodingChunkFilters() {
-        return encodingChunkFilters;
+        return encodingChunkFilters.materialize();
     }
 
+    /**
+     * Materializes the decoding filter chain currently configured for this
+     * file.
+     *
+     * @return decoding filters for one runtime use
+     */
     List<ChunkFilter> getDecodingChunkFilters() {
-        return decodingChunkFilters;
+        return decodingChunkFilters.materialize();
+    }
+
+    /**
+     * Returns immutable encoding suppliers used to create runtime write-path
+     * filters.
+     *
+     * @return encoding filter suppliers
+     */
+    List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
+        return encodingChunkFilters.getSuppliers();
+    }
+
+    /**
+     * Returns immutable decoding suppliers used to create runtime read-path
+     * filters.
+     *
+     * @return decoding filter suppliers
+     */
+    List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
+        return decodingChunkFilters.getSuppliers();
     }
 
 }

@@ -253,7 +253,8 @@ class SegmentIndexImplPutTest {
                 final TypeDescriptor<V> valueTypeDescriptor,
                 final IndexConfiguration<K, V> conf) {
             super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                    conf, new IndexExecutorRegistry(conf));
+                    conf, conf.resolveRuntimeConfiguration(),
+                    new IndexExecutorRegistry(conf));
         }
 
         void awaitSplitsIdlePublic() {

@@ -4,12 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -80,9 +81,7 @@ class SegmentRegistryBuilderTest {
         final MemDirectory directory = new MemDirectory();
         directory.mkdir("segment-00005");
         final Directory asyncDirectory = directory;
-        when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
-        when(conf.getIndexBusyTimeoutMillis()).thenReturn(10);
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
         final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
         final ExecutorService registryMaintenanceExecutor = Executors
@@ -156,6 +155,32 @@ class SegmentRegistryBuilderTest {
                 .withConfiguration(conf)
                 .withSegmentMaintenanceExecutor(
                         stableSegmentMaintenanceExecutor)
+                .build();
+    }
+
+    private static IndexConfiguration<Integer, String> newConfiguration() {
+        return IndexConfiguration.<Integer, String>builder()
+                .withKeyClass(Integer.class)
+                .withValueClass(String.class)
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                .withValueTypeDescriptor(new TypeDescriptorShortString())
+                .withName("segment-registry-builder-test")
+                .withContextLoggingEnabled(false)
+                .withMaxNumberOfKeysInSegmentCache(10)
+                .withMaxNumberOfKeysInActivePartition(5)
+                .withMaxNumberOfKeysInPartitionBuffer(6)
+                .withMaxNumberOfKeysInSegmentChunk(2)
+                .withMaxNumberOfKeysInSegment(100)
+                .withMaxNumberOfSegmentsInCache(3)
+                .withBloomFilterNumberOfHashFunctions(1)
+                .withBloomFilterIndexSizeInBytes(1024)
+                .withBloomFilterProbabilityOfFalsePositive(0.01D)
+                .withDiskIoBufferSizeInBytes(1024)
+                .withIndexWorkerThreadCount(1)
+                .withIndexBusyBackoffMillis(1)
+                .withIndexBusyTimeoutMillis(10)
+                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
+                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
                 .build();
     }
 }

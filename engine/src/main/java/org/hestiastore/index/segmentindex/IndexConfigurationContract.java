@@ -7,6 +7,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 
 /**
  * Define contract, that define index configuration.
@@ -263,6 +265,15 @@ public interface IndexConfigurationContract {
     }
 
     /**
+     * Returns the default encoding filter specs.
+     *
+     * @return default encoding filter specs
+     */
+    default List<ChunkFilterSpec> getEncodingChunkFilterSpecs() {
+        return List.of(ChunkFilterSpecs.crc32(), ChunkFilterSpecs.magicNumber());
+    }
+
+    /**
      * Returns the default decoding chunk filter chain.
      *
      * @return default decoding filters
@@ -270,6 +281,16 @@ public interface IndexConfigurationContract {
     default List<ChunkFilter> getDecodingChunkFilters() {
         return List.of(new ChunkFilterMagicNumberValidation(),
                 new ChunkFilterCrc32Validation());
+    }
+
+    /**
+     * Returns the default decoding filter specs.
+     *
+     * @return default decoding filter specs
+     */
+    default List<ChunkFilterSpec> getDecodingChunkFilterSpecs() {
+        return List.of(ChunkFilterSpecs.magicNumber(),
+                ChunkFilterSpecs.crc32());
     }
 
 }

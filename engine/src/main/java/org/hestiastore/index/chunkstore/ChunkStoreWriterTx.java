@@ -9,6 +9,15 @@ import org.hestiastore.index.datablockfile.DataBlockSize;
 import org.hestiastore.index.datablockfile.DataBlockWriter;
 import org.hestiastore.index.datablockfile.DataBlockWriterTx;
 
+/**
+ * One-shot write transaction for a single chunk-store file.
+ *
+ * <p>
+ * The transaction owns one low-level {@link DataBlockWriterTx} and opens a
+ * runtime {@link ChunkStoreWriter} exactly once. The supplied encoding filter
+ * list is already materialized for this transaction.
+ * </p>
+ */
 public class ChunkStoreWriterTx
         extends GuardedWriteTransaction<ChunkStoreWriter> {
 
@@ -16,6 +25,14 @@ public class ChunkStoreWriterTx
     private final DataBlockSize dataBlockSize;
     private final List<ChunkFilter> encodingChunkFilters;
 
+    /**
+     * Creates a transaction for appending chunks to the given data block file.
+     *
+     * @param blockDataFile required target data block file
+     * @param dataBlockSize required data block size
+     * @param encodingChunkFilters required encoding filters for the runtime
+     *                             writer opened from this transaction
+     */
     public ChunkStoreWriterTx(final DataBlockFile blockDataFile,
             final DataBlockSize dataBlockSize,
             final List<ChunkFilter> encodingChunkFilters) {
@@ -24,7 +41,8 @@ public class ChunkStoreWriterTx
         this.dataBlockSize = Vldtn.requireNonNull(dataBlockSize,
                 "dataBlockSize");
         this.encodingChunkFilters = List
-                .copyOf(Vldtn.requireNonNull(encodingChunkFilters, "filters"));
+                .copyOf(Vldtn.requireNonNull(encodingChunkFilters,
+                        "encodingChunkFilters"));
     }
 
     @Override
@@ -34,7 +52,8 @@ public class ChunkStoreWriterTx
                 dataBlockWriter, dataBlockSize);
         final CellStoreWriterImpl cellStoreWriter = new CellStoreWriterImpl(
                 cursor);
-        return new ChunkStoreWriterImpl(cellStoreWriter, encodingChunkFilters);
+        return new ChunkStoreWriterImpl(cellStoreWriter,
+                encodingChunkFilters);
     }
 
     @Override

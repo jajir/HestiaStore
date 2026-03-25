@@ -258,14 +258,16 @@ class SegmentIndexAsyncMaintenanceTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         return new IndexInternalConcurrent<>(
                 new MemDirectory(),
-                tdi, tds, conf, new IndexExecutorRegistry(conf));
+                tdi, tds, conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     private IndexInternalConcurrent<Integer, String> newDrainIndex() {
         final IndexConfiguration<Integer, String> conf = buildDrainConf();
         return new IndexInternalConcurrent<>(
                 new MemDirectory(),
-                tdi, tds, conf, new IndexExecutorRegistry(conf));
+                tdi, tds, conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

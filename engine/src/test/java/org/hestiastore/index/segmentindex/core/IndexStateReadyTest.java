@@ -79,6 +79,7 @@ class IndexStateReadyTest {
                 final TypeDescriptorShortString valueTypeDescriptor,
                 final IndexConfiguration<Integer, String> conf) {
             super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
+                    conf.resolveRuntimeConfiguration(),
                     new IndexExecutorRegistry(conf));
         }
     }

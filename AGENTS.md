@@ -74,6 +74,12 @@
 - New code must satisfy the JaCoCo gate: 80% instruction coverage and no missed classes.
 - Test corner cases.
 - For each changed production class, ensure there is a corresponding `*Test` class in the matching package.
+- Apply the matching `*Test` expectation to helper, value, registry, SPI, codec, and factory classes too, not only to large service classes.
+- If a matching `*Test` class is intentionally not added for a changed production class, explicitly explain in the final response which existing tests cover it and which corner cases remain uncovered.
+- Changes in persistence, configuration, or codec layers must include direct tests for round-trip behavior, backward compatibility, and invalid-input handling.
+- Changes in factory, lifecycle, or transaction layers must include direct tests for open/close/commit ordering, repeated calls, and rollback or cleanup on failure paths.
+- Changes in registry, provider, supplier, or spec-mapping layers must include direct tests for unknown IDs, duplicate registration, canonicalization, and negative-path resolution failures.
+- New public classes, public overloads, and new persistence/runtime adaptation paths must have direct tests for the main happy path and at least one representative failure path.
 - If a JUnit test class uses mocks, annotate it with `@ExtendWith(MockitoExtension.class)`.
 - Create one private field per mocked dependency.
 - Instantiate the class under test in `setUp()` and clean up in `tearDown()` when needed.

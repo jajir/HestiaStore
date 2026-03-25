@@ -48,6 +48,8 @@ Source: [system-overview.plantuml](images/system-overview.plantuml)
 
 - [Data Block Format](datablock.md) — low-level block and chunk structure.
 - [Filters & Integrity](filters.md) — chunk filter pipeline and validation.
+- [Chunk Filter Provider Model](chunk-filter-provider-model.md) — how filter
+  specs, providers, registries, and runtime suppliers fit together.
 - [Chain of Filters](chain-of-filters.md) — shared filter-chain helper.
 - [Concurrency Model](concurrency.md) — index-wide synchronization model.
 - [Consistency & Recovery](recovery.md) — crash-safety and recovery model.

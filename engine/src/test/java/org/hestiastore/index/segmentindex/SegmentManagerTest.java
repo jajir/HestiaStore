@@ -8,7 +8,9 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
+import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -34,10 +36,20 @@ class SegmentManagerTest {
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
+    @Mock
+    private IndexRuntimeConfiguration<Integer, String> runtimeConfiguration;
+
     @Test
     void test_getting_same_segmentId() {
         final Directory directory = new MemDirectory();
+        final List<Supplier<? extends ChunkFilter>> filterSuppliers = List
+                .of(ChunkFilterDoNothing::new);
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        when(conf.resolveRuntimeConfiguration()).thenReturn(runtimeConfiguration);
+        when(runtimeConfiguration.getEncodingChunkFilterSuppliers())
+                .thenReturn(filterSuppliers);
+        when(runtimeConfiguration.getDecodingChunkFilterSuppliers())
+                .thenReturn(filterSuppliers);
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry
@@ -61,10 +73,6 @@ class SegmentManagerTest {
         when(conf.getBloomFilterNumberOfHashFunctions()).thenReturn(1);
         when(conf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
         when(conf.getBloomFilterProbabilityOfFalsePositive()).thenReturn(0.01);
-        when(conf.getEncodingChunkFilters())
-                .thenReturn(List.of(new ChunkFilterDoNothing()));
-        when(conf.getDecodingChunkFilters())
-                .thenReturn(List.of(new ChunkFilterDoNothing()));
 
         final SegmentRegistryResult<Segment<Integer, String>> created = segmentRegistry
                 .createSegment();
@@ -89,6 +97,7 @@ class SegmentManagerTest {
     void test_close() {
         final Directory directory = new MemDirectory();
         when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        when(conf.resolveRuntimeConfiguration()).thenReturn(runtimeConfiguration);
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
         final SegmentRegistry<Integer, String> segmentRegistry = SegmentRegistry

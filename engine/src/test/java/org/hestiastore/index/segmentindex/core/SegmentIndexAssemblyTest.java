@@ -110,7 +110,8 @@ class SegmentIndexAssemblyTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         return SegmentIndexAssembly.open(logger, new MemDirectory(), tdi, tds,
-                conf, executorRegistry, new Stats(), new AtomicLong(),
+                conf, conf.resolveRuntimeConfiguration(), executorRegistry,
+                new Stats(), new AtomicLong(),
                 new AtomicLong(), new AtomicLong(),
                 new SegmentIndexAssembly.Callbacks(
                         () -> SegmentIndexState.READY, () -> {

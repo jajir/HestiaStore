@@ -11,6 +11,7 @@ import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
@@ -97,6 +98,7 @@ final class SegmentIndexRuntime<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
@@ -107,7 +109,8 @@ final class SegmentIndexRuntime<K, V> {
             final Runnable onBackgroundSplitApplied) {
         return new SegmentIndexRuntimeBuilder<>(
                 logger, directoryFacade, keyTypeDescriptor,
-                valueTypeDescriptor, conf, executorRegistry, stats,
+                valueTypeDescriptor, conf, runtimeConfiguration,
+                executorRegistry, stats,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn,
                 new SegmentIndexRuntimeBuilder.Callbacks(stateSupplier,

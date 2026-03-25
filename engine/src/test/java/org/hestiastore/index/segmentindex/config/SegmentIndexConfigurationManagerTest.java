@@ -14,8 +14,12 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
+import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+import org.hestiastore.index.chunkstore.ChunkFilterRegistration;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -689,9 +693,9 @@ class SegmentIndexConfigurationManagerTest {
 
         assertEquals(
                 "Value of 'EncodingChunkFilters' is already set to '"
-                        + CONFIG.getEncodingChunkFilters()
+                        + CONFIG.getEncodingChunkFilterSpecs()
                         + "' and can't be changed to '"
-                        + config.getEncodingChunkFilters() + "'",
+                        + config.getEncodingChunkFilterSpecs() + "'",
                 e.getMessage());
     }
 
@@ -709,9 +713,9 @@ class SegmentIndexConfigurationManagerTest {
 
         assertEquals(
                 "Value of 'DecodingChunkFilters' is already set to '"
-                        + CONFIG.getDecodingChunkFilters()
+                        + CONFIG.getDecodingChunkFilterSpecs()
                         + "' and can't be changed to '"
-                        + config.getDecodingChunkFilters() + "'",
+                        + config.getDecodingChunkFilterSpecs() + "'",
                 e.getMessage());
     }
 
@@ -730,6 +734,85 @@ class SegmentIndexConfigurationManagerTest {
 
         when(storage.load()).thenReturn(CONFIG);
         manager.mergeWithStored(config);
+    }
+
+    @Test
+    void test_mergeWithStored_legacyBuiltInJavaClassSpecsAreEquivalent() {
+        final IndexConfiguration<Long, String> storedConfig = baseBuilder()
+                .withEncodingFilterRegistrations(List.of(
+                        ChunkFilterRegistration.of(
+                                ChunkFilterSpecs.javaClass(
+                                        ChunkFilterCrc32Writing.class),
+                                ChunkFilterCrc32Writing::new),
+                        ChunkFilterRegistration.of(
+                                ChunkFilterSpecs.javaClass(
+                                        ChunkFilterMagicNumberWriting.class),
+                                ChunkFilterMagicNumberWriting::new)))
+                .withDecodingFilterRegistrations(List.of(
+                        ChunkFilterRegistration.of(
+                                ChunkFilterSpecs.javaClass(
+                                        ChunkFilterMagicNumberValidation.class),
+                                ChunkFilterMagicNumberValidation::new),
+                        ChunkFilterRegistration.of(
+                                ChunkFilterSpecs.javaClass(
+                                        ChunkFilterCrc32Validation.class),
+                                ChunkFilterCrc32Validation::new)))
+                .build();
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()
+                .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
+                        ChunkFilterMagicNumberWriting.class))
+                .withDecodingFilterClasses(
+                        List.of(ChunkFilterMagicNumberValidation.class,
+                                ChunkFilterCrc32Validation.class))
+                .build();
+
+        when(storage.load()).thenReturn(storedConfig);
+
+        final IndexConfiguration<Long, String> merged = manager
+                .mergeWithStored(config);
+
+        assertNotNull(merged);
+        assertEquals(storedConfig.getEncodingChunkFilterSpecs(),
+                merged.getEncodingChunkFilterSpecs());
+        assertEquals(storedConfig.getDecodingChunkFilterSpecs(),
+                merged.getDecodingChunkFilterSpecs());
+        Mockito.verify(storage, Mockito.never()).save(any());
+    }
+
+    @Test
+    void test_mergeWithStored_chunkFilterSpecParameterOrderDoesNotMatter() {
+        final ChunkFilterSpec storedSpec = ChunkFilterSpec.ofProvider("custom")
+                .withParameter("keyRef", "orders-main")
+                .withParameter("mode", "gcm");
+        final ChunkFilterSpec requestSpec = ChunkFilterSpec.ofProvider("custom")
+                .withParameter("mode", "gcm")
+                .withParameter("keyRef", "orders-main");
+        final IndexConfiguration<Long, String> storedConfig = baseBuilder()
+                .withEncodingFilterRegistrations(List.of(
+                        ChunkFilterRegistration.of(storedSpec,
+                                ChunkFilterDoNothing::new)))
+                .withDecodingFilterRegistrations(List.of(
+                        ChunkFilterRegistration.of(storedSpec,
+                                ChunkFilterDoNothing::new)))
+                .build();
+        final IndexConfiguration<Long, String> config = IndexConfiguration
+                .<Long, String>builder()
+                .addEncodingFilter(ChunkFilterDoNothing::new, requestSpec)
+                .addDecodingFilter(ChunkFilterDoNothing::new, requestSpec)
+                .build();
+
+        when(storage.load()).thenReturn(storedConfig);
+
+        final IndexConfiguration<Long, String> merged = manager
+                .mergeWithStored(config);
+
+        assertNotNull(merged);
+        assertEquals(storedConfig.getEncodingChunkFilterSpecs(),
+                merged.getEncodingChunkFilterSpecs());
+        assertEquals(storedConfig.getDecodingChunkFilterSpecs(),
+                merged.getDecodingChunkFilterSpecs());
+        Mockito.verify(storage, Mockito.never()).save(any());
     }
 
     @BeforeEach
