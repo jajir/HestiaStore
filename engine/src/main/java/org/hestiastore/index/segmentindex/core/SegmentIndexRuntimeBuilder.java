@@ -8,6 +8,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -95,6 +96,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
+    private final IndexRuntimeConfiguration<K, V> runtimeConfiguration;
     private final IndexExecutorRegistry executorRegistry;
     private final Stats stats;
     private final AtomicLong compactRequestHighWaterMark;
@@ -109,6 +111,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
@@ -122,6 +125,8 @@ final class SegmentIndexRuntimeBuilder<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
+        this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration,
+                "runtimeConfiguration");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
         this.stats = Vldtn.requireNonNull(stats, "stats");
@@ -240,8 +245,9 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     }
 
     private SegmentFactory<K, V> newSegmentFactory() {
-        return new SegmentFactory<>(directoryFacade, keyTypeDescriptor,
-                valueTypeDescriptor, conf,
+        return SegmentFactory.withRuntimeConfiguration(directoryFacade,
+                keyTypeDescriptor, valueTypeDescriptor, conf,
+                runtimeConfiguration,
                 executorRegistry.getStableSegmentMaintenanceExecutor());
     }
 
@@ -251,6 +257,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
+                .withRuntimeConfiguration(runtimeConfiguration)
                 .withSegmentMaintenanceExecutor(
                         executorRegistry.getStableSegmentMaintenanceExecutor())
                 .withRegistryMaintenanceExecutor(

@@ -29,7 +29,8 @@ class SegmentIndexImplTest {
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
-                conf, new IndexExecutorRegistry(conf));
+                conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     @AfterEach
@@ -57,6 +58,7 @@ class SegmentIndexImplTest {
         try (IndexInternalConcurrent<Integer, String> asyncIndex = new IndexInternalConcurrent<>(
                 new MemDirectory(), new TypeDescriptorInteger(),
                 recordingValueTypeDescriptor, conf,
+                conf.resolveRuntimeConfiguration(),
                 new IndexExecutorRegistry(conf))) {
             asyncIndex.putAsync(1, "one").toCompletableFuture().get(5,
                     TimeUnit.SECONDS);

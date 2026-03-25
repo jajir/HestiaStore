@@ -3,6 +3,7 @@ package org.hestiastore.index.segment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -38,8 +39,8 @@ public final class SegmentBuilder<K, V> {
     private int bloomFilterIndexSizeInBytes = SegmentConf.UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
     private double bloomFilterProbabilityOfFalsePositive = SegmentConf.UNSET_BLOOM_FILTER_PROBABILITY;
     private int diskIoBufferSize = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
-    private final List<ChunkFilter> encodingChunkFilters = new ArrayList<>();
-    private final List<ChunkFilter> decodingChunkFilters = new ArrayList<>();
+    private final List<Supplier<? extends ChunkFilter>> encodingChunkFilters = new ArrayList<>();
+    private final List<Supplier<? extends ChunkFilter>> decodingChunkFilters = new ArrayList<>();
     private Executor maintenanceExecutor;
     private SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private boolean directoryLockingEnabled = true;
@@ -272,6 +273,26 @@ public final class SegmentBuilder<K, V> {
         final List<ChunkFilter> validated = Vldtn.requireNotEmpty(filters,
                 "encodingChunkFilters");
         encodingChunkFilters.clear();
+        validated.forEach(filter -> encodingChunkFilters.add(() -> filter));
+        return this;
+    }
+
+    /**
+     * Sets encoding filters as runtime suppliers.
+     *
+     * <p>
+     * Use this variant when filters should be created lazily for each runtime
+     * segment component instead of reusing fixed instances.
+     * </p>
+     *
+     * @param filters non-empty list of encoding filter suppliers
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withEncodingChunkFilterSuppliers(
+            final List<Supplier<? extends ChunkFilter>> filters) {
+        final List<Supplier<? extends ChunkFilter>> validated = Vldtn
+                .requireNotEmpty(filters, "encodingChunkFilters");
+        encodingChunkFilters.clear();
         encodingChunkFilters.addAll(List.copyOf(validated));
         return this;
     }
@@ -286,6 +307,26 @@ public final class SegmentBuilder<K, V> {
             final List<ChunkFilter> filters) {
         final List<ChunkFilter> validated = Vldtn.requireNotEmpty(filters,
                 "decodingChunkFilters");
+        decodingChunkFilters.clear();
+        validated.forEach(filter -> decodingChunkFilters.add(() -> filter));
+        return this;
+    }
+
+    /**
+     * Sets decoding filters as runtime suppliers.
+     *
+     * <p>
+     * Use this variant when filters should be created lazily for each runtime
+     * segment component instead of reusing fixed instances.
+     * </p>
+     *
+     * @param filters non-empty list of decoding filter suppliers
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withDecodingChunkFilterSuppliers(
+            final List<Supplier<? extends ChunkFilter>> filters) {
+        final List<Supplier<? extends ChunkFilter>> validated = Vldtn
+                .requireNotEmpty(filters, "decodingChunkFilters");
         decodingChunkFilters.clear();
         decodingChunkFilters.addAll(List.copyOf(validated));
         return this;
@@ -482,10 +523,20 @@ public final class SegmentBuilder<K, V> {
     }
 
     List<ChunkFilter> getEncodingChunkFilters() {
+        return encodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
+    }
+
+    List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
         return encodingChunkFilters;
     }
 
     List<ChunkFilter> getDecodingChunkFilters() {
+        return decodingChunkFilters.stream()
+                .map(supplier -> (ChunkFilter) supplier.get()).toList();
+    }
+
+    List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
         return decodingChunkFilters;
     }
 

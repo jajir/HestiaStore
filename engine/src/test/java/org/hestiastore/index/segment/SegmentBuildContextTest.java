@@ -2,9 +2,12 @@ package org.hestiastore.index.segment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -101,6 +104,53 @@ class SegmentBuildContextTest {
                     context.segmentConf.getBloomFilterNumberOfHashFunctions());
             assertEquals(512,
                     context.segmentConf.getBloomFilterIndexSizeInBytes());
+        }
+    }
+
+    @Test
+    void supplierBasedFiltersArePropagatedToSegmentConfAndSegmentFiles() {
+        final AtomicInteger sequence = new AtomicInteger();
+        final SegmentBuilder<Integer, String> builder = Segment
+                .<Integer, String>builder(new MemDirectory()).withId(SEGMENT_ID)
+                .withKeyTypeDescriptor(KEY_TYPE_DESCRIPTOR)
+                .withValueTypeDescriptor(VALUE_TYPE_DESCRIPTOR)
+                .withMaxNumberOfKeysInSegmentWriteCache(10)
+                .withEncodingChunkFilterSuppliers(List.of(
+                        () -> new TrackingChunkFilter(sequence.incrementAndGet())))
+                .withDecodingChunkFilterSuppliers(List.of(
+                        () -> new TrackingChunkFilter(sequence.incrementAndGet())));
+        final SegmentBuildContext<Integer, String> context = new SegmentBuildContext<>(
+                builder, new SegmentDirectoryLayout(SEGMENT_ID));
+
+        final TrackingChunkFilter firstConfFilter = (TrackingChunkFilter) context.segmentConf
+                .getEncodingChunkFilters().get(0);
+        final TrackingChunkFilter secondConfFilter = (TrackingChunkFilter) context.segmentConf
+                .getEncodingChunkFilters().get(0);
+        final TrackingChunkFilter fileFilter = (TrackingChunkFilter) context.segmentFiles
+                .getEncodingChunkFilters().get(0);
+
+        assertEquals(1, firstConfFilter.getId());
+        assertEquals(2, secondConfFilter.getId());
+        assertEquals(3, fileFilter.getId());
+        assertNotSame(firstConfFilter, secondConfFilter);
+    }
+
+    private static final class TrackingChunkFilter
+            implements org.hestiastore.index.chunkstore.ChunkFilter {
+
+        private final int id;
+
+        private TrackingChunkFilter(final int id) {
+            this.id = id;
+        }
+
+        private int getId() {
+            return id;
+        }
+
+        @Override
+        public ChunkData apply(final ChunkData input) {
+            return input;
         }
     }
 }

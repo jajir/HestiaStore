@@ -9,7 +9,13 @@ import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.bytes.ConcatenatedByteSequence;
 
 /**
- * A writer for writing chunks to a chunk store.
+ * Runtime writer for appending chunks to a chunk store.
+ *
+ * <p>
+ * The encoding filter chain is already materialized when this object is
+ * created. Any supplier-based lifecycle is resolved by higher-level factory
+ * types before the writer is opened.
+ * </p>
  */
 public class ChunkStoreWriterImpl extends AbstractCloseableResource
         implements ChunkStoreWriter {
@@ -24,14 +30,16 @@ public class ChunkStoreWriterImpl extends AbstractCloseableResource
      * Creates a new instance of {@link ChunkStoreWriterImpl}.
      *
      * @param cellStoreWriter required cell store writer to write chunk data to.
+     * @param encodingChunkFilters required encoding filters already resolved
+     *                             for this runtime writer
      */
     public ChunkStoreWriterImpl(final CellStoreWriter cellStoreWriter,
             final List<ChunkFilter> encodingChunkFilters) {
         this.cellStoreWriter = Vldtn.requireNonNull(cellStoreWriter,
                 "cellStoreWriter");
-        final List<ChunkFilter> filters = List
-                .copyOf(Vldtn.requireNonNull(encodingChunkFilters, "filters"));
-        this.encodingProcessor = new ChunkProcessor(filters);
+        this.encodingProcessor = new ChunkProcessor(List
+                .copyOf(Vldtn.requireNonNull(encodingChunkFilters,
+                        "encodingChunkFilters")));
     }
 
     @Override

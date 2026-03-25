@@ -1,12 +1,8 @@
 package org.hestiastore.index.segmentindex.config;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
-import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
@@ -81,6 +77,27 @@ public class IndexConfigurationStorage<K, V> {
     public IndexConfigurationStorage(final Directory directoryFacade) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
+    }
+
+    /**
+     * Creates a configuration storage wrapper.
+     *
+     * <p>
+     * The chunk filter provider registry parameter is retained for source and
+     * binary compatibility with earlier runtime-coupled storage code. Storage
+     * now persists only {@code ChunkFilterSpec} metadata and no longer resolves
+     * runtime suppliers while loading.
+     * </p>
+     *
+     * @param directoryFacade backing directory
+     * @param chunkFilterProviderRegistry ignored runtime registry retained for
+     *                                    compatibility
+     */
+    public IndexConfigurationStorage(final Directory directoryFacade,
+            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+        this(directoryFacade);
+        Vldtn.requireNonNull(chunkFilterProviderRegistry,
+                "chunkFilterProviderRegistry");
     }
 
     public IndexConfiguration<K, V> load() {
@@ -201,13 +218,15 @@ public class IndexConfigurationStorage<K, V> {
         final String encodingFilters = propsView
                 .getString(PROP_ENCODING_CHUNK_FILTERS);
         if (encodingFilters != null && !encodingFilters.isBlank()) {
-            builder.withEncodingFilters(parseFilterList(encodingFilters));
+            builder.withEncodingFilterSpecs(
+                    ChunkFilterSpecCodec.parse(encodingFilters));
         }
 
         final String decodingFilters = propsView
                 .getString(PROP_DECODING_CHUNK_FILTERS);
         if (decodingFilters != null && !decodingFilters.isBlank()) {
-            builder.withDecodingFilters(parseFilterList(decodingFilters));
+            builder.withDecodingFilterSpecs(
+                    ChunkFilterSpecCodec.parse(decodingFilters));
         }
 
         final boolean walEnabled = getOrDefaultBoolean(propsView,
@@ -349,10 +368,14 @@ public class IndexConfigurationStorage<K, V> {
                     BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE);
         }
         writer.setString(PROP_ENCODING_CHUNK_FILTERS,
-                serializeFilters(indexConfiguration.getEncodingChunkFilters()));
+                ChunkFilterSpecCodec
+                        .serialize(indexConfiguration
+                                .getEncodingChunkFilterSpecs()));
 
         writer.setString(PROP_DECODING_CHUNK_FILTERS,
-                serializeFilters(indexConfiguration.getDecodingChunkFilters()));
+                ChunkFilterSpecCodec
+                        .serialize(indexConfiguration
+                                .getDecodingChunkFilterSpecs()));
         final Wal wal = Wal.orEmpty(indexConfiguration.getWal());
         writer.setBoolean(PROP_WAL_ENABLED, wal.isEnabled());
         writer.setString(PROP_WAL_DURABILITY_MODE,
@@ -387,41 +410,6 @@ public class IndexConfigurationStorage<K, V> {
         } catch (ClassNotFoundException ex) {
             throw new IllegalArgumentException(
                     "Unable to load class: " + className, ex);
-        }
-    }
-
-    private List<ChunkFilter> parseFilterList(final String value) {
-        return Arrays.stream(value.split(",")).map(String::trim)
-                .filter(s -> !s.isEmpty()).map(this::instantiateFilter)
-                .toList();
-    }
-
-    private String serializeFilters(final List<ChunkFilter> filters) {
-        if (filters == null || filters.isEmpty()) {
-            return "";
-        }
-        return filters.stream().map(filter -> filter.getClass().getName())
-                .collect(Collectors.joining(","));
-    }
-
-    private ChunkFilter instantiateFilter(final String className) {
-        final String requiredClassName = Vldtn.requireNonNull(className,
-                "className");
-        try {
-            final Class<?> clazz = Class.forName(requiredClassName);
-            if (!ChunkFilter.class.isAssignableFrom(clazz)) {
-                throw new IllegalArgumentException(String.format(
-                        "Class '%s' does not implement ChunkFilter",
-                        requiredClassName));
-            }
-            @SuppressWarnings("unchecked")
-            final Class<? extends ChunkFilter> filterClass = (Class<? extends ChunkFilter>) clazz;
-            return filterClass.getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException ex) {
-            throw new IllegalArgumentException(
-                    String.format("Unable to instantiate chunk filter '%s'",
-                            requiredClassName),
-                    ex);
         }
     }
 

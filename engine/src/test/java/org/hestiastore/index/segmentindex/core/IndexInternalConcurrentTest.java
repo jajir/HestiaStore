@@ -32,7 +32,8 @@ class IndexInternalConcurrentTest {
         index = new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                conf, new IndexExecutorRegistry(conf));
+                conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     @AfterEach
@@ -242,7 +243,8 @@ class IndexInternalConcurrentTest {
                 final IndexConfiguration<Integer, String> conf) {
             super(new MemDirectory(),
                     new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                    conf, new IndexExecutorRegistry(conf));
+                    conf, conf.resolveRuntimeConfiguration(),
+                    new IndexExecutorRegistry(conf));
             this.iterator = iterator;
         }
 
@@ -286,7 +288,8 @@ class IndexInternalConcurrentTest {
                 final AtomicInteger awaitSplitsIdleCalls) {
             super(new MemDirectory(),
                     new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                    conf, new IndexExecutorRegistry(conf));
+                    conf, conf.resolveRuntimeConfiguration(),
+                    new IndexExecutorRegistry(conf));
             this.awaitSplitsIdleCalls = awaitSplitsIdleCalls;
         }
 

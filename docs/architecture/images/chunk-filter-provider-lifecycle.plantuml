@@ -1,0 +1,35 @@
+@startuml
+title Chunk Filter Provider Lifecycle
+skinparam backgroundColor transparent
+skinparam shadowing false
+left to right direction
+
+actor Application
+rectangle "IndexConfigurationBuilder" as Builder
+rectangle "ChunkFilterRegistration\nspec + supplier" as Registration
+rectangle "IndexConfigurationStorage" as Storage
+file "manifest.txt\nencodingChunkFilters /\ndecodingChunkFilters" as Manifest
+rectangle "ChunkFilterProviderRegistry" as Registry
+rectangle "ChunkFilterProvider" as Provider
+rectangle "Supplier<ChunkFilter>" as Supplier
+rectangle "ChunkStoreReaderImpl /\nChunkStoreWriterImpl" as Runtime
+rectangle "ChunkProcessor" as Processor
+
+Application --> Builder : addEncodingFilter(...)\naddDecodingFilter(...)
+Builder --> Registration : normalize inputs
+Registration --> Storage : save configuration
+Storage --> Manifest : persist ChunkFilterSpec only
+
+Manifest --> Storage : load specs
+Storage --> Registry : resolve spec
+Registry --> Provider : getRequired(providerId)
+Provider --> Supplier : createEncodingSupplier(spec)\ncreateDecodingSupplier(spec)
+Supplier --> Runtime : materialize filter list
+Runtime --> Processor : build pipeline
+
+note bottom of Manifest
+No suppliers, provider instances,
+Spring beans, or secrets are persisted.
+Only providerId and string parameters are stored.
+end note
+@enduml

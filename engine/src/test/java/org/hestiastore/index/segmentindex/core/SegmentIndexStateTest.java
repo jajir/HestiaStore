@@ -28,7 +28,8 @@ class SegmentIndexStateTest {
         errorIndex = new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                conf, new IndexExecutorRegistry(conf));
+                conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     @AfterEach
@@ -74,6 +75,7 @@ class SegmentIndexStateTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)
                 .withDiskIoBufferSizeInBytes(1024)
                 .withIndexWorkerThreadCount(1)
+                .withBackgroundMaintenanceAutoEnabled(false)
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
                 .build();
