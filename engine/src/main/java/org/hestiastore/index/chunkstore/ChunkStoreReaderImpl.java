@@ -9,7 +9,13 @@ import org.hestiastore.index.bytes.ByteSequence;
 import org.hestiastore.index.datablockfile.DataBlockByteReader;
 
 /**
- * Implementation of {@link ChunkStoreReader}.
+ * Runtime reader over a single chunk-store stream.
+ *
+ * <p>
+ * The decoding filter chain is already materialized when this object is
+ * created. The reader therefore contains only runtime state and does not own
+ * any supplier or provider-based configuration.
+ * </p>
  */
 public class ChunkStoreReaderImpl extends AbstractCloseableResource
         implements ChunkStoreReader {
@@ -21,15 +27,17 @@ public class ChunkStoreReaderImpl extends AbstractCloseableResource
      * Constructor.
      *
      * @param dataBlockByteReader required data block byte reader
+     * @param decodingChunkFilters required decoding filters already resolved
+     *                             for this runtime reader
      * @throws IllegalArgumentException when dataBlockByteReader is null
      */
     public ChunkStoreReaderImpl(final DataBlockByteReader dataBlockByteReader,
             final List<ChunkFilter> decodingChunkFilters) {
         this.dataBlockByteReader = Vldtn.requireNonNull(dataBlockByteReader,
                 "dataBlockByteReader");
-        final List<ChunkFilter> filters = List.copyOf(Vldtn
-                .requireNonNull(decodingChunkFilters, "decodingChunkFilters"));
-        this.decodingProcessor = new ChunkProcessor(filters);
+        this.decodingProcessor = new ChunkProcessor(List
+                .copyOf(Vldtn.requireNonNull(decodingChunkFilters,
+                        "decodingChunkFilters")));
     }
 
     @Override

@@ -3,10 +3,12 @@ package org.hestiastore.index.segmentindex.core;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 import org.slf4j.Logger;
@@ -29,6 +31,7 @@ public class SegmentIndexLifecycle<K, V> {
 
     private Managed<Directory> managedDirectory;
     private Managed<IndexConfiguration<K, V>> managedConf;
+    private Managed<IndexRuntimeConfiguration<K, V>> managedRuntimeConf;
     private Managed<IndexExecutorRegistry> managedExecutorRegistry;
     private Supplier<IndexConfiguration<K, V>> createIndexSupplier;
 
@@ -39,7 +42,22 @@ public class SegmentIndexLifecycle<K, V> {
      */
     public SegmentIndexLifecycle(
             final IndexConfiguration<K, V> indexConfiguration) {
-        this(new MemDirectory(), indexConfiguration);
+        this(new MemDirectory(), indexConfiguration,
+                ChunkFilterProviderRegistry.defaultRegistry());
+    }
+
+    /**
+     * Creates an in-memory lifecycle using an explicit chunk filter provider
+     * registry.
+     *
+     * @param indexConfiguration user-provided configuration overrides
+     * @param chunkFilterProviderRegistry registry used to resolve persisted
+     *                                    chunk filter specs
+     */
+    public SegmentIndexLifecycle(
+            final IndexConfiguration<K, V> indexConfiguration,
+            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+        this(new MemDirectory(), indexConfiguration, chunkFilterProviderRegistry);
     }
 
     /**
@@ -50,6 +68,22 @@ public class SegmentIndexLifecycle<K, V> {
      */
     SegmentIndexLifecycle(final Directory dir,
             final IndexConfiguration<K, V> userProvidedConf) {
+        this(dir, userProvidedConf,
+                ChunkFilterProviderRegistry.defaultRegistry());
+    }
+
+    /**
+     * Creates a lifecycle over a specific backing directory and explicit chunk
+     * filter provider registry.
+     *
+     * @param dir backing directory
+     * @param userProvidedConf user-provided configuration overrides
+     * @param chunkFilterProviderRegistry registry used to resolve persisted
+     *                                    chunk filter specs
+     */
+    SegmentIndexLifecycle(final Directory dir,
+            final IndexConfiguration<K, V> userProvidedConf,
+            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
         managedConf//
                 = new Managed<>(null, () -> {
                     IndexConfigurationManager<K, V> confManager = new IndexConfigurationManager<>(
@@ -67,6 +101,10 @@ public class SegmentIndexLifecycle<K, V> {
             confManager.save(conf);
             return conf;
         };
+
+        managedRuntimeConf = new Managed<>(null, () -> managedConf.resource
+                .resolveRuntimeConfiguration(chunkFilterProviderRegistry),
+                toClose -> managedRuntimeConf.resource = null);
 
         managedExecutorRegistry//
                 = new Managed<>(null, () -> {
@@ -104,6 +142,7 @@ public class SegmentIndexLifecycle<K, V> {
             } else {
                 managedConf.resource = managedConf.supplier.get();
             }
+            managedRuntimeConf.resource = managedRuntimeConf.supplier.get();
             managedExecutorRegistry.resource = managedExecutorRegistry.supplier
                     .get();
             managedDirectory.resource = managedDirectory.supplier.get();
@@ -120,6 +159,7 @@ public class SegmentIndexLifecycle<K, V> {
     public void close() {
         managedDirectory.close();
         managedExecutorRegistry.close();
+        managedRuntimeConf.close();
         managedConf.close();
     }
 
@@ -133,12 +173,22 @@ public class SegmentIndexLifecycle<K, V> {
     }
 
     /**
-     * Returns the resolved runtime configuration.
+     * Returns the persisted index configuration loaded from or saved to index
+     * metadata.
      *
-     * @return resolved configuration or {@code null} when not opened
+     * @return persisted configuration or {@code null} when not opened
      */
     public IndexConfiguration<K, V> getIndexConfiguration() {
         return managedConf.resource;
+    }
+
+    /**
+     * Returns the resolved runtime configuration.
+     *
+     * @return runtime configuration or {@code null} when not opened
+     */
+    public IndexRuntimeConfiguration<K, V> getIndexRuntimeConfiguration() {
+        return managedRuntimeConf.resource;
     }
 
     /**

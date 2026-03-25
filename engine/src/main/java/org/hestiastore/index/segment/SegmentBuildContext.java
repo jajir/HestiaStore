@@ -44,9 +44,9 @@ final class SegmentBuildContext<K, V> {
                         "maxNumberOfKeysInSegmentWriteCache");
         versionController = new VersionController();
 
-        Vldtn.requireNotEmpty(builder.getEncodingChunkFilters(),
+        Vldtn.requireNotEmpty(builder.getEncodingChunkFilterSuppliers(),
                 "encodingChunkFilters");
-        Vldtn.requireNotEmpty(builder.getDecodingChunkFilters(),
+        Vldtn.requireNotEmpty(builder.getDecodingChunkFilterSuppliers(),
                 "decodingChunkFilters");
         segmentConf = SegmentConf.builder()
                 .withMaxNumberOfKeysInSegmentWriteCache(
@@ -66,8 +66,10 @@ final class SegmentBuildContext<K, V> {
                 .withBloomFilterProbabilityOfFalsePositive(
                         builder.getBloomFilterProbabilityOfFalsePositive())
                 .withDiskIoBufferSize(builder.getDiskIoBufferSize())
-                .withEncodingChunkFilters(builder.getEncodingChunkFilters())
-                .withDecodingChunkFilters(builder.getDecodingChunkFilters())
+                .withEncodingChunkFilterSuppliers(
+                        builder.getEncodingChunkFilterSuppliers())
+                .withDecodingChunkFilterSuppliers(
+                        builder.getDecodingChunkFilterSuppliers())
                 .build();
 
         final SegmentId resolvedId = Vldtn.requireNonNull(builder.getId(),
@@ -79,11 +81,11 @@ final class SegmentBuildContext<K, V> {
                 builder.getLoggingContextIndexName());
         final long activeVersion = resolveActiveVersion(directoryFacade,
                 resolvedLayout, propertiesManager);
-        segmentFiles = new SegmentFiles<>(directoryFacade, resolvedLayout,
+        segmentFiles = SegmentFiles.fromSuppliers(directoryFacade, resolvedLayout,
                 activeVersion, keyTypeDescriptor, valueTypeDescriptor,
                 segmentConf.getDiskIoBufferSize(),
-                segmentConf.getEncodingChunkFilters(),
-                segmentConf.getDecodingChunkFilters());
+                segmentConf.getEncodingChunkFilterSuppliers(),
+                segmentConf.getDecodingChunkFilterSuppliers());
 
         segmentPropertiesManager = propertiesManager;
         initializeDirectoryMetadata(segmentPropertiesManager, activeVersion);

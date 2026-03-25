@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
@@ -43,21 +44,24 @@ class SegmentRegistryImplTest {
 
     private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
-    private static final List<ChunkFilter> FILTERS = List
-            .of(new ChunkFilterDoNothing());
-
     private Directory directoryFacade;
 
     @Mock
     private IndexConfiguration<Integer, String> conf;
 
+    @Mock
+    private IndexRuntimeConfiguration<Integer, String> runtimeConfiguration;
+
     private SegmentRegistryImpl<Integer, String> registry;
     private ExecutorService stableSegmentMaintenancePool;
     private ExecutorService registryMaintenancePool;
+    private List<Supplier<? extends ChunkFilter>> filterSuppliers;
 
     @BeforeEach
     void setUp() {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
+        Mockito.when(conf.resolveRuntimeConfiguration())
+                .thenReturn(runtimeConfiguration);
         directoryFacade = new MemDirectory();
         stableSegmentMaintenancePool = Executors.newSingleThreadExecutor();
         rebuildRegistry();
@@ -288,6 +292,7 @@ class SegmentRegistryImplTest {
     }
 
     private void stubSegmentConfig() {
+        filterSuppliers = List.of(ChunkFilterDoNothing::new);
         Mockito.when(conf.getMaxNumberOfKeysInActivePartition())
                 .thenReturn(5);
         Mockito.when(
@@ -301,8 +306,10 @@ class SegmentRegistryImplTest {
         Mockito.when(conf.getBloomFilterProbabilityOfFalsePositive())
                 .thenReturn(0.01D);
         Mockito.when(conf.getDiskIoBufferSize()).thenReturn(1024);
-        Mockito.when(conf.getEncodingChunkFilters()).thenReturn(FILTERS);
-        Mockito.when(conf.getDecodingChunkFilters()).thenReturn(FILTERS);
+        Mockito.when(runtimeConfiguration.getEncodingChunkFilterSuppliers())
+                .thenReturn(filterSuppliers);
+        Mockito.when(runtimeConfiguration.getDecodingChunkFilterSuppliers())
+                .thenReturn(filterSuppliers);
     }
 
     private SegmentRegistryStateMachine readGate(

@@ -9,6 +9,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 
@@ -37,9 +38,10 @@ class IndexInternalConcurrent<K, V> extends SegmentIndexImpl<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry) {
         super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
-                executorRegistry);
+                runtimeConfiguration, executorRegistry);
     }
 
     /** {@inheritDoc} */

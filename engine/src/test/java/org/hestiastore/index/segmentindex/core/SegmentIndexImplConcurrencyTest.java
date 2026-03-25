@@ -38,7 +38,8 @@ class SegmentIndexImplConcurrencyTest {
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
-                conf, new IndexExecutorRegistry(conf));
+                conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     @AfterEach
@@ -238,7 +239,8 @@ class SegmentIndexImplConcurrencyTest {
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
-                conf, new IndexExecutorRegistry(conf));
+                conf, conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     private void seedStableRange(final int count) {

@@ -9,6 +9,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.slf4j.Logger;
 
@@ -138,6 +139,7 @@ final class SegmentIndexAssembly<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
@@ -152,6 +154,8 @@ final class SegmentIndexAssembly<K, V> {
                 .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         final IndexConfiguration<K, V> nonNullConf = Vldtn.requireNonNull(conf,
                 "conf");
+        final IndexRuntimeConfiguration<K, V> nonNullRuntimeConfiguration = Vldtn
+                .requireNonNull(runtimeConfiguration, "runtimeConfiguration");
         final IndexExecutorRegistry nonNullExecutorRegistry = Vldtn
                 .requireNonNull(executorRegistry, "executorRegistry");
         final Stats nonNullStats = Vldtn.requireNonNull(stats, "stats");
@@ -168,8 +172,9 @@ final class SegmentIndexAssembly<K, V> {
 
         final SegmentIndexRuntime<K, V> runtime = SegmentIndexRuntime.open(
                 nonNullLogger, nonNullDirectory, nonNullKeyTypeDescriptor,
-                nonNullValueTypeDescriptor, nonNullConf, nonNullExecutorRegistry,
-                nonNullStats, nonNullCompactRequestHighWaterMark,
+                nonNullValueTypeDescriptor, nonNullConf,
+                nonNullRuntimeConfiguration, nonNullExecutorRegistry, nonNullStats,
+                nonNullCompactRequestHighWaterMark,
                 nonNullFlushRequestHighWaterMark, nonNullLastAppliedWalLsn,
                 nonNullCallbacks.stateSupplier(),
                 nonNullCallbacks.awaitSplitsIdle(),

@@ -1,11 +1,11 @@
 package org.hestiastore.index.segmentindex.config;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
@@ -210,11 +210,13 @@ public class IndexConfigurationManager<K, V> {
     private void applyChunkFilterDefaults(final IndexConfiguration<K, V> conf,
             final IndexConfigurationContract defaults,
             final IndexConfigurationBuilder<K, V> builder) {
-        if (conf.getEncodingChunkFilters().isEmpty()) {
-            builder.withEncodingFilters(defaults.getEncodingChunkFilters());
+        if (conf.getEncodingChunkFilterSpecs().isEmpty()) {
+            builder.withEncodingFilterSpecs(
+                    defaults.getEncodingChunkFilterSpecs());
         }
-        if (conf.getDecodingChunkFilters().isEmpty()) {
-            builder.withDecodingFilters(defaults.getDecodingChunkFilters());
+        if (conf.getDecodingChunkFilterSpecs().isEmpty()) {
+            builder.withDecodingFilterSpecs(
+                    defaults.getDecodingChunkFilterSpecs());
         }
     }
 
@@ -459,43 +461,38 @@ public class IndexConfigurationManager<K, V> {
                 storedConf.getBloomFilterProbabilityOfFalsePositive(),
                 indexConf.getBloomFilterProbabilityOfFalsePositive());
         throwIfChanged(
-                chunkFiltersChanged(indexConf.getEncodingChunkFilters(),
-                        storedConf.getEncodingChunkFilters()),
-                "EncodingChunkFilters", storedConf.getEncodingChunkFilters(),
-                indexConf.getEncodingChunkFilters());
+                chunkFiltersChanged(indexConf.getEncodingChunkFilterSpecs(),
+                        storedConf.getEncodingChunkFilterSpecs()),
+                "EncodingChunkFilters",
+                storedConf.getEncodingChunkFilterSpecs(),
+                indexConf.getEncodingChunkFilterSpecs());
         throwIfChanged(
-                chunkFiltersChanged(indexConf.getDecodingChunkFilters(),
-                        storedConf.getDecodingChunkFilters()),
-                "DecodingChunkFilters", storedConf.getDecodingChunkFilters(),
-                indexConf.getDecodingChunkFilters());
+                chunkFiltersChanged(indexConf.getDecodingChunkFilterSpecs(),
+                        storedConf.getDecodingChunkFilterSpecs()),
+                "DecodingChunkFilters",
+                storedConf.getDecodingChunkFilterSpecs(),
+                indexConf.getDecodingChunkFilterSpecs());
         throwIfChanged(
                 isChanged(indexConf.getWal(), storedConf.getWal()), "Wal",
                 storedConf.getWal(), indexConf.getWal());
     }
 
-    static final Comparator<ChunkFilter> chunkFilterCmp = (f1, f2) -> f1
-            .getClass().getName().compareTo(f2.getClass().getName());
-
-    private <T> boolean equalLists(List<T> a, List<T> b,
-            Comparator<? super T> cmp) {
-        if (a.size() != b.size())
-            return false;
-        for (int i = 0; i < a.size(); i++) {
-            if (cmp.compare(a.get(i), b.get(i)) != 0)
-                return false;
-        }
-        return true;
-    }
-
-    private boolean chunkFiltersChanged(final List<ChunkFilter> indexFilters,
-            final List<ChunkFilter> storedFilters) {
+    private boolean chunkFiltersChanged(final List<ChunkFilterSpec> indexFilters,
+            final List<ChunkFilterSpec> storedFilters) {
         if (indexFilters == null) {
             return false;
         }
         if (indexFilters.isEmpty()) {
             return false;
         }
-        return !equalLists(indexFilters, storedFilters, chunkFilterCmp);
+        return !canonicalizeChunkFilterSpecs(indexFilters)
+                .equals(canonicalizeChunkFilterSpecs(storedFilters));
+    }
+
+    private List<ChunkFilterSpec> canonicalizeChunkFilterSpecs(
+            final List<ChunkFilterSpec> specs) {
+        return Vldtn.requireNonNull(specs, "specs").stream()
+                .map(ChunkFilterSpecs::canonicalize).toList();
     }
 
     private void validateClassNotChanged(final Class<?> requested,
@@ -631,13 +628,13 @@ public class IndexConfigurationManager<K, V> {
     }
 
     private void validateChunkFilters(final IndexConfiguration<K, V> conf) {
-        if (conf.getEncodingChunkFilters() == null
-                || conf.getEncodingChunkFilters().isEmpty()) {
+        if (conf.getEncodingChunkFilterSpecs() == null
+                || conf.getEncodingChunkFilterSpecs().isEmpty()) {
             throw new IllegalArgumentException(
                     "Encoding chunk filters must not be empty.");
         }
-        if (conf.getDecodingChunkFilters() == null
-                || conf.getDecodingChunkFilters().isEmpty()) {
+        if (conf.getDecodingChunkFilterSpecs() == null
+                || conf.getDecodingChunkFilterSpecs().isEmpty()) {
             throw new IllegalArgumentException(
                     "Decoding chunk filters must not be empty.");
         }
@@ -756,8 +753,8 @@ public class IndexConfigurationManager<K, V> {
                 .withBloomFilterProbabilityOfFalsePositive(
                         conf.getBloomFilterProbabilityOfFalsePositive());
 
-        conf.getEncodingChunkFilters().forEach(builder::addEncodingFilter);
-        conf.getDecodingChunkFilters().forEach(builder::addDecodingFilter);
+        builder.withEncodingFilterSpecs(conf.getEncodingChunkFilterSpecs());
+        builder.withDecodingFilterSpecs(conf.getDecodingChunkFilterSpecs());
         return builder;
     }
 

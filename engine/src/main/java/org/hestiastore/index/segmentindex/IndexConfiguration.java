@@ -3,14 +3,16 @@ package org.hestiastore.index.segmentindex;
 import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 
 /**
  * Immutable configuration for the segment-index layer.
  * <p>
  * Encapsulates key/value types, index name, segment sizing and caching limits,
  * Bloom filter parameters, disk I/O buffer size, logging switches, and the
- * chunk encoding/decoding filter pipeline. Instances are created via the fluent
- * {@link IndexConfigurationBuilder}.
+ * chunk encoding/decoding filter pipeline metadata. Instances are created via
+ * the fluent {@link IndexConfigurationBuilder}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -61,8 +63,8 @@ public class IndexConfiguration<K, V> {
     private final Boolean contextLoggingEnabled;
     private final Wal wal;
 
-    private final List<ChunkFilter> encodingChunkFilters;
-    private final List<ChunkFilter> decodingChunkFilters;
+    private final List<ChunkFilterSpec> encodingChunkFilters;
+    private final List<ChunkFilterSpec> decodingChunkFilters;
 
     /**
      * Creates a new instance of IndexConfigurationBuilder.
@@ -102,8 +104,8 @@ public class IndexConfiguration<K, V> {
             final Integer indexBusyTimeoutMillis,
             final Boolean backgroundMaintenanceAutoEnabled,
             final Wal wal,
-            final List<ChunkFilter> encodingChunkFilters,
-            final List<ChunkFilter> decodingChunkFilters) {
+            final List<ChunkFilterSpec> encodingChunkFilters,
+            final List<ChunkFilterSpec> decodingChunkFilters) {
         this.keyClass = keyClass;
         this.valueClass = valueClass;
         this.keyTypeDescriptor = keyTypeDescriptor;
@@ -398,22 +400,77 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the ordered list of chunk filters applied during encoding (write
-     * path).
+     * Returns immutable encoding filter specs.
      *
-     * @return encoding chunk filters
+     * @return encoding filter specs
      */
-    public List<ChunkFilter> getEncodingChunkFilters() {
+    public List<ChunkFilterSpec> getEncodingChunkFilterSpecs() {
         return encodingChunkFilters;
     }
 
     /**
-     * Returns the ordered list of chunk filters applied during decoding (read
-     * path).
+     * Returns immutable decoding filter specs.
      *
-     * @return decoding chunk filters
+     * @return decoding filter specs
+     */
+    public List<ChunkFilterSpec> getDecodingChunkFilterSpecs() {
+        return decodingChunkFilters;
+    }
+
+    /**
+     * Materializes encoding filters using the built-in chunk filter provider
+     * registry.
+     *
+     * <p>
+     * This is a convenience view over persisted metadata. Custom providers
+     * that are not registered in the default registry must be resolved through
+     * {@link #resolveRuntimeConfiguration(ChunkFilterProviderRegistry)}.
+     * </p>
+     *
+     * @return immutable encoding filter list
+     */
+    public List<ChunkFilter> getEncodingChunkFilters() {
+        return resolveRuntimeConfiguration().getEncodingChunkFilters();
+    }
+
+    /**
+     * Materializes decoding filters using the built-in chunk filter provider
+     * registry.
+     *
+     * <p>
+     * This is a convenience view over persisted metadata. Custom providers
+     * that are not registered in the default registry must be resolved through
+     * {@link #resolveRuntimeConfiguration(ChunkFilterProviderRegistry)}.
+     * </p>
+     *
+     * @return immutable decoding filter list
      */
     public List<ChunkFilter> getDecodingChunkFilters() {
-        return decodingChunkFilters;
+        return resolveRuntimeConfiguration().getDecodingChunkFilters();
+    }
+
+    /**
+     * Resolves this persisted configuration into runtime filter suppliers using
+     * the built-in chunk filter provider registry.
+     *
+     * @return runtime configuration resolved from persisted metadata
+     */
+    public IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration() {
+        return resolveRuntimeConfiguration(
+                ChunkFilterProviderRegistry.defaultRegistry());
+    }
+
+    /**
+     * Resolves this persisted configuration into runtime filter suppliers using
+     * the provided chunk filter provider registry.
+     *
+     * @param chunkFilterProviderRegistry registry used to resolve persisted
+     *                                    chunk filter specs
+     * @return runtime configuration resolved from persisted metadata
+     */
+    public IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration(
+            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+        return IndexRuntimeConfiguration.resolve(this,
+                chunkFilterProviderRegistry);
     }
 }
