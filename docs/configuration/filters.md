@@ -52,7 +52,8 @@ If you persist custom provider-backed filters, pass the matching
   filters.
 - Use `ChunkFilter` instances only for shared filters that are safe to reuse.
 - Use `Supplier<? extends ChunkFilter> + ChunkFilterSpec` when the filter needs
-  runtime dependencies, constructor arguments, or fresh instances.
+  runtime dependencies, constructor arguments, or fresh instances such as
+  `ChunkFilterAesGcmEncrypt` and `ChunkFilterAesGcmDecrypt`.
 
 ## Defaults
 
@@ -91,7 +92,7 @@ IndexConfiguration<Integer, String> conf = IndexConfiguration
     .build();
 ```
 
-Add XOR on top of compression:
+Add XOR on top of compression when you only need reversible obfuscation:
 
 ```java
 builder
@@ -125,7 +126,7 @@ final class AesGcmChunkFilterProvider implements ChunkFilterProvider {
     public Supplier<? extends ChunkFilter> createEncodingSupplier(
             final ChunkFilterSpec spec) {
         final String keyRef = spec.getRequiredParameter("keyRef");
-        return () -> new AesGcmEncryptChunkFilter(
+        return () -> new ChunkFilterAesGcmEncrypt(
                 secretKeyResolver.resolveRequired(keyRef));
     }
 
@@ -133,7 +134,7 @@ final class AesGcmChunkFilterProvider implements ChunkFilterProvider {
     public Supplier<? extends ChunkFilter> createDecodingSupplier(
             final ChunkFilterSpec spec) {
         final String keyRef = spec.getRequiredParameter("keyRef");
-        return () -> new AesGcmDecryptChunkFilter(
+        return () -> new ChunkFilterAesGcmDecrypt(
                 secretKeyResolver.resolveRequired(keyRef));
     }
 }
@@ -197,6 +198,8 @@ In this example:
   providers and the custom AES provider
 - the same `ChunkFilterSpec` is used for both encoding and decoding because the
   provider id describes one logical encode/decode pair
+- `ChunkFilterAesGcmEncrypt` and `ChunkFilterAesGcmDecrypt` are not part of the
+  default registry because they require an application-managed `SecretKey`
 
 ## Related docs
 

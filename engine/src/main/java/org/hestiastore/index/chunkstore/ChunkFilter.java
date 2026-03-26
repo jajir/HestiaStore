@@ -9,6 +9,7 @@ public interface ChunkFilter {
     public static final int BIT_POSITION_CRC32 = 1;
     public static final int BIT_POSITION_SNAPPY_COMPRESSION = 3;
     public static final int BIT_POSITION_XOR_ENCRYPT = 4;
+    public static final int BIT_POSITION_AES_GCM_ENCRYPT = 5;
 
     /**
      * Apply the filter to the input chunk data.
