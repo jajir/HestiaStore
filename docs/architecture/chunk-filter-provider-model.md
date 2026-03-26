@@ -105,6 +105,11 @@ decodingChunkFilters=p=magic-number,p=aes-gcm|keyRef=orders-main,p=snappy,p=crc3
 Legacy metadata containing only a class name is still supported and is mapped
 to the built-in `java-class` provider.
 
+The `aes-gcm` provider id in the example above is a custom provider id, not a
+built-in default. A typical implementation materializes
+`ChunkFilterAesGcmEncrypt` and `ChunkFilterAesGcmDecrypt` using a runtime key
+resolver and the persisted `keyRef` parameter.
+
 ## Materialization and performance
 
 Providers return `Supplier<? extends ChunkFilter>`, not chunk filter instances.
@@ -134,6 +139,9 @@ The default registry ships with these provider ids:
 Each provider id represents one logical encode/decode pair. For example,
 `snappy` means `ChunkFilterSnappyCompress` on write and
 `ChunkFilterSnappyDecompress` on read.
+
+Provider ids outside that list, such as `aes-gcm`, must be supplied by the
+application through an extended `ChunkFilterProviderRegistry`.
 
 ## Related docs
 
