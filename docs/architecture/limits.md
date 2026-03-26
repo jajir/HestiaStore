@@ -40,7 +40,12 @@ Attempts to change these raise a validation error in `IndexConfigurationManager`
 
 ## Security Posture
 
-- XOR filter is not encryption: `ChunkFilterXorEncrypt` provides reversible obfuscation only; do not use as security. For encryption at rest, place HestiaStore on an encrypted volume or add a real crypto layer above. See `chunkstore/ChunkFilterXor*`.
+- XOR filter is not encryption: `ChunkFilterXorEncrypt` provides reversible
+  obfuscation only; do not use it as a security control. For authenticated
+  chunk encryption, wire `ChunkFilterAesGcmEncrypt` and
+  `ChunkFilterAesGcmDecrypt` through a provider-backed
+  `ChunkFilterProviderRegistry`, or use an encrypted volume. See
+  `chunkstore/ChunkFilterXor*` and `chunkstore/ChunkFilterAesGcm*`.
 - No authentication/authorization: HestiaStore is an embedded library and relies on your process/container isolation.
 
 ## Workloads That Fit Well
