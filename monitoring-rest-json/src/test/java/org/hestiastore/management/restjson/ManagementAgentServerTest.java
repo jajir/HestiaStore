@@ -444,10 +444,11 @@ class ManagementAgentServerTest {
                     && snapshot.getDrainInFlightCount() == 0;
         }, 10_000L);
 
-        final SegmentIndexMetricsSnapshot snapshot = awaitStableSplitMetrics(
-                extra, 10_000L);
-        final JsonNode indexNode = awaitIndexNodeWithMatchingSplitMetrics(extra,
-                extra.getConfiguration().getIndexName(), 10_000L);
+        final Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> splitMetricsMatch =
+                awaitIndexNodeWithMatchingSplitMetrics(extra,
+                        extra.getConfiguration().getIndexName(), 10_000L);
+        final SegmentIndexMetricsSnapshot snapshot = splitMetricsMatch.getKey();
+        final JsonNode indexNode = splitMetricsMatch.getValue();
 
         assertEquals(snapshot.getSegmentCount(),
                 indexNode.path("segmentCount").asInt());
@@ -533,31 +534,6 @@ class ManagementAgentServerTest {
                 "Condition not reached within " + timeoutMillis + " ms.");
     }
 
-    private static SegmentIndexMetricsSnapshot awaitStableSplitMetrics(
-            final SegmentIndex<Integer, String> index,
-            final long timeoutMillis) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        SegmentIndexMetricsSnapshot previous = null;
-        while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot current = index.metricsSnapshot();
-            if (sameSplitMetrics(previous, current)) {
-                return current;
-            }
-            previous = current;
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
-            if (Thread.currentThread().isInterrupted()) {
-                throw new AssertionError("Interrupted while waiting");
-            }
-        }
-        assertNotNull(previous,
-                "Split metrics snapshot was never observed while waiting.");
-        assertTrue(false,
-                "Stable split metrics were not observed within "
-                        + timeoutMillis + " ms.");
-        return previous;
-    }
-
     private static boolean sameSplitMetrics(
             final SegmentIndexMetricsSnapshot left,
             final SegmentIndexMetricsSnapshot right) {
@@ -571,11 +547,13 @@ class ManagementAgentServerTest {
                         .getDrainLatencyP95Micros();
     }
 
-    private JsonNode awaitIndexNodeWithMatchingSplitMetrics(
-            final SegmentIndex<Integer, String> index, final String indexName,
-            final long timeoutMillis) throws Exception {
+    private Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> awaitIndexNodeWithMatchingSplitMetrics(
+            final SegmentIndex<Integer, String> index,
+            final String indexName, final long timeoutMillis)
+            throws Exception {
         final long deadline = System.nanoTime()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        SegmentIndexMetricsSnapshot lastSnapshot = null;
         JsonNode lastIndexNode = null;
         while (System.nanoTime() < deadline) {
             final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
@@ -587,20 +565,23 @@ class ManagementAgentServerTest {
             final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
             if (sameSplitMetrics(before, after)
                     && splitMetricsMatch(indexNode, after)) {
-                return indexNode;
+                return Map.entry(after, indexNode);
             }
+            lastSnapshot = after;
             lastIndexNode = indexNode;
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
             if (Thread.currentThread().isInterrupted()) {
                 throw new AssertionError("Interrupted while waiting");
             }
         }
+        assertNotNull(lastSnapshot,
+                "Split metrics snapshot was never observed while waiting.");
         assertNotNull(lastIndexNode,
                 "Index report was never observed while waiting.");
         assertTrue(false,
                 "Index report split metrics did not match a stable snapshot within "
                         + timeoutMillis + " ms.");
-        return lastIndexNode;
+        return Map.entry(lastSnapshot, lastIndexNode);
     }
 
     private static boolean splitMetricsMatch(final JsonNode indexNode,
