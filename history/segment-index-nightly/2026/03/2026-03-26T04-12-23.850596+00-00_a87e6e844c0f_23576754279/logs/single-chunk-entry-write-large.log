@@ -1,0 +1,51 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark.writeEntrySteadyState
+# Parameters: (entriesPerChunk = 1024, valueLength = 64)
+
+# Run progress: 0.00% complete, ETA 00:00:14
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+7314867.499 ops/s
+# Warmup Iteration   2: 7247390.079 ops/s
+Iteration   1: 7806404.117 ops/s
+Iteration   2: 7855138.141 ops/s
+Iteration   3: 7848904.483 ops/s
+Iteration   4: 7851691.342 ops/s
+Iteration   5: 7868765.033 ops/s
+
+
+Result "org.hestiastore.benchmark.chunkentryfile.SingleChunkEntryWriterBenchmark.writeEntrySteadyState":
+  7846180.623 ±(99.9%) 90515.743 ops/s [Average]
+  (min, avg, max) = (7806404.117, 7846180.623, 7868765.033), stdev = 23506.651
+  CI (99.9%): [7755664.880, 7936696.366] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:14
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                              (entriesPerChunk)  (valueLength)   Mode  Cnt        Score       Error  Units
+SingleChunkEntryWriterBenchmark.writeEntrySteadyState               1024             64  thrpt    5  7846180.623 ± 90515.743  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/single-chunk-entry-write-large.json
