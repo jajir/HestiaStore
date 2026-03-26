@@ -37,6 +37,12 @@ def resolve_profile_path(repo_root: Path, profile_arg: str) -> Path:
     raise FileNotFoundError(f"Unable to resolve benchmark profile '{profile_arg}'.")
 
 
+def source_path_for_include(repo_root: Path, include: str) -> Path:
+    return repo_root / "benchmarks" / "src" / "main" / "java" / Path(
+        *include.split(".")
+    ).with_suffix(".java")
+
+
 def run_command(cmd: list[str], cwd: Path, stdout_path: Path | None = None) -> None:
     stdout_handle = None
     try:
@@ -197,22 +203,47 @@ def main() -> int:
         "host": host_metadata(),
         "benchmarks": [],
     }
+    skipped_benchmarks: list[dict[str, str]] = []
 
     for benchmark in profile["benchmarks"]:
         label = benchmark["label"]
+        include = benchmark["include"]
+        source_path = source_path_for_include(repo_root, include)
+        if not source_path.is_file():
+            skipped_benchmarks.append({
+                "label": label,
+                "include": include,
+                "reason": "missing_benchmark_source",
+                "sourcePath": os.path.relpath(source_path, repo_root),
+            })
+            print(
+                f"Skipping benchmark '{label}' ({include}): "
+                f"missing source file {source_path}",
+            )
+            continue
         raw_path = raw_dir / f"{label}.json"
         log_path = logs_dir / f"{label}.log"
-        cmd = ["java", "-jar", str(jar_path), benchmark["include"], *benchmark["args"], "-rf", "json", "-rff", str(raw_path)]
+        cmd = ["java", "-jar", str(jar_path), include, *benchmark["args"], "-rf", "json", "-rff", str(raw_path)]
         run_command(cmd, cwd=repo_root, stdout_path=log_path)
         normalized = normalize_result(raw_path)
         run_summary["benchmarks"].append({
             "label": label,
-            "include": benchmark["include"],
+            "include": include,
             "args": benchmark["args"],
             "rawResult": os.path.relpath(raw_path, output_dir),
             "log": os.path.relpath(log_path, output_dir),
             "normalized": normalized,
         })
+
+    if skipped_benchmarks:
+        run_summary["skippedBenchmarks"] = skipped_benchmarks
+    if not run_summary["benchmarks"]:
+        (output_dir / "summary.json").write_text(
+            json.dumps(run_summary, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        print("No runnable benchmarks found for the selected profile.", file=sys.stderr)
+        return 1
 
     (output_dir / "summary.json").write_text(
         json.dumps(run_summary, indent=2, sort_keys=True),

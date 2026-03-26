@@ -13,6 +13,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -279,6 +286,73 @@ class BenchmarkHistoryScriptsSmokeTest {
 
             assertEquals(1, resolveResult.exitCode(), resolveResult.output());
         }
+    }
+
+    @Test
+    void runProfileScriptSkipsBenchmarksMissingFromRepoRoot() throws Exception {
+        assumePython3Available();
+        final Path benchmarkRepo = tempDir.resolve("benchmark-repo");
+        final Path benchmarkSourceRoot = benchmarkRepo.resolve("benchmarks")
+                .resolve("src").resolve("main").resolve("java")
+                .resolve("com").resolve("example");
+        Files.createDirectories(benchmarkSourceRoot);
+        Files.writeString(benchmarkSourceRoot.resolve("ExistingBenchmark.java"),
+                """
+                        package com.example;
+
+                        public class ExistingBenchmark {
+                        }
+                        """,
+                StandardCharsets.UTF_8);
+
+        final Path profileSpec = tempDir.resolve("profile.json");
+        Files.writeString(profileSpec, """
+                {
+                  "profile": "script-smoke",
+                  "description": "script smoke",
+                  "benchmarks": [
+                    {
+                      "label": "existing-benchmark",
+                      "include": "com.example.ExistingBenchmark",
+                      "args": [ "-wi", "1" ]
+                    },
+                    {
+                      "label": "missing-benchmark",
+                      "include": "com.example.MissingBenchmark",
+                      "args": [ "-wi", "1" ]
+                    }
+                  ]
+                }
+                """, StandardCharsets.UTF_8);
+
+        final Path outputDir = tempDir.resolve("profile-output");
+        final Path runnerJar = createDummyJmhRunnerJar(
+                tempDir.resolve("dummy-jmh-runner.jar"));
+
+        final ProcessResult result = runPythonScript(
+                "run_jmh_profile.py",
+                "--repo-root", benchmarkRepo.toString(),
+                "--profile", profileSpec.toString(),
+                "--output-dir", outputDir.toString(),
+                "--jar", runnerJar.toString(),
+                "--skip-build");
+
+        assertEquals(0, result.exitCode(), result.output());
+        assertTrue(result.output().contains("Skipping benchmark 'missing-benchmark'"),
+                result.output());
+
+        final JsonNode summary = OBJECT_MAPPER
+                .readTree(outputDir.resolve("summary.json").toFile());
+        assertEquals(1, summary.path("benchmarks").size());
+        assertEquals("existing-benchmark",
+                summary.path("benchmarks").get(0).path("label").asText());
+        assertEquals(1, summary.path("skippedBenchmarks").size());
+        assertEquals("missing-benchmark",
+                summary.path("skippedBenchmarks").get(0).path("label")
+                        .asText());
+        assertEquals("missing_benchmark_source",
+                summary.path("skippedBenchmarks").get(0).path("reason")
+                        .asText());
     }
 
     @Test
@@ -635,6 +709,82 @@ class BenchmarkHistoryScriptsSmokeTest {
     private Path scriptPath(final String scriptName) {
         return repoRoot().resolve("benchmarks").resolve("scripts")
                 .resolve(scriptName);
+    }
+
+    private Path createDummyJmhRunnerJar(final Path jarPath) throws Exception {
+        final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        Assumptions.assumeTrue(compiler != null,
+                "JDK compiler is required for dummy JMH runner smoke tests");
+
+        final Path sourceDir = tempDir.resolve("dummy-jmh-src");
+        final Path classesDir = tempDir.resolve("dummy-jmh-classes");
+        Files.createDirectories(sourceDir);
+        Files.createDirectories(classesDir);
+
+        final Path sourceFile = sourceDir.resolve("DummyJmhMain.java");
+        Files.writeString(sourceFile, """
+                import java.nio.charset.StandardCharsets;
+                import java.nio.file.Files;
+                import java.nio.file.Path;
+
+                public final class DummyJmhMain {
+
+                    private DummyJmhMain() {
+                    }
+
+                    public static void main(final String[] args)
+                            throws Exception {
+                        if (args.length == 0) {
+                            throw new IllegalArgumentException(
+                                    "Missing benchmark include");
+                        }
+                        final String benchmark = args[0];
+                        Path resultPath = null;
+                        for (int index = 0; index < args.length - 1; index++) {
+                            if ("-rff".equals(args[index])) {
+                                resultPath = Path.of(args[index + 1]);
+                                break;
+                            }
+                        }
+                        if (resultPath == null) {
+                            throw new IllegalArgumentException(
+                                    "Missing -rff argument");
+                        }
+                        Files.createDirectories(resultPath.getParent());
+                        final String payload = "[{"
+                                + "\\"benchmark\\":\\"" + benchmark
+                                + ".run\\","
+                                + "\\"mode\\":\\"thrpt\\","
+                                + "\\"threads\\":1,"
+                                + "\\"primaryMetric\\":{"
+                                + "\\"score\\":1.0,"
+                                + "\\"scoreUnit\\":\\"ops/s\\""
+                                + "}"
+                                + "}]";
+                        Files.writeString(resultPath, payload,
+                                StandardCharsets.UTF_8);
+                    }
+                }
+                """, StandardCharsets.UTF_8);
+
+        final int compileExit = compiler.run(null, null, null, "-d",
+                classesDir.toString(), sourceFile.toString());
+        assertEquals(0, compileExit, "Failed to compile dummy JMH runner");
+
+        final Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION,
+                "1.0");
+        manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
+                "DummyJmhMain");
+
+        try (JarOutputStream jarOutput = new JarOutputStream(
+                Files.newOutputStream(jarPath), manifest)) {
+            final Path classFile = classesDir.resolve("DummyJmhMain.class");
+            jarOutput.putNextEntry(new JarEntry("DummyJmhMain.class"));
+            jarOutput.write(Files.readAllBytes(classFile));
+            jarOutput.closeEntry();
+        }
+        return jarPath;
     }
 
     private record ProcessResult(int exitCode, String output) {
