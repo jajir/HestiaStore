@@ -12,7 +12,6 @@ import org.hestiastore.index.segment.SegmentId;
  */
 public final class IndexRetryPolicy {
 
-    private final int backoffMillis;
     private final int timeoutMillis;
     private final long backoffNanos;
     private final long maxJitterNanos;
@@ -26,8 +25,7 @@ public final class IndexRetryPolicy {
      */
     public IndexRetryPolicy(final int backoffMillis,
             final int timeoutMillis) {
-        this.backoffMillis = Vldtn.requireGreaterThanZero(backoffMillis,
-                "indexBusyBackoffMillis");
+        Vldtn.requireGreaterThanZero(backoffMillis, "indexBusyBackoffMillis");
         this.timeoutMillis = Vldtn.requireGreaterThanZero(timeoutMillis,
                 "indexBusyTimeoutMillis");
         this.backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoffMillis);

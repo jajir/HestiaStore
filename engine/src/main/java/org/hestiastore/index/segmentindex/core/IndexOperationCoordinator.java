@@ -123,16 +123,18 @@ final class IndexOperationCoordinator<K, V> {
             final Supplier<IndexResult<T>> operation, final String opName,
             final boolean retryClosed) {
         final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final IndexResult<T> result = operation.get();
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.BUSY
-                    || (retryClosed && status == IndexResultStatus.CLOSED)) {
-                retryPolicy.backoffOrThrow(startNanos, opName, null);
-                continue;
-            }
-            return result;
+        IndexResult<T> result = operation.get();
+        while (shouldRetry(result.getStatus(), retryClosed)) {
+            retryPolicy.backoffOrThrow(startNanos, opName, null);
+            result = operation.get();
         }
+        return result;
+    }
+
+    private boolean shouldRetry(final IndexResultStatus status,
+            final boolean retryClosed) {
+        return status == IndexResultStatus.BUSY
+                || retryClosed && status == IndexResultStatus.CLOSED;
     }
 
     private IndexException newIndexException(final String operation,

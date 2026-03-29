@@ -71,7 +71,7 @@ public final class ChunkFilterAesGcmEncrypt implements ChunkFilter {
     }
 
     static byte[] buildAad(final ChunkData input, final long flags) {
-        return ByteBuffer.allocate((Long.BYTES * 3) + Integer.BYTES)
+        return ByteBuffer.allocate(Long.BYTES * 3 + Integer.BYTES)
                 .putLong(input.getMagicNumber())
                 .putInt(input.getVersion())
                 .putLong(input.getCrc())

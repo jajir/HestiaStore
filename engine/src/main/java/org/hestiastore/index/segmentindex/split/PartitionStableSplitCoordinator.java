@@ -517,44 +517,37 @@ public class PartitionStableSplitCoordinator<K, V> {
 
     private void deleteRetiredParentSegment(final SegmentId segmentId) {
         final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Void> deleteResult = segmentRegistry
-                    .deleteSegment(segmentId);
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.OK
-                    || deleteResult
-                            .getStatus() == SegmentRegistryResultStatus.CLOSED) {
+        SegmentRegistryResultStatus status = segmentRegistry.deleteSegment(segmentId)
+                .getStatus();
+        while (status == SegmentRegistryResultStatus.BUSY) {
+            try {
+                retryPolicy.backoffOrThrow(startNanos, "deleteRetiredSplit",
+                        segmentId);
+            } catch (final IndexException timeout) {
+                logger.warn(
+                        "Retired parent segment '{}' remained on disk because delete timed out after split publish.",
+                        segmentId);
                 return;
             }
-            if (deleteResult.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                try {
-                    retryPolicy.backoffOrThrow(startNanos, "deleteRetiredSplit",
-                            segmentId);
-                } catch (final IndexException timeout) {
-                    logger.warn(
-                            "Retired parent segment '{}' remained on disk because delete timed out after split publish.",
-                            segmentId);
-                    return;
-                }
-                continue;
-            }
+            status = segmentRegistry.deleteSegment(segmentId).getStatus();
+        }
+        if (status != SegmentRegistryResultStatus.OK
+                && status != SegmentRegistryResultStatus.CLOSED) {
             logger.warn(
                     "Retired parent segment '{}' could not be deleted after split publish: {}",
-                    segmentId, deleteResult.getStatus());
-            return;
+                    segmentId, status);
         }
     }
 
     private SegmentRegistryResult<Segment<K, V>> createSegment() {
         final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Segment<K, V>> result = segmentRegistry
-                    .createSegment();
-            if (result.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "createSegment", null);
-                continue;
-            }
-            return result;
+        SegmentRegistryResult<Segment<K, V>> result = segmentRegistry
+                .createSegment();
+        while (result.getStatus() == SegmentRegistryResultStatus.BUSY) {
+            retryPolicy.backoffOrThrow(startNanos, "createSegment", null);
+            result = segmentRegistry.createSegment();
         }
+        return result;
     }
 
     private void deleteSplitSegments(final SegmentId lowerSegmentId,

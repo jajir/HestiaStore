@@ -15,6 +15,8 @@ Use this skill when the task is to review a diff, branch, or pull request in Hes
 - Prefer code shapes where each class has one clear concern and one main lifecycle.
 - Treat mixed responsibilities in one class as maintainability findings when they increase coupling, blur persistence/runtime boundaries, or make testing harder.
 - Prefer separate top-level or package-private helper classes over `private static final` nested classes when the nested type has non-trivial behavior, domain meaning, or test value outside one tiny local helper use.
+- Verify that name of classes, method variables and other identifiers are meaningful and consistent with their behavior and domain meaning. Avoid generic names like `Helper`, `Util`, `Manager`, or `Processor` without clear justification.
+- Make sure that algorithms logic is clear and straightforward, and that control flow is easy to follow. Flag complex or nested logic that could be simplified or clarified.
 - Do not flag every nested class by default; flag them when they hide meaningful logic, grow beyond a tiny scoped helper, or make the host class harder to understand.
 - Keep summaries brief and secondary.
 - If no findings are present, state that explicitly and mention any remaining verification gaps.

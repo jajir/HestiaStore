@@ -441,10 +441,9 @@ final class SegmentCache<K, V> {
                     consumeIfEquals(writeCursor, minKey);
 
                     final V value = resolveValue(minKey, write, frozen, delta);
-                    if (value == null) {
-                        continue;
+                    if (value != null) {
+                        return Entry.of(minKey, value);
                     }
-                    return Entry.of(minKey, value);
                 }
                 return null;
             }
