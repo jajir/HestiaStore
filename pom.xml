@@ -36,6 +36,10 @@
         <jacoco.version>0.8.14</jacoco.version>
         <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
         <project.info.reports.plugin.version>3.9.0</project.info.reports.plugin.version>
+        <jdepend.plugin.version>2.2.1-SNAPSHOT</jdepend.plugin.version>
+        <jdeps.plugin.version>3.2.0</jdeps.plugin.version>
+        <depgraph.plugin.version>4.0.3</depgraph.plugin.version>
+        <antrun.plugin.version>3.1.0</antrun.plugin.version>
         <pmd.plugin.version>3.21.2</pmd.plugin.version>
         <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
         <micrometer.version>1.16.4</micrometer.version>
@@ -114,6 +118,68 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>${maven.site.plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>com.github.ferstl</groupId>
+                <artifactId>depgraph-maven-plugin</artifactId>
+                <version>${depgraph.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>generate-reactor-dependency-json</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <classpathScope>compile</classpathScope>
+                            <graphFormat>json</graphFormat>
+                            <mergeClassifiers>true</mergeClassifiers>
+                            <mergeScopes>true</mergeScopes>
+                            <mergeTypes>true</mergeTypes>
+                            <outputDirectory>${project.build.directory}/site/depgraph</outputDirectory>
+                            <outputFileName>reactor-dependencies</outputFileName>
+                            <reduceEdges>false</reduceEdges>
+                            <showGroupIds>true</showGroupIds>
+                            <showVersions>true</showVersions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${antrun.plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>render-reactor-dependency-site</id>
+                        <phase>pre-site</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/site/depgraph" />
+                                <exec executable="python3" failonerror="true">
+                                    <arg value="${maven.multiModuleProjectDirectory}/scripts/generate_dependency_site_report.py" />
+                                    <arg value="reactor" />
+                                    <arg value="--json" />
+                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.json" />
+                                    <arg value="--html" />
+                                    <arg value="${project.build.directory}/site/module-dependencies.html" />
+                                    <arg value="--dot" />
+                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.dot" />
+                                    <arg value="--png" />
+                                    <arg value="${project.build.directory}/site/depgraph/reactor-dependencies.png" />
+                                    <arg value="--include-group-id" />
+                                    <arg value="${project.groupId}" />
+                                    <arg value="--page-title" />
+                                    <arg value="${project.name} Module Dependencies" />
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

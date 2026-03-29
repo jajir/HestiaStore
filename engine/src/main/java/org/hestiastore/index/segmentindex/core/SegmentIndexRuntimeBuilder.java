@@ -225,9 +225,8 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier = new SegmentRuntimeLimitApplier<>(
                     segmentRegistry, segmentFactory);
             return new SegmentIndexRuntime<>(runtimeTuningState,
-                    keyToSegmentMap, segmentFactory, segmentRegistry,
-                    backgroundSplitCoordinator, backgroundSplitPolicyLoop,
-                    stableSegmentGateway, stableSegmentCoordinator,
+                    keyToSegmentMap, segmentRegistry, backgroundSplitCoordinator,
+                    backgroundSplitPolicyLoop, stableSegmentCoordinator,
                     partitionDrainCoordinator, partitionWriteCoordinator,
                     partitionReadCoordinator, maintenanceCoordinator,
                     recoveryCleanupCoordinator, retryPolicy, walRuntime,

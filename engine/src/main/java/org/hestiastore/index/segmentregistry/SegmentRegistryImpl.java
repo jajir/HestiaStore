@@ -132,26 +132,37 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         if (state != SegmentRegistryState.READY) {
             return SegmentRegistryResult.fromStatus(resultForState(state));
         }
-        while (true) {
-            final Segment<K, V> segment;
-            try {
-                segment = cache.get(segmentId);
-            } catch (final SegmentRegistryCache.EntryBusyException
-                    | SegmentBusyException ex) {
-                return SegmentRegistryResult.busy();
-            } catch (final RuntimeException ex) {
-                logger.error("Failed to load segment '{}'.", segmentId, ex);
-                return SegmentRegistryResult.error();
-            }
-            if (segment == null) {
-                return SegmentRegistryResult.error();
-            }
-            if (segment.getState() == SegmentState.CLOSED) {
-                cache.invalidate(segmentId);
-                continue;
-            }
-            return SegmentRegistryResult.ok(segment);
+        SegmentRegistryResult<Segment<K, V>> result = loadSegmentFromCache(
+                segmentId);
+        while (isClosedSegment(result)) {
+            cache.invalidate(segmentId);
+            result = loadSegmentFromCache(segmentId);
         }
+        return result;
+    }
+
+    private SegmentRegistryResult<Segment<K, V>> loadSegmentFromCache(
+            final SegmentId segmentId) {
+        final Segment<K, V> segment;
+        try {
+            segment = cache.get(segmentId);
+        } catch (final SegmentRegistryCache.EntryBusyException
+                | SegmentBusyException ex) {
+            return SegmentRegistryResult.busy();
+        } catch (final RuntimeException ex) {
+            logger.error("Failed to load segment '{}'.", segmentId, ex);
+            return SegmentRegistryResult.error();
+        }
+        if (segment == null) {
+            return SegmentRegistryResult.error();
+        }
+        return SegmentRegistryResult.ok(segment);
+    }
+
+    private boolean isClosedSegment(
+            final SegmentRegistryResult<Segment<K, V>> result) {
+        return result.isOk() && result.getValue() != null
+                && result.getValue().getState() == SegmentState.CLOSED;
     }
 
     /**

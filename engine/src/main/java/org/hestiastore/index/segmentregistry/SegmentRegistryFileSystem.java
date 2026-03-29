@@ -73,11 +73,7 @@ final class SegmentRegistryFileSystem {
         final Directory directory = directoryFacade
                 .openSubDirectory(directoryName);
         clearDirectory(directory);
-        try {
-            directoryFacade.rmdir(directoryName);
-        } catch (final RuntimeException e) {
-            // Best-effort cleanup.
-        }
+        removeDirectory(directoryName);
     }
 
     /**
@@ -94,30 +90,11 @@ final class SegmentRegistryFileSystem {
     private void clearDirectory(final Directory directory) {
         try (Stream<String> files = directory.getFileNames()) {
             files.forEach(fileName -> {
-                boolean deleted = false;
-                try {
-                    deleted = directory.deleteFile(fileName);
-                    if (deleted) {
-                        return;
-                    }
-                } catch (final RuntimeException e) {
-                    // fall through to directory cleanup
-                }
-                try {
-                    if (!directory.isFileExists(fileName)) {
-                        return;
-                    }
-                } catch (final RuntimeException e) {
+                if (tryDeleteFile(directory, fileName)
+                        || !exists(directory, fileName)) {
                     return;
                 }
-                try {
-                    final Directory subDirectory = directory
-                            .openSubDirectory(fileName);
-                    clearDirectory(subDirectory);
-                    directory.rmdir(fileName);
-                } catch (final RuntimeException e) {
-                    // Best-effort cleanup.
-                }
+                deleteSubDirectory(directory, fileName);
             });
         }
     }
@@ -130,6 +107,43 @@ final class SegmentRegistryFileSystem {
      */
     private boolean exists(final String fileName) {
         return directoryFacade.isFileExists(fileName);
+    }
+
+    private void removeDirectory(final String directoryName) {
+        try {
+            directoryFacade.rmdir(directoryName);
+        } catch (final RuntimeException ex) {
+            return;
+        }
+    }
+
+    private boolean tryDeleteFile(final Directory directory,
+            final String fileName) {
+        try {
+            return directory.deleteFile(fileName);
+        } catch (final RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private boolean exists(final Directory directory, final String fileName) {
+        try {
+            return directory.isFileExists(fileName);
+        } catch (final RuntimeException ex) {
+            return false;
+        }
+    }
+
+    private void deleteSubDirectory(final Directory directory,
+            final String directoryName) {
+        try {
+            final Directory subDirectory = directory
+                    .openSubDirectory(directoryName);
+            clearDirectory(subDirectory);
+            directory.rmdir(directoryName);
+        } catch (final RuntimeException ex) {
+            return;
+        }
     }
 
 }
