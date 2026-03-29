@@ -144,6 +144,113 @@
 				<version>3.8.0</version>
 			</plugin>
 			<plugin>
+				<groupId>com.github.ferstl</groupId>
+				<artifactId>depgraph-maven-plugin</artifactId>
+				<version>${depgraph.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>generate-engine-dependency-json</id>
+						<phase>site</phase>
+						<goals>
+							<goal>graph</goal>
+						</goals>
+						<configuration>
+							<graphFormat>json</graphFormat>
+							<mergeClassifiers>true</mergeClassifiers>
+							<mergeScopes>true</mergeScopes>
+							<mergeTypes>true</mergeTypes>
+							<outputDirectory>${project.build.directory}/site/depgraph</outputDirectory>
+							<outputFileName>engine-dependencies</outputFileName>
+							<showGroupIds>true</showGroupIds>
+							<showVersions>true</showVersions>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jdeps-plugin</artifactId>
+				<version>${jdeps.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>generate-engine-jdeps-dot</id>
+						<phase>site</phase>
+						<goals>
+							<goal>jdkinternals</goal>
+						</goals>
+						<configuration>
+							<dotOutput>${project.build.directory}/site/jdeps</dotOutput>
+							<failOnWarning>false</failOnWarning>
+							<multiRelease>${java.version}</multiRelease>
+							<verbose>package</verbose>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>${antrun.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>render-engine-dependency-site</id>
+						<phase>site</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<mkdir dir="${project.build.directory}/site/depgraph" />
+								<exec executable="python3" failonerror="true">
+									<arg value="${maven.multiModuleProjectDirectory}/scripts/generate_dependency_site_report.py" />
+									<arg value="engine" />
+									<arg value="--json" />
+									<arg value="${project.build.directory}/site/depgraph/engine-dependencies.json" />
+									<arg value="--html" />
+									<arg value="${project.build.directory}/site/external-dependencies.html" />
+									<arg value="--dot" />
+									<arg value="${project.build.directory}/site/depgraph/engine-external-dependencies.dot" />
+									<arg value="--png" />
+									<arg value="${project.build.directory}/site/depgraph/engine-external-dependencies.png" />
+									<arg value="--include-group-id" />
+									<arg value="${project.groupId}" />
+									<arg value="--root-artifact" />
+									<arg value="${project.groupId}:${project.artifactId}" />
+									<arg value="--page-title" />
+									<arg value="${project.name} External Dependencies" />
+								</exec>
+							</target>
+						</configuration>
+					</execution>
+					<execution>
+						<id>render-engine-jdeps-site</id>
+						<phase>site</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<mkdir dir="${project.build.directory}/site/jdeps" />
+								<exec executable="python3" failonerror="true">
+									<arg value="${maven.multiModuleProjectDirectory}/scripts/generate_jdeps_site_report.py" />
+									<arg value="--summary-dot" />
+									<arg value="${project.build.directory}/site/jdeps/summary.dot" />
+									<arg value="--raw-dir" />
+									<arg value="${project.build.directory}/site/jdeps" />
+									<arg value="--html" />
+									<arg value="${project.build.directory}/site/jdeps-report.html" />
+									<arg value="--png" />
+									<arg value="${project.build.directory}/site/jdeps/jdeps-summary.png" />
+									<arg value="--page-title" />
+									<arg value="${project.name} JDeps Summary" />
+									<arg value="--multi-release" />
+									<arg value="${java.version}" />
+								</exec>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<artifactId>maven-site-plugin</artifactId>
 				<version>${maven.site.plugin.version}</version>
 			</plugin>
@@ -166,7 +273,7 @@
 				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>3.4.1</version>
-					<configuration>
+				<configuration>
 						<quiet>true</quiet>
 						<additionalOptions>-Xdoclint:none</additionalOptions>
 					</configuration>
@@ -263,13 +370,18 @@
 					<skipEmptyReport>false</skipEmptyReport>
 				</configuration>
 			</plugin>
-			<plugin>
-				<artifactId>maven-jxr-plugin</artifactId>
-				<version>3.6.0</version>
-			</plugin>
-			<plugin>
-				<groupId>com.github.spotbugs</groupId>
-				<artifactId>spotbugs-maven-plugin</artifactId>
+				<plugin>
+					<artifactId>maven-jxr-plugin</artifactId>
+					<version>3.6.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>jdepend-maven-plugin</artifactId>
+					<version>${jdepend.plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>com.github.spotbugs</groupId>
+					<artifactId>spotbugs-maven-plugin</artifactId>
 				<version>4.9.8.2</version>
 				<configuration>
 					<plugins>

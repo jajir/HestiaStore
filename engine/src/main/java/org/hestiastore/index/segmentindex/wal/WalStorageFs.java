@@ -163,7 +163,7 @@ final class WalStorageFs implements WalStorage {
 
     @Override
     public Stream<String> listFileNames() {
-        try (final Stream<Path> listing = Files.list(walDirectory)) {
+        try (Stream<Path> listing = Files.list(walDirectory)) {
             return listing.sorted(Comparator.comparing(Path::getFileName))
                     .map(path -> path.getFileName().toString()).toList()
                     .stream();

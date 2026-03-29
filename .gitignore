@@ -18,3 +18,7 @@ pok.png
 #.vscode
 jpf/src/main/java/
 site/
+!src/site/
+!src/site/site.xml
+!engine/src/site/
+!engine/src/site/site.xml

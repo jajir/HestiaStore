@@ -40,7 +40,7 @@ public class DataBlockByteReaderImpl extends AbstractCloseableResource
             if (requestedPosition >= dataBlockPayloadSize) {
                 throw new IllegalArgumentException(String.format(
                         "Initial cell index '%s' is out of range. Max allowed is '%s'",
-                        initialCellIndex, (dataBlockPayloadSize / 16) - 1));
+                        initialCellIndex, dataBlockPayloadSize / 16 - 1));
             }
             moveToNextDataBlock();
             this.currentBlockPosition = requestedPosition;

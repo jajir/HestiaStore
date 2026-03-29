@@ -157,7 +157,7 @@ public final class WalTool {
                             file.getFileName().toString(), offset,
                             "DELETE record must have zero value length.");
                 }
-                if (lsn <= 0L || (previousLsn > 0L && lsn <= previousLsn)) {
+                if (lsn <= 0L || previousLsn > 0L && lsn <= previousLsn) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
                             file.getFileName().toString(), offset,
                             "Non-monotonic or invalid LSN.");

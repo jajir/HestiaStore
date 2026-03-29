@@ -26,7 +26,7 @@ public interface EntryIterator<K, V>
      * @param iterator required iterator
      * @return entry iterator
      */
-    public static <M, N> EntryIterator<M, N> make(
+    static <M, N> EntryIterator<M, N> make(
             final Iterator<Entry<M, N>> iterator) {
         Vldtn.requireNonNull(iterator, "iterator");
         class Adapter extends AbstractCloseableResource
