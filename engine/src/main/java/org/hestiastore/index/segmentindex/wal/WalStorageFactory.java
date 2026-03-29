@@ -39,9 +39,10 @@ final class WalStorageFactory {
                 if (value instanceof File file) {
                     return file.toPath();
                 }
-            } catch (NoSuchFieldException e) {
-                // Continue with superclass lookup.
-            } catch (ReflectiveOperationException e) {
+            } catch (final NoSuchFieldException ex) {
+                type = type.getSuperclass();
+                continue;
+            } catch (final ReflectiveOperationException ex) {
                 return null;
             }
             type = type.getSuperclass();
