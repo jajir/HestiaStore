@@ -1,5 +1,6 @@
 package org.hestiastore.index.directory;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +30,7 @@ public class MemDirectory implements Directory {
         try {
             final byte[] bytes = data.get(fileName);
             if (bytes == null) {
-                throw new IndexException(
-                        String.format(ERROR_MSG_NO_FILE, fileName));
+                throw createMissingFileException(fileName);
             }
             return new MemFileReader(bytes);
         } finally {
@@ -43,8 +43,7 @@ public class MemDirectory implements Directory {
         try {
             final byte[] bytes = data.get(fileName);
             if (bytes == null) {
-                throw new IndexException(
-                        String.format(ERROR_MSG_NO_FILE, fileName));
+                throw createMissingFileException(fileName);
             }
             return ByteSequences.wrap(bytes);
         } finally {
@@ -70,8 +69,7 @@ public class MemDirectory implements Directory {
         try {
             final byte[] bytes = data.get(fileName);
             if (bytes == null) {
-                throw new IndexException(
-                        String.format(ERROR_MSG_NO_FILE, fileName));
+                throw createMissingFileException(fileName);
             }
             return new MemFileReader(bytes);
         } finally {
@@ -100,10 +98,9 @@ public class MemDirectory implements Directory {
             final String newFileName) {
         writeLock.lock();
         try {
-            if (directories.containsKey(newFileName)) {
-                throw new IndexException(String.format(
-                        "There is required file but '%s' is directory.",
-                        newFileName));
+            if (!data.containsKey(currentFileName)
+                    && !directories.containsKey(currentFileName)) {
+                throw createMissingFileException(currentFileName);
             }
             if (directories.containsKey(currentFileName)) {
                 if (data.containsKey(newFileName)) {
@@ -115,6 +112,11 @@ public class MemDirectory implements Directory {
                         .remove(currentFileName);
                 directories.put(newFileName, directory);
                 return;
+            }
+            if (directories.containsKey(newFileName)) {
+                throw new IndexException(String.format(
+                        "There is required file but '%s' is directory.",
+                        newFileName));
             }
             if (data.containsKey(currentFileName)) {
                 final byte[] tmp = data.remove(currentFileName);
@@ -139,8 +141,8 @@ public class MemDirectory implements Directory {
             } else {
                 final byte[] a = data.get(fileName);
                 if (a == null) {
-                    throw new IndexException(
-                            String.format("No such file '%s'", fileName));
+                    data.put(fileName, bytes);
+                    return;
                 }
                 byte[] c = new byte[a.length + bytes.length];
                 System.arraycopy(a, 0, c, 0, a.length);
@@ -270,13 +272,17 @@ public class MemDirectory implements Directory {
         try {
             final byte[] fileData = data.get(fileName);
             if (fileData == null) {
-                throw new IllegalArgumentException(
-                        String.format("No such file '%s'.", fileName));
+                throw createMissingFileException(fileName);
             }
             return new MemFileReaderSeekable(fileData);
         } finally {
             readLock.unlock();
         }
+    }
+
+    private IndexException createMissingFileException(final String fileName) {
+        final String message = String.format(ERROR_MSG_NO_FILE, fileName);
+        return new IndexException(message, new FileNotFoundException(message));
     }
 
     private boolean isEmpty() {
