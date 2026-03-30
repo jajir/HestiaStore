@@ -1,9 +1,12 @@
 package org.hestiastore.index.directory;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.FileNotFoundException;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory.Access;
@@ -115,6 +118,24 @@ class MemDirectoryTest {
     }
 
     @Test
+    void test_getFileReader_missingFile_hasFileNotFoundCause() {
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> directory.getFileReader("missing"));
+
+        assertEquals("There is no file 'missing'", exception.getMessage());
+        assertInstanceOf(FileNotFoundException.class, exception.getCause());
+    }
+
+    @Test
+    void test_getFileReaderSeekable_missingFile_hasFileNotFoundCause() {
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> directory.getFileReaderSeekable("missing"));
+
+        assertEquals("There is no file 'missing'", exception.getMessage());
+        assertInstanceOf(FileNotFoundException.class, exception.getCause());
+    }
+
+    @Test
     void test_getFileWriter_invalid_cacheSize() {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> directory.getFileWriter("pok", Access.OVERWRITE, 0));
@@ -141,6 +162,21 @@ class MemDirectoryTest {
     }
 
     @Test
+    void test_append_creates_missing_file() {
+        try (FileWriter fw = directory.getFileWriter("missing.txt",
+                Access.APPEND)) {
+            fw.write(NAME);
+        }
+
+        assertTrue(directory.isFileExists("missing.txt"));
+        try (FileReader reader = directory.getFileReader("missing.txt")) {
+            final byte[] bytes = new byte[NAME.length];
+            assertEquals(NAME.length, reader.read(bytes));
+            assertEquals("Karel", new String(bytes));
+        }
+    }
+
+    @Test
     void test_subdirectory_rejects_file_name_conflict() {
         FileWriter fw = directory.getFileWriter("sub");
         fw.write(NAME);
@@ -148,6 +184,16 @@ class MemDirectoryTest {
 
         assertThrows(IndexException.class,
                 () -> directory.openSubDirectory("sub"));
+    }
+
+    @Test
+    void test_renameFile_missingSource_throwsIndexException() {
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> directory.renameFile("missing.txt", "target.txt"));
+
+        assertEquals("There is no file 'missing.txt'",
+                exception.getMessage());
+        assertInstanceOf(FileNotFoundException.class, exception.getCause());
     }
 
     private String readStr(final FileReader fr, final int length) {

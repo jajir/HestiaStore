@@ -73,21 +73,17 @@ public class DataBlockFile {
             throw new IllegalArgumentException(String.format(
                     "Block position must be >= '%s'", FIRST_BLOCK.getValue()));
         }
-        if (directoryFacade.isFileExists(fileName)) {
-            try {
-                final FileReaderSeekable reader = getFileReader(blockPosition,
-                        seekableReader);
-                final boolean closeOnClose = seekableReader == null;
-                return new DataBlockReaderImpl(reader, blockPosition, blockSize,
-                        closeOnClose);
-            } catch (final RuntimeException e) {
-                if (!directoryFacade.isFileExists(fileName)) {
-                    return new DataBlockReaderEmpty();
-                }
-                throw e;
+        try {
+            final FileReaderSeekable reader = getFileReader(blockPosition,
+                    seekableReader);
+            final boolean closeOnClose = seekableReader == null;
+            return new DataBlockReaderImpl(reader, blockPosition, blockSize,
+                    closeOnClose);
+        } catch (final RuntimeException e) {
+            if (!directoryFacade.isFileExists(fileName)) {
+                return new DataBlockReaderEmpty();
             }
-        } else {
-            return new DataBlockReaderEmpty();
+            throw e;
         }
     }
 
