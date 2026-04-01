@@ -1,0 +1,153 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitAsyncJoin
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = cold)
+
+# Run progress: 0.00% complete, ETA 00:00:56
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+36.654 ops/s
+# Warmup Iteration   2: 36.713 ops/s
+Iteration   1: 37.344 ops/s
+Iteration   2: 36.597 ops/s
+Iteration   3: 37.433 ops/s
+Iteration   4: 59.275 ops/s
+Iteration   5: 28.409 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitAsyncJoin":
+  39.812 ±(99.9%) 44.362 ops/s [Average]
+  (min, avg, max) = (28.409, 39.812, 59.275), stdev = 11.521
+  CI (99.9%): [≈ 0, 84.174] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = cold)
+
+# Run progress: 25.00% complete, ETA 00:02:51
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+35.969 ops/s
+# Warmup Iteration   2: 36.096 ops/s
+Iteration   1: 40.950 ops/s
+Iteration   2: 52.619 ops/s
+Iteration   3: 39.953 ops/s
+Iteration   4: 30.155 ops/s
+Iteration   5: 37.142 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getHitSync":
+  40.164 ±(99.9%) 31.348 ops/s [Average]
+  (min, avg, max) = (30.155, 40.164, 52.619), stdev = 8.141
+  CI (99.9%): [8.816, 71.511] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissAsyncJoin
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = cold)
+
+# Run progress: 50.00% complete, ETA 00:01:55
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+170574.367 ops/s
+# Warmup Iteration   2: 187131.856 ops/s
+Iteration   1: 189920.985 ops/s
+Iteration   2: 188656.454 ops/s
+Iteration   3: 188419.286 ops/s
+Iteration   4: 187839.015 ops/s
+Iteration   5: 189060.560 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissAsyncJoin":
+  188779.260 ±(99.9%) 2989.765 ops/s [Average]
+  (min, avg, max) = (187839.015, 188779.260, 189920.985), stdev = 776.432
+  CI (99.9%): [185789.495, 191769.025] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync
+# Parameters: (keyCount = 32768, maxKeysInSegment = 1024, maxSegmentsInCache = 3, snappy = true, valueLength = 64, workingSetMode = cold)
+
+# Run progress: 75.00% complete, ETA 00:00:57
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+3277427.899 ops/s
+# Warmup Iteration   2: 3951322.186 ops/s
+Iteration   1: 3724917.696 ops/s
+Iteration   2: 3459887.293 ops/s
+Iteration   3: 3423897.124 ops/s
+Iteration   4: 3434296.941 ops/s
+Iteration   5: 3423514.438 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark.getMissSync":
+  3493302.699 ±(99.9%) 501808.902 ops/s [Average]
+  (min, avg, max) = (3423514.438, 3493302.699, 3724917.696), stdev = 130318.178
+  CI (99.9%): [2991493.796, 3995111.601] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:03:43
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                              (keyCount)  (maxKeysInSegment)  (maxSegmentsInCache)  (snappy)  (valueLength)  (workingSetMode)   Mode  Cnt        Score        Error  Units
+SegmentIndexMultiSegmentGetBenchmark.getHitAsyncJoin        32768                1024                     3      true             64              cold  thrpt    5       39.812 ±     44.362  ops/s
+SegmentIndexMultiSegmentGetBenchmark.getHitSync             32768                1024                     3      true             64              cold  thrpt    5       40.164 ±     31.348  ops/s
+SegmentIndexMultiSegmentGetBenchmark.getMissAsyncJoin       32768                1024                     3      true             64              cold  thrpt    5   188779.260 ±   2989.765  ops/s
+SegmentIndexMultiSegmentGetBenchmark.getMissSync            32768                1024                     3      true             64              cold  thrpt    5  3493302.699 ± 501808.902  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-get-multisegment-cold.json
