@@ -41,7 +41,7 @@
         <depgraph.plugin.version>4.0.3</depgraph.plugin.version>
         <antrun.plugin.version>3.1.0</antrun.plugin.version>
         <pmd.plugin.version>3.21.2</pmd.plugin.version>
-        <spotbugs.plugin.version>4.9.8.2</spotbugs.plugin.version>
+        <spotbugs.plugin.version>4.9.8.3</spotbugs.plugin.version>
         <micrometer.version>1.16.4</micrometer.version>
         <dependency-check.skip>false</dependency-check.skip>
         <dependency-check.dataDirectory>${user.home}/.cache/dependency-check</dependency-check.dataDirectory>
