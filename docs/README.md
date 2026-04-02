@@ -73,6 +73,14 @@ runs, so treat the charts as relative comparisons, not absolute guarantees.
 
 ![Sequential read benchmark comparison](./images/out-sequential.svg)
 
+### Multithread write throughput
+
+![Multithread write benchmark comparison](./images/out-multithread-write.svg)
+
+### Multithread read throughput
+
+![Multithread read benchmark comparison](./images/out-multithread-read.svg)
+
 Detailed methodology, workload notes, and links to raw artifacts are available
 on the [Benchmarks](why-hestiastore/benchmarks.md) page.
 
