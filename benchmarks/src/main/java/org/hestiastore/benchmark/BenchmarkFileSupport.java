@@ -1,4 +1,4 @@
-package org.hestiastore.benchmark.diskio;
+package org.hestiastore.benchmark;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,16 +9,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 
 /**
- * Shared filesystem-backed benchmark helpers for deterministic disk I/O runs.
+ * Shared benchmark filesystem and wait helpers.
  */
-public final class DiskIoBenchmarkSupport {
+public final class BenchmarkFileSupport {
 
     private static final Comparator<File> REVERSE_FILE_ORDER = Comparator
             .comparing(File::getAbsolutePath).reversed();
     private static final Path JMH_TEMP_ROOT = Path.of("target", "jmh-temp");
-    private static final int KEY_WIDTH = 10;
 
-    private DiskIoBenchmarkSupport() {
+    private BenchmarkFileSupport() {
     }
 
     public static File createTempDir(final String prefix) throws IOException {
@@ -42,22 +41,6 @@ public final class DiskIoBenchmarkSupport {
                     "Unable to delete benchmark temp path: "
                             + file.getAbsolutePath());
         }
-    }
-
-    public static String buildSequentialKey(final int value) {
-        final String raw = String.valueOf(value);
-        if (raw.length() >= KEY_WIDTH) {
-            return raw;
-        }
-        final StringBuilder padded = new StringBuilder(KEY_WIDTH);
-        for (int index = raw.length(); index < KEY_WIDTH; index++) {
-            padded.append('0');
-        }
-        return padded.append(raw).toString();
-    }
-
-    public static Long buildLongValue(final int value) {
-        return Long.valueOf((value * 1_103_515_245L) ^ 0x5DEECE66DL);
     }
 
     public static void awaitCondition(final BooleanSupplier condition,
