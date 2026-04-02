@@ -19,8 +19,10 @@ Profile definitions live in [profiles](/Users/jan/projects/HestiaStore/benchmark
   - short per-change profile for PRs and local refactor validation
 - `segment-index-nightly`
   - longer profile for trend tracking on `main`
+- `diskio-nightly`
+  - filesystem-backed nightly profile for disk I/O buffer-size trend tracking
 
-Both profiles currently include:
+Both SegmentIndex profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
 - `SegmentIndexGetBenchmark` with `readPathMode=overlay`
@@ -35,6 +37,11 @@ The nightly profile additionally includes:
 - `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=cold`
 - `SegmentIndexLifecycleBenchmark` for `open`, `checkAndRepairConsistency`,
   and `compactAndWait`
+
+The disk I/O nightly profile includes:
+
+- `SequentialFileWritingBenchmark` with 1 KiB, 4 KiB, and 32 KiB buffers
+- `SequentialFileReadingBenchmark` with 1 KiB, 4 KiB, and 32 KiB buffers
 
 ## Runner and Compare Scripts
 
@@ -122,10 +129,11 @@ Current behavior:
     `history/segment-index-pr-smoke/latest-main.json`
 - nightly schedule
   - run `segment-index-nightly`
-  - compare `HEAD` against the latest stored nightly baseline from
+  - run `diskio-nightly`
+  - compare each nightly profile against the latest stored nightly baseline from
     `perf-artifacts`
   - if no stored baseline exists yet, fall back to `HEAD~1`
-  - publish the new candidate run into `perf-artifacts`
+  - publish each new candidate run into `perf-artifacts`
 - manual dispatch
   - can override profile, history branch, history channel, optional PR number,
     baseline ref, candidate ref, fail policy, and whether to publish into
