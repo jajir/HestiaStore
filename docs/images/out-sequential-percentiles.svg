@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760">
+  <style>
+        text { fill: currentColor; dominant-baseline: middle; }
+        .title { font: 600 26px "Inter", "Helvetica Neue", Arial, sans-serif; }
+        .subtitle { font: 16px "Inter", "Helvetica Neue", Arial, sans-serif; fill: #5B667A; }
+        .axis-label { font: 500 16px "Inter", "Helvetica Neue", Arial, sans-serif; }
+        .tick { font: 14px "IBM Plex Mono", "Courier New", monospace; fill: #5B667A; }
+        .legend { font: 500 16px "Inter", "Helvetica Neue", Arial, sans-serif; }
+        .grid { stroke: #D7DCE5; stroke-width: 1; fill: none; }
+        .axis { stroke: #8A94A6; stroke-width: 1.5; fill: none; }
+    </style>
+  <text class="title" x="110" y="36">Sequential Read Latency Percentiles</text>
+  <text class="subtitle" x="110" y="66">X axis: percentile, Y axis: latency (log scale)</text>
+  <line class="grid" x1="110" y1="521.5383811013488" x2="1060" y2="521.5383811013488" />
+  <text class="tick" x="96" y="521.5383811013488" text-anchor="end">2 us</text>
+  <line class="grid" x1="110" y1="420.4616188986512" x2="1060" y2="420.4616188986512" />
+  <text class="tick" x="96" y="420.4616188986512" text-anchor="end">5 us</text>
+  <line class="grid" x1="110" y1="344.0" x2="1060" y2="344.0" />
+  <text class="tick" x="96" y="344.0" text-anchor="end">10 us</text>
+  <line class="grid" x1="110" y1="267.53838110134876" x2="1060" y2="267.53838110134876" />
+  <text class="tick" x="96" y="267.53838110134876" text-anchor="end">20 us</text>
+  <line class="axis" x1="110" y1="598" x2="1060" y2="598" />
+  <line class="axis" x1="110" y1="90" x2="110" y2="598" />
+  <line class="grid" x1="110.0" y1="90" x2="110.0" y2="598" />
+  <text class="tick" x="110.0" y="626" text-anchor="middle">p50</text>
+  <line class="grid" x1="245.71428571428572" y1="90" x2="245.71428571428572" y2="598" />
+  <text class="tick" x="245.71428571428572" y="626" text-anchor="middle">p75</text>
+  <line class="grid" x1="381.42857142857144" y1="90" x2="381.42857142857144" y2="598" />
+  <text class="tick" x="381.42857142857144" y="626" text-anchor="middle">p90</text>
+  <line class="grid" x1="517.1428571428571" y1="90" x2="517.1428571428571" y2="598" />
+  <text class="tick" x="517.1428571428571" y="626" text-anchor="middle">p95</text>
+  <line class="grid" x1="652.8571428571429" y1="90" x2="652.8571428571429" y2="598" />
+  <text class="tick" x="652.8571428571429" y="626" text-anchor="middle">p99</text>
+  <line class="grid" x1="788.5714285714287" y1="90" x2="788.5714285714287" y2="598" />
+  <text class="tick" x="788.5714285714287" y="626" text-anchor="middle">p99.5</text>
+  <line class="grid" x1="924.2857142857143" y1="90" x2="924.2857142857143" y2="598" />
+  <text class="tick" x="924.2857142857143" y="626" text-anchor="middle">p99.9</text>
+  <line class="grid" x1="1060.0" y1="90" x2="1060.0" y2="598" />
+  <text class="tick" x="1060.0" y="626" text-anchor="middle">p99.99</text>
+  <text class="axis-label" x="585" y="660" text-anchor="middle">Percentile</text>
+  <text class="axis-label" x="28" y="344" transform="rotate(-90 28 344)" text-anchor="middle">Latency (us/op)</text>
+  <polyline points="110.00,589.31 245.71,573.38 381.43,559.63 517.14,553.27 652.86,528.72 788.57,502.72 924.29,437.41 1060.00,261.19" fill="none" stroke="#12b548" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+  <circle cx="110.0" cy="589.3062757642801" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="245.71428571428572" cy="573.3848566959537" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="381.42857142857144" cy="559.6299336481475" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="517.1428571428571" cy="553.2728201998569" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="652.8571428571429" cy="528.7165250158531" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="788.5714285714287" cy="502.7208700881749" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="924.2857142857143" cy="437.40728672208274" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <circle cx="1060.0" cy="261.1939761890601" r="4.5" fill="#12b548" stroke="#0F993D" stroke-width="1.5" />
+  <line x1="120.0" y1="702.0" x2="150.0" y2="702.0" stroke="#12b548" stroke-width="4" stroke-linecap="round" />
+  <text class="legend" x="162.0" y="702.0">H2</text>
+</svg>
