@@ -42,6 +42,8 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotPartiti
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileReadingBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SequentialFileWritingBenchmark
 ```
 
 Compare both modes in one run (recommended):
@@ -107,8 +109,8 @@ PR benchmark runs now surface in three places:
 
 Canonical `main` baselines continue to advance through
 `history/<profile>/latest-main.json`. Today, `segment-index-pr-smoke`
-publishes there on `push` to `main`, while `segment-index-nightly`
-publishes there from the nightly schedule.
+publishes there on `push` to `main`, while `segment-index-nightly` and
+`diskio-nightly` publish there from the nightly schedule.
 
 Run a profile locally:
 
@@ -117,6 +119,15 @@ python3 benchmarks/scripts/run_jmh_profile.py \
   --repo-root . \
   --profile segment-index-pr-smoke \
   --output-dir /tmp/hestia-bench/current
+```
+
+Run the nightly disk I/O profile locally:
+
+```sh
+python3 benchmarks/scripts/run_jmh_profile.py \
+  --repo-root . \
+  --profile diskio-nightly \
+  --output-dir /tmp/hestia-bench/diskio
 ```
 
 Compare two profile runs:

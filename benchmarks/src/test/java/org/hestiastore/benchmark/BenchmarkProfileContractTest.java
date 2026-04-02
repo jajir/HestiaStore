@@ -45,6 +45,13 @@ class BenchmarkProfileContractTest {
             "segment-index-hot-partition-put",
             "segment-index-mixed-drain",
             "segment-index-mixed-split-heavy");
+    private static final Set<String> REQUIRED_NIGHTLY_DISKIO_LABELS = Set.of(
+            "diskio-sequential-write-1k",
+            "diskio-sequential-write-4k",
+            "diskio-sequential-write-32k",
+            "diskio-sequential-read-1k",
+            "diskio-sequential-read-4k",
+            "diskio-sequential-read-32k");
 
     @Test
     void allBenchmarkProfilesUseUniqueLabelsAndResolvableBenchmarkClasses()
@@ -87,6 +94,7 @@ class BenchmarkProfileContractTest {
                 profilesByName.get("segment-index-pr-smoke"));
         assertCanonicalNightlySegmentIndexProfile(
                 profilesByName.get("segment-index-nightly"));
+        assertCanonicalDiskIoNightlyProfile(profilesByName.get("diskio-nightly"));
     }
 
     @Test
@@ -176,6 +184,37 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-mixed-split-heavy"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
                 Map.of("workloadMode", "splitHeavy"));
+    }
+
+    private void assertCanonicalDiskIoNightlyProfile(
+            final BenchmarkProfile profile) {
+        assertNotNull(profile, "Missing canonical diskio nightly profile");
+        final Map<String, BenchmarkEntry> byLabel = new LinkedHashMap<>();
+        for (final BenchmarkEntry benchmark : profile.benchmarks()) {
+            byLabel.put(benchmark.label(), benchmark);
+        }
+        assertEquals(REQUIRED_NIGHTLY_DISKIO_LABELS, byLabel.keySet(),
+                () -> "Unexpected benchmark labels in profile "
+                        + profile.profile());
+
+        assertEntry(byLabel.get("diskio-sequential-write-1k"),
+                "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "1024"));
+        assertEntry(byLabel.get("diskio-sequential-write-4k"),
+                "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "4096"));
+        assertEntry(byLabel.get("diskio-sequential-write-32k"),
+                "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "32768"));
+        assertEntry(byLabel.get("diskio-sequential-read-1k"),
+                "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "1024"));
+        assertEntry(byLabel.get("diskio-sequential-read-4k"),
+                "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "4096"));
+        assertEntry(byLabel.get("diskio-sequential-read-32k"),
+                "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+                Map.of("diskIoBufferSizeBytes", "32768"));
     }
 
     private void assertEntry(final BenchmarkEntry entry, final String include,
