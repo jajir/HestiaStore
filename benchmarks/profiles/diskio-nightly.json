@@ -1,0 +1,78 @@
+{
+  "profile": "diskio-nightly",
+  "description": "Nightly filesystem-backed disk I/O benchmark set for buffer-size trend tracking.",
+  "benchmarks": [
+    {
+      "label": "diskio-sequential-write-1k",
+      "include": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "diskIoBufferSizeBytes=1024"
+      ]
+    },
+    {
+      "label": "diskio-sequential-write-4k",
+      "include": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "diskIoBufferSizeBytes=4096"
+      ]
+    },
+    {
+      "label": "diskio-sequential-write-32k",
+      "include": "org.hestiastore.benchmark.diskio.write.sequential.SequentialFileWritingBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "diskIoBufferSizeBytes=32768"
+      ]
+    },
+    {
+      "label": "diskio-sequential-read-1k",
+      "include": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "diskIoBufferSizeBytes=1024"
+      ]
+    },
+    {
+      "label": "diskio-sequential-read-4k",
+      "include": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "diskIoBufferSizeBytes=4096"
+      ]
+    },
+    {
+      "label": "diskio-sequential-read-32k",
+      "include": "org.hestiastore.benchmark.diskio.read.sequential.SequentialFileReadingBenchmark",
+      "args": [
+        "-wi", "1",
+        "-i", "3",
+        "-f", "1",
+        "-r", "1s",
+        "-w", "1s",
+        "-p", "diskIoBufferSizeBytes=32768"
+      ]
+    }
+  ]
+}

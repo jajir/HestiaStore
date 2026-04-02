@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 import java.util.function.IntFunction;
 
+import org.hestiastore.benchmark.BenchmarkFileSupport;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
@@ -27,16 +25,12 @@ final class SegmentIndexBenchmarkSupport {
 
     static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
-    private static final Comparator<File> REVERSE_FILE_ORDER = Comparator
-            .comparing(File::getAbsolutePath).reversed();
-    private static final Path JMH_TEMP_ROOT = Path.of("target", "jmh-temp");
 
     private SegmentIndexBenchmarkSupport() {
     }
 
     static File createTempDir(final String prefix) throws IOException {
-        Files.createDirectories(JMH_TEMP_ROOT);
-        return Files.createTempDirectory(JMH_TEMP_ROOT, prefix).toFile();
+        return BenchmarkFileSupport.createTempDir(prefix);
     }
 
     static IndexConfigurationBuilder<Integer, String> baseBuilder(
@@ -91,41 +85,12 @@ final class SegmentIndexBenchmarkSupport {
     }
 
     static void deleteRecursively(final File file) {
-        if (file == null || !file.exists()) {
-            return;
-        }
-        final File[] children = file.listFiles();
-        if (children != null) {
-            java.util.Arrays.sort(children, REVERSE_FILE_ORDER);
-            for (final File child : children) {
-                deleteRecursively(child);
-            }
-        }
-        if (!file.delete()) {
-            throw new IllegalStateException(
-                    "Unable to delete benchmark temp path: "
-                            + file.getAbsolutePath());
-        }
+        BenchmarkFileSupport.deleteRecursively(file);
     }
 
-    static void awaitCondition(final BooleanSupplier condition,
+    static void awaitCondition(final java.util.function.BooleanSupplier condition,
             final long timeoutMillis, final String message) {
-        final long deadline = System.nanoTime()
-                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
-        while (System.nanoTime() < deadline) {
-            if (condition.getAsBoolean()) {
-                return;
-            }
-            try {
-                Thread.sleep(10L);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException(message, e);
-            }
-        }
-        if (!condition.getAsBoolean()) {
-            throw new IllegalStateException(message);
-        }
+        BenchmarkFileSupport.awaitCondition(condition, timeoutMillis, message);
     }
 
     static void copyDirectory(final Path source, final Path target)
