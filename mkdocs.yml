@@ -16,8 +16,10 @@ nav:
         - Security: SECURITY.md
         - Benchmarks:
             - Overview: why-hestiastore/benchmarks.md
-            - Write Throughput Results: why-hestiastore/out-write.md
-            - Random Read Results: why-hestiastore/out-read.md
+            - Write Results: why-hestiastore/out-write.md
+            - Read Results: why-hestiastore/out-read.md
+            - Multithread Write Results: why-hestiastore/out-multithread-write.md
+            - Multithread Read Results: why-hestiastore/out-multithread-read.md
             - Sequential Read Results: why-hestiastore/out-sequential.md
     - Getting Started:
         - Overview: how-to-use/index.md
