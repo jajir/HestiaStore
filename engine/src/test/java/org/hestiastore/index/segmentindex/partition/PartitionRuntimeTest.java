@@ -221,9 +221,12 @@ class PartitionRuntimeTest {
 
         runtime.beginSplit(segmentId);
         assertFalse(runtime.markDrainScheduledIfNeeded(segmentId));
+        assertEquals(1, runtime.snapshot().getSplitBlockedPartitionCount());
+        assertEquals(1L, runtime.snapshot().getSplitBlockedDrainScheduleCount());
 
         runtime.finishSplit(segmentId);
         assertTrue(runtime.markDrainScheduledIfNeeded(segmentId));
+        assertEquals(0, runtime.snapshot().getSplitBlockedPartitionCount());
     }
 
     @Test
@@ -297,5 +300,27 @@ class PartitionRuntimeTest {
         assertEquals("v9", runtime.lookup(replacementSegmentId,
                 Integer.valueOf(9)).getValue());
         assertEquals(3, runtime.snapshot().getBufferedKeyCount());
+    }
+
+    @Test
+    void writeBusyWhileSplitBlockedIncrementsStructuralBackpressureCounter() {
+        final SegmentId segmentId = SegmentId.of(17);
+        final PartitionRuntimeLimits limits = new PartitionRuntimeLimits(1, 1,
+                2, 8);
+
+        assertEquals(PartitionWriteResultStatus.OK,
+                runtime.write(segmentId, Integer.valueOf(1), "v1", limits)
+                        .getStatus());
+        assertEquals(PartitionWriteResultStatus.OK,
+                runtime.write(segmentId, Integer.valueOf(2), "v2", limits)
+                        .getStatus());
+
+        runtime.beginSplit(segmentId);
+        final PartitionWriteResult result = runtime.write(segmentId,
+                Integer.valueOf(3), "v3", limits);
+
+        assertEquals(PartitionWriteResultStatus.BUSY, result.getStatus());
+        assertEquals(1L,
+                runtime.snapshot().getBufferFullWhileSplitBlockedCount());
     }
 }

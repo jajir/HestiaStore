@@ -29,6 +29,8 @@ public final class PartitionRuntime<K, V> {
     private final AtomicInteger globalThrottleCount = new AtomicInteger();
     private final AtomicInteger drainInFlightCount = new AtomicInteger();
     private final LongAdder drainScheduleCount = new LongAdder();
+    private final LongAdder splitBlockedDrainScheduleCount = new LongAdder();
+    private final LongAdder bufferFullWhileSplitBlockedCount = new LongAdder();
 
     public PartitionRuntime(final Comparator<K> keyComparator) {
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
@@ -43,9 +45,15 @@ public final class PartitionRuntime<K, V> {
             final V value, final PartitionRuntimeLimits limits) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(value, "value");
-        return partition(segmentId).write(key, value, limits,
+        final RangePartition<K, V> partition = partition(segmentId);
+        final PartitionWriteResult result = partition.write(key, value, limits,
                 totalBufferedKeyCount, localThrottleCount,
                 globalThrottleCount);
+        if (result.getStatus() == PartitionWriteResultStatus.BUSY
+                && partition.isSplitBlocked()) {
+            bufferFullWhileSplitBlockedCount.increment();
+        }
+        return result;
     }
 
     public PartitionLookupResult<V> lookup(final SegmentId segmentId,
@@ -63,7 +71,14 @@ public final class PartitionRuntime<K, V> {
 
     public boolean markDrainScheduledIfNeeded(final SegmentId segmentId) {
         final RangePartition<K, V> partition = partitions.get(segmentId);
-        if (partition == null || !partition.markDrainScheduledIfNeeded()) {
+        if (partition == null) {
+            return false;
+        }
+        final boolean splitBlocked = partition.isSplitBlocked();
+        if (!partition.markDrainScheduledIfNeeded()) {
+            if (splitBlocked) {
+                splitBlockedDrainScheduleCount.increment();
+            }
             return false;
         }
         drainScheduleCount.increment();
@@ -116,6 +131,7 @@ public final class PartitionRuntime<K, V> {
         int activePartitionCount = 0;
         int drainingPartitionCount = 0;
         int immutableRunCount = 0;
+        int splitBlockedPartitionCount = 0;
         for (final RangePartition<K, V> partition : partitions.values()) {
             if (partition.hasActiveEntries()) {
                 activePartitionCount++;
@@ -123,13 +139,19 @@ public final class PartitionRuntime<K, V> {
             if (partition.isDrainScheduled()) {
                 drainingPartitionCount++;
             }
+            if (partition.isSplitBlocked()) {
+                splitBlockedPartitionCount++;
+            }
             immutableRunCount += partition.getImmutableRunCount();
         }
         return new PartitionRuntimeSnapshot(partitions.size(),
                 activePartitionCount, drainingPartitionCount, immutableRunCount,
                 totalBufferedKeyCount.get(), localThrottleCount.get(),
                 globalThrottleCount.get(), drainScheduleCount.sum(),
-                Math.max(0, drainInFlightCount.get()));
+                Math.max(0, drainInFlightCount.get()),
+                splitBlockedPartitionCount,
+                splitBlockedDrainScheduleCount.sum(),
+                bufferFullWhileSplitBlockedCount.sum());
     }
 
     public boolean hasBufferedData() {

@@ -62,6 +62,68 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     }
 
     @Test
+    void metricsSnapshotExposesExecutorRuntimeMetrics() {
+        final Directory directory = new MemDirectory();
+        final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
+        final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<Integer, String> conf = IndexConfiguration
+                .<Integer, String>builder()//
+                .withKeyClass(Integer.class)//
+                .withValueClass(String.class)//
+                .withKeyTypeDescriptor(keyDescriptor) //
+                .withValueTypeDescriptor(valueDescriptor) //
+                .withMaxNumberOfKeysInSegmentCache(8) //
+                .withMaxNumberOfKeysInSegment(32) //
+                .withMaxNumberOfKeysInSegmentChunk(4) //
+                .withBloomFilterIndexSizeInBytes(1024 * 1024) //
+                .withBloomFilterNumberOfHashFunctions(4) //
+                .withContextLoggingEnabled(false) //
+                .withName("metrics_executor_runtime_test_index") //
+                .build();
+
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
+                conf)) {
+            index.put(1, "a");
+            final SegmentIndexMetricsSnapshot snapshot = index
+                    .metricsSnapshot();
+
+            assertTrue(snapshot.getMaintenanceQueueCapacity() > 0);
+            assertTrue(snapshot.getSplitQueueCapacity() > 0);
+            assertTrue(snapshot.getStableSegmentMaintenanceQueueCapacity() > 0);
+            assertTrue(snapshot.getMaintenanceQueueSize() >= 0);
+            assertTrue(snapshot.getSplitQueueSize() >= 0);
+            assertTrue(snapshot.getStableSegmentMaintenanceQueueSize() >= 0);
+            assertTrue(snapshot.getIndexMaintenanceActiveThreadCount() >= 0);
+            assertTrue(snapshot.getSplitMaintenanceActiveThreadCount() >= 0);
+            assertTrue(
+                    snapshot.getStableSegmentMaintenanceActiveThreadCount() >= 0);
+            assertTrue(snapshot.getIndexMaintenanceCompletedTaskCount() >= 0L);
+            assertTrue(snapshot.getSplitMaintenanceCompletedTaskCount() >= 0L);
+            assertTrue(snapshot
+                    .getStableSegmentMaintenanceCompletedTaskCount() >= 0L);
+            assertTrue(snapshot.getIndexMaintenanceRejectedTaskCount() >= 0L);
+            assertTrue(snapshot.getSplitMaintenanceRejectedTaskCount() >= 0L);
+            assertTrue(
+                    snapshot.getStableSegmentMaintenanceCallerRunsCount() >= 0L);
+            assertTrue(snapshot.getSplitTaskStartDelayP95Micros() >= 0L);
+            assertTrue(snapshot.getSplitTaskRunLatencyP95Micros() >= 0L);
+            assertTrue(snapshot.getDrainTaskStartDelayP95Micros() >= 0L);
+            assertTrue(snapshot.getDrainTaskRunLatencyP95Micros() >= 0L);
+            assertTrue(snapshot.getSplitBlockedPartitionCount() >= 0);
+            assertTrue(snapshot.getSplitBlockedDrainScheduleCount() >= 0L);
+            assertTrue(
+                    snapshot.getBufferFullWhileSplitBlockedCount() >= 0L);
+            assertTrue(snapshot.getPutBusyRetryCount() >= 0L);
+            assertTrue(snapshot.getPutBusyTimeoutCount() >= 0L);
+            assertTrue(snapshot.getPutBusyWaitP95Micros() >= 0L);
+            assertTrue(snapshot.getFlushAcceptedToReadyP95Micros() >= 0L);
+            assertTrue(snapshot.getCompactAcceptedToReadyP95Micros() >= 0L);
+            assertTrue(snapshot.getFlushBusyRetryCount() >= 0L);
+            assertTrue(snapshot.getCompactBusyRetryCount() >= 0L);
+        }
+    }
+
+    @Test
     void metricsSnapshotExposesWalStatsWhenEnabled() {
         final Directory directory = new MemDirectory();
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();

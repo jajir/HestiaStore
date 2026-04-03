@@ -818,6 +818,36 @@ public class ConsoleBackendClient {
                         indexNode.path("maintenanceQueueCapacity").asInt(0)),
                 nonNegativeInt(indexNode.path("splitQueueSize").asInt(0)),
                 nonNegativeInt(indexNode.path("splitQueueCapacity").asInt(0)),
+                nonNegativeInt(indexNode.path("indexMaintenanceActiveThreadCount")
+                        .asInt(0)),
+                nonNegativeLong(indexNode
+                        .path("indexMaintenanceCompletedTaskCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode
+                        .path("indexMaintenanceRejectedTaskCount")
+                        .asLong(0L)),
+                nonNegativeInt(indexNode.path("splitMaintenanceActiveThreadCount")
+                        .asInt(0)),
+                nonNegativeLong(indexNode
+                        .path("splitMaintenanceCompletedTaskCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode
+                        .path("splitMaintenanceRejectedTaskCount")
+                        .asLong(0L)),
+                nonNegativeInt(indexNode
+                        .path("stableSegmentMaintenanceActiveThreadCount")
+                        .asInt(0)),
+                nonNegativeInt(indexNode
+                        .path("stableSegmentMaintenanceQueueSize").asInt(0)),
+                nonNegativeInt(indexNode
+                        .path("stableSegmentMaintenanceQueueCapacity")
+                        .asInt(0)),
+                nonNegativeLong(indexNode
+                        .path("stableSegmentMaintenanceCompletedTaskCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode
+                        .path("stableSegmentMaintenanceCallerRunsCount")
+                        .asLong(0L)),
                 nonNegativeLong(
                         indexNode.path("readLatencyP50Micros").asLong(0L)),
                 nonNegativeLong(
@@ -871,6 +901,34 @@ public class ConsoleBackendClient {
                         null),
                 nonNegativeLong(
                         indexNode.path("drainLatencyP95Micros").asLong(0L)),
+                nonNegativeLong(indexNode.path("splitTaskStartDelayP95Micros")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("splitTaskRunLatencyP95Micros")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("drainTaskStartDelayP95Micros")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("drainTaskRunLatencyP95Micros")
+                        .asLong(0L)),
+                readNonNegativeIntWithFallback(indexNode,
+                        "splitBlockedPartitionCount", null),
+                nonNegativeLong(indexNode
+                        .path("splitBlockedDrainScheduleCount").asLong(0L)),
+                nonNegativeLong(indexNode
+                        .path("bufferFullWhileSplitBlockedCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("putBusyRetryCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("putBusyTimeoutCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("putBusyWaitP95Micros").asLong(0L)),
+                nonNegativeLong(indexNode.path("flushAcceptedToReadyP95Micros")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode
+                        .path("compactAcceptedToReadyP95Micros").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("flushBusyRetryCount").asLong(0L)),
+                nonNegativeLong(
+                        indexNode.path("compactBusyRetryCount").asLong(0L)),
                 parseSegmentRuntimeSnapshots(
                         indexNode.path("segmentRuntimeSnapshots")),
                 parseState(indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)));

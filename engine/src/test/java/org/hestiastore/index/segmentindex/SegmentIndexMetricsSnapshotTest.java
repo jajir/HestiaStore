@@ -53,9 +53,8 @@ class SegmentIndexMetricsSnapshotTest {
         final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 11, 12, 0, 0, 0, 0, 0,
                 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L,
-                0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, true, 1L, 2L, 3L, 4L, 5L,
-                6L, 7L, 8, 9L, 10L, 11L, 12L, 13L, 14L, 15L, 16, 17, 18, 19,
-                20, 21, 22, 23, 24L, 25L, 26L, 27, 28L, List.of(),
+                0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, 17, 18, 19, 20, 21, 22, 23,
+                24L, 25L, 26L, 27, List.of(),
                 SegmentIndexState.READY);
 
         assertEquals(11, snapshot.getMaxNumberOfKeysInActivePartition());
@@ -71,10 +70,45 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(25L, snapshot.getGlobalThrottleCount());
         assertEquals(26L, snapshot.getDrainScheduleCount());
         assertEquals(27, snapshot.getDrainInFlightCount());
-        assertEquals(28L, snapshot.getDrainLatencyP95Micros());
+        assertEquals(0L, snapshot.getDrainLatencyP95Micros());
     }
 
     @Test
+    void fullConstructorStoresExecutorMetricsValues() {
+        final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 10L, 11, 12, 13, 14, 15, 16, 17L, 18L,
+                19, 20L, 21L, 22, 23, 24, 25L, 26L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
+                0, 0D, 0L, 0L, 0L, 0L, false, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0L, 0L,
+                0L, 0, 0L, NO_SEGMENTS,
+                SegmentIndexState.READY);
+
+        assertEquals(10L, snapshot.getSplitScheduleCount());
+        assertEquals(11, snapshot.getSplitInFlightCount());
+        assertEquals(12, snapshot.getMaintenanceQueueSize());
+        assertEquals(13, snapshot.getMaintenanceQueueCapacity());
+        assertEquals(14, snapshot.getSplitQueueSize());
+        assertEquals(15, snapshot.getSplitQueueCapacity());
+        assertEquals(16, snapshot.getIndexMaintenanceActiveThreadCount());
+        assertEquals(17L, snapshot.getIndexMaintenanceCompletedTaskCount());
+        assertEquals(18L, snapshot.getIndexMaintenanceRejectedTaskCount());
+        assertEquals(19, snapshot.getSplitMaintenanceActiveThreadCount());
+        assertEquals(20L, snapshot.getSplitMaintenanceCompletedTaskCount());
+        assertEquals(21L, snapshot.getSplitMaintenanceRejectedTaskCount());
+        assertEquals(22, snapshot.getStableSegmentMaintenanceActiveThreadCount());
+        assertEquals(23, snapshot.getStableSegmentMaintenanceQueueSize());
+        assertEquals(24, snapshot.getStableSegmentMaintenanceQueueCapacity());
+        assertEquals(25L,
+                snapshot.getStableSegmentMaintenanceCompletedTaskCount());
+        assertEquals(26L,
+                snapshot.getStableSegmentMaintenanceCallerRunsCount());
+        assertEquals(0L, snapshot.getFlushAcceptedToReadyP95Micros());
+        assertEquals(0L, snapshot.getCompactAcceptedToReadyP95Micros());
+        assertEquals(0L, snapshot.getFlushBusyRetryCount());
+        assertEquals(0L, snapshot.getCompactBusyRetryCount());
+    }
+
     void fullConstructorStoresWalMetricsValues() {
         final SegmentIndexMetricsSnapshot snapshot = new SegmentIndexMetricsSnapshot(
                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -211,5 +245,15 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(0L, snapshot.getDrainScheduleCount());
         assertEquals(0, snapshot.getDrainInFlightCount());
         assertEquals(0L, snapshot.getDrainLatencyP95Micros());
+        assertEquals(0, snapshot.getSplitBlockedPartitionCount());
+        assertEquals(0L, snapshot.getSplitBlockedDrainScheduleCount());
+        assertEquals(0L, snapshot.getBufferFullWhileSplitBlockedCount());
+        assertEquals(0L, snapshot.getPutBusyRetryCount());
+        assertEquals(0L, snapshot.getPutBusyTimeoutCount());
+        assertEquals(0L, snapshot.getPutBusyWaitP95Micros());
+        assertEquals(0L, snapshot.getFlushAcceptedToReadyP95Micros());
+        assertEquals(0L, snapshot.getCompactAcceptedToReadyP95Micros());
+        assertEquals(0L, snapshot.getFlushBusyRetryCount());
+        assertEquals(0L, snapshot.getCompactBusyRetryCount());
     }
 }

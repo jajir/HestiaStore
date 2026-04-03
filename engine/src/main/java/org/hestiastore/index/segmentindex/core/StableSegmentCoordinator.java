@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
+import java.util.function.LongSupplier;
+
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -35,6 +37,7 @@ final class StableSegmentCoordinator<K, V> {
     private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats;
+    private final LongSupplier nanoTimeSupplier;
 
     StableSegmentCoordinator(final Logger logger,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
@@ -42,6 +45,17 @@ final class StableSegmentCoordinator<K, V> {
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final StableSegmentGateway<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats) {
+        this(logger, keyToSegmentMap, segmentRegistry, backgroundSplitCoordinator,
+                stableSegmentGateway, retryPolicy, stats, System::nanoTime);
+    }
+
+    StableSegmentCoordinator(final Logger logger,
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final StableSegmentGateway<K, V> stableSegmentGateway,
+            final IndexRetryPolicy retryPolicy, final Stats stats,
+            final LongSupplier nanoTimeSupplier) {
         this.logger = Vldtn.requireNonNull(logger, "logger");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -53,6 +67,8 @@ final class StableSegmentCoordinator<K, V> {
                 "stableSegmentGateway");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.nanoTimeSupplier = Vldtn.requireNonNull(nanoTimeSupplier,
+                "nanoTimeSupplier");
     }
 
     void putEntryForDrain(final SegmentId segmentId, final K key,
@@ -208,6 +224,7 @@ final class StableSegmentCoordinator<K, V> {
                         operationLabel)) {
                     return;
                 }
+                recordBusyRetry(operation);
                 retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
                 continue;
             }
@@ -229,7 +246,10 @@ final class StableSegmentCoordinator<K, V> {
                 operationLabel, segmentId, waitForCompletion,
                 segment == null ? null : segment.getState());
         if (waitForCompletion && segment != null) {
+            final long acceptedAtNanos = nanoTimeSupplier.getAsLong();
             awaitSegmentReady(segmentId, operation, segment);
+            recordAcceptedToReadyLatency(operation,
+                    nanoTimeSupplier.getAsLong() - acceptedAtNanos);
         }
         logOperation("{} completed: segment='{}' wait='{}'", operationLabel,
                 segmentId, waitForCompletion);
@@ -257,6 +277,23 @@ final class StableSegmentCoordinator<K, V> {
     private void logOperation(final String message, final Object... args) {
         if (logger.isDebugEnabled()) {
             logger.debug(message, args);
+        }
+    }
+
+    private void recordAcceptedToReadyLatency(final String operation,
+            final long latencyNanos) {
+        if (OPERATION_FLUSH.equals(operation)) {
+            stats.recordFlushAcceptedToReadyNanos(latencyNanos);
+        } else if (OPERATION_COMPACT.equals(operation)) {
+            stats.recordCompactAcceptedToReadyNanos(latencyNanos);
+        }
+    }
+
+    private void recordBusyRetry(final String operation) {
+        if (OPERATION_FLUSH.equals(operation)) {
+            stats.incFlushBusyRetryCx();
+        } else if (OPERATION_COMPACT.equals(operation)) {
+            stats.incCompactBusyRetryCx();
         }
     }
 
