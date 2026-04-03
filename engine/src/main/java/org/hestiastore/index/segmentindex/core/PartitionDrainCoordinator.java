@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -29,6 +30,7 @@ final class PartitionDrainCoordinator<K, V> {
     private final Stats stats;
     private final Consumer<SegmentId> splitHintAction;
     private final Consumer<RuntimeException> failureHandler;
+    private final LongSupplier nanoTimeSupplier;
 
     PartitionDrainCoordinator(final PartitionRuntime<K, V> partitionRuntime,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
@@ -36,6 +38,18 @@ final class PartitionDrainCoordinator<K, V> {
             final StableSegmentCoordinator<K, V> stableSegmentCoordinator,
             final Stats stats, final Consumer<SegmentId> splitHintAction,
             final Consumer<RuntimeException> failureHandler) {
+        this(partitionRuntime, keyToSegmentMap, drainExecutor, retryPolicy,
+                stableSegmentCoordinator, stats, splitHintAction,
+                failureHandler, System::nanoTime);
+    }
+
+    PartitionDrainCoordinator(final PartitionRuntime<K, V> partitionRuntime,
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final Executor drainExecutor, final IndexRetryPolicy retryPolicy,
+            final StableSegmentCoordinator<K, V> stableSegmentCoordinator,
+            final Stats stats, final Consumer<SegmentId> splitHintAction,
+            final Consumer<RuntimeException> failureHandler,
+            final LongSupplier nanoTimeSupplier) {
         this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
                 "partitionRuntime");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -50,14 +64,18 @@ final class PartitionDrainCoordinator<K, V> {
                 "splitHintAction");
         this.failureHandler = Vldtn.requireNonNull(failureHandler,
                 "failureHandler");
+        this.nanoTimeSupplier = Vldtn.requireNonNull(nanoTimeSupplier,
+                "nanoTimeSupplier");
     }
 
     void scheduleDrain(final SegmentId segmentId) {
         if (!partitionRuntime.markDrainScheduledIfNeeded(segmentId)) {
             return;
         }
+        final long scheduledAtNanos = nanoTimeSupplier.getAsLong();
         try {
-            drainExecutor.execute(() -> drainPartitionLoop(segmentId));
+            drainExecutor.execute(
+                    () -> drainScheduledPartition(segmentId, scheduledAtNanos));
         } catch (final RuntimeException e) {
             partitionRuntime.finishDrainScheduling(segmentId);
             throw e;
@@ -87,7 +105,20 @@ final class PartitionDrainCoordinator<K, V> {
         if (!partitionRuntime.markDrainScheduledIfNeeded(segmentId)) {
             return;
         }
-        drainPartitionLoop(segmentId);
+        drainScheduledPartition(segmentId, nanoTimeSupplier.getAsLong());
+    }
+
+    private void drainScheduledPartition(final SegmentId segmentId,
+            final long scheduledAtNanos) {
+        final long startedAtNanos = nanoTimeSupplier.getAsLong();
+        stats.recordDrainTaskStartDelayNanos(
+                Math.max(0L, startedAtNanos - scheduledAtNanos));
+        try {
+            drainPartitionLoop(segmentId);
+        } finally {
+            stats.recordDrainTaskRunLatencyNanos(Math.max(0L,
+                    nanoTimeSupplier.getAsLong() - startedAtNanos));
+        }
     }
 
     private void drainPartitionLoop(final SegmentId segmentId) {

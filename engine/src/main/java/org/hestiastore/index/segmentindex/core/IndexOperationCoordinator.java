@@ -17,6 +17,7 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
  */
 final class IndexOperationCoordinator<K, V> {
 
+    private static final String OPERATION_PUT = "put";
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final Stats stats;
     private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
@@ -54,10 +55,10 @@ final class IndexOperationCoordinator<K, V> {
                     "Can't insert tombstone value '%s' into index", value));
         }
         final long walLsn = walCoordinator.appendPut(key, value);
-        finishWriteOperation("put",
+        finishWriteOperation(OPERATION_PUT,
                 retryWhileBusy(
                         () -> partitionWriteCoordinator.putBuffered(key, value),
-                        "put", false),
+                        OPERATION_PUT, false),
                 walLsn, startedNanos);
     }
 
@@ -123,12 +124,47 @@ final class IndexOperationCoordinator<K, V> {
             final Supplier<IndexResult<T>> operation, final String opName,
             final boolean retryClosed) {
         final long startNanos = retryPolicy.startNanos();
+        long busyWaitStartNanos = 0L;
+        long busyRetryCount = 0L;
         IndexResult<T> result = operation.get();
         while (shouldRetry(result.getStatus(), retryClosed)) {
-            retryPolicy.backoffOrThrow(startNanos, opName, null);
+            if (OPERATION_PUT.equals(opName)
+                    && result.getStatus() == IndexResultStatus.BUSY) {
+                if (busyWaitStartNanos == 0L) {
+                    busyWaitStartNanos = System.nanoTime();
+                }
+                busyRetryCount++;
+            }
+            try {
+                retryPolicy.backoffOrThrow(startNanos, opName, null);
+            } catch (final IndexException e) {
+                recordPutBusyWait(opName, busyWaitStartNanos, busyRetryCount,
+                        isTimeoutException(e));
+                throw e;
+            }
             result = operation.get();
         }
+        recordPutBusyWait(opName, busyWaitStartNanos, busyRetryCount, false);
         return result;
+    }
+
+    private boolean isTimeoutException(final IndexException exception) {
+        return exception.getMessage() != null
+                && exception.getMessage().contains("timed out");
+    }
+
+    private void recordPutBusyWait(final String opName,
+            final long busyWaitStartNanos, final long busyRetryCount,
+            final boolean timedOut) {
+        if (!OPERATION_PUT.equals(opName) || busyWaitStartNanos == 0L) {
+            return;
+        }
+        stats.addPutBusyRetryCx(busyRetryCount);
+        stats.recordPutBusyWaitNanos(
+                Math.max(0L, System.nanoTime() - busyWaitStartNanos));
+        if (timedOut) {
+            stats.incPutBusyTimeoutCx();
+        }
     }
 
     private boolean shouldRetry(final IndexResultStatus status,
