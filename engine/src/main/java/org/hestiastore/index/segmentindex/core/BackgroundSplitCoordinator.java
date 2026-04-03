@@ -46,6 +46,7 @@ final class BackgroundSplitCoordinator<K, V> {
     private final Executor splitExecutor;
     private final Consumer<RuntimeException> splitFailureHandler;
     private final Runnable splitAppliedListener;
+    private final Stats stats;
     private final LongSupplier nanoTimeSupplier;
     private final Object splitMonitor = new Object();
     private final ReentrantReadWriteLock splitGate = new ReentrantReadWriteLock();
@@ -65,7 +66,20 @@ final class BackgroundSplitCoordinator<K, V> {
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener) {
         this(keyToSegmentMap, partitionRuntime, splitCoordinator, splitExecutor,
-                splitFailureHandler, splitAppliedListener, System::nanoTime);
+                splitFailureHandler, splitAppliedListener, new Stats(),
+                System::nanoTime);
+    }
+
+    BackgroundSplitCoordinator(
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final PartitionRuntime<K, V> partitionRuntime,
+            final PartitionStableSplitCoordinator<K, V> splitCoordinator,
+            final Executor splitExecutor,
+            final Consumer<RuntimeException> splitFailureHandler,
+            final Runnable splitAppliedListener, final Stats stats) {
+        this(keyToSegmentMap, partitionRuntime, splitCoordinator, splitExecutor,
+                splitFailureHandler, splitAppliedListener, stats,
+                System::nanoTime);
     }
 
     BackgroundSplitCoordinator(
@@ -75,6 +89,19 @@ final class BackgroundSplitCoordinator<K, V> {
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener,
+            final LongSupplier nanoTimeSupplier) {
+        this(keyToSegmentMap, partitionRuntime, splitCoordinator, splitExecutor,
+                splitFailureHandler, splitAppliedListener, new Stats(),
+                nanoTimeSupplier);
+    }
+
+    BackgroundSplitCoordinator(
+            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final PartitionRuntime<K, V> partitionRuntime,
+            final PartitionStableSplitCoordinator<K, V> splitCoordinator,
+            final Executor splitExecutor,
+            final Consumer<RuntimeException> splitFailureHandler,
+            final Runnable splitAppliedListener, final Stats stats,
             final LongSupplier nanoTimeSupplier) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -88,6 +115,7 @@ final class BackgroundSplitCoordinator<K, V> {
                 "splitFailureHandler");
         this.splitAppliedListener = Vldtn.requireNonNull(splitAppliedListener,
                 "splitAppliedListener");
+        this.stats = Vldtn.requireNonNull(stats, "stats");
         this.nanoTimeSupplier = Vldtn.requireNonNull(nanoTimeSupplier,
                 "nanoTimeSupplier");
     }
@@ -235,10 +263,11 @@ final class BackgroundSplitCoordinator<K, V> {
         }
         markSplitStarted();
         partitionRuntime.beginSplit(segmentId);
+        final long scheduledAtNanos = nanoTimeSupplier.getAsLong();
         try {
             splitExecutor.execute(
-                    () -> executeSplitAsync(segment, splitThreshold,
-                            observedKeyCount));
+                    () -> executeScheduledSplit(segment, splitThreshold,
+                            observedKeyCount, scheduledAtNanos));
         } catch (final RuntimeException e) {
             scheduledSplits.remove(segmentId);
             partitionRuntime.finishSplit(segmentId);
@@ -248,10 +277,31 @@ final class BackgroundSplitCoordinator<K, V> {
         return true;
     }
 
+    private void executeScheduledSplit(final Segment<K, V> segment,
+            final long splitThreshold, final long observedKeyCount,
+            final long scheduledAtNanos) {
+        final long startedAtNanos = nanoTimeSupplier.getAsLong();
+        stats.recordSplitTaskStartDelayNanos(
+                Math.max(0L, startedAtNanos - scheduledAtNanos));
+        try {
+            executeSplitAsync(segment, splitThreshold, observedKeyCount,
+                    startedAtNanos);
+        } finally {
+            stats.recordSplitTaskRunLatencyNanos(Math.max(0L,
+                    nanoTimeSupplier.getAsLong() - startedAtNanos));
+        }
+    }
+
     private void executeSplitAsync(final Segment<K, V> segment,
             final long splitThreshold, final long observedKeyCount) {
+        executeSplitAsync(segment, splitThreshold, observedKeyCount,
+                nanoTimeSupplier.getAsLong());
+    }
+
+    private void executeSplitAsync(final Segment<K, V> segment,
+            final long splitThreshold, final long observedKeyCount,
+            final long startNanos) {
         final SegmentId segmentId = segment.getId();
-        final long startNanos = nanoTimeSupplier.getAsLong();
         boolean splitApplied = false;
         try {
             splitApplied = splitCoordinator.optionallySplit(segment,

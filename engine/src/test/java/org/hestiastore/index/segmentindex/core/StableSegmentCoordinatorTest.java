@@ -1,10 +1,13 @@
 package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.LongSupplier;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -15,6 +18,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
@@ -47,6 +51,7 @@ class StableSegmentCoordinatorTest {
     private KeyToSegmentMap<String> keyToSegmentMap;
     private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
     private StableSegmentCoordinator<String, String> coordinator;
+    private Stats stats;
 
     @BeforeEach
     void setUp() {
@@ -55,12 +60,12 @@ class StableSegmentCoordinatorTest {
                 new TypeDescriptorShortString());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
+        stats = new Stats();
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
                 backgroundSplitCoordinator, stableSegmentGateway,
-                new IndexRetryPolicy(1, 10),
-                new Stats());
+                new IndexRetryPolicy(1, 10), stats);
     }
 
     @AfterEach
@@ -108,5 +113,53 @@ class StableSegmentCoordinatorTest {
 
         verify(stableSegmentGateway).openIterator(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    @Test
+    void flushSegment_recordsAcceptedToReadyLatencyAndBusyRetryCount() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        coordinator = new StableSegmentCoordinator<>(
+                LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
+                synchronizedKeyToSegmentMap, segmentRegistry,
+                backgroundSplitCoordinator, stableSegmentGateway,
+                new IndexRetryPolicy(1, 10), stats,
+                sequenceNanoTimeSupplier(10_000L, 35_000L));
+        when(stableSegmentGateway.flush(segmentId)).thenReturn(
+                IndexResult.busy(), IndexResult.ok(segment));
+        when(segment.getState()).thenReturn(SegmentState.READY);
+
+        coordinator.flushSegment(segmentId, true);
+
+        assertEquals(1L, stats.getFlushBusyRetryCx());
+        assertEquals(25L, stats.getFlushAcceptedToReadyP95Micros());
+    }
+
+    @Test
+    void compactSegment_recordsAcceptedToReadyLatencyAndBusyRetryCount() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        coordinator = new StableSegmentCoordinator<>(
+                LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
+                synchronizedKeyToSegmentMap, segmentRegistry,
+                backgroundSplitCoordinator, stableSegmentGateway,
+                new IndexRetryPolicy(1, 10), stats,
+                sequenceNanoTimeSupplier(20_000L, 68_000L));
+        when(stableSegmentGateway.compact(segmentId)).thenReturn(
+                IndexResult.busy(), IndexResult.ok(segment));
+        when(segment.getState()).thenReturn(SegmentState.READY);
+
+        coordinator.compactSegment(segmentId, true);
+
+        assertEquals(1L, stats.getCompactBusyRetryCx());
+        assertEquals(48L, stats.getCompactAcceptedToReadyP95Micros());
+    }
+
+    private static LongSupplier sequenceNanoTimeSupplier(
+            final long... nanos) {
+        final AtomicInteger index = new AtomicInteger();
+        return () -> {
+            final int current = index.getAndIncrement();
+            final int safeIndex = Math.min(current, nanos.length - 1);
+            return nanos[safeIndex];
+        };
     }
 }

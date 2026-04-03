@@ -107,7 +107,7 @@ class HestiaStorePrometheusExporterTest {
                 0L, 0L, 0L,
                 0, 0, 0D,
                 0L, 0L, 0L, 0L,
-                List.of(),
+                List.<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot>of(),
                 state);
     }
 
@@ -134,6 +134,7 @@ class HestiaStorePrometheusExporterTest {
                 0L, 0L, 0L, 0L,
                 0L, 0L, splitScheduleCount,
                 splitInFlightCount, 0, 0, 0, 0,
+                0, 0L, 0L, 0, 0L, 0L, 0, 0, 0, 0L, 0L,
                 0L, 0L, 0L,
                 0L, 0L, 0L,
                 0, 0, 0D,
@@ -144,7 +145,9 @@ class HestiaStorePrometheusExporterTest {
                 activePartitionCount, drainingPartitionCount,
                 immutableRunCount, partitionBufferedKeyCount,
                 localThrottleCount, globalThrottleCount, drainScheduleCount,
-                drainInFlightCount, drainLatencyP95Micros, List.of(),
+                drainInFlightCount, drainLatencyP95Micros, 0L, 0L, 0L, 0L, 0,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                List.<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot>of(),
                 state);
     }
 

@@ -2,10 +2,13 @@ package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -90,5 +93,34 @@ class PartitionDrainCoordinatorTest {
         assertEquals(0, splitHints.get());
         assertEquals(0, partitionRuntime.snapshot().getDrainInFlightCount());
         verifyNoInteractions(stableSegmentCoordinator);
+    }
+
+    @Test
+    void scheduleDrain_recordsTaskStartDelayAndRunLatency() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment(1);
+        final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
+        final AtomicLong nowNanos = new AtomicLong(
+                TimeUnit.MILLISECONDS.toNanos(2));
+        final Stats stats = new Stats();
+        partitionRuntime.write(segmentId, 1, "v1", limits);
+        partitionRuntime.sealAllActivePartitionsForDrain();
+        doAnswer(invocation -> {
+            nowNanos.set(TimeUnit.MILLISECONDS.toNanos(9));
+            return null;
+        }).when(stableSegmentCoordinator).flushSegment(segmentId, true);
+        coordinator = new PartitionDrainCoordinator<>(partitionRuntime,
+                synchronizedKeyToSegmentMap, scheduledTask::set,
+                new IndexRetryPolicy(1, 10), stableSegmentCoordinator, stats,
+                ignoredSegmentId -> splitHints.incrementAndGet(),
+                handledFailure::set, nowNanos::get);
+
+        coordinator.scheduleDrain(segmentId);
+        nowNanos.set(TimeUnit.MILLISECONDS.toNanos(5));
+
+        scheduledTask.get().run();
+
+        assertEquals(3_000L, stats.getDrainTaskStartDelayP95Micros());
+        assertEquals(4_000L, stats.getDrainTaskRunLatencyP95Micros());
+        verify(stableSegmentCoordinator).flushSegment(segmentId, true);
     }
 }
