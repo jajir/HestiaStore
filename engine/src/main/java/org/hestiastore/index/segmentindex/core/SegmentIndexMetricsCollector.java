@@ -33,6 +33,8 @@ final class SegmentIndexMetricsCollector<K, V> {
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final PartitionRuntime<K, V> partitionRuntime;
+    private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
+    private final IndexExecutorRegistry executorRegistry;
     private final RuntimeTuningState runtimeTuningState;
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats;
@@ -45,6 +47,8 @@ final class SegmentIndexMetricsCollector<K, V> {
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final PartitionRuntime<K, V> partitionRuntime,
+            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final IndexExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
@@ -58,6 +62,10 @@ final class SegmentIndexMetricsCollector<K, V> {
                 "segmentRegistry");
         this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
                 "partitionRuntime");
+        this.backgroundSplitCoordinator = Vldtn.requireNonNull(
+                backgroundSplitCoordinator, "backgroundSplitCoordinator");
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
@@ -79,6 +87,14 @@ final class SegmentIndexMetricsCollector<K, V> {
                 collectStableSegmentRuntime();
         final PartitionRuntimeSnapshot partitionSnapshot = partitionRuntime
                 .snapshot();
+        final IndexExecutorRegistry.RuntimeSnapshot executorSnapshot =
+                executorRegistry.runtimeSnapshot();
+        final IndexExecutorRegistry.ExecutorMetricsSnapshot indexMaintenanceExecutor =
+                executorSnapshot.getIndexMaintenance();
+        final IndexExecutorRegistry.ExecutorMetricsSnapshot splitMaintenanceExecutor =
+                executorSnapshot.getSplitMaintenance();
+        final IndexExecutorRegistry.ExecutorMetricsSnapshot stableSegmentMaintenanceExecutor =
+                executorSnapshot.getStableSegmentMaintenance();
         final var walStats = walRuntime.statsSnapshot();
         final long compactRequestCount = Math.max(stats.getCompactRequestCx(),
                 updateHighWaterMark(compactRequestHighWaterMark,
@@ -108,15 +124,23 @@ final class SegmentIndexMetricsCollector<K, V> {
                 stableSegmentRuntime.totalStableSegmentWriteBufferKeyCount
                         + partitionSnapshot.getBufferedKeyCount(),
                 stableSegmentRuntime.totalStableSegmentDeltaCacheFileCount,
-                compactRequestCount, flushRequestCount,
-                partitionSnapshot.getDrainScheduleCount(),
-                partitionSnapshot.getDrainInFlightCount(),
-                partitionSnapshot.getImmutableRunCount(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
-                partitionSnapshot.getDrainingPartitionCount(),
-                runtimeTuningState.effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
+                compactRequestCount, flushRequestCount, stats.getSplitScheduleCx(),
+                backgroundSplitCoordinator.splitInFlightCount(),
+                indexMaintenanceExecutor.getQueueSize(),
+                indexMaintenanceExecutor.getQueueCapacity(),
+                splitMaintenanceExecutor.getQueueSize(),
+                splitMaintenanceExecutor.getQueueCapacity(),
+                indexMaintenanceExecutor.getActiveThreadCount(),
+                indexMaintenanceExecutor.getCompletedTaskCount(),
+                indexMaintenanceExecutor.getRejectedTaskCount(),
+                splitMaintenanceExecutor.getActiveThreadCount(),
+                splitMaintenanceExecutor.getCompletedTaskCount(),
+                splitMaintenanceExecutor.getRejectedTaskCount(),
+                stableSegmentMaintenanceExecutor.getActiveThreadCount(),
+                stableSegmentMaintenanceExecutor.getQueueSize(),
+                stableSegmentMaintenanceExecutor.getQueueCapacity(),
+                stableSegmentMaintenanceExecutor.getCompletedTaskCount(),
+                stableSegmentMaintenanceExecutor.getCallerRunsCount(),
                 stats.getReadLatencyP50Micros(),
                 stats.getReadLatencyP95Micros(),
                 stats.getReadLatencyP99Micros(),
@@ -153,6 +177,19 @@ final class SegmentIndexMetricsCollector<K, V> {
                 partitionSnapshot.getDrainScheduleCount(),
                 partitionSnapshot.getDrainInFlightCount(),
                 stats.getDrainLatencyP95Micros(),
+                stats.getSplitTaskStartDelayP95Micros(),
+                stats.getSplitTaskRunLatencyP95Micros(),
+                stats.getDrainTaskStartDelayP95Micros(),
+                stats.getDrainTaskRunLatencyP95Micros(),
+                partitionSnapshot.getSplitBlockedPartitionCount(),
+                partitionSnapshot.getSplitBlockedDrainScheduleCount(),
+                partitionSnapshot.getBufferFullWhileSplitBlockedCount(),
+                stats.getPutBusyRetryCx(), stats.getPutBusyTimeoutCx(),
+                stats.getPutBusyWaitP95Micros(),
+                stats.getFlushAcceptedToReadyP95Micros(),
+                stats.getCompactAcceptedToReadyP95Micros(),
+                stats.getFlushBusyRetryCx(),
+                stats.getCompactBusyRetryCx(),
                 stableSegmentRuntime.stableSegmentMetricsSnapshots,
                 stateSupplier.get());
     }

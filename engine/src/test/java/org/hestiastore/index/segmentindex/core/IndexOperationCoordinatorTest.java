@@ -2,9 +2,11 @@ package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -52,8 +54,31 @@ class IndexOperationCoordinatorTest {
         coordinator.put(1, "one");
 
         assertEquals(1L, stats.getPutCx());
+        assertEquals(1L, stats.getPutBusyRetryCx());
+        assertEquals(0L, stats.getPutBusyTimeoutCx());
         verify(retryPolicy).backoffOrThrow(1L, "put", null);
         verify(walCoordinator).recordAppliedLsn(7L);
+    }
+
+    @Test
+    void putBusyTimeoutIncrementsTimeoutMetrics() {
+        when(retryPolicy.startNanos()).thenReturn(1L);
+        when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
+        when(partitionWriteCoordinator.putBuffered(1, "one"))
+                .thenReturn(IndexResult.busy());
+        final IndexException timeout = new IndexException(
+                "Index operation 'put' timed out after 30 ms");
+        org.mockito.Mockito.doThrow(timeout).when(retryPolicy)
+                .backoffOrThrow(1L, "put", null);
+
+        final IndexException thrown = assertThrows(IndexException.class,
+                () -> coordinator.put(1, "one"));
+
+        assertEquals(timeout, thrown);
+        assertEquals(1L, stats.getPutCx());
+        assertEquals(1L, stats.getPutBusyRetryCx());
+        assertEquals(1L, stats.getPutBusyTimeoutCx());
+        assertTrue(stats.getPutBusyWaitP95Micros() >= 0L);
     }
 
     @Test

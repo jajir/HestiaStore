@@ -171,6 +171,12 @@ final class RangePartition<K, V> {
         }
     }
 
+    boolean isSplitBlocked() {
+        synchronized (monitor) {
+            return splitBlockCount > 0;
+        }
+    }
+
     void beginSplit() {
         synchronized (monitor) {
             splitBlockCount++;

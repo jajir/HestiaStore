@@ -138,6 +138,40 @@ class BackgroundSplitCoordinatorTest {
     }
 
     @Test
+    void recordsSplitTaskStartDelayAndRunLatency() {
+        final SegmentId segmentId = SegmentId.of(6);
+        final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
+        final AtomicLong nowNanos = new AtomicLong(TimeUnit.MILLISECONDS
+                .toNanos(2));
+        final Stats stats = new Stats();
+        when(segment.getId()).thenReturn(segmentId);
+        when(segment.getState()).thenReturn(SegmentState.READY);
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        when(segment.getNumberOfKeysInCache()).thenReturn(101L);
+        when(splitCoordinator.optionallySplit(eq(segment), eq(100L), any()))
+                .thenAnswer(invocation -> {
+                    nowNanos.set(TimeUnit.MILLISECONDS.toNanos(9));
+                    return Boolean.FALSE;
+                });
+
+        final BackgroundSplitCoordinator<String, String> coordinator = new BackgroundSplitCoordinator<>(
+                synchronizedKeyToSegmentMap, partitionRuntime,
+                splitCoordinator, scheduledTask::set, failure -> {
+                }, () -> {
+                }, stats, nowNanos::get);
+
+        coordinator.handleSplitCandidate(segment, 100L);
+        nowNanos.set(TimeUnit.MILLISECONDS.toNanos(5));
+
+        scheduledTask.get().run();
+
+        org.junit.jupiter.api.Assertions.assertEquals(3_000L,
+                stats.getSplitTaskStartDelayP95Micros());
+        org.junit.jupiter.api.Assertions.assertEquals(4_000L,
+                stats.getSplitTaskRunLatencyP95Micros());
+    }
+
+    @Test
     void splitSchedulingPauseSkipsNewCandidate() {
         final SegmentId segmentId = SegmentId.of(17);
         when(segment.getId()).thenReturn(segmentId);

@@ -11,7 +11,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -307,6 +309,100 @@ class IndexExecutorRegistryTest {
         } finally {
             release.countDown();
             registry.close();
+        }
+    }
+
+    @Test
+    void runtimeSnapshotTracksIndexMaintenanceQueuePressureAndRejections()
+            throws InterruptedException {
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
+        final CountDownLatch workerStarted = new CountDownLatch(1);
+        final CountDownLatch releaseWorker = new CountDownLatch(1);
+        try {
+            registry.getIndexMaintenanceExecutor().execute(() -> {
+                workerStarted.countDown();
+                awaitRelease(releaseWorker);
+            });
+            assertTrue(workerStarted.await(2, TimeUnit.SECONDS));
+            for (int i = 0; i < 64; i++) {
+                registry.getIndexMaintenanceExecutor().execute(() -> {
+                });
+            }
+
+            assertThrows(RejectedExecutionException.class,
+                    () -> registry.getIndexMaintenanceExecutor().execute(() -> {
+                    }));
+
+            final IndexExecutorRegistry.ExecutorMetricsSnapshot snapshot =
+                    registry.runtimeSnapshot().getIndexMaintenance();
+            assertEquals(1, snapshot.getActiveThreadCount());
+            assertEquals(64, snapshot.getQueueSize());
+            assertEquals(64, snapshot.getQueueCapacity());
+            assertEquals(1L, snapshot.getRejectedTaskCount());
+            assertEquals(0L, snapshot.getCallerRunsCount());
+        } finally {
+            releaseWorker.countDown();
+            registry.close();
+        }
+    }
+
+    @Test
+    void runtimeSnapshotTracksCompletedTasksAndCallerRuns()
+            throws InterruptedException, ExecutionException {
+        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
+        final IndexExecutorRegistry registry = new IndexExecutorRegistry(conf);
+        final CountDownLatch workerStarted = new CountDownLatch(1);
+        final CountDownLatch releaseWorker = new CountDownLatch(1);
+        final AtomicReference<String> callerRunThread = new AtomicReference<>();
+        try {
+            registry.getSplitMaintenanceExecutor().submit(() -> {
+            }).get();
+            registry.getStableSegmentMaintenanceExecutor().submit(() -> {
+            }).get();
+
+            registry.getStableSegmentMaintenanceExecutor().execute(() -> {
+                workerStarted.countDown();
+                awaitRelease(releaseWorker);
+            });
+            assertTrue(workerStarted.await(2, TimeUnit.SECONDS));
+            for (int i = 0; i < 64; i++) {
+                registry.getStableSegmentMaintenanceExecutor().execute(() -> {
+                });
+            }
+
+            final String submittingThreadName = Thread.currentThread().getName();
+            registry.getStableSegmentMaintenanceExecutor()
+                    .execute(() -> callerRunThread
+                            .set(Thread.currentThread().getName()));
+
+            assertEquals(submittingThreadName, callerRunThread.get());
+
+            final IndexExecutorRegistry.RuntimeSnapshot runtimeSnapshot =
+                    registry.runtimeSnapshot();
+            assertEquals(1L, runtimeSnapshot.getSplitMaintenance()
+                    .getCompletedTaskCount());
+            assertEquals(1L, runtimeSnapshot.getStableSegmentMaintenance()
+                    .getCompletedTaskCount());
+            assertEquals(1L, runtimeSnapshot.getStableSegmentMaintenance()
+                    .getCallerRunsCount());
+            assertEquals(1, runtimeSnapshot.getStableSegmentMaintenance()
+                    .getActiveThreadCount());
+            assertEquals(64, runtimeSnapshot.getStableSegmentMaintenance()
+                    .getQueueSize());
+            assertEquals(64, runtimeSnapshot.getStableSegmentMaintenance()
+                    .getQueueCapacity());
+        } finally {
+            releaseWorker.countDown();
+            registry.close();
+        }
+    }
+
+    private static void awaitRelease(final CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

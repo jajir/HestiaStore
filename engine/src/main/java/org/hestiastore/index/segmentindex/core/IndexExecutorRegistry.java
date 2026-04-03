@@ -3,10 +3,13 @@ package org.hestiastore.index.segmentindex.core;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
@@ -38,6 +41,9 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
     private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
 
+    private final ObservedThreadPool indexMaintenanceThreadPool;
+    private final ObservedThreadPool splitMaintenanceThreadPool;
+    private final ObservedThreadPool stableSegmentMaintenanceThreadPool;
     private final ExecutorService indexMaintenanceExecutor;
     private final ExecutorService splitMaintenanceExecutor;
     private final ScheduledExecutorService splitPolicyScheduler;
@@ -52,13 +58,17 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     IndexExecutorRegistry(final IndexConfiguration<?, ?> indexConfiguration) {
         final IndexConfiguration<?, ?> conf = Vldtn
                 .requireNonNull(indexConfiguration, ARG_INDEX_CONFIGURATION);
+        this.indexMaintenanceThreadPool = createIndexMaintenanceExecutor(conf);
+        this.splitMaintenanceThreadPool = createSplitMaintenanceExecutor(conf);
+        this.stableSegmentMaintenanceThreadPool = createStableSegmentMaintenanceExecutor(
+                conf);
         this.indexMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
-                createIndexMaintenanceExecutor(conf));
+                indexMaintenanceThreadPool.executor());
         this.splitMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
-                createSplitMaintenanceExecutor(conf));
+                splitMaintenanceThreadPool.executor());
         this.splitPolicyScheduler = createSplitPolicyScheduler();
         this.stableSegmentMaintenanceExecutor = wrapWithIndexContextIfEnabled(
-                conf, createStableSegmentMaintenanceExecutor(conf));
+                conf, stableSegmentMaintenanceThreadPool.executor());
         this.registryMaintenanceExecutor = wrapWithIndexContextIfEnabled(conf,
                 createRegistryMaintenanceExecutor(conf));
     }
@@ -118,7 +128,14 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         return registryMaintenanceExecutor;
     }
 
-    private static ExecutorService createIndexMaintenanceExecutor(
+    RuntimeSnapshot runtimeSnapshot() {
+        checkNotClosed();
+        return new RuntimeSnapshot(indexMaintenanceThreadPool.snapshot(),
+                splitMaintenanceThreadPool.snapshot(),
+                stableSegmentMaintenanceThreadPool.snapshot());
+    }
+
+    private static ObservedThreadPool createIndexMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int indexMaintenanceThreads = Vldtn
                 .requireGreaterThanZero(
@@ -131,40 +148,46 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 indexMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         final AtomicInteger threadCounter = new AtomicInteger(1);
-        return new ThreadPoolExecutor(indexMaintenanceThreads,
-                indexMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(queueCapacity), runnable -> {
+        final LongAdder rejectedTaskCount = new LongAdder();
+        return new ObservedThreadPool(new ThreadPoolExecutor(
+                indexMaintenanceThreads, indexMaintenanceThreads, 0L,
+                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(queueCapacity),
+                runnable -> {
                     final Thread thread = new Thread(runnable,
                             THREAD_NAME_PREFIX_INDEX_MAINTENANCE
                                     + threadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
-                }, new ThreadPoolExecutor.AbortPolicy());
+                }, new CountingAbortPolicy(rejectedTaskCount)), queueCapacity,
+                rejectedTaskCount, new LongAdder());
     }
 
-    private static ExecutorService createStableSegmentMaintenanceExecutor(
+    private static ObservedThreadPool createStableSegmentMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int stableSegmentMaintenanceThreads = Vldtn.requireGreaterThanZero(
                 Vldtn.requireNonNull(
                         Vldtn.requireNonNull(conf, ARG_INDEX_CONFIGURATION)
                                 .getNumberOfStableSegmentMaintenanceThreads(),
                         ARG_STABLE_SEGMENT_MAINTENANCE_THREADS),
-                ARG_STABLE_SEGMENT_MAINTENANCE_THREADS);
+                        ARG_STABLE_SEGMENT_MAINTENANCE_THREADS);
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 stableSegmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         final AtomicInteger threadCounter = new AtomicInteger(1);
-        return new ThreadPoolExecutor(stableSegmentMaintenanceThreads,
-                stableSegmentMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
+        final LongAdder callerRunsCount = new LongAdder();
+        return new ObservedThreadPool(new ThreadPoolExecutor(
+                stableSegmentMaintenanceThreads, stableSegmentMaintenanceThreads,
+                0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity), runnable -> {
                     final Thread thread = new Thread(runnable,
                             THREAD_NAME_PREFIX_STABLE_SEGMENT_MAINTENANCE
                                     + threadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
-                }, new ThreadPoolExecutor.CallerRunsPolicy());
+                }, new CountingCallerRunsPolicy(callerRunsCount)),
+                queueCapacity, new LongAdder(), callerRunsCount);
     }
 
-    private static ExecutorService createSplitMaintenanceExecutor(
+    private static ObservedThreadPool createSplitMaintenanceExecutor(
             final IndexConfiguration<?, ?> conf) {
         final int splitMaintenanceThreads = Vldtn
                 .requireGreaterThanZero(
@@ -177,15 +200,18 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 splitMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         final AtomicInteger threadCounter = new AtomicInteger(1);
-        return new ThreadPoolExecutor(splitMaintenanceThreads,
-                splitMaintenanceThreads, 0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(queueCapacity), runnable -> {
+        final LongAdder rejectedTaskCount = new LongAdder();
+        return new ObservedThreadPool(new ThreadPoolExecutor(
+                splitMaintenanceThreads, splitMaintenanceThreads, 0L,
+                TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(queueCapacity),
+                runnable -> {
                     final Thread thread = new Thread(runnable,
                             THREAD_NAME_PREFIX_SPLIT_MAINTENANCE
                                     + threadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;
-                }, new ThreadPoolExecutor.AbortPolicy());
+                }, new CountingAbortPolicy(rejectedTaskCount)), queueCapacity,
+                rejectedTaskCount, new LongAdder());
     }
 
     private static ExecutorService createRegistryMaintenanceExecutor(
@@ -296,6 +322,149 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private void checkNotClosed() {
         if (wasClosed()) {
             throw new IllegalStateException(MESSAGE_ALREADY_CLOSED);
+        }
+    }
+
+    static final class RuntimeSnapshot {
+
+        private final ExecutorMetricsSnapshot indexMaintenance;
+        private final ExecutorMetricsSnapshot splitMaintenance;
+        private final ExecutorMetricsSnapshot stableSegmentMaintenance;
+
+        RuntimeSnapshot(final ExecutorMetricsSnapshot indexMaintenance,
+                final ExecutorMetricsSnapshot splitMaintenance,
+                final ExecutorMetricsSnapshot stableSegmentMaintenance) {
+            this.indexMaintenance = Vldtn.requireNonNull(indexMaintenance,
+                    "indexMaintenance");
+            this.splitMaintenance = Vldtn.requireNonNull(splitMaintenance,
+                    "splitMaintenance");
+            this.stableSegmentMaintenance = Vldtn.requireNonNull(
+                    stableSegmentMaintenance, "stableSegmentMaintenance");
+        }
+
+        ExecutorMetricsSnapshot getIndexMaintenance() {
+            return indexMaintenance;
+        }
+
+        ExecutorMetricsSnapshot getSplitMaintenance() {
+            return splitMaintenance;
+        }
+
+        ExecutorMetricsSnapshot getStableSegmentMaintenance() {
+            return stableSegmentMaintenance;
+        }
+    }
+
+    static final class ExecutorMetricsSnapshot {
+
+        private final int activeThreadCount;
+        private final int queueSize;
+        private final int queueCapacity;
+        private final long completedTaskCount;
+        private final long rejectedTaskCount;
+        private final long callerRunsCount;
+
+        ExecutorMetricsSnapshot(final int activeThreadCount, final int queueSize,
+                final int queueCapacity, final long completedTaskCount,
+                final long rejectedTaskCount, final long callerRunsCount) {
+            this.activeThreadCount = Math.max(0, activeThreadCount);
+            this.queueSize = Math.max(0, queueSize);
+            this.queueCapacity = Math.max(0, queueCapacity);
+            this.completedTaskCount = Math.max(0L, completedTaskCount);
+            this.rejectedTaskCount = Math.max(0L, rejectedTaskCount);
+            this.callerRunsCount = Math.max(0L, callerRunsCount);
+        }
+
+        int getActiveThreadCount() {
+            return activeThreadCount;
+        }
+
+        int getQueueSize() {
+            return queueSize;
+        }
+
+        int getQueueCapacity() {
+            return queueCapacity;
+        }
+
+        long getCompletedTaskCount() {
+            return completedTaskCount;
+        }
+
+        long getRejectedTaskCount() {
+            return rejectedTaskCount;
+        }
+
+        long getCallerRunsCount() {
+            return callerRunsCount;
+        }
+    }
+
+    private static final class ObservedThreadPool {
+
+        private final ThreadPoolExecutor executor;
+        private final int queueCapacity;
+        private final LongAdder rejectedTaskCount;
+        private final LongAdder callerRunsCount;
+
+        private ObservedThreadPool(final ThreadPoolExecutor executor,
+                final int queueCapacity, final LongAdder rejectedTaskCount,
+                final LongAdder callerRunsCount) {
+            this.executor = Vldtn.requireNonNull(executor, "executor");
+            this.queueCapacity = Math.max(0, queueCapacity);
+            this.rejectedTaskCount = Vldtn.requireNonNull(rejectedTaskCount,
+                    "rejectedTaskCount");
+            this.callerRunsCount = Vldtn.requireNonNull(callerRunsCount,
+                    "callerRunsCount");
+        }
+
+        ExecutorService executor() {
+            return executor;
+        }
+
+        ExecutorMetricsSnapshot snapshot() {
+            return new ExecutorMetricsSnapshot(executor.getActiveCount(),
+                    executor.getQueue().size(), queueCapacity,
+                    executor.getCompletedTaskCount(), rejectedTaskCount.sum(),
+                    callerRunsCount.sum());
+        }
+    }
+
+    private static final class CountingAbortPolicy
+            implements RejectedExecutionHandler {
+
+        private final LongAdder rejectedTaskCount;
+
+        private CountingAbortPolicy(final LongAdder rejectedTaskCount) {
+            this.rejectedTaskCount = Vldtn.requireNonNull(rejectedTaskCount,
+                    "rejectedTaskCount");
+        }
+
+        @Override
+        public void rejectedExecution(final Runnable runnable,
+                final ThreadPoolExecutor executor) {
+            rejectedTaskCount.increment();
+            throw new RejectedExecutionException(String.format(
+                    "Task %s rejected from %s", runnable, executor));
+        }
+    }
+
+    private static final class CountingCallerRunsPolicy
+            implements RejectedExecutionHandler {
+
+        private final LongAdder callerRunsCount;
+        private final ThreadPoolExecutor.CallerRunsPolicy delegate = new ThreadPoolExecutor.CallerRunsPolicy();
+
+        private CountingCallerRunsPolicy(final LongAdder callerRunsCount) {
+            this.callerRunsCount = Vldtn.requireNonNull(callerRunsCount,
+                    "callerRunsCount");
+        }
+
+        @Override
+        public void rejectedExecution(final Runnable runnable,
+                final ThreadPoolExecutor executor) {
+            callerRunsCount.increment();
+            delegate.rejectedExecution(runnable, executor);
         }
     }
 }
