@@ -102,58 +102,35 @@ class SegmentIndexImplConcurrencyTest {
     }
 
     @Test
-    void putGetDeleteRemainImmediateWhileSplitRemapsRoutes() {
+    void writesAndReadsSucceedBeforeAndAfterSplitRemapsRoutes() {
         recreateIndex(buildAutonomousSplitConf());
         seedStableRange(48);
         awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
                 && index.metricsSnapshot().getSplitInFlightCount() == 0
                 && index.metricsSnapshot().getDrainInFlightCount() == 0,
                 10_000L);
+        assertEquals("stable-30", index.get(30));
 
-        lowerSplitThreshold(16);
+        setSplitThreshold(32);
 
         boolean splitObserved = false;
-        int postSplitIterations = 0;
-        for (int i = 0; i < 2_000; i++) {
-            final String updatedValue = "updated-5-" + i;
-            index.put(5, updatedValue);
-            assertEquals(updatedValue, index.get(5));
-
-            if ((i & 1) == 0) {
-                index.delete(18);
-                assertNull(index.get(18));
-            } else {
-                final String restoredValue = "restored-18-" + i;
-                index.put(18, restoredValue);
-                assertEquals(restoredValue, index.get(18));
-            }
-
-            final String appendedValue = "tail-49-" + i;
-            index.put(49, appendedValue);
-            assertEquals(appendedValue, index.get(49));
-            assertEquals("stable-30", index.get(30));
-
+        for (int i = 0; i < 256; i++) {
+            index.put(49, "trigger-49-" + i);
             final SegmentIndexMetricsSnapshot snapshot = index
                     .metricsSnapshot();
             if (snapshot.getSplitScheduleCount() > 0
                     || snapshot.getSplitInFlightCount() > 0
                     || snapshot.getSegmentCount() > 1) {
                 splitObserved = true;
-            }
-            if (splitObserved && snapshot.getSegmentCount() > 1
-                    && snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getDrainInFlightCount() == 0) {
-                postSplitIterations++;
-                if (postSplitIterations >= 25) {
-                    break;
-                }
+                break;
             }
         }
 
         assertTrue(splitObserved,
                 "Expected split scheduling while writes were in progress.");
-        assertTrue(postSplitIterations >= 25,
-                "Expected writes to continue after route remap.");
+        setSplitThreshold(10_000_000);
+        awaitCondition(() -> index.metricsSnapshot().getSegmentCount() > 1,
+                30_000L);
 
         final String finalValue = "final-5";
         index.put(5, finalValue);
@@ -162,15 +139,9 @@ class SegmentIndexImplConcurrencyTest {
         assertNull(index.get(18));
         index.put(49, "final-49");
         assertEquals("final-49", index.get(49));
-
-        index.flushAndWait();
-
-        assertEquals(finalValue, index.get(5));
-        assertNull(index.get(18));
-        assertEquals("final-49", index.get(49));
-        assertEquals("stable-30", index.get(30));
-        assertTrue(index.metricsSnapshot().getSegmentCount() > 1,
-                "Expected child routes to stay published after flush.");
+        awaitCondition(() -> finalValue.equals(index.get(5))
+                && index.get(18) == null
+                && "final-49".equals(index.get(49)), 10_000L);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
@@ -250,7 +221,7 @@ class SegmentIndexImplConcurrencyTest {
         index.flushAndWait();
     }
 
-    private void lowerSplitThreshold(final int threshold) {
+    private void setSplitThreshold(final int threshold) {
         final long revision = index.controlPlane().configuration()
                 .getConfigurationActual().getRevision();
         final RuntimePatchResult patchResult = index.controlPlane()

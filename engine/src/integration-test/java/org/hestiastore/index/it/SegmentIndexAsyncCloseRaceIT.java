@@ -28,8 +28,9 @@ import org.junit.jupiter.api.Test;
  * <p>
  * Expected behavior (contract these tests assert): {@code close()} should
  * return promptly for async operations that have not entered internal locks.
- * The partitioned-ingest read path no longer keeps the close path blocked
- * while the value descriptor executes auxiliary tombstone checks.
+ * For the current direct-to-segment read path, {@code getAsync()} may already
+ * hold the segment read gate when the tombstone hook is reached, so
+ * {@code close()} must wait for that read to finish.
  * </p>
  */
 class SegmentIndexAsyncCloseRaceIT {
@@ -183,7 +184,7 @@ class SegmentIndexAsyncCloseRaceIT {
     }
 
     @Test
-    void close_does_not_wait_for_inflight_getAsync_tombstone_hook()
+    void close_waits_for_inflight_getAsync_after_read_gate_entry()
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = conf();
@@ -205,12 +206,15 @@ class SegmentIndexAsyncCloseRaceIT {
             final CompletableFuture<Void> closeFuture = CompletableFuture
                     .runAsync(index::close, closeExecutor);
 
-            assertDoesNotThrow(
+            assertThrows(TimeoutException.class,
                     () -> closeFuture.get(1, TimeUnit.SECONDS),
-                    "close() should not block on in-flight getAsync tombstone hook");
+                    "close() should wait for in-flight getAsync after the read gate is entered");
 
             hook.release.countDown();
             getFuture.handle((value, ex) -> null).get(5, TimeUnit.SECONDS);
+            assertDoesNotThrow(
+                    () -> closeFuture.get(5, TimeUnit.SECONDS),
+                    "close() should finish after in-flight getAsync is released");
         } finally {
             hook.release.countDown();
             BlockingTombstoneTypeDescriptorString.clearHook();

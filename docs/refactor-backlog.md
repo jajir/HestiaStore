@@ -32,7 +32,7 @@
       - upgrade notes describe old config key removal and new key mapping.
 
 [ ] 79.2 Introduce partition runtime and routing layer (Risk: HIGH)
-    - Add internal partition runtime under `segmentindex.partition` with:
+    - Add internal partition runtime with:
       range partition, mutable layer, immutable run, read/write route table,
       drain scheduler, and local/global backpressure controller.
     - Build runtime route tables from `KeyToSegmentMap.snapshot()` and existing
@@ -91,7 +91,7 @@
       - Removed legacy live-segment split pipeline classes from
         `segmentindex.split` and deleted their lock/freeze-oriented tests.
       - Kept only route-first split primitives
-        (`PartitionStableSplitCoordinator`, split policy/plan/result DTOs).
+        (route split coordinator, split policy/plan/result DTOs).
       - Converted post-drain split triggering to background hinting:
         drain now only enqueues per-partition split hints and split candidate
         evaluation runs exclusively inside the autonomous background split loop.
@@ -189,16 +189,16 @@
       `SegmentIndexConcurrencyStressIT`,
       and the current split coordinator tests.
     - Add JMH benchmarks for:
-      hot-partition concurrent `put()`,
+      hot-route concurrent `put()`,
       mixed `put()+get()` during drain,
-      and update `SegmentIndexGetBenchmark` to measure reads with overlay data
+      and update `SegmentIndexGetBenchmark` to measure reads with live-update data
       present.
     - Acceptance:
       - 20-writer random-put reproduction completes without timeout/stall,
       - read-after-write and reopen consistency tests pass,
       - pre/post JMH baselines are captured under `benchmarks/results`.
     - Delivered (partial):
-      - Expanded `PartitionRuntimeTest` with deterministic unit coverage for:
+      - Expanded the partition-runtime unit suite with deterministic coverage for:
         global index-buffer throttling across partitions, duplicate-key updates
         staying within the active-layer budget, drain schedule monotonicity,
         overlay precedence across older/newer immutable runs plus active data,
@@ -259,7 +259,7 @@
         client path, not only at exporter/source level.
       - Extended canonical JMH profiles
         (`segment-index-pr-smoke`, `segment-index-nightly`) with
-        `SegmentIndexHotPartitionPutBenchmark`.
+        `SegmentIndexHotRoutePutBenchmark`.
       - Improved benchmark compare tooling:
         `compare_jmh_profile.py` now reports `new`/`removed` metrics when
         profile coverage differs between baseline and candidate.

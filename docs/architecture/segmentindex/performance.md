@@ -1,6 +1,8 @@
 # Performance Model & Sizing
 
-This page summarizes how HestiaStore achieves high throughput and predictable latency, and how to size the main knobs. All claims map to code so you can verify behavior.
+This page summarizes how HestiaStore achieves high throughput and predictable
+latency, and how to size the main knobs. All claims map to code so you can
+verify behavior.
 
 Segment-specific internals referenced here are centralized in
 [Segment Architecture](../segment/index.md).
@@ -8,9 +10,10 @@ Segment-specific internals referenced here are centralized in
 ## Mental Model (Hot Paths)
 
 - Put/Delete:
-  - O(1) to update in‑memory write buffer (`UniqueCache`).
-  - Batched flush sorts unique keys (parallel sort over entries) and writes per‑segment delta files sequentially.
-  - Optional compaction merges delta files into the main SST (sequential chunk write).
+  - Route lookup is an in-memory map operation.
+  - `Segment.put(...)` updates the target segment write cache in O(1).
+  - Flush writes frozen write-cache snapshots into per-segment delta files.
+  - Optional compaction merges delta files into the main SST.
 
 - Get (negative):
   - O(k) Bloom probe (k = hash functions), no disk I/O when filter says “absent”.
@@ -51,7 +54,11 @@ Segment-specific internals referenced here are centralized in
 
 ## Memory Sizing
 
-- Per‑segment delta overlay (in memory): when a segment is loaded, delta files are folded into a `UniqueCache`. Upper bound approximates number of unique keys across delta files (see segment properties).
+- Per-segment write cache: bounded by the routed write-cache threshold and the
+  segment maintenance backlog.
+- Per-segment delta cache (in memory): when a segment is loaded, delta files
+  are folded into a `UniqueCache`. Upper bound approximates the number of
+  unique keys across delta files.
 - Bloom filter: fully memory‑mapped in RAM when present; `indexSizeInBytes` bytes per segment plus metadata. Code: `bloomfilter/BloomFilterImpl.java`.
 - SegmentData LRU: holds delta cache + Bloom + scarce index for up to `maxNumberOfSegmentsInCache` segments; evictions call `close()` to free memory.
 
@@ -83,15 +90,15 @@ Segment-specific internals referenced here are centralized in
 
 ## Code Pointers
 
-- Write buffer, drain, and stable publish:
-  `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`,
-  `src/main/java/org/hestiastore/index/segmentindex/partition/PartitionRuntime.java`
+- Routed direct writes and stable maintenance:
+  `src/main/java/org/hestiastore/index/segmentindex/core/DirectSegmentWriteCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/IndexMaintenanceCoordinator.java`
 - Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`,
   `src/main/java/org/hestiastore/index/segment/SegmentIndexSearcher.java`
 - Bloom filter: `src/main/java/org/hestiastore/index/bloomfilter/*`
 - Chunked I/O and filters: `src/main/java/org/hestiastore/index/chunkstore/*`
 - Segment sizing/splitting:
-  `src/main/java/org/hestiastore/index/segmentindex/split/PartitionStableSplitCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/split/RouteSplitCoordinator.java`,
   `src/main/java/org/hestiastore/index/segmentindex/core/BackgroundSplitCoordinator.java`
 
 ## Related Glossary

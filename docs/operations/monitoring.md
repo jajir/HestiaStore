@@ -18,41 +18,40 @@ at a fixed scrape interval.
   - `getOperationCount`, `putOperationCount`, `deleteOperationCount`
 - Cache behavior:
   - `registryCacheHitCount`, `registryCacheMissCount`, `registryCacheEvictionCount`
+- Segment write path:
+  - `totalBufferedWriteKeys`
+  - `totalDeltaCacheFiles`
+  - `putBusyRetryCount`
+  - `putBusyTimeoutCount`
 - Latency:
   - `readLatencyP50/P95/P99Micros`
   - `writeLatencyP50/P95/P99Micros`
 - State:
   - `state` (`OPENING`, `READY`, `CLOSING`, `ERROR`, `CLOSED`)
 
-## Partition Overlay Signals
+## Split And Maintenance Signals
 
-For the range-partitioned ingest runtime, treat these as the primary
-backpressure and drain indicators:
+In the current direct-to-segment runtime, these are the primary topology and
+maintenance indicators:
 
-- Buffered overlay pressure:
-  - `getPartitionBufferedKeyCount()`
-  - `getImmutableRunCount()`
-  - `getDrainingPartitionCount()`
-- Capacity and routing shape:
-  - `getPartitionCount()`
-  - `getActivePartitionCount()`
-  - `getMaxNumberOfKeysInActivePartition()`
-  - `getMaxNumberOfKeysInPartitionBuffer()`
-  - `getMaxNumberOfKeysInIndexBuffer()`
-  - `getMaxNumberOfImmutableRunsPerPartition()`
-- Throttling:
-  - `getLocalThrottleCount()`
-  - `getGlobalThrottleCount()`
-- Drain activity:
-  - `getDrainScheduleCount()`
-  - `getDrainInFlightCount()`
-  - `getDrainLatencyP95Micros()`
+- `getSplitScheduleCount()`
+- `getSplitInFlightCount()`
+- `getSplitBlockedPartitionCount()`
+- `getSplitTaskStartDelayP95Micros()`
+- `getSplitTaskRunLatencyP95Micros()`
+- `getFlushAcceptedToReadyP95Micros()`
+- `getCompactAcceptedToReadyP95Micros()`
+- `getStableSegmentMaintenanceQueueSize()`
+- `getStableSegmentMaintenanceActiveThreadCount()`
 
 Compatibility note:
 
-- `splitScheduleCount`, `splitInFlightCount`, `maintenanceQueueSize`, and
-  related legacy queue fields are still emitted for older clients.
-- New dashboards and alerts should prefer the explicit partition fields above.
+- partition-named fields remain in `metricsSnapshot()` for backward
+  compatibility with older dashboards and management clients
+- in the direct-to-segment runtime those partition-overlay counters should
+  normally remain `0`
+- new dashboards and alerts should prefer the explicit split, maintenance, WAL,
+  and segment-write-path fields above
 
 ## WAL Signals
 
@@ -103,17 +102,17 @@ Start with these baseline alerts and tune per workload:
 - `wal pending sync growth`:
   - condition: `getWalPendingSyncBytes()` grows without recovery for 10+ minutes
   - severity: warning
-- `partition overlay backlog growth`:
-  - condition: `getPartitionBufferedKeyCount()` and `getImmutableRunCount()`
-    grow continuously without returning to baseline
+- `write busy retries growing`:
+  - condition: `getPutBusyRetryCount()` grows continuously together with write
+    latency
   - severity: warning
-- `partition drain latency spike`:
-  - condition: `getDrainLatencyP95Micros()` remains elevated above workload
-    baseline for 10+ minutes
+- `split queue delay spike`:
+  - condition: `getSplitTaskStartDelayP95Micros()` remains elevated above
+    workload baseline for 10+ minutes
   - severity: warning
-- `partition throttling`:
-  - condition: `getLocalThrottleCount()` or `getGlobalThrottleCount()`
-    increases steadily
+- `stable maintenance backlog`:
+  - condition: `getStableSegmentMaintenanceQueueSize()` stays elevated and
+    `getTotalBufferedWriteKeys()` keeps growing
   - severity: warning
 - `index stuck closing`:
   - condition: `state == CLOSING` for longer than the expected shutdown window
@@ -148,6 +147,6 @@ At minimum, create one dashboard per WAL-enabled index with:
 4. `WalPendingSyncBytes`.
 5. Counters for `WalSyncFailureCount`, `WalCorruptionCount`,
    `WalTruncationCount`.
-6. `PartitionBufferedKeyCount`, `ImmutableRunCount`,
-   `DrainingPartitionCount`, `DrainInFlightCount`.
+6. `TotalBufferedWriteKeys`, `TotalDeltaCacheFiles`,
+   `SplitInFlightCount`, `StableSegmentMaintenanceQueueSize`.
 7. Index state timeline (`OPENING` / `READY` / `CLOSING` / `ERROR` / `CLOSED`).

@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex.core;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,8 +13,6 @@ import java.util.List;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,12 +24,6 @@ class IndexMaintenanceCoordinatorTest {
 
     @Mock
     private KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap;
-
-    @Mock
-    private PartitionRuntime<Integer, String> partitionRuntime;
-
-    @Mock
-    private PartitionDrainCoordinator<Integer, String> partitionDrainCoordinator;
 
     @Mock
     private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
@@ -54,37 +45,28 @@ class IndexMaintenanceCoordinatorTest {
     @BeforeEach
     void setUp() {
         coordinator = new IndexMaintenanceCoordinator<>(keyToSegmentMap,
-                partitionRuntime, partitionDrainCoordinator,
                 backgroundSplitCoordinator, backgroundSplitPolicyLoop,
                 stableSegmentCoordinator, walCoordinator);
     }
 
     @Test
-    void compact_skipsStableCompactionWhileOverlayStillHasBufferedData() {
-        when(partitionRuntime.snapshot())
-                .thenReturn(new PartitionRuntimeSnapshot(1, 1, 0, 0, 1, 0, 0,
-                        0, 0));
+    void compact_skipsStableCompactionWhileSplitIsStillRunning() {
+        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(1);
 
         coordinator.compact();
 
-        verify(partitionDrainCoordinator).drainPartitions(false);
         verifyNoInteractions(stableSegmentCoordinator, backgroundSplitPolicyLoop);
-        verify(backgroundSplitCoordinator, never()).splitInFlightCount();
     }
 
     @Test
     void compact_compactsMappedSegmentsWhenRuntimeIsSettled() {
         final SegmentId segmentId = SegmentId.of(7);
-        when(partitionRuntime.snapshot())
-                .thenReturn(new PartitionRuntimeSnapshot(1, 0, 0, 0, 0, 0, 0,
-                        0, 0));
         when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(0);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         runPausedActionImmediately();
 
         coordinator.compact();
 
-        verify(partitionDrainCoordinator).drainPartitions(false);
         verify(stableSegmentCoordinator).compactSegment(segmentId, false);
         verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
     }
@@ -97,8 +79,7 @@ class IndexMaintenanceCoordinatorTest {
 
         coordinator.flushAndWait();
 
-        verify(partitionDrainCoordinator, times(3)).drainPartitions(true);
-        verify(backgroundSplitPolicyLoop, times(4)).awaitExhausted();
+        verify(backgroundSplitPolicyLoop, times(2)).awaitExhausted();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
         verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
         verify(keyToSegmentMap).optionalyFlush();

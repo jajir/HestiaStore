@@ -20,7 +20,7 @@
       ]
     },
     {
-      "label": "segment-index-get-overlay",
+      "label": "segment-index-get-live",
       "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
       "args": [
         "-wi", "1",
@@ -29,7 +29,7 @@
         "-r", "1s",
         "-w", "1s",
         "-t", "4",
-        "-p", "readPathMode=overlay",
+        "-p", "readPathMode=live",
         "-p", "snappy=true",
         "-p", "keyCount=12000",
         "-p", "maxKeysInChunk=256",
@@ -71,8 +71,8 @@
       ]
     },
     {
-      "label": "segment-index-hot-partition-put",
-      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+      "label": "segment-index-hot-route-put",
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
       "args": [
         "-wi", "1",
         "-i", "3",
