@@ -18,8 +18,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.split.PartitionSplitApplyPlan;
-import org.hestiastore.index.segmentindex.split.PartitionSplitResult;
+import org.hestiastore.index.segmentindex.split.RouteSplitPlan;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -312,23 +311,23 @@ public final class KeyToSegmentMap<K> extends AbstractCloseableResource {
         return removedKey;
     }
 
-    public boolean applyPartitionSplitPlan(
-            final PartitionSplitApplyPlan<K> plan) {
+    public boolean applyRouteSplit(final RouteSplitPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
-        final SegmentId oldSegmentId = plan.getOldSegmentId();
+        final SegmentId replacedSegmentId = plan.getReplacedSegmentId();
         final SegmentId lowerSegmentId = plan.getLowerSegmentId();
-        final K upperMaxKey = removeSegmentAndReturnMaxKey(oldSegmentId);
+        final K upperMaxKey = removeSegmentAndReturnMaxKey(replacedSegmentId);
         if (upperMaxKey == null) {
             return false;
         }
         if (DEBUG_SPLIT_LOSS) {
             logger.warn(
-                    "Split debug: map apply oldSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', status='{}', upperSegmentId='{}'.",
-                    oldSegmentId, upperMaxKey, lowerSegmentId, plan.getMaxKey(),
-                    plan.getStatus(), plan.getUpperSegmentId().orElse(null));
+                    "Split debug: map apply replacedSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', splitMode='{}', upperSegmentId='{}'.",
+                    replacedSegmentId, upperMaxKey, lowerSegmentId,
+                    plan.getLowerMaxKey(), plan.getSplitMode(),
+                    plan.getUpperSegmentId().orElse(null));
         }
-        insertSegment(plan.getMaxKey(), lowerSegmentId);
-        if (plan.getStatus() == PartitionSplitResult.PartitionSplitStatus.SPLIT) {
+        insertSegment(plan.getLowerMaxKey(), lowerSegmentId);
+        if (plan.isSplit()) {
             final SegmentId upperSegmentId = Vldtn.requireNonNull(
                     plan.getUpperSegmentId().orElse(null), "upperSegmentId");
             insertSegment(upperMaxKey, upperSegmentId);

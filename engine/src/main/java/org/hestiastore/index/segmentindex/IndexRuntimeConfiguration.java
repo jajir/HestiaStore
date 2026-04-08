@@ -16,8 +16,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterSuppliers;
  * <p>
  * {@link IndexConfiguration} stores only persisted metadata that can be written
  * to and loaded from index manifest files. This runtime configuration resolves
- * the persisted chunk filter specs against a {@link ChunkFilterProviderRegistry}
- * and keeps the suppliers needed to materialize fresh runtime filter instances.
+ * the persisted chunk filter specs against a
+ * {@link ChunkFilterProviderRegistry} and keeps the suppliers needed to
+ * materialize fresh runtime filter instances.
  * </p>
  *
  * @param <K> key type
@@ -29,7 +30,8 @@ public final class IndexRuntimeConfiguration<K, V> {
     private final List<ChunkFilterRegistration> encodingChunkFilters;
     private final List<ChunkFilterRegistration> decodingChunkFilters;
 
-    private IndexRuntimeConfiguration(final IndexConfiguration<K, V> configuration,
+    private IndexRuntimeConfiguration(
+            final IndexConfiguration<K, V> configuration,
             final List<ChunkFilterRegistration> encodingChunkFilters,
             final List<ChunkFilterRegistration> decodingChunkFilters) {
         this.configuration = Vldtn.requireNonNull(configuration,
@@ -43,9 +45,9 @@ public final class IndexRuntimeConfiguration<K, V> {
     /**
      * Resolves persisted chunk filter specs into runtime suppliers.
      *
-     * @param <K> key type
-     * @param <V> value type
-     * @param configuration persisted configuration
+     * @param <K>                         key type
+     * @param <V>                         value type
+     * @param configuration               persisted configuration
      * @param chunkFilterProviderRegistry registry used to resolve filter specs
      * @return resolved runtime configuration
      */
@@ -58,8 +60,10 @@ public final class IndexRuntimeConfiguration<K, V> {
                 .requireNonNull(chunkFilterProviderRegistry,
                         "chunkFilterProviderRegistry");
         return new IndexRuntimeConfiguration<>(requiredConfiguration,
-                toEncodingRegistrations(requiredConfiguration, requiredRegistry),
-                toDecodingRegistrations(requiredConfiguration, requiredRegistry));
+                toEncodingRegistrations(requiredConfiguration,
+                        requiredRegistry),
+                toDecodingRegistrations(requiredConfiguration,
+                        requiredRegistry));
     }
 
     /**
@@ -113,8 +117,8 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @return immutable encoding filter suppliers
      */
     public List<Supplier<? extends ChunkFilter>> getEncodingChunkFilterSuppliers() {
-        return encodingChunkFilters.stream()
-                .map(ChunkFilterRegistration::getSupplier).toList();
+        return ChunkFilterSuppliers.copySuppliers(encodingChunkFilters.stream()
+                .map(ChunkFilterRegistration::getSupplier).toList());
     }
 
     /**
@@ -123,8 +127,8 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @return immutable decoding filter suppliers
      */
     public List<Supplier<? extends ChunkFilter>> getDecodingChunkFilterSuppliers() {
-        return decodingChunkFilters.stream()
-                .map(ChunkFilterRegistration::getSupplier).toList();
+        return ChunkFilterSuppliers.copySuppliers(decodingChunkFilters.stream()
+                .map(ChunkFilterRegistration::getSupplier).toList());
     }
 
     /**
@@ -133,7 +137,8 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @return immutable encoding filter list
      */
     public List<ChunkFilter> getEncodingChunkFilters() {
-        return ChunkFilterSuppliers.materialize(getEncodingChunkFilterSuppliers());
+        return ChunkFilterSuppliers
+                .materialize(getEncodingChunkFilterSuppliers());
     }
 
     /**
@@ -142,24 +147,29 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @return immutable decoding filter list
      */
     public List<ChunkFilter> getDecodingChunkFilters() {
-        return ChunkFilterSuppliers.materialize(getDecodingChunkFilterSuppliers());
+        return ChunkFilterSuppliers
+                .materialize(getDecodingChunkFilterSuppliers());
     }
 
     private static <K, V> List<ChunkFilterRegistration> toEncodingRegistrations(
             final IndexConfiguration<K, V> configuration,
             final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
-        return configuration.getEncodingChunkFilterSpecs().stream()
-                .map(spec -> ChunkFilterRegistration.of(spec,
-                        chunkFilterProviderRegistry.createEncodingSupplier(spec)))
+        return configuration
+                .getEncodingChunkFilterSpecs().stream().map(
+                        spec -> ChunkFilterRegistration.of(spec,
+                                chunkFilterProviderRegistry
+                                        .createEncodingSupplier(spec)))
                 .toList();
     }
 
     private static <K, V> List<ChunkFilterRegistration> toDecodingRegistrations(
             final IndexConfiguration<K, V> configuration,
             final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
-        return configuration.getDecodingChunkFilterSpecs().stream()
-                .map(spec -> ChunkFilterRegistration.of(spec,
-                        chunkFilterProviderRegistry.createDecodingSupplier(spec)))
+        return configuration
+                .getDecodingChunkFilterSpecs().stream().map(
+                        spec -> ChunkFilterRegistration.of(spec,
+                                chunkFilterProviderRegistry
+                                        .createDecodingSupplier(spec)))
                 .toList();
     }
 }

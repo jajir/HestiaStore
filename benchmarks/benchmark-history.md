@@ -25,10 +25,10 @@ Profile definitions live in [profiles](/Users/jan/projects/HestiaStore/benchmark
 Both SegmentIndex profiles currently include:
 
 - `SegmentIndexGetBenchmark` with `readPathMode=persisted`
-- `SegmentIndexGetBenchmark` with `readPathMode=overlay`
+- `SegmentIndexGetBenchmark` with `readPathMode=live`
 - `SegmentIndexMultiSegmentGetBenchmark` with `workingSetMode=hot`
 - `SegmentIndexPersistedMutationBenchmark` for persisted `put`/`delete`
-- `SegmentIndexHotPartitionPutBenchmark` (20-thread hot `put` + `putThenGet`)
+- `SegmentIndexHotRoutePutBenchmark` (20-thread hot `put` + `putThenGet`)
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=drainOnly`
 - `SegmentIndexMixedDrainBenchmark` with `workloadMode=splitHeavy`
 

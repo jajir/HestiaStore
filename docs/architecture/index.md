@@ -7,7 +7,7 @@ indexes.
 ## High-level system view
 
 HestiaStore is organized around a `SegmentIndex` orchestration layer that
-routes operations across stable segments, keeps hot state in memory, and
+routes operations across stable segments, keeps hot segment state in memory, and
 exposes runtime metrics without letting monitoring code touch index files
 directly.
 
@@ -18,7 +18,7 @@ Source: [system-overview.plantuml](images/system-overview.plantuml)
 ## Main runtime components
 
 - **SegmentIndex** is the public engine entry point. It owns request routing,
-  write buffering, flush/compaction scheduling, split orchestration, and
+  direct routed writes, flush/compaction scheduling, split orchestration, and
   runtime metrics.
 - **Key-to-segment map** resolves which segment should serve a key range so the
   index can route reads and writes without scanning every segment.
@@ -34,9 +34,9 @@ Source: [system-overview.plantuml](images/system-overview.plantuml)
 
 ## High-level data flow
 
-- **Write path**: requests enter `SegmentIndex`, land in the write buffer or
-  partitioned ingest layer, and are later drained into segment storage through
-  flush and compaction work.
+- **Write path**: requests enter `SegmentIndex`, are routed to one stable
+  segment, and become immediately visible through that segment's write cache;
+  flush and compaction later persist the segment state.
 - **Read path**: `SegmentIndex` routes a key through the key-to-segment map,
   obtains the target segment through the registry, and then reads segment
   structures such as delta cache, Bloom filter, sparse index, and main SST.

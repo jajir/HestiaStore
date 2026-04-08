@@ -22,10 +22,10 @@ class IndexOperationCoordinatorTest {
     private final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
 
     @Mock
-    private PartitionWriteCoordinator<Integer, String> partitionWriteCoordinator;
+    private DirectSegmentWriteCoordinator<Integer, String> directSegmentWriteCoordinator;
 
     @Mock
-    private PartitionReadCoordinator<Integer, String> partitionReadCoordinator;
+    private DirectSegmentReadCoordinator<Integer, String> directSegmentReadCoordinator;
 
     @Mock
     private IndexWalCoordinator<Integer, String> walCoordinator;
@@ -40,7 +40,7 @@ class IndexOperationCoordinatorTest {
     void setUp() {
         stats = new Stats();
         coordinator = new IndexOperationCoordinator<>(typeDescriptor, stats,
-                partitionWriteCoordinator, partitionReadCoordinator,
+                directSegmentWriteCoordinator, directSegmentReadCoordinator,
                 walCoordinator, retryPolicy);
     }
 
@@ -48,7 +48,7 @@ class IndexOperationCoordinatorTest {
     void putRetriesBusyWriteAndRecordsAppliedWalLsn() {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
-        when(partitionWriteCoordinator.putBuffered(1, "one"))
+        when(directSegmentWriteCoordinator.put(1, "one"))
                 .thenReturn(IndexResult.busy(), IndexResult.ok());
 
         coordinator.put(1, "one");
@@ -64,7 +64,7 @@ class IndexOperationCoordinatorTest {
     void putBusyTimeoutIncrementsTimeoutMetrics() {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
-        when(partitionWriteCoordinator.putBuffered(1, "one"))
+        when(directSegmentWriteCoordinator.put(1, "one"))
                 .thenReturn(IndexResult.busy());
         final IndexException timeout = new IndexException(
                 "Index operation 'put' timed out after 30 ms");
@@ -84,7 +84,7 @@ class IndexOperationCoordinatorTest {
     @Test
     void getRetriesClosedResultUntilReadSucceeds() {
         when(retryPolicy.startNanos()).thenReturn(1L);
-        when(partitionReadCoordinator.get(1))
+        when(directSegmentReadCoordinator.get(1))
                 .thenReturn(IndexResult.closed(), IndexResult.ok("one"));
 
         assertEquals("one", coordinator.get(1));
@@ -102,13 +102,13 @@ class IndexOperationCoordinatorTest {
         when(replayRecord.getOperation()).thenReturn(WalRuntime.Operation.DELETE);
         when(replayRecord.getKey()).thenReturn(3);
         when(replayRecord.getLsn()).thenReturn(11L);
-        when(partitionWriteCoordinator.putBuffered(3,
+        when(directSegmentWriteCoordinator.put(3,
                 TypeDescriptorShortString.TOMBSTONE_VALUE))
                         .thenReturn(IndexResult.ok());
 
         coordinator.replayWalRecord(replayRecord);
 
-        verify(partitionWriteCoordinator).putBuffered(3,
+        verify(directSegmentWriteCoordinator).put(3,
                 TypeDescriptorShortString.TOMBSTONE_VALUE);
         verify(walCoordinator).recordAppliedLsn(11L);
     }

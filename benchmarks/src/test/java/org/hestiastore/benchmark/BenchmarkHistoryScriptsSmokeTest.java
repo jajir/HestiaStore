@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,7 +60,7 @@ class BenchmarkHistoryScriptsSmokeTest {
         assertEquals(1, comparison.path("worseCount").asInt());
         assertEquals(1, comparison.path("newMetricCount").asInt());
         assertEquals(1, comparison.path("removedMetricCount").asInt());
-        assertTrue(hasMetricWithStatus(comparison, "segment-index-get-overlay:getHit:overlayProbe",
+        assertTrue(hasMetricWithStatus(comparison, "segment-index-get-live:getHit:liveProbe",
                 "better"));
         assertTrue(hasMetricWithStatus(comparison,
                 "segment-index-mixed-drain:putWorkload", "new"));
@@ -68,7 +69,7 @@ class BenchmarkHistoryScriptsSmokeTest {
 
         final String markdown = Files.readString(markdownOut,
                 StandardCharsets.UTF_8);
-        assertTrue(markdown.contains("segment-index-get-overlay:getHit"));
+        assertTrue(markdown.contains("segment-index-get-live:getHit"));
         assertTrue(markdown.contains("segment-index-mixed-drain:putWorkload"));
         assertTrue(markdown.contains("segment-index-get-persisted:getMiss"));
     }
@@ -191,9 +192,9 @@ class BenchmarkHistoryScriptsSmokeTest {
                 {
                   "profile": "segment-index-pr-smoke",
                   "benchmarks": [
-                    { "label": "segment-index-get-overlay" },
+                    { "label": "segment-index-get-live" },
                     { "label": "segment-index-get-persisted" },
-                    { "label": "segment-index-hot-partition-put" }
+                    { "label": "segment-index-hot-route-put" }
                   ]
                 }
                 """, StandardCharsets.UTF_8);
@@ -363,6 +364,163 @@ class BenchmarkHistoryScriptsSmokeTest {
                 .contains("/pull-requests/"));
     }
 
+    @Test
+    void syncBenchmarkDocsScriptCopiesLatestArtifactsToCanonicalNamesAndRemovesObsoleteFiles()
+            throws Exception {
+        assumePython3Available();
+        final Path sourceRoot = tempDir.resolve("generated");
+        final Path targetRoot = tempDir.resolve("site");
+        final Path sourceDocs = sourceRoot.resolve("docs").resolve("why-hestiastore");
+        final Path sourceImages = sourceRoot.resolve("docs").resolve("images");
+        final Path targetDocs = targetRoot.resolve("docs").resolve("why-hestiastore");
+        final Path targetImages = targetRoot.resolve("docs").resolve("images");
+        Files.createDirectories(sourceDocs);
+        Files.createDirectories(sourceImages);
+        Files.createDirectories(targetDocs);
+        Files.createDirectories(targetImages);
+
+        writeText(sourceDocs.resolve("out-write.md"),
+                "# old write\n![chart](../images/out-write.svg)\n",
+                1_000L);
+        writeText(sourceDocs.resolve("out-write-single-thread.md"), """
+                # latest single-thread write
+
+                ![chart](../images/out-write-single-thread.svg)
+                ![percentiles](../images/out-write-single-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-write.svg"), "<svg>old-write</svg>\n",
+                1_000L);
+        writeText(sourceImages.resolve("out-write-single-thread.svg"),
+                "<svg>latest-write</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-write-percentiles.svg"),
+                "<svg>old-write-percentiles</svg>\n", 1_000L);
+        writeText(sourceImages.resolve("out-write-single-thread-percentiles.svg"),
+                "<svg>latest-write-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-read-single-thread.md"), """
+                # latest single-thread read
+
+                ![chart](../images/out-read-single-thread.svg)
+                ![percentiles](../images/out-read-single-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-read-single-thread.svg"),
+                "<svg>latest-read</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-read-single-thread-percentiles.svg"),
+                "<svg>latest-read-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-sequential-read.md"), """
+                # latest sequential read
+
+                ![chart](../images/out-sequential-read.svg)
+                ![percentiles](../images/out-sequential-read-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-sequential-read.svg"),
+                "<svg>latest-sequential</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-sequential-read-percentiles.svg"),
+                "<svg>latest-sequential-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-write-multi-thread.md"), """
+                # latest multi-thread write
+
+                ![chart](../images/out-write-multi-thread.svg)
+                ![percentiles](../images/out-write-multi-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-write-multi-thread.svg"),
+                "<svg>latest-multi-write</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-write-multi-thread-percentiles.svg"),
+                "<svg>latest-multi-write-percentiles</svg>\n", 2_000L);
+
+        writeText(sourceDocs.resolve("out-read-multi-thread.md"), """
+                # latest multi-thread read
+
+                ![chart](../images/out-read-multi-thread.svg)
+                ![percentiles](../images/out-read-multi-thread-percentiles.svg)
+                """, 2_000L);
+        writeText(sourceImages.resolve("out-read-multi-thread.svg"),
+                "<svg>latest-multi-read</svg>\n", 2_000L);
+        writeText(sourceImages.resolve("out-read-multi-thread-percentiles.svg"),
+                "<svg>latest-multi-read-percentiles</svg>\n", 2_000L);
+
+        writeText(targetDocs.resolve("out-write-single-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-read-single-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-sequential-read.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-write-multi-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetDocs.resolve("out-read-multi-thread.md"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-write-single-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-write-single-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-read-single-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-read-single-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-sequential-read.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-sequential-read-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-write-multi-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-write-multi-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+        writeText(targetImages.resolve("out-read-multi-thread.svg"), "obsolete\n",
+                500L);
+        writeText(targetImages.resolve("out-read-multi-thread-percentiles.svg"),
+                "obsolete\n", 500L);
+
+        final ProcessResult result = runPythonScript(
+                "sync_benchmark_docs.py",
+                "--source-root", sourceRoot.toString(),
+                "--target-root", targetRoot.toString());
+
+        assertEquals(0, result.exitCode(), result.output());
+
+        final String writeMarkdown = Files.readString(targetDocs.resolve("out-write.md"),
+                StandardCharsets.UTF_8);
+        assertTrue(writeMarkdown.contains("# latest single-thread write"));
+        assertTrue(writeMarkdown.contains("../images/out-write.svg"));
+        assertTrue(writeMarkdown.contains("../images/out-write-percentiles.svg"));
+        assertFalse(writeMarkdown.contains("out-write-single-thread.svg"));
+        assertEquals("<svg>latest-write</svg>\n",
+                Files.readString(targetImages.resolve("out-write.svg"),
+                        StandardCharsets.UTF_8));
+        assertEquals("<svg>latest-write-percentiles</svg>\n",
+                Files.readString(targetImages.resolve("out-write-percentiles.svg"),
+                        StandardCharsets.UTF_8));
+        assertEquals("<svg>latest-multi-read</svg>\n",
+                Files.readString(targetImages.resolve("out-multithread-read.svg"),
+                        StandardCharsets.UTF_8));
+        assertEquals("<svg>latest-multi-read-percentiles</svg>\n",
+                Files.readString(targetImages.resolve(
+                        "out-multithread-read-percentiles.svg"),
+                        StandardCharsets.UTF_8));
+
+        assertFalse(Files.exists(targetDocs.resolve("out-write-single-thread.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-read-single-thread.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-sequential-read.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-write-multi-thread.md")));
+        assertFalse(Files.exists(targetDocs.resolve("out-read-multi-thread.md")));
+        assertFalse(Files.exists(targetImages.resolve("out-write-single-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-write-single-thread-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-read-single-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-read-single-thread-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-sequential-read.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-sequential-read-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-write-multi-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-write-multi-thread-percentiles.svg")));
+        assertFalse(Files.exists(targetImages.resolve("out-read-multi-thread.svg")));
+        assertFalse(Files.exists(
+                targetImages.resolve("out-read-multi-thread-percentiles.svg")));
+    }
+
     private boolean hasMetricWithStatus(final JsonNode comparison,
             final String displayName, final String status) {
         for (final JsonNode metric : comparison.path("metrics")) {
@@ -407,12 +565,19 @@ class BenchmarkHistoryScriptsSmokeTest {
                 summary);
     }
 
+    private void writeText(final Path path, final String value,
+            final long modifiedMillis) throws IOException {
+        path.getParent().toFile().mkdirs();
+        Files.writeString(path, value, StandardCharsets.UTF_8);
+        Files.setLastModifiedTime(path, FileTime.fromMillis(modifiedMillis));
+    }
+
     private Map<String, Object> baselineSummaryModel() {
         return summary("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 List.of(
-                        benchmark("segment-index-get-overlay",
+                        benchmark("segment-index-get-live",
                                 BENCHMARK_GET_HIT, 100D,
-                                Map.of("overlayProbe", metric(10D, "ops/s"))),
+                                Map.of("liveProbe", metric(10D, "ops/s"))),
                         benchmark("segment-index-get-persisted",
                                 BENCHMARK_GET_MISS, 90D, Map.of())));
     }
@@ -420,9 +585,9 @@ class BenchmarkHistoryScriptsSmokeTest {
     private Map<String, Object> candidateSummaryModel() {
         return summary("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                 List.of(
-                        benchmark("segment-index-get-overlay",
+                        benchmark("segment-index-get-live",
                                 BENCHMARK_GET_HIT, 80D,
-                                Map.of("overlayProbe", metric(12D, "ops/s"))),
+                                Map.of("liveProbe", metric(12D, "ops/s"))),
                         benchmark("segment-index-mixed-drain",
                                 BENCHMARK_MIXED_PUT, 210D, Map.of())));
     }

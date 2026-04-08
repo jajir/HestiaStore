@@ -27,8 +27,8 @@ final class IndexWalCoordinator<K, V> {
     private final IndexConfiguration<K, V> conf;
     private final WalRuntime<K, V> walRuntime;
     private final IndexRetryPolicy retryPolicy;
-    private final Runnable drainPartitionsAndWaitAction;
-    private final Runnable flushStableStateAction;
+    private final Runnable prepareDurableStateAction;
+    private final Runnable flushDurableStateAction;
     private final Supplier<SegmentIndexState> stateSupplier;
     private final Consumer<RuntimeException> failureHandler;
     private final AtomicLong lastAppliedWalLsn;
@@ -41,8 +41,8 @@ final class IndexWalCoordinator<K, V> {
             final IndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
-            final Runnable drainPartitionsAndWaitAction,
-            final Runnable flushStableStateAction,
+            final Runnable prepareDurableStateAction,
+            final Runnable flushDurableStateAction,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler,
             final AtomicLong lastAppliedWalLsn) {
@@ -50,10 +50,10 @@ final class IndexWalCoordinator<K, V> {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-        this.drainPartitionsAndWaitAction = Vldtn.requireNonNull(
-                drainPartitionsAndWaitAction, "drainPartitionsAndWaitAction");
-        this.flushStableStateAction = Vldtn.requireNonNull(
-                flushStableStateAction, "flushStableStateAction");
+        this.prepareDurableStateAction = Vldtn.requireNonNull(
+                prepareDurableStateAction, "prepareDurableStateAction");
+        this.flushDurableStateAction = Vldtn.requireNonNull(
+                flushDurableStateAction, "flushDurableStateAction");
         this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
                 "stateSupplier");
         this.failureHandler = Vldtn.requireNonNull(failureHandler,
@@ -143,8 +143,8 @@ final class IndexWalCoordinator<K, V> {
         int checkpointAttempts = 0;
         while (walRuntime.isRetentionPressure()) {
             checkpointAttempts++;
-            drainPartitionsAndWaitAction.run();
-            flushStableStateAction.run();
+            prepareDurableStateAction.run();
+            flushDurableStateAction.run();
             checkpoint();
             if (!walRuntime.isRetentionPressure()) {
                 logWalRetentionPressureCleared(startNanos, checkpointAttempts);

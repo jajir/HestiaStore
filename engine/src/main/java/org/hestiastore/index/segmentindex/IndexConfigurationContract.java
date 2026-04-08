@@ -77,28 +77,33 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default maximum number of keys accepted into the active
-     * partition before it is rotated to an immutable run.
+     * Returns the default maximum number of keys accepted into the routed
+     * segment write cache.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @return default active partition key count
+     * @return default routed write-cache key count
      */
     default int getMaxNumberOfKeysInActivePartition() {
         return getMaxNumberOfKeysInSegmentCache() / 2;
     }
 
     /**
-     * Returns the default immutable run queue depth per partition.
+     * Returns a legacy compatibility limit retained from the removed partition
+     * runtime.
      *
-     * @return default immutable run count
+     * @return default legacy compatibility limit
      */
     default int getMaxNumberOfImmutableRunsPerPartition() {
         return DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION;
     }
 
     /**
-     * Returns the default buffered key limit inside one partition.
+     * Returns the default buffered key limit inside one routed segment.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @return default buffered key count per partition
+     * @return default buffered key count per routed segment
      */
     default int getMaxNumberOfKeysInPartitionBuffer() {
         return Math.max(getMaxNumberOfKeysInActivePartition() + 1,
@@ -106,7 +111,9 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default buffered key limit across the whole index overlay.
+     * Returns the default buffered key limit across the whole index.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
      * @return default total buffered key count
      */
@@ -117,9 +124,11 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default split/drain threshold for a routed partition.
+     * Returns the default split threshold for a routed segment.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @return default partition split threshold
+     * @return default routed-segment split threshold
      */
     default int getMaxNumberOfKeysInPartitionBeforeSplit() {
         return MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;

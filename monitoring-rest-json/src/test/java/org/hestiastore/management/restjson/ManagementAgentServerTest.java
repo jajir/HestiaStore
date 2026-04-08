@@ -108,7 +108,7 @@ class ManagementAgentServerTest {
         assertTrue(report.indexes().stream()
                 .allMatch(idx -> idx.segmentRuntimeSnapshots() != null));
         assertTrue(report.indexes().stream()
-                .allMatch(idx -> idx.partitionCount() >= 1));
+                .allMatch(idx -> idx.partitionCount() >= 0));
         for (final JsonNode indexNode : reportJson.path("indexes")) {
             assertTrue(indexNode.has("maxNumberOfKeysInActivePartition"));
             assertTrue(indexNode.has("maxNumberOfImmutableRunsPerPartition"));

@@ -227,7 +227,7 @@ Segment can be accessd from multiple threads in paraell. Segment
   `flush()`/`compact()` after writes.
 - **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor
   provided to `SegmentImpl` via `SegmentRegistry`.
-- **BackgroundSplitCoordinator / PartitionStableSplitCoordinator**
+- **BackgroundSplitCoordinator / RouteSplitCoordinator**
   (segmentindex): schedule and perform route-first stable segment splits.
 
 ### Responsibilities
