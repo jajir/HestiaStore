@@ -38,7 +38,7 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar ByteSequenceCrc32Bench
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar StringEncodingBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotPartitionPutBenchmark
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexHotRoutePutBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMixedDrainBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexPersistedMutationBenchmark
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexLifecycleBenchmark
@@ -59,7 +59,7 @@ java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "DataBlockByteReaderBe
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SingleChunkEntryIteratorBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "SortedDataFileWriterBenchmark" -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar "StringEncodingBenchmark" -prof gc
-java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=overlay -prof gc
+java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexGetBenchmark -p readPathMode=live -prof gc
 java -jar benchmarks/target/benchmarks-0.0.6-SNAPSHOT.jar SegmentIndexMultiSegmentGetBenchmark -p workingSetMode=cold -prof gc
 ```
 

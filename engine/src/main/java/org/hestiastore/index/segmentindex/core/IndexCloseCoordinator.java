@@ -21,8 +21,8 @@ final class IndexCloseCoordinator {
     private final String indexName;
     private final Runnable beginCloseTransition;
     private final Runnable awaitOperations;
-    private final Runnable drainPartitions;
-    private final Runnable awaitBackgroundSplitExhausted;
+    private final Runnable prepareDurableState;
+    private final Runnable awaitBackgroundSplitsIdle;
     private final Runnable markClosed;
     private final Runnable flushStableSegmentsWithSplitPaused;
     private final Supplier<SegmentRegistryResult<Void>> closeSegmentRegistry;
@@ -37,8 +37,8 @@ final class IndexCloseCoordinator {
     IndexCloseCoordinator(final Logger logger, final String indexName,
             final Runnable beginCloseTransition,
             final Runnable awaitOperations,
-            final Runnable drainPartitions,
-            final Runnable awaitBackgroundSplitExhausted,
+            final Runnable prepareDurableState,
+            final Runnable awaitBackgroundSplitsIdle,
             final Runnable markClosed,
             final Runnable flushStableSegmentsWithSplitPaused,
             final Supplier<SegmentRegistryResult<Void>> closeSegmentRegistry,
@@ -52,8 +52,8 @@ final class IndexCloseCoordinator {
         this.indexName = indexName;
         this.beginCloseTransition = beginCloseTransition;
         this.awaitOperations = awaitOperations;
-        this.drainPartitions = drainPartitions;
-        this.awaitBackgroundSplitExhausted = awaitBackgroundSplitExhausted;
+        this.prepareDurableState = prepareDurableState;
+        this.awaitBackgroundSplitsIdle = awaitBackgroundSplitsIdle;
         this.markClosed = markClosed;
         this.flushStableSegmentsWithSplitPaused = flushStableSegmentsWithSplitPaused;
         this.closeSegmentRegistry = closeSegmentRegistry;
@@ -71,7 +71,7 @@ final class IndexCloseCoordinator {
         try {
             beginCloseTransition.run();
             awaitOperations.run();
-            settleBackgroundWork();
+            awaitBackgroundWorkSettled();
             markClosed.run();
             flushStableSegmentsWithSplitPaused.run();
             verifyRegistryCloseResult(closeSegmentRegistry.get());
@@ -88,11 +88,11 @@ final class IndexCloseCoordinator {
         }
     }
 
-    private void settleBackgroundWork() {
-        drainPartitions.run();
-        awaitBackgroundSplitExhausted.run();
-        drainPartitions.run();
-        awaitBackgroundSplitExhausted.run();
+    private void awaitBackgroundWorkSettled() {
+        prepareDurableState.run();
+        awaitBackgroundSplitsIdle.run();
+        prepareDurableState.run();
+        awaitBackgroundSplitsIdle.run();
     }
 
     private void verifyRegistryCloseResult(

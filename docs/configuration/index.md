@@ -3,6 +3,10 @@
 Use `IndexConfiguration` to define storage behavior, memory limits, type
 handling, and selected runtime features for a `SegmentIndex`.
 
+Some runtime settings still keep historical `partition` names for backward
+compatibility. The old ingest-overlay runtime is gone; those settings now map
+to direct-to-segment write-cache, maintenance-backlog, and split thresholds.
+
 ## Start with the minimum configuration
 
 ```java
@@ -106,11 +110,11 @@ the implementation supports runtime-safe reopening.
 | `valueTypeDescriptor` | Value type descriptor | No |
 | `maxNumberOfKeysInSegmentIndexPage` | Keys per segment index page | No |
 | `maxNumberOfKeysInSegmentCache` | Keys kept in segment cache | Yes |
-| `maxNumberOfKeysInActivePartition` | Active partition overlay size | Yes |
-| `maxNumberOfImmutableRunsPerPartition` | Immutable runs per partition | Yes |
-| `maxNumberOfKeysInPartitionBuffer` | Buffered keys per partition | Yes |
-| `maxNumberOfKeysInIndexBuffer` | Buffered keys across index | Yes |
-| `maxNumberOfKeysInPartitionBeforeSplit` | Split eligibility threshold | Yes |
+| `maxNumberOfKeysInActivePartition` | Legacy-named routed segment write-cache threshold | Yes |
+| `maxNumberOfImmutableRunsPerPartition` | Legacy compatibility knob reserved for runtime tuning and metrics | Yes |
+| `maxNumberOfKeysInPartitionBuffer` | Legacy-named per-segment maintenance backlog limit | Yes |
+| `maxNumberOfKeysInIndexBuffer` | Legacy-named index-wide buffered-write budget | Yes |
+| `maxNumberOfKeysInPartitionBeforeSplit` | Routed segment split eligibility threshold | Yes |
 | `maxNumberOfKeysInSegment` | Maximum keys per segment | No |
 | `maxNumberOfSegmentsInCache` | Cached segments | Yes |
 | `bloomFilterNumberOfHashFunctions` | Bloom filter hash count | No |

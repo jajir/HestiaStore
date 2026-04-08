@@ -1,7 +1,6 @@
 package org.hestiastore.index.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
@@ -48,19 +47,16 @@ class AesGcmFilteredSegmentIndexIT {
                 .defaultRegistry()
                 .withProvider(new AesGcmChunkFilterProvider(TEST_KEY));
         final IndexConfiguration<String, String> createConf = IndexConfiguration
-                .<String, String>builder()
-                .withKeyClass(String.class)
-                .withValueClass(String.class)
-                .withName("orders_encrypted")
+                .<String, String>builder().withKeyClass(String.class)
+                .withValueClass(String.class).withName("orders_encrypted")
                 .addEncodingFilter(ChunkFilterCrc32Writing.class)
                 .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
-                .addEncodingFilter(
-                        registry.createEncodingSupplier(aesSpec), aesSpec)
+                .addEncodingFilter(registry.createEncodingSupplier(aesSpec),
+                        aesSpec)
                 .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
-                .addDecodingFilter(
-                        registry.createDecodingSupplier(aesSpec), aesSpec)
-                .addDecodingFilter(ChunkFilterCrc32Validation.class)
-                .build();
+                .addDecodingFilter(registry.createDecodingSupplier(aesSpec),
+                        aesSpec)
+                .addDecodingFilter(ChunkFilterCrc32Validation.class).build();
 
         final Map<String, String> entries = new LinkedHashMap<>();
         entries.put("alpha", "first value");
@@ -83,9 +79,8 @@ class AesGcmFilteredSegmentIndexIT {
 
         try (SegmentIndex<String, String> index = SegmentIndex.open(directory,
                 registry)) {
-            entries.forEach(
-                    (key, expectedValue) -> assertEquals(expectedValue,
-                            index.get(key)));
+            entries.forEach((key, expectedValue) -> assertEquals(expectedValue,
+                    index.get(key)));
         }
     }
 
@@ -102,7 +97,8 @@ class AesGcmFilteredSegmentIndexIT {
                 read = reader.read(buffer);
             }
             final Properties properties = new Properties();
-            properties.load(new StringReader(out.toString(StandardCharsets.UTF_8)));
+            properties.load(
+                    new StringReader(out.toString(StandardCharsets.UTF_8)));
             return properties;
         } catch (Exception ex) {
             throw new IllegalStateException(

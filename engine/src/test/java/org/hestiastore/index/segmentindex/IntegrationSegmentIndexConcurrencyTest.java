@@ -189,6 +189,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withMaxNumberOfImmutableRunsPerPartition(4) //
                 .withMaxNumberOfKeysInPartitionBuffer(partitionBufferSize) //
                 .withMaxNumberOfKeysInIndexBuffer(indexBufferSize) //
+                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000) //
                 .withMaxNumberOfKeysInSegmentChunk(
                         scenario.maxNumberOfKeysInSegmentChunk()) //
                 .withMaxNumberOfKeysInSegment(

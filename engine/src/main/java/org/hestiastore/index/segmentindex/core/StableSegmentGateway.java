@@ -71,6 +71,15 @@ final class StableSegmentGateway<K, V> {
                 segment -> fromSegmentResult(segment.get(key)));
     }
 
+    IndexResult<Void> put(final SegmentId segmentId, final K key,
+            final V value) {
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
+        Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(value, "value");
+        return withLoadedSegment(segmentId,
+                segment -> fromSegmentResult(segment.put(key, value)));
+    }
+
     IndexResult<EntryIterator<K, V>> openIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);

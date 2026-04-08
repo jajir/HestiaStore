@@ -19,8 +19,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -38,7 +36,6 @@ final class BackgroundSplitPolicyLoop<K, V> {
     private final RuntimeTuningState runtimeTuningState;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final PartitionRuntime<K, V> partitionRuntime;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final Executor workerExecutor;
     private final ScheduledExecutorService splitPolicyScheduler;
@@ -58,7 +55,6 @@ final class BackgroundSplitPolicyLoop<K, V> {
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final PartitionRuntime<K, V> partitionRuntime,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final Executor workerExecutor,
             final ScheduledExecutorService splitPolicyScheduler,
@@ -73,8 +69,6 @@ final class BackgroundSplitPolicyLoop<K, V> {
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
-                "partitionRuntime");
         this.backgroundSplitCoordinator = Vldtn.requireNonNull(
                 backgroundSplitCoordinator, "backgroundSplitCoordinator");
         this.workerExecutor = Vldtn.requireNonNull(workerExecutor,
@@ -124,7 +118,8 @@ final class BackgroundSplitPolicyLoop<K, V> {
 
     void awaitExhausted() {
         awaitSettled();
-        if (forceRetryEligibleSplitCandidates()) {
+        if (isBackgroundSplitPolicyEnabled()
+                && forceRetryEligibleSplitCandidates()) {
             awaitSettled();
         }
     }
@@ -216,13 +211,7 @@ final class BackgroundSplitPolicyLoop<K, V> {
     }
 
     private boolean isAutonomousSplitPolicyIdle() {
-        final PartitionRuntimeSnapshot snapshot = partitionRuntime.snapshot();
-        return snapshot.getBufferedKeyCount() == 0
-                && snapshot.getActivePartitionCount() == 0
-                && snapshot.getImmutableRunCount() == 0
-                && snapshot.getDrainInFlightCount() == 0
-                && snapshot.getDrainingPartitionCount() == 0
-                && backgroundSplitCoordinator.splitInFlightCount() == 0;
+        return backgroundSplitCoordinator.splitInFlightCount() == 0;
     }
 
     private void scanCurrentSplitCandidates() {
@@ -299,10 +288,7 @@ final class BackgroundSplitPolicyLoop<K, V> {
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
             awaitSplitsIdleAction.run();
-            if (!backgroundSplitScanRequested.get()
-                    && !backgroundSplitScanScheduled.get()
-                    && !hasPendingSplitHints()
-                    && backgroundSplitCoordinator.splitInFlightCount() == 0) {
+            if (isSplitPolicySettled()) {
                 return;
             }
             if (System.nanoTime() >= deadline) {
@@ -317,6 +303,23 @@ final class BackgroundSplitPolicyLoop<K, V> {
                         "Interrupted while waiting for background split policy completion.");
             }
         }
+    }
+
+    private boolean isSplitPolicySettled() {
+        if (!isBackgroundSplitPolicyEnabled()) {
+            clearPendingSplitPolicyWork();
+            return !backgroundSplitScanScheduled.get()
+                    && backgroundSplitCoordinator.splitInFlightCount() == 0;
+        }
+        return !backgroundSplitScanRequested.get()
+                && !backgroundSplitScanScheduled.get()
+                && !hasPendingSplitHints()
+                && backgroundSplitCoordinator.splitInFlightCount() == 0;
+    }
+
+    private void clearPendingSplitPolicyWork() {
+        backgroundSplitScanRequested.set(false);
+        backgroundSplitHintedSegments.clear();
     }
 
     private boolean forceRetryEligibleSplitCandidates() {
@@ -340,7 +343,8 @@ final class BackgroundSplitPolicyLoop<K, V> {
 
     private boolean isClosedOrClosingState() {
         final SegmentIndexState state = stateSupplier.get();
-        return state == SegmentIndexState.CLOSED
+        return state == SegmentIndexState.CLOSING
+                || state == SegmentIndexState.CLOSED
                 || state == SegmentIndexState.ERROR;
     }
 
