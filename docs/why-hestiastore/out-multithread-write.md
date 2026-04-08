@@ -1,18 +1,18 @@
-# Benchmark for 'Multithread Write' operation
+# Benchmark for 'Multi-thread write' operation
 
 ## Chart
 
-![Multithread write benchmark chart](../images/out-multithread-write.svg)
+![Multi-thread write benchmark chart](../images/out-multithread-write.svg)
 
 ## Percentile Chart
 
 This chart shows the latency percentile curve for the benchmarked engines. The X axis runs from p50 to p99.99, and the Y axis uses a logarithmic latency scale so tail-latency differences are easier to compare.
 
-![Multithread write latency percentile chart](../images/out-multithread-write-percentiles.svg)
+![Multi-thread write latency percentile chart](../images/out-multithread-write-percentiles.svg)
 
-## Test Conditions - Multithread Write Benchmarks
+## Test Conditions - Multi-thread Write Benchmarks
 
-- Multithread write runs reuse the same controlled JVM flags and hardware as the other benchmark suites. Each trial wipes the working directory supplied through the `dir` system property and creates a fresh storage instance before any benchmark thread starts.
+- Multi-thread write runs reuse the same controlled JVM flags and hardware as the other benchmark suites. Each trial wipes the working directory supplied through the `dir` system property and creates a fresh storage instance before any benchmark thread starts.
 - Each benchmark thread performs the same write operation in two JMH modes during the same run: `SampleTime` to capture latency percentiles and `Throughput` to capture aggregate write throughput.
 - The configured thread count for this result set is 4 benchmark threads, matching the `threads4` suffix used by the generated result files.
 - Every operation generates a pseudo-random key via `HashDataProvider.makeHash(ThreadLocalRandom.current().nextLong())`, so concurrent writers insert independent keys while using the constant payload `"opice skace po stromech"`.
@@ -25,20 +25,22 @@ This chart shows the latency percentile curve for the benchmarked engines. The X
 
 | Engine | Threads | Throughput [ops/s] | CPU Usage |
 |:-------|--------:|-------------------:|----------:|
-| ChronicleMap | 4 | 2 454 | 10% |
-| H2 | 4 | 39 736 | 30% |
-| HestiaStoreBasic | 4 | 423 154 | 21% |
-| LevelDB | 4 | 47 190 | 17% |
-| MapDB | 4 | 15 559 | 19% |
-| RocksDB | 4 | 108 818 | 15% |
+| ChronicleMap | 4 | 3 715 | 16% |
+| H2 | 4 | 37 088 | 32% |
+| HestiaStoreBasic | 4 | 8 418 | 8% |
+| HestiaStoreCompress | 4 | 48 983 | 12% |
+| LevelDB | 4 | 62 152 | 19% |
+| MapDB | 4 | 17 127 | 17% |
+| RocksDB | 4 | 129 179 | 14% |
 
 ## Source Data for Percentile Chart
 
 | Engine | p50 [us/op] | p75 [us/op] | p90 [us/op] | p95 [us/op] | p99 [us/op] | p99.5 [us/op] | p99.9 [us/op] | p99.99 [us/op] |
 |:-------|-------------:|-------------:|-------------:|-------------:|-------------:|-------------:|-------------:|-------------:|
-| ChronicleMap | 2.748 | 1 167.36 | 2 330.624 | 3 416.064 | 6 283.264 | 7 995.392 | 296 222.72 | 571 589.578 |
-| H2 | 49.856 | 90.24 | 172.8 | 302.08 | 1 527.808 | 1 632.256 | 3 096.576 | 5 152.768 |
-| HestiaStoreBasic | 2.708 | 3.5 | 5.456 | 6.832 | 10.08 | 12.704 | 30.496 | 3 627.887 |
-| LevelDB | 1.54 | 2.292 | 32.832 | 59.584 | 1 282.048 | 1 505.28 | 1 540.096 | 4 165.632 |
-| MapDB | 90.624 | 131.84 | 317.952 | 409.6 | 752.64 | 994.304 | 5 685.248 | 14 811.136 |
-| RocksDB | 8.04 | 11.456 | 13.04 | 14.288 | 30.24 | 37.888 | 108.16 | 1 570.816 |
+| ChronicleMap | 2.372 | 1 191.936 | 2 314.24 | 3 317.76 | 5 832.704 | 7 028.736 | 19 450.659 | 670 040.064 |
+| H2 | 36.288 | 70.016 | 136.96 | 227.072 | 1 331.2 | 1 591.296 | 3 043.328 | 4 800.512 |
+| HestiaStoreBasic | 1.75 | 2.332 | 3.288 | 8.736 | 41.6 | 51.456 | 78.208 | 298.693 |
+| HestiaStoreCompress | 2.164 | 2.584 | 3.084 | 3.748 | 43.008 | 90.88 | 410.112 | 1 960 |
+| LevelDB | 1.582 | 2.292 | 33.408 | 56.32 | 1 511.424 | 1 525.76 | 1 562.624 | 4 341.76 |
+| MapDB | 107.264 | 146.688 | 199.168 | 241.408 | 430.08 | 3 477.504 | 7 725.056 | 13 942.784 |
+| RocksDB | 9.072 | 11.456 | 12.528 | 13.36 | 20.064 | 26.624 | 1 542.144 | 1 562.624 |
