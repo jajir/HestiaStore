@@ -24,8 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base implementation of the segment index that manages stable segment
- * storage, partition overlays, and background maintenance coordination.
+ * Base implementation of the segment index that manages routed segment
+ * storage, WAL coordination, and background maintenance.
  *
  * @param <K> key type
  * @param <V> value type
@@ -179,7 +179,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     : segmentWindows;
             Vldtn.requireNonNull(isolation, "isolation");
             final EntryIterator<K, V> segmentIterator = runtime
-                    .partitionReadCoordinator()
+                    .directSegmentReadCoordinator()
                     .openWindowIterator(resolvedWindows, isolation);
             if (isContextLoggingEnabled()) {
                 return new EntryIteratorLoggingContext<>(segmentIterator, conf);

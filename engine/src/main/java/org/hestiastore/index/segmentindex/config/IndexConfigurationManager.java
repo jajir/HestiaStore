@@ -595,7 +595,7 @@ public class IndexConfigurationManager<K, V> {
                 "MaxNumberOfKeysInActivePartition");
         if (conf.getMaxNumberOfKeysInActivePartition() < 1) {
             throw new IllegalArgumentException(
-                    "Max number of keys in active partition must be at least 1.");
+                    "Max number of keys in active partition (legacy-named routed write-cache limit) must be at least 1.");
         }
         final int effectiveMaxDuringMaintenance = conf
                 .getMaxNumberOfKeysInPartitionBuffer() == null
@@ -607,7 +607,7 @@ public class IndexConfigurationManager<K, V> {
         if (effectiveMaxDuringMaintenance <= conf
                 .getMaxNumberOfKeysInActivePartition()) {
             throw new IllegalArgumentException(
-                    "Max number of keys in partition buffer must be greater than the active partition limit.");
+                    "Max number of keys in partition buffer (legacy-named per-segment backlog limit) must be greater than the active partition limit.");
         }
     }
 

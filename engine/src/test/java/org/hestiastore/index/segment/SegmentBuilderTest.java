@@ -7,14 +7,13 @@ import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
  */
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryWriter;
@@ -256,10 +255,12 @@ class SegmentBuilderTest {
     void test_supplierBasedFiltersMaterializeFreshInstances() {
         final AtomicInteger sequence = new AtomicInteger();
         final SegmentBuilder<Integer, String> builder = newBuilder()
-                .withEncodingChunkFilterSuppliers(List.of(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet())))
-                .withDecodingChunkFilterSuppliers(List.of(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet())));
+                .withEncodingChunkFilterSuppliers(
+                        List.of(() -> new TrackingChunkFilter(
+                                sequence.incrementAndGet())))
+                .withDecodingChunkFilterSuppliers(
+                        List.of(() -> new TrackingChunkFilter(
+                                sequence.incrementAndGet())));
 
         final TrackingChunkFilter first = (TrackingChunkFilter) builder
                 .getEncodingChunkFilters().get(0);

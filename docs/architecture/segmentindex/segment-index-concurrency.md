@@ -7,15 +7,15 @@
   checks.
 - Segment registry: cache of Segment instances plus the maintenance executor.
 - Background split coordinator: decides split scheduling after writes.
-- Split: replace one segment with a new segment (or two) and update the
-  mapping.
+- Split: replace one routed segment range with child ranges and update the
+  route map atomically.
 
 ## Core Rules
 - SegmentIndex is thread-safe by contract; calls may be concurrent.
 - Target: highly concurrent SegmentIndex API; avoid global synchronization and
   only protect minimal shared structures (mapping updates, split swaps).
 - Index operations are not globally serialized; concurrency is bounded by
-  shared caches, mapping updates, and per-segment state machines.
+  mapping updates, split admission, and per-segment state machines.
 - Segment maintenance IO runs on the segment maintenance executor.
 - The maintenance executor is always created by SegmentRegistry from
   IndexConfiguration.numberOfStableSegmentMaintenanceThreads (default 10).
@@ -56,18 +56,16 @@
   The per-segment `.lock` file enforces single-open at the directory level.
 
 ## Maintenance & Splits
-- SegmentIndexImpl evaluates overlay thresholds after each write and
-  triggers drain/flush follow-up only when backgroundMaintenanceAutoEnabled is
-  true.
+- SegmentIndex evaluates split thresholds after successful writes and schedules
+  follow-up maintenance only when `backgroundMaintenanceAutoEnabled` is true.
 - Splits are scheduled by BackgroundSplitCoordinator on the shared split
   executor; only one split per segment id can be in flight.
-- PartitionStableSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts
-  throw.
-- Split materialization reads parent stable data with FAIL_FAST iteration,
-  publishes child stable segments, then performs a short exclusive apply phase
-  for route-map swap + overlay reassignment.
+- RouteSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts throw.
+- Split materialization reads the parent stable data through
+  `FULL_ISOLATION`, materializes child stable segments first, and then performs
+  a short exclusive route-map publish step.
 - After a split, KeyToSegmentMap updates the mapping and flushes it to disk;
-  any in-flight write with a stale mapping version retries.
+  any in-flight write with a stale route retries.
 
 ## Index State Machine
 
@@ -78,7 +76,7 @@ States:
   progress; operations are rejected.
 - READY: operations allowed.
 - CLOSING: `close()` is in progress; new API operations are rejected, the
-  directory lock is still held, and shutdown may still wait for split/drain/WAL
+  directory lock is still held, and shutdown may still wait for split/WAL
   durability boundaries to settle.
 - ERROR: unrecoverable failure; operations are rejected.
 - CLOSED: shutdown completed, resources were released, and operations are
@@ -110,6 +108,7 @@ Notes:
 ## Components
 - SegmentIndex (public API): thread-safe entry point.
 - SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
+- SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
   maintenance, including the dedicated async API executor.
 - IndexAsyncAdapter: thin facade that forwards async API calls to the wrapped
   index.
@@ -120,7 +119,7 @@ Notes:
 - SegmentRegistry(Synchronized): caches Segment instances and supplies the
   maintenance executor.
 - BackgroundSplitCoordinator: post-write split scheduling decisions.
-- PartitionStableSplitCoordinator: split execution.
+- RouteSplitCoordinator: split execution and route-map publish.
 
 ## Iterator Isolation
 - FAIL_FAST: iteration is optimistic; any mutation can invalidate the

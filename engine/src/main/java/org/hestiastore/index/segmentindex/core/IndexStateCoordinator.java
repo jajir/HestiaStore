@@ -44,7 +44,6 @@ final class IndexStateCoordinator<K, V> {
         }
         final IndexState<K, V> currentState = getIndexState();
         if (currentState instanceof IndexStateClosing<?, ?>) {
-            @SuppressWarnings("unchecked")
             final IndexStateClosing<K, V> closingState = (IndexStateClosing<K, V>) currentState;
             closingState.finishClose(index);
             return;

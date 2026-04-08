@@ -24,7 +24,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Benchmark focused on the hot-partition write path.
+ * Benchmark focused on the hot-route write path.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -32,12 +32,12 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1)
 @State(Scope.Benchmark)
-public class SegmentIndexHotPartitionPutBenchmark {
+public class SegmentIndexHotRoutePutBenchmark {
 
     private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
     private static final int HOT_KEY_SPACE = 256;
-    private static final int ACTIVE_PARTITION_CAPACITY = 1024;
+    private static final int ROUTED_WRITE_CACHE_CAPACITY = 1024;
 
     private SegmentIndex<Integer, String> index;
     private AtomicInteger sequence;
@@ -58,7 +58,7 @@ public class SegmentIndexHotPartitionPutBenchmark {
 
     @Benchmark
     @Threads(20)
-    public void putHotPartition() {
+    public void putHotRoute() {
         final int next = sequence.getAndIncrement();
         final int key = next % HOT_KEY_SPACE;
         index.put(Integer.valueOf(key), buildValue(next));
@@ -66,7 +66,7 @@ public class SegmentIndexHotPartitionPutBenchmark {
 
     @Benchmark
     @Threads(20)
-    public void putThenGetHotPartition(final Blackhole blackhole) {
+    public void putThenGetHotRoute(final Blackhole blackhole) {
         final int next = sequence.getAndIncrement();
         final int key = next % HOT_KEY_SPACE;
         final String value = buildValue(next);
@@ -80,13 +80,14 @@ public class SegmentIndexHotPartitionPutBenchmark {
                 .withValueClass(String.class)//
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withName("segment-index-hot-partition-put-benchmark")//
+                .withName("segment-index-hot-route-put-benchmark")//
                 .withContextLoggingEnabled(false)//
                 .withMaxNumberOfKeysInSegmentCache(512)//
-                // Keep the active partition above the hot key space so this
-                // benchmark measures the hot write path instead of drain churn.
+                // Keep the legacy-named routed write-cache limit above the hot
+                // key space so this benchmark measures the hot write path
+                // instead of maintenance churn.
                 .withMaxNumberOfKeysInActivePartition(
-                        ACTIVE_PARTITION_CAPACITY)//
+                        ROUTED_WRITE_CACHE_CAPACITY)//
                 .withMaxNumberOfImmutableRunsPerPartition(2)//
                 .withMaxNumberOfKeysInPartitionBuffer(2048)//
                 .withMaxNumberOfKeysInIndexBuffer(8192)//

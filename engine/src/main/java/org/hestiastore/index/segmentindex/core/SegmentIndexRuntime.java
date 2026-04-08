@@ -33,9 +33,7 @@ final class SegmentIndexRuntime<K, V> {
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
-    private final PartitionDrainCoordinator<K, V> partitionDrainCoordinator;
-    private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
-    private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
+    private final DirectSegmentReadCoordinator<K, V> directSegmentReadCoordinator;
     private final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator;
     private final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator;
     private final IndexRetryPolicy retryPolicy;
@@ -54,9 +52,7 @@ final class SegmentIndexRuntime<K, V> {
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop,
             final StableSegmentCoordinator<K, V> stableSegmentCoordinator,
-            final PartitionDrainCoordinator<K, V> partitionDrainCoordinator,
-            final PartitionWriteCoordinator<K, V> partitionWriteCoordinator,
-            final PartitionReadCoordinator<K, V> partitionReadCoordinator,
+            final DirectSegmentReadCoordinator<K, V> directSegmentReadCoordinator,
             final IndexMaintenanceCoordinator<K, V> maintenanceCoordinator,
             final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator,
             final IndexRetryPolicy retryPolicy,
@@ -72,9 +68,7 @@ final class SegmentIndexRuntime<K, V> {
         this.backgroundSplitCoordinator = backgroundSplitCoordinator;
         this.backgroundSplitPolicyLoop = backgroundSplitPolicyLoop;
         this.stableSegmentCoordinator = stableSegmentCoordinator;
-        this.partitionDrainCoordinator = partitionDrainCoordinator;
-        this.partitionWriteCoordinator = partitionWriteCoordinator;
-        this.partitionReadCoordinator = partitionReadCoordinator;
+        this.directSegmentReadCoordinator = directSegmentReadCoordinator;
         this.maintenanceCoordinator = maintenanceCoordinator;
         this.recoveryCleanupCoordinator = recoveryCleanupCoordinator;
         this.retryPolicy = retryPolicy;
@@ -136,12 +130,8 @@ final class SegmentIndexRuntime<K, V> {
         return stableSegmentCoordinator;
     }
 
-    PartitionWriteCoordinator<K, V> partitionWriteCoordinator() {
-        return partitionWriteCoordinator;
-    }
-
-    PartitionReadCoordinator<K, V> partitionReadCoordinator() {
-        return partitionReadCoordinator;
+    DirectSegmentReadCoordinator<K, V> directSegmentReadCoordinator() {
+        return directSegmentReadCoordinator;
     }
 
     IndexMaintenanceCoordinator<K, V> maintenanceCoordinator() {
@@ -201,7 +191,8 @@ final class SegmentIndexRuntime<K, V> {
             final Runnable finishCloseTransition) {
         return new IndexCloseCoordinator(logger, indexName, beginCloseTransition,
                 awaitOperations,
-                () -> partitionDrainCoordinator.drainPartitions(true),
+                () -> {
+                },
                 backgroundSplitPolicyLoop::awaitExhausted, markClosed,
                 () -> backgroundSplitCoordinator
                         .runWithSplitSchedulingPaused(() -> stableSegmentCoordinator

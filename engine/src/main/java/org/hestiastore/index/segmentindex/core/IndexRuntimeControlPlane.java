@@ -100,21 +100,21 @@ final class IndexRuntimeControlPlane implements IndexControlPlane {
         }
         final Map<RuntimeSettingKey, Integer> effective = runtimeTuningState
                 .previewEffective(normalized);
-        final int activePartition = effective.get(
+        final int segmentWriteCacheLimit = effective.get(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION)
                 .intValue();
-        final int partitionBuffer = effective.get(
+        final int maintenanceWriteCacheLimit = effective.get(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER)
                 .intValue();
         final int indexBuffer = effective
                 .get(RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER)
                 .intValue();
-        if (partitionBuffer <= activePartition) {
+        if (maintenanceWriteCacheLimit <= segmentWriteCacheLimit) {
             issues.add(new ValidationIssue(
                     RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
                     "value must be greater than maxNumberOfKeysInActivePartition"));
         }
-        if (indexBuffer < partitionBuffer) {
+        if (indexBuffer < maintenanceWriteCacheLimit) {
             issues.add(new ValidationIssue(
                     RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
                     "value must be >= maxNumberOfKeysInPartitionBuffer"));

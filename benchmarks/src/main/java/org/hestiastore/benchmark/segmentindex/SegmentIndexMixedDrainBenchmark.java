@@ -26,12 +26,13 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Mixed read/write benchmark for partitioned ingest.
+ * Mixed read/write benchmark for the direct-to-segment runtime.
  *
  * <p>
- * `drainOnly` keeps one hot partition under continuous overlay drain pressure.
- * `splitHeavy` keeps growing the routed keyspace so the background split policy
- * has to keep materializing child ranges while reads and writes continue.
+ * `drainOnly` keeps one hot routed range under continuous maintenance
+ * pressure. `splitHeavy` keeps growing the routed key space so the background
+ * split policy has to keep materializing child ranges while reads and writes
+ * continue.
  * </p>
  */
 @BenchmarkMode(Mode.Throughput)

@@ -10,7 +10,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.split.PartitionSplitApplyPlan;
+import org.hestiastore.index.segmentindex.split.RouteSplitPlan;
 
 /**
  * Thread-safe adapter for {@link KeyToSegmentMap} backed by a read/write lock.
@@ -145,9 +145,8 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
         withWriteLock(() -> delegate.updateSegmentMaxKey(segmentId, newMaxKey));
     }
 
-    public boolean applyPartitionSplitPlan(
-            final PartitionSplitApplyPlan<K> plan) {
-        return withWriteLock(() -> delegate.applyPartitionSplitPlan(plan));
+    public boolean applyRouteSplit(final RouteSplitPlan<K> plan) {
+        return withWriteLock(() -> delegate.applyRouteSplit(plan));
     }
 
     /**

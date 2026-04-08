@@ -9,6 +9,11 @@ import org.hestiastore.index.segment.SegmentState;
 
 /**
  * Immutable snapshot of index and segment runtime metrics.
+ * <p>
+ * Several fields keep historical {@code partition} names for backward
+ * compatibility with existing monitoring clients. In the current
+ * direct-to-segment runtime, those fields act as compatibility values and are
+ * not evidence of a live partition-overlay subsystem.
  */
 @SuppressWarnings("java:S107")
 public final class SegmentIndexMetricsSnapshot {
@@ -246,8 +251,8 @@ public final class SegmentIndexMetricsSnapshot {
     }
 
     /**
-     * Full runtime metrics constructor including per-segment and partition
-     * metrics, without WAL metrics.
+     * Full runtime metrics constructor including per-segment metrics plus
+     * partition-named compatibility fields, without WAL metrics.
      */
     public SegmentIndexMetricsSnapshot(final long getOperationCount,
             final long putOperationCount, final long deleteOperationCount,

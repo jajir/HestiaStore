@@ -1,125 +1,94 @@
-# Range-Partitioned Ingest Architecture
+---
+title: Range-Partitioned Ingest Compatibility Note
+audience: contributor
+doc_type: explanation
+owner: engine
+---
 
-This page describes the target write-path architecture for `SegmentIndex`.
-Its purpose is to preserve immediate read-after-write semantics while moving
-long-running drain and split work out of the hot user write path.
+# Range-Partitioned Ingest Compatibility Note
 
-This is an architecture page, not an implementation guide. It focuses on
-contracts, invariants, and flow boundaries.
+This file keeps its historical topic name, but the ingest-overlay runtime it
+described has been removed. `SegmentIndex` now routes writes directly into
+stable segments and relies on segment-local write caches for read-after-write
+semantics.
+
+Use this page as a compatibility note explaining what replaced the removed
+historical ingest runtime.
 
 ## Goals
 
 - `put()` becomes visible to `get()` immediately after the call returns.
-- Hot user writes must not wait for long-running split or compaction work.
-- Buffered ingest must stay bounded at both local-range and whole-index level.
-- Overload should be explicit and controlled, not expressed as retry storms.
 - Stable segment files remain the durable storage boundary.
+- Split work stays route-first and atomic at the map-publish step.
+- Overload is expressed through bounded retry and explicit `BUSY`, not through
+  an extra overlay runtime.
 
-## What Stays
+## Current Runtime Model
 
-- Stable segment files remain the durable read and publish boundary.
-- `KeyToSegmentMap` remains the persisted routing source of truth in the first
-  version.
+- User writes target the routed stable segment directly.
+- `KeyToSegmentMap` remains the persisted routing source of truth.
 - WAL remains the crash-recovery mechanism for acknowledged writes that are not
-  yet published into stable segment storage.
+  yet flushed to stable segment files.
+- Read-after-write comes from the segment write cache, not from an index-level
+  overlay.
 
-## What Changes
+## Read Contract
 
-- User writes stop targeting live segments directly.
-- New writes first enter a bounded in-memory overlay that is organized by key
-  range.
-- Each routed range owns a short ingest pipeline:
-  - an active mutable layer,
-  - a bounded queue of immutable runs waiting for drain,
-  - references to stable segment sources for that range.
-- Reads consult the overlay first and stable storage second.
+`get(key)` resolves the current route and then reads the mapped segment. The
+segment checks its write cache and delta cache before consulting stable
+on-disk structures.
 
-## Read-After-Write Contract
+## Write Contract
 
-`get(key)` must resolve the routed range for `key` and read sources in this
-order:
-
-1. active mutable data for the range
-2. immutable runs for the range, newest first
-3. stable segment sources for the range
-
-This ordering guarantees that a successful `put()` is observable before any
-background drain completes.
-
-Diagram PNG:
-![Range-partitioned ingest overview](images/range-partitioned-ingest-overview.png)
-
-PlantUML source:
-[`docs/architecture/segmentindex/images/range-partitioned-ingest-overview.plantuml`](images/range-partitioned-ingest-overview.plantuml)
-
-## Drain Model
-
-When the active mutable layer reaches its local admission limit, it is sealed
-and becomes an immutable run. Background drain then moves immutable data into
-stable segment storage.
-
-Key rules:
-
-- user writes continue into a fresh active mutable layer,
-- immutable runs remain readable until drain and publish complete,
-- flush durability is reached only after buffered overlay data is drained and
-  WAL checkpointed.
-
-Diagram PNG:
-![Range-partitioned ingest write sequence](images/range-partitioned-ingest-sequence.png)
-
-PlantUML source:
-[`docs/architecture/segmentindex/images/range-partitioned-ingest-sequence.plantuml`](images/range-partitioned-ingest-sequence.plantuml)
+`put()` / `delete()` append to WAL first when enabled, then resolve the write
+route and call `Segment.put(...)` on the mapped segment. The write is visible
+immediately through the segment write cache and becomes durable after segment
+flush plus WAL checkpoint.
 
 ## Split Model
 
-Split no longer means freezing a live segment and making user writers wait.
-Instead:
+Split has two phases:
 
-1. new writes are routed to child ranges first,
-2. the previous parent range becomes draining-only,
-3. old stable data is rewritten in the background,
-4. `KeyToSegmentMap` is updated only at publish time,
-5. the old parent route is removed after publish succeeds.
+1. background materialization builds child stable segments from the parent
+   stable snapshot
+2. a short publish step atomically remaps `KeyToSegmentMap`
 
-During the transition, reads must be able to combine:
-
-- overlays from the new child ranges,
-- stable sources still owned by the draining parent range.
-
-Diagram PNG:
-![Range-partitioned split drain flow](images/range-partitioned-split-drain.png)
-
-PlantUML source:
-[`docs/architecture/segmentindex/images/range-partitioned-split-drain.plantuml`](images/range-partitioned-split-drain.plantuml)
+During split build, writes to the affected route may be retried internally as
+`BUSY`. There is no overlay reassignment step anymore.
 
 ## Backpressure Model
 
-Bounded buffering is mandatory.
+Bounded retry remains mandatory:
 
-Two backpressure scopes exist:
+- split-affected routes can return internal `BUSY` until the retry policy
+  succeeds or times out
+- WAL retention pressure can force checkpoint progress before accepting more
+  writes
+- segment-local maintenance still bounds how much mutable state one segment can
+  hold before maintenance catches up
 
-- local range backpressure when one routed range has too much buffered data,
-- global backpressure when total buffered overlay data exceeds the index-level
-  budget.
+## Maintenance Boundaries
 
-This replaces the previous near-deadlock failure mode with explicit bounded
-admission.
+`flush()` schedules stable flush work but does not wait for the whole topology
+to settle.
+
+`flushAndWait()` and `compactAndWait()` are the explicit durability
+boundaries:
+
+- scheduled split work is allowed to finish and publish if it changes the
+  routed topology
+- stable segments for the final mapped topology are flushed
+- persisted routing metadata is flushed
+- WAL is checkpointed after the stable view is durable
 
 ## Recovery Model
 
-Any overlay state that is not yet published into stable segment storage is
-transient.
+Crash recovery rebuilds routing from persisted metadata, replays WAL through
+the current direct write path, and removes orphaned split artifacts that were
+never published into the route map.
 
-Crash recovery therefore follows this rule:
+## Related Docs
 
-- rebuild routed ranges from persisted stable metadata,
-- discard unpublished in-memory overlay state,
-- replay WAL to restore acknowledged writes into the overlay,
-- publish again during subsequent drain or flush.
-
-The recovery boundary is therefore still:
-
-- stable segment storage,
-- persisted `KeyToSegmentMap`,
-- WAL.
+- [Range-Partitioned Ingest Implementation Notes](range-partitioned-ingest-implementation.md)
+- [Write Path](write-path.md)
+- [Read Path](read-path.md)

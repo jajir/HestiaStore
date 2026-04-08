@@ -17,8 +17,6 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -32,7 +30,6 @@ final class SegmentIndexMetricsCollector<K, V> {
     private final IndexConfiguration<K, V> conf;
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final PartitionRuntime<K, V> partitionRuntime;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final IndexExecutorRegistry executorRegistry;
     private final RuntimeTuningState runtimeTuningState;
@@ -46,7 +43,6 @@ final class SegmentIndexMetricsCollector<K, V> {
     SegmentIndexMetricsCollector(final IndexConfiguration<K, V> conf,
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final PartitionRuntime<K, V> partitionRuntime,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final IndexExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
@@ -60,8 +56,6 @@ final class SegmentIndexMetricsCollector<K, V> {
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
-                "partitionRuntime");
         this.backgroundSplitCoordinator = Vldtn.requireNonNull(
                 backgroundSplitCoordinator, "backgroundSplitCoordinator");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
@@ -85,8 +79,6 @@ final class SegmentIndexMetricsCollector<K, V> {
                 .metricsSnapshot();
         final StableSegmentRuntimeAggregate stableSegmentRuntime =
                 collectStableSegmentRuntime();
-        final PartitionRuntimeSnapshot partitionSnapshot = partitionRuntime
-                .snapshot();
         final IndexExecutorRegistry.RuntimeSnapshot executorSnapshot =
                 executorRegistry.runtimeSnapshot();
         final IndexExecutorRegistry.ExecutorMetricsSnapshot indexMaintenanceExecutor =
@@ -121,8 +113,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                 stableSegmentRuntime.unloadedMappedStableSegmentCount,
                 stableSegmentRuntime.totalStableSegmentKeyCount,
                 stableSegmentRuntime.totalStableSegmentCacheKeyCount,
-                stableSegmentRuntime.totalStableSegmentWriteBufferKeyCount
-                        + partitionSnapshot.getBufferedKeyCount(),
+                stableSegmentRuntime.totalStableSegmentWriteBufferKeyCount,
                 stableSegmentRuntime.totalStableSegmentDeltaCacheFileCount,
                 compactRequestCount, flushRequestCount, stats.getSplitScheduleCx(),
                 backgroundSplitCoordinator.splitInFlightCount(),
@@ -167,23 +158,13 @@ final class SegmentIndexMetricsCollector<K, V> {
                         RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
                 runtimeTuningState.effectiveValue(
                         RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
-                partitionSnapshot.getPartitionCount(),
-                partitionSnapshot.getActivePartitionCount(),
-                partitionSnapshot.getDrainingPartitionCount(),
-                partitionSnapshot.getImmutableRunCount(),
-                partitionSnapshot.getBufferedKeyCount(),
-                partitionSnapshot.getLocalThrottleCount(),
-                partitionSnapshot.getGlobalThrottleCount(),
-                partitionSnapshot.getDrainScheduleCount(),
-                partitionSnapshot.getDrainInFlightCount(),
+                0, 0, 0, 0, 0, 0L, 0L, 0L, 0,
                 stats.getDrainLatencyP95Micros(),
                 stats.getSplitTaskStartDelayP95Micros(),
                 stats.getSplitTaskRunLatencyP95Micros(),
                 stats.getDrainTaskStartDelayP95Micros(),
                 stats.getDrainTaskRunLatencyP95Micros(),
-                partitionSnapshot.getSplitBlockedPartitionCount(),
-                partitionSnapshot.getSplitBlockedDrainScheduleCount(),
-                partitionSnapshot.getBufferFullWhileSplitBlockedCount(),
+                backgroundSplitCoordinator.splitBlockedCount(), 0L, 0L,
                 stats.getPutBusyRetryCx(), stats.getPutBusyTimeoutCx(),
                 stats.getPutBusyWaitP95Micros(),
                 stats.getFlushAcceptedToReadyP95Micros(),

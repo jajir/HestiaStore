@@ -19,8 +19,8 @@ import org.openjdk.jmh.annotations.Warmup;
  *
  * <p>
  * The benchmark intentionally closes and reopens the index after populating it.
- * It can then either read only the persisted view or add a live overlay and
- * measure point lookups that resolve from the active partition layer.
+ * It can then either read only the persisted view or add live updates and
+ * measure point lookups that resolve from the segment write cache.
  * </p>
  */
 @BenchmarkMode(Mode.Throughput)
@@ -43,7 +43,7 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     @Param({ "false", "true" })
     private boolean snappy;
 
-    @Param({ "persisted", "overlay" })
+    @Param({ "persisted", "live" })
     private String readPathMode;
 
     @Override
@@ -95,12 +95,12 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     protected void configureReadState(
             final SegmentIndex<Integer, String> openedIndex) {
         int queryKeyBound = keyCount;
-        if ("overlay".equals(readPathMode)) {
+        if ("live".equals(readPathMode)) {
             queryKeyBound = Math.min(keyCount, 1024);
         }
         setReadKeyBounds(queryKeyBound, keyCount * 2);
-        if ("overlay".equals(readPathMode)) {
-            populateOverlay(openedIndex, queryKeyBound);
+        if ("live".equals(readPathMode)) {
+            populateLiveUpdates(openedIndex, queryKeyBound);
         }
     }
 
@@ -115,15 +115,16 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                 valueLength, 'x');
     }
 
-    private String buildOverlayValue(final int key) {
-        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("overlay-", key,
+    private String buildLiveValue(final int key) {
+        return SegmentIndexBenchmarkSupport.buildFixedWidthValue("live-", key,
                 valueLength, 'o');
     }
 
-    private void populateOverlay(final SegmentIndex<Integer, String> openedIndex,
+    private void populateLiveUpdates(
+            final SegmentIndex<Integer, String> openedIndex,
             final int queryKeyBound) {
         for (int key = 0; key < queryKeyBound; key++) {
-            openedIndex.put(Integer.valueOf(key), buildOverlayValue(key));
+            openedIndex.put(Integer.valueOf(key), buildLiveValue(key));
         }
     }
 }

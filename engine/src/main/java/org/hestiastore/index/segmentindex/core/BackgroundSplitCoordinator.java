@@ -18,11 +18,10 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.partition.PartitionRuntime;
-import org.hestiastore.index.segmentindex.split.PartitionStableSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
 
 /**
- * Coordinates background split scheduling and split-apply admission.
+ * Coordinates background split scheduling and split-publish admission.
  */
 final class BackgroundSplitCoordinator<K, V> {
 
@@ -41,15 +40,16 @@ final class BackgroundSplitCoordinator<K, V> {
     private static final long SPLIT_COOLDOWN_SMOOTHING_WEIGHT_OBSERVED = 1L;
 
     private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final PartitionRuntime<K, V> partitionRuntime;
-    private final PartitionStableSplitCoordinator<K, V> splitCoordinator;
+    private final RouteSplitCoordinator<K, V> routeSplitCoordinator;
     private final Executor splitExecutor;
     private final Consumer<RuntimeException> splitFailureHandler;
     private final Runnable splitAppliedListener;
     private final Stats stats;
     private final LongSupplier nanoTimeSupplier;
     private final Object splitMonitor = new Object();
-    private final ReentrantReadWriteLock splitGate = new ReentrantReadWriteLock();
+    // Fair ordering prevents retrying direct writes from starving split publish.
+    private final ReentrantReadWriteLock splitGate = new ReentrantReadWriteLock(
+            true);
     private final ConcurrentHashMap<SegmentId, Boolean> scheduledSplits = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<SegmentId, SplitAttemptState> splitAttemptStates = new ConcurrentHashMap<>();
     private final AtomicReference<RuntimeException> splitFailure = new AtomicReference<>();
@@ -60,55 +60,49 @@ final class BackgroundSplitCoordinator<K, V> {
 
     BackgroundSplitCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final PartitionRuntime<K, V> partitionRuntime,
-            final PartitionStableSplitCoordinator<K, V> splitCoordinator,
+            final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener) {
-        this(keyToSegmentMap, partitionRuntime, splitCoordinator, splitExecutor,
+        this(keyToSegmentMap, routeSplitCoordinator, splitExecutor,
                 splitFailureHandler, splitAppliedListener, new Stats(),
                 System::nanoTime);
     }
 
     BackgroundSplitCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final PartitionRuntime<K, V> partitionRuntime,
-            final PartitionStableSplitCoordinator<K, V> splitCoordinator,
+            final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener, final Stats stats) {
-        this(keyToSegmentMap, partitionRuntime, splitCoordinator, splitExecutor,
+        this(keyToSegmentMap, routeSplitCoordinator, splitExecutor,
                 splitFailureHandler, splitAppliedListener, stats,
                 System::nanoTime);
     }
 
     BackgroundSplitCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final PartitionRuntime<K, V> partitionRuntime,
-            final PartitionStableSplitCoordinator<K, V> splitCoordinator,
+            final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener,
             final LongSupplier nanoTimeSupplier) {
-        this(keyToSegmentMap, partitionRuntime, splitCoordinator, splitExecutor,
+        this(keyToSegmentMap, routeSplitCoordinator, splitExecutor,
                 splitFailureHandler, splitAppliedListener, new Stats(),
                 nanoTimeSupplier);
     }
 
     BackgroundSplitCoordinator(
             final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
-            final PartitionRuntime<K, V> partitionRuntime,
-            final PartitionStableSplitCoordinator<K, V> splitCoordinator,
+            final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener, final Stats stats,
             final LongSupplier nanoTimeSupplier) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
-        this.partitionRuntime = Vldtn.requireNonNull(partitionRuntime,
-                "partitionRuntime");
-        this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
-                "splitCoordinator");
+        this.routeSplitCoordinator = Vldtn.requireNonNull(
+                routeSplitCoordinator, "routeSplitCoordinator");
         this.splitExecutor = Vldtn.requireNonNull(splitExecutor,
                 "splitExecutor");
         this.splitFailureHandler = Vldtn.requireNonNull(splitFailureHandler,
@@ -121,19 +115,17 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     boolean handleSplitCandidate(final Segment<K, V> segment,
-            final long maxNumberOfKeysInPartitionBeforeSplit) {
-        return handleSplitCandidate(segment,
-                maxNumberOfKeysInPartitionBeforeSplit, false);
+            final long splitThreshold) {
+        return handleSplitCandidate(segment, splitThreshold, false);
     }
 
     boolean forceHandleSplitCandidate(final Segment<K, V> segment,
-            final long maxNumberOfKeysInPartitionBeforeSplit) {
-        return handleSplitCandidate(segment,
-                maxNumberOfKeysInPartitionBeforeSplit, true);
+            final long splitThreshold) {
+        return handleSplitCandidate(segment, splitThreshold, true);
     }
 
     private boolean handleSplitCandidate(final Segment<K, V> segment,
-            final long maxNumberOfKeysInPartitionBeforeSplit,
+            final long splitThreshold,
             final boolean ignoreCooldown) {
         if (segment == null) {
             return false;
@@ -145,7 +137,7 @@ final class BackgroundSplitCoordinator<K, V> {
             }
             return false;
         }
-        if (!isSplitSchedulingEnabled(maxNumberOfKeysInPartitionBeforeSplit)) {
+        if (!isSplitSchedulingEnabled(splitThreshold)) {
             return false;
         }
         if (!keyToSegmentMap.getSegmentIds().contains(segmentId)) {
@@ -154,8 +146,8 @@ final class BackgroundSplitCoordinator<K, V> {
             }
             return false;
         }
-        return optionallyScheduleSplit(segment,
-                maxNumberOfKeysInPartitionBeforeSplit, ignoreCooldown);
+        return optionallyScheduleSplit(segment, splitThreshold,
+                ignoreCooldown);
     }
 
     void awaitSplitsIdle(final long timeoutMillis) {
@@ -203,6 +195,14 @@ final class BackgroundSplitCoordinator<K, V> {
         }
     }
 
+    boolean isSplitBlocked(final SegmentId segmentId) {
+        return segmentId != null && scheduledSplits.containsKey(segmentId);
+    }
+
+    int splitBlockedCount() {
+        return scheduledSplits.size();
+    }
+
     <T> T runWithSplitSchedulingPaused(final Supplier<T> action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         splitSchedulingPauseCount.incrementAndGet();
@@ -221,7 +221,7 @@ final class BackgroundSplitCoordinator<K, V> {
         });
     }
 
-    <T> T runWithStableWriteAdmission(final Supplier<T> action) {
+    <T> T runWithSharedSplitAdmission(final Supplier<T> action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         final var readLock = splitGate.readLock();
         readLock.lock();
@@ -258,11 +258,10 @@ final class BackgroundSplitCoordinator<K, V> {
     private boolean scheduleSplitAsync(final Segment<K, V> segment,
             final long splitThreshold, final long observedKeyCount) {
         final SegmentId segmentId = segment.getId();
-        if (scheduledSplits.putIfAbsent(segmentId, Boolean.TRUE) != null) {
+        if (!runWithExclusiveSplitAdmission(() -> tryMarkSplitScheduled(
+                segmentId))) {
             return false;
         }
-        markSplitStarted();
-        partitionRuntime.beginSplit(segmentId);
         final long scheduledAtNanos = nanoTimeSupplier.getAsLong();
         try {
             splitExecutor.execute(
@@ -270,7 +269,6 @@ final class BackgroundSplitCoordinator<K, V> {
                             observedKeyCount, scheduledAtNanos));
         } catch (final RuntimeException e) {
             scheduledSplits.remove(segmentId);
-            partitionRuntime.finishSplit(segmentId);
             markSplitFinished();
             throw e;
         }
@@ -304,15 +302,13 @@ final class BackgroundSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         boolean splitApplied = false;
         try {
-            splitApplied = splitCoordinator.optionallySplit(segment,
-                    splitThreshold,
-                    this::runWithExclusiveSplitApply);
+            splitApplied = routeSplitCoordinator.trySplit(segment,
+                    splitThreshold, this::runWithExclusiveSplitAdmission);
         } catch (final RuntimeException e) {
             splitFailure.compareAndSet(null, e);
             splitFailureHandler.accept(e);
         } finally {
             scheduledSplits.remove(segmentId);
-            partitionRuntime.finishSplit(segmentId);
             markSplitFinished();
         }
         final long durationNanos = Math.max(0L,
@@ -326,7 +322,7 @@ final class BackgroundSplitCoordinator<K, V> {
         }
     }
 
-    private boolean runWithExclusiveSplitApply(
+    private boolean runWithExclusiveSplitAdmission(
             final BooleanSupplier action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         final var writeLock = splitGate.writeLock();
@@ -336,6 +332,14 @@ final class BackgroundSplitCoordinator<K, V> {
         } finally {
             writeLock.unlock();
         }
+    }
+
+    private boolean tryMarkSplitScheduled(final SegmentId segmentId) {
+        if (scheduledSplits.putIfAbsent(segmentId, Boolean.TRUE) != null) {
+            return false;
+        }
+        markSplitStarted();
+        return true;
     }
 
     private boolean isSplitSchedulingEnabled(final long splitThreshold) {
