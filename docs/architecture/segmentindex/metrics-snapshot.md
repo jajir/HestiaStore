@@ -15,7 +15,7 @@ for index-level telemetry.
   - `totalSegmentKeys`
   - `totalSegmentCacheKeys`
   - `totalBufferedWriteKeys`
-- Partitioned ingest overlay:
+- Compatibility fields retained from the removed partition runtime:
   - `maxNumberOfKeysInActivePartition`
   - `maxNumberOfImmutableRunsPerPartition`
   - `maxNumberOfKeysInPartitionBuffer`
@@ -44,11 +44,10 @@ for index-level telemetry.
 - Counters are process-local and reset when a new index object is created.
 - Field values represent observed operation calls, not necessarily durable
   writes on disk.
-- `partitionBufferedKeyCount` counts only overlay-resident keys; it is a
-  subset of `totalBufferedWriteKeys`.
-- Legacy `split*` and `maintenance*` fields remain in the snapshot for
-  compatibility, but partition-specific fields are the authoritative view for
-  the new ingest runtime.
+- partition-named fields are compatibility values; in the direct-to-segment
+  runtime they typically remain `0` or act as legacy-named tuning limits
+- `split*`, `maintenance*`, `segment*`, `totalBufferedWriteKeys`, and `wal*`
+  fields are the authoritative operational view for the current runtime
 - `state` is one of `OPENING`, `READY`, `CLOSING`, `CLOSED`, or `ERROR`.
 - `CLOSING` means shutdown is in progress and the index is no longer accepting
   new API operations, but final persistence/cleanup work may still be running.

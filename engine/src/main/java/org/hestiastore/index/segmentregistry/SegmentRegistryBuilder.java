@@ -190,24 +190,27 @@ public final class SegmentRegistryBuilder<K, V> {
         final SegmentRegistryCache<SegmentId, Segment<K, V>> cache = new SegmentRegistryCache<>(
                 maxNumberOfSegmentsInCache, maintenance::loadSegment,
                 maintenance::closeSegmentIfNeeded,
-                resolvedRegistryMaintenanceExecutor, segment -> isEvictable(
-                        segment, pinnedSegments));
+                resolvedRegistryMaintenanceExecutor,
+                segment -> isEvictable(segment, pinnedSegments, gate));
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate,
                 pinnedSegments);
     }
 
     private static <K, V> boolean isEvictable(final Segment<K, V> segment,
-            final Set<SegmentId> pinnedSegments) {
+            final Set<SegmentId> pinnedSegments,
+            final SegmentRegistryStateMachine gate) {
         return segment != null && (segment.getState() == SegmentState.CLOSED
-                || isUnpinnedReadySegment(segment, pinnedSegments));
+                || isUnpinnedReadySegment(segment, pinnedSegments, gate));
     }
 
     private static <K, V> boolean isUnpinnedReadySegment(
-            final Segment<K, V> segment, final Set<SegmentId> pinnedSegments) {
+            final Segment<K, V> segment, final Set<SegmentId> pinnedSegments,
+            final SegmentRegistryStateMachine gate) {
+        final boolean closing = gate.getState() != SegmentRegistryState.READY;
         return !pinnedSegments.contains(segment.getId())
                 && segment.getState() == SegmentState.READY
-                && segment.getNumberOfKeysInWriteCache() == 0;
+                && (closing || segment.getNumberOfKeysInWriteCache() == 0);
     }
 
     private static int sanitizeRetryConf(final Integer configured,

@@ -16,8 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.split.PartitionSplitApplyPlan;
-import org.hestiastore.index.segmentindex.split.PartitionSplitResult;
+import org.hestiastore.index.segmentindex.split.RouteSplitPlan;
 import org.junit.jupiter.api.Test;
 
 class KeyToSegmentMapTest {
@@ -36,11 +35,11 @@ class KeyToSegmentMapTest {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final PartitionSplitApplyPlan<Integer> plan = new PartitionSplitApplyPlan<>(
-                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 1, 5,
-                PartitionSplitResult.PartitionSplitStatus.SPLIT);
+        final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(1),
+                SegmentId.of(3), SegmentId.of(4), 1, 5,
+                RouteSplitPlan.SplitMode.SPLIT);
 
-        assertTrue(cache.applyPartitionSplitPlan(plan));
+        assertTrue(cache.applyRouteSplit(plan));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(4), SegmentId.of(2)),
                 cache.getSegmentIds());
@@ -51,11 +50,11 @@ class KeyToSegmentMapTest {
         final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final PartitionSplitApplyPlan<Integer> plan = new PartitionSplitApplyPlan<>(
-                SegmentId.of(1), SegmentId.of(3), null, 1, 10,
-                PartitionSplitResult.PartitionSplitStatus.COMPACTED);
+        final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(1),
+                SegmentId.of(3), null, 1, 10,
+                RouteSplitPlan.SplitMode.COMPACTED);
 
-        assertTrue(cache.applyPartitionSplitPlan(plan));
+        assertTrue(cache.applyRouteSplit(plan));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(2)),
                 cache.getSegmentIds());
@@ -127,10 +126,10 @@ class KeyToSegmentMapTest {
                 Entry.of(30, SegmentId.of(3))));
         final KeyToSegmentMap.Snapshot<Integer> snapshot = cache.snapshot();
 
-        final PartitionSplitApplyPlan<Integer> plan = new PartitionSplitApplyPlan<>(
-                SegmentId.of(2), SegmentId.of(4), SegmentId.of(5), 11, 15,
-                PartitionSplitResult.PartitionSplitStatus.SPLIT);
-        assertTrue(cache.applyPartitionSplitPlan(plan));
+        final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(2),
+                SegmentId.of(4), SegmentId.of(5), 11, 15,
+                RouteSplitPlan.SplitMode.SPLIT);
+        assertTrue(cache.applyRouteSplit(plan));
 
         assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),
                 snapshot.getSegmentIds(SegmentWindow.unbounded()));

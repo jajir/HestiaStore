@@ -193,7 +193,7 @@ class SegmentFactoryTest {
                     IllegalArgumentException.class,
                     () -> factory.updateRuntimeLimits(10, 5, 5));
             assertEquals(
-                    "maxNumberOfKeysInPartitionBuffer must be greater than maxNumberOfKeysInActivePartition",
+                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache",
                     exception.getMessage());
         } finally {
             stableSegmentMaintenancePool.shutdownNow();

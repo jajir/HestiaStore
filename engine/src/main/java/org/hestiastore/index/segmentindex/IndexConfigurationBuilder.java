@@ -162,10 +162,12 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the maximum number of keys accepted into the active partition
-     * before it is rotated to an immutable run.
+     * Sets the maximum number of keys accepted into the routed segment write
+     * cache.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @param maxNumberOfKeysInActivePartition max active partition keys
+     * @param maxNumberOfKeysInActivePartition max routed write-cache keys
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInActivePartition(
@@ -199,9 +201,10 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the maximum immutable run queue depth per partition.
+     * Sets a legacy compatibility limit retained from the removed partition
+     * runtime.
      *
-     * @param maxNumberOfImmutableRunsPerPartition immutable run count
+     * @param maxNumberOfImmutableRunsPerPartition legacy compatibility limit
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> withMaxNumberOfImmutableRunsPerPartition(
@@ -211,9 +214,11 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the maximum number of keys buffered inside one partition.
+     * Sets the maximum number of keys buffered inside one routed segment.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @param maxNumberOfKeysInPartitionBuffer per-partition buffered key count
+     * @param maxNumberOfKeysInPartitionBuffer per-segment buffered key count
      * @return this builder
      */
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBuffer(
@@ -235,7 +240,9 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the maximum number of keys buffered across the whole index overlay.
+     * Sets the maximum number of keys buffered across the whole index.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
      * @param maxNumberOfKeysInIndexBuffer global buffered key count
      * @return this builder
@@ -247,8 +254,9 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the threshold at which a partition becomes eligible for split or
-     * drain re-routing.
+     * Sets the threshold at which a routed segment becomes eligible for split.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
      * @param maxNumberOfKeysInPartitionBeforeSplit max keys before split
      * @return this builder

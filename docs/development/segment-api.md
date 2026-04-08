@@ -1,223 +1,120 @@
 # Segment API: Flush, Compact, and Split
 
-## Scope and assumptions
+## Scope
 
-This document describes how to use the Segment API for maintenance operations.
-The public Segment interface exposes `flush()` and `compact()`. Split is
-orchestrated by the segment-index layer
-(`BackgroundSplitCoordinator` + `PartitionStableSplitCoordinator`) using a
-route-first stable child materialization flow and a short exclusive apply
-window. Split behavior is documented here because it affects locking and
-iterator semantics.
+This document explains how the public `Segment` API behaves during maintenance
+and how segment-level rules interact with index-level route splitting.
 
-`Segment` is thread-safe by contract. The legacy lock-based adapter was removed;
-historical notes remain below for reference. For the lock-free `SegmentImpl`
-behavior and state machine rules, rely on
-`docs/architecture/segment/segment-concurrency.md`.
+The public `Segment` interface exposes `flush()` and `compact()`. Split is
+owned by the segment-index layer through
+`BackgroundSplitCoordinator` + `RouteSplitCoordinator`.
 
-This document keeps legacy notes for context and describes the lock-free model
-used today.
+For the current state machine and iterator rules, use
+[Segment Concurrency](../architecture/segment/segment-concurrency.md).
 
-## Legacy (removed lock-based adapter)
+## Current Model
 
-### Lock model (historical)
+- `Segment.put(...)` writes into the segment write cache.
+- `Segment.get(...)` reads write cache first, then delta cache, then stable
+  files.
+- `flush()` freezes the current write-cache snapshot and persists it into delta
+  cache files.
+- `compact()` rewrites the stable segment view from main SST + delta cache and
+  clears obsolete delta files.
+- `SegmentIndex` routes writes directly to a stable segment; there is no
+  index-level ingest overlay anymore.
 
-This section describes the removed adapter for context only.
+## Flush
 
-Per-segment `ReentrantReadWriteLock` (via `SegmentImplSynchronizationAdapter`):
+Current behavior:
 
-- Read lock: `get()`, `openIterator(FAIL_FAST)` per `hasNext()`/`next()` call.
-- Write lock: `put()`, `flush()`, `compact()`, `invalidateIterators()`, `close()`.
-- `openIterator(FULL_ISOLATION)` holds the write lock for its entire lifetime.
+- under `FREEZE`, the segment swaps out the current write cache
+- in `MAINTENANCE_RUNNING`, the frozen snapshot is written to delta cache
+  files
+- under `FREEZE`, metadata is published and iterators are invalidated
+- new writes continue in a fresh write cache while the frozen snapshot is being
+  persisted
 
-Optimistic iterator invalidation is driven by `VersionController` and used by
-`openIterator(FAIL_FAST)`.
+Practical consequences:
 
-### A) Flush
+- `flush()` is a no-op when the write cache is empty
+- concurrent `flush()` requests return `BUSY`
+- fail-fast iterators can terminate early after the publish step
 
-What it does today (SegmentImpl):
+## Compact
 
-- Snapshot write cache via `SegmentCache.freezeWriteCache()`.
-- Write entries to a delta cache file (`SegmentDeltaCacheWriter`).
-- Merge frozen write cache into delta cache and clear the frozen snapshot.
-- Bump version (via `openDeltaCacheWriter()`), invalidating fail-fast iterators.
-- No-op when the write cache is empty.
+Current behavior:
 
-When a new write arrives while `flush()` is running:
+- compaction captures the current stable view plus in-memory deltas
+- background I/O builds a new SST, sparse index, and Bloom filter
+- publish swaps the new stable files atomically
+- obsolete delta files are removed after a successful publish
 
-- The new write blocks on the write lock.
+Practical consequences:
 
-### B) Compact
+- concurrent `compact()` requests return `BUSY`
+- fail-fast iterators can terminate early after publish
+- `get()` remains thread-safe; it either sees the old view or the new view
 
-What it does today (SegmentCompacter):
+## Split
 
-- Resets searchers and bumps the version (invalidates fail-fast iterators).
-- Rewrites the full segment using a merged view (index + delta + write cache).
-- `SegmentFullWriterTx` clears delta cache and write cache on commit.
+Current index-level split behavior:
 
-When a new write arrives while `compact()` is running:
+- `BackgroundSplitCoordinator` decides when a routed segment should be split
+- `RouteSplitCoordinator` computes the split boundary from a parent segment
+  snapshot
+- child stable segments are materialized before route-map publish
+- publish is a short exclusive update of `KeyToSegmentMap`
+- writes to the affected route may see transient internal `BUSY` and are
+  retried by `IndexRetryPolicy`
 
-- The new write blocks on the write lock.
+Important boundary:
 
-### C) Split (SegmentIndex)
+- `Segment` itself does not own route-map changes
+- `Segment` only provides the stable snapshot and local read-after-write
+  guarantee used by the split coordinator
 
-Historical behavior (removed live-segment split pipeline):
+## Backpressure And Overload
 
-- Triggered when `getNumberOfKeysInCache()` exceeds
-  `maxNumberOfKeysInSegmentCache` (or the coordinator threshold).
-- May run `segment.compact()` first when the policy says the segment is small
-  or likely full of tombstones, then re-evaluates the plan.
-- Acquires the segment write lock for the entire split when the segment is a
-  `SegmentImplSynchronizationAdapter`.
-- Calls `segment.invalidateIterators()` to terminate fail-fast iterators.
-- Opens `openIterator(FULL_ISOLATION)` and streams a merged view
-  (index + delta cache + write cache). Tombstones are filtered out by the
-  iterator (`MergeDeltaCacheWithIndexIterator`).
-- Writes the first half into a new lower segment. Remaining entries go into a
-  new upper segment. If there are no remaining entries, the result is a
-  compaction: the lower segment replaces the current segment.
-- Replaces on-disk files and updates `KeyToSegmentMap`, then closes the old
-  segment instance.
+There is no index-level ingest overlay to absorb writes anymore. Backpressure
+comes from:
 
-When a new write arrives while split is running:
+- segment-local write cache and delta-cache maintenance limits
+- transient `BUSY` while a segment is in `FREEZE` or maintenance
+- transient `BUSY` while a route is scheduled for split
+- WAL retention pressure when WAL is enabled
 
-- The new write blocks on the write lock for the full split duration.
+Legacy-named compatibility settings still exist in `IndexConfiguration`, but
+they now tune routed segment write-cache, maintenance backlog, and split
+thresholds rather than a separate partition runtime.
 
-When `get()` or iterators run during split:
-
-- `get()` and fail-fast iterators block on the write lock while split holds it.
-- Fail-fast iterators are explicitly invalidated at split start.
-- FULL_ISOLATION iterators hold the write lock, so split waits until they
-  close.
-
-### Backpressure / overload
-
-The segment itself does not enforce a hard size cap. `UniqueCache` is
-unbounded, so if writes outpace maintenance, memory can grow.
-
-Current index-level handling (SegmentIndexImpl):
-
-- When the active partition reaches `maxNumberOfKeysInActivePartition`, the
-  write overlay rotates to an immutable run and background drain starts.
-- When one partition exceeds `maxNumberOfKeysInPartitionBuffer`, or the whole
-  index exceeds `maxNumberOfKeysInIndexBuffer`, the index applies bounded
-  backpressure instead of letting buffered data grow without limit.
-- When a routed partition grows past
-  `maxNumberOfKeysInPartitionBeforeSplit`, the split policy loop schedules a
-  partition split.
-
-If write load still exceeds flush/compact throughput, pick one:
-
-- Apply backpressure at the index level (for example, wrap SegmentIndex with a
-  bounded executor/queue).
-- Lower thresholds to flush/split earlier.
-- Add explicit throttling around `SegmentIndex.put()` callers if upstream
-  producers still exceed drain/compaction throughput.
-
-### Parallel calls (flush vs compact vs split)
+## Parallel Calls
 
 Same segment:
 
-- `flush()`, `compact()`, and split are exclusive. The write lock serializes
-  them, so parallel calls run one after another.
-- Split uses `FULL_ISOLATION` iterators and was wrapped in the write lock by
-  the removed segment-index split wrapper when the segment was a
-  `SegmentImplSynchronizationAdapter`.
+- `flush()`, `compact()`, and `FULL_ISOLATION` iteration are exclusive
+- writes can continue during `MAINTENANCE_RUNNING` when the segment state
+  allows it
 
 Different segments:
 
-- Maintenance can run in parallel (each segment has its own lock).
-- Split takes a registry lock only during file rename; it does not block
-  other segments otherwise.
+- maintenance can run in parallel
+- split work on one route does not stop unrelated routes
 
-### Reads, get(), and iterators
+## Reads And Iterators
 
-- Multiple `get()` calls can run concurrently.
-- `openIterator(FAIL_FAST)` can run concurrently with `get()` and other
-  fail-fast iterators, but any mutation (`put`, `flush`, `compact`, `split`)
-  invalidates it via the version counter.
-- `openIterator(FULL_ISOLATION)` holds the write lock until closed, blocking
-  writes, flush, compact, and split on that segment.
+- multiple `get()` calls can run concurrently
+- `FAIL_FAST` iteration is optimistic and can stop early after a publish
+- `FULL_ISOLATION` iteration holds exclusive access for its lifetime and blocks
+  writes, flush, compact, and split materialization on that segment
 
-### Corner cases to call out
+## Corner Cases
 
-- Fail-fast iterators must be expected to end early after any mutation.
-- FULL_ISOLATION iterators must always be closed; otherwise writers can stall.
-- `flush()` is a no-op with an empty write cache.
-- `compact()` clears both delta cache and write cache; callers should not
-  expect pending writes to remain after compaction.
-- Split can degrade to compaction when no entries remain for the upper segment.
-- Split throws if the plan is not feasible (estimated keys too low).
-- Split can be skipped when `hasLiveEntries()` finds no live entries (empty or
-  tombstone-only segment).
-- Split closes and replaces the current segment instance; stale references to
-  the old segment must not be reused.
-- Calls on a closed segment return `SegmentResultStatus.CLOSED`; callers can
-  check `getState()` or handle the status directly.
-- Version overflow throws in `VersionController`; long-running services should
-  monitor for it.
-
-### Legacy lock summary (removed)
-
-- Removed: per-segment read/write lock for API calls.
-- One optimistic version counter for fail-fast iterator invalidation
-  (`VersionController`).
-- Segment registry exposes `executeWithRegistryLock()` for split file
-  replacement, but the current `SegmentRegistry` does not implement a real
-  registry lock.
-
-## Lock-free model (current)
-
-### Goals
-
-- Keep `FREEZE` exclusive phases short and deterministic (swap + version bump).
-- Run IO-heavy work (sorting, building files) outside `FREEZE`.
-- Allow writes and most reads to continue during `MAINTENANCE_RUNNING`.
-- Bound memory growth under sustained write load.
-
-### Coordination model
-
-- Short `FREEZE` phase for cache rotation, version capture, and file/reference
-  swap.
-- Background maintenance uses frozen snapshots; no long-held
-  `FULL_ISOLATION` holds for heavy work.
-- A per-segment maintenance state serializes flush/compact/split without
-  blocking normal writes.
-
-### A) Flush
-
-- Under `FREEZE`: swap (freeze) the write cache and capture a version.
-- Release to `MAINTENANCE_RUNNING`: sort and write the frozen snapshot to the
-  delta cache file.
-- Under `FREEZE`: merge metadata and drop the frozen snapshot handle.
-- Writes continue into the new write cache throughout the flush.
-
-### B) Compact
-
-- Under `FREEZE`: freeze the merged in-memory view (delta + write cache),
-  capture a version, and redirect writes to a fresh cache.
-- Release to `MAINTENANCE_RUNNING`: rebuild new on-disk files from the snapshot
-  plus current index.
-- Optionally replay post-freeze writes before swap (or keep them in the active
-  write cache) to avoid data loss.
-- Under `FREEZE`: validate version and swap files; clear obsolete delta files
-  and reset searchers.
-
-### C) Split
-
-- Use the freeze + redirect + replay pattern (see
-  `docs/development/segment-splitting-lock-minimization.md`).
-- Under `FREEZE`: freeze the write cache, record a split version, and
-  redirect writes to a fresh cache.
-- Release to `MAINTENANCE_RUNNING`: run the split pipeline against the frozen
-  snapshot.
-- Replay post-freeze writes into the new lower/upper segments.
-- Under `FREEZE`: verify version and swap references; on conflict, retry.
-
-### Backpressure / overload
-
-- Bound the number/size of frozen snapshots per segment.
-- If backlog exceeds limits, apply throttling or spill to disk.
+- always close `FULL_ISOLATION` iterators; otherwise writers and split
+  materialization can stall
+- calls on a closed segment return `SegmentResultStatus.CLOSED`
+- version overflow still fails fast in `VersionController`
+- stale references to a retired parent segment must not be reused after split
 - Run maintenance on a background executor and prioritize older snapshots.
 
 ### Parallel calls

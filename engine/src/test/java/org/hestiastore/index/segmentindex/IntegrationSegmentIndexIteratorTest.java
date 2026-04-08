@@ -141,7 +141,7 @@ class IntegrationSegmentIndexIteratorTest {
     }
 
     @Test
-    void fullIsolationStreamKeepsSnapshotOpenedBeforeLaterWrites() {
+    void fullIsolationStreamBlocksLaterWritesUntilSnapshotCloses() {
         try (SegmentIndex<Integer, String> index = makeSegmentIndex()) {
             index.put(1, "stable-1");
             index.put(2, "stable-2");
@@ -152,21 +152,32 @@ class IntegrationSegmentIndexIteratorTest {
             final List<Entry<Integer, String>> snapshotView;
             try (var stream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
-                index.put(2, "overlay-after-open");
-                index.delete(1);
-                index.put(4, "overlay-after-open");
+                final var updateExisting = index.putAsync(2,
+                        "overlay-after-open").toCompletableFuture();
+                final var deleteExisting = index.deleteAsync(1)
+                        .toCompletableFuture();
+                final var insertNew = index.putAsync(4, "overlay-after-open")
+                        .toCompletableFuture();
 
-                assertNull(index.get(1));
-                assertEquals("overlay-after-open", index.get(2));
-                assertEquals("overlay-before-open", index.get(3));
-                assertEquals("overlay-after-open", index.get(4));
+                awaitCondition(() -> !updateExisting.isDone()
+                        && !deleteExisting.isDone() && !insertNew.isDone(),
+                        5_000L);
 
                 snapshotView = stream.toList();
+
+                awaitCondition(() -> updateExisting.isDone()
+                        && deleteExisting.isDone() && insertNew.isDone(),
+                        5_000L);
             }
 
             assertEquals(List.of(Entry.of(1, "stable-1"),
                     Entry.of(2, "stable-2"),
                     Entry.of(3, "overlay-before-open")), snapshotView);
+
+            assertNull(index.get(1));
+            assertEquals("overlay-after-open", index.get(2));
+            assertEquals("overlay-before-open", index.get(3));
+            assertEquals("overlay-after-open", index.get(4));
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
@@ -178,7 +189,7 @@ class IntegrationSegmentIndexIteratorTest {
     }
 
     @Test
-    void fullIsolationStreamsRemainConsistentWhileSplitReassignsOverlayToChildRoutes() {
+    void fullIsolationStreamDelaysSplitRemapUntilSnapshotCloses() {
         try (SegmentIndex<Integer, String> index = makeAutonomousSplitIndex()) {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "stable-" + i);
@@ -189,26 +200,8 @@ class IntegrationSegmentIndexIteratorTest {
                     && index.metricsSnapshot().getDrainInFlightCount() == 0,
                     10_000L);
 
-            index.put(5, "overlay-5");
-            index.delete(18);
-            index.put(44, "overlay-44");
-            index.put(49, "overlay-49");
-
-            final List<Entry<Integer, String>> expected = IntStream
-                    .concat(IntStream.range(0, 48), IntStream.of(49))
-                    .filter(key -> key != 18)
-                    .mapToObj(key -> {
-                        if (key == 5) {
-                            return Entry.of(key, "overlay-5");
-                        }
-                        if (key == 44) {
-                            return Entry.of(key, "overlay-44");
-                        }
-                        if (key == 49) {
-                            return Entry.of(key, "overlay-49");
-                        }
-                        return Entry.of(key, "stable-" + key);
-                    }).toList();
+            final List<Entry<Integer, String>> expected = IntStream.range(0, 48)
+                    .mapToObj(key -> Entry.of(key, "stable-" + key)).toList();
 
             try (var preSplitStream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
@@ -222,21 +215,20 @@ class IntegrationSegmentIndexIteratorTest {
                                 Long.valueOf(revision)));
                 assertTrue(patchResult.isApplied());
 
-                awaitCondition(() -> {
-                    assertFullIsolationSnapshot(index, expected);
-                    final SegmentIndexMetricsSnapshot snapshot = index
-                            .metricsSnapshot();
-                    return snapshot.getSegmentCount() > 1
-                            && snapshot.getSplitInFlightCount() == 0;
-                }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
-
                 assertEquals(expected, preSplitStream.toList());
+                assertEquals(1, index.metricsSnapshot().getSegmentCount());
             }
 
-            assertEquals("overlay-5", index.get(5));
-            assertNull(index.get(18));
-            assertEquals("overlay-44", index.get(44));
-            assertEquals("overlay-49", index.get(49));
+            awaitCondition(() -> {
+                final SegmentIndexMetricsSnapshot snapshot = index
+                        .metricsSnapshot();
+                return snapshot.getSegmentCount() > 1
+                        && snapshot.getSplitInFlightCount() == 0;
+            }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
+
+            assertEquals("stable-5", index.get(5));
+            assertEquals("stable-18", index.get(18));
+            assertEquals("stable-44", index.get(44));
             assertFullIsolationSnapshot(index, expected);
             assertTrue(index.metricsSnapshot().getSegmentCount() > 1);
         }

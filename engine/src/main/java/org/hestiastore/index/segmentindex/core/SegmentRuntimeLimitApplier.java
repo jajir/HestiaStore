@@ -34,16 +34,17 @@ final class SegmentRuntimeLimitApplier<K, V> {
         final int maxSegmentCache = effective
                 .get(RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE)
                 .intValue();
-        final int maxActivePartition = effective.get(
+        final int maxSegmentWriteCache = effective.get(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION)
                 .intValue();
-        final int maxPartitionBuffer = effective.get(
+        final int maxMaintenanceWriteCache = effective.get(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER)
                 .intValue();
-        segmentFactory.updateRuntimeLimits(maxSegmentCache, maxActivePartition,
-                maxPartitionBuffer);
+        segmentFactory.updateRuntimeLimits(maxSegmentCache,
+                maxSegmentWriteCache, maxMaintenanceWriteCache);
         final SegmentRuntimeLimits limits = new SegmentRuntimeLimits(
-                maxSegmentCache, maxActivePartition, maxPartitionBuffer);
+                maxSegmentCache, maxSegmentWriteCache,
+                maxMaintenanceWriteCache);
         for (final Segment<K, V> segment : segmentRegistry
                 .loadedSegmentsSnapshot()) {
             segment.applyRuntimeLimits(limits);

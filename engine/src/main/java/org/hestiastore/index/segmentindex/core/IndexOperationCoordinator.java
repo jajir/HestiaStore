@@ -20,25 +20,25 @@ final class IndexOperationCoordinator<K, V> {
     private static final String OPERATION_PUT = "put";
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final Stats stats;
-    private final PartitionWriteCoordinator<K, V> partitionWriteCoordinator;
-    private final PartitionReadCoordinator<K, V> partitionReadCoordinator;
+    private final DirectSegmentWriteCoordinator<K, V> directSegmentWriteCoordinator;
+    private final DirectSegmentReadCoordinator<K, V> directSegmentReadCoordinator;
     private final IndexWalCoordinator<K, V> walCoordinator;
     private final IndexRetryPolicy retryPolicy;
 
     IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
             final Stats stats,
-            final PartitionWriteCoordinator<K, V> partitionWriteCoordinator,
-            final PartitionReadCoordinator<K, V> partitionReadCoordinator,
+            final DirectSegmentWriteCoordinator<K, V> directSegmentWriteCoordinator,
+            final DirectSegmentReadCoordinator<K, V> directSegmentReadCoordinator,
             final IndexWalCoordinator<K, V> walCoordinator,
             final IndexRetryPolicy retryPolicy) {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.stats = Vldtn.requireNonNull(stats, "stats");
-        this.partitionWriteCoordinator = Vldtn
-                .requireNonNull(partitionWriteCoordinator,
-                        "partitionWriteCoordinator");
-        this.partitionReadCoordinator = Vldtn.requireNonNull(
-                partitionReadCoordinator, "partitionReadCoordinator");
+        this.directSegmentWriteCoordinator = Vldtn
+                .requireNonNull(directSegmentWriteCoordinator,
+                        "directSegmentWriteCoordinator");
+        this.directSegmentReadCoordinator = Vldtn.requireNonNull(
+                directSegmentReadCoordinator, "directSegmentReadCoordinator");
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
@@ -57,7 +57,7 @@ final class IndexOperationCoordinator<K, V> {
         final long walLsn = walCoordinator.appendPut(key, value);
         finishWriteOperation(OPERATION_PUT,
                 retryWhileBusy(
-                        () -> partitionWriteCoordinator.putBuffered(key, value),
+                        () -> directSegmentWriteCoordinator.put(key, value),
                         OPERATION_PUT, false),
                 walLsn, startedNanos);
     }
@@ -68,7 +68,7 @@ final class IndexOperationCoordinator<K, V> {
         stats.incGetCx();
 
         final IndexResult<V> result = retryWhileBusy(
-                () -> partitionReadCoordinator.get(key), "get", true);
+                () -> directSegmentReadCoordinator.get(key), "get", true);
         if (result.getStatus() == IndexResultStatus.OK) {
             stats.recordReadLatencyNanos(System.nanoTime() - startedNanos);
             return result.getValue();
@@ -85,7 +85,7 @@ final class IndexOperationCoordinator<K, V> {
         final long walLsn = walCoordinator.appendDelete(key);
         finishWriteOperation("delete",
                 retryWhileBusy(
-                        () -> partitionWriteCoordinator.putBuffered(key,
+                        () -> directSegmentWriteCoordinator.put(key,
                                 valueTypeDescriptor.getTombstone()),
                         "delete", false),
                 walLsn, startedNanos);
@@ -99,8 +99,8 @@ final class IndexOperationCoordinator<K, V> {
                         ? nonNullReplayRecord.getValue()
                         : valueTypeDescriptor.getTombstone();
         final IndexResult<Void> result = retryWhileBusy(
-                () -> partitionWriteCoordinator
-                        .putBuffered(nonNullReplayRecord.getKey(), value),
+                () -> directSegmentWriteCoordinator.put(
+                        nonNullReplayRecord.getKey(), value),
                 "walReplay", false);
         if (result.getStatus() != IndexResultStatus.OK) {
             throw newIndexException("walReplay", null, result.getStatus());
