@@ -365,7 +365,7 @@
 				</plugin>
 			<plugin>
 				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.21.2</version>
+				<version>3.28.0</version>
 				<configuration>
 					<skipEmptyReport>false</skipEmptyReport>
 				</configuration>
