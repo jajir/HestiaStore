@@ -148,29 +148,34 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the maximum number of keys accepted into the active partition
-     * before it rotates to an immutable run.
+     * Returns the maximum number of keys accepted into the routed segment write
+     * cache.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @return max keys in active partition
+     * @return max routed write-cache keys
      */
     public Integer getMaxNumberOfKeysInActivePartition() {
         return maxNumberOfKeysInActivePartition;
     }
 
     /**
-     * Returns the immutable run queue depth per partition.
+     * Returns a legacy compatibility limit retained from the removed partition
+     * runtime.
      *
-     * @return immutable run count
+     * @return legacy compatibility limit
      */
     public Integer getMaxNumberOfImmutableRunsPerPartition() {
         return maxNumberOfImmutableRunsPerPartition;
     }
 
     /**
-     * Returns the maximum number of buffered keys allowed inside one partition
-     * before local backpressure is applied.
+     * Returns the maximum number of buffered keys allowed inside one routed
+     * segment before local backpressure is applied.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @return max buffered keys inside one partition
+     * @return max buffered keys inside one routed segment
      */
     public Integer getMaxNumberOfKeysInPartitionBuffer() {
         return maxNumberOfKeysInPartitionBuffer;
@@ -178,7 +183,9 @@ public class IndexConfiguration<K, V> {
 
     /**
      * Returns the maximum number of buffered keys allowed across the whole
-     * index overlay.
+     * index.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
      * @return global buffered key count
      */
@@ -225,9 +232,11 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the split/drain threshold for a routed partition.
+     * Returns the split threshold for a routed segment.
+     * <p>
+     * The method keeps its historical name for backward compatibility.
      *
-     * @return max keys before a partition is split
+     * @return max keys before a routed segment is split
      */
     public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
         return maxNumberOfKeysInPartitionBeforeSplit;

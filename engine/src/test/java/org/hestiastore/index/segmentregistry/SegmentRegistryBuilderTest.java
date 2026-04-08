@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,7 +16,9 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -131,6 +134,39 @@ class SegmentRegistryBuilderTest {
                             "Property 'registryMaintenanceExecutor' must not be null."));
         } finally {
             stableSegmentMaintenanceExecutor.shutdownNow();
+        }
+    }
+
+    @Test
+    void closeFlushesDirtySegmentWhenRegistryFreezes() {
+        final MemDirectory directory = new MemDirectory();
+        final ExecutorService stableSegmentMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        final ExecutorService registryMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        try {
+            final SegmentRegistry<Integer, String> registry = SegmentRegistry
+                    .<Integer, String>builder()
+                    .withDirectoryFacade(directory)
+                    .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                    .withValueTypeDescriptor(new TypeDescriptorShortString())
+                    .withConfiguration(newConfiguration())
+                    .withSegmentMaintenanceExecutor(
+                            stableSegmentMaintenanceExecutor)
+                    .withRegistryMaintenanceExecutor(
+                            registryMaintenanceExecutor)
+                    .build();
+            final SegmentRegistryResult<Segment<Integer, String>> created = registry
+                    .createSegment();
+            assertSame(SegmentRegistryResultStatus.OK, created.getStatus());
+            assertNotNull(created.getValue());
+            assertSame(SegmentResultStatus.OK,
+                    created.getValue().put(1, "value").getStatus());
+            assertSame(SegmentRegistryResultStatus.OK,
+                    registry.close().getStatus());
+        } finally {
+            stableSegmentMaintenanceExecutor.shutdownNow();
+            registryMaintenanceExecutor.shutdownNow();
         }
     }
 

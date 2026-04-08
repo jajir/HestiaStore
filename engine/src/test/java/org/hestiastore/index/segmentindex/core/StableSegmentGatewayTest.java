@@ -103,6 +103,32 @@ class StableSegmentGatewayTest {
     }
 
     @Test
+    void put_returnsOkWhenSegmentAcceptsWrite() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
+
+        final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
+                "key", "value");
+
+        assertEquals(IndexResultStatus.OK, result.getStatus());
+    }
+
+    @Test
+    void put_returnsBusyWhenSegmentRejectsWrite() {
+        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        when(segmentRegistry.getSegment(segmentId))
+                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
+
+        final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
+                "key", "value");
+
+        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+    }
+
+    @Test
     void openIterator_returnsValueWhenOk() {
         final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator

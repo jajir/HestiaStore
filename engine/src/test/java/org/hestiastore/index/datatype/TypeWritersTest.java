@@ -89,8 +89,8 @@ class TypeWritersTest {
         final CollectingFileWriter fileWriter = new CollectingFileWriter();
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> writer.write(fileWriter,
-                        "abc"));
+                IllegalArgumentException.class,
+                () -> writer.write(fileWriter, "abc"));
         assertEquals("bad payload", error.getMessage());
     }
 
@@ -210,8 +210,8 @@ class TypeWritersTest {
         final CollectingFileWriter fileWriter = new CollectingFileWriter();
 
         final IllegalArgumentException error = assertThrows(
-                IllegalArgumentException.class, () -> writer.write(fileWriter,
-                        "abc"));
+                IllegalArgumentException.class,
+                () -> writer.write(fileWriter, "abc"));
         assertEquals("bad short payload", error.getMessage());
     }
 

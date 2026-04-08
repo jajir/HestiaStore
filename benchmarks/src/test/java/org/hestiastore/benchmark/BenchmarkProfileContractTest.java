@@ -29,20 +29,20 @@ class BenchmarkProfileContractTest {
     private static final String LEGACY_BACKGROUND_MAINTENANCE_METHOD = "withSegmentMaintenanceAutoEnabled";
     private static final Set<String> REQUIRED_PR_SEGMENT_INDEX_LABELS = Set.of(
             "segment-index-get-persisted",
-            "segment-index-get-overlay",
+            "segment-index-get-live",
             "segment-index-get-multisegment-hot",
             "segment-index-persisted-mutation",
-            "segment-index-hot-partition-put",
+            "segment-index-hot-route-put",
             "segment-index-mixed-drain",
             "segment-index-mixed-split-heavy");
     private static final Set<String> REQUIRED_NIGHTLY_SEGMENT_INDEX_LABELS = Set.of(
             "segment-index-get-persisted",
-            "segment-index-get-overlay",
+            "segment-index-get-live",
             "segment-index-get-multisegment-hot",
             "segment-index-get-multisegment-cold",
             "segment-index-persisted-mutation",
             "segment-index-lifecycle",
-            "segment-index-hot-partition-put",
+            "segment-index-hot-route-put",
             "segment-index-mixed-drain",
             "segment-index-mixed-split-heavy");
     private static final Set<String> REQUIRED_NIGHTLY_DISKIO_LABELS = Set.of(
@@ -126,17 +126,17 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-persisted"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
                 Map.of("readPathMode", "persisted"));
-        assertEntry(byLabel.get("segment-index-get-overlay"),
+        assertEntry(byLabel.get("segment-index-get-live"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "overlay"));
+                Map.of("readPathMode", "live"));
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
         assertEntry(byLabel.get("segment-index-persisted-mutation"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
                 Map.of("walMode", "sync"));
-        assertEntry(byLabel.get("segment-index-hot-partition-put"),
-                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+        assertEntry(byLabel.get("segment-index-hot-route-put"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
                 Map.of());
         assertEntry(byLabel.get("segment-index-mixed-drain"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",
@@ -160,9 +160,9 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-get-persisted"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
                 Map.of("readPathMode", "persisted"));
-        assertEntry(byLabel.get("segment-index-get-overlay"),
+        assertEntry(byLabel.get("segment-index-get-live"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark",
-                Map.of("readPathMode", "overlay"));
+                Map.of("readPathMode", "live"));
         assertEntry(byLabel.get("segment-index-get-multisegment-hot"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMultiSegmentGetBenchmark",
                 Map.of("workingSetMode", "hot"));
@@ -175,8 +175,8 @@ class BenchmarkProfileContractTest {
         assertEntry(byLabel.get("segment-index-lifecycle"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark",
                 Map.of("walMode", "sync"));
-        assertEntry(byLabel.get("segment-index-hot-partition-put"),
-                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotPartitionPutBenchmark",
+        assertEntry(byLabel.get("segment-index-hot-route-put"),
+                "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark",
                 Map.of());
         assertEntry(byLabel.get("segment-index-mixed-drain"),
                 "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark",

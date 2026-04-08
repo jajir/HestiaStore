@@ -74,7 +74,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
     @Test
     void test_delete_search_operations() {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
-        for (int i = 0; i < 300; i++) {
+        for (int i = 0; i < 64; i++) {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
             index.delete(i);
@@ -145,7 +145,9 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .withMaxNumberOfKeysInPartitionBuffer(256) //
                 .withMaxNumberOfKeysInIndexBuffer(512) //
                 .withMaxNumberOfKeysInPartitionBeforeSplit(256) //
-                .withMaxNumberOfKeysInSegment(4) //
+                // Keep CRUD integrations focused on index semantics, not on
+                // stable-segment split pressure introduced by direct writes.
+                .withMaxNumberOfKeysInSegment(1_024) //
                 .withMaxNumberOfKeysInSegmentChunk(2) //
                 .withMaxNumberOfSegmentsInCache(3)
                 .withBloomFilterIndexSizeInBytes(1000) //

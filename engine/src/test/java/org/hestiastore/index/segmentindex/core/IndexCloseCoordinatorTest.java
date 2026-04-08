@@ -32,10 +32,10 @@ class IndexCloseCoordinatorTest {
     private Runnable awaitOperations;
 
     @Mock
-    private Runnable drainPartitions;
+    private Runnable prepareDurableState;
 
     @Mock
-    private Runnable awaitBackgroundSplitExhausted;
+    private Runnable awaitBackgroundSplitsIdle;
 
     @Mock
     private Runnable markClosed;
@@ -72,8 +72,8 @@ class IndexCloseCoordinatorTest {
     @BeforeEach
     void setUp() {
         closeCoordinator = new IndexCloseCoordinator(logger, "test-index",
-                beginCloseTransition, awaitOperations, drainPartitions,
-                awaitBackgroundSplitExhausted, markClosed,
+                beginCloseTransition, awaitOperations, prepareDurableState,
+                awaitBackgroundSplitsIdle, markClosed,
                 flushStableSegmentsWithSplitPaused, closeSegmentRegistry,
                 flushKeyToSegmentMap, checkpointWal, getReadCount,
                 getWriteCount, getDeleteCount, finishCloseTransition,
@@ -91,17 +91,17 @@ class IndexCloseCoordinatorTest {
         closeCoordinator.close();
 
         final InOrder inOrder = inOrder(beginCloseTransition,
-                awaitOperations, drainPartitions,
-                awaitBackgroundSplitExhausted, markClosed,
+                awaitOperations, prepareDurableState,
+                awaitBackgroundSplitsIdle, markClosed,
                 flushStableSegmentsWithSplitPaused, closeSegmentRegistry,
                 flushKeyToSegmentMap, checkpointWal, finishCloseTransition,
                 closeWalRuntime);
         inOrder.verify(beginCloseTransition).run();
         inOrder.verify(awaitOperations).run();
-        inOrder.verify(drainPartitions).run();
-        inOrder.verify(awaitBackgroundSplitExhausted).run();
-        inOrder.verify(drainPartitions).run();
-        inOrder.verify(awaitBackgroundSplitExhausted).run();
+        inOrder.verify(prepareDurableState).run();
+        inOrder.verify(awaitBackgroundSplitsIdle).run();
+        inOrder.verify(prepareDurableState).run();
+        inOrder.verify(awaitBackgroundSplitsIdle).run();
         inOrder.verify(markClosed).run();
         inOrder.verify(flushStableSegmentsWithSplitPaused).run();
         inOrder.verify(closeSegmentRegistry).get();
