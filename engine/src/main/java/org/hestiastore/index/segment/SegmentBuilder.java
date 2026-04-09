@@ -413,6 +413,8 @@ public final class SegmentBuilder<K, V> {
             final SegmentCache<K, V> segmentCache = context
                     .createSegmentCache();
             deltaCacheController.setSegmentCache(segmentCache);
+            initializeEmptyPersistedBaseIfNeeded(context,
+                    deltaCacheController, segmentCache);
             final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(
                     context.segmentFiles, context.segmentConf,
                     context.segmentResources, segmentSearcher, segmentCache,
@@ -445,6 +447,45 @@ public final class SegmentBuilder<K, V> {
     private SegmentBuildContext<K, V> prepareBuildContext(
             final SegmentDirectoryLayout layout) {
         return new SegmentBuildContext<>(this, layout);
+    }
+
+    private void initializeEmptyPersistedBaseIfNeeded(
+            final SegmentBuildContext<K, V> context,
+            final SegmentDeltaCacheController<K, V> deltaCacheController,
+            final SegmentCache<K, V> segmentCache) {
+        Vldtn.requireNonNull(context, "context");
+        Vldtn.requireNonNull(deltaCacheController, "deltaCacheController");
+        Vldtn.requireNonNull(segmentCache, "segmentCache");
+        if (!shouldInitializeEmptyPersistedBase(context)) {
+            return;
+        }
+        new SegmentFullWriterTx<>(context.segmentFiles,
+                context.segmentPropertiesManager,
+                context.segmentConf.getMaxNumberOfKeysInChunk(),
+                context.segmentResources, deltaCacheController)
+                        .execute(writer -> {
+                        });
+    }
+
+    private boolean shouldInitializeEmptyPersistedBase(
+            final SegmentBuildContext<K, V> context) {
+        final SegmentFiles<K, V> segmentFiles = context.segmentFiles;
+        final Directory directory = segmentFiles.getDirectory();
+        if (directory.isFileExists(segmentFiles.getIndexFileName())
+                || directory.isFileExists(segmentFiles.getScarceFileName())
+                || directory.isFileExists(segmentFiles.getBloomFilterFileName())) {
+            return false;
+        }
+        return context.segmentPropertiesManager.getDeltaFileCount() == 0
+                && segmentCacheFilesAbsent(context);
+    }
+
+    private boolean segmentCacheFilesAbsent(
+            final SegmentBuildContext<K, V> context) {
+        final SegmentFiles<K, V> segmentFiles = context.segmentFiles;
+        final Directory directory = segmentFiles.getDirectory();
+        return context.segmentPropertiesManager.getCacheDeltaFileNames().stream()
+                .noneMatch(directory::isFileExists);
     }
 
     private SegmentDirectoryLayout resolveLayout() {
