@@ -89,10 +89,12 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
         verifyTestDataSet(seg);
 
         /**
-         * It's always 4 or 5 because only one or zero delta files could exists.
+         * Fresh segments now start with the persisted base files already
+         * materialized, so duplicate writes leave either two or three delta
+         * files on top of that base set.
          */
-        if (numberOfFilesInDirectory(directory) != 3
-                && numberOfFilesInDirectory(directory) != 4) {
+        if (numberOfFilesInDirectory(directory) != 6
+                && numberOfFilesInDirectory(directory) != 7) {
             fail("Invalid number of files "
                     + numberOfFilesInDirectory(directory));
         }
@@ -607,7 +609,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                                 ))//
                         .build().getValue(), //
                 1, // expectedNumberKeysInScarceIndex,
-                10 // expectedNumberOfFile
+                13 // expectedNumberOfFile
         ), arguments(tdi, tds, dir2, Segment.<Integer, String>builder(dir2)//
                 .withId(id2)//
                 .withKeyTypeDescriptor(tdi)//
@@ -631,7 +633,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build().getValue(), //
                 9, // expectedNumberKeysInScarceIndex
-                10// expectedNumberOfFile
+                13// expectedNumberOfFile
         ), arguments(tdi, tds, dir3, Segment.<Integer, String>builder(dir3)//
                 .withId(id3)//
                 .withKeyTypeDescriptor(tdi)//
@@ -655,7 +657,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
                         ))//
                 .build().getValue(), //
                 5, // expectedNumberKeysInScarceIndex
-                10 // expectedNumberOfFile
+                13 // expectedNumberOfFile
         ));
     }
 
