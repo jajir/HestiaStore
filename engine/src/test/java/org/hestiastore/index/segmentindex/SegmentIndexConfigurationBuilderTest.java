@@ -152,14 +152,6 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     @Test
-    void withIndexWorkerThreadCountSetsValue() {
-        final int value = 4;
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .withIndexWorkerThreadCount(value).build();
-        assertEquals(value, config.getIndexWorkerThreadCount());
-    }
-
-    @Test
     void withNumberOfRegistryLifecycleThreadsSetsValue() {
         final int value = 5;
         final IndexConfiguration<Integer, String> config = newBuilder()

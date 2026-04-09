@@ -355,7 +355,6 @@ class SegmentIndexConcurrencyStressIT {
                 .withMaxNumberOfSegmentsInCache(10)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(cpuThreads)//
                 .withNumberOfIndexMaintenanceThreads(
                         Math.max(1, Math.min(cpuThreads, 2)))//
                 .withNumberOfRegistryLifecycleThreads(
@@ -384,7 +383,6 @@ class SegmentIndexConcurrencyStressIT {
                 .withMaxNumberOfSegmentsInCache(64)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(cpuThreads)//
                 .withNumberOfIndexMaintenanceThreads(
                         Math.max(1, Math.min(cpuThreads, 2)))//
                 .withNumberOfRegistryLifecycleThreads(

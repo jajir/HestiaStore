@@ -17,9 +17,6 @@ final class IndexOperationTracker {
 
     <T> T runTracked(final Supplier<T> task) {
         final Supplier<T> nonNullTask = Vldtn.requireNonNull(task, "task");
-        if (IndexAsyncExecutionContext.isAsyncOperationActive()) {
-            return nonNullTask.get();
-        }
         if (isInSyncOperation()) {
             return runWithSyncOperationContext(nonNullTask);
         }
@@ -32,8 +29,7 @@ final class IndexOperationTracker {
     }
 
     void awaitOperations() {
-        if (IndexAsyncExecutionContext.isAsyncOperationActive()
-                || isInSyncOperation()) {
+        if (isInSyncOperation()) {
             throw new IllegalStateException(
                     "close() must not be called from an index operation.");
         }

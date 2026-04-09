@@ -164,7 +164,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withIndexBusyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS) //
                 .withIndexBusyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS) //
                 .withBackgroundMaintenanceAutoEnabled(true) //
-                .withIndexWorkerThreadCount(cpuThreads)//
                 .withName("concurrency_index") //
                 .build();
         return SegmentIndex.create(directory, conf);
@@ -201,7 +200,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .withIndexBusyBackoffMillis(INDEX_BUSY_BACKOFF_MILLIS) //
                 .withIndexBusyTimeoutMillis(INDEX_BUSY_TIMEOUT_MILLIS) //
                 .withBackgroundMaintenanceAutoEnabled(true) //
-                .withIndexWorkerThreadCount(scenario.cpuThreads())//
                 .withName("concurrency_index_" + scenario.name()) //
                 .build();
         return SegmentIndex.create(directory, conf);

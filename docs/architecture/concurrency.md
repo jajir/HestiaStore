@@ -49,9 +49,7 @@ These structures are shared across threads and require synchronization:
 ## Threads
 
 - Sync operations run on caller threads.
-- Async operations run on the dedicated index-worker executor owned by the
-  segment-index runtime.
-- Stable-segment maintenance runs on the stable-segment maintenance executor.
+- Segment maintenance runs on the segment maintenance executor.
 - Background split policy and split materialization run on index-maintenance
   executors.
 

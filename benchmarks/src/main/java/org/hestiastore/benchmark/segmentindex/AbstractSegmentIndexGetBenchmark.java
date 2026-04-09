@@ -53,23 +53,9 @@ public abstract class AbstractSegmentIndexGetBenchmark {
     }
 
     @Benchmark
-    public final String getHitAsyncJoin(final QueryState queryState) {
-        return index
-                .getAsync(Integer.valueOf(nextHitKey(queryState, queryKeyBound)))
-                .toCompletableFuture().join();
-    }
-
-    @Benchmark
     public final String getMissSync(final QueryState queryState) {
         return index.get(Integer.valueOf(
                 nextMissKey(queryState, queryKeyBound, missKeyStart)));
-    }
-
-    @Benchmark
-    public final String getMissAsyncJoin(final QueryState queryState) {
-        return index.getAsync(Integer.valueOf(
-                nextMissKey(queryState, queryKeyBound, missKeyStart)))
-                .toCompletableFuture().join();
     }
 
     protected abstract String tempDirPrefix();

@@ -179,9 +179,6 @@ class IndexContextLoggingAdapterTest {
         final AtomicReference<String> mdcAtFlush = new AtomicReference<>();
         final AtomicReference<String> mdcAtFlushAndWait = new AtomicReference<>();
         final AtomicReference<String> mdcAtCheck = new AtomicReference<>();
-        final AtomicReference<String> mdcAtPutAsync = new AtomicReference<>();
-        final AtomicReference<String> mdcAtGetAsync = new AtomicReference<>();
-        final AtomicReference<String> mdcAtDeleteAsync = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetConfiguration = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetState = new AtomicReference<>();
         final AtomicReference<String> mdcAtMetricsSnapshot = new AtomicReference<>();
@@ -213,18 +210,6 @@ class IndexContextLoggingAdapterTest {
             mdcAtCheck.set(MDC.get("index.name"));
             return null;
         }).when(delegate).checkAndRepairConsistency();
-        when(delegate.putAsync("k", "v")).thenAnswer(invocation -> {
-            mdcAtPutAsync.set(MDC.get("index.name"));
-            return CompletableFuture.completedFuture(null);
-        });
-        when(delegate.getAsync("k")).thenAnswer(invocation -> {
-            mdcAtGetAsync.set(MDC.get("index.name"));
-            return CompletableFuture.completedFuture("v");
-        });
-        when(delegate.deleteAsync("k")).thenAnswer(invocation -> {
-            mdcAtDeleteAsync.set(MDC.get("index.name"));
-            return CompletableFuture.completedFuture(null);
-        });
         when(delegate.getConfiguration()).thenAnswer(invocation -> {
             mdcAtGetConfiguration.set(MDC.get("index.name"));
             return conf;
@@ -271,12 +256,6 @@ class IndexContextLoggingAdapterTest {
         assertEquals("outer", MDC.get("index.name"));
         adapter.checkAndRepairConsistency();
         assertEquals("outer", MDC.get("index.name"));
-        adapter.putAsync("k", "v");
-        assertEquals("outer", MDC.get("index.name"));
-        adapter.getAsync("k");
-        assertEquals("outer", MDC.get("index.name"));
-        adapter.deleteAsync("k");
-        assertEquals("outer", MDC.get("index.name"));
         adapter.getConfiguration();
         assertEquals("outer", MDC.get("index.name"));
         adapter.getState();
@@ -301,39 +280,10 @@ class IndexContextLoggingAdapterTest {
         }
 
         assertDelegatedMdcValues(mdcAtCompact, mdcAtCompactAndWait, mdcAtFlush,
-                mdcAtFlushAndWait, mdcAtCheck, mdcAtPutAsync, mdcAtGetAsync,
-                mdcAtDeleteAsync, mdcAtGetConfiguration, mdcAtGetState,
+                mdcAtFlushAndWait, mdcAtCheck, mdcAtGetConfiguration, mdcAtGetState,
                 mdcAtMetricsSnapshot, mdcAtPutEntry, mdcAtGetStream,
                 mdcAtGetStreamIsolation, mdcAtGetStreamDefault,
                 mdcAtGetStreamDefaultIsolation);
-    }
-
-    @Test
-    void propagatesMdcToCompletionStageCallbacks() throws Exception {
-        final CompletableFuture<String> delegateStage = new CompletableFuture<>();
-        final AtomicReference<String> mdcAtCompletion = new AtomicReference<>();
-
-        when(delegate.getAsync("k")).thenReturn(delegateStage);
-
-        final CompletableFuture<String> wrappedStage = adapter.getAsync("k")
-                .thenApply(value -> {
-                    mdcAtCompletion.set(MDC.get("index.name"));
-                    return value;
-                }).toCompletableFuture();
-
-        final ExecutorService completionExecutor = Executors
-                .newSingleThreadExecutor();
-        try {
-            final Future<?> completionFuture = completionExecutor
-                    .submit(() -> delegateStage.complete("value"));
-            completionFuture.get(5, TimeUnit.SECONDS);
-        } finally {
-            completionExecutor.shutdownNow();
-        }
-
-        assertEquals("value", wrappedStage.get(5, TimeUnit.SECONDS));
-        assertEquals("idx", mdcAtCompletion.get());
-        assertNull(MDC.get("index.name"));
     }
 
     @SafeVarargs

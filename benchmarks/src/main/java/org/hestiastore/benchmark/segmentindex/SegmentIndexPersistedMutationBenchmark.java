@@ -103,26 +103,8 @@ public class SegmentIndexPersistedMutationBenchmark {
 
     @Benchmark
     @Threads(1)
-    public void putAsyncJoin() {
-        final int key = putSequence++;
-        index.putAsync(Integer.valueOf(key), buildValue("put-", key, 'a'))
-                .toCompletableFuture().join();
-        flushIfNeeded();
-    }
-
-    @Benchmark
-    @Threads(1)
     public void deleteSync() {
         index.delete(Integer.valueOf(deleteSequence));
-        deleteSequence = advanceDeleteCursor(deleteSequence);
-        flushIfNeeded();
-    }
-
-    @Benchmark
-    @Threads(1)
-    public void deleteAsyncJoin() {
-        index.deleteAsync(Integer.valueOf(deleteSequence)).toCompletableFuture()
-                .join();
         deleteSequence = advanceDeleteCursor(deleteSequence);
         flushIfNeeded();
     }
@@ -148,8 +130,7 @@ public class SegmentIndexPersistedMutationBenchmark {
                 .withBloomFilterNumberOfHashFunctions(3)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withIndexWorkerThreadCount(4)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
+                .withNumberOfSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
                 .withNumberOfRegistryLifecycleThreads(1)//
                 .withBackgroundMaintenanceAutoEnabled(false);

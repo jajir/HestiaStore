@@ -111,8 +111,7 @@ class SegmentFactoryTest {
                 .withBloomFilterProbabilityOfFalsePositive(0.01)
                 .withDiskIoBufferSizeInBytes(1024)
                 .withBackgroundMaintenanceAutoEnabled(false)
-                .withIndexWorkerThreadCount(1)
-                .withNumberOfStableSegmentMaintenanceThreads(1)
+                .withNumberOfSegmentMaintenanceThreads(1)
                 .withNumberOfIndexMaintenanceThreads(1)
                 .withIndexBusyBackoffMillis(1)
                 .withIndexBusyTimeoutMillis(1000)
@@ -220,8 +219,7 @@ class SegmentFactoryTest {
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withBackgroundMaintenanceAutoEnabled(false)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
+                .withNumberOfSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
                 .withIndexBusyBackoffMillis(1)//
                 .withIndexBusyTimeoutMillis(1000)//
