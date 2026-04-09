@@ -27,15 +27,12 @@ a flush.
   counters, and delegate to the internal implementation.
 - Internal implementation: `IndexInternalConcurrent` (caller-thread execution,
   thread-safe without global serialization).
-- Async operations are executed by the dedicated `IndexAsyncExecutor` inside
-  the internal implementation; `IndexAsyncAdapter` is a thin async-facing
-  wrapper and `IndexContextLoggingAdapter` adds MDC correlation.
+- `IndexContextLoggingAdapter` adds MDC correlation when context logging is
+  enabled.
 
 Key classes:
 `segmentindex/SegmentIndex.java`,
 `segmentindex/IndexInternalConcurrent.java`,
-`segmentindex/core/IndexAsyncExecutor.java`,
-`segmentindex/IndexAsyncAdapter.java`,
 `segmentindex/IndexContextLoggingAdapter.java`.
 
 ## Optional Logging Context

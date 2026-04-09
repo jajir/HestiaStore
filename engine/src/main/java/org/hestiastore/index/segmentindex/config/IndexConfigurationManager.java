@@ -88,12 +88,9 @@ public class IndexConfigurationManager<K, V> {
             builder.withContextLoggingEnabled(
                     defaults.isContextLoggingEnabled());
         }
-        if (conf.getIndexWorkerThreadCount() == null) {
-            builder.withIndexWorkerThreadCount(defaults.getIndexWorkerThreadCount());
-        }
-        if (conf.getNumberOfStableSegmentMaintenanceThreads() == null) {
-            builder.withNumberOfStableSegmentMaintenanceThreads(
-                    defaults.getNumberOfStableSegmentMaintenanceThreads());
+        if (conf.getNumberOfSegmentMaintenanceThreads() == null) {
+            builder.withNumberOfSegmentMaintenanceThreads(
+                    defaults.getNumberOfSegmentMaintenanceThreads());
         }
         if (conf.getNumberOfIndexMaintenanceThreads() == null) {
             builder.withNumberOfIndexMaintenanceThreads(
@@ -290,16 +287,11 @@ public class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> indexConf) {
         boolean dirty = false;
         dirty |= applyIf(
-                isPositiveOverride(indexConf.getIndexWorkerThreadCount(),
-                        storedConf.getIndexWorkerThreadCount()),
-                () -> builder.withIndexWorkerThreadCount(
-                        indexConf.getIndexWorkerThreadCount()));
-        dirty |= applyIf(
                 isPositiveOverride(
-                        indexConf.getNumberOfStableSegmentMaintenanceThreads(),
-                        storedConf.getNumberOfStableSegmentMaintenanceThreads()),
-                () -> builder.withNumberOfStableSegmentMaintenanceThreads(
-                        indexConf.getNumberOfStableSegmentMaintenanceThreads()));
+                        indexConf.getNumberOfSegmentMaintenanceThreads(),
+                        storedConf.getNumberOfSegmentMaintenanceThreads()),
+                () -> builder.withNumberOfSegmentMaintenanceThreads(
+                        indexConf.getNumberOfSegmentMaintenanceThreads()));
         dirty |= applyIf(
                 isPositiveOverride(indexConf.getNumberOfIndexMaintenanceThreads(),
                         storedConf.getNumberOfIndexMaintenanceThreads()),
@@ -641,17 +633,11 @@ public class IndexConfigurationManager<K, V> {
     }
 
     private void validateThreading(final IndexConfiguration<K, V> conf) {
-        Vldtn.requireNonNull(conf.getIndexWorkerThreadCount(),
-                "indexWorkerThreadCount");
-        if (conf.getIndexWorkerThreadCount() < 1) {
+        Vldtn.requireNonNull(conf.getNumberOfSegmentMaintenanceThreads(),
+                "numberOfSegmentMaintenanceThreads");
+        if (conf.getNumberOfSegmentMaintenanceThreads() < 1) {
             throw new IllegalArgumentException(
-                    "Index worker thread count must be at least 1.");
-        }
-        Vldtn.requireNonNull(conf.getNumberOfStableSegmentMaintenanceThreads(),
-                "numberOfStableSegmentMaintenanceThreads");
-        if (conf.getNumberOfStableSegmentMaintenanceThreads() < 1) {
-            throw new IllegalArgumentException(
-                    "Stable segment maintenance threads must be at least 1.");
+                    "Segment maintenance threads must be at least 1.");
         }
         Vldtn.requireNonNull(conf.getNumberOfIndexMaintenanceThreads(),
                 "indexMaintenanceThreads");
@@ -710,9 +696,8 @@ public class IndexConfigurationManager<K, V> {
                 .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
                 .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
                 .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
-                .withIndexWorkerThreadCount(conf.getIndexWorkerThreadCount())//
-                .withNumberOfStableSegmentMaintenanceThreads(
-                        conf.getNumberOfStableSegmentMaintenanceThreads())//
+                .withNumberOfSegmentMaintenanceThreads(
+                        conf.getNumberOfSegmentMaintenanceThreads())//
                 .withNumberOfIndexMaintenanceThreads(
                         conf.getNumberOfIndexMaintenanceThreads())//
                 .withNumberOfRegistryLifecycleThreads(

@@ -383,9 +383,10 @@ class SegmentIndexConfigurationManagerTest {
                 withDefaults.getDecodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
                 withDefaults.getDecodingChunkFilters().get(1).getClass());
-        assertEquals(IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT,
-                withDefaults.getIndexWorkerThreadCount(),
-                "Number of threads should be defaulted");
+        assertEquals(
+                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                withDefaults.getNumberOfRegistryLifecycleThreads(),
+                "Registry lifecycle threads should be defaulted");
     }
 
     @Test
@@ -502,10 +503,9 @@ class SegmentIndexConfigurationManagerTest {
     }
 
     @Test
-    void test_mergeWithStored_numberOfThreads() {
+    void test_mergeWithStored_numberOfRegistryLifecycleThreads_defaultsToStoredValue() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withIndexWorkerThreadCount(4)//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -514,23 +514,8 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(4, ret.getIndexWorkerThreadCount());
-    }
-
-    @Test
-    void test_mergeWithStored_numberOfRegistryLifecycleThreads() {
-        final IndexConfiguration<Long, String> config = IndexConfiguration
-                .<Long, String>builder()//
-                .withNumberOfRegistryLifecycleThreads(4)//
-                .build();
-
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
-                .mergeWithStored(config);
-        verify(storage, Mockito.times(1)).save(any());
-        assertNotNull(ret);
-
-        assertEquals(4, ret.getNumberOfRegistryLifecycleThreads());
+        assertEquals(IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                ret.getNumberOfRegistryLifecycleThreads());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

@@ -52,9 +52,6 @@ class SegmentIndexConfigurationDefaultsUsageTest {
             assertEquals(defaults.getMaxNumberOfSegmentsInCache(),
                     actual.getMaxNumberOfSegmentsInCache(),
                     "Segments in cache must come from contract defaults");
-            assertEquals(defaults.getIndexWorkerThreadCount(),
-                    actual.getIndexWorkerThreadCount(),
-                    "Number of threads must come from contract defaults");
             assertEquals(defaults.getNumberOfRegistryLifecycleThreads(),
                     actual.getNumberOfRegistryLifecycleThreads(),
                     "Registry lifecycle threads must come from contract defaults");

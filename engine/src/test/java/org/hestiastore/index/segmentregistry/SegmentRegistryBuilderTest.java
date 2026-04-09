@@ -212,7 +212,6 @@ class SegmentRegistryBuilderTest {
                 .withBloomFilterIndexSizeInBytes(1024)
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)
                 .withDiskIoBufferSizeInBytes(1024)
-                .withIndexWorkerThreadCount(1)
                 .withIndexBusyBackoffMillis(1)
                 .withIndexBusyTimeoutMillis(10)
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))

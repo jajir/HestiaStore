@@ -47,8 +47,7 @@ public class IndexConfiguration<K, V> {
     private final String indexName;
     private final Integer maxNumberOfKeysInSegment;
     private final Integer maxNumberOfSegmentsInCache;
-    private final Integer indexWorkerThreadCount;
-    private final Integer numberOfStableSegmentMaintenanceThreads;
+    private final Integer numberOfSegmentMaintenanceThreads;
     private final Integer numberOfIndexMaintenanceThreads;
     private final Integer numberOfRegistryLifecycleThreads;
     private final Integer indexBusyBackoffMillis;
@@ -96,8 +95,7 @@ public class IndexConfiguration<K, V> {
             final Integer bloomFilterIndexSizeInBytes, //
             final Double bloomFilterProbabilityOfFalsePositive, //
             final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
-            final Integer indexWorkerThreadCount,
-            final Integer numberOfStableSegmentMaintenanceThreads,
+            final Integer numberOfSegmentMaintenanceThreads,
             final Integer numberOfIndexMaintenanceThreads,
             final Integer numberOfRegistryLifecycleThreads,
             final Integer indexBusyBackoffMillis,
@@ -121,8 +119,7 @@ public class IndexConfiguration<K, V> {
         this.indexName = indexName;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
-        this.indexWorkerThreadCount = indexWorkerThreadCount;
-        this.numberOfStableSegmentMaintenanceThreads = numberOfStableSegmentMaintenanceThreads;
+        this.numberOfSegmentMaintenanceThreads = numberOfSegmentMaintenanceThreads;
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
         this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
@@ -271,21 +268,12 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the number of index worker threads used for index operations.
+     * Returns the number of threads used for segment maintenance.
      *
-     * @return index worker thread count
+     * @return segment maintenance thread count
      */
-    public Integer getIndexWorkerThreadCount() {
-        return indexWorkerThreadCount;
-    }
-
-    /**
-     * Returns the number of threads used for segment index maintenance.
-     *
-     * @return maintenance thread count
-     */
-    public Integer getNumberOfStableSegmentMaintenanceThreads() {
-        return numberOfStableSegmentMaintenanceThreads;
+    public Integer getNumberOfSegmentMaintenanceThreads() {
+        return numberOfSegmentMaintenanceThreads;
     }
 
     /**

@@ -18,7 +18,7 @@
   mapping updates, split admission, and per-segment state machines.
 - Segment maintenance IO runs on the segment maintenance executor.
 - The maintenance executor is always created by SegmentRegistry from
-  IndexConfiguration.numberOfStableSegmentMaintenanceThreads (default 10).
+  IndexConfiguration.numberOfSegmentMaintenanceThreads (default 10).
 - Automatic post-write flush/compact is optional and enabled by default.
 - Segment BUSY is treated as transient and retried internally; callers do not
   see BUSY.
@@ -38,10 +38,6 @@
 - put/get/delete: retry on per-segment BUSY using IndexRetryPolicy
   (indexBusyBackoffMillis + indexBusyTimeoutMillis); mapping version mismatch
   triggers a retry with a fresh snapshot. Timeouts throw IndexException.
-- putAsync/getAsync/deleteAsync: submit the synchronous operation to the
-  dedicated index-worker executor owned by SegmentIndexImpl and return a
-  CompletionStage. `IndexAsyncAdapter` preserves the async-facing API but does
-  not own a separate executor.
 - flush/compact: start maintenance on each segment and return once accepted;
   do not wait for IO completion; BUSY retries follow IndexRetryPolicy.
 - flushAndWait/compactAndWait: wait for each segment to return to `READY`
@@ -108,10 +104,7 @@ Notes:
 ## Components
 - SegmentIndex (public API): thread-safe entry point.
 - SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
-- SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
-  maintenance, including the dedicated async API executor.
-- IndexAsyncAdapter: thin facade that forwards async API calls to the wrapped
-  index.
+  maintenance.
 - StableSegmentGateway: single-attempt mapping + stable-segment selection.
 - IndexRetryPolicy: backoff + timeout for BUSY retries.
 - IndexResult/IndexResultStatus: internal OK/BUSY/CLOSED/ERROR wrapper.
@@ -132,7 +125,7 @@ Notes:
 - Index implementation: IndexInternalConcurrent (caller-thread execution).
 - Mapping version: KeyToSegmentMap.version (AtomicLong).
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
-  IndexConfiguration.numberOfStableSegmentMaintenanceThreads (default 10).
+  IndexConfiguration.numberOfSegmentMaintenanceThreads (default 10).
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.
 - Retry policy: IndexConfiguration.indexBusyBackoffMillis and
   IndexConfiguration.indexBusyTimeoutMillis.

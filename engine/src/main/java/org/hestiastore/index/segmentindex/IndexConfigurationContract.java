@@ -30,8 +30,7 @@ public interface IndexConfigurationContract {
     double BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
 
     int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
-    int INDEX_WORKER_THREAD_COUNT = 1;
-    int DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS = 10;
+    int DEFAULT_SEGMENT_MAINTENANCE_THREADS = 10;
     int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_REGISTRY_LIFECYCLE_THREADS = 3;
     int DEFAULT_INDEX_BUSY_BACKOFF_MILLIS = 5;
@@ -181,22 +180,12 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default number of index worker threads used for index
-     * operations.
+     * Returns the default number of segment maintenance threads.
      *
-     * @return default index worker thread count
+     * @return default segment maintenance thread count
      */
-    default int getIndexWorkerThreadCount() {
-        return INDEX_WORKER_THREAD_COUNT;
-    }
-
-    /**
-     * Returns the default number of stable-segment maintenance threads.
-     *
-     * @return default stable-segment maintenance thread count
-     */
-    default int getNumberOfStableSegmentMaintenanceThreads() {
-        return DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS;
+    default int getNumberOfSegmentMaintenanceThreads() {
+        return DEFAULT_SEGMENT_MAINTENANCE_THREADS;
     }
 
     /**

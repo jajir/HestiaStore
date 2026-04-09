@@ -56,7 +56,7 @@ class SegmentIndexLifecycleTest {
         openLifecycle.open(false);
         assertEquals(2,
                 openLifecycle.getIndexConfiguration()
-                        .getIndexWorkerThreadCount());
+                        .getNumberOfRegistryLifecycleThreads());
         openLifecycle.close();
     }
 
@@ -149,7 +149,7 @@ class SegmentIndexLifecycleTest {
     }
 
     private static IndexConfiguration<Integer, String> buildConf(
-            final String indexName, final int indexWorkerThreads) {
+            final String indexName, final int registryLifecycleThreads) {
         return IndexConfiguration.<Integer, String>builder()//
                 .withKeyClass(Integer.class)//
                 .withValueClass(String.class)//
@@ -167,9 +167,8 @@ class SegmentIndexLifecycleTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(indexWorkerThreads)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(1)//
+                .withNumberOfSegmentMaintenanceThreads(1)//
+                .withNumberOfRegistryLifecycleThreads(registryLifecycleThreads)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .build();
@@ -197,9 +196,8 @@ class SegmentIndexLifecycleTest {
                 .withBloomFilterIndexSizeInBytes(1024)
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)
                 .withDiskIoBufferSizeInBytes(1024)
-                .withIndexWorkerThreadCount(1)
                 .withBackgroundMaintenanceAutoEnabled(false)
-                .withNumberOfStableSegmentMaintenanceThreads(1)
+                .withNumberOfSegmentMaintenanceThreads(1)
                 .withNumberOfRegistryLifecycleThreads(1)
                 .addEncodingFilter(LifecycleChunkFilter::new, spec)
                 .addDecodingFilter(LifecycleChunkFilter::new, spec)

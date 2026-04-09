@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -47,32 +46,14 @@ final class IndexDirectoryClosingAdapter<K, V> extends AbstractCloseableResource
 
     /** {@inheritDoc} */
     @Override
-    public CompletionStage<Void> putAsync(final K key, final V value) {
-        return index.putAsync(key, value);
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public V get(final K key) {
         return index.get(key);
     }
 
     /** {@inheritDoc} */
     @Override
-    public CompletionStage<V> getAsync(final K key) {
-        return index.getAsync(key);
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public void delete(final K key) {
         index.delete(key);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletionStage<Void> deleteAsync(final K key) {
-        return index.deleteAsync(key);
     }
 
     /** {@inheritDoc} */
