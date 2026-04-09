@@ -61,7 +61,7 @@ class IntegrationSegmentWriteConsistencyTest {
         segment.flush();
 
         verifySegmentData(segment, data);
-        verifyNumberOfFiles(directory, 2);
+        verifyNumberOfFiles(directory, 5);
     }
 
     @Test
@@ -71,7 +71,7 @@ class IntegrationSegmentWriteConsistencyTest {
 
         verifySegmentData(segment, data);
         // no data are flushed to disk
-        verifyNumberOfFiles(directory, 1);
+        verifyNumberOfFiles(directory, 4);
     }
 
     @Test
@@ -85,7 +85,7 @@ class IntegrationSegmentWriteConsistencyTest {
                 SEGMENT_ID_1);
         verifySegmentData(reopened, data);
         closeAndAwait(reopened);
-        verifyNumberOfFiles(directory, 2);
+        verifyNumberOfFiles(directory, 5);
     }
 
     @Test
@@ -103,7 +103,7 @@ class IntegrationSegmentWriteConsistencyTest {
         segment2.flush();
         verifySegmentData(segment2, updatedData);
         closeAndAwait(segment2);
-        verifyNumberOfFiles(directory, 3);
+        verifyNumberOfFiles(directory, 6);
     }
 
     private Segment<Integer, String> makeSegment(final Directory directory,
