@@ -21,7 +21,7 @@ public final class IndexPropertiesSchema {
     public static final String SCHEMA_VERSION_KEY = "schema.version";
     public static final String REQUIRED_KEYS_KEY = "schema.requiredKeys";
     public static final int CURRENT_SCHEMA_VERSION = 1;
-    private static final String LEGACY_PROP_NUMBER_OF_THREADS = "numberOfThreads";
+    private static final String LEGACY_PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = "numberOfStableSegmentMaintenanceThreads";
     private static final String LEGACY_PROP_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
     private static final String LEGACY_PROP_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
     private static final String LEGACY_PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
@@ -64,8 +64,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = "maxNumberOfKeysInSegment";
         public static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = "maxNumberOfKeysInPartitionBeforeSplit";
         public static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = "maxNumberOfSegmentsInCache";
-        public static final String PROP_INDEX_WORKER_THREAD_COUNT = "indexWorkerThreadCount";
-        public static final String PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = "numberOfStableSegmentMaintenanceThreads";
+        public static final String PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS = "numberOfSegmentMaintenanceThreads";
         public static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = "numberOfIndexMaintenanceThreads";
         public static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = "numberOfRegistryLifecycleThreads";
         public static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = "indexBusyBackoffMillis";
@@ -304,8 +303,6 @@ public final class IndexPropertiesSchema {
             final Map<String, DefaultValueProvider> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_CONTEXT_LOGGING_ENABLED,
                 view -> Boolean.FALSE.toString());
-        defaults.put(IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT,
-                IndexPropertiesSchema::resolveLegacyOrDefaultWorkerThreads);
         defaults.put(
                 IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED,
                 IndexPropertiesSchema::defaultBackgroundMaintenanceAutoEnabled);
@@ -349,8 +346,8 @@ public final class IndexPropertiesSchema {
     private static void addThreadingDefaults(
             final Map<String, DefaultValueProvider> defaults) {
         defaults.put(
-                IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
-                IndexPropertiesSchema::defaultStableSegmentMaintenanceThreads);
+                IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS,
+                IndexPropertiesSchema::defaultSegmentMaintenanceThreads);
         defaults.put(
                 IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 view -> String.valueOf(
@@ -418,15 +415,6 @@ public final class IndexPropertiesSchema {
                 view -> Boolean.FALSE.toString());
     }
 
-    private static String resolveLegacyOrDefaultWorkerThreads(
-            final PropertyView view) {
-        final String legacy = view.getString(LEGACY_PROP_NUMBER_OF_THREADS);
-        if (legacy != null && !legacy.isBlank()) {
-            return legacy;
-        }
-        return String.valueOf(IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT);
-    }
-
     private static String defaultBackgroundMaintenanceAutoEnabled(
             final PropertyView view) {
         final String legacy = view.getString(
@@ -438,15 +426,20 @@ public final class IndexPropertiesSchema {
                 IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED);
     }
 
-    private static String defaultStableSegmentMaintenanceThreads(
+    private static String defaultSegmentMaintenanceThreads(
             final PropertyView view) {
+        final String previousPublicKey = view.getString(
+                LEGACY_PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS);
+        if (previousPublicKey != null && !previousPublicKey.isBlank()) {
+            return previousPublicKey;
+        }
         final String legacy = view.getString(
                 LEGACY_PROP_SEGMENT_INDEX_MAINTENANCE_THREADS);
         if (legacy != null && !legacy.isBlank()) {
             return legacy;
         }
         return String.valueOf(
-                IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS);
+                IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS);
     }
 
     private static String defaultActivePartition(final PropertyView view) {

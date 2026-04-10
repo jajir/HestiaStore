@@ -218,7 +218,6 @@ class SegmentIndexAsyncMaintenanceTest {
                 .withContextLoggingEnabled(false)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withIndexWorkerThreadCount(1)//
                 .build();
     }
 

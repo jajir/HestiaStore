@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -45,29 +43,13 @@ class IndexInternalTest {
         }
 
         @Override
-        public CompletionStage<Void> putAsync(final String key,
-                final String value) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
         public String get(final String key) {
             return null;
         }
 
         @Override
-        public CompletionStage<String> getAsync(final String key) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
         public void delete(final String key) {
             // no-op test stub
-        }
-
-        @Override
-        public CompletionStage<Void> deleteAsync(final String key) {
-            return CompletableFuture.completedFuture(null);
         }
 
         @Override

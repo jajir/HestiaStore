@@ -99,8 +99,7 @@ public class SegmentIndexHotRoutePutBenchmark {
                 .withBloomFilterNumberOfHashFunctions(2)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withIndexWorkerThreadCount(4)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
+                .withNumberOfSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(2)//
                 .withNumberOfRegistryLifecycleThreads(1)//
                 .withBackgroundMaintenanceAutoEnabled(false)//

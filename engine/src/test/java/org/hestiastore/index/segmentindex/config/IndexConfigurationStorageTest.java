@@ -33,6 +33,7 @@ class IndexConfigurationStorageTest {
 
     private static final String LEGACY_MAX_KEYS_IN_SEGMENT_WRITE_CACHE = "maxNumberOfKeysInSegmentWriteCache";
     private static final String LEGACY_MAX_KEYS_IN_SEGMENT_WRITE_CACHE_DURING_MAINTENANCE = "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance";
+    private static final String LEGACY_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = "numberOfStableSegmentMaintenanceThreads";
     private static final String LEGACY_SEGMENT_MAINTENANCE_AUTO_ENABLED = "segmentMaintenanceAutoEnabled";
     private static final String LEGACY_SEGMENT_INDEX_MAINTENANCE_THREADS = "segmentIndexMaintenanceThreads";
     private static final String TEST_PROVIDER_ID = "test-custom";
@@ -57,7 +58,7 @@ class IndexConfigurationStorageTest {
         assertEquals(9, loaded.getMaxNumberOfKeysInIndexBuffer());
         assertEquals(11, loaded.getMaxNumberOfKeysInSegment());
         assertEquals(10, loaded.getMaxNumberOfKeysInPartitionBeforeSplit());
-        assertEquals(7, loaded.getNumberOfStableSegmentMaintenanceThreads());
+        assertEquals(7, loaded.getNumberOfSegmentMaintenanceThreads());
         assertFalse(loaded.isBackgroundMaintenanceAutoEnabled());
     }
 
@@ -149,7 +150,7 @@ class IndexConfigurationStorageTest {
     }
 
     @Test
-    void loadMigratesLegacyStableSegmentMaintenanceThreadsIntoNewName() {
+    void loadMigratesPreviousPublicSegmentMaintenanceKeyIntoNewName() {
         final MemDirectory directory = new MemDirectory();
         final PropertyStore store = PropertyStoreImpl.fromDirectory(directory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -171,7 +172,48 @@ class IndexConfigurationStorageTest {
                     typeDescriptor.getClass().getName());
             writer.setString(
                     IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
-                    "legacy-stable-maintenance-config");
+                    "previous-public-segment-maintenance-config");
+            writer.setInt(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+                    4);
+            writer.setInt(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT,
+                    30);
+            writer.setInt(
+                    LEGACY_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS, 6);
+        }
+
+        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
+                directory);
+        final IndexConfiguration<String, String> loaded = storage.load();
+
+        assertEquals(6, loaded.getNumberOfSegmentMaintenanceThreads());
+    }
+
+    @Test
+    void loadMigratesLegacySegmentIndexMaintenanceThreadsIntoNewName() {
+        final MemDirectory directory = new MemDirectory();
+        final PropertyStore store = PropertyStoreImpl.fromDirectory(directory,
+                IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
+                false);
+        final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
+        try (PropertyTransaction tx = store.beginTransaction()) {
+            final PropertyWriter writer = tx.openPropertyWriter();
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_CLASS,
+                    String.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_CLASS,
+                    String.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_TYPE_DESCRIPTOR,
+                    typeDescriptor.getClass().getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR,
+                    typeDescriptor.getClass().getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
+                    "legacy-segment-index-maintenance-config");
             writer.setInt(
                     IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                     4);
@@ -185,7 +227,7 @@ class IndexConfigurationStorageTest {
                 directory);
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertEquals(6, loaded.getNumberOfStableSegmentMaintenanceThreads());
+        assertEquals(6, loaded.getNumberOfSegmentMaintenanceThreads());
     }
 
     @Test
@@ -202,10 +244,12 @@ class IndexConfigurationStorageTest {
         final var view = store.snapshot();
 
         assertEquals(7, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS));
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS));
         assertFalse(view.getBoolean(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
         assertNull(view.getString(LEGACY_SEGMENT_MAINTENANCE_AUTO_ENABLED));
+        assertNull(view.getString(
+                LEGACY_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS));
         assertNull(view.getString(LEGACY_SEGMENT_INDEX_MAINTENANCE_THREADS));
         assertNull(view.getString(LEGACY_MAX_KEYS_IN_SEGMENT_WRITE_CACHE));
         assertNull(view.getString(
@@ -309,8 +353,7 @@ class IndexConfigurationStorageTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(7)//
+                .withNumberOfSegmentMaintenanceThreads(7)//
                 .withContextLoggingEnabled(false)//
                 .withBackgroundMaintenanceAutoEnabled(false)//
                 .addEncodingFilter(() -> new TestEncodingChunkFilter("orders-main"),
@@ -371,8 +414,7 @@ class IndexConfigurationStorageTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(7)//
+                .withNumberOfSegmentMaintenanceThreads(7)//
                 .withContextLoggingEnabled(false)//
                 .withBackgroundMaintenanceAutoEnabled(false)//
                 .addEncodingFilter(new ChunkFilterDoNothing())//
@@ -424,8 +466,7 @@ class IndexConfigurationStorageTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(7)//
+                .withNumberOfSegmentMaintenanceThreads(7)//
                 .withContextLoggingEnabled(false)//
                 .withBackgroundMaintenanceAutoEnabled(false)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//

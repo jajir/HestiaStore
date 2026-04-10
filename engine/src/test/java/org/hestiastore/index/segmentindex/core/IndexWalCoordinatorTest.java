@@ -155,7 +155,6 @@ class IndexWalCoordinatorTest {
                 .withBloomFilterIndexSizeInBytes(1024)
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)
                 .withDiskIoBufferSizeInBytes(1024)
-                .withIndexWorkerThreadCount(1)
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
                 .withWal(Wal.builder()

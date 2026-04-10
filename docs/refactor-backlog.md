@@ -163,7 +163,7 @@
         partition-first ingest cases.
     - Delivered (additional):
       - Finished the public config cleanup around
-        `numberOfStableSegmentMaintenanceThreads`: storage/tests now verify
+        `numberOfSegmentMaintenanceThreads`: storage/tests now verify
         round-trip persistence under the new key, schema/storage load still
         migrate legacy `segmentIndexMaintenanceThreads` manifests, and save
         removes the legacy alias from rewritten manifests.
@@ -600,13 +600,6 @@
     - Add an explicit lock around registry mutations + file ops.
     - Replace/rename `executeWithRegistryLock` to actually serialize callers.
     - Add tests for split/compact interleaving and segment visibility.
-[ ] 14 Replace common-pool async with dedicated executor + backpressure (Risk: MEDIUM)
-    - Add/configure a dedicated executor for async API calls.
-    - Track in-flight tasks and wait on close; add queue/backpressure limits.
-    - Add tests for saturation, cancellation, and close ordering.
-[ ] 15 Define `IndexAsyncAdapter.close()` behavior (Risk: MEDIUM)
-    - Decide on wait vs non-blocking close and document it.
-    - Add tests that match the chosen contract.
 [ ] 16 Replace busy-spin loops with retry+backoff+timeout (Risk: MEDIUM)
     - Use `IndexRetryPolicy` in `SegmentsIterator` and split iterator open.
     - Add interrupt handling and timeout paths with clear error messaging.
@@ -615,15 +608,9 @@
     - Decide API surface (exception vs status/Optional).
     - Update callers and docs to distinguish "missing" vs "closed".
     - Add tests for CLOSED/ERROR paths.
-[ ] 19 Propagate MDC context to async ops and stream consumption (Risk: LOW)
-    - Capture MDC context on submit and reapply in async tasks.
+[ ] 19 Propagate MDC context to stream consumption (Risk: LOW)
     - Wrap stream/iterator consumption with MDC scope; clear on close.
-    - Add tests asserting `index.name` appears in async logs.
-[ ] 41 Unify async execution for segment index (Risk: MEDIUM)
-    - Route `SegmentIndexImpl.runAsyncTracked` and `IndexAsyncAdapter.runAsyncTracked`
-      through a shared, dedicated executor (no common pool).
-    - Decide whether to keep both async layers or make one delegate to the other.
-    - Align async close behavior and document rejection/backpressure outcomes.
+    - Add tests asserting `index.name` appears in streamed-operation logs.
 [ ] 42 Revisit `SegmentAsyncExecutor` rejection policy (Risk: MEDIUM)
     - Ensure maintenance IO never runs on caller threads.
     - Choose `AbortPolicy` + BUSY/error mapping or custom handler.

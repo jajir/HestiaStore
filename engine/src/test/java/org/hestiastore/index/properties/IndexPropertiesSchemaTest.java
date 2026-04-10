@@ -167,8 +167,41 @@ class IndexPropertiesSchemaTest {
 
         final PropertyView view = store.snapshot();
         assertEquals(6, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS));
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS));
         assertEquals("false", view.getString(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
+    }
+
+    @Test
+    void indexConfigurationSchemaMigratesPreviousPublicSegmentMaintenanceKey() {
+        final PropertyStore store = PropertyStoreImpl.fromDirectory(
+                asyncDirectory,
+                IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
+                false);
+        try (PropertyTransaction tx = store.beginTransaction()) {
+            final PropertyWriter writer = tx.openPropertyWriter();
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_CLASS,
+                    String.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_CLASS,
+                    Long.class.getName());
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_KEY_TYPE_DESCRIPTOR,
+                    "test-key-descriptor");
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_VALUE_TYPE_DESCRIPTOR,
+                    "test-value-descriptor");
+            writer.setString(
+                    IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
+                    "previous-public-maintenance-schema-test");
+            writer.setString("numberOfStableSegmentMaintenanceThreads", "6");
+        }
+
+        IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
+
+        final PropertyView view = store.snapshot();
+        assertEquals(6, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS));
     }
 }

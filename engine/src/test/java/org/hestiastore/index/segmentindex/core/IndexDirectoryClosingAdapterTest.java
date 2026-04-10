@@ -5,8 +5,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -45,29 +43,13 @@ class IndexDirectoryClosingAdapterTest {
         }
 
         @Override
-        public CompletionStage<Void> putAsync(final String key,
-                final String value) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
         public String get(final String key) {
             return null;
         }
 
         @Override
-        public CompletionStage<String> getAsync(final String key) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        @Override
         public void delete(final String key) {
             // no-op
-        }
-
-        @Override
-        public CompletionStage<Void> deleteAsync(final String key) {
-            return CompletableFuture.completedFuture(null);
         }
 
         @Override

@@ -1,8 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.EntryIterator;
@@ -37,7 +35,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final Stats stats = new Stats();
-    private final IndexAsyncExecutor asyncExecutor;
     private final IndexOperationTracker operationTracker = new IndexOperationTracker();
     private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
     private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
@@ -53,7 +50,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry) {
-        IndexAsyncExecutor createdAsyncExecutor = null;
         final Directory nonNullDirectory = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
@@ -65,8 +61,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     "keyTypeDescriptor");
             Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
             this.conf = Vldtn.requireNonNull(conf, "conf");
-            createdAsyncExecutor = new IndexAsyncExecutor(this.conf);
-            this.asyncExecutor = createdAsyncExecutor;
             try (IndexNameMdcScope ignored = IndexNameMdcScope
                     .openIfConfigured(this.conf)) {
                 final SegmentIndexAssembly<K, V> assembly = SegmentIndexAssembly
@@ -98,10 +92,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                         this::checkAndRepairConsistency);
             }
         } catch (final RuntimeException e) {
-            if (createdAsyncExecutor != null
-                    && !createdAsyncExecutor.wasClosed()) {
-                createdAsyncExecutor.close();
-            }
             failWithError(e);
             throw e;
         }
@@ -113,15 +103,6 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         operationTracker.runTracked(() -> {
             getIndexState().tryPerformOperation();
             runtime.operationCoordinator().put(key, value);
-            return null;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletionStage<Void> putAsync(final K key, final V value) {
-        return runAsyncTracked(() -> {
-            put(key, value);
             return null;
         });
     }
@@ -219,25 +200,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     /** {@inheritDoc} */
     @Override
-    public CompletionStage<V> getAsync(final K key) {
-        return runAsyncTracked(() -> get(key));
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public void delete(final K key) {
         operationTracker.runTracked(() -> {
             getIndexState().tryPerformOperation();
             runtime.operationCoordinator().delete(key);
-            return null;
-        });
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CompletionStage<Void> deleteAsync(final K key) {
-        return runAsyncTracked(() -> {
-            delete(key);
             return null;
         });
     }
@@ -255,12 +221,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        asyncExecutor.close();
         closeCoordinator.close();
-    }
-
-    private <T> CompletionStage<T> runAsyncTracked(final Supplier<T> task) {
-        return asyncExecutor.runAsync(task);
     }
 
     final void setIndexState(final IndexState<K, V> indexState) {
