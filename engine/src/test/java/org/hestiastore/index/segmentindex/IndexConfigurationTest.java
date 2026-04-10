@@ -58,8 +58,8 @@ class IndexConfigurationTest {
 
         assertTrue(config.isBackgroundMaintenanceAutoEnabled());
         assertEquals(
-                IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS,
-                config.getNumberOfStableSegmentMaintenanceThreads());
+                IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
+                config.getNumberOfSegmentMaintenanceThreads());
     }
 
     @Test

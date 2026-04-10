@@ -44,8 +44,7 @@ public class IndexConfigurationStorage<K, V> {
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT;
     private static final String PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
     private static final String PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
-    private static final String PROP_INDEX_WORKER_THREAD_COUNT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_WORKER_THREAD_COUNT;
-    private static final String PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS;
+    private static final String PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS;
     private static final String PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS;
     private static final String PROP_INDEX_BUSY_BACKOFF_MILLIS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS;
@@ -173,13 +172,10 @@ public class IndexConfigurationStorage<K, V> {
                 .withMaxNumberOfKeysInSegmentChunk(propsView
                         .getInt(PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK))//
                 .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)//
-                .withIndexWorkerThreadCount(getOrDefault(propsView,
-                        PROP_INDEX_WORKER_THREAD_COUNT,
-                        IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT))//
-                .withNumberOfStableSegmentMaintenanceThreads(getOrDefault(
+                .withNumberOfSegmentMaintenanceThreads(getOrDefault(
                         propsView,
-                        PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
-                        IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS))//
+                        PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS,
+                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS))//
                 .withNumberOfIndexMaintenanceThreads(getOrDefault(propsView,
                         PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                         IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS))//
@@ -315,17 +311,12 @@ public class IndexConfigurationStorage<K, V> {
                         : indexConfiguration.getMaxNumberOfDeltaCacheFiles();
         writer.setInt(PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 deltaCacheFileCount);
-        final int threadCount = indexConfiguration
-                .getIndexWorkerThreadCount() == null
-                        ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
-                        : indexConfiguration.getIndexWorkerThreadCount();
-        writer.setInt(PROP_INDEX_WORKER_THREAD_COUNT, threadCount);
         final int maintenanceThreads = indexConfiguration
-                .getNumberOfStableSegmentMaintenanceThreads() == null
-                        ? IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS
+                .getNumberOfSegmentMaintenanceThreads() == null
+                        ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS
                         : indexConfiguration
-                                .getNumberOfStableSegmentMaintenanceThreads();
-        writer.setInt(PROP_NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
+                                .getNumberOfSegmentMaintenanceThreads();
+        writer.setInt(PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS,
                 maintenanceThreads);
         final int indexMaintenanceThreads = indexConfiguration
                 .getNumberOfIndexMaintenanceThreads() == null

@@ -30,14 +30,14 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     private static final String ARG_INDEX_CONFIGURATION = "indexConfiguration";
     private static final String ARG_INDEX_MAINTENANCE_THREADS = "indexMaintenanceThreads";
     private static final String ARG_SPLIT_MAINTENANCE_THREADS = "splitMaintenanceThreads";
-    private static final String ARG_STABLE_SEGMENT_MAINTENANCE_THREADS = "numberOfStableSegmentMaintenanceThreads";
+    private static final String ARG_SEGMENT_MAINTENANCE_THREADS = "numberOfSegmentMaintenanceThreads";
     private static final String ARG_REGISTRY_MAINTENANCE_THREADS = "registryMaintenanceThreads";
     private static final String ARG_EXECUTOR = "executor";
     private static final String ARG_INDEX_NAME = "indexName";
     private static final String THREAD_NAME_PREFIX_INDEX_MAINTENANCE = "index-maintenance-";
     private static final String THREAD_NAME_PREFIX_SPLIT_MAINTENANCE = "split-maintenance-";
     private static final String THREAD_NAME_PREFIX_SPLIT_POLICY = "split-policy-";
-    private static final String THREAD_NAME_PREFIX_STABLE_SEGMENT_MAINTENANCE = "stable-segment-maintenance-";
+    private static final String THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE = "segment-maintenance-";
     private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
     private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
 
@@ -74,9 +74,9 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
     }
 
     /**
-     * Returns shared stable-segment maintenance executor.
+     * Returns shared segment maintenance executor.
      *
-     * @return stable-segment maintenance executor service
+     * @return segment maintenance executor service
      * @throws IllegalStateException when registry has already been closed
      */
     ExecutorService getStableSegmentMaintenanceExecutor() {
@@ -167,9 +167,9 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
         final int stableSegmentMaintenanceThreads = Vldtn.requireGreaterThanZero(
                 Vldtn.requireNonNull(
                         Vldtn.requireNonNull(conf, ARG_INDEX_CONFIGURATION)
-                                .getNumberOfStableSegmentMaintenanceThreads(),
-                        ARG_STABLE_SEGMENT_MAINTENANCE_THREADS),
-                        ARG_STABLE_SEGMENT_MAINTENANCE_THREADS);
+                                .getNumberOfSegmentMaintenanceThreads(),
+                        ARG_SEGMENT_MAINTENANCE_THREADS),
+                        ARG_SEGMENT_MAINTENANCE_THREADS);
         final int queueCapacity = Math.max(MIN_QUEUE_CAPACITY,
                 stableSegmentMaintenanceThreads * QUEUE_CAPACITY_MULTIPLIER);
         final AtomicInteger threadCounter = new AtomicInteger(1);
@@ -179,7 +179,7 @@ final class IndexExecutorRegistry extends AbstractCloseableResource {
                 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity), runnable -> {
                     final Thread thread = new Thread(runnable,
-                            THREAD_NAME_PREFIX_STABLE_SEGMENT_MAINTENANCE
+                            THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE
                                     + threadCounter.getAndIncrement());
                     thread.setDaemon(true);
                     return thread;

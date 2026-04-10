@@ -50,7 +50,7 @@ class SegmentIndexConcurrentIT {
             : 60L;
 
     @Test
-    void concurrent_put_delete_on_disjoint_keyspaces_produces_consistent_state()
+    void concurrent_put_delete_on_disjoint_keyspaces_produces_consistent_state_after_reopen()
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
@@ -622,7 +622,7 @@ class SegmentIndexConcurrentIT {
     }
 
     @Test
-    void concurrent_async_put_delete_on_disjoint_keyspaces_produces_consistent_state()
+    void concurrent_put_delete_on_disjoint_keyspaces_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newConfiguration(
@@ -652,12 +652,10 @@ class SegmentIndexConcurrentIT {
                     if (rnd.nextDouble() < 0.6) {
                         final int value = rnd.nextInt(10_000);
                         expectedLocal.put(key, value);
-                        index.putAsync(key, value).toCompletableFuture()
-                                .orTimeout(30, TimeUnit.SECONDS).join();
+                        index.put(key, value);
                     } else {
                         expectedLocal.remove(key);
-                        index.deleteAsync(key).toCompletableFuture()
-                                .orTimeout(30, TimeUnit.SECONDS).join();
+                        index.delete(key);
                     }
                 }
 
@@ -874,7 +872,6 @@ class SegmentIndexConcurrentIT {
                 .withMaxNumberOfKeysInSegmentChunk(5)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(cpuThreads)//
                 .build();
     }
 
@@ -898,8 +895,7 @@ class SegmentIndexConcurrentIT {
                 .withMaxNumberOfSegmentsInCache(64)//
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterNumberOfHashFunctions(1)//
-                .withIndexWorkerThreadCount(cpuThreads)//
-                .withNumberOfStableSegmentMaintenanceThreads(2)//
+                .withNumberOfSegmentMaintenanceThreads(2)//
                 .withNumberOfIndexMaintenanceThreads(2)//
                 .withNumberOfRegistryLifecycleThreads(2)//
                 .withIndexBusyTimeoutMillis(120_000)//

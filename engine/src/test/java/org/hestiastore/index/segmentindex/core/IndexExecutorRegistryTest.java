@@ -55,7 +55,7 @@ class IndexExecutorRegistryTest {
                 IllegalArgumentException.class,
                 () -> new IndexExecutorRegistry(conf));
         assertEquals(
-                "Property 'numberOfStableSegmentMaintenanceThreads' must be greater than 0",
+                "Property 'numberOfSegmentMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
@@ -99,11 +99,10 @@ class IndexExecutorRegistryTest {
                 .withBloomFilterProbabilityOfFalsePositive(
                         conf.getBloomFilterProbabilityOfFalsePositive())//
                 .withDiskIoBufferSizeInBytes(conf.getDiskIoBufferSize())//
-                .withIndexWorkerThreadCount(conf.getIndexWorkerThreadCount())//
                 .withNumberOfIndexMaintenanceThreads(
                         conf.getNumberOfIndexMaintenanceThreads())//
-                .withNumberOfStableSegmentMaintenanceThreads(
-                        conf.getNumberOfStableSegmentMaintenanceThreads())//
+                .withNumberOfSegmentMaintenanceThreads(
+                        conf.getNumberOfSegmentMaintenanceThreads())//
                 .withNumberOfRegistryLifecycleThreads(0)//
                 .withEncodingFilters(conf.getEncodingChunkFilters())//
                 .withDecodingFilters(conf.getDecodingChunkFilters())//
@@ -136,9 +135,8 @@ class IndexExecutorRegistryTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
+                .withNumberOfSegmentMaintenanceThreads(1)//
                 .withNumberOfRegistryLifecycleThreads(1)//
                 .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
                 .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
@@ -254,7 +252,7 @@ class IndexExecutorRegistryTest {
             assertTrue(splitMaintenanceName.startsWith("split-maintenance-"));
             assertTrue(splitPolicyName.startsWith("split-policy-"));
             assertTrue(stableSegmentMaintenanceName
-                    .startsWith("stable-segment-maintenance-"));
+                    .startsWith("segment-maintenance-"));
             assertTrue(
                     registryMaintenanceName.startsWith("registry-maintenance-"));
             assertTrue(indexMaintenanceDaemon);
@@ -427,10 +425,9 @@ class IndexExecutorRegistryTest {
                 .withBloomFilterIndexSizeInBytes(1024)//
                 .withBloomFilterProbabilityOfFalsePositive(0.01D)//
                 .withDiskIoBufferSizeInBytes(1024)//
-                .withIndexWorkerThreadCount(1)//
                 .withNumberOfIndexMaintenanceThreads(
                         indexMaintenanceThreads)//
-                .withNumberOfStableSegmentMaintenanceThreads(
+                .withNumberOfSegmentMaintenanceThreads(
                         stableSegmentMaintenanceThreads)//
                 .withNumberOfRegistryLifecycleThreads(
                         registryMaintenanceThreads)//

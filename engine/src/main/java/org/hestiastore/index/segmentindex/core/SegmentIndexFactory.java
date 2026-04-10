@@ -186,7 +186,7 @@ public final class SegmentIndexFactory {
      * @param indexConf resolved configuration
      * @param runtimeConfiguration resolved runtime configuration
      * @param lifecycle lifecycle owning runtime dependencies
-     * @return index wrapped with async and close adapters
+     * @return index wrapped with close adapters
      */
     private static <M, N> SegmentIndex<M, N> openIndex(
             final IndexConfiguration<M, N> indexConf,
@@ -207,7 +207,6 @@ public final class SegmentIndexFactory {
             Vldtn.requireNotBlank(indexConf.getIndexName(), "indexName");
             index = new IndexContextLoggingAdapter<>(indexConf, index);
         }
-        index = new IndexAsyncAdapter<>(index);
         final CloseableResource lifecycleOnClose = new AbstractCloseableResource() {
             @Override
             protected void doClose() {

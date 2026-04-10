@@ -40,8 +40,7 @@ public class IndexConfigurationBuilder<K, V> {
     private Double bloomFilterProbabilityOfFalsePositive;
 
     private Integer diskIoBufferSizeInBytes;
-    private Integer indexWorkerThreadCount;
-    private Integer numberOfStableSegmentMaintenanceThreads;
+    private Integer numberOfSegmentMaintenanceThreads;
     private Integer numberOfIndexMaintenanceThreads;
     private Integer numberOfRegistryLifecycleThreads;
     private Integer indexBusyBackoffMillis;
@@ -352,27 +351,14 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
-     * Sets the number of index worker threads used for index operations.
+     * Sets the number of segment maintenance threads.
      *
-     * @param indexWorkerThreadCount index worker thread count
+     * @param numberOfSegmentMaintenanceThreads segment maintenance thread count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withIndexWorkerThreadCount(
-            final Integer indexWorkerThreadCount) {
-        this.indexWorkerThreadCount = indexWorkerThreadCount;
-        return this;
-    }
-
-    /**
-     * Sets the number of stable-segment maintenance threads.
-     *
-     * @param numberOfStableSegmentMaintenanceThreads stable-segment
-     *                                               maintenance threads
-     * @return this builder
-     */
-    public IndexConfigurationBuilder<K, V> withNumberOfStableSegmentMaintenanceThreads(
-            final Integer numberOfStableSegmentMaintenanceThreads) {
-        this.numberOfStableSegmentMaintenanceThreads = numberOfStableSegmentMaintenanceThreads;
+    public IndexConfigurationBuilder<K, V> withNumberOfSegmentMaintenanceThreads(
+            final Integer numberOfSegmentMaintenanceThreads) {
+        this.numberOfSegmentMaintenanceThreads = numberOfSegmentMaintenanceThreads;
         return this;
     }
 
@@ -694,12 +680,9 @@ public class IndexConfigurationBuilder<K, V> {
      * @return built configuration
      */
     public IndexConfiguration<K, V> build() {
-        final Integer effectiveIndexWorkerThreadCount = indexWorkerThreadCount == null
-                ? IndexConfigurationContract.INDEX_WORKER_THREAD_COUNT
-                : indexWorkerThreadCount;
-        final Integer effectiveStableSegmentMaintenanceThreads = numberOfStableSegmentMaintenanceThreads == null
-                ? IndexConfigurationContract.DEFAULT_STABLE_SEGMENT_MAINTENANCE_THREADS
-                : numberOfStableSegmentMaintenanceThreads;
+        final Integer effectiveSegmentMaintenanceThreads = numberOfSegmentMaintenanceThreads == null
+                ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS
+                : numberOfSegmentMaintenanceThreads;
         final Integer effectiveIndexMaintenanceThreads = numberOfIndexMaintenanceThreads == null
                 ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
                 : numberOfIndexMaintenanceThreads;
@@ -740,8 +723,7 @@ public class IndexConfigurationBuilder<K, V> {
                 maxNumberOfSegmentsInCache, indexName,
                 bloomFilterNumberOfHashFunctions, bloomFilterIndexSizeInBytes,
                 bloomFilterProbabilityOfFalsePositive, diskIoBufferSizeInBytes,
-                contextLoggingEnabled, effectiveIndexWorkerThreadCount,
-                effectiveStableSegmentMaintenanceThreads,
+                contextLoggingEnabled, effectiveSegmentMaintenanceThreads,
                 effectiveIndexMaintenanceThreads,
                 effectiveRegistryLifecycleThreads,
                 effectiveIndexBusyBackoffMillis,

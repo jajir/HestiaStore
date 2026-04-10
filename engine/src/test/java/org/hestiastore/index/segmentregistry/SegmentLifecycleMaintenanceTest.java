@@ -172,8 +172,7 @@ class SegmentLifecycleMaintenanceTest {
                 .withEncodingFilters(FILTERS)//
                 .withDecodingFilters(FILTERS)//
                 .withBackgroundMaintenanceAutoEnabled(false)//
-                .withIndexWorkerThreadCount(1)//
-                .withNumberOfStableSegmentMaintenanceThreads(1)//
+                .withNumberOfSegmentMaintenanceThreads(1)//
                 .withNumberOfIndexMaintenanceThreads(1)//
                 .withIndexBusyBackoffMillis(1)//
                 .withIndexBusyTimeoutMillis(1000)//

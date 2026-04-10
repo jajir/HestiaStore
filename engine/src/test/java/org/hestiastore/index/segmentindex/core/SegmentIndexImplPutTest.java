@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -141,45 +140,6 @@ class SegmentIndexImplPutTest {
             final RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> index.delete(1));
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.getState());
-            assertThrows(IllegalStateException.class, () -> index.get(1));
-        } finally {
-            clearWalSyncFailure(index);
-        }
-    }
-
-    @Test
-    void walSyncFailureOnPutAsyncTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC).build());
-        injectWalSyncFailure(index, new IllegalStateException("simulated"));
-        final var putFuture = index.putAsync(1, "one").toCompletableFuture();
-
-        try {
-            final CompletionException exception = assertThrows(
-                    CompletionException.class, putFuture::join);
-            assertTrue(exception.getCause().getMessage()
-                    .contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.getState());
-            assertThrows(IllegalStateException.class, () -> index.get(1));
-        } finally {
-            clearWalSyncFailure(index);
-        }
-    }
-
-    @Test
-    void walSyncFailureOnDeleteAsyncTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC).build());
-        index.put(1, "one");
-        injectWalSyncFailure(index, new IllegalStateException("simulated"));
-        final var deleteFuture = index.deleteAsync(1).toCompletableFuture();
-
-        try {
-            final CompletionException exception = assertThrows(
-                    CompletionException.class, deleteFuture::join);
-            assertTrue(exception.getCause().getMessage()
-                    .contains("WAL sync failure"));
             assertEquals(SegmentIndexState.ERROR, index.getState());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {

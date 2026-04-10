@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -152,22 +154,29 @@ class IntegrationSegmentIndexIteratorTest {
             final List<Entry<Integer, String>> snapshotView;
             try (var stream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
-                final var updateExisting = index.putAsync(2,
-                        "overlay-after-open").toCompletableFuture();
-                final var deleteExisting = index.deleteAsync(1)
-                        .toCompletableFuture();
-                final var insertNew = index.putAsync(4, "overlay-after-open")
-                        .toCompletableFuture();
+                final ExecutorService executor = Executors.newFixedThreadPool(3);
+                try {
+                    final var updateExisting = java.util.concurrent.CompletableFuture
+                            .runAsync(() -> index.put(2, "overlay-after-open"),
+                                    executor);
+                    final var deleteExisting = java.util.concurrent.CompletableFuture
+                            .runAsync(() -> index.delete(1), executor);
+                    final var insertNew = java.util.concurrent.CompletableFuture
+                            .runAsync(() -> index.put(4, "overlay-after-open"),
+                                    executor);
 
-                awaitCondition(() -> !updateExisting.isDone()
-                        && !deleteExisting.isDone() && !insertNew.isDone(),
-                        5_000L);
+                    awaitCondition(() -> !updateExisting.isDone()
+                            && !deleteExisting.isDone()
+                            && !insertNew.isDone(), 5_000L);
 
-                snapshotView = stream.toList();
+                    snapshotView = stream.toList();
 
-                awaitCondition(() -> updateExisting.isDone()
-                        && deleteExisting.isDone() && insertNew.isDone(),
-                        5_000L);
+                    awaitCondition(() -> updateExisting.isDone()
+                            && deleteExisting.isDone() && insertNew.isDone(),
+                            5_000L);
+                } finally {
+                    executor.shutdownNow();
+                }
             }
 
             assertEquals(List.of(Entry.of(1, "stable-1"),

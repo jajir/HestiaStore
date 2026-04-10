@@ -23,12 +23,8 @@ Results:
 | Benchmark | Baseline | Direct seekable | Variant A | Baseline -> Direct | Direct -> Variant A |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `getHitSync` | `83216.199 ops/s` | `168601.418 ops/s` | `156213.035 ops/s` | `+102.6%` | `-7.3%` |
-| `getHitAsyncJoin` | `44405.156 ops/s` | `90428.743 ops/s` | `113548.703 ops/s` | `+103.6%` | `+25.6%` |
 
-Variant A in this comparison means:
-
-- low-level seekable reads stay direct/sync
-- public `getAsync/putAsync/deleteAsync` execute the whole sync operation on a fixed `index-worker-*` pool sized by `indexWorkerThreadCount`
+Variant A in this comparison means low-level seekable reads stay direct/sync.
 
 Artifacts:
 
