@@ -30,8 +30,6 @@ import org.slf4j.LoggerFactory;
 public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private static final boolean DEBUG_SPLIT_LOSS = Boolean
-            .getBoolean("hestiastore.debugSplitLoss");
     private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
     private static final String FILE_NAME = "index.map";
@@ -288,8 +286,8 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         if (upperMaxKey == null) {
             return false;
         }
-        if (DEBUG_SPLIT_LOSS) {
-            logger.warn(
+        if (logger.isDebugEnabled()) {
+            logger.debug(
                     "Split debug: map apply replacedSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', splitMode='{}', upperSegmentId='{}'.",
                     replacedSegmentId, upperMaxKey, lowerSegmentId,
                     plan.getLowerMaxKey(), plan.getSplitMode(),
