@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 
 /**
  * Owns foreground flush and compaction orchestration across split and stable
@@ -9,14 +9,14 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAda
  */
 final class IndexMaintenanceCoordinator<K, V> {
 
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
     private final StableSegmentCoordinator<K, V> stableSegmentCoordinator;
     private final IndexWalCoordinator<K, V> walCoordinator;
 
     IndexMaintenanceCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop,
             final StableSegmentCoordinator<K, V> stableSegmentCoordinator,
@@ -50,17 +50,17 @@ final class IndexMaintenanceCoordinator<K, V> {
         final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
         backgroundSplitPolicyLoop.scheduleScanIfIdle();
         backgroundSplitPolicyLoop.awaitExhausted();
-        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
+        if (!keyToSegmentMap.isAtVersion(finalTopologyVersion)) {
             stableSegmentCoordinator.compactMappedSegmentsAndFlush();
         }
-        keyToSegmentMap.optionalyFlush();
+        keyToSegmentMap.flushIfDirty();
         walCoordinator.checkpoint();
     }
 
     void flush() {
         backgroundSplitCoordinator.runWithSplitSchedulingPaused(
                 () -> stableSegmentCoordinator.flushSegments(false));
-        keyToSegmentMap.optionalyFlush();
+        keyToSegmentMap.flushIfDirty();
         backgroundSplitPolicyLoop.scheduleScanIfIdle();
     }
 
@@ -70,10 +70,10 @@ final class IndexMaintenanceCoordinator<K, V> {
         final long finalTopologyVersion = keyToSegmentMap.snapshot().version();
         backgroundSplitPolicyLoop.scheduleScanIfIdle();
         backgroundSplitPolicyLoop.awaitExhausted();
-        if (!keyToSegmentMap.isVersion(finalTopologyVersion)) {
+        if (!keyToSegmentMap.isAtVersion(finalTopologyVersion)) {
             stableSegmentCoordinator.flushMappedSegmentsAndWait();
         }
-        keyToSegmentMap.optionalyFlush();
+        keyToSegmentMap.flushIfDirty();
         walCoordinator.checkpoint();
     }
 }

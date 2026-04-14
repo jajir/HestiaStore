@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core;
 
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 
@@ -12,7 +12,7 @@ public final class SegmentIndexTestAccess {
     private SegmentIndexTestAccess() {
     }
 
-    public static <K> KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap(
+    public static <K> KeyToSegmentMap<K> keyToSegmentMap(
             final SegmentIndexImpl<K, ?> index) {
         return index.keyToSegmentMap();
     }

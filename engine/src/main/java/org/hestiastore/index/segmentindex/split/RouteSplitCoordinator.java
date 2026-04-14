@@ -18,7 +18,7 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -41,7 +41,7 @@ public final class RouteSplitCoordinator<K, V> {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     private final Comparator<K> keyComparator;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final IndexRetryPolicy retryPolicy;
@@ -53,7 +53,7 @@ public final class RouteSplitCoordinator<K, V> {
 
     public RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
             final Comparator<K> keyComparator,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry) {
         this(conf, keyComparator, keyToSegmentMap, segmentRegistry,
                 new SegmentIndexSplitPolicyThreshold<>());
@@ -61,7 +61,7 @@ public final class RouteSplitCoordinator<K, V> {
 
     public RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
             final Comparator<K> keyComparator,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentIndexSplitPolicy<K, V> splitPolicy) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
@@ -149,7 +149,7 @@ public final class RouteSplitCoordinator<K, V> {
                     splitPlan.getUpperSegmentId().orElse(null));
             return false;
         }
-        keyToSegmentMap.optionalyFlush();
+        keyToSegmentMap.flushIfDirty();
         deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
         if (logger.isDebugEnabled()) {
             logger.debug(
@@ -235,7 +235,7 @@ public final class RouteSplitCoordinator<K, V> {
     private boolean publishRouteSplit(final RouteSplitPlan<K> splitPlan) {
         Vldtn.requireNonNull(splitPlan, "splitPlan");
         try {
-            if (!keyToSegmentMap.applyRouteSplit(splitPlan)) {
+            if (!keyToSegmentMap.tryApplySplitPlan(splitPlan)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(
                             "Route split publish returned false: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",

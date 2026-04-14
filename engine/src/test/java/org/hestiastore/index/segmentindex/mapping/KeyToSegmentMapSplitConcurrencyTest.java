@@ -31,7 +31,8 @@ class KeyToSegmentMapSplitConcurrencyTest {
 
     @BeforeEach
     void setUp() {
-        final KeyToSegmentMap<Integer> rawKeyMap = newCacheWithEntries(List.of(
+        final KeyToSegmentMapImpl<Integer> rawKeyMap = newCacheWithEntries(
+                List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         adapter = new KeyToSegmentMapSynchronizedAdapter<>(rawKeyMap);
@@ -65,7 +66,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
             ready.countDown();
             await(start);
             for (int i = 0; i < 1_000; i++) {
-                if (adapter.findSegmentId(5) == null) {
+                if (adapter.findSegmentIdForKey(5) == null) {
                     missing.set(true);
                     break;
                 }
@@ -91,8 +92,8 @@ class KeyToSegmentMapSplitConcurrencyTest {
         assertTrue(await(startedOps, 5),
                 "Workers did not perform initial ops in time");
 
-        assertTrue(adapter.applyRouteSplit(plan));
-        adapter.optionalyFlush();
+        assertTrue(adapter.tryApplySplitPlan(plan));
+        adapter.flushIfDirty();
 
         awaitFuture(reader, "Reader did not finish in time");
         awaitFuture(writer, "Writer did not finish in time");
@@ -125,7 +126,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
         }
     }
 
-    private KeyToSegmentMap<Integer> newCacheWithEntries(
+    private KeyToSegmentMapImpl<Integer> newCacheWithEntries(
             final List<Entry<Integer, SegmentId>> entries) {
         final MemDirectory dir = new MemDirectory();
         final SortedDataFile<Integer, SegmentId> sdf = SortedDataFile
@@ -139,7 +140,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
                         .forEach(writer::write));
-        return new KeyToSegmentMap<>(dir,
+        return new KeyToSegmentMapImpl<>(dir,
                 new TypeDescriptorInteger());
     }
 }

@@ -23,7 +23,8 @@ class KeyToSegmentMapTest {
 
     @Test
     void insertSegmentRejectsDuplicateId() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(
+                List.of());
         final SegmentId existingId = SegmentId.of(0);
         cache.insertSegment(5, existingId);
         assertThrows(IllegalArgumentException.class,
@@ -31,30 +32,30 @@ class KeyToSegmentMapTest {
     }
 
     @Test
-    void applySplitPlan_replaces_old_segment_with_lower_and_upper() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
+    void tryApplySplitPlan_replacesOldSegmentWithLowerAndUpper() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(1),
                 SegmentId.of(3), SegmentId.of(4), 1, 5,
                 RouteSplitPlan.SplitMode.SPLIT);
 
-        assertTrue(cache.applyRouteSplit(plan));
+        assertTrue(cache.tryApplySplitPlan(plan));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(4), SegmentId.of(2)),
                 cache.getSegmentIds());
     }
 
     @Test
-    void applySplitPlan_replaces_old_segment_when_compacted() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
+    void tryApplySplitPlan_replacesOldSegmentWhenCompacted() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(1),
                 SegmentId.of(3), null, 1, 10,
                 RouteSplitPlan.SplitMode.COMPACTED);
 
-        assertTrue(cache.applyRouteSplit(plan));
+        assertTrue(cache.tryApplySplitPlan(plan));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(2)),
                 cache.getSegmentIds());
@@ -62,7 +63,8 @@ class KeyToSegmentMapTest {
 
     @Test
     void synchronizedAdapterDelegatesToCache() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(
+                List.of());
         final KeyToSegmentMapSynchronizedAdapter<Integer> adapter = new KeyToSegmentMapSynchronizedAdapter<>(
                 cache);
 
@@ -76,7 +78,8 @@ class KeyToSegmentMapTest {
 
     @Test
     void synchronizedAdapterHandlesConcurrentInsertions() throws Exception {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of());
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(
+                List.of());
         final KeyToSegmentMapSynchronizedAdapter<Integer> adapter = new KeyToSegmentMapSynchronizedAdapter<>(
                 cache);
         final int threads = 4;
@@ -120,24 +123,24 @@ class KeyToSegmentMapTest {
 
     @Test
     void snapshotRetainsSegmentOrderAfterLaterSplitMutation() {
-        final KeyToSegmentMap<Integer> cache = newCacheWithEntries(List.of(
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(20, SegmentId.of(2)),
                 Entry.of(30, SegmentId.of(3))));
-        final KeyToSegmentMap.Snapshot<Integer> snapshot = cache.snapshot();
+        final Snapshot<Integer> snapshot = cache.snapshot();
 
         final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(2),
                 SegmentId.of(4), SegmentId.of(5), 11, 15,
                 RouteSplitPlan.SplitMode.SPLIT);
-        assertTrue(cache.applyRouteSplit(plan));
+        assertTrue(cache.tryApplySplitPlan(plan));
 
         assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),
                 snapshot.getSegmentIds(SegmentWindow.unbounded()));
-        assertTrue(cache.isVersion(cache.snapshot().version()));
-        assertFalse(cache.isVersion(snapshot.version()));
+        assertTrue(cache.isAtVersion(cache.snapshot().version()));
+        assertFalse(cache.isAtVersion(snapshot.version()));
     }
 
-    private KeyToSegmentMap<Integer> newCacheWithEntries(
+    private KeyToSegmentMapImpl<Integer> newCacheWithEntries(
             final List<Entry<Integer, SegmentId>> entries) {
         final MemDirectory dir = new MemDirectory();
         final var sdf = org.hestiastore.index.sorteddatafile.SortedDataFile
@@ -153,7 +156,7 @@ class KeyToSegmentMapTest {
                 .execute(writer -> entries.stream().sorted(
                         (e1, e2) -> Integer.compare(e1.getKey(), e2.getKey()))
                         .forEach(writer::write));
-        return new KeyToSegmentMap<>(
+        return new KeyToSegmentMapImpl<>(
                 dir,
                 new TypeDescriptorInteger());
     }

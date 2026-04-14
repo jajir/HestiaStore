@@ -16,7 +16,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -278,7 +278,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         runtime.awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
     }
 
-    final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap() {
+    final KeyToSegmentMap<K> keyToSegmentMap() {
         return runtime.keyToSegmentMap();
     }
 

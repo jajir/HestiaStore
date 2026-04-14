@@ -11,6 +11,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
@@ -33,7 +34,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     interface BuildObserver<K, V> {
 
         default void onKeyToSegmentMapCreated(
-                final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap) {
+                final KeyToSegmentMap<K> keyToSegmentMap) {
         }
 
         default void onSegmentRegistryCreated(
@@ -141,13 +142,13 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     }
 
     SegmentIndexRuntime<K, V> build() {
-        KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap = null;
+        KeyToSegmentMap<K> keyToSegmentMap = null;
         SegmentRegistry<K, V> segmentRegistry = null;
         WalRuntime<K, V> walRuntime = null;
         try {
             final RuntimeTuningState runtimeTuningState = RuntimeTuningState
                     .fromConfiguration(conf);
-            final KeyToSegmentMap<K> keyToSegmentMapDelegate = new KeyToSegmentMap<>(
+            final KeyToSegmentMapImpl<K> keyToSegmentMapDelegate = new KeyToSegmentMapImpl<>(
                     directoryFacade, keyTypeDescriptor);
             keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
@@ -190,14 +191,14 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             walRuntime = WalRuntime.open(directoryFacade, conf.getWal(),
                     keyTypeDescriptor, valueTypeDescriptor);
             buildObserver.onWalRuntimeCreated(walRuntime);
-            final KeyToSegmentMapSynchronizedAdapter<K> builtKeyToSegmentMap = keyToSegmentMap;
+            final KeyToSegmentMap<K> builtKeyToSegmentMap = keyToSegmentMap;
             final IndexWalCoordinator<K, V> walCoordinator = new IndexWalCoordinator<>(
                     logger, conf, walRuntime, retryPolicy,
                     () -> {
                     },
                     () -> {
                         stableSegmentCoordinator.flushSegments(true);
-                        builtKeyToSegmentMap.optionalyFlush();
+                        builtKeyToSegmentMap.flushIfDirty();
                     }, callbacks.stateSupplier(), callbacks.failureHandler(),
                     lastAppliedWalLsn);
             final IndexOperationCoordinator<K, V> operationCoordinator = new IndexOperationCoordinator<>(
@@ -258,7 +259,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     }
 
     private SegmentIndexMetricsCollector<K, V> newMetricsCollector(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final RuntimeTuningState runtimeTuningState,
@@ -274,7 +275,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     private RuntimeException cleanupFailedBuild(final RuntimeException failure,
             final WalRuntime<K, V> walRuntime,
             final SegmentRegistry<K, V> segmentRegistry,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap) {
+            final KeyToSegmentMap<K> keyToSegmentMap) {
         closeWalRuntime(walRuntime, failure);
         closeSegmentRegistry(segmentRegistry, failure);
         closeKeyToSegmentMap(keyToSegmentMap, failure);
@@ -319,7 +320,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
     }
 
     private void closeKeyToSegmentMap(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final RuntimeException failure) {
         if (keyToSegmentMap == null || keyToSegmentMap.wasClosed()) {
             return;
