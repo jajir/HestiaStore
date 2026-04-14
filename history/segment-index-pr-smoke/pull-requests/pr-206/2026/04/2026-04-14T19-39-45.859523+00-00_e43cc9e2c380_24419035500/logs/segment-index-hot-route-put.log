@@ -1,0 +1,77 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute
+
+# Run progress: 0.00% complete, ETA 00:00:08
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+1441648.348 ops/s
+Iteration   1: 2351158.646 ops/s
+Iteration   2: 2458088.990 ops/s
+Iteration   3: 2454120.061 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putHotRoute":
+  2421122.566 ±(99.9%) 1105989.576 ops/s [Average]
+  (min, avg, max) = (2351158.646, 2421122.566, 2458088.990), stdev = 60623.021
+  CI (99.9%): [1315132.989, 3527112.142] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute
+
+# Run progress: 50.00% complete, ETA 00:00:05
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+888827.464 ops/s
+Iteration   1: 1548717.490 ops/s
+Iteration   2: 1602304.610 ops/s
+Iteration   3: 1573021.505 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute":
+  1574681.202 ±(99.9%) 489517.126 ops/s [Average]
+  (min, avg, max) = (1548717.490, 1574681.202, 1602304.610), stdev = 26832.085
+  CI (99.9%): [1085164.076, 2064198.328] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:10
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                             Mode  Cnt        Score         Error  Units
+SegmentIndexHotRoutePutBenchmark.putHotRoute         thrpt    3  2421122.566 ± 1105989.576  ops/s
+SegmentIndexHotRoutePutBenchmark.putThenGetHotRoute  thrpt    3  1574681.202 ±  489517.126  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-hot-route-put.json
