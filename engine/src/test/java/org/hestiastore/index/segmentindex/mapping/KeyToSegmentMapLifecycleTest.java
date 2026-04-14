@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test;
 
 class KeyToSegmentMapLifecycleTest {
 
-    private KeyToSegmentMap<Integer> keyToSegmentMap;
+    private KeyToSegmentMapImpl<Integer> keyToSegmentMap;
 
     @BeforeEach
     void setUp() {
         final MemDirectory directory = new MemDirectory();
-        keyToSegmentMap = new KeyToSegmentMap<>(directory,
+        keyToSegmentMap = new KeyToSegmentMapImpl<>(directory,
                 new TypeDescriptorInteger());
     }
 
@@ -29,11 +29,11 @@ class KeyToSegmentMapLifecycleTest {
     }
 
     @Test
-    void findSegmentIdThrowsAfterClose() {
+    void findSegmentIdForKeyThrowsAfterClose() {
         keyToSegmentMap.close();
         final Exception e = assertThrows(IllegalStateException.class,
-                () -> keyToSegmentMap.findSegmentId(1));
-        assertEquals("KeyToSegmentMap already closed", e.getMessage());
+                () -> keyToSegmentMap.findSegmentIdForKey(1));
+        assertEquals("KeyToSegmentMapImpl already closed", e.getMessage());
     }
 
     @Test
@@ -45,9 +45,9 @@ class KeyToSegmentMapLifecycleTest {
     }
 
     @Test
-    void optionalyFlushThrowsAfterClose() {
+    void flushIfDirtyThrowsAfterClose() {
         keyToSegmentMap.close();
         assertThrows(IllegalStateException.class,
-                () -> keyToSegmentMap.optionallyFlush());
+                () -> keyToSegmentMap.flushIfDirty());
     }
 }

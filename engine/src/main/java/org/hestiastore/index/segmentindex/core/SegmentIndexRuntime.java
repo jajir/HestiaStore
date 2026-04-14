@@ -14,7 +14,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 final class SegmentIndexRuntime<K, V> {
 
     private final RuntimeTuningState runtimeTuningState;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop;
@@ -47,7 +47,7 @@ final class SegmentIndexRuntime<K, V> {
     @SuppressWarnings("java:S107")
     SegmentIndexRuntime(
             final RuntimeTuningState runtimeTuningState,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop,
@@ -110,7 +110,7 @@ final class SegmentIndexRuntime<K, V> {
         return runtimeTuningState;
     }
 
-    KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap() {
+    KeyToSegmentMap<K> keyToSegmentMap() {
         return keyToSegmentMap;
     }
 
@@ -197,7 +197,7 @@ final class SegmentIndexRuntime<K, V> {
                 () -> backgroundSplitCoordinator
                         .runWithSplitSchedulingPaused(() -> stableSegmentCoordinator
                                 .flushSegments(true)),
-                segmentRegistry::close, keyToSegmentMap::optionalyFlush,
+                segmentRegistry::close, keyToSegmentMap::flushIfDirty,
                 walCoordinator::checkpoint, getReadCount, getWriteCount,
                 getDeleteCount, finishCloseTransition, walRuntime::close);
     }

@@ -20,6 +20,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -48,15 +49,15 @@ class StableSegmentCoordinatorTest {
     private Segment<String, String> segment;
 
     private Directory directory;
-    private KeyToSegmentMap<String> keyToSegmentMap;
-    private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
+    private KeyToSegmentMapImpl<String> keyToSegmentMap;
+    private KeyToSegmentMap<String> synchronizedKeyToSegmentMap;
     private StableSegmentCoordinator<String, String> coordinator;
     private Stats stats;
 
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        keyToSegmentMap = new KeyToSegmentMap<>(directory,
+        keyToSegmentMap = new KeyToSegmentMapImpl<>(directory,
                 new TypeDescriptorShortString());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
@@ -78,7 +79,7 @@ class StableSegmentCoordinatorTest {
 
     @Test
     void putEntryForDrain_writesToLoadedSegment() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.getSegment(segmentId))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
@@ -90,7 +91,7 @@ class StableSegmentCoordinatorTest {
 
     @Test
     void invalidateIterators_invalidatesLoadedMappedSegments() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.getSegment(segmentId))
                 .thenReturn(SegmentRegistryResult.ok(segment));
 
@@ -101,7 +102,7 @@ class StableSegmentCoordinatorTest {
 
     @Test
     void openIteratorWithRetry_returnsIteratorFromCore() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
         when(stableSegmentGateway.openIterator(segmentId,
@@ -117,7 +118,7 @@ class StableSegmentCoordinatorTest {
 
     @Test
     void flushSegment_recordsAcceptedToReadyLatencyAndBusyRetryCount() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
@@ -136,7 +137,7 @@ class StableSegmentCoordinatorTest {
 
     @Test
     void compactSegment_recordsAcceptedToReadyLatencyAndBusyRetryCount() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
@@ -161,5 +162,10 @@ class StableSegmentCoordinatorTest {
             final int safeIndex = Math.min(current, nanos.length - 1);
             return nanos[safeIndex];
         };
+    }
+
+    private SegmentId createBootstrapSegment(final String key) {
+        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(key);
+        return synchronizedKeyToSegmentMap.findSegmentIdForKey(key);
     }
 }

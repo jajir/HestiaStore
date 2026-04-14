@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -32,7 +33,7 @@ class BackgroundSplitPolicyLoopTest {
     private RuntimeTuningState runtimeTuningState;
 
     @Mock
-    private KeyToSegmentMap<String> keyToSegmentMap;
+    private KeyToSegmentMapImpl<String> keyToSegmentMap;
 
     @Mock
     private SegmentRegistry<String, String> segmentRegistry;
@@ -43,7 +44,7 @@ class BackgroundSplitPolicyLoopTest {
     @Mock
     private ScheduledExecutorService splitPolicyScheduler;
 
-    private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
+    private KeyToSegmentMap<String> synchronizedKeyToSegmentMap;
 
     @BeforeEach
     void setUp() {

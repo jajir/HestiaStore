@@ -71,7 +71,7 @@ Key classes:
   - Writes to a temporary file via `BloomFilterWriterTx.open()` and commits with `rename`; also updates the in‑memory hash snapshot on commit.
 
 - Key→segment map (`index.map`)
-  - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeyToSegmentMap.optionalyFlush()`
+  - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeyToSegmentMap.flushIfDirty()`
   - Ensures the map is replaced atomically.
 
 ## What Is Not Transactional

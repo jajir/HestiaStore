@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class DirectSegmentReadCoordinatorTest {
 
     @Mock
-    private KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;

@@ -10,7 +10,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -23,11 +23,11 @@ final class StableSegmentGateway<K, V> {
 
     private static final String SEGMENT_ID_ARG = "segmentId";
 
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
 
     StableSegmentGateway(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -36,8 +36,8 @@ final class StableSegmentGateway<K, V> {
     }
 
     IndexResult<V> get(final K key) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        final SegmentId segmentId = snapshot.findSegmentId(key);
+        final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
+        final SegmentId segmentId = snapshot.findSegmentIdForKey(key);
         if (segmentId == null) {
             return IndexResult.ok(null);
         }
@@ -56,8 +56,8 @@ final class StableSegmentGateway<K, V> {
         }
         final SegmentResult<V> result = loaded.getValue().get(key);
         if (result.getStatus() == SegmentResultStatus.OK) {
-            if (!keyToSegmentMap.isMappingValid(key, segmentId,
-                    expectedTopologyVersion)) {
+            if (!keyToSegmentMap
+                    .isSnapshotVersionCurrent(expectedTopologyVersion)) {
                 return IndexResult.busy();
             }
             return IndexResult.ok(result.getValue());

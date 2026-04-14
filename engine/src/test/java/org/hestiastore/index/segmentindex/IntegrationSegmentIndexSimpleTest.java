@@ -29,7 +29,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +70,7 @@ class IntegrationSegmentIndexSimpleTest {
         index1.close();
 
         final Directory asyncDirectory = directory;
-        final KeyToSegmentMap<Integer> keyToSegmentMap = new KeyToSegmentMap<>(
+        final KeyToSegmentMapImpl<Integer> keyToSegmentMap = new KeyToSegmentMapImpl<>(
                 asyncDirectory, tdi);
         final List<SegmentId> segmentIds = keyToSegmentMap.getSegmentIds();
         assertEquals(expectedFileCount(segmentIds.size()),

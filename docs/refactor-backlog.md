@@ -978,7 +978,7 @@
     - Ensure apply evicts old segment instance and closes it via
       `SegmentRegistryImpl.closeSegmentInstance(...)`.
     - Keep key-map flush outside registry freeze:
-      `keyToSegmentMap.optionalyFlush()` only after apply OK.
+      `keyToSegmentMap.flushIfDirty()` only after apply OK.
     - Delete old segment files only after apply succeeds and locks released.
 [x] 58.5 Split: test alignment (Risk: MEDIUM)
     - Add/update tests to assert no directory swap in split flow.

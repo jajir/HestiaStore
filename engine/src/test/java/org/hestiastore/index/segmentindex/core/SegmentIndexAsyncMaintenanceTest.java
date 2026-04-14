@@ -31,7 +31,7 @@ import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -72,7 +72,7 @@ class SegmentIndexAsyncMaintenanceTest {
             index.flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
-                    .findSegmentId(1);
+                    .findSegmentIdForKey(1);
             final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
@@ -105,7 +105,7 @@ class SegmentIndexAsyncMaintenanceTest {
             index.flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
-                    .findSegmentId(1);
+                    .findSegmentIdForKey(1);
             final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
@@ -151,7 +151,7 @@ class SegmentIndexAsyncMaintenanceTest {
             index.flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
-                    .findSegmentId(1);
+                    .findSegmentIdForKey(1);
             final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
@@ -303,7 +303,7 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
+    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         return index.keyToSegmentMap();
     }
