@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IndexMaintenanceCoordinatorTest {
 
     @Mock
-    private KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
     private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
@@ -38,7 +38,7 @@ class IndexMaintenanceCoordinatorTest {
     private IndexWalCoordinator<Integer, String> walCoordinator;
 
     @Mock
-    private KeyToSegmentMap.Snapshot<Integer> snapshot;
+    private Snapshot<Integer> snapshot;
 
     private IndexMaintenanceCoordinator<Integer, String> coordinator;
 
@@ -75,14 +75,14 @@ class IndexMaintenanceCoordinatorTest {
     void flushAndWait_retriesStableFlushWhenTopologyChanges() {
         when(keyToSegmentMap.snapshot()).thenReturn(snapshot);
         when(snapshot.version()).thenReturn(11L);
-        when(keyToSegmentMap.isVersion(anyLong())).thenReturn(false);
+        when(keyToSegmentMap.isAtVersion(anyLong())).thenReturn(false);
 
         coordinator.flushAndWait();
 
         verify(backgroundSplitPolicyLoop, times(2)).awaitExhausted();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
         verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
-        verify(keyToSegmentMap).optionalyFlush();
+        verify(keyToSegmentMap).flushIfDirty();
         verify(walCoordinator).checkpoint();
     }
 

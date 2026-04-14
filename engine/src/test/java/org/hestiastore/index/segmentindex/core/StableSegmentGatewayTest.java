@@ -17,6 +17,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -38,14 +39,14 @@ class StableSegmentGatewayTest {
     private Segment<String, String> segment;
 
     private Directory asyncDirectory;
-    private KeyToSegmentMap<String> keyToSegmentMap;
-    private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
+    private KeyToSegmentMapImpl<String> keyToSegmentMap;
+    private KeyToSegmentMap<String> synchronizedKeyToSegmentMap;
     private StableSegmentGateway<String, String> stableSegmentGateway;
 
     @BeforeEach
     void setUp() {
         asyncDirectory = new MemDirectory();
-        keyToSegmentMap = new KeyToSegmentMap<>(asyncDirectory,
+        keyToSegmentMap = new KeyToSegmentMapImpl<>(asyncDirectory,
                 new TypeDescriptorShortString());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
@@ -77,7 +78,7 @@ class StableSegmentGatewayTest {
 
     @Test
     void get_returnsBusyWhenSegmentIsBusy() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.getSegment(segmentId))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.get("key")).thenReturn(SegmentResult.busy());
@@ -89,11 +90,11 @@ class StableSegmentGatewayTest {
 
     @Test
     void get_returnsBusyWhenMappingChangesDuringRead() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.getSegment(segmentId))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.get("key")).thenAnswer(invocation -> {
-            synchronizedKeyToSegmentMap.updateSegmentMaxKey(segmentId, "key-2");
+            synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded("key-2");
             return SegmentResult.ok("value");
         });
 
@@ -104,7 +105,7 @@ class StableSegmentGatewayTest {
 
     @Test
     void put_returnsOkWhenSegmentAcceptsWrite() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.getSegment(segmentId))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
@@ -117,7 +118,7 @@ class StableSegmentGatewayTest {
 
     @Test
     void put_returnsBusyWhenSegmentRejectsWrite() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.getSegment(segmentId))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
@@ -130,7 +131,7 @@ class StableSegmentGatewayTest {
 
     @Test
     void openIterator_returnsValueWhenOk() {
-        final SegmentId segmentId = keyToSegmentMap.insertKeyToSegment("key");
+        final SegmentId segmentId = createBootstrapSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
         when(segmentRegistry.getSegment(segmentId))
@@ -143,5 +144,10 @@ class StableSegmentGatewayTest {
 
         assertEquals(IndexResultStatus.OK, result.getStatus());
         assertSame(iterator, result.getValue());
+    }
+
+    private SegmentId createBootstrapSegment(final String key) {
+        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(key);
+        return synchronizedKeyToSegmentMap.findSegmentIdForKey(key);
     }
 }

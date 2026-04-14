@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -19,14 +19,14 @@ final class DirectSegmentReadCoordinator<K, V> {
 
     private static final String OPERATION_OPEN_FULL_ISOLATION_ITERATOR = "openFullIsolationIterator";
 
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final IndexRetryPolicy retryPolicy;
 
     DirectSegmentReadCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentGateway<K, V> stableSegmentGateway,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
@@ -68,13 +68,12 @@ final class DirectSegmentReadCoordinator<K, V> {
             final SegmentIteratorIsolation isolation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap
-                    .snapshot();
+            final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
             final List<SegmentId> segmentIds = snapshot
                     .getSegmentIds(resolvedWindows);
             final EntryIterator<K, V> iterator = openStableIterator(segmentIds,
                     isolation);
-            if (keyToSegmentMap.isVersion(snapshot.version())) {
+            if (keyToSegmentMap.isAtVersion(snapshot.version())) {
                 return iterator;
             }
             iterator.close();

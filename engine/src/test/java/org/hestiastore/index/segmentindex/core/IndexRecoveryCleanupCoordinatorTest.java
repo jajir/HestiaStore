@@ -12,6 +12,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -31,14 +32,14 @@ class IndexRecoveryCleanupCoordinatorTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     private Directory directory;
-    private KeyToSegmentMap<Integer> keyToSegmentMap;
-    private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
+    private KeyToSegmentMapImpl<Integer> keyToSegmentMap;
+    private KeyToSegmentMap<Integer> synchronizedKeyToSegmentMap;
     private IndexRecoveryCleanupCoordinator<Integer, String> coordinator;
 
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
-        keyToSegmentMap = new KeyToSegmentMap<>(directory,
+        keyToSegmentMap = new KeyToSegmentMapImpl<>(directory,
                 new TypeDescriptorInteger());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
@@ -59,7 +60,7 @@ class IndexRecoveryCleanupCoordinatorTest {
 
     @Test
     void cleanupOrphanedSegmentDirectories_deletesOnlyUnmappedNonBootstrapDirectories() {
-        keyToSegmentMap.insertKeyToSegment(1);
+        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(1);
         directory.mkdir("segment-00000");
         directory.mkdir("segment-00003");
         when(segmentRegistry.deleteSegment(SegmentId.of(3)))

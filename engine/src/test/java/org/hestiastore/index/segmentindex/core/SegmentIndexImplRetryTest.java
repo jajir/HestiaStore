@@ -19,7 +19,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
@@ -57,9 +57,9 @@ class SegmentIndexImplRetryTest {
         index.put(1, "one");
         index.flushAndWait();
 
-        final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+        final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(
                 index);
-        final SegmentId segmentId = cache.findSegmentId(1);
+        final SegmentId segmentId = cache.findSegmentIdForKey(1);
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
         final Segment<Integer, String> original = registry.getSegment(segmentId)
@@ -149,7 +149,7 @@ class SegmentIndexImplRetryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
+    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         return index.keyToSegmentMap();
     }

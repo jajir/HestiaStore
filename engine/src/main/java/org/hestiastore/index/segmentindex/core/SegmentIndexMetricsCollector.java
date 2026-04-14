@@ -16,7 +16,7 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -28,7 +28,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 final class SegmentIndexMetricsCollector<K, V> {
 
     private final IndexConfiguration<K, V> conf;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final IndexExecutorRegistry executorRegistry;
@@ -41,7 +41,7 @@ final class SegmentIndexMetricsCollector<K, V> {
     private final Supplier<SegmentIndexState> stateSupplier;
 
     SegmentIndexMetricsCollector(final IndexConfiguration<K, V> conf,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final IndexExecutorRegistry executorRegistry,

@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.Comparator;
 import java.util.function.Predicate;
 
 import org.hestiastore.index.EntryIterator;
@@ -14,7 +13,9 @@ import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -38,19 +39,18 @@ class IndexConsistencyChecker<K, V> {
             IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
-    private final Comparator<K> keyComparator;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final Predicate<SegmentId> segmentFilter;
     private final IndexRetryPolicy retryPolicy;
 
-    IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
                 segmentId -> true, DEFAULT_RETRY_POLICY);
     }
 
-    IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor,
             final Predicate<SegmentId> segmentFilter) {
@@ -58,7 +58,7 @@ class IndexConsistencyChecker<K, V> {
                 segmentFilter, DEFAULT_RETRY_POLICY);
     }
 
-    IndexConsistencyChecker(final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor,
             final Predicate<SegmentId> segmentFilter,
@@ -68,7 +68,6 @@ class IndexConsistencyChecker<K, V> {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
-        this.keyComparator = keyTypeDescriptor.getComparator();
         this.segmentFilter = Vldtn.requireNonNull(segmentFilter,
                 "segmentFilter");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
@@ -84,12 +83,8 @@ class IndexConsistencyChecker<K, V> {
      * repair obvious corruption when possible.
      */
     public void checkAndRepairConsistency() {
-        keyToSegmentMap.getSegmentsAsStream().forEach(segmentPair -> {
-            final K segmentKey = segmentPair.getKey();
-            if (segmentKey == null) {
-                throw new IndexException(ERROR_MSG + "Segment key is null.");
-            }
-            final SegmentId segmentId = segmentPair.getValue();
+        final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
+        snapshot.getSegmentIds(SegmentWindow.unbounded()).forEach(segmentId -> {
             if (segmentId == null) {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
@@ -105,11 +100,12 @@ class IndexConsistencyChecker<K, V> {
                 removeEmptySegment(segmentId, segment);
                 return;
             }
-            if (keyComparator.compare(segmentKey, maxKey) < 0) {
+            final SegmentId routedSegmentId = snapshot.findSegmentIdForKey(
+                    maxKey);
+            if (!segmentId.equals(routedSegmentId)) {
                 throw new IndexException(String.format(ERROR_MSG
-                        + "Segment '%s' has a max key of '%s', "
-                        + "which is less than the max key '%s' from the index data.",
-                        segmentId, segmentKey, maxKey));
+                        + "Segment '%s' contains max key '%s', which routes to segment '%s' in the index map.",
+                        segmentId, maxKey, routedSegmentId));
             }
             logger.debug("Checking segment '{}' id done.", segmentId);
         });
@@ -122,8 +118,8 @@ class IndexConsistencyChecker<K, V> {
         }
         logger.warn("Segment '{}' is empty. Removing it from index map.",
                 segmentId);
-        keyToSegmentMap.removeSegment(segmentId);
-        keyToSegmentMap.optionalyFlush();
+        keyToSegmentMap.removeSegmentRoute(segmentId);
+        keyToSegmentMap.flushIfDirty();
         segmentRegistry.deleteSegment(segmentId);
     }
 

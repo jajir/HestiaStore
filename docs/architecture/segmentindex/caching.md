@@ -106,7 +106,7 @@ Code:
   `SegmentDeltaCacheController.clear()`; rebuilt on demand from delta files.
 - Segment write cache: frozen snapshots are flushed to delta cache files and
   then retired by segment maintenance.
-- KeyToSegmentMap: persisted via `optionalyFlush()` when updated; survives
+- KeyToSegmentMap: persisted via `flushIfDirty()` when updated; survives
   process restarts by reading `index.map`.
 
 ## Configuration Knobs

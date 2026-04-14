@@ -42,10 +42,10 @@ class KeyToSegmentMapSanityCheckTest {
 
     }
 
-    private static KeyToSegmentMap<String> createKeyToSegmentMap(
+    private static KeyToSegmentMapImpl<String> createKeyToSegmentMap(
             final Directory directory,
             final TypeDescriptorShortString keyTypeDescriptor) {
-        return new KeyToSegmentMap<>(directory, keyTypeDescriptor);
+        return new KeyToSegmentMapImpl<>(directory, keyTypeDescriptor);
     }
 
 }

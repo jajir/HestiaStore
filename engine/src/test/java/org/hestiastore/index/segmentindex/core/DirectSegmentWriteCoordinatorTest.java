@@ -12,6 +12,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.junit.jupiter.api.AfterEach;
@@ -31,14 +32,15 @@ class DirectSegmentWriteCoordinatorTest {
     private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
 
     private Directory directory;
-    private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
+    private KeyToSegmentMap<Integer> synchronizedKeyToSegmentMap;
     private DirectSegmentWriteCoordinator<Integer, String> coordinator;
 
     @BeforeEach
     void setUp() {
         directory = new MemDirectory();
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
-                new KeyToSegmentMap<>(directory, new TypeDescriptorInteger()));
+                new KeyToSegmentMapImpl<>(directory,
+                        new TypeDescriptorInteger()));
         stubAdmissionRunner();
         coordinator = new DirectSegmentWriteCoordinator<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway,
@@ -62,13 +64,13 @@ class DirectSegmentWriteCoordinatorTest {
 
         assertEquals(IndexResultStatus.OK, result.getStatus());
         assertEquals(SegmentId.of(0),
-                synchronizedKeyToSegmentMap.findSegmentId(11));
+                synchronizedKeyToSegmentMap.findSegmentIdForKey(11));
         verify(stableSegmentGateway).put(SegmentId.of(0), 11, "v11");
     }
 
     @Test
     void put_returnsBusyWhenStableSegmentRejectsWrite() {
-        synchronizedKeyToSegmentMap.insertKeyToSegment(10);
+        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
         when(stableSegmentGateway.put(SegmentId.of(0), 10, "v10"))
                 .thenReturn(IndexResult.busy());
 
@@ -79,7 +81,7 @@ class DirectSegmentWriteCoordinatorTest {
 
     @Test
     void put_returnsBusyWhenRouteIsSplitBlocked() {
-        synchronizedKeyToSegmentMap.insertKeyToSegment(10);
+        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
         when(backgroundSplitCoordinator.isSplitBlocked(SegmentId.of(0)))
                 .thenReturn(true);
 

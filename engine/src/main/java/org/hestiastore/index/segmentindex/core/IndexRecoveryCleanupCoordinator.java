@@ -12,7 +12,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
@@ -30,13 +30,13 @@ final class IndexRecoveryCleanupCoordinator<K, V> {
 
     private final Logger logger;
     private final Directory directoryFacade;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final IndexRetryPolicy retryPolicy;
 
     IndexRecoveryCleanupCoordinator(final Logger logger,
             final Directory directoryFacade,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final IndexRetryPolicy retryPolicy) {
         this.logger = Vldtn.requireNonNull(logger, "logger");

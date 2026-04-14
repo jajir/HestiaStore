@@ -23,7 +23,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,16 +74,16 @@ class SegmentIndexImplPutTest {
         index.put(5, "e");
         index.flushAndWait();
 
-        final KeyToSegmentMapSynchronizedAdapter<Integer> cache = readKeyToSegmentMap(
+        final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(
                 index);
         final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
                 index);
-        final SegmentId segmentId = cache.findSegmentId(1);
+        final SegmentId segmentId = cache.findSegmentIdForKey(1);
         final Segment<Integer, String> segment = registry.getSegment(segmentId)
                 .getValue();
         awaitSegmentReady(segment);
         awaitSegmentCount(cache, 2);
-        assertEquals(SegmentId.of(1), cache.findSegmentId(1));
+        assertEquals(SegmentId.of(1), cache.findSegmentIdForKey(1));
     }
 
     @Test
@@ -249,7 +249,7 @@ class SegmentIndexImplPutTest {
     }
 
     private static void awaitSegmentCount(
-            final KeyToSegmentMapSynchronizedAdapter<Integer> cache,
+            final KeyToSegmentMap<Integer> cache,
             final int expectedCount) {
         final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         while (System.nanoTime() < deadline) {
@@ -280,7 +280,7 @@ class SegmentIndexImplPutTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> KeyToSegmentMapSynchronizedAdapter<K> readKeyToSegmentMap(
+    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final SegmentIndexImpl<K, V> index) {
         return index.keyToSegmentMap();
     }

@@ -3,38 +3,38 @@ package org.hestiastore.index.segmentindex.mapping;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.split.RouteSplitPlan;
 
 /**
- * Thread-safe adapter for {@link KeyToSegmentMap} backed by a read/write lock.
+ * Thread-safe adapter for {@link KeyToSegmentMapImpl} backed by a read/write
+ * lock.
  */
 public final class KeyToSegmentMapSynchronizedAdapter<K>
-        extends AbstractCloseableResource {
+        extends AbstractCloseableResource implements KeyToSegmentMap<K> {
 
-    private final KeyToSegmentMap<K> delegate;
+    private final KeyToSegmentMapImpl<K> delegate;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Lock readLock = lock.readLock();
     private final Lock writeLock = lock.writeLock();
 
     public KeyToSegmentMapSynchronizedAdapter(
-            final KeyToSegmentMap<K> delegate) {
+            final KeyToSegmentMapImpl<K> delegate) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 
     /**
      * Verifies that all segment ids are unique.
      */
-    public void checkUniqueSegmentIds() {
+    @Override
+    public void validateUniqueSegmentIds() {
         readLock.lock();
         try {
-            delegate.checkUniqueSegmentIds();
+            delegate.validateUniqueSegmentIds();
         } finally {
             readLock.unlock();
         }
@@ -46,36 +46,18 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
      * @param key key to look up
      * @return segment id or {@code null} when not mapped
      */
-    public SegmentId findSegmentId(final K key) {
+    @Override
+    public SegmentId findSegmentIdForKey(final K key) {
         readLock.lock();
         try {
-            return delegate.findSegmentId(key);
+            return delegate.findSegmentIdForKey(key);
         } finally {
             readLock.unlock();
         }
     }
 
-    public <T> T withWriteLock(final java.util.function.Supplier<T> action) {
-        Vldtn.requireNonNull(action, "action");
-        writeLock.lock();
-        try {
-            return action.get();
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void withWriteLock(final Runnable action) {
-        Vldtn.requireNonNull(action, "action");
-        writeLock.lock();
-        try {
-            action.run();
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public KeyToSegmentMap.Snapshot<K> snapshot() {
+    @Override
+    public Snapshot<K> snapshot() {
         readLock.lock();
         try {
             return delegate.snapshot();
@@ -84,50 +66,43 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
         }
     }
 
-    public boolean isVersion(final long expectedVersion) {
+    @Override
+    public boolean isAtVersion(final long expectedVersion) {
         readLock.lock();
         try {
-            return delegate.isVersion(expectedVersion);
+            return delegate.isAtVersion(expectedVersion);
         } finally {
             readLock.unlock();
         }
     }
 
-    public boolean isMappingValid(final K key,
-            final SegmentId expectedSegmentId, final long expectedVersion) {
+    @Override
+    public boolean isSnapshotVersionCurrent(final long expectedVersion) {
         readLock.lock();
         try {
-            return delegate.isMappingValid(key, expectedSegmentId,
-                    expectedVersion);
+            return delegate.isSnapshotVersionCurrent(expectedVersion);
         } finally {
             readLock.unlock();
         }
     }
 
-    public boolean isKeyMappedToSegment(final K key,
-            final SegmentId expectedSegmentId) {
-        readLock.lock();
+    @Override
+    public boolean extendMaxKeyIfNeeded(final K key) {
+        writeLock.lock();
         try {
-            return delegate.isKeyMappedToSegment(key, expectedSegmentId);
+            return delegate.extendMaxKeyIfNeeded(key);
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
-    public boolean tryExtendMaxKey(final K key,
-            final KeyToSegmentMap.Snapshot<K> snapshot) {
-        return withWriteLock(() -> delegate.tryExtendMaxKey(key, snapshot));
-    }
-
-    /**
-     * Inserts a mapping for the provided key, allocating a segment id when
-     * needed.
-     *
-     * @param key key to map
-     * @return segment id assigned to the key
-     */
-    public SegmentId insertKeyToSegment(final K key) {
-        return withWriteLock(() -> delegate.insertKeyToSegment(key));
+    SegmentId insertKeyToSegment(final K key) {
+        writeLock.lock();
+        try {
+            return delegate.insertKeyToSegment(key);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -136,17 +111,32 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
      * @param key       key to map
      * @param segmentId segment id to associate
      */
-    public void insertSegment(final K key, final SegmentId segmentId) {
-        withWriteLock(() -> delegate.insertSegment(key, segmentId));
+    void insertSegment(final K key, final SegmentId segmentId) {
+        writeLock.lock();
+        try {
+            delegate.insertSegment(key, segmentId);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
-    public void updateSegmentMaxKey(final SegmentId segmentId,
-            final K newMaxKey) {
-        withWriteLock(() -> delegate.updateSegmentMaxKey(segmentId, newMaxKey));
+    void updateSegmentMaxKey(final SegmentId segmentId, final K newMaxKey) {
+        writeLock.lock();
+        try {
+            delegate.updateSegmentMaxKey(segmentId, newMaxKey);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
-    public boolean applyRouteSplit(final RouteSplitPlan<K> plan) {
-        return withWriteLock(() -> delegate.applyRouteSplit(plan));
+    @Override
+    public boolean tryApplySplitPlan(final RouteSplitPlan<K> plan) {
+        writeLock.lock();
+        try {
+            return delegate.tryApplySplitPlan(plan);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     /**
@@ -154,21 +144,13 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
      *
      * @param segmentId segment id to remove
      */
-    public void removeSegment(final SegmentId segmentId) {
-        withWriteLock(() -> delegate.removeSegment(segmentId));
-    }
-
-    /**
-     * Returns a stream of key-to-segment mappings.
-     *
-     * @return stream of entries
-     */
-    public Stream<Entry<K, SegmentId>> getSegmentsAsStream() {
-        readLock.lock();
+    @Override
+    public void removeSegmentRoute(final SegmentId segmentId) {
+        writeLock.lock();
         try {
-            return delegate.getSegmentsAsStream();
+            delegate.removeSegmentRoute(segmentId);
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -177,6 +159,7 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
      *
      * @return ordered list of segment ids
      */
+    @Override
     public List<SegmentId> getSegmentIds() {
         readLock.lock();
         try {
@@ -192,6 +175,7 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
      * @param segmentWindow window to apply
      * @return ordered list of segment ids
      */
+    @Override
     public List<SegmentId> getSegmentIds(final SegmentWindow segmentWindow) {
         readLock.lock();
         try {
@@ -204,12 +188,23 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
     /**
      * Flushes the mapping to disk if it has changed.
      */
-    public void optionalyFlush() {
-        withWriteLock(delegate::optionallyFlush);
+    @Override
+    public void flushIfDirty() {
+        writeLock.lock();
+        try {
+            delegate.flushIfDirty();
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
     protected void doClose() {
-        withWriteLock(delegate::close);
+        writeLock.lock();
+        try {
+            delegate.close();
+        } finally {
+            writeLock.unlock();
+        }
     }
 }
