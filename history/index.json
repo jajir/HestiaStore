@@ -465,8 +465,8 @@
         "205": {
           "channel": "pr-205",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-205/latest.json",
-          "sha": "f99a21cb10bd46a6fdd60b330008434a8a859efb",
-          "timestampUtc": "2026-04-14T18:56:57.446442+00:00"
+          "sha": "ff40d70c41db5d6bfb2af076123dcfe2714e0f38",
+          "timestampUtc": "2026-04-14T19:06:02.894207+00:00"
         }
       },
       "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
