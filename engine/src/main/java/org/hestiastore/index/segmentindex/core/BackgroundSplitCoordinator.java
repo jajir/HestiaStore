@@ -17,7 +17,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
 
 /**
@@ -39,7 +39,7 @@ final class BackgroundSplitCoordinator<K, V> {
     private static final long SPLIT_COOLDOWN_SMOOTHING_WEIGHT_PREVIOUS = 3L;
     private static final long SPLIT_COOLDOWN_SMOOTHING_WEIGHT_OBSERVED = 1L;
 
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final RouteSplitCoordinator<K, V> routeSplitCoordinator;
     private final Executor splitExecutor;
     private final Consumer<RuntimeException> splitFailureHandler;
@@ -59,7 +59,7 @@ final class BackgroundSplitCoordinator<K, V> {
     private int splitInFlightCount;
 
     BackgroundSplitCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
@@ -70,7 +70,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     BackgroundSplitCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
@@ -81,7 +81,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     BackgroundSplitCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
@@ -93,7 +93,7 @@ final class BackgroundSplitCoordinator<K, V> {
     }
 
     BackgroundSplitCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,

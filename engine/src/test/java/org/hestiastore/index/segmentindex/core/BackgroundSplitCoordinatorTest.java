@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
@@ -30,9 +31,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BackgroundSplitCoordinatorTest {
 
     @Mock
-    private KeyToSegmentMap<String> keyToSegmentMap;
+    private KeyToSegmentMapImpl<String> keyToSegmentMap;
 
-    private KeyToSegmentMapSynchronizedAdapter<String> synchronizedKeyToSegmentMap;
+    private KeyToSegmentMap<String> synchronizedKeyToSegmentMap;
 
     @Mock
     private Segment<String, String> segment;

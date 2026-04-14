@@ -12,7 +12,7 @@ import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -31,7 +31,7 @@ final class StableSegmentCoordinator<K, V> {
     private static final String OPERATION_LABEL_FLUSH = "Flush";
 
     private final Logger logger;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final StableSegmentGateway<K, V> stableSegmentGateway;
@@ -40,7 +40,7 @@ final class StableSegmentCoordinator<K, V> {
     private final LongSupplier nanoTimeSupplier;
 
     StableSegmentCoordinator(final Logger logger,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final StableSegmentGateway<K, V> stableSegmentGateway,
@@ -50,7 +50,7 @@ final class StableSegmentCoordinator<K, V> {
     }
 
     StableSegmentCoordinator(final Logger logger,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final StableSegmentGateway<K, V> stableSegmentGateway,

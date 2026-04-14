@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -30,12 +30,12 @@ final class IndexConsistencyCoordinator<K, V> {
     private boolean startupSegmentLockValidationEnabled;
 
     IndexConsistencyCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor,
             final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator,
             final BackgroundSplitPolicyLoop<K, V> backgroundSplitPolicyLoop) {
-        this(keyToSegmentMap::checkUniqueSegmentIds,
+        this(keyToSegmentMap::validateUniqueSegmentIds,
                 segmentFilter -> new IndexConsistencyChecker<>(keyToSegmentMap,
                         segmentRegistry, keyTypeDescriptor, segmentFilter)
                                 .checkAndRepairConsistency(),

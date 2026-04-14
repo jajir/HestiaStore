@@ -7,8 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -20,7 +20,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
@@ -39,8 +40,8 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Mock
     private KeyToSegmentMap<Integer> keyToSegmentMap;
-
-    private KeyToSegmentMapSynchronizedAdapter<Integer> synchronizedKeyToSegmentMap;
+    @Mock
+    private Snapshot<Integer> snapshot;
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -48,13 +49,12 @@ class SegmentIndexConsistencyCheckerTest {
     @Mock
     private Segment<Integer, String> segment;
 
-    private Entry<Integer, SegmentId> segmentPair;
-
     private IndexConsistencyChecker<Integer, String> checker;
 
     @Test
     void test_noSegments() {
-        when(keyToSegmentMap.getSegmentsAsStream()).thenReturn(Stream.empty());
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(List.of());
 
         checker.checkAndRepairConsistency();
 
@@ -63,8 +63,8 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_missingSegment() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(segmentPair));
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(List.of(SEGMENT_ID));
         when(segmentRegistry.getSegment(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.error());
 
@@ -79,23 +79,9 @@ class SegmentIndexConsistencyCheckerTest {
     }
 
     @Test
-    void test_oneSegment_segmentKey_is_null() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(Entry.of(null, SEGMENT_ID)));
-
-        final Exception e = assertThrows(IndexException.class,
-                () -> checker.checkAndRepairConsistency());
-
-        assertEquals(
-                "Index is broken. " + "File 'index.map' containing information "
-                        + "about segments is corrupted. Segment key is null.",
-                e.getMessage());
-    }
-
-    @Test
     void test_oneSegment_segmentId_is_null() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(Entry.of(SEGMENT_MAX_KEY, null)));
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(Collections.singletonList(null));
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -108,8 +94,8 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_oneSegment_segmentMaxKey_is_null_removes_segment() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(segmentPair));
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(List.of(SEGMENT_ID));
         when(segmentRegistry.getSegment(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(null);
@@ -120,35 +106,39 @@ class SegmentIndexConsistencyCheckerTest {
         checker.checkAndRepairConsistency();
 
         verify(segmentRegistry).deleteSegment(SEGMENT_ID);
-        verify(keyToSegmentMap).removeSegment(SEGMENT_ID);
-        verify(keyToSegmentMap).optionallyFlush();
+        verify(keyToSegmentMap).removeSegmentRoute(SEGMENT_ID);
+        verify(keyToSegmentMap).flushIfDirty();
     }
 
     @Test
     void test_oneSegment_segmentMaxKeyIsHigher() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(segmentPair));
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(List.of(SEGMENT_ID));
         when(segmentRegistry.getSegment(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
+        when(snapshot.findSegmentIdForKey(SEGMENT_MAX_KEY + 1))
+                .thenReturn(null);
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
 
         assertEquals("Index is broken. File 'index.map' containing information "
                 + "about segments is corrupted. Segment 'segment-00013' "
-                + "has a max key of '73', which is less "
-                + "than the max key '74' from the index data.", e.getMessage());
+                + "contains max key '74', which routes to segment 'null' "
+                + "in the index map.", e.getMessage());
     }
 
     @Test
     void test_oneSegment() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(segmentPair));
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(List.of(SEGMENT_ID));
         when(segmentRegistry.getSegment(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.ok(segment));
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
+        when(snapshot.findSegmentIdForKey(SEGMENT_MAX_KEY))
+                .thenReturn(SEGMENT_ID);
 
         checker.checkAndRepairConsistency();
 
@@ -157,9 +147,9 @@ class SegmentIndexConsistencyCheckerTest {
 
     @Test
     void test_segmentFilteredOut_isSkippedWithoutLoading() {
-        when(keyToSegmentMap.getSegmentsAsStream())
-                .thenReturn(Stream.of(segmentPair));
-        checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
+        when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
+                .thenReturn(List.of(SEGMENT_ID));
+        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
                 segmentRegistry, TYPE_DESCRIPTOR_INTEGER, segmentId -> false);
 
         checker.checkAndRepairConsistency();
@@ -171,17 +161,13 @@ class SegmentIndexConsistencyCheckerTest {
 
     @BeforeEach
     void setUp() {
-        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
-                keyToSegmentMap);
-        checker = new IndexConsistencyChecker<>(synchronizedKeyToSegmentMap,
-                segmentRegistry, TYPE_DESCRIPTOR_INTEGER);
-        segmentPair = Entry.of(SEGMENT_MAX_KEY, SEGMENT_ID);
+        when(keyToSegmentMap.snapshot()).thenReturn(snapshot);
+        checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
+                TYPE_DESCRIPTOR_INTEGER);
     }
 
     @AfterEach
     void tearDown() {
         checker = null;
-        segmentPair = null;
-        synchronizedKeyToSegmentMap = null;
     }
 }

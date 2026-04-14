@@ -18,7 +18,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -34,7 +34,7 @@ final class BackgroundSplitPolicyLoop<K, V> {
 
     private final IndexConfiguration<K, V> conf;
     private final RuntimeTuningState runtimeTuningState;
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
     private final Executor workerExecutor;
@@ -53,7 +53,7 @@ final class BackgroundSplitPolicyLoop<K, V> {
 
     BackgroundSplitPolicyLoop(final IndexConfiguration<K, V> conf,
             final RuntimeTuningState runtimeTuningState,
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
             final Executor workerExecutor,

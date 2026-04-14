@@ -19,7 +19,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +72,7 @@ class SegmentIndexRuntimeBuilderTest {
 
     @Test
     void buildClosesCreatedResourcesWhenLaterAssemblyFails() {
-        final AtomicReference<KeyToSegmentMapSynchronizedAdapter<Integer>> keyToSegmentMapRef = new AtomicReference<>();
+        final AtomicReference<KeyToSegmentMap<Integer>> keyToSegmentMapRef = new AtomicReference<>();
         final AtomicReference<WalRuntime<Integer, String>> walRuntimeRef = new AtomicReference<>();
         final RuntimeException failure = new IllegalStateException("boom");
         final SegmentIndexRuntimeBuilder<Integer, String> builder = newBuilder(
@@ -80,7 +80,7 @@ class SegmentIndexRuntimeBuilderTest {
                 }, new SegmentIndexRuntimeBuilder.BuildObserver<>() {
                     @Override
                     public void onKeyToSegmentMapCreated(
-                            final KeyToSegmentMapSynchronizedAdapter<Integer> keyToSegmentMap) {
+                            final KeyToSegmentMap<Integer> keyToSegmentMap) {
                         keyToSegmentMapRef.set(keyToSegmentMap);
                     }
 

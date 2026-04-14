@@ -4,19 +4,19 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
 
 /**
  * Owns routed writes that go directly into stable segments.
  */
 final class DirectSegmentWriteCoordinator<K, V> {
 
-    private final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap;
+    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final StableSegmentGateway<K, V> stableSegmentGateway;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
 
     DirectSegmentWriteCoordinator(
-            final KeyToSegmentMapSynchronizedAdapter<K> keyToSegmentMap,
+            final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentGateway<K, V> stableSegmentGateway,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -43,19 +43,18 @@ final class DirectSegmentWriteCoordinator<K, V> {
     }
 
     private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
-        final KeyToSegmentMap.Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        final SegmentId routedSegmentId = snapshot.findSegmentId(key);
+        final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
+        final SegmentId routedSegmentId = snapshot.findSegmentIdForKey(key);
         if (routedSegmentId == null) {
             if (isTailRouteSplitBlocked(snapshot)
-                    || !keyToSegmentMap.tryExtendMaxKey(key, snapshot)) {
+                    || !keyToSegmentMap.extendMaxKeyIfNeeded(key)) {
                 return IndexResult.busy();
             }
         } else if (backgroundSplitCoordinator.isSplitBlocked(routedSegmentId)) {
             return IndexResult.busy();
         }
-        final KeyToSegmentMap.Snapshot<K> stableSnapshot = keyToSegmentMap
-                .snapshot();
-        final SegmentId segmentId = stableSnapshot.findSegmentId(key);
+        final Snapshot<K> stableSnapshot = keyToSegmentMap.snapshot();
+        final SegmentId segmentId = stableSnapshot.findSegmentIdForKey(key);
         if (segmentId == null
                 || backgroundSplitCoordinator.isSplitBlocked(segmentId)) {
             return IndexResult.busy();
@@ -63,8 +62,7 @@ final class DirectSegmentWriteCoordinator<K, V> {
         return IndexResult.ok(segmentId);
     }
 
-    private boolean isTailRouteSplitBlocked(
-            final KeyToSegmentMap.Snapshot<K> snapshot) {
+    private boolean isTailRouteSplitBlocked(final Snapshot<K> snapshot) {
         final var segmentIds = snapshot.getSegmentIds(SegmentWindow.unbounded());
         if (segmentIds.isEmpty()) {
             return false;
