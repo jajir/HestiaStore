@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 
 /**
  * Owns foreground flush and compaction orchestration across split and stable
