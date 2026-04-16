@@ -30,7 +30,7 @@
         <log4j.version>3.0.0-beta2</log4j.version>
         <junit.jupiter.version>6.0.3</junit.jupiter.version>
         <junit.platform.version>6.0.3</junit.platform.version>
-        <failsafe.plugin.version>3.5.3</failsafe.plugin.version>
+        <failsafe.plugin.version>3.5.5</failsafe.plugin.version>
         <surefire.plugin.version>3.5.5</surefire.plugin.version>
         <mockito.version>5.23.0</mockito.version>
         <jacoco.version>0.8.14</jacoco.version>
@@ -42,7 +42,7 @@
         <antrun.plugin.version>3.1.0</antrun.plugin.version>
         <pmd.plugin.version>3.28.0</pmd.plugin.version>
         <spotbugs.plugin.version>4.9.8.3</spotbugs.plugin.version>
-        <micrometer.version>1.16.4</micrometer.version>
+        <micrometer.version>1.16.5</micrometer.version>
         <dependency-check.skip>false</dependency-check.skip>
         <dependency-check.dataDirectory>${user.home}/.cache/dependency-check</dependency-check.dataDirectory>
     </properties>

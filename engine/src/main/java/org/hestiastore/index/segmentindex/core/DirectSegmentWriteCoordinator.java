@@ -5,6 +5,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 
 /**
  * Owns routed writes that go directly into stable segments.

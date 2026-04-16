@@ -82,7 +82,7 @@ public final class RouteSplitPlan<K> {
     /**
      * @return minimum key covered by the lower segment
      */
-    public K getLowerMinKey() {
+    K getLowerMinKey() {
         return lowerMinKey;
     }
 

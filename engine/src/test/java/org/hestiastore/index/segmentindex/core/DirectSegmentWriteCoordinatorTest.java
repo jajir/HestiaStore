@@ -15,6 +15,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
