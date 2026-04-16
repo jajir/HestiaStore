@@ -1,0 +1,198 @@
+{
+  "benchmarks": [
+    {
+      "args": [
+        "-wi",
+        "2",
+        "-i",
+        "5",
+        "-f",
+        "1",
+        "-r",
+        "2s",
+        "-w",
+        "2s",
+        "-p",
+        "snappy=true",
+        "-p",
+        "walMode=sync",
+        "-p",
+        "seededKeyCount=75000",
+        "-p",
+        "valueLength=64",
+        "-p",
+        "flushBatchSize=256"
+      ],
+      "include": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark",
+      "label": "segment-index-persisted-mutation",
+      "log": "logs/segment-index-persisted-mutation.log",
+      "normalized": {
+        "results": [
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteAsyncJoin",
+            "jdkVersion": "21.0.10",
+            "mode": "thrpt",
+            "params": {
+              "flushBatchSize": "256",
+              "seededKeyCount": "75000",
+              "snappy": "true",
+              "valueLength": "64",
+              "walMode": "sync"
+            },
+            "primaryMetric": {
+              "score": 801.6708583440048,
+              "scoreError": 1719.516395875113,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {
+              "diag_directoryCountDelta": {
+                "score": 0.0,
+                "scoreError": 0.0,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileBytesDelta": {
+                "score": 16802.367583099163,
+                "scoreError": 29057.89993418175,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileCountDelta": {
+                "score": 1.5526750460265526,
+                "scoreError": 0.7296619650213535,
+                "scoreUnit": "ops/s"
+              }
+            },
+            "threads": 1,
+            "vmVersion": "21.0.10+7-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.deleteSync",
+            "jdkVersion": "21.0.10",
+            "mode": "thrpt",
+            "params": {
+              "flushBatchSize": "256",
+              "seededKeyCount": "75000",
+              "snappy": "true",
+              "valueLength": "64",
+              "walMode": "sync"
+            },
+            "primaryMetric": {
+              "score": 1003.2722125996818,
+              "scoreError": 1589.7443172884518,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {
+              "diag_directoryCountDelta": {
+                "score": 0.0,
+                "scoreError": 0.0,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileBytesDelta": {
+                "score": 22598.59103013706,
+                "scoreError": 37109.53771680741,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileCountDelta": {
+                "score": 1.6575435770155444,
+                "scoreError": 0.9251304930833879,
+                "scoreUnit": "ops/s"
+              }
+            },
+            "threads": 1,
+            "vmVersion": "21.0.10+7-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putAsyncJoin",
+            "jdkVersion": "21.0.10",
+            "mode": "thrpt",
+            "params": {
+              "flushBatchSize": "256",
+              "seededKeyCount": "75000",
+              "snappy": "true",
+              "valueLength": "64",
+              "walMode": "sync"
+            },
+            "primaryMetric": {
+              "score": 755.4156282366006,
+              "scoreError": 1479.0436313598516,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {
+              "diag_directoryCountDelta": {
+                "score": 0.0,
+                "scoreError": 0.0,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileBytesDelta": {
+                "score": 74396.9644385784,
+                "scoreError": 146762.02269849833,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileCountDelta": {
+                "score": 1.5655827993526052,
+                "scoreError": 0.8971080153153487,
+                "scoreUnit": "ops/s"
+              }
+            },
+            "threads": 1,
+            "vmVersion": "21.0.10+7-LTS"
+          },
+          {
+            "benchmark": "org.hestiastore.benchmark.segmentindex.SegmentIndexPersistedMutationBenchmark.putSync",
+            "jdkVersion": "21.0.10",
+            "mode": "thrpt",
+            "params": {
+              "flushBatchSize": "256",
+              "seededKeyCount": "75000",
+              "snappy": "true",
+              "valueLength": "64",
+              "walMode": "sync"
+            },
+            "primaryMetric": {
+              "score": 1309.7711092798938,
+              "scoreError": 1443.7351797837318,
+              "scoreUnit": "ops/s"
+            },
+            "secondaryMetrics": {
+              "diag_directoryCountDelta": {
+                "score": 0.0,
+                "scoreError": 0.0,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileBytesDelta": {
+                "score": 133871.77227953088,
+                "scoreError": 146463.11023183726,
+                "scoreUnit": "ops/s"
+              },
+              "diag_fileCountDelta": {
+                "score": 1.8285020275014514,
+                "scoreError": 0.8155923873218067,
+                "scoreUnit": "ops/s"
+              }
+            },
+            "threads": 1,
+            "vmVersion": "21.0.10+7-LTS"
+          }
+        ]
+      },
+      "rawResult": "raw/segment-index-persisted-mutation.json"
+    }
+  ],
+  "description": "Longer canonical hot-path benchmark set for trend tracking on main/nightly runs.",
+  "git": {
+    "branch": "HEAD",
+    "dirty": false,
+    "mergeBaseFriendlyRef": "release-0.0.6-122-ge72f4974",
+    "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872"
+  },
+  "host": {
+    "hostname": "runnervm35a4x",
+    "machine": "x86_64",
+    "os": "Linux-6.17.0-1010-azure-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "jar": "/home/runner/work/_temp/benchmark-candidate/benchmarks/target/benchmarks-0.0.7-SNAPSHOT.jar",
+  "profile": "segment-index-nightly",
+  "repoRoot": "/home/runner/work/_temp/benchmark-candidate",
+  "timestampUtc": "2026-04-16T04:21:22.314560+00:00"
+}
