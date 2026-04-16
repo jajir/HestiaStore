@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.Segment;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexSplitPolicyThreshold<K, V>
+final class SegmentIndexSplitPolicyThreshold<K, V>
         implements SegmentIndexSplitPolicy<K, V> {
 
     /**

@@ -225,7 +225,6 @@ public final class SegmentBuilder<K, V> {
         return this;
     }
 
-
     /**
      * Provide an executor used for maintenance operations (flush/compact).
      *
@@ -363,6 +362,11 @@ public final class SegmentBuilder<K, V> {
      * order, and must not contain tombstones. The returned transaction writes
      * directly to the main index and scarce index files.
      *
+     * The transaction runs synchronously in the caller thread. It does not use
+     * the segment maintenance executor, does not publish the built segment into
+     * any higher-level registry or route map, and does not provide external
+     * concurrency coordination beyond the file transactions it opens.
+     *
      * @return transaction for streaming the segment contents
      */
     public SegmentFullWriterTx<K, V> openWriterTx() {
@@ -463,8 +467,8 @@ public final class SegmentBuilder<K, V> {
                 context.segmentPropertiesManager,
                 context.segmentConf.getMaxNumberOfKeysInChunk(),
                 context.segmentResources, deltaCacheController)
-                        .execute(writer -> {
-                        });
+                .execute(writer -> {
+                });
     }
 
     private boolean shouldInitializeEmptyPersistedBase(
