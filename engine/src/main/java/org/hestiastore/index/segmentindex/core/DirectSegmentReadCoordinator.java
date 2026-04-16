@@ -10,6 +10,7 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
