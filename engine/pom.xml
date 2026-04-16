@@ -272,7 +272,7 @@
 			</plugin>
 				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.4.1</version>
+					<version>3.12.0</version>
 				<configuration>
 						<quiet>true</quiet>
 						<additionalOptions>-Xdoclint:none</additionalOptions>
@@ -357,7 +357,7 @@
 			</plugin>
 				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.4.1</version>
+					<version>3.12.0</version>
 					<configuration>
 						<quiet>true</quiet>
 						<additionalOptions>-Xdoclint:none</additionalOptions>
