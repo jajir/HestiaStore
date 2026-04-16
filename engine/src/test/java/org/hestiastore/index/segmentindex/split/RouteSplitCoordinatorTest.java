@@ -1,0 +1,175 @@
+package org.hestiastore.index.segmentindex.split;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class RouteSplitCoordinatorTest {
+
+    private static final SegmentId PARENT_SEGMENT_ID = SegmentId.of(1);
+    private static final SegmentId LOWER_SEGMENT_ID = SegmentId.of(2);
+    private static final SegmentId UPPER_SEGMENT_ID = SegmentId.of(3);
+
+    @Mock
+    private IndexConfiguration<Integer, String> conf;
+
+    @Mock
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
+
+    @Mock
+    private SegmentRegistry<Integer, String> segmentRegistry;
+
+    @Mock
+    private Segment<Integer, String> parentSegment;
+
+    @Mock
+    private Segment<Integer, String> currentSegment;
+
+    @Mock
+    private SegmentMaterializationService<Integer, String> materializationService;
+
+    @Mock
+    private PreparedSegmentHandle<Integer, String> lowerSegment;
+
+    @Mock
+    private PreparedSegmentHandle<Integer, String> upperSegment;
+
+    private RouteSplitCoordinator<Integer, String> coordinator;
+    private RouteSplitPlan<Integer> splitPlan;
+    private PreparedRouteSplit<Integer> preparedSplit;
+
+    @BeforeEach
+    void setUp() {
+        when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
+        when(conf.getIndexBusyTimeoutMillis()).thenReturn(1);
+        coordinator = new RouteSplitCoordinator<>(conf, Integer::compare,
+                keyToSegmentMap, segmentRegistry, materializationService);
+        splitPlan = new RouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
+                UPPER_SEGMENT_ID, 1, 2, RouteSplitPlan.SplitMode.SPLIT);
+        preparedSplit = new PreparedRouteSplit<>(splitPlan);
+    }
+
+    @Test
+    void tryPrepareSplitReturnsMaterializedSplit() {
+        when(parentSegment.getNumberOfKeysInCache()).thenReturn(4L);
+        when(parentSegment.getId()).thenReturn(PARENT_SEGMENT_ID);
+        when(segmentRegistry.getSegment(PARENT_SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok(parentSegment));
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(entries()),
+                        iteratorResult(entries()), iteratorResult(entries()));
+        when(materializationService.openPreparedSegment())
+                .thenReturn(lowerSegment, upperSegment);
+        when(lowerSegment.segmentId()).thenReturn(LOWER_SEGMENT_ID);
+        when(upperSegment.segmentId()).thenReturn(UPPER_SEGMENT_ID);
+
+        final PreparedRouteSplit<Integer> prepared = coordinator
+                .tryPrepareSplit(parentSegment, 2L);
+
+        assertNotNull(prepared);
+        assertSame(PARENT_SEGMENT_ID, prepared.plan().getReplacedSegmentId());
+        assertSame(LOWER_SEGMENT_ID, prepared.plan().getLowerSegmentId());
+        assertSame(UPPER_SEGMENT_ID,
+                prepared.plan().getUpperSegmentId().orElseThrow());
+        final InOrder inOrder = inOrder(lowerSegment, upperSegment);
+        inOrder.verify(lowerSegment).write(Entry.of(1, "a"));
+        inOrder.verify(lowerSegment).write(Entry.of(2, "b"));
+        inOrder.verify(upperSegment).write(Entry.of(3, "c"));
+        inOrder.verify(upperSegment).write(Entry.of(4, "d"));
+        inOrder.verify(lowerSegment).commit();
+        inOrder.verify(upperSegment).commit();
+        inOrder.verify(lowerSegment).close();
+        inOrder.verify(upperSegment).close();
+    }
+
+    @Test
+    void tryPrepareSplitReturnsNullWhenLoadedSegmentChanged() {
+        when(parentSegment.getNumberOfKeysInCache()).thenReturn(4L);
+        when(parentSegment.getId()).thenReturn(PARENT_SEGMENT_ID);
+        when(segmentRegistry.getSegment(PARENT_SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok(currentSegment));
+
+        final PreparedRouteSplit<Integer> prepared = coordinator
+                .tryPrepareSplit(parentSegment, 2L);
+
+        assertNull(prepared);
+        verifyNoInteractions(keyToSegmentMap);
+    }
+
+    @Test
+    void publishPreparedSplitReturnsMapResult() {
+        when(keyToSegmentMap.tryApplySplitPlan(splitPlan)).thenReturn(true);
+
+        final boolean published = coordinator.publishPreparedSplit(
+                preparedSplit);
+
+        assertTrue(published);
+    }
+
+    @Test
+    void publishPreparedSplitReturnsFalseOnMapFailure() {
+        when(keyToSegmentMap.tryApplySplitPlan(splitPlan))
+                .thenThrow(new IllegalStateException("boom"));
+
+        final boolean published = coordinator.publishPreparedSplit(
+                preparedSplit);
+
+        assertFalse(published);
+    }
+
+    @Test
+    void completePreparedSplitFlushesMapBeforeDeletingParent() {
+        when(segmentRegistry.deleteSegment(PARENT_SEGMENT_ID))
+                .thenReturn(SegmentRegistryResult.ok());
+
+        coordinator.completePreparedSplit(preparedSplit);
+
+        final InOrder inOrder = inOrder(keyToSegmentMap, segmentRegistry);
+        inOrder.verify(keyToSegmentMap).flushIfDirty();
+        inOrder.verify(segmentRegistry).deleteSegment(PARENT_SEGMENT_ID);
+    }
+
+    @Test
+    void abortPreparedSplitDeletesMaterializedChildren() {
+        coordinator.abortPreparedSplit(preparedSplit);
+
+        verify(materializationService).deletePreparedSegment(LOWER_SEGMENT_ID);
+        verify(materializationService).deletePreparedSegment(UPPER_SEGMENT_ID);
+    }
+
+    private static List<Entry<Integer, String>> entries() {
+        return List.of(Entry.of(1, "a"), Entry.of(2, "b"), Entry.of(3, "c"),
+                Entry.of(4, "d"));
+    }
+
+    private static SegmentResult<EntryIterator<Integer, String>> iteratorResult(
+            final List<Entry<Integer, String>> entries) {
+        return SegmentResult.ok(EntryIterator.make(entries.iterator()));
+    }
+}

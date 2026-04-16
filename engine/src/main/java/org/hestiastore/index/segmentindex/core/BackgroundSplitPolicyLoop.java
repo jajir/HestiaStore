@@ -19,6 +19,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -249,11 +250,8 @@ final class BackgroundSplitPolicyLoop<K, V> {
         if (segment == null) {
             return false;
         }
-        final boolean scheduled = forceRetry
-                ? backgroundSplitCoordinator.forceHandleSplitCandidate(segment,
-                        threshold)
-                : backgroundSplitCoordinator.handleSplitCandidate(segment,
-                        threshold);
+        final boolean scheduled = backgroundSplitCoordinator
+                .handleSplitCandidate(segment, threshold, forceRetry);
         if (scheduled) {
             stats.incSplitScheduleCx();
         }

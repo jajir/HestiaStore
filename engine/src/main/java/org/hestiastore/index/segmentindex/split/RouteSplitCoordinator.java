@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.split;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
-import java.util.function.BooleanSupplier;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -13,10 +12,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -43,26 +39,24 @@ public final class RouteSplitCoordinator<K, V> {
     private final Comparator<K> keyComparator;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentMaterializationService<K, V> materializationService;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final IndexRetryPolicy retryPolicy;
-
-    @FunctionalInterface
-    public interface SplitPublishRunner {
-        boolean run(BooleanSupplier action);
-    }
-
-    public RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
-            final Comparator<K> keyComparator,
-            final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry) {
-        this(conf, keyComparator, keyToSegmentMap, segmentRegistry,
-                new SegmentIndexSplitPolicyThreshold<>());
-    }
 
     public RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
             final Comparator<K> keyComparator,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentMaterializationService<K, V> materializationService) {
+        this(conf, keyComparator, keyToSegmentMap, segmentRegistry,
+                materializationService, new SegmentIndexSplitPolicyThreshold<>());
+    }
+
+    RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
+            final Comparator<K> keyComparator,
+            final KeyToSegmentMap<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentMaterializationService<K, V> materializationService,
             final SegmentIndexSplitPolicy<K, V> splitPolicy) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.keyComparator = Vldtn.requireNonNull(keyComparator,
@@ -71,22 +65,17 @@ public final class RouteSplitCoordinator<K, V> {
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
+        this.materializationService = Vldtn.requireNonNull(
+                materializationService, "materializationService");
         this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
         this.retryPolicy = new IndexRetryPolicy(
                 conf.getIndexBusyBackoffMillis(),
                 conf.getIndexBusyTimeoutMillis());
     }
 
-    public boolean trySplit(final Segment<K, V> segment,
+    public PreparedRouteSplit<K> tryPrepareSplit(final Segment<K, V> segment,
             final long splitThreshold) {
-        return trySplit(segment, splitThreshold, BooleanSupplier::getAsBoolean);
-    }
-
-    public boolean trySplit(final Segment<K, V> segment,
-            final long splitThreshold,
-            final SplitPublishRunner splitPublishRunner) {
         Vldtn.requireNonNull(segment, SEGMENT_ARG);
-        Vldtn.requireNonNull(splitPublishRunner, "splitPublishRunner");
         final long estimatedVisibleKeys = segment.getNumberOfKeysInCache();
         final boolean splitFeasible = estimatedVisibleKeys >= 2L;
         if (!isSplitEligible(segment, estimatedVisibleKeys, splitThreshold,
@@ -97,23 +86,83 @@ public final class RouteSplitCoordinator<K, V> {
                         segment.getId(), estimatedVisibleKeys, splitThreshold,
                         splitFeasible);
             }
-            return false;
+            return null;
         }
-        return splitAndPublishRoute(segment, splitThreshold,
-                splitPublishRunner);
+        logger.debug("Route split started: segment='{}' threshold='{}'",
+                segment.getId(), splitThreshold);
+        if (!isStillCurrentSegment(segment)) {
+            return null;
+        }
+        final SplitBoundary<K> boundary = computeSplitBoundary(segment);
+        if (boundary == null || boundary.visibleCount() < splitThreshold
+                || boundary.visibleCount() < 2L) {
+            return null;
+        }
+        return materializeChildSegments(segment, boundary);
     }
 
-    public boolean shouldSplit(final Segment<K, V> segment,
+    private boolean shouldSplit(final Segment<K, V> segment,
             final long splitThreshold) {
         return splitPolicy.shouldSplit(segment, splitThreshold);
     }
 
-    private boolean splitAndPublishRoute(final Segment<K, V> segment,
-            final long splitThreshold,
-            final SplitPublishRunner splitPublishRunner) {
+    public boolean publishPreparedSplit(
+            final PreparedRouteSplit<K> preparedSplit) {
+        final RouteSplitPlan<K> splitPlan = splitPlan(preparedSplit);
+        try {
+            if (!keyToSegmentMap.tryApplySplitPlan(splitPlan)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(
+                            "Route split publish returned false: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
+                            splitPlan.getReplacedSegmentId(),
+                            splitPlan.getLowerSegmentId(),
+                            splitPlan.getUpperSegmentId().orElse(null));
+                }
+                return false;
+            }
+            return true;
+        } catch (final RuntimeException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Route split publish failed: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
+                        splitPlan.getReplacedSegmentId(),
+                        splitPlan.getLowerSegmentId(),
+                        splitPlan.getUpperSegmentId().orElse(null), e);
+            }
+            return false;
+        }
+    }
+
+    public void completePreparedSplit(
+            final PreparedRouteSplit<K> preparedSplit) {
+        final RouteSplitPlan<K> splitPlan = splitPlan(preparedSplit);
+        keyToSegmentMap.flushIfDirty();
+        deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Route split applied: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' lowerMaxKey='{}'",
+                    splitPlan.getReplacedSegmentId(),
+                    splitPlan.getLowerSegmentId(),
+                    splitPlan.getUpperSegmentId().orElse(null),
+                    splitPlan.getLowerMaxKey());
+        }
+    }
+
+    public void abortPreparedSplit(
+            final PreparedRouteSplit<K> preparedSplit) {
+        final RouteSplitPlan<K> splitPlan = splitPlan(preparedSplit);
+        deleteChildSegments(splitPlan.getLowerSegmentId(),
+                splitPlan.getUpperSegmentId().orElse(null));
+    }
+
+    private RouteSplitPlan<K> splitPlan(
+            final PreparedRouteSplit<K> preparedSplit) {
+        Vldtn.requireNonNull(preparedSplit, "preparedSplit");
+        return preparedSplit.plan();
+    }
+
+    private boolean isStillCurrentSegment(final Segment<K, V> segment) {
         final SegmentId segmentId = segment.getId();
-        logger.debug("Route split started: segment='{}' threshold='{}'",
-                segmentId, splitThreshold);
         final SegmentRegistryResult<Segment<K, V>> currentResult = segmentRegistry
                 .getSegment(segmentId);
         if (currentResult.getStatus() != SegmentRegistryResultStatus.OK
@@ -134,57 +183,7 @@ public final class RouteSplitCoordinator<K, V> {
             }
             return false;
         }
-        final RouteSplitPlan<K> splitPlan = buildRouteSplitPlan(segment,
-                splitThreshold);
-        if (splitPlan == null) {
-            return false;
-        }
-        if (!materializeChildSegments(segment, splitPlan)) {
-            return false;
-        }
-        final boolean published = splitPublishRunner
-                .run(() -> publishRouteSplit(splitPlan));
-        if (!published) {
-            deleteChildSegments(splitPlan.getLowerSegmentId(),
-                    splitPlan.getUpperSegmentId().orElse(null));
-            return false;
-        }
-        keyToSegmentMap.flushIfDirty();
-        deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "Route split applied: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' lowerMaxKey='{}'",
-                    splitPlan.getReplacedSegmentId(),
-                    splitPlan.getLowerSegmentId(),
-                    splitPlan.getUpperSegmentId().orElse(null),
-                    splitPlan.getLowerMaxKey());
-        }
         return true;
-    }
-
-    private RouteSplitPlan<K> buildRouteSplitPlan(final Segment<K, V> segment,
-            final long splitThreshold) {
-        final SplitBoundary<K> boundary = computeSplitBoundary(segment);
-        if (boundary == null) {
-            return null;
-        }
-        if (boundary.visibleCount() < splitThreshold
-                || boundary.visibleCount() < 2L) {
-            return null;
-        }
-        final SegmentRegistryResult<Segment<K, V>> lowerCreated = createChildSegment();
-        if (!lowerCreated.isOk() || lowerCreated.getValue() == null) {
-            return null;
-        }
-        final SegmentRegistryResult<Segment<K, V>> upperCreated = createChildSegment();
-        if (!upperCreated.isOk() || upperCreated.getValue() == null) {
-            deleteChildSegments(lowerCreated.getValue().getId(), null);
-            return null;
-        }
-        return new RouteSplitPlan<>(segment.getId(),
-                lowerCreated.getValue().getId(), upperCreated.getValue().getId(),
-                boundary.minKey(), boundary.maxLowerKey(),
-                RouteSplitPlan.SplitMode.SPLIT);
     }
 
     private SplitBoundary<K> computeSplitBoundary(final Segment<K, V> segment) {
@@ -232,52 +231,14 @@ public final class RouteSplitCoordinator<K, V> {
         }
     }
 
-    private boolean publishRouteSplit(final RouteSplitPlan<K> splitPlan) {
-        Vldtn.requireNonNull(splitPlan, "splitPlan");
-        try {
-            if (!keyToSegmentMap.tryApplySplitPlan(splitPlan)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(
-                            "Route split publish returned false: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
-                            splitPlan.getReplacedSegmentId(),
-                            splitPlan.getLowerSegmentId(),
-                            splitPlan.getUpperSegmentId().orElse(null));
-                }
-                return false;
-            }
-            return true;
-        } catch (final RuntimeException e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "Route split publish failed: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
-                        splitPlan.getReplacedSegmentId(),
-                        splitPlan.getLowerSegmentId(),
-                        splitPlan.getUpperSegmentId().orElse(null), e);
-            }
-            return false;
-        }
-    }
-
-    private boolean materializeChildSegments(final Segment<K, V> parentSegment,
-            final RouteSplitPlan<K> splitPlan) {
+    private PreparedRouteSplit<K> materializeChildSegments(
+            final Segment<K, V> parentSegment, final SplitBoundary<K> boundary) {
         Vldtn.requireNonNull(parentSegment, SEGMENT_ARG);
-        Vldtn.requireNonNull(splitPlan, "splitPlan");
-        pinChildSegments(splitPlan);
-        boolean deleteChildSegments = true;
+        Vldtn.requireNonNull(boundary, "boundary");
+        PreparedSegmentHandle<K, V> lowerSegment = null;
+        PreparedSegmentHandle<K, V> upperSegment = null;
+        boolean materializationCompleted = false;
         try {
-            final Segment<K, V> lowerSegment = loadSegmentWithRetry(
-                    splitPlan.getLowerSegmentId(), "splitChildLoad");
-            final Segment<K, V> upperSegment = splitPlan.getUpperSegmentId()
-                    .map(segmentId -> loadSegmentWithRetry(segmentId,
-                            "splitChildLoad"))
-                    .orElse(null);
-            final SegmentRuntimeLimits defaultLimits = defaultRuntimeLimits();
-            final SegmentRuntimeLimits materializationLimits = childMaterializationRuntimeLimits(
-                    parentSegment, defaultLimits);
-            lowerSegment.applyRuntimeLimits(materializationLimits);
-            if (upperSegment != null) {
-                upperSegment.applyRuntimeLimits(materializationLimits);
-            }
             final EntryIterator<K, V> openedIterator = openIteratorWithRetry(
                     parentSegment, SegmentIteratorIsolation.FULL_ISOLATION);
             if (openedIterator == null) {
@@ -286,17 +247,27 @@ public final class RouteSplitCoordinator<K, V> {
                             "Route split aborted because parent segment closed before child materialization completed: segment='{}'",
                             parentSegment.getId());
                 }
-                return false;
+                return null;
             }
+            lowerSegment = materializationService.openPreparedSegment();
             try (EntryIterator<K, V> iterator = openedIterator) {
                 while (iterator.hasNext()) {
                     final Entry<K, V> entry = iterator.next();
-                    final Segment<K, V> childSegment = selectChildSegment(
-                            splitPlan, entry.getKey(), lowerSegment,
-                            upperSegment);
-                    copyEntryToChildSegment(childSegment, entry.getKey(),
-                            entry.getValue());
+                    if (isLowerKey(boundary, entry.getKey())) {
+                        lowerSegment.write(entry);
+                        continue;
+                    }
+                    if (upperSegment == null) {
+                        upperSegment = materializationService
+                                .openPreparedSegment();
+                    }
+                    upperSegment.write(entry);
                 }
+                if (upperSegment == null) {
+                    return null;
+                }
+                lowerSegment.commit();
+                upperSegment.commit();
             } catch (final RuntimeException e) {
                 if (isIteratorInvalidated(e)) {
                     if (logger.isDebugEnabled()) {
@@ -304,81 +275,24 @@ public final class RouteSplitCoordinator<K, V> {
                                 "Route split aborted because parent iterator was invalidated during child materialization: segment='{}'",
                                 parentSegment.getId());
                     }
-                    return false;
+                    return null;
                 }
                 throw e;
             }
-            flushChildSegment(lowerSegment);
-            if (upperSegment != null) {
-                flushChildSegment(upperSegment);
-            }
-            lowerSegment.applyRuntimeLimits(defaultLimits);
-            if (upperSegment != null) {
-                upperSegment.applyRuntimeLimits(defaultLimits);
-            }
-            deleteChildSegments = false;
-            return true;
+            materializationCompleted = true;
+            return new PreparedRouteSplit<>(new RouteSplitPlan<>(
+                    parentSegment.getId(), lowerSegment.segmentId(),
+                    upperSegment.segmentId(), boundary.minKey(),
+                    boundary.maxLowerKey(), RouteSplitPlan.SplitMode.SPLIT));
         } finally {
-            unpinChildSegments(splitPlan);
-            if (deleteChildSegments) {
-                deleteChildSegments(splitPlan.getLowerSegmentId(),
-                        splitPlan.getUpperSegmentId().orElse(null));
+            if (materializationCompleted) {
+                closePreparedSegment(lowerSegment);
+                closePreparedSegment(upperSegment);
+            } else {
+                discardPreparedSegment(lowerSegment);
+                discardPreparedSegment(upperSegment);
             }
         }
-    }
-
-    private void pinChildSegments(final RouteSplitPlan<K> splitPlan) {
-        segmentRegistry.pinSegment(splitPlan.getLowerSegmentId());
-        splitPlan.getUpperSegmentId().ifPresent(segmentRegistry::pinSegment);
-    }
-
-    private void unpinChildSegments(final RouteSplitPlan<K> splitPlan) {
-        segmentRegistry.unpinSegment(splitPlan.getLowerSegmentId());
-        splitPlan.getUpperSegmentId().ifPresent(segmentRegistry::unpinSegment);
-    }
-
-    private SegmentRuntimeLimits defaultRuntimeLimits() {
-        final int segmentCacheLimit = positiveOrFallback(
-                conf.getMaxNumberOfKeysInSegmentCache(),
-                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE);
-        final int segmentWriteCacheLimit = positiveOrFallback(
-                conf.getMaxNumberOfKeysInActivePartition(),
-                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
-                        / 2);
-        final int maintenanceWriteCacheLimit = Math.max(
-                segmentWriteCacheLimit + 1,
-                positiveOrFallback(conf.getMaxNumberOfKeysInPartitionBuffer(),
-                        segmentWriteCacheLimit + 1));
-        return new SegmentRuntimeLimits(segmentCacheLimit,
-                segmentWriteCacheLimit, maintenanceWriteCacheLimit);
-    }
-
-    private SegmentRuntimeLimits childMaterializationRuntimeLimits(
-            final Segment<K, V> parentSegment,
-            final SegmentRuntimeLimits defaultLimits) {
-        final int widenedSegmentCacheLimit = saturatingToPositiveInt(
-                Math.max(parentSegment.getNumberOfKeysInCache() + 1L,
-                        defaultLimits.maxNumberOfKeysInSegmentCache()));
-        return new SegmentRuntimeLimits(widenedSegmentCacheLimit,
-                defaultLimits.maxNumberOfKeysInSegmentWriteCache(),
-                defaultLimits.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance());
-    }
-
-    private int positiveOrFallback(final Integer value, final int fallback) {
-        if (value != null && value.intValue() > 0) {
-            return value.intValue();
-        }
-        return Math.max(1, fallback);
-    }
-
-    private int saturatingToPositiveInt(final long value) {
-        if (value <= 0L) {
-            return 1;
-        }
-        if (value >= Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
-        }
-        return (int) value;
     }
 
     private EntryIterator<K, V> openIteratorWithRetry(
@@ -406,101 +320,8 @@ public final class RouteSplitCoordinator<K, V> {
         }
     }
 
-    private Segment<K, V> loadSegmentWithRetry(final SegmentId segmentId,
-            final String operation) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
-                continue;
-            }
-            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
-                    && loaded.getValue() != null) {
-                return loaded.getValue();
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to load for split materialization: %s",
-                    segmentId, loaded.getStatus()));
-        }
-    }
-
-    private void copyEntryToChildSegment(final Segment<K, V> segment,
-            final K key, final V value) {
-        final SegmentId segmentId = segment.getId();
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<Void> putResult = segment.put(key, value);
-            if (putResult.getStatus() == SegmentResultStatus.OK) {
-                return;
-            }
-            if (putResult.getStatus() == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "splitPut", segmentId);
-                continue;
-            }
-            if (putResult.getStatus() == SegmentResultStatus.CLOSED) {
-                throw new IndexException(String.format(
-                        "Segment '%s' closed during split materialization.",
-                        segmentId));
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to accept split materialization entry: %s",
-                    segmentId, putResult.getStatus()));
-        }
-    }
-
-    private void flushChildSegment(final Segment<K, V> segment) {
-        final SegmentId segmentId = segment.getId();
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<Void> flushResult = segment.flush();
-            if (flushResult.getStatus() == SegmentResultStatus.OK) {
-                awaitSegmentReady(segmentId, "splitFlush", segment);
-                return;
-            }
-            if (flushResult.getStatus() == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "splitFlush",
-                        segmentId);
-                continue;
-            }
-            if (flushResult.getStatus() == SegmentResultStatus.CLOSED) {
-                throw new IndexException(String.format(
-                        "Segment '%s' closed during split flush.", segmentId));
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to flush during split materialization: %s",
-                    segmentId, flushResult.getStatus()));
-        }
-    }
-
-    private void awaitSegmentReady(final SegmentId segmentId,
-            final String operation, final Segment<K, V> segment) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentState state = segment.getState();
-            if (state == SegmentState.READY || state == SegmentState.CLOSED) {
-                return;
-            }
-            if (state == SegmentState.ERROR) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed during %s.", segmentId,
-                        operation));
-            }
-            retryPolicy.backoffOrThrow(startNanos, operation, segmentId);
-        }
-    }
-
-    private Segment<K, V> selectChildSegment(final RouteSplitPlan<K> splitPlan,
-            final K key, final Segment<K, V> lowerSegment,
-            final Segment<K, V> upperSegment) {
-        if (!splitPlan.isSplit()) {
-            return lowerSegment;
-        }
-        if (keyComparator.compare(key, splitPlan.getLowerMaxKey()) <= 0) {
-            return lowerSegment;
-        }
-        return upperSegment == null ? lowerSegment : upperSegment;
+    private boolean isLowerKey(final SplitBoundary<K> boundary, final K key) {
+        return keyComparator.compare(key, boundary.maxLowerKey()) <= 0;
     }
 
     private boolean isIteratorInvalidated(final RuntimeException e) {
@@ -524,24 +345,26 @@ public final class RouteSplitCoordinator<K, V> {
         }
     }
 
-    private SegmentRegistryResult<Segment<K, V>> createChildSegment() {
-        final long startNanos = retryPolicy.startNanos();
-        SegmentRegistryResult<Segment<K, V>> result = segmentRegistry
-                .createSegment();
-        while (result.getStatus() == SegmentRegistryResultStatus.BUSY) {
-            retryPolicy.backoffOrThrow(startNanos, "createSegment", null);
-            result = segmentRegistry.createSegment();
-        }
-        return result;
-    }
-
     private void deleteChildSegments(final SegmentId lowerSegmentId,
             final SegmentId upperSegmentId) {
         if (lowerSegmentId != null) {
-            segmentRegistry.deleteSegment(lowerSegmentId);
+            materializationService.deletePreparedSegment(lowerSegmentId);
         }
         if (upperSegmentId != null) {
-            segmentRegistry.deleteSegment(upperSegmentId);
+            materializationService.deletePreparedSegment(upperSegmentId);
+        }
+    }
+
+    private void discardPreparedSegment(
+            final PreparedSegmentHandle<K, V> segment) {
+        if (segment != null) {
+            segment.discard();
+        }
+    }
+
+    private void closePreparedSegment(final PreparedSegmentHandle<K, V> segment) {
+        if (segment != null) {
+            segment.close();
         }
     }
 
