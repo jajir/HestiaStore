@@ -10,6 +10,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
+import org.hestiastore.index.segment.SegmentFullWriterTx;
 import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentMaintenancePolicy;
@@ -189,6 +190,16 @@ public final class SegmentFactory<K, V> {
                 .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
                 .withEncodingChunkFilterSuppliers(encodingChunkFilters)//
                 .withDecodingChunkFilterSuppliers(decodingChunkFilters);
+    }
+
+    /**
+     * Opens a synchronous bulk writer transaction for the provided segment id.
+     *
+     * @param segmentId segment id to materialize
+     * @return full writer transaction for building the segment files
+     */
+    public SegmentFullWriterTx<K, V> openWriterTx(final SegmentId segmentId) {
+        return newSegmentBuilder(segmentId).openWriterTx();
     }
 
     /**

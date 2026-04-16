@@ -39,6 +39,7 @@
 - Use Java 17 and the repository `eclipse-formatter.xml` profile with 4-space indentation.
 - Keep packages under `org.hestiastore.index...`.
 - Avoid inner enums and exception classes when a separate file is clearer.
+- Avoid non-trivial inner classes when a separate file is clearer; if an inner class grows beyond roughly 20 lines or carries its own state and behavior, prefer a dedicated top-level class.
 - Prefer clear, descriptive class names such as `*Adapter`, `*Cache`, and `*Descriptor`.
 - Add Javadoc for public types and non-trivial logic.
 - Do not use fully qualified class names in code; use explicit imports instead.
