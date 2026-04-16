@@ -8,12 +8,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
+import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -30,6 +33,7 @@ import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
@@ -88,6 +92,39 @@ class SegmentFactoryTest {
             stableSegmentMaintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
+    }
+
+    @Test
+    void openWriterTx_materializesSegmentFilesSynchronously() {
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final Directory directory = new MemDirectory();
+        final ExecutorService stableSegmentMaintenancePool = Executors
+                .newSingleThreadExecutor();
+        final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
+                directory, new TypeDescriptorInteger(),
+                new TypeDescriptorShortString(), conf,
+                stableSegmentMaintenancePool);
+        final SegmentId segmentId = SegmentId.of(9);
+
+        try {
+            factory.openWriterTx(segmentId).execute(writer -> {
+                writer.write(1, "a");
+                writer.write(2, "b");
+            });
+
+            final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
+                    .buildSegment(segmentId);
+            final Segment<Integer, String> segment = buildResult.getValue();
+            try {
+                assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
+                assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")),
+                        readEntries(segment));
+            } finally {
+                SegmentTestHelper.closeAndAwait(segment);
+            }
+        } finally {
+            stableSegmentMaintenancePool.shutdownNow();
+        }
     }
 
     @Test
@@ -239,6 +276,19 @@ class SegmentFactoryTest {
         } catch (ReflectiveOperationException ex) {
             throw new AssertionError(ex);
         }
+    }
+
+    private static List<Entry<Integer, String>> readEntries(
+            final Segment<Integer, String> segment) {
+        final List<Entry<Integer, String>> entries = new ArrayList<>();
+        try (EntryIterator<Integer, String> iterator = segment
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)
+                .getValue()) {
+            while (iterator.hasNext()) {
+                entries.add(iterator.next());
+            }
+        }
+        return entries;
     }
 
     private static final class TrackingChunkFilter implements ChunkFilter {
