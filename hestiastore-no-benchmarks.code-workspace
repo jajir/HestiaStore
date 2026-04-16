@@ -1,0 +1,42 @@
+{
+    "folders": [
+        {
+            "path": "engine"
+        },
+        {
+            "path": "wal-tools"
+        },
+        {
+            "path": "monitoring-micrometer"
+        },
+        {
+            "path": "monitoring-prometheus"
+        },
+        {
+            "path": "monitoring-rest-json-api"
+        },
+        {
+            "path": "monitoring-rest-json"
+        },
+        {
+            "path": "monitoring-console-web"
+        },
+        {
+            "path": "docs"
+        }
+    ],
+    "settings": {
+        "java.debug.settings.onBuildFailureProceed": true,
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "java.format.settings.url": ".vscode/eclipse-formatter.xml",
+        "java.format.settings.profile": "mujSunFormatter",
+        "editor.formatOnSave": true,
+        "java.dependency.syncWithFolderExplorer": false,
+        "java.debug.settings.showQualifiedNames": true,
+        "maven.view": "flat",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "java.compile.nullAnalysis.mode": "disabled"
+    }
+}
