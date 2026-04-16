@@ -8,7 +8,7 @@ import org.hestiastore.index.segment.Segment;
  * @param <K> key type
  * @param <V> value type
  */
-public interface SegmentIndexSplitPolicy<K, V> {
+interface SegmentIndexSplitPolicy<K, V> {
 
     /**
      * Returns whether the segment should be split for the given threshold.

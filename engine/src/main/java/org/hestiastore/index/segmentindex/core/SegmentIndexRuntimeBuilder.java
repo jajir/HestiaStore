@@ -11,12 +11,19 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinatorImpl;
+import org.hestiastore.index.segmentindex.split.BackgroundSplitMetrics;
+import org.hestiastore.index.segmentindex.split.DefaultSegmentMaterializationService;
 import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
+import org.hestiastore.index.segmentindex.split.SegmentMaterializationService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentregistry.DirectorySegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentFactory;
+import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
@@ -154,16 +161,33 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                     keyToSegmentMapDelegate);
             buildObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
             final SegmentFactory<K, V> segmentFactory = newSegmentFactory();
-            segmentRegistry = newSegmentRegistry();
+            final SegmentIdAllocator segmentIdAllocator = new DirectorySegmentIdAllocator(
+                    directoryFacade);
+            segmentRegistry = newSegmentRegistry(segmentIdAllocator);
             buildObserver.onSegmentRegistryCreated(segmentRegistry);
+            final SegmentMaterializationService<K, V> materializationService = new DefaultSegmentMaterializationService<>(
+                    segmentIdAllocator, directoryFacade, segmentFactory);
             final RouteSplitCoordinator<K, V> routeSplitCoordinator = new RouteSplitCoordinator<>(
                     conf, keyTypeDescriptor.getComparator(), keyToSegmentMap,
-                    segmentRegistry);
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator = new BackgroundSplitCoordinator<>(
+                    segmentRegistry, materializationService);
+            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator = new BackgroundSplitCoordinatorImpl<>(
                     keyToSegmentMap, routeSplitCoordinator,
                     executorRegistry.getSplitMaintenanceExecutor(),
                     callbacks.failureHandler(),
-                    callbacks.onBackgroundSplitApplied(), stats);
+                    callbacks.onBackgroundSplitApplied(),
+                    new BackgroundSplitMetrics() {
+                        @Override
+                        public void recordSplitTaskStartDelayNanos(
+                                final long nanos) {
+                            stats.recordSplitTaskStartDelayNanos(nanos);
+                        }
+
+                        @Override
+                        public void recordSplitTaskRunLatencyNanos(
+                                final long nanos) {
+                            stats.recordSplitTaskRunLatencyNanos(nanos);
+                        }
+                    });
             final StableSegmentGateway<K, V> stableSegmentGateway = new StableSegmentGateway<>(
                     keyToSegmentMap, segmentRegistry);
             final IndexRetryPolicy retryPolicy = newRetryPolicy();
@@ -239,13 +263,15 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                 executorRegistry.getStableSegmentMaintenanceExecutor());
     }
 
-    private SegmentRegistry<K, V> newSegmentRegistry() {
+    private SegmentRegistry<K, V> newSegmentRegistry(
+            final SegmentIdAllocator segmentIdAllocator) {
         return SegmentRegistry.<K, V>builder()
                 .withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
                 .withRuntimeConfiguration(runtimeConfiguration)
+                .withSegmentIdAllocator(segmentIdAllocator)
                 .withSegmentMaintenanceExecutor(
                         executorRegistry.getStableSegmentMaintenanceExecutor())
                 .withRegistryMaintenanceExecutor(
