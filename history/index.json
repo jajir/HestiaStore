@@ -507,8 +507,8 @@
         "212": {
           "channel": "pr-212",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-212/latest.json",
-          "sha": "a61f26e34d09cc5b31f4919fba6ea5f9e08210c7",
-          "timestampUtc": "2026-04-15T14:52:22.720498+00:00"
+          "sha": "d9527ca3fd8e4f103e16b71baacc91a4cab49398",
+          "timestampUtc": "2026-04-16T15:43:09.247213+00:00"
         },
         "213": {
           "channel": "pr-213",
