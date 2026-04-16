@@ -1,11 +1,11 @@
-package org.hestiastore.index.segmentindex.core;
+package org.hestiastore.index.segmentindex.split;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -18,12 +18,16 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
 
 /**
- * Coordinates background split scheduling and split-publish admission.
+ * Default implementation of background split scheduling and split-publish
+ * admission.
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
-final class BackgroundSplitCoordinator<K, V> {
+public final class BackgroundSplitCoordinatorImpl<K, V>
+        implements BackgroundSplitCoordinator<K, V> {
 
     private static final String ACTION_PARAMETER = "action";
     private static final long SPLIT_RESCHEDULE_COOLDOWN_MILLIS = 500L;
@@ -44,7 +48,7 @@ final class BackgroundSplitCoordinator<K, V> {
     private final Executor splitExecutor;
     private final Consumer<RuntimeException> splitFailureHandler;
     private final Runnable splitAppliedListener;
-    private final Stats stats;
+    private final BackgroundSplitMetrics metrics;
     private final LongSupplier nanoTimeSupplier;
     private final Object splitMonitor = new Object();
     // Fair ordering prevents retrying direct writes from starving split publish.
@@ -58,46 +62,46 @@ final class BackgroundSplitCoordinator<K, V> {
             SPLIT_RESCHEDULE_COOLDOWN_NANOS);
     private int splitInFlightCount;
 
-    BackgroundSplitCoordinator(
+    public BackgroundSplitCoordinatorImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener) {
         this(keyToSegmentMap, routeSplitCoordinator, splitExecutor,
-                splitFailureHandler, splitAppliedListener, new Stats(),
-                System::nanoTime);
+                splitFailureHandler, splitAppliedListener,
+                BackgroundSplitMetrics.NO_OP, System::nanoTime);
     }
 
-    BackgroundSplitCoordinator(
+    public BackgroundSplitCoordinatorImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
-            final Runnable splitAppliedListener, final Stats stats) {
+            final Runnable splitAppliedListener,
+            final BackgroundSplitMetrics metrics) {
         this(keyToSegmentMap, routeSplitCoordinator, splitExecutor,
-                splitFailureHandler, splitAppliedListener, stats,
+                splitFailureHandler, splitAppliedListener, metrics,
                 System::nanoTime);
     }
 
-    BackgroundSplitCoordinator(
-            final KeyToSegmentMap<K> keyToSegmentMap,
+    BackgroundSplitCoordinatorImpl(final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
             final Runnable splitAppliedListener,
             final LongSupplier nanoTimeSupplier) {
         this(keyToSegmentMap, routeSplitCoordinator, splitExecutor,
-                splitFailureHandler, splitAppliedListener, new Stats(),
-                nanoTimeSupplier);
+                splitFailureHandler, splitAppliedListener,
+                BackgroundSplitMetrics.NO_OP, nanoTimeSupplier);
     }
 
-    BackgroundSplitCoordinator(
-            final KeyToSegmentMap<K> keyToSegmentMap,
+    BackgroundSplitCoordinatorImpl(final KeyToSegmentMap<K> keyToSegmentMap,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final Executor splitExecutor,
             final Consumer<RuntimeException> splitFailureHandler,
-            final Runnable splitAppliedListener, final Stats stats,
+            final Runnable splitAppliedListener,
+            final BackgroundSplitMetrics metrics,
             final LongSupplier nanoTimeSupplier) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -109,24 +113,14 @@ final class BackgroundSplitCoordinator<K, V> {
                 "splitFailureHandler");
         this.splitAppliedListener = Vldtn.requireNonNull(splitAppliedListener,
                 "splitAppliedListener");
-        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.metrics = Vldtn.requireNonNull(metrics, "metrics");
         this.nanoTimeSupplier = Vldtn.requireNonNull(nanoTimeSupplier,
                 "nanoTimeSupplier");
     }
 
-    boolean handleSplitCandidate(final Segment<K, V> segment,
-            final long splitThreshold) {
-        return handleSplitCandidate(segment, splitThreshold, false);
-    }
-
-    boolean forceHandleSplitCandidate(final Segment<K, V> segment,
-            final long splitThreshold) {
-        return handleSplitCandidate(segment, splitThreshold, true);
-    }
-
-    private boolean handleSplitCandidate(final Segment<K, V> segment,
-            final long splitThreshold,
-            final boolean ignoreCooldown) {
+    @Override
+    public boolean handleSplitCandidate(final Segment<K, V> segment,
+            final long splitThreshold, final boolean ignoreCooldown) {
         if (segment == null) {
             return false;
         }
@@ -150,7 +144,8 @@ final class BackgroundSplitCoordinator<K, V> {
                 ignoreCooldown);
     }
 
-    void awaitSplitsIdle(final long timeoutMillis) {
+    @Override
+    public void awaitSplitsIdle(final long timeoutMillis) {
         final RuntimeException failure = splitFailure.get();
         if (failure != null) {
             throw failure;
@@ -189,21 +184,25 @@ final class BackgroundSplitCoordinator<K, V> {
         }
     }
 
-    int splitInFlightCount() {
+    @Override
+    public int splitInFlightCount() {
         synchronized (splitMonitor) {
             return splitInFlightCount;
         }
     }
 
-    boolean isSplitBlocked(final SegmentId segmentId) {
+    @Override
+    public boolean isSplitBlocked(final SegmentId segmentId) {
         return segmentId != null && scheduledSplits.containsKey(segmentId);
     }
 
-    int splitBlockedCount() {
+    @Override
+    public int splitBlockedCount() {
         return scheduledSplits.size();
     }
 
-    <T> T runWithSplitSchedulingPaused(final Supplier<T> action) {
+    @Override
+    public <T> T runWithSplitSchedulingPaused(final Supplier<T> action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         splitSchedulingPauseCount.incrementAndGet();
         try {
@@ -213,7 +212,8 @@ final class BackgroundSplitCoordinator<K, V> {
         }
     }
 
-    void runWithSplitSchedulingPaused(final Runnable action) {
+    @Override
+    public void runWithSplitSchedulingPaused(final Runnable action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         runWithSplitSchedulingPaused(() -> {
             action.run();
@@ -221,7 +221,8 @@ final class BackgroundSplitCoordinator<K, V> {
         });
     }
 
-    <T> T runWithSharedSplitAdmission(final Supplier<T> action) {
+    @Override
+    public <T> T runWithSharedSplitAdmission(final Supplier<T> action) {
         Vldtn.requireNonNull(action, ACTION_PARAMETER);
         final var readLock = splitGate.readLock();
         readLock.lock();
@@ -279,21 +280,15 @@ final class BackgroundSplitCoordinator<K, V> {
             final long splitThreshold, final long observedKeyCount,
             final long scheduledAtNanos) {
         final long startedAtNanos = nanoTimeSupplier.getAsLong();
-        stats.recordSplitTaskStartDelayNanos(
+        metrics.recordSplitTaskStartDelayNanos(
                 Math.max(0L, startedAtNanos - scheduledAtNanos));
         try {
             executeSplitAsync(segment, splitThreshold, observedKeyCount,
                     startedAtNanos);
         } finally {
-            stats.recordSplitTaskRunLatencyNanos(Math.max(0L,
+            metrics.recordSplitTaskRunLatencyNanos(Math.max(0L,
                     nanoTimeSupplier.getAsLong() - startedAtNanos));
         }
-    }
-
-    private void executeSplitAsync(final Segment<K, V> segment,
-            final long splitThreshold, final long observedKeyCount) {
-        executeSplitAsync(segment, splitThreshold, observedKeyCount,
-                nanoTimeSupplier.getAsLong());
     }
 
     private void executeSplitAsync(final Segment<K, V> segment,
@@ -302,8 +297,19 @@ final class BackgroundSplitCoordinator<K, V> {
         final SegmentId segmentId = segment.getId();
         boolean splitApplied = false;
         try {
-            splitApplied = routeSplitCoordinator.trySplit(segment,
-                    splitThreshold, this::runWithExclusiveSplitAdmission);
+            final PreparedRouteSplit<K> preparedSplit = routeSplitCoordinator
+                    .tryPrepareSplit(segment, splitThreshold);
+            if (preparedSplit != null) {
+                final boolean published = runWithExclusiveSplitAdmission(
+                        () -> routeSplitCoordinator
+                                .publishPreparedSplit(preparedSplit));
+                if (published) {
+                    routeSplitCoordinator.completePreparedSplit(preparedSplit);
+                    splitApplied = true;
+                } else {
+                    routeSplitCoordinator.abortPreparedSplit(preparedSplit);
+                }
+            }
         } catch (final RuntimeException e) {
             splitFailure.compareAndSet(null, e);
             splitFailureHandler.accept(e);

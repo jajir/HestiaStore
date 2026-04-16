@@ -34,6 +34,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private IndexRuntimeConfiguration<K, V> runtimeConfiguration;
     private ExecutorService segmentMaintenanceExecutor;
     private ExecutorService registryMaintenanceExecutor;
+    private SegmentIdAllocator segmentIdAllocator;
 
     SegmentRegistryBuilder() {
     }
@@ -132,6 +133,19 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
+     * Sets the segment id allocator used for newly created segment ids.
+     *
+     * @param segmentIdAllocator allocator for segment ids
+     * @return this builder
+     */
+    public SegmentRegistryBuilder<K, V> withSegmentIdAllocator(
+            final SegmentIdAllocator segmentIdAllocator) {
+        this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
+                "segmentIdAllocator");
+        return this;
+    }
+
+    /**
      * Builds a registry with the configured defaults and overrides.
      *
      * @return registry instance
@@ -171,8 +185,9 @@ public final class SegmentRegistryBuilder<K, V> {
                         resolvedKeyDescriptor, resolvedValueDescriptor,
                         resolvedConf, resolvedRuntimeConfiguration,
                         resolvedSegmentMaintenanceExecutor);
-        final SegmentIdAllocator resolvedAllocator = new DirectorySegmentIdAllocator(
-                resolvedDirectory);
+        final SegmentIdAllocator resolvedAllocator = segmentIdAllocator == null
+                ? new DirectorySegmentIdAllocator(resolvedDirectory)
+                : segmentIdAllocator;
         final SegmentRegistryFileSystem resolvedFileSystem = new SegmentRegistryFileSystem(
                 resolvedDirectory);
         // SegmentIndex key-map bootstraps the first logical segment with id 0.
@@ -193,8 +208,7 @@ public final class SegmentRegistryBuilder<K, V> {
                 resolvedRegistryMaintenanceExecutor,
                 segment -> isEvictable(segment, pinnedSegments, gate));
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
-                cache, resolvedRegistryCloseRetryPolicy, gate,
-                pinnedSegments);
+                cache, resolvedRegistryCloseRetryPolicy, gate, pinnedSegments);
     }
 
     private static <K, V> boolean isEvictable(final Segment<K, V> segment,
