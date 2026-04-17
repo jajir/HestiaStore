@@ -28,7 +28,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -399,8 +398,6 @@ class SegmentIndexConcurrentIT {
         index.close();
     }
 
-    @Disabled(
-            "FIXME flaky on CI under autonomous split stress; re-enable and fix before release.")
     @Test
     @Timeout(value = 180, unit = TimeUnit.SECONDS,
             threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
