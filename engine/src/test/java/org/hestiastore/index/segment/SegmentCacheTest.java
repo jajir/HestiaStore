@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -223,6 +225,27 @@ class SegmentCacheTest {
     }
 
     @Test
+    void frozenWriteCacheIterator_keeps_snapshot_after_field_is_cleared() {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(),
+                DEFAULT_MAX_BUFFERED, DEFAULT_MAX_DURING_MAINTENANCE,
+                DEFAULT_MAX_SEGMENT_CACHE);
+        cache.putToWriteCache(Entry.of(2, "B"));
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.freezeWriteCache();
+
+        final var iterator = cache.frozenWriteCacheIterator();
+
+        clearFrozenWriteCacheField(cache);
+
+        assertTrue(iterator.hasNext());
+        assertEquals(Entry.of(1, "A"), iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(Entry.of(2, "B"), iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
     void getAsSortedList_includes_frozen_and_write_entries_with_overrides() {
         final SegmentCache<Integer, String> cache = new SegmentCache<>(
                 keyType.getComparator(), valueType,
@@ -341,5 +364,78 @@ class SegmentCacheTest {
         assertFalse(cache.hasFrozenWriteCache());
         assertEquals(0, cache.getNumberOfKeysInWriteCache());
         assertNull(cache.get(1));
+    }
+
+    @Test
+    void concurrentFrozenCacheReads_doNotThrowOrLoseVisibleEntry()
+            throws Exception {
+        final SegmentCache<Integer, String> cache = new SegmentCache<>(
+                keyType.getComparator(), valueType, List.of(), 1024, 1024,
+                DEFAULT_MAX_SEGMENT_CACHE);
+        cache.putToWriteCache(Entry.of(1, "A"));
+        cache.freezeWriteCache();
+
+        final CountDownLatch startGate = new CountDownLatch(1);
+        final AtomicReference<Throwable> failure = new AtomicReference<>();
+        final CompletableFuture<Void> reader = CompletableFuture.runAsync(() -> {
+            awaitStart(startGate);
+            for (int i = 0; i < 20_000; i++) {
+                assertVisible(cache, failure);
+                cache.size();
+                cache.getNumbberOfKeysInCache();
+                cache.getAsSortedList();
+                cache.hasFrozenWriteCache();
+            }
+        });
+        final CompletableFuture<Void> maintenance = CompletableFuture
+                .runAsync(() -> {
+                    awaitStart(startGate);
+                    for (int i = 0; i < 20_000; i++) {
+                        cache.mergeFrozenWriteCacheToDeltaCache();
+                        assertVisible(cache, failure);
+                        cache.putToWriteCache(Entry.of(1, "A"));
+                        cache.freezeWriteCache();
+                    }
+                });
+
+        startGate.countDown();
+        CompletableFuture.allOf(reader, maintenance).get(10,
+                TimeUnit.SECONDS);
+        final Throwable detectedFailure = failure.get();
+        if (detectedFailure != null) {
+            throw new AssertionError(
+                    "Concurrent frozen-cache access failed", detectedFailure);
+        }
+    }
+
+    private void assertVisible(final SegmentCache<Integer, String> cache,
+            final AtomicReference<Throwable> failure) {
+        try {
+            assertEquals("A", cache.get(1));
+        } catch (final Throwable throwable) {
+            failure.compareAndSet(null, throwable);
+            throw throwable;
+        }
+    }
+
+    private void awaitStart(final CountDownLatch startGate) {
+        try {
+            startGate.await();
+        } catch (final InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting to start", ex);
+        }
+    }
+
+    private void clearFrozenWriteCacheField(
+            final SegmentCache<Integer, String> cache) {
+        try {
+            final var field = SegmentCache.class
+                    .getDeclaredField("frozenWriteCache");
+            field.setAccessible(true);
+            field.set(cache, null);
+        } catch (final ReflectiveOperationException ex) {
+            throw new AssertionError("Failed to clear frozen write cache", ex);
+        }
     }
 }
