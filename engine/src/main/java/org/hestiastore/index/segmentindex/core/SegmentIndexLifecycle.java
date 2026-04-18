@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex.core;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;

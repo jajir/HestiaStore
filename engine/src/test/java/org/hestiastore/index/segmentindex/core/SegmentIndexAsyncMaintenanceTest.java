@@ -32,8 +32,7 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,10 +72,10 @@ class SegmentIndexAsyncMaintenanceTest {
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentIdForKey(1);
-            final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
+            final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId).getValue();
+                    .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
@@ -106,10 +105,10 @@ class SegmentIndexAsyncMaintenanceTest {
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentIdForKey(1);
-            final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
+            final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId).getValue();
+                    .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
@@ -152,10 +151,10 @@ class SegmentIndexAsyncMaintenanceTest {
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentIdForKey(1);
-            final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
+            final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                     index);
             final Segment<Integer, String> originalSegment = registry
-                    .getSegment(segmentId).getValue();
+                    .getSegment(segmentId);
             final CountDownLatch started = new CountDownLatch(1);
             final CountDownLatch release = new CountDownLatch(1);
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
@@ -290,16 +289,16 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     private static <K, V> void replaceSegment(
-            final SegmentRegistryImpl<K, V> registry, final SegmentId segmentId,
+            final Object registry, final SegmentId segmentId,
             final Segment<K, V> segment) {
-        final SegmentRegistryCache<K, V> cache = readCache(registry);
+        final Object cache = readCache(registry);
         putCacheEntry(cache, segmentId, segment);
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentRegistryImpl<K, V> readSegmentRegistry(
+    private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
             final SegmentIndexImpl<K, V> index) {
-        return (SegmentRegistryImpl<K, V>) index.segmentRegistry();
+        return (SegmentRegistry<K, V>) index.segmentRegistry();
     }
 
     @SuppressWarnings("unchecked")
@@ -309,13 +308,12 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentRegistryCache<K, V> readCache(
-            final SegmentRegistryImpl<K, V> registry) {
+    private static Object readCache(final Object registry) {
         try {
-            final Field cacheField = SegmentRegistryImpl.class
-                    .getDeclaredField("cache");
+            final Field cacheField = registry.getClass().getDeclaredField(
+                    "cache");
             cacheField.setAccessible(true);
-            return (SegmentRegistryCache<K, V>) cacheField.get(registry);
+            return cacheField.get(registry);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to read registry cache for test", ex);
@@ -331,14 +329,14 @@ class SegmentIndexAsyncMaintenanceTest {
             final java.util.concurrent.ConcurrentHashMap<SegmentId, Object> map = (java.util.concurrent.ConcurrentHashMap<SegmentId, Object>) mapField
                     .get(cache);
             final Class<?> entryClass = Class.forName(
-                    SegmentRegistryCache.class.getName() + "$Entry");
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
             final var ctor = entryClass.getDeclaredConstructor(long.class);
             ctor.setAccessible(true);
             final Object entry = ctor.newInstance(0L);
             final Field stateField = entryClass.getDeclaredField("state");
             stateField.setAccessible(true);
             final Class<?> stateClass = Class.forName(
-                    SegmentRegistryCache.class.getName() + "$EntryState");
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$EntryState");
             stateField.set(entry, Enum.valueOf(
                     stateClass.asSubclass(Enum.class), "READY"));
             final Field valueField = entryClass.getDeclaredField("value");

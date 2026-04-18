@@ -24,7 +24,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,11 +76,10 @@ class SegmentIndexImplPutTest {
 
         final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(
                 index);
-        final SegmentRegistryImpl<Integer, String> registry = readSegmentRegistry(
+        final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                 index);
         final SegmentId segmentId = cache.findSegmentIdForKey(1);
-        final Segment<Integer, String> segment = registry.getSegment(segmentId)
-                .getValue();
+        final Segment<Integer, String> segment = registry.getSegment(segmentId);
         awaitSegmentReady(segment);
         awaitSegmentCount(cache, 2);
         assertEquals(SegmentId.of(1), cache.findSegmentIdForKey(1));
@@ -286,9 +285,9 @@ class SegmentIndexImplPutTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentRegistryImpl<K, V> readSegmentRegistry(
+    private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
             final SegmentIndexImpl<K, V> index) {
-        return (SegmentRegistryImpl<K, V>) index.segmentRegistry();
+        return (SegmentRegistry<K, V>) index.segmentRegistry();
     }
 
     private static void injectWalSyncFailure(final SegmentIndexImpl<?, ?> index,

@@ -6,7 +6,7 @@ import org.hestiastore.index.segment.SegmentId;
  * Allocates new segment identifiers.
  */
 @FunctionalInterface
-public interface SegmentIdAllocator {
+interface SegmentIdAllocator {
 
     /**
      * Returns the next available segment id.

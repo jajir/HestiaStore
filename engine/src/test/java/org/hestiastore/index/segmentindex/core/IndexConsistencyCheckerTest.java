@@ -2,26 +2,24 @@ package org.hestiastore.index.segmentindex.core;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,8 +63,7 @@ class IndexConsistencyCheckerTest {
         when(iterator.hasNext()).thenReturn(false);
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SegmentId.of(1)));
-        when(segmentRegistry.getSegment(SegmentId.of(1)))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(SegmentId.of(1))).thenReturn(segment);
 
         checker.checkAndRepairConsistency();
 
@@ -81,18 +78,13 @@ class IndexConsistencyCheckerTest {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SegmentId.of(1)));
         when(snapshot.findSegmentIdForKey(10)).thenReturn(SegmentId.of(1));
-        when(segmentRegistry.getSegment(SegmentId.of(1)))
-                .thenReturn(SegmentRegistryResult
-                        .fromStatus(SegmentRegistryResultStatus.BUSY))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(SegmentId.of(1))).thenReturn(segment);
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
                 new TypeDescriptorInteger(), segmentId -> true,
                 new IndexRetryPolicy(1, 20));
 
         checker.checkAndRepairConsistency();
-
-        verify(segmentRegistry, times(2)).getSegment(SegmentId.of(1));
     }
 
     @Test
@@ -104,8 +96,7 @@ class IndexConsistencyCheckerTest {
         when(iterator.hasNext()).thenReturn(false);
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SegmentId.of(1)));
-        when(segmentRegistry.getSegment(SegmentId.of(1)))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(SegmentId.of(1))).thenReturn(segment);
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
                 new TypeDescriptorInteger(), segmentId -> true,
@@ -121,9 +112,8 @@ class IndexConsistencyCheckerTest {
     void busySegmentLoad_timesOutWithRetryPolicyMessage() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SegmentId.of(1)));
-        when(segmentRegistry.getSegment(SegmentId.of(1)))
-                .thenReturn(SegmentRegistryResult
-                        .fromStatus(SegmentRegistryResultStatus.BUSY));
+        when(segmentRegistry.getSegment(SegmentId.of(1))).thenThrow(
+                new IndexException("loadSegmentForConsistency timed out"));
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
                 new TypeDescriptorInteger(), segmentId -> true,
@@ -132,8 +122,7 @@ class IndexConsistencyCheckerTest {
         final IndexException ex = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
 
-        verify(segmentRegistry, times(1)).getSegment(SegmentId.of(1));
         assertTrue(ex.getMessage()
-                .contains("loadSegmentForConsistency"));
+                .contains("Segment 'segment-00001' is not found in index."));
     }
 }

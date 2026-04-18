@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -21,7 +22,6 @@ import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,8 +79,8 @@ class RouteSplitCoordinatorTest {
     void tryPrepareSplitReturnsMaterializedSplit() {
         when(parentSegment.getNumberOfKeysInCache()).thenReturn(4L);
         when(parentSegment.getId()).thenReturn(PARENT_SEGMENT_ID);
-        when(segmentRegistry.getSegment(PARENT_SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(parentSegment));
+        when(segmentRegistry.findSegment(PARENT_SEGMENT_ID))
+                .thenReturn(Optional.of(parentSegment));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()),
                         iteratorResult(entries()), iteratorResult(entries()));
@@ -112,8 +112,8 @@ class RouteSplitCoordinatorTest {
     void tryPrepareSplitReturnsNullWhenLoadedSegmentChanged() {
         when(parentSegment.getNumberOfKeysInCache()).thenReturn(4L);
         when(parentSegment.getId()).thenReturn(PARENT_SEGMENT_ID);
-        when(segmentRegistry.getSegment(PARENT_SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(currentSegment));
+        when(segmentRegistry.findSegment(PARENT_SEGMENT_ID))
+                .thenReturn(Optional.of(currentSegment));
 
         final PreparedRouteSplit<Integer> prepared = coordinator
                 .tryPrepareSplit(parentSegment, 2L);
@@ -145,14 +145,15 @@ class RouteSplitCoordinatorTest {
 
     @Test
     void completePreparedSplitFlushesMapBeforeDeletingParent() {
-        when(segmentRegistry.deleteSegment(PARENT_SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok());
+        when(segmentRegistry.deleteSegmentIfAvailable(PARENT_SEGMENT_ID))
+                .thenReturn(true);
 
         coordinator.completePreparedSplit(preparedSplit);
 
         final InOrder inOrder = inOrder(keyToSegmentMap, segmentRegistry);
         inOrder.verify(keyToSegmentMap).flushIfDirty();
-        inOrder.verify(segmentRegistry).deleteSegment(PARENT_SEGMENT_ID);
+        inOrder.verify(segmentRegistry)
+                .deleteSegmentIfAvailable(PARENT_SEGMENT_ID);
     }
 
     @Test

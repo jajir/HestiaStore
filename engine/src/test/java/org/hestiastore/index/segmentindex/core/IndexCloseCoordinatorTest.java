@@ -7,10 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
-
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +41,7 @@ class IndexCloseCoordinatorTest {
     private Runnable flushStableSegmentsWithSplitPaused;
 
     @Mock
-    private Supplier<SegmentRegistryResult<Void>> closeSegmentRegistry;
+    private Runnable closeSegmentRegistry;
 
     @Mock
     private Runnable flushKeyToSegmentMap;
@@ -82,7 +79,6 @@ class IndexCloseCoordinatorTest {
 
     @Test
     void close_runsShutdownStepsInOrder() {
-        when(closeSegmentRegistry.get()).thenReturn(SegmentRegistryResult.ok());
         when(logger.isDebugEnabled()).thenReturn(true);
         when(getReadCount.getAsLong()).thenReturn(1L);
         when(getWriteCount.getAsLong()).thenReturn(2L);
@@ -104,7 +100,7 @@ class IndexCloseCoordinatorTest {
         inOrder.verify(awaitBackgroundSplitsIdle).run();
         inOrder.verify(markClosed).run();
         inOrder.verify(flushStableSegmentsWithSplitPaused).run();
-        inOrder.verify(closeSegmentRegistry).get();
+        inOrder.verify(closeSegmentRegistry).run();
         inOrder.verify(flushKeyToSegmentMap).run();
         inOrder.verify(checkpointWal).run();
         inOrder.verify(finishCloseTransition).run();
@@ -113,8 +109,8 @@ class IndexCloseCoordinatorTest {
 
     @Test
     void close_stillFinishesAndClosesWalWhenRegistryCloseFails() {
-        when(closeSegmentRegistry.get())
-                .thenReturn(SegmentRegistryResult.error());
+        org.mockito.Mockito.doThrow(new IndexException("close failed"))
+                .when(closeSegmentRegistry).run();
 
         assertThrows(IndexException.class, () -> closeCoordinator.close());
 

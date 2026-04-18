@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -14,7 +15,6 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 
 /**
  * Builder for {@link SegmentRegistry} instances.
@@ -138,7 +138,7 @@ public final class SegmentRegistryBuilder<K, V> {
      * @param segmentIdAllocator allocator for segment ids
      * @return this builder
      */
-    public SegmentRegistryBuilder<K, V> withSegmentIdAllocator(
+    SegmentRegistryBuilder<K, V> withSegmentIdAllocator(
             final SegmentIdAllocator segmentIdAllocator) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
@@ -180,11 +180,11 @@ public final class SegmentRegistryBuilder<K, V> {
         final int busyTimeoutMillis = sanitizeRetryConf(
                 resolvedConf.getIndexBusyTimeoutMillis(),
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
-        final SegmentFactory<K, V> resolvedFactory = SegmentFactory
-                .withRuntimeConfiguration(resolvedDirectory,
-                        resolvedKeyDescriptor, resolvedValueDescriptor,
-                        resolvedConf, resolvedRuntimeConfiguration,
-                        resolvedSegmentMaintenanceExecutor);
+        final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
+                resolvedDirectory, resolvedKeyDescriptor,
+                resolvedValueDescriptor, resolvedConf,
+                resolvedRuntimeConfiguration,
+                resolvedSegmentMaintenanceExecutor);
         final SegmentIdAllocator resolvedAllocator = segmentIdAllocator == null
                 ? new DirectorySegmentIdAllocator(resolvedDirectory)
                 : segmentIdAllocator;
@@ -193,9 +193,11 @@ public final class SegmentRegistryBuilder<K, V> {
         // SegmentIndex key-map bootstraps the first logical segment with id 0.
         // Ensure its directory exists so registry loads do not fail on a fresh index.
         resolvedFileSystem.ensureSegmentDirectory(SegmentId.of(0));
-        final IndexRetryPolicy resolvedCloseRetryPolicy = new IndexRetryPolicy(
+        final BusyRetryPolicy resolvedCloseRetryPolicy = new BusyRetryPolicy(
                 busyBackoffMillis, busyTimeoutMillis);
-        final IndexRetryPolicy resolvedRegistryCloseRetryPolicy = new IndexRetryPolicy(
+        final BusyRetryPolicy resolvedBlockingRetryPolicy = new BusyRetryPolicy(
+                busyBackoffMillis, busyTimeoutMillis);
+        final BusyRetryPolicy resolvedRegistryCloseRetryPolicy = new BusyRetryPolicy(
                 busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         final Set<SegmentId> pinnedSegments = ConcurrentHashMap.newKeySet();
@@ -208,7 +210,8 @@ public final class SegmentRegistryBuilder<K, V> {
                 resolvedRegistryMaintenanceExecutor,
                 segment -> isEvictable(segment, pinnedSegments, gate));
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
-                cache, resolvedRegistryCloseRetryPolicy, gate, pinnedSegments);
+                cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
+                resolvedFactory, resolvedBlockingRetryPolicy, pinnedSegments);
     }
 
     private static <K, V> boolean isEvictable(final Segment<K, V> segment,

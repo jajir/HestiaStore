@@ -7,7 +7,7 @@ import org.hestiastore.index.Vldtn;
  *
  * @param <T> value type for successful results
  */
-public final class SegmentRegistryResult<T> {
+final class SegmentRegistryResult<T> {
 
     private final SegmentRegistryResultStatus status;
     private final T value;
@@ -25,7 +25,7 @@ public final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return OK result with value
      */
-    public static <T> SegmentRegistryResult<T> ok(final T value) {
+    static <T> SegmentRegistryResult<T> ok(final T value) {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.OK,
                 value);
     }
@@ -36,7 +36,7 @@ public final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return OK result
      */
-    public static <T> SegmentRegistryResult<T> ok() {
+    static <T> SegmentRegistryResult<T> ok() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.OK, null);
     }
 
@@ -46,7 +46,7 @@ public final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return BUSY result
      */
-    public static <T> SegmentRegistryResult<T> busy() {
+    static <T> SegmentRegistryResult<T> busy() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.BUSY,
                 null);
     }
@@ -57,7 +57,7 @@ public final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return CLOSED result
      */
-    public static <T> SegmentRegistryResult<T> closed() {
+    static <T> SegmentRegistryResult<T> closed() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.CLOSED,
                 null);
     }
@@ -68,7 +68,7 @@ public final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return ERROR result
      */
-    public static <T> SegmentRegistryResult<T> error() {
+    static <T> SegmentRegistryResult<T> error() {
         return new SegmentRegistryResult<>(SegmentRegistryResultStatus.ERROR,
                 null);
     }
@@ -80,7 +80,7 @@ public final class SegmentRegistryResult<T> {
      * @param <T> value type
      * @return result with given status and null value
      */
-    public static <T> SegmentRegistryResult<T> fromStatus(
+    static <T> SegmentRegistryResult<T> fromStatus(
             final SegmentRegistryResultStatus status) {
         final SegmentRegistryResultStatus validated = Vldtn.requireNonNull(
                 status, "status");
@@ -101,7 +101,7 @@ public final class SegmentRegistryResult<T> {
      *
      * @return status
      */
-    public SegmentRegistryResultStatus getStatus() {
+    SegmentRegistryResultStatus getStatus() {
         return status;
     }
 
@@ -110,7 +110,7 @@ public final class SegmentRegistryResult<T> {
      *
      * @return value or null
      */
-    public T getValue() {
+    T getValue() {
         return value;
     }
 
@@ -119,7 +119,7 @@ public final class SegmentRegistryResult<T> {
      *
      * @return true for OK
      */
-    public boolean isOk() {
+    boolean isOk() {
         return status == SegmentRegistryResultStatus.OK;
     }
 }

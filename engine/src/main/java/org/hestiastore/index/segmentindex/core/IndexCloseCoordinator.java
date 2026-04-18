@@ -1,12 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.F;
-import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 
 /**
@@ -14,8 +10,6 @@ import org.slf4j.Logger;
  */
 @SuppressWarnings("java:S107")
 final class IndexCloseCoordinator {
-
-    private static final String CLOSE_OPERATION = "close";
 
     private final Logger logger;
     private final String indexName;
@@ -25,7 +19,7 @@ final class IndexCloseCoordinator {
     private final Runnable awaitBackgroundSplitsIdle;
     private final Runnable markClosed;
     private final Runnable flushStableSegmentsWithSplitPaused;
-    private final Supplier<SegmentRegistryResult<Void>> closeSegmentRegistry;
+    private final Runnable closeSegmentRegistry;
     private final Runnable flushKeyToSegmentMap;
     private final Runnable checkpointWal;
     private final LongSupplier getReadCount;
@@ -41,7 +35,7 @@ final class IndexCloseCoordinator {
             final Runnable awaitBackgroundSplitsIdle,
             final Runnable markClosed,
             final Runnable flushStableSegmentsWithSplitPaused,
-            final Supplier<SegmentRegistryResult<Void>> closeSegmentRegistry,
+            final Runnable closeSegmentRegistry,
             final Runnable flushKeyToSegmentMap, final Runnable checkpointWal,
             final LongSupplier getReadCount,
             final LongSupplier getWriteCount,
@@ -74,7 +68,7 @@ final class IndexCloseCoordinator {
             awaitBackgroundWorkSettled();
             markClosed.run();
             flushStableSegmentsWithSplitPaused.run();
-            verifyRegistryCloseResult(closeSegmentRegistry.get());
+            closeSegmentRegistry.run();
             flushKeyToSegmentMap.run();
             checkpointWal.run();
             logOperationCounts();
@@ -93,17 +87,6 @@ final class IndexCloseCoordinator {
         awaitBackgroundSplitsIdle.run();
         prepareDurableState.run();
         awaitBackgroundSplitsIdle.run();
-    }
-
-    private void verifyRegistryCloseResult(
-            final SegmentRegistryResult<Void> closeResult) {
-        final SegmentRegistryResultStatus status = closeResult.getStatus();
-        if (status == SegmentRegistryResultStatus.OK
-                || status == SegmentRegistryResultStatus.CLOSED) {
-            return;
-        }
-        throw new IndexException(String.format(
-                "Index operation '%s' failed: %s", CLOSE_OPERATION, status));
     }
 
     private void logOperationCounts() {

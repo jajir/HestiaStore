@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -17,14 +16,10 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
-import org.hestiastore.index.segment.SegmentBuildResult;
-import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
-import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
 class DefaultSegmentMaterializationServiceTest {
@@ -34,13 +29,14 @@ class DefaultSegmentMaterializationServiceTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), newConfiguration(),
-                stableSegmentMaintenancePool);
-        final SegmentIdAllocator segmentIdAllocator = sequenceAllocator(11);
+        final ExecutorService registryMaintenancePool = Executors
+                .newSingleThreadExecutor();
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final SegmentRegistry<Integer, String> registry = openRegistry(
+                directory, conf, stableSegmentMaintenancePool,
+                registryMaintenancePool);
         final DefaultSegmentMaterializationService<Integer, String> service = new DefaultSegmentMaterializationService<>(
-                segmentIdAllocator, directory, segmentFactory);
+                directory, registry.materialization());
 
         try {
             final PreparedSegmentHandle<Integer, String> handle = service
@@ -51,17 +47,16 @@ class DefaultSegmentMaterializationServiceTest {
             handle.commit();
             handle.close();
 
-            final SegmentBuildResult<Segment<Integer, String>> buildResult = segmentFactory
-                    .buildSegment(segmentId);
-            final Segment<Integer, String> segment = buildResult.getValue();
             try {
-                assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
+                final Segment<Integer, String> segment = registry
+                        .getSegment(segmentId);
                 assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")),
                         readEntries(segment));
             } finally {
-                SegmentTestHelper.closeAndAwait(segment);
+                registry.close();
             }
         } finally {
+            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -71,13 +66,14 @@ class DefaultSegmentMaterializationServiceTest {
         final Directory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), newConfiguration(),
-                stableSegmentMaintenancePool);
-        final SegmentIdAllocator segmentIdAllocator = sequenceAllocator(21);
+        final ExecutorService registryMaintenancePool = Executors
+                .newSingleThreadExecutor();
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
+        final SegmentRegistry<Integer, String> registry = openRegistry(
+                directory, conf, stableSegmentMaintenancePool,
+                registryMaintenancePool);
         final DefaultSegmentMaterializationService<Integer, String> service = new DefaultSegmentMaterializationService<>(
-                segmentIdAllocator, directory, segmentFactory);
+                directory, registry.materialization());
 
         try {
             final PreparedSegmentHandle<Integer, String> handle = service
@@ -90,13 +86,10 @@ class DefaultSegmentMaterializationServiceTest {
 
             assertFalse(directory.isFileExists(segmentId.getName()));
         } finally {
+            registry.close();
+            registryMaintenancePool.shutdownNow();
             stableSegmentMaintenancePool.shutdownNow();
         }
-    }
-
-    private static SegmentIdAllocator sequenceAllocator(final int firstId) {
-        final AtomicInteger sequence = new AtomicInteger(firstId);
-        return () -> SegmentId.of(sequence.getAndIncrement());
     }
 
     private static List<Entry<Integer, String>> readEntries(
@@ -110,6 +103,23 @@ class DefaultSegmentMaterializationServiceTest {
             }
         }
         return entries;
+    }
+
+    private static SegmentRegistry<Integer, String> openRegistry(
+            final Directory directory,
+            final IndexConfiguration<Integer, String> conf,
+            final ExecutorService stableSegmentMaintenancePool,
+            final ExecutorService registryMaintenancePool) {
+        return SegmentRegistry
+                .<Integer, String>builder()
+                .withDirectoryFacade(directory)
+                .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                .withValueTypeDescriptor(new TypeDescriptorShortString())
+                .withConfiguration(conf)
+                .withRuntimeConfiguration(conf.resolveRuntimeConfiguration())
+                .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
+                .withRegistryMaintenanceExecutor(registryMaintenancePool)
+                .build();
     }
 
     private static IndexConfiguration<Integer, String> newConfiguration() {
