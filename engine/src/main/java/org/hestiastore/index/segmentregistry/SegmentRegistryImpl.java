@@ -1,13 +1,15 @@
 package org.hestiastore.index.segmentregistry;
 
+import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 
+import org.hestiastore.index.BusyRetryPolicy;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +23,8 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
+final class SegmentRegistryImpl<K, V>
+        implements SegmentRegistry<K, V>, SegmentRegistryStatusAccess<K, V> {
 
     private static final Logger logger = LoggerFactory
             .getLogger(SegmentRegistryImpl.class);
@@ -29,10 +32,15 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
 
     private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
     private final SegmentRegistryStateMachine gate;
-    private final IndexRetryPolicy closeRetryPolicy;
+    private final BusyRetryPolicy closeRetryPolicy;
 
     private final SegmentIdAllocator segmentIdAllocator;
     private final SegmentRegistryFileSystem fileSystem;
+    private final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory;
+    private final SegmentRuntimeTuner runtimeTuner;
+    private final BlockingSegmentRegistryAdapter<K, V> blockingFacade;
+    private final SegmentRegistry.Materialization<K, V> materialization;
+    private final SegmentRegistry.Runtime<K, V> runtime;
     private final Set<SegmentId> pinnedSegments;
 
     /**
@@ -47,8 +55,11 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
             final SegmentRegistryCache<SegmentId, Segment<K, V>> cache,
-            final IndexRetryPolicy closeRetryPolicy,
+            final BusyRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate,
+            final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory,
+            final SegmentRuntimeTuner runtimeTuner,
+            final BusyRetryPolicy blockingRetryPolicy,
             final Set<SegmentId> pinnedSegments) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
@@ -57,12 +68,48 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         this.closeRetryPolicy = Vldtn.requireNonNull(closeRetryPolicy,
                 "closeRetryPolicy");
         this.gate = Vldtn.requireNonNull(gate, "gate");
+        this.preparedSegmentWriterFactory = Vldtn
+                .requireNonNull(preparedSegmentWriterFactory,
+                        "preparedSegmentWriterFactory");
+        this.runtimeTuner = Vldtn.requireNonNull(runtimeTuner, "runtimeTuner");
+        this.blockingFacade = new BlockingSegmentRegistryAdapter<>(this,
+                Vldtn.requireNonNull(blockingRetryPolicy,
+                        "blockingRetryPolicy"));
         this.pinnedSegments = Vldtn.requireNonNull(pinnedSegments,
                 "pinnedSegments");
+        this.materialization = new SegmentRegistryMaterializationView<>(
+                this.segmentIdAllocator, this.preparedSegmentWriterFactory);
+        this.runtime = new SegmentRegistryRuntimeView<>(this.runtimeTuner,
+                this::loadedSegmentsSnapshot);
         if (!gate.finishFreezeToReady()) {
             throw new IllegalStateException(
                     "Failed to transition registry from FREEZE to READY");
         }
+    }
+
+    @Override
+    public Segment<K, V> getSegment(final SegmentId segmentId) {
+        return blockingFacade.getSegment(segmentId);
+    }
+
+    @Override
+    public Optional<Segment<K, V>> findSegment(final SegmentId segmentId) {
+        return blockingFacade.findSegment(segmentId);
+    }
+
+    @Override
+    public Segment<K, V> createSegment() {
+        return blockingFacade.createSegment();
+    }
+
+    @Override
+    public void deleteSegment(final SegmentId segmentId) {
+        blockingFacade.deleteSegment(segmentId);
+    }
+
+    @Override
+    public boolean deleteSegmentIfAvailable(final SegmentId segmentId) {
+        return blockingFacade.deleteSegmentIfAvailable(segmentId);
     }
 
     /**
@@ -95,7 +142,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @return result containing the segment or a status
      */
     @Override
-    public SegmentRegistryResult<Segment<K, V>> getSegment(
+    public SegmentRegistryResult<Segment<K, V>> tryGetSegment(
             final SegmentId segmentId) {
         return loadSegment(segmentId);
     }
@@ -106,7 +153,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @return registry result containing the new segment or a status
      */
     @Override
-    public SegmentRegistryResult<Segment<K, V>> createSegment() {
+    public SegmentRegistryResult<Segment<K, V>> tryCreateSegment() {
         final SegmentRegistryResult<SegmentId> allocated = allocateSegmentId();
         if (!allocated.isOk()) {
             return SegmentRegistryResult.fromStatus(allocated.getStatus());
@@ -171,7 +218,7 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
      * @param segmentId segment id to remove
      */
     @Override
-    public SegmentRegistryResult<Void> deleteSegment(
+    public SegmentRegistryResult<Void> tryDeleteSegment(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
         final SegmentRegistryState state = gate.getState();
@@ -207,32 +254,32 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
         return cache.updateLimit(newLimit);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public int cacheLimit() {
-        return cache.getLimit();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void pinSegment(final SegmentId segmentId) {
+    void pinSegment(final SegmentId segmentId) {
         pinnedSegments.add(
                 Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER));
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public void unpinSegment(final SegmentId segmentId) {
+    void unpinSegment(final SegmentId segmentId) {
         if (segmentId == null) {
             return;
         }
         pinnedSegments.remove(segmentId);
     }
 
+    private List<Segment<K, V>> loadedSegmentsSnapshot() {
+        return cache.readyValuesSnapshot();
+    }
+
     /** {@inheritDoc} */
     @Override
-    public List<Segment<K, V>> loadedSegmentsSnapshot() {
-        return cache.readyValuesSnapshot();
+    public SegmentRegistry.Materialization<K, V> materialization() {
+        return materialization;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public SegmentRegistry.Runtime<K, V> runtime() {
+        return runtime;
     }
 
     private static SegmentRegistryResultStatus resultForState(
@@ -251,41 +298,40 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
     /**
      * Closes all tracked segments.
      * <p>
-     * Close is idempotent. Runtime close failures while unloading are handled by
-     * cache/entry semantics and may leave entries unavailable (BUSY) by design.
+     * Close is idempotent. Runtime close failures while unloading are surfaced
+     * as {@link IndexException}.
      */
     @Override
-    public SegmentRegistryResult<Void> close() {
+    public void close() {
         SegmentRegistryState state = gate.getState();
         if (state == SegmentRegistryState.ERROR) {
-            return SegmentRegistryResult.error();
+            throw closeFailure(SegmentRegistryResultStatus.ERROR, null);
         }
         if (state == SegmentRegistryState.CLOSED) {
-            return SegmentRegistryResult.closed();
+            return;
         }
         if (state == SegmentRegistryState.READY) {
             gate.tryEnterFreeze();
         }
         state = gate.getState();
         if (state == SegmentRegistryState.ERROR) {
-            return SegmentRegistryResult.error();
+            throw closeFailure(SegmentRegistryResultStatus.ERROR, null);
         }
         if (state == SegmentRegistryState.CLOSED) {
-            return SegmentRegistryResult.closed();
+            return;
         }
         if (state != SegmentRegistryState.FREEZE) {
-            return SegmentRegistryResult.busy();
+            throw closeFailure(SegmentRegistryResultStatus.BUSY, null);
         }
         try {
             awaitCacheClosed();
         } catch (final RuntimeException ex) {
             gate.fail();
-            return SegmentRegistryResult.error();
+            throw closeFailure(SegmentRegistryResultStatus.ERROR, ex);
         }
         if (!gate.finishFreezeToClosed()) {
-            return SegmentRegistryResult.error();
+            throw closeFailure(SegmentRegistryResultStatus.ERROR, null);
         }
-        return SegmentRegistryResult.ok();
     }
 
     private void awaitCacheClosed() {
@@ -297,6 +343,14 @@ public final class SegmentRegistryImpl<K, V> implements SegmentRegistry<K, V> {
             }
             closeRetryPolicy.backoffOrThrow(startNanos, "registryClose", null);
         }
+    }
+
+    private IndexException closeFailure(
+            final SegmentRegistryResultStatus status,
+            final RuntimeException cause) {
+        return new IndexException(
+                String.format("Segment registry close failed: %s", status),
+                cause);
     }
 
 }

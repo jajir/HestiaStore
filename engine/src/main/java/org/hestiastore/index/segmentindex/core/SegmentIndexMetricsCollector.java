@@ -188,7 +188,7 @@ final class SegmentIndexMetricsCollector<K, V> {
         final Set<SegmentId> mappedSegmentIdSet = new HashSet<>(
                 mappedSegmentIds);
         int accountedSegments = 0;
-        for (final Segment<K, V> segment : segmentRegistry
+        for (final Segment<K, V> segment : segmentRegistry.runtime()
                 .loadedSegmentsSnapshot()) {
             if (segment != null) {
                 final SegmentRuntimeSnapshot segmentRuntime = segment

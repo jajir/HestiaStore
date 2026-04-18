@@ -86,7 +86,6 @@ final class DirectSegmentReadCoordinator<K, V> {
     private EntryIterator<K, V> openStableIterator(
             final List<SegmentId> segmentIds,
             final SegmentIteratorIsolation isolation) {
-        return new SegmentsIterator<>(segmentIds, segmentRegistry, isolation,
-                retryPolicy);
+        return new SegmentsIterator<>(segmentIds, segmentRegistry, isolation);
     }
 }

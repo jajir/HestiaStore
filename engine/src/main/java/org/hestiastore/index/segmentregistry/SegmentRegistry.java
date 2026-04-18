@@ -1,16 +1,18 @@
 package org.hestiastore.index.segmentregistry;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentFullWriterTx;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 
 /**
- * Minimal contract for retrieving and managing segments from a registry.
+ * Main public entry point for segment registry operations and related runtime
+ * views.
  * <p>
  * Contract source of truth is {@code docs/architecture/registry.md}.
- * Operations return status and optional value through
- * {@link SegmentRegistryResult}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -29,55 +31,67 @@ public interface SegmentRegistry<K, V> {
     }
 
     /**
-     * Returns the segment for the provided id, loading it if needed.
-     * <p>
-     * In {@code READY} state this operation uses per-key synchronization.
-     * Unrelated keys must not block each other.
+     * Returns the materialization view backed by the same registry runtime.
+     *
+     * @return registry materialization view
+     */
+    Materialization<K, V> materialization();
+
+    /**
+     * Returns the runtime tuning view backed by the same registry runtime.
+     *
+     * @return registry runtime view
+     */
+    Runtime<K, V> runtime();
+
+    /**
+     * Returns the segment for the provided id, waiting until the registry can
+     * load it or a terminal failure is reached.
      *
      * @param segmentId segment id to load
-     * @return result with status and optional segment
+     * @return loaded segment
      */
-    SegmentRegistryResult<Segment<K, V>> getSegment(SegmentId segmentId);
+    Segment<K, V> getSegment(SegmentId segmentId);
 
     /**
-     * Allocates a new, unused segment id.
+     * Performs a bounded fail-fast attempt to load the requested segment.
      *
-     * @return result with status and optional segment id
+     * @param segmentId segment id to load
+     * @return loaded segment when immediately available, otherwise empty
      */
-    SegmentRegistryResult<SegmentId> allocateSegmentId();
+    Optional<Segment<K, V>> findSegment(SegmentId segmentId);
 
     /**
-     * Creates and registers a new segment using a freshly allocated id.
+     * Creates and registers a new segment, waiting until the segment becomes
+     * available or a terminal failure is reached.
      *
-     * @return result with status and optional created segment
+     * @return created segment
      */
-    default SegmentRegistryResult<Segment<K, V>> createSegment() {
-        final SegmentRegistryResult<SegmentId> allocated = allocateSegmentId();
-        if (allocated.getStatus() != SegmentRegistryResultStatus.OK) {
-            return SegmentRegistryResult.fromStatus(allocated.getStatus());
-        }
-        if (allocated.getValue() == null) {
-            return SegmentRegistryResult.error();
-        }
-        return getSegment(allocated.getValue());
-    }
+    Segment<K, V> createSegment();
 
     /**
-     * Removes a segment from the registry, closing and deleting its files.
+     * Removes a segment from the registry, waiting until the segment is
+     * deleted or a terminal failure is reached.
      *
      * @param segmentId segment id to remove
-     * @return result status
      */
-    SegmentRegistryResult<Void> deleteSegment(SegmentId segmentId);
+    void deleteSegment(SegmentId segmentId);
+
+    /**
+     * Performs a bounded fail-fast attempt to delete the requested segment.
+     *
+     * @param segmentId segment id to remove
+     * @return true when the segment was deleted or already closed, false when
+     *         it remained busy
+     */
+    boolean deleteSegmentIfAvailable(SegmentId segmentId);
 
     /**
      * Returns immutable cache counters snapshot.
      *
      * @return registry cache metrics snapshot
      */
-    default SegmentRegistryCacheStats metricsSnapshot() {
-        return SegmentRegistryCacheStats.empty();
-    }
+    SegmentRegistryCacheStats metricsSnapshot();
 
     /**
      * Updates registry cache limit at runtime.
@@ -85,52 +99,59 @@ public interface SegmentRegistry<K, V> {
      * @param newLimit new cache limit
      * @return true when update was applied
      */
-    default boolean updateCacheLimit(final int newLimit) {
-        return false;
-    }
-
-    /**
-     * Returns current registry cache limit.
-     *
-     * @return cache limit
-     */
-    default int cacheLimit() {
-        return 0;
-    }
-
-    /**
-     * Prevents cache eviction/unload for a segment while an internal operation
-     * is in progress.
-     *
-     * @param segmentId segment id to pin
-     */
-    default void pinSegment(final SegmentId segmentId) {
-    }
-
-    /**
-     * Releases a previously pinned segment so normal cache eviction can resume.
-     *
-     * @param segmentId segment id to unpin
-     */
-    default void unpinSegment(final SegmentId segmentId) {
-    }
-
-    /**
-     * Returns currently loaded segment instances.
-     *
-     * @return loaded segment snapshot
-     */
-    default List<Segment<K, V>> loadedSegmentsSnapshot() {
-        return List.of();
-    }
+    boolean updateCacheLimit(int newLimit);
 
     /**
      * Closes the registry, releasing cached segments and executors.
      * <p>
-     * Close is idempotent and maps the gate to {@code CLOSED} unless the gate is
-     * already terminal {@code ERROR}.
+     * Close is idempotent and maps the gate to {@code CLOSED} unless the gate
+     * is already terminal {@code ERROR}.
      *
-     * @return result status
      */
-    SegmentRegistryResult<Void> close();
+    void close();
+
+    /**
+     * Materialization helpers exposed by the registry package.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     */
+    interface Materialization<K, V> {
+
+        /**
+         * Allocates the next segment id for offline materialization.
+         *
+         * @return next segment id
+         */
+        SegmentId nextSegmentId();
+
+        /**
+         * Opens a synchronous bulk writer transaction for the provided segment
+         * id.
+         *
+         * @param segmentId segment id to materialize
+         * @return full writer transaction for building the segment files
+         */
+        SegmentFullWriterTx<K, V> openWriterTx(SegmentId segmentId);
+    }
+
+    /**
+     * Runtime tuning helpers exposed by the registry package.
+     */
+    interface Runtime<K, V> {
+
+        /**
+         * Updates runtime-only limits used for future segment materialization.
+         *
+         * @param runtimeLimits validated segment runtime limits
+         */
+        void updateRuntimeLimits(SegmentRuntimeLimits runtimeLimits);
+
+        /**
+         * Returns currently loaded segment instances.
+         *
+         * @return loaded segment snapshot
+         */
+        List<Segment<K, V>> loadedSegmentsSnapshot();
+    }
 }

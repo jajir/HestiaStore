@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -17,11 +18,10 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,8 +79,8 @@ class StableSegmentGatewayTest {
     @Test
     void get_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.findSegment(segmentId))
+                .thenReturn(Optional.of(segment));
         when(segment.get("key")).thenReturn(SegmentResult.busy());
 
         final IndexResult<String> result = stableSegmentGateway.get("key");
@@ -91,8 +91,8 @@ class StableSegmentGatewayTest {
     @Test
     void get_returnsBusyWhenMappingChangesDuringRead() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.findSegment(segmentId))
+                .thenReturn(Optional.of(segment));
         when(segment.get("key")).thenAnswer(invocation -> {
             synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded("key-2");
             return SegmentResult.ok("value");
@@ -106,8 +106,8 @@ class StableSegmentGatewayTest {
     @Test
     void put_returnsOkWhenSegmentAcceptsWrite() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.findSegment(segmentId))
+                .thenReturn(Optional.of(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
 
         final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
@@ -119,8 +119,8 @@ class StableSegmentGatewayTest {
     @Test
     void put_returnsBusyWhenSegmentRejectsWrite() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.findSegment(segmentId))
+                .thenReturn(Optional.of(segment));
         when(segment.put("key", "value")).thenReturn(SegmentResult.busy());
 
         final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
@@ -134,8 +134,8 @@ class StableSegmentGatewayTest {
         final SegmentId segmentId = createBootstrapSegment("key");
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.findSegment(segmentId))
+                .thenReturn(Optional.of(segment));
         when(segment.openIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 

@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
@@ -13,12 +13,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hestiastore.index.BusyRetryPolicy;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -46,13 +47,13 @@ class SegmentRegistryImplCloseTest {
 
         final ExecutorService closer = Executors.newSingleThreadExecutor();
         try {
-            final Future<SegmentRegistryResult<Void>> closeFuture = closer
-                    .submit(registry::close);
+            final Future<?> closeFuture = closer.submit(() -> {
+                registry.close();
+                return null;
+            });
             entry.finishLoad(segment);
 
-            final SegmentRegistryResult<Void> result = closeFuture.get(1,
-                    TimeUnit.SECONDS);
-            assertSame(SegmentRegistryResultStatus.OK, result.getStatus());
+            closeFuture.get(1, TimeUnit.SECONDS);
             assertTrue(readCacheMap(cache).isEmpty(),
                     "Cache should be empty after close drain");
             assertEquals(SegmentRegistryState.CLOSED, gate.getState());
@@ -62,7 +63,7 @@ class SegmentRegistryImplCloseTest {
     }
 
     @Test
-    void closeReturnsErrorWhenCacheCannotDrainBeforeTimeout() {
+    void closeThrowsWhenCacheCannotDrainBeforeTimeout() {
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         final SegmentRegistryCache<SegmentId, Segment<Integer, String>> cache = new SegmentRegistryCache<>(
                 4, id -> {
@@ -78,11 +79,12 @@ class SegmentRegistryImplCloseTest {
         readCacheMap(cache).put(segmentId, loadingEntry);
 
         final long startNanos = System.nanoTime();
-        final SegmentRegistryResult<Void> result = registry.close();
+        final IndexException result = assertThrows(IndexException.class,
+                registry::close);
         final long durationMillis = TimeUnit.NANOSECONDS
                 .toMillis(System.nanoTime() - startNanos);
 
-        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
+        assertTrue(result.getMessage().contains("ERROR"));
         assertEquals(SegmentRegistryState.ERROR, gate.getState());
         assertTrue(durationMillis >= 30L,
                 "Close should retry until timeout budget is consumed");
@@ -98,10 +100,18 @@ class SegmentRegistryImplCloseTest {
         final AtomicInteger counter = new AtomicInteger();
         final SegmentIdAllocator allocator = () -> SegmentId
                 .of(counter.getAndIncrement());
-        final IndexRetryPolicy closeRetryPolicy = new IndexRetryPolicy(
+        final BusyRetryPolicy closeRetryPolicy = new BusyRetryPolicy(
+                backoffMillis, timeoutMillis);
+        @SuppressWarnings("unchecked")
+        final PreparedSegmentWriterFactory<Integer, String> writerFactory = Mockito
+                .mock(PreparedSegmentWriterFactory.class);
+        final SegmentRuntimeTuner runtimeTuner = Mockito
+                .mock(SegmentRuntimeTuner.class);
+        final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
-                gate, ConcurrentHashMap.<SegmentId>newKeySet());
+                gate, writerFactory, runtimeTuner, blockingRetryPolicy,
+                ConcurrentHashMap.<SegmentId>newKeySet());
     }
 
     @SuppressWarnings("unchecked")

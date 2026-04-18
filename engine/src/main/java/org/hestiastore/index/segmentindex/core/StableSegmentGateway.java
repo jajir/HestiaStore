@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
 import java.util.function.Function;
+import java.util.Optional;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
@@ -12,8 +13,6 @@ import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 
 /**
  * Single-attempt gateway for stable-segment operations that returns status
@@ -48,13 +47,12 @@ final class StableSegmentGateway<K, V> {
             final long expectedTopologyVersion) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
-        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                .getSegment(segmentId);
-        if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                || loaded.getValue() == null) {
-            return fromRegistryStatus(loaded.getStatus());
+        final Optional<Segment<K, V>> loaded = segmentRegistry
+                .findSegment(segmentId);
+        if (loaded.isEmpty()) {
+            return IndexResult.busy();
         }
-        final SegmentResult<V> result = loaded.getValue().get(key);
+        final SegmentResult<V> result = loaded.get().get(key);
         if (result.getStatus() == SegmentResultStatus.OK) {
             if (!keyToSegmentMap
                     .isSnapshotVersionCurrent(expectedTopologyVersion)) {
@@ -109,17 +107,6 @@ final class StableSegmentGateway<K, V> {
         });
     }
 
-    private static <T> IndexResult<T> fromRegistryStatus(
-            final SegmentRegistryResultStatus status) {
-        if (status == SegmentRegistryResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (status == SegmentRegistryResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        return IndexResult.error();
-    }
-
     private static <T> IndexResult<T> fromSegmentResult(
             final SegmentResult<T> result) {
         if (result.getStatus() == SegmentResultStatus.OK) {
@@ -150,12 +137,11 @@ final class StableSegmentGateway<K, V> {
 
     private <T> IndexResult<T> withLoadedSegment(final SegmentId segmentId,
             final Function<Segment<K, V>, IndexResult<T>> action) {
-        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                .getSegment(segmentId);
-        if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                || loaded.getValue() == null) {
-            return fromRegistryStatus(loaded.getStatus());
+        final Optional<Segment<K, V>> loaded = segmentRegistry
+                .findSegment(segmentId);
+        if (loaded.isEmpty()) {
+            return IndexResult.busy();
         }
-        return action.apply(loaded.getValue());
+        return action.apply(loaded.get());
     }
 }

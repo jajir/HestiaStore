@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * {@code ERROR -> ERROR}.
  * {@code ERROR} is terminal.
  */
-public final class SegmentRegistryStateMachine {
+final class SegmentRegistryStateMachine {
 
     private final AtomicReference<SegmentRegistryState> state = new AtomicReference<>(
             SegmentRegistryState.FREEZE);
@@ -22,7 +22,7 @@ public final class SegmentRegistryStateMachine {
      *
      * @return registry state
      */
-    public SegmentRegistryState getState() {
+    SegmentRegistryState getState() {
         return state.get();
     }
 
@@ -31,7 +31,7 @@ public final class SegmentRegistryStateMachine {
      *
      * @return true when FREEZE was entered from READY
      */
-    public boolean tryEnterFreeze() {
+    boolean tryEnterFreeze() {
         return state.compareAndSet(SegmentRegistryState.READY,
                 SegmentRegistryState.FREEZE);
     }
@@ -41,7 +41,7 @@ public final class SegmentRegistryStateMachine {
      *
      * @return true when the transition succeeds
      */
-    public boolean finishFreezeToReady() {
+    boolean finishFreezeToReady() {
         return state.compareAndSet(SegmentRegistryState.FREEZE,
                 SegmentRegistryState.READY);
     }
@@ -52,7 +52,7 @@ public final class SegmentRegistryStateMachine {
      * @return true when state becomes CLOSED (or is already CLOSED),
      *         false when state is terminal ERROR
      */
-    public boolean close() {
+    boolean close() {
         while (true) {
             final SegmentRegistryState current = state.get();
             if (current == SegmentRegistryState.ERROR) {
@@ -78,7 +78,7 @@ public final class SegmentRegistryStateMachine {
      *
      * @return true when state becomes CLOSED
      */
-    public boolean finishFreezeToClosed() {
+    boolean finishFreezeToClosed() {
         if (state.get() == SegmentRegistryState.CLOSED) {
             return true;
         }
@@ -89,7 +89,7 @@ public final class SegmentRegistryStateMachine {
     /**
      * Marks the registry as failed.
      */
-    public void fail() {
+    void fail() {
         state.set(SegmentRegistryState.ERROR);
     }
 }
