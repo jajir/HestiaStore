@@ -37,7 +37,7 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentRegistryCache<K, V> {
+final class SegmentRegistryCache<K, V> {
 
     private final ConcurrentHashMap<K, Entry<V>> map = new ConcurrentHashMap<>();
     private final AtomicInteger size = new AtomicInteger();
@@ -60,7 +60,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param loader  value loader invoked on cache misses
      * @param unloader value unloader invoked on eviction/removal
      */
-    public SegmentRegistryCache(final int limit, final Function<K, V> loader,
+    SegmentRegistryCache(final int limit, final Function<K, V> loader,
             final Consumer<V> unloader) {
         this(limit, loader, unloader, Runnable::run,
                 value -> true);
@@ -90,7 +90,7 @@ public final class SegmentRegistryCache<K, V> {
      * @param key cache key
      * @return cached or newly loaded value
      */
-    public V get(final K key) {
+    V get(final K key) {
         Vldtn.requireNonNull(key, "key");
         while (true) {
             final long currentAccessCx = accessCx.getAndIncrement();

@@ -13,12 +13,10 @@ import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,11 +69,6 @@ class IndexConsistencyChecker<K, V> {
         this.segmentFilter = Vldtn.requireNonNull(segmentFilter,
                 "segmentFilter");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-    }
-
-    private SegmentRegistryResult<Segment<K, V>> loadSegment(
-            final SegmentId segmentId) {
-        return segmentRegistry.getSegment(segmentId);
     }
 
     /**
@@ -145,21 +138,12 @@ class IndexConsistencyChecker<K, V> {
     }
 
     private Segment<K, V> awaitLoadedSegment(final SegmentId segmentId) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentRegistryResult<Segment<K, V>> loaded = loadSegment(
-                    segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos,
-                        "loadSegmentForConsistency", segmentId);
-            } else if (loaded.getStatus() == SegmentRegistryResultStatus.OK
-                    && loaded.getValue() != null) {
-                return loaded.getValue();
-            } else {
-                throw new IndexException(String.format(
-                        ERROR_MSG + "Segment '%s' is not found in index.",
-                        segmentId));
-            }
+        try {
+            return segmentRegistry.getSegment(segmentId);
+        } catch (final IndexException e) {
+            throw new IndexException(String.format(
+                    ERROR_MSG + "Segment '%s' is not found in index.",
+                    segmentId), e);
         }
     }
 

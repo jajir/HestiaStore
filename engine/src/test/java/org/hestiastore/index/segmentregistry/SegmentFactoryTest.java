@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Entry;
@@ -34,6 +34,7 @@ import org.hestiastore.index.segment.SegmentBuilder;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
@@ -50,6 +51,7 @@ class SegmentFactoryTest {
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), conf,
+                conf.resolveRuntimeConfiguration(),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
@@ -74,6 +76,7 @@ class SegmentFactoryTest {
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), conf,
+                conf.resolveRuntimeConfiguration(),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(7);
         final String lockFileName = new SegmentDirectoryLayout(segmentId)
@@ -103,6 +106,7 @@ class SegmentFactoryTest {
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), conf,
+                conf.resolveRuntimeConfiguration(),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(9);
 
@@ -192,11 +196,10 @@ class SegmentFactoryTest {
                 .build();
         final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = conf
                 .resolveRuntimeConfiguration(registry);
-        final SegmentFactory<Integer, String> factory = SegmentFactory
-                .withRuntimeConfiguration(new MemDirectory(),
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), conf,
-                        runtimeConfiguration, stableSegmentMaintenancePool);
+        final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
+                new MemDirectory(), new TypeDescriptorInteger(),
+                new TypeDescriptorShortString(), conf, runtimeConfiguration,
+                stableSegmentMaintenancePool);
 
         try {
             final SegmentBuilder<Integer, String> builder = factory
@@ -220,14 +223,18 @@ class SegmentFactoryTest {
     void updateRuntimeLimitsRejectsInvalidPartitionBufferRelationship() {
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
+        final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 new MemDirectory(), new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), newConfiguration(),
+                new TypeDescriptorShortString(), conf,
+                conf.resolveRuntimeConfiguration(),
                 stableSegmentMaintenancePool);
         try {
             final IllegalArgumentException exception = assertThrows(
                     IllegalArgumentException.class,
-                    () -> factory.updateRuntimeLimits(10, 5, 5));
+                    () -> factory
+                            .updateRuntimeLimits(new SegmentRuntimeLimits(10, 5,
+                                    5)));
             assertEquals(
                     "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance must be greater than maxNumberOfKeysInSegmentWriteCache",
                     exception.getMessage());

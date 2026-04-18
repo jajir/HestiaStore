@@ -19,11 +19,10 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +65,7 @@ class SegmentIndexConsistencyCheckerTest {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SEGMENT_ID));
         when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.error());
+                .thenThrow(new IndexException("boom"));
 
         final Exception e = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());
@@ -96,8 +95,7 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment_segmentMaxKey_is_null_removes_segment() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SEGMENT_ID));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency()).thenReturn(null);
         when(segment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(SegmentResult.ok(EntryIterator
@@ -114,8 +112,7 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment_segmentMaxKeyIsHigher() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SEGMENT_ID));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency())
                 .thenReturn(SEGMENT_MAX_KEY + 1);
         when(snapshot.findSegmentIdForKey(SEGMENT_MAX_KEY + 1))
@@ -134,8 +131,7 @@ class SegmentIndexConsistencyCheckerTest {
     void test_oneSegment() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SEGMENT_ID));
-        when(segmentRegistry.getSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(SEGMENT_ID)).thenReturn(segment);
         when(segment.checkAndRepairConsistency()).thenReturn(SEGMENT_MAX_KEY);
         when(snapshot.findSegmentIdForKey(SEGMENT_MAX_KEY))
                 .thenReturn(SEGMENT_ID);

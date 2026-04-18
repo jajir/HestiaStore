@@ -20,7 +20,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -74,14 +73,12 @@ class SegmentManagerTest {
         when(conf.getBloomFilterIndexSizeInBytes()).thenReturn(0);
         when(conf.getBloomFilterProbabilityOfFalsePositive()).thenReturn(0.01);
 
-        final SegmentRegistryResult<Segment<Integer, String>> created = segmentRegistry
-                .createSegment();
-        final Segment<Integer, String> s1 = created.getValue();
+        final Segment<Integer, String> s1 = segmentRegistry.createSegment();
         assertNotNull(s1);
         final SegmentId segmentId = s1.getId();
 
         final Segment<Integer, String> s2 = segmentRegistry
-                .getSegment(segmentId).getValue();
+                .getSegment(segmentId);
         assertNotNull(s1);
 
         /*
