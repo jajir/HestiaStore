@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.split;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.NoSuchElementException;
 
 import org.hestiastore.index.Entry;
@@ -16,8 +17,6 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,19 +162,26 @@ public final class RouteSplitCoordinator<K, V> {
 
     private boolean isStillCurrentSegment(final Segment<K, V> segment) {
         final SegmentId segmentId = segment.getId();
-        final SegmentRegistryResult<Segment<K, V>> currentResult = segmentRegistry
-                .getSegment(segmentId);
-        if (currentResult.getStatus() != SegmentRegistryResultStatus.OK
-                || currentResult.getValue() == null) {
+        final Optional<Segment<K, V>> currentSegment;
+        try {
+            currentSegment = segmentRegistry.findSegment(segmentId);
+        } catch (final IndexException e) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
-                        "Route split aborted before validation: segment='{}' registryStatus='{}'",
-                        segmentId, currentResult.getStatus());
+                        "Route split aborted before validation because registry lookup failed: segment='{}'",
+                        segmentId, e);
             }
             return false;
         }
-        final Segment<K, V> currentSegment = currentResult.getValue();
-        if (currentSegment != segment) {
+        if (currentSegment.isEmpty()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Route split aborted before validation because segment is not immediately available: segment='{}'",
+                        segmentId);
+            }
+            return false;
+        }
+        if (currentSegment.get() != segment) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
                         "Route split aborted because loaded segment changed: segment='{}'",
@@ -329,19 +335,17 @@ public final class RouteSplitCoordinator<K, V> {
     }
 
     private void deleteRetiredParentSegment(final SegmentId segmentId) {
-        final SegmentRegistryResultStatus status = segmentRegistry
-                .deleteSegment(segmentId).getStatus();
-        if (status == SegmentRegistryResultStatus.BUSY) {
+        try {
+            if (segmentRegistry.deleteSegmentIfAvailable(segmentId)) {
+                return;
+            }
             logger.warn(
                     "Retired parent segment '{}' remained on disk because delete was busy after split publish.",
                     segmentId);
-            return;
-        }
-        if (status != SegmentRegistryResultStatus.OK
-                && status != SegmentRegistryResultStatus.CLOSED) {
+        } catch (final IndexException e) {
             logger.warn(
                     "Retired parent segment '{}' could not be deleted after split publish: {}",
-                    segmentId, status);
+                    segmentId, e.getMessage());
         }
     }
 

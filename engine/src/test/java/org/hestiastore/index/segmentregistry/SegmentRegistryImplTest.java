@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +14,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Supplier;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -26,11 +27,8 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
-import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,18 +77,18 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_reusesInstanceUntilClosed() {
         stubSegmentConfig();
-        final Segment<Integer, String> created = registry.createSegment()
+        final Segment<Integer, String> created = registry.tryCreateSegment()
                 .getValue();
         final SegmentId segmentId = created.getId();
 
-        final Segment<Integer, String> first = registry.getSegment(segmentId)
+        final Segment<Integer, String> first = registry.tryGetSegment(segmentId)
                 .getValue();
-        final Segment<Integer, String> second = registry.getSegment(segmentId)
+        final Segment<Integer, String> second = registry.tryGetSegment(segmentId)
                 .getValue();
 
         assertSame(first, second);
         closeAndAwait(first);
-        final Segment<Integer, String> third = registry.getSegment(segmentId)
+        final Segment<Integer, String> third = registry.tryGetSegment(segmentId)
                 .getValue();
 
         assertNotSame(first, third);
@@ -99,9 +97,7 @@ class SegmentRegistryImplTest {
     @Test
     void registryStartupTransitionsGateToReady() {
         final SegmentRegistryStateMachine gate = readGate(registry);
-        assertSame(
-                org.hestiastore.index.segmentregistry.SegmentRegistryState.READY,
-                gate.getState());
+        assertSame(SegmentRegistryState.READY, gate.getState());
     }
 
     @Test
@@ -112,7 +108,7 @@ class SegmentRegistryImplTest {
         assertTrue(gate.tryEnterFreeze());
         try (GateGuard ignored = new GateGuard(gate)) {
             final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                    .getSegment(segmentId);
+                    .tryGetSegment(segmentId);
             assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
         }
     }
@@ -122,7 +118,7 @@ class SegmentRegistryImplTest {
         registry.close();
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .getSegment(SegmentId.of(1));
+                .tryGetSegment(SegmentId.of(1));
         assertSame(SegmentRegistryResultStatus.CLOSED, result.getStatus());
     }
 
@@ -132,7 +128,7 @@ class SegmentRegistryImplTest {
         gate.fail();
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .getSegment(SegmentId.of(1));
+                .tryGetSegment(SegmentId.of(1));
         assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
     }
 
@@ -141,11 +137,11 @@ class SegmentRegistryImplTest {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
         rebuildRegistry();
         stubSegmentConfig();
-        final Segment<Integer, String> first = registry.createSegment()
+        final Segment<Integer, String> first = registry.tryCreateSegment()
                 .getValue();
-        final Segment<Integer, String> second = registry.createSegment()
+        final Segment<Integer, String> second = registry.tryCreateSegment()
                 .getValue();
-        final Segment<Integer, String> third = registry.createSegment()
+        final Segment<Integer, String> third = registry.tryCreateSegment()
                 .getValue();
 
         final long closedCount = List.of(first, second, third).stream()
@@ -166,13 +162,13 @@ class SegmentRegistryImplTest {
         Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
         rebuildRegistry();
         stubSegmentConfig();
-        final Segment<Integer, String> first = registry.createSegment()
+        final Segment<Integer, String> first = registry.tryCreateSegment()
                 .getValue();
-        final Segment<Integer, String> second = registry.createSegment()
+        final Segment<Integer, String> second = registry.tryCreateSegment()
                 .getValue();
         registry.pinSegment(first.getId());
 
-        final Segment<Integer, String> third = registry.createSegment()
+        final Segment<Integer, String> third = registry.tryCreateSegment()
                 .getValue();
 
         awaitCondition(() -> List.of(second, third).stream().anyMatch(
@@ -189,12 +185,12 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_returnsBusyWhenSegmentMissing() {
         stubSegmentConfig();
-        final Segment<Integer, String> existing = registry.createSegment()
+        final Segment<Integer, String> existing = registry.tryCreateSegment()
                 .getValue();
         final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .getSegment(missingId);
+                .tryGetSegment(missingId);
         assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
     }
 
@@ -212,7 +208,7 @@ class SegmentRegistryImplTest {
         final ExecutorService callers = Executors.newSingleThreadExecutor();
         try {
             final Future<SegmentRegistryResult<Segment<Integer, String>>> waiter = callers
-                    .submit(() -> registry.getSegment(segmentId));
+                    .submit(() -> registry.tryGetSegment(segmentId));
 
             org.junit.jupiter.api.Assertions.assertThrows(
                     TimeoutException.class,
@@ -233,10 +229,10 @@ class SegmentRegistryImplTest {
     @Test
     void getSegment_returnsBusyWhenEntryIsUnloading() {
         stubSegmentConfig();
-        final Segment<Integer, String> created = registry.createSegment()
+        final Segment<Integer, String> created = registry.tryCreateSegment()
                 .getValue();
         final SegmentId segmentId = created.getId();
-        final Segment<Integer, String> segment = registry.getSegment(segmentId)
+        final Segment<Integer, String> segment = registry.tryGetSegment(segmentId)
                 .getValue();
         assertNotNull(segment);
 
@@ -244,7 +240,7 @@ class SegmentRegistryImplTest {
         assertTrue(invokeTryStartUnload(entry));
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .getSegment(segmentId);
+                .tryGetSegment(segmentId);
         assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
 
         closeAndAwait(segment);
@@ -266,7 +262,11 @@ class SegmentRegistryImplTest {
 
     private void closeRegistry() {
         if (registry != null) {
-            registry.close();
+            try {
+                registry.close();
+            } catch (final IndexException ex) {
+                // Tests may intentionally leave the registry in ERROR state.
+            }
             registry = null;
         }
         if (registryMaintenancePool != null) {

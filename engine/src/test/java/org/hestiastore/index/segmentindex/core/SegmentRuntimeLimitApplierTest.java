@@ -10,7 +10,6 @@ import java.util.Map;
 import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,7 @@ class SegmentRuntimeLimitApplierTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private SegmentFactory<Integer, String> segmentFactory;
+    private SegmentRegistry.Runtime<Integer, String> segmentRuntime;
 
     @Mock
     private Segment<Integer, String> firstSegment;
@@ -39,12 +38,12 @@ class SegmentRuntimeLimitApplierTest {
     @BeforeEach
     void setUp() {
         applier = new SegmentRuntimeLimitApplier<>(segmentRegistry,
-                segmentFactory);
+                segmentRuntime);
     }
 
     @Test
     void applyUpdatesRegistryFactoryAndLoadedSegments() {
-        when(segmentRegistry.loadedSegmentsSnapshot())
+        when(segmentRuntime.loadedSegmentsSnapshot())
                 .thenReturn(List.of(firstSegment, secondSegment));
         final Map<RuntimeSettingKey, Integer> effective = Map.of(
                 RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
@@ -58,13 +57,18 @@ class SegmentRuntimeLimitApplierTest {
 
         applier.apply(effective);
 
+        final SegmentRuntimeLimits expectedLimits = new SegmentRuntimeLimits(10,
+                5, 7);
         verify(segmentRegistry).updateCacheLimit(3);
-        verify(segmentFactory).updateRuntimeLimits(10, 5, 7);
-        final ArgumentCaptor<SegmentRuntimeLimits> captor = ArgumentCaptor
+        final ArgumentCaptor<SegmentRuntimeLimits> tunerCaptor = ArgumentCaptor
                 .forClass(SegmentRuntimeLimits.class);
-        verify(firstSegment).applyRuntimeLimits(captor.capture());
-        verify(secondSegment).applyRuntimeLimits(captor.getValue());
-        assertEquals(new SegmentRuntimeLimits(10, 5, 7),
-                captor.getValue());
+        verify(segmentRuntime).updateRuntimeLimits(tunerCaptor.capture());
+        assertEquals(expectedLimits, tunerCaptor.getValue());
+        final ArgumentCaptor<SegmentRuntimeLimits> segmentCaptor = ArgumentCaptor
+                .forClass(SegmentRuntimeLimits.class);
+        verify(firstSegment).applyRuntimeLimits(segmentCaptor.capture());
+        verify(secondSegment).applyRuntimeLimits(segmentCaptor.capture());
+        assertEquals(List.of(expectedLimits, expectedLimits),
+                segmentCaptor.getAllValues());
     }
 }

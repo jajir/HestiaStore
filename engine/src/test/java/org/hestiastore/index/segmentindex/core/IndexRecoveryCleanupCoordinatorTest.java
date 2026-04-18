@@ -12,11 +12,10 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,14 +62,14 @@ class IndexRecoveryCleanupCoordinatorTest {
         synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(1);
         directory.mkdir("segment-00000");
         directory.mkdir("segment-00003");
-        when(segmentRegistry.deleteSegment(SegmentId.of(3)))
-                .thenReturn(SegmentRegistryResult.ok(null));
+        when(segmentRegistry.deleteSegmentIfAvailable(SegmentId.of(3)))
+                .thenReturn(true);
 
         coordinator.cleanupOrphanedSegmentDirectories();
 
-        verify(segmentRegistry).deleteSegment(SegmentId.of(3));
-        verify(segmentRegistry, never()).deleteSegment(SegmentId.of(0));
-        verify(segmentRegistry, never()).deleteSegment(SegmentId.of(1));
+        verify(segmentRegistry).deleteSegmentIfAvailable(SegmentId.of(3));
+        verify(segmentRegistry, never()).deleteSegmentIfAvailable(SegmentId.of(0));
+        verify(segmentRegistry, never()).deleteSegmentIfAvailable(SegmentId.of(1));
     }
 
     @Test

@@ -1,11 +1,9 @@
-package org.hestiastore.index.segmentindex;
+package org.hestiastore.index.segmentregistry;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hestiastore.index.segmentregistry.SegmentRegistryState;
-import org.hestiastore.index.segmentregistry.SegmentRegistryStateMachine;
 import org.junit.jupiter.api.Test;
 
 class SegmentRegystryStateTest {

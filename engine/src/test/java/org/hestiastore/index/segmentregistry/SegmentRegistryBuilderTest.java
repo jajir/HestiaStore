@@ -102,9 +102,9 @@ class SegmentRegistryBuilderTest {
                             registryMaintenanceExecutor)
                     .build();
             try {
-                assertEquals(SegmentId.of(6),
-                        registry.allocateSegmentId().getValue());
                 final SegmentRegistryImpl<Integer, String> impl = (SegmentRegistryImpl<Integer, String>) registry;
+                assertEquals(SegmentId.of(6),
+                        impl.allocateSegmentId().getValue());
                 assertNotNull(readField(impl, "cache"),
                         "Expected prebuilt cache wiring");
                 assertNotNull(readField(impl, "segmentIdAllocator"),
@@ -156,14 +156,11 @@ class SegmentRegistryBuilderTest {
                     .withRegistryMaintenanceExecutor(
                             registryMaintenanceExecutor)
                     .build();
-            final SegmentRegistryResult<Segment<Integer, String>> created = registry
-                    .createSegment();
-            assertSame(SegmentRegistryResultStatus.OK, created.getStatus());
-            assertNotNull(created.getValue());
+            final Segment<Integer, String> created = registry.createSegment();
+            assertNotNull(created);
             assertSame(SegmentResultStatus.OK,
-                    created.getValue().put(1, "value").getStatus());
-            assertSame(SegmentRegistryResultStatus.OK,
-                    registry.close().getStatus());
+                    created.put(1, "value").getStatus());
+            registry.close();
         } finally {
             stableSegmentMaintenanceExecutor.shutdownNow();
             registryMaintenanceExecutor.shutdownNow();
