@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core;
 
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 
 /**
  * Test-only bridge exposing package-private runtime collaborators.
@@ -17,10 +16,8 @@ public final class SegmentIndexTestAccess {
         return index.keyToSegmentMap();
     }
 
-    @SuppressWarnings("unchecked")
-    public static <K, V> SegmentRegistryImpl<K, V> segmentRegistry(
-            final SegmentIndexImpl<K, V> index) {
-        return (SegmentRegistryImpl<K, V>) index.segmentRegistry();
+    public static Object segmentRegistry(final SegmentIndexImpl<?, ?> index) {
+        return index.segmentRegistry();
     }
 
     public static WalRuntime<?, ?> walRuntime(final SegmentIndexImpl<?, ?> index) {

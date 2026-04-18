@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
@@ -37,7 +38,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final SegmentRegistryBlockingAdapter<K, V> segmentRegistryBlockingAdapter;
+    private final SegmentRegistry<K, V> segmentRegistry;
     private final IndexRetryPolicy retryPolicy;
     private final List<SegmentId> ids;
     private final SegmentIteratorIsolation isolation;
@@ -49,23 +50,15 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentRegistry<K, V> segmentRegistry) {
-        this(ids, segmentRegistry, SegmentIteratorIsolation.FAIL_FAST,
-                DEFAULT_RETRY_POLICY);
+        this(ids, segmentRegistry, SegmentIteratorIsolation.FAIL_FAST);
     }
 
     SegmentsIterator(final List<SegmentId> ids,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentIteratorIsolation isolation) {
-        this(ids, segmentRegistry, isolation, DEFAULT_RETRY_POLICY);
-    }
-
-    SegmentsIterator(final List<SegmentId> ids,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final SegmentIteratorIsolation isolation,
-            final IndexRetryPolicy retryPolicy) {
-        this.segmentRegistryBlockingAdapter = new SegmentRegistryBlockingAdapter<>(
-                segmentRegistry, retryPolicy);
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
+        this.retryPolicy = DEFAULT_RETRY_POLICY;
         this.ids = Vldtn.requireNonNull(ids, "ids");
         this.isolation = Vldtn.requireNonNull(isolation, "isolation");
         nextSegmentIterator();
@@ -118,9 +111,11 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     private Segment<K, V> awaitSegment(final SegmentId segmentId) {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
-            return segmentRegistryBlockingAdapter.awaitSegmentFailFast(segmentId);
+            final Optional<Segment<K, V>> segment = segmentRegistry
+                    .findSegment(segmentId);
+            return segment.orElse(null);
         }
-        return segmentRegistryBlockingAdapter.awaitSegment(segmentId);
+        return segmentRegistry.getSegment(segmentId);
     }
 
     private EntryIterator<K, V> awaitOpenIterator(final Segment<K, V> segment) {

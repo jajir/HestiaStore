@@ -5,7 +5,6 @@ import java.util.Map;
 import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -18,12 +17,12 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 final class SegmentRuntimeLimitApplier<K, V> {
 
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final SegmentFactory<K, V> segmentFactory;
+    private final SegmentRegistry.Runtime<K, V> segmentRuntime;
 
     SegmentRuntimeLimitApplier(final SegmentRegistry<K, V> segmentRegistry,
-            final SegmentFactory<K, V> segmentFactory) {
+            final SegmentRegistry.Runtime<K, V> segmentRuntime) {
         this.segmentRegistry = segmentRegistry;
-        this.segmentFactory = segmentFactory;
+        this.segmentRuntime = segmentRuntime;
     }
 
     void apply(final Map<RuntimeSettingKey, Integer> effective) {
@@ -40,12 +39,11 @@ final class SegmentRuntimeLimitApplier<K, V> {
         final int maxMaintenanceWriteCache = effective.get(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER)
                 .intValue();
-        segmentFactory.updateRuntimeLimits(maxSegmentCache,
-                maxSegmentWriteCache, maxMaintenanceWriteCache);
         final SegmentRuntimeLimits limits = new SegmentRuntimeLimits(
                 maxSegmentCache, maxSegmentWriteCache,
                 maxMaintenanceWriteCache);
-        for (final Segment<K, V> segment : segmentRegistry
+        segmentRuntime.updateRuntimeLimits(limits);
+        for (final Segment<K, V> segment : segmentRuntime
                 .loadedSegmentsSnapshot()) {
             segment.applyRuntimeLimits(limits);
         }

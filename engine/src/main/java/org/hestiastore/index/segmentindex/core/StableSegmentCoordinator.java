@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
 import java.util.function.LongSupplier;
+import java.util.Optional;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
@@ -15,8 +16,6 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 
 /**
@@ -76,31 +75,19 @@ final class StableSegmentCoordinator<K, V> {
             final V value) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
+            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
+            final SegmentResult<Void> putResult = segment.put(key, value);
+            if (putResult.getStatus() == SegmentResultStatus.OK) {
+                return;
+            }
+            if (putResult.getStatus() == SegmentResultStatus.BUSY
+                    || putResult.getStatus() == SegmentResultStatus.CLOSED) {
                 retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
                         segmentId);
-            } else if (loaded.getStatus() != SegmentRegistryResultStatus.OK
-                    || loaded.getValue() == null) {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to load for drain: %s", segmentId,
-                        loaded.getStatus()));
             } else {
-                final SegmentResult<Void> putResult = loaded.getValue().put(key,
-                        value);
-                if (putResult.getStatus() == SegmentResultStatus.OK) {
-                    return;
-                }
-                if (putResult.getStatus() == SegmentResultStatus.BUSY
-                        || putResult.getStatus() == SegmentResultStatus.CLOSED) {
-                    retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
-                            segmentId);
-                } else {
-                    throw new IndexException(String.format(
-                            "Segment '%s' failed to accept drain entry: %s",
-                            segmentId, putResult.getStatus()));
-                }
+                throw new IndexException(String.format(
+                        "Segment '%s' failed to accept drain entry: %s",
+                        segmentId, putResult.getStatus()));
             }
         }
     }
@@ -159,25 +146,28 @@ final class StableSegmentCoordinator<K, V> {
 
     void invalidateIterators() {
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .getSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
-                    && loaded.getValue() != null) {
-                loaded.getValue().invalidateIterators();
-                return;
-            }
-            if (!isSegmentStillMapped(segmentId)) {
-                return;
-            }
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
+            try {
+                final Optional<Segment<K, V>> loaded = segmentRegistry
+                        .findSegment(segmentId);
+                if (loaded.isPresent()) {
+                    loaded.get().invalidateIterators();
+                    return;
+                }
+                if (!isSegmentStillMapped(segmentId)) {
+                    return;
+                }
                 logger.debug(
-                        "Skipping iterator invalidation for segment '{}' because it is BUSY.",
+                        "Skipping iterator invalidation for segment '{}' because it is not immediately available.",
                         segmentId);
                 return;
+            } catch (final IndexException e) {
+                if (!isSegmentStillMapped(segmentId)) {
+                    return;
+                }
+                logger.debug(
+                        "Skipping iterator invalidation for segment '{}' because registry lookup failed.",
+                        segmentId, e);
             }
-            logger.debug(
-                    "Skipping iterator invalidation for segment '{}' because registry returned status '{}'.",
-                    segmentId, loaded.getStatus());
         });
     }
 

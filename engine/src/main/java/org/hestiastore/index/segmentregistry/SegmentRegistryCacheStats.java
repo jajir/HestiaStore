@@ -38,7 +38,7 @@ public record SegmentRegistryCacheStats(long hitCount, long missCount,
      *
      * @return zeroed snapshot
      */
-    public static SegmentRegistryCacheStats empty() {
+    static SegmentRegistryCacheStats empty() {
         return new SegmentRegistryCacheStats(0L, 0L, 0L, 0L, 0, 0);
     }
 }

@@ -21,8 +21,6 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.core.SegmentIndexImpl;
 import org.hestiastore.index.segmentindex.core.SegmentIndexTestAccess;
-import org.hestiastore.index.segmentregistry.SegmentRegistryCache;
-import org.hestiastore.index.segmentregistry.SegmentRegistryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,8 +140,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
     protected void awaitMaintenanceIdle(final SegmentIndex<?, ?> index) {
         final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (System.nanoTime() < deadline) {
-            final SegmentRegistryImpl<?, ?> registry = readSegmentRegistry(
-                    index);
+            final Object registry = readSegmentRegistry(index);
             final Map<SegmentId, Segment<?, ?>> segments = readSegmentsMap(
                     registry);
             boolean idle = true;
@@ -169,27 +166,28 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         Assertions.fail("Timed out waiting for maintenance to finish");
     }
 
-    private static SegmentRegistryImpl<?, ?> readSegmentRegistry(
-            final SegmentIndex<?, ?> index) {
+    private static Object readSegmentRegistry(final SegmentIndex<?, ?> index) {
         final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
         return SegmentIndexTestAccess.segmentRegistry(impl);
     }
 
     @SuppressWarnings("unchecked")
     private static Map<SegmentId, Segment<?, ?>> readSegmentsMap(
-            final SegmentRegistryImpl<?, ?> registry) {
+            final Object registry) {
         try {
-            final Field cacheField = SegmentRegistryImpl.class
-                    .getDeclaredField("cache");
+            final Field cacheField = registry.getClass().getDeclaredField(
+                    "cache");
             cacheField.setAccessible(true);
             final Object cache = cacheField.get(registry);
-            final Field mapField = SegmentRegistryCache.class
+            final Class<?> cacheClass = Class.forName(
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache");
+            final Field mapField = cacheClass
                     .getDeclaredField("map");
             mapField.setAccessible(true);
             final Map<SegmentId, ?> entries = (Map<SegmentId, ?>) mapField
                     .get(cache);
             final Class<?> entryClass = Class.forName(
-                    SegmentRegistryCache.class.getName() + "$Entry");
+                    "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             final Map<SegmentId, Segment<?, ?>> segments = new HashMap<>();

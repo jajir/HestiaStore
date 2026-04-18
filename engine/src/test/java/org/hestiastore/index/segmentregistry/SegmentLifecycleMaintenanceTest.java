@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -23,7 +24,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -134,12 +134,13 @@ class SegmentLifecycleMaintenanceTest {
 
         private final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
                 asyncDirectory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
+                conf.resolveRuntimeConfiguration(),
                 stableSegmentMaintenanceExecutor);
         private final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);
         private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
         private final SegmentLifecycleMaintenance<Integer, String> maintenance = new SegmentLifecycleMaintenance<>(
-                segmentFactory, fileSystem, new IndexRetryPolicy(1, 1000),
+                segmentFactory, fileSystem, new BusyRetryPolicy(1, 1000),
                 gate);
 
         private void createSegmentDirectory(final SegmentId segmentId) {
