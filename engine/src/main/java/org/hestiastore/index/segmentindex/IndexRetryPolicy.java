@@ -1,21 +1,11 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-
-import org.hestiastore.index.IndexException;
-import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.BusyRetryPolicy;
 
 /**
- * Backoff/timeout policy for retrying BUSY index operations.
+ * Backward-compatible index-specific alias for {@link BusyRetryPolicy}.
  */
-public final class IndexRetryPolicy {
-
-    private final int timeoutMillis;
-    private final long backoffNanos;
-    private final long maxJitterNanos;
-    private final long timeoutNanos;
+public class IndexRetryPolicy extends BusyRetryPolicy {
 
     /**
      * Creates a retry policy for BUSY operations.
@@ -25,86 +15,19 @@ public final class IndexRetryPolicy {
      */
     public IndexRetryPolicy(final int backoffMillis,
             final int timeoutMillis) {
-        Vldtn.requireGreaterThanZero(backoffMillis, "indexBusyBackoffMillis");
-        this.timeoutMillis = Vldtn.requireGreaterThanZero(timeoutMillis,
-                "indexBusyTimeoutMillis");
-        this.backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoffMillis);
-        this.maxJitterNanos = Math.max(1L, backoffNanos / 4L);
-        this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+        super(backoffMillis, timeoutMillis);
     }
 
-    /**
-     * Captures the start timestamp for a retry loop.
-     *
-     * @return start timestamp in nanoseconds
-     */
-    public long startNanos() {
-        return System.nanoTime();
+    /** {@inheritDoc} */
+    @Override
+    protected String formatTarget(final Object target) {
+        return target == null ? ""
+                : String.format(" on segment '%s'", target);
     }
 
-    /**
-     * Sleeps for one backoff interval or throws when timeout/interruption is
-     * reached.
-     *
-     * @param startNanos retry loop start timestamp
-     * @param operation operation label used in error messages
-     * @param segmentId optional segment id for error context
-     */
-    public void backoffOrThrow(final long startNanos, final String operation,
-            final SegmentId segmentId) {
-        if (hasTimedOut(startNanos)) {
-            throw new IndexException(formatTimeoutMessage(operation,
-                    segmentId));
-        }
-        LockSupport.parkNanos(nextBackoffNanos());
-        if (Thread.interrupted()) {
-            Thread.currentThread().interrupt();
-            throw new IndexException(formatInterruptedMessage(operation,
-                    segmentId));
-        }
-        if (hasTimedOut(startNanos)) {
-            throw new IndexException(formatTimeoutMessage(operation,
-                    segmentId));
-        }
-    }
-
-    private long nextBackoffNanos() {
-        if (maxJitterNanos <= 1L) {
-            return backoffNanos;
-        }
-        return backoffNanos + Long.remainderUnsigned(
-                mix64(System.nanoTime() ^ Thread.currentThread().getId()),
-                maxJitterNanos);
-    }
-
-    private long mix64(final long value) {
-        long mixed = value;
-        mixed ^= mixed >>> 33;
-        mixed *= 0xff51afd7ed558ccdL;
-        mixed ^= mixed >>> 33;
-        mixed *= 0xc4ceb9fe1a85ec53L;
-        mixed ^= mixed >>> 33;
-        return mixed;
-    }
-
-    private boolean hasTimedOut(final long startNanos) {
-        return System.nanoTime() - startNanos >= timeoutNanos;
-    }
-
-    private String formatTimeoutMessage(final String operation,
-            final SegmentId segmentId) {
-        final String target = segmentId == null ? "" : String
-                .format(" on segment '%s'", segmentId);
-        return String.format(
-                "Index operation '%s' timed out after %d ms%s", operation,
-                timeoutMillis, target);
-    }
-
-    private String formatInterruptedMessage(final String operation,
-            final SegmentId segmentId) {
-        final String target = segmentId == null ? "" : String
-                .format(" on segment '%s'", segmentId);
-        return String.format("Index operation '%s' was interrupted%s",
-                operation, target);
+    /** {@inheritDoc} */
+    @Override
+    protected String formatOperationLabel() {
+        return "Index operation";
     }
 }

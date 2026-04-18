@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
@@ -9,7 +10,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 
 /**
  * Encapsulates direct segment lifecycle operations used by the registry cache.
@@ -26,14 +26,14 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 final class SegmentLifecycleMaintenance<K, V> {
 
     private static final String SEGMENT_CLOSE_FAILED_FORMAT = "Segment '%s' failed during close: %s";
-    private final SegmentFactory<K, V> segmentFactory;
+    private final SegmentBuildService<K, V> segmentFactory;
     private final SegmentRegistryFileSystem fileSystem;
-    private final IndexRetryPolicy closeRetryPolicy;
+    private final BusyRetryPolicy closeRetryPolicy;
     private final SegmentRegistryStateMachine gate;
 
-    SegmentLifecycleMaintenance(final SegmentFactory<K, V> segmentFactory,
+    SegmentLifecycleMaintenance(final SegmentBuildService<K, V> segmentFactory,
             final SegmentRegistryFileSystem fileSystem,
-            final IndexRetryPolicy closeRetryPolicy,
+            final BusyRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate) {
         this.segmentFactory = Vldtn.requireNonNull(segmentFactory,
                 "segmentFactory");

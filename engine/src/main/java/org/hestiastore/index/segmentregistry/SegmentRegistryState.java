@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentregistry;
 /**
  * Lifecycle states for the segment registry.
  */
-public enum SegmentRegistryState {
+enum SegmentRegistryState {
     /** Registry is operational and can serve requests. */
     READY,
     /** Registry is mutating the segment map and should be treated as busy. */

@@ -13,7 +13,7 @@ import org.hestiastore.index.segment.SegmentId;
  * Segment id allocator that scans existing segment directories and allocates
  * ids above the current maximum.
  */
-public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
+final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
 
     private static final Pattern SEGMENT_DIR_PATTERN = Pattern
             .compile("^segment-(\\d{5})$");
@@ -27,7 +27,7 @@ public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
      *
      * @param directoryFacade directory facade
      */
-    public DirectorySegmentIdAllocator(final Directory directoryFacade) {
+    DirectorySegmentIdAllocator(final Directory directoryFacade) {
         Vldtn.requireNonNull(directoryFacade, "directoryFacade");
         final int startId = resolveStartId(directoryFacade, DEFAULT_FIRST_ID);
         this.nextId = new AtomicInteger(startId);
@@ -41,11 +41,11 @@ public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
         return SegmentId.of(nextId.getAndIncrement());
     }
 
-    private static int resolveStartId(final Directory directoryFacade,
+    private int resolveStartId(final Directory directoryFacade,
             final int defaultFirstId) {
         int maxId = -1;
         try (Stream<String> names = directoryFacade.getFileNames()) {
-            maxId = names.map(DirectorySegmentIdAllocator::parseSegmentId)
+            maxId = names.map(this::parseSegmentId)
                     .filter(id -> id >= 0)
                     .max(Integer::compareTo)
                     .orElse(-1);
@@ -54,7 +54,7 @@ public final class DirectorySegmentIdAllocator implements SegmentIdAllocator {
         return Math.max(candidate, defaultFirstId);
     }
 
-    private static int parseSegmentId(final String name) {
+    private int parseSegmentId(final String name) {
         if (name == null || name.isBlank()) {
             return -1;
         }

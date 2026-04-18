@@ -14,7 +14,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 
 /**
@@ -97,29 +96,24 @@ final class IndexRecoveryCleanupCoordinator<K, V> {
 
     private void deleteOrphanedSegmentDirectory(final SegmentId segmentId) {
         final long startNanos = retryPolicy.startNanos();
-        SegmentRegistryResultStatus status = segmentRegistry
-                .deleteSegment(segmentId).getStatus();
-        while (status == SegmentRegistryResultStatus.BUSY) {
+        boolean deleted = false;
+        while (!deleted) {
             try {
+                deleted = segmentRegistry.deleteSegmentIfAvailable(segmentId);
+                if (deleted) {
+                    logger.info(
+                            "Deleted orphaned segment directory '{}' during recovery/consistency cleanup.",
+                            segmentId);
+                    return;
+                }
                 retryPolicy.backoffOrThrow(startNanos,
                         OPERATION_CLEANUP_ORPHAN_SEGMENT, segmentId);
-            } catch (final IndexException timeout) {
+            } catch (final IndexException failure) {
                 logger.warn(
-                        "Orphaned segment directory '{}' could not be deleted because cleanup timed out.",
-                        segmentId);
+                        "Orphaned segment directory '{}' could not be deleted during cleanup: {}",
+                        segmentId, failure.getMessage());
                 return;
             }
-            status = segmentRegistry.deleteSegment(segmentId).getStatus();
-        }
-        if (status == SegmentRegistryResultStatus.OK
-                || status == SegmentRegistryResultStatus.CLOSED) {
-            logger.info(
-                    "Deleted orphaned segment directory '{}' during recovery/consistency cleanup.",
-                    segmentId);
-        } else {
-            logger.warn(
-                    "Orphaned segment directory '{}' could not be deleted during cleanup: {}",
-                    segmentId, status);
         }
     }
 }

@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,8 +22,6 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 
 /**
  * Owns the autonomous background split-policy scan loop and its coordination
@@ -263,21 +262,19 @@ final class BackgroundSplitPolicyLoop<K, V> {
     }
 
     private Segment<K, V> tryLoadSplitCandidate(final SegmentId segmentId) {
-        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                .getSegment(segmentId);
-        if (loaded.getStatus() == SegmentRegistryResultStatus.OK) {
-            return loaded.getValue();
-        }
-        if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY
-                || loaded.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+        try {
+            final Optional<Segment<K, V>> loaded = segmentRegistry
+                    .findSegment(segmentId);
+            if (loaded.isPresent()) {
+                return loaded.get();
+            }
             return null;
+        } catch (final IndexException e) {
+            if (!isSegmentStillMapped(segmentId)) {
+                return null;
+            }
+            throw e;
         }
-        if (!isSegmentStillMapped(segmentId)) {
-            return null;
-        }
-        throw new IndexException(String.format(
-                "Segment '%s' failed to load for split scheduling: %s",
-                segmentId, loaded.getStatus()));
     }
 
     private void awaitSettled() {

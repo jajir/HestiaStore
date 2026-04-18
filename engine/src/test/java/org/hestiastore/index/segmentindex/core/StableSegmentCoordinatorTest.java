@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 
@@ -20,12 +21,11 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,8 +81,7 @@ class StableSegmentCoordinatorTest {
     @Test
     void putEntryForDrain_writesToLoadedSegment() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);
         when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
 
         assertDoesNotThrow(
@@ -93,8 +92,8 @@ class StableSegmentCoordinatorTest {
     @Test
     void invalidateIterators_invalidatesLoadedMappedSegments() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId))
-                .thenReturn(SegmentRegistryResult.ok(segment));
+        when(segmentRegistry.findSegment(segmentId))
+                .thenReturn(Optional.of(segment));
 
         coordinator.invalidateIterators();
 

@@ -8,8 +8,8 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
@@ -21,12 +21,7 @@ import org.hestiastore.index.segmentindex.split.DefaultSegmentMaterializationSer
 import org.hestiastore.index.segmentindex.split.RouteSplitCoordinator;
 import org.hestiastore.index.segmentindex.split.SegmentMaterializationService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentregistry.DirectorySegmentIdAllocator;
-import org.hestiastore.index.segmentregistry.SegmentFactory;
-import org.hestiastore.index.segmentregistry.SegmentIdAllocator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResult;
-import org.hestiastore.index.segmentregistry.SegmentRegistryResultStatus;
 import org.slf4j.Logger;
 
 /**
@@ -160,13 +155,10 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                     keyToSegmentMapDelegate);
             buildObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
-            final SegmentFactory<K, V> segmentFactory = newSegmentFactory();
-            final SegmentIdAllocator segmentIdAllocator = new DirectorySegmentIdAllocator(
-                    directoryFacade);
-            segmentRegistry = newSegmentRegistry(segmentIdAllocator);
+            segmentRegistry = newSegmentRegistry();
             buildObserver.onSegmentRegistryCreated(segmentRegistry);
             final SegmentMaterializationService<K, V> materializationService = new DefaultSegmentMaterializationService<>(
-                    segmentIdAllocator, directoryFacade, segmentFactory);
+                    directoryFacade, segmentRegistry.materialization());
             final RouteSplitCoordinator<K, V> routeSplitCoordinator = new RouteSplitCoordinator<>(
                     conf, keyTypeDescriptor.getComparator(), keyToSegmentMap,
                     segmentRegistry, materializationService);
@@ -237,7 +229,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
                     keyToSegmentMap, segmentRegistry, backgroundSplitCoordinator,
                     runtimeTuningState, walRuntime);
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier = new SegmentRuntimeLimitApplier<>(
-                    segmentRegistry, segmentFactory);
+                    segmentRegistry, segmentRegistry.runtime());
             return new SegmentIndexRuntime<>(runtimeTuningState,
                     keyToSegmentMap, segmentRegistry, backgroundSplitCoordinator,
                     backgroundSplitPolicyLoop, stableSegmentCoordinator,
@@ -256,22 +248,13 @@ final class SegmentIndexRuntimeBuilder<K, V> {
         }
     }
 
-    private SegmentFactory<K, V> newSegmentFactory() {
-        return SegmentFactory.withRuntimeConfiguration(directoryFacade,
-                keyTypeDescriptor, valueTypeDescriptor, conf,
-                runtimeConfiguration,
-                executorRegistry.getStableSegmentMaintenanceExecutor());
-    }
-
-    private SegmentRegistry<K, V> newSegmentRegistry(
-            final SegmentIdAllocator segmentIdAllocator) {
+    private SegmentRegistry<K, V> newSegmentRegistry() {
         return SegmentRegistry.<K, V>builder()
                 .withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
                 .withConfiguration(conf)
                 .withRuntimeConfiguration(runtimeConfiguration)
-                .withSegmentIdAllocator(segmentIdAllocator)
                 .withSegmentMaintenanceExecutor(
                         executorRegistry.getStableSegmentMaintenanceExecutor())
                 .withRegistryMaintenanceExecutor(
@@ -326,20 +309,7 @@ final class SegmentIndexRuntimeBuilder<K, V> {
             return;
         }
         try {
-            final SegmentRegistryResult<Void> closeResult = segmentRegistry
-                    .close();
-            if (closeResult == null) {
-                failure.addSuppressed(new IllegalStateException(
-                        "Segment registry close returned null during runtime cleanup."));
-                return;
-            }
-            final SegmentRegistryResultStatus status = closeResult.getStatus();
-            if (status != SegmentRegistryResultStatus.OK
-                    && status != SegmentRegistryResultStatus.CLOSED) {
-                failure.addSuppressed(new IllegalStateException(String.format(
-                        "Segment registry close failed during runtime cleanup: %s",
-                        status)));
-            }
+            segmentRegistry.close();
         } catch (final RuntimeException cleanupFailure) {
             failure.addSuppressed(cleanupFailure);
         }
