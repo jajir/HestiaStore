@@ -30,29 +30,29 @@ class BlockingSegmentRegistryAdapterTest {
 
     @Test
     void getSegment_retriesBusyUntilSegmentLoads() {
-        when(registry.tryGetSegment(SEGMENT_ID)).thenReturn(
+        when(registry.tryLoadSegment(SEGMENT_ID)).thenReturn(
                 SegmentRegistryResult.busy(),
                 SegmentRegistryResult.ok(segment));
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
 
-        final Segment<Integer, String> loaded = adapter.getSegment(SEGMENT_ID);
+        final Segment<Integer, String> loaded = adapter.loadSegment(SEGMENT_ID);
 
         assertSame(segment, loaded);
-        verify(registry, times(2)).tryGetSegment(SEGMENT_ID);
+        verify(registry, times(2)).tryLoadSegment(SEGMENT_ID);
     }
 
     @Test
     void findSegment_returnsEmptyWhenRegistryReturnsClosed() {
-        when(registry.tryGetSegment(SEGMENT_ID))
+        when(registry.tryLoadSegment(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.closed());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
 
-        assertTrue(adapter.findSegment(SEGMENT_ID).isEmpty());
-        verify(registry).tryGetSegment(SEGMENT_ID);
+        assertTrue(adapter.tryGetSegment(SEGMENT_ID).isEmpty());
+        verify(registry).tryLoadSegment(SEGMENT_ID);
     }
 
     @Test
@@ -80,13 +80,13 @@ class BlockingSegmentRegistryAdapterTest {
 
     @Test
     void getSegment_throwsWhenRegistryReturnsError() {
-        when(registry.tryGetSegment(SEGMENT_ID))
+        when(registry.tryLoadSegment(SEGMENT_ID))
                 .thenReturn(SegmentRegistryResult.error());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
 
         assertThrows(IndexException.class,
-                () -> adapter.getSegment(SEGMENT_ID));
+                () -> adapter.loadSegment(SEGMENT_ID));
     }
 }

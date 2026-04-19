@@ -16,6 +16,7 @@ import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,26 +73,29 @@ public final class RouteSplitCoordinator<K, V> {
                 conf.getIndexBusyTimeoutMillis());
     }
 
-    public PreparedRouteSplit<K> tryPrepareSplit(final Segment<K, V> segment,
+    public PreparedRouteSplit<K> tryPrepareSplit(
+            final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold) {
-        Vldtn.requireNonNull(segment, SEGMENT_ARG);
-        final long estimatedVisibleKeys = segment.getNumberOfKeysInCache();
+        Vldtn.requireNonNull(segmentHandle, "segmentHandle");
+        final long estimatedVisibleKeys = segmentHandle.getRuntime()
+                .getNumberOfKeysInCache();
         final boolean splitFeasible = estimatedVisibleKeys >= 2L;
-        if (!isSplitEligible(segment, estimatedVisibleKeys, splitThreshold,
-                splitFeasible)) {
+        if (!isSplitEligible(segmentHandle, estimatedVisibleKeys,
+                splitThreshold, splitFeasible)) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
                         "Route split skipped: segment='{}' estimatedKeys='{}' threshold='{}' splitFeasible='{}'",
-                        segment.getId(), estimatedVisibleKeys, splitThreshold,
-                        splitFeasible);
+                        segmentHandle.getId(), estimatedVisibleKeys,
+                        splitThreshold, splitFeasible);
             }
             return null;
         }
         logger.debug("Route split started: segment='{}' threshold='{}'",
-                segment.getId(), splitThreshold);
-        if (!isStillCurrentSegment(segment)) {
+                segmentHandle.getId(), splitThreshold);
+        if (!isStillCurrentSegment(segmentHandle)) {
             return null;
         }
+        final Segment<K, V> segment = segmentHandle.getSegment();
         final SplitBoundary<K> boundary = computeSplitBoundary(segment);
         if (boundary == null || boundary.visibleCount() < splitThreshold
                 || boundary.visibleCount() < 2L) {
@@ -100,9 +104,9 @@ public final class RouteSplitCoordinator<K, V> {
         return materializeChildSegments(segment, boundary);
     }
 
-    private boolean shouldSplit(final Segment<K, V> segment,
+    private boolean shouldSplit(final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold) {
-        return splitPolicy.shouldSplit(segment, splitThreshold);
+        return splitPolicy.shouldSplit(segmentHandle, splitThreshold);
     }
 
     public boolean publishPreparedSplit(
@@ -160,11 +164,12 @@ public final class RouteSplitCoordinator<K, V> {
         return preparedSplit.plan();
     }
 
-    private boolean isStillCurrentSegment(final Segment<K, V> segment) {
-        final SegmentId segmentId = segment.getId();
-        final Optional<Segment<K, V>> currentSegment;
+    private boolean isStillCurrentSegment(
+            final SegmentHandle<K, V> segmentHandle) {
+        final SegmentId segmentId = segmentHandle.getId();
+        final Optional<SegmentHandle<K, V>> currentSegment;
         try {
-            currentSegment = segmentRegistry.findSegment(segmentId);
+            currentSegment = segmentRegistry.tryGetSegment(segmentId);
         } catch (final IndexException e) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
@@ -181,7 +186,7 @@ public final class RouteSplitCoordinator<K, V> {
             }
             return false;
         }
-        if (currentSegment.get() != segment) {
+        if (currentSegment.get() != segmentHandle) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
                         "Route split aborted because loaded segment changed: segment='{}'",
@@ -372,13 +377,13 @@ public final class RouteSplitCoordinator<K, V> {
         }
     }
 
-    private boolean isSplitEligible(final Segment<K, V> segment,
+    private boolean isSplitEligible(final SegmentHandle<K, V> segmentHandle,
             final long estimatedVisibleKeys, final long splitThreshold,
             final boolean splitFeasible) {
         if (estimatedVisibleKeys < splitThreshold || !splitFeasible) {
             return false;
         }
-        return shouldSplit(segment, splitThreshold);
+        return shouldSplit(segmentHandle, splitThreshold);
     }
 
     private record SplitBoundary<K>(K minKey, K maxLowerKey, long visibleCount) {

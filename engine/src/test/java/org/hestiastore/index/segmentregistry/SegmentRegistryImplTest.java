@@ -81,14 +81,14 @@ class SegmentRegistryImplTest {
                 .getValue();
         final SegmentId segmentId = created.getId();
 
-        final Segment<Integer, String> first = registry.tryGetSegment(segmentId)
+        final Segment<Integer, String> first = registry.tryLoadSegment(segmentId)
                 .getValue();
-        final Segment<Integer, String> second = registry.tryGetSegment(segmentId)
+        final Segment<Integer, String> second = registry.tryLoadSegment(segmentId)
                 .getValue();
 
         assertSame(first, second);
         closeAndAwait(first);
-        final Segment<Integer, String> third = registry.tryGetSegment(segmentId)
+        final Segment<Integer, String> third = registry.tryLoadSegment(segmentId)
                 .getValue();
 
         assertNotSame(first, third);
@@ -108,7 +108,7 @@ class SegmentRegistryImplTest {
         assertTrue(gate.tryEnterFreeze());
         try (GateGuard ignored = new GateGuard(gate)) {
             final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                    .tryGetSegment(segmentId);
+                    .tryLoadSegment(segmentId);
             assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
         }
     }
@@ -118,7 +118,7 @@ class SegmentRegistryImplTest {
         registry.close();
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .tryGetSegment(SegmentId.of(1));
+                .tryLoadSegment(SegmentId.of(1));
         assertSame(SegmentRegistryResultStatus.CLOSED, result.getStatus());
     }
 
@@ -128,7 +128,7 @@ class SegmentRegistryImplTest {
         gate.fail();
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .tryGetSegment(SegmentId.of(1));
+                .tryLoadSegment(SegmentId.of(1));
         assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
     }
 
@@ -166,7 +166,7 @@ class SegmentRegistryImplTest {
                 .getValue();
         final Segment<Integer, String> second = registry.tryCreateSegment()
                 .getValue();
-        registry.pinSegment(first.getId());
+        invokePinSegment(registry, first.getId());
 
         final Segment<Integer, String> third = registry.tryCreateSegment()
                 .getValue();
@@ -179,7 +179,7 @@ class SegmentRegistryImplTest {
         assertTrue(List.of(second, third).stream().anyMatch(
                 segment -> segment.getState() == SegmentState.CLOSED));
 
-        registry.unpinSegment(first.getId());
+        invokeUnpinSegment(registry, first.getId());
     }
 
     @Test
@@ -190,7 +190,7 @@ class SegmentRegistryImplTest {
         final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .tryGetSegment(missingId);
+                .tryLoadSegment(missingId);
         assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
     }
 
@@ -208,7 +208,7 @@ class SegmentRegistryImplTest {
         final ExecutorService callers = Executors.newSingleThreadExecutor();
         try {
             final Future<SegmentRegistryResult<Segment<Integer, String>>> waiter = callers
-                    .submit(() -> registry.tryGetSegment(segmentId));
+                    .submit(() -> registry.tryLoadSegment(segmentId));
 
             org.junit.jupiter.api.Assertions.assertThrows(
                     TimeoutException.class,
@@ -232,7 +232,7 @@ class SegmentRegistryImplTest {
         final Segment<Integer, String> created = registry.tryCreateSegment()
                 .getValue();
         final SegmentId segmentId = created.getId();
-        final Segment<Integer, String> segment = registry.tryGetSegment(segmentId)
+        final Segment<Integer, String> segment = registry.tryLoadSegment(segmentId)
                 .getValue();
         assertNotNull(segment);
 
@@ -240,7 +240,7 @@ class SegmentRegistryImplTest {
         assertTrue(invokeTryStartUnload(entry));
 
         final SegmentRegistryResult<Segment<Integer, String>> result = registry
-                .tryGetSegment(segmentId);
+                .tryLoadSegment(segmentId);
         assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
 
         closeAndAwait(segment);
@@ -321,6 +321,32 @@ class SegmentRegistryImplTest {
             return (SegmentRegistryStateMachine) field.get(target);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException("Unable to read gate for test", ex);
+        }
+    }
+
+    private static void invokePinSegment(
+            final SegmentRegistryImpl<Integer, String> registry,
+            final SegmentId segmentId) {
+        invokeRegistryMethod(registry, "pinSegment", segmentId);
+    }
+
+    private static void invokeUnpinSegment(
+            final SegmentRegistryImpl<Integer, String> registry,
+            final SegmentId segmentId) {
+        invokeRegistryMethod(registry, "unpinSegment", segmentId);
+    }
+
+    private static void invokeRegistryMethod(
+            final SegmentRegistryImpl<Integer, String> registry,
+            final String methodName, final SegmentId segmentId) {
+        try {
+            final var method = SegmentRegistryImpl.class.getDeclaredMethod(
+                    methodName, SegmentId.class);
+            method.setAccessible(true);
+            method.invoke(registry, segmentId);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to invoke SegmentRegistryImpl." + methodName, ex);
         }
     }
 

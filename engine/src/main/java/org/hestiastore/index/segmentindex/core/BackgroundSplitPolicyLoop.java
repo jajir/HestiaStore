@@ -15,12 +15,12 @@ import java.util.function.Supplier;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.model.RuntimeSettingKey;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -245,12 +245,13 @@ final class BackgroundSplitPolicyLoop<K, V> {
         if (!isSegmentStillMapped(segmentId)) {
             return false;
         }
-        final Segment<K, V> segment = tryLoadSplitCandidate(segmentId);
-        if (segment == null) {
+        final SegmentHandle<K, V> segmentHandle = tryLoadSplitCandidate(
+                segmentId);
+        if (segmentHandle == null) {
             return false;
         }
         final boolean scheduled = backgroundSplitCoordinator
-                .handleSplitCandidate(segment, threshold, forceRetry);
+                .handleSplitCandidate(segmentHandle, threshold, forceRetry);
         if (scheduled) {
             stats.incSplitScheduleCx();
         }
@@ -261,10 +262,11 @@ final class BackgroundSplitPolicyLoop<K, V> {
         return !backgroundSplitHintedSegments.isEmpty();
     }
 
-    private Segment<K, V> tryLoadSplitCandidate(final SegmentId segmentId) {
+    private SegmentHandle<K, V> tryLoadSplitCandidate(
+            final SegmentId segmentId) {
         try {
-            final Optional<Segment<K, V>> loaded = segmentRegistry
-                    .findSegment(segmentId);
+            final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
+                    .tryGetSegment(segmentId);
             if (loaded.isPresent()) {
                 return loaded.get();
             }

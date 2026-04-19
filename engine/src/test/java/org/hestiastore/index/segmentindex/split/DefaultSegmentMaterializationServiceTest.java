@@ -49,7 +49,7 @@ class DefaultSegmentMaterializationServiceTest {
 
             try {
                 final Segment<Integer, String> segment = registry
-                        .getSegment(segmentId);
+                        .loadSegment(segmentId).getSegment();
                 assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")),
                         readEntries(segment));
             } finally {

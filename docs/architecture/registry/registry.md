@@ -13,8 +13,12 @@ This document describes the segment registry responsibilities and supported oper
   must remain safe when one thread uses a segment while another thread closes it.
 - The registry does **not** own split execution, scheduling, or in-flight
   tracking. Those belong to the segment index layer.
-- The registry is about safe access to segment resources; it should not manage
-  operations *on* those resources (flush/compact/split remain outside).
+- The registry is about safe access to segment resources and now exposes
+  `SegmentHandle` as the main public access point for loaded segments.
+- `SegmentHandle` centralizes retry-aware blocking operations and segment
+  runtime descriptors, while callers still own higher-level operation policy
+  such as fail-fast routing, split coordination, and accepted-vs-completed
+  maintenance behavior.
 - Segment load/open failures are status-driven:
   `getSegment()` and `createSegment()` return `ERROR` when loading/opening
   fails (including missing segment files), with no dedicated registry-status exception type.
@@ -51,11 +55,19 @@ when startup completes.
 
 | Operation             | Description                                                      |
 | --------------------- | ---------------------------------------------------------------- |
-| `getSegment(id)`      | Load or return cached segment by id (`SegmentRegistryResult<Segment>`). |
+| `getSegment(id)`      | Load or return cached segment handle by id (`SegmentHandle`). |
 | `allocateSegmentId()` | Allocate a new segment id for split or growth (`SegmentRegistryResult<SegmentId>`). |
-| `createSegment()`     | Allocate id and create a new segment (`SegmentRegistryResult<Segment>`). |
+| `createSegment()`     | Allocate id and create a new segment handle (`SegmentHandle`). |
 | `deleteSegment(id)`   | Close and delete a segment, then remove from cache (`SegmentRegistryResult<Void>`). |
 | `close()`             | Close cached segments (`SegmentRegistryResult<Void>`).           |
+
+The public facade returns `SegmentHandle` instances so the registry remains the
+central access point for retry-aware segment operations. These handles
+translate retryable segment-operation outcomes (`BUSY`, transient `CLOSED`)
+into bounded blocking calls while preserving the existing segment state machine
+and background-maintenance semantics. `flush()` and `compact()` on the handle
+block only until the request is accepted; they do not wait for the background
+maintenance work to reach `READY`.
 
 All registry operations return `SegmentRegistryResult<T>` (status + optional value).
 Registry BUSY/CLOSED/ERROR outcomes are propagated by `SegmentRegistryResultStatus`.
