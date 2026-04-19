@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 
 /**
@@ -14,10 +13,10 @@ final class SegmentRegistryRuntimeView<K, V>
         implements SegmentRegistry.Runtime<K, V> {
 
     private final SegmentRuntimeTuner runtimeTuner;
-    private final Supplier<List<Segment<K, V>>> loadedSegmentsSnapshot;
+    private final Supplier<List<SegmentHandle<K, V>>> loadedSegmentsSnapshot;
 
     SegmentRegistryRuntimeView(final SegmentRuntimeTuner runtimeTuner,
-            final Supplier<List<Segment<K, V>>> loadedSegmentsSnapshot) {
+            final Supplier<List<SegmentHandle<K, V>>> loadedSegmentsSnapshot) {
         this.runtimeTuner = Vldtn.requireNonNull(runtimeTuner, "runtimeTuner");
         this.loadedSegmentsSnapshot = Vldtn
                 .requireNonNull(loadedSegmentsSnapshot,
@@ -30,7 +29,7 @@ final class SegmentRegistryRuntimeView<K, V>
     }
 
     @Override
-    public List<Segment<K, V>> loadedSegmentsSnapshot() {
+    public List<SegmentHandle<K, V>> loadedSegmentsSnapshot() {
         return loadedSegmentsSnapshot.get();
     }
 }

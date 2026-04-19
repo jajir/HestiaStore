@@ -12,7 +12,7 @@ import org.hestiastore.index.segment.SegmentId;
  */
 interface SegmentRegistryStatusAccess<K, V> {
 
-    SegmentRegistryResult<Segment<K, V>> tryGetSegment(SegmentId segmentId);
+    SegmentRegistryResult<Segment<K, V>> tryLoadSegment(SegmentId segmentId);
 
     SegmentRegistryResult<SegmentId> allocateSegmentId();
 

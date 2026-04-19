@@ -15,16 +15,15 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +46,10 @@ class StableSegmentCoordinatorTest {
     private StableSegmentGateway<String, String> stableSegmentGateway;
 
     @Mock
-    private Segment<String, String> segment;
+    private SegmentHandle<String, String> segmentHandle;
+
+    @Mock
+    private SegmentHandle.Runtime runtime;
 
     private Directory directory;
     private KeyToSegmentMapImpl<String> keyToSegmentMap;
@@ -81,23 +83,22 @@ class StableSegmentCoordinatorTest {
     @Test
     void putEntryForDrain_writesToLoadedSegment() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.getSegment(segmentId)).thenReturn(segment);
-        when(segment.put("key", "value")).thenReturn(SegmentResult.ok());
+        when(segmentRegistry.loadSegment(segmentId)).thenReturn(segmentHandle);
 
         assertDoesNotThrow(
                 () -> coordinator.putEntryForDrain(segmentId, "key", "value"));
-        verify(segment).put("key", "value");
+        verify(segmentHandle).put("key", "value");
     }
 
     @Test
     void invalidateIterators_invalidatesLoadedMappedSegments() {
         final SegmentId segmentId = createBootstrapSegment("key");
-        when(segmentRegistry.findSegment(segmentId))
-                .thenReturn(Optional.of(segment));
+        when(segmentRegistry.tryGetSegment(segmentId))
+                .thenReturn(Optional.of(segmentHandle));
 
         coordinator.invalidateIterators();
 
-        verify(segment).invalidateIterators();
+        verify(segmentHandle).invalidateIterators();
     }
 
     @Test
@@ -125,9 +126,10 @@ class StableSegmentCoordinatorTest {
                 backgroundSplitCoordinator, stableSegmentGateway,
                 new IndexRetryPolicy(1, 10), stats,
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
+        when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId)).thenReturn(
-                IndexResult.busy(), IndexResult.ok(segment));
-        when(segment.getState()).thenReturn(SegmentState.READY);
+                IndexResult.busy(), IndexResult.ok(segmentHandle));
+        when(runtime.getState()).thenReturn(SegmentState.READY);
 
         coordinator.flushSegment(segmentId, true);
 
@@ -144,9 +146,10 @@ class StableSegmentCoordinatorTest {
                 backgroundSplitCoordinator, stableSegmentGateway,
                 new IndexRetryPolicy(1, 10), stats,
                 sequenceNanoTimeSupplier(20_000L, 68_000L));
+        when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.compact(segmentId)).thenReturn(
-                IndexResult.busy(), IndexResult.ok(segment));
-        when(segment.getState()).thenReturn(SegmentState.READY);
+                IndexResult.busy(), IndexResult.ok(segmentHandle));
+        when(runtime.getState()).thenReturn(SegmentState.READY);
 
         coordinator.compactSegment(segmentId, true);
 

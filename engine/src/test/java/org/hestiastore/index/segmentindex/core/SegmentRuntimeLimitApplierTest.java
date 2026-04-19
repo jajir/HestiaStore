@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.hestiastore.index.control.model.RuntimeSettingKey;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,10 +28,16 @@ class SegmentRuntimeLimitApplierTest {
     private SegmentRegistry.Runtime<Integer, String> segmentRuntime;
 
     @Mock
-    private Segment<Integer, String> firstSegment;
+    private SegmentHandle<Integer, String> firstSegment;
 
     @Mock
-    private Segment<Integer, String> secondSegment;
+    private SegmentHandle<Integer, String> secondSegment;
+
+    @Mock
+    private SegmentHandle.Runtime firstRuntime;
+
+    @Mock
+    private SegmentHandle.Runtime secondRuntime;
 
     private SegmentRuntimeLimitApplier<Integer, String> applier;
 
@@ -43,6 +49,8 @@ class SegmentRuntimeLimitApplierTest {
 
     @Test
     void applyUpdatesRegistryFactoryAndLoadedSegments() {
+        when(firstSegment.getRuntime()).thenReturn(firstRuntime);
+        when(secondSegment.getRuntime()).thenReturn(secondRuntime);
         when(segmentRuntime.loadedSegmentsSnapshot())
                 .thenReturn(List.of(firstSegment, secondSegment));
         final Map<RuntimeSettingKey, Integer> effective = Map.of(
@@ -66,8 +74,8 @@ class SegmentRuntimeLimitApplierTest {
         assertEquals(expectedLimits, tunerCaptor.getValue());
         final ArgumentCaptor<SegmentRuntimeLimits> segmentCaptor = ArgumentCaptor
                 .forClass(SegmentRuntimeLimits.class);
-        verify(firstSegment).applyRuntimeLimits(segmentCaptor.capture());
-        verify(secondSegment).applyRuntimeLimits(segmentCaptor.capture());
+        verify(firstRuntime).updateRuntimeLimits(segmentCaptor.capture());
+        verify(secondRuntime).updateRuntimeLimits(segmentCaptor.capture());
         assertEquals(List.of(expectedLimits, expectedLimits),
                 segmentCaptor.getAllValues());
     }

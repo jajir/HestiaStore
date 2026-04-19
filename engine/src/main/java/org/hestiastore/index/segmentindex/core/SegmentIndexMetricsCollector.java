@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.model.RuntimeSettingKey;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
@@ -19,6 +18,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 
@@ -188,11 +188,11 @@ final class SegmentIndexMetricsCollector<K, V> {
         final Set<SegmentId> mappedSegmentIdSet = new HashSet<>(
                 mappedSegmentIds);
         int accountedSegments = 0;
-        for (final Segment<K, V> segment : segmentRegistry.runtime()
+        for (final SegmentHandle<K, V> segment : segmentRegistry.runtime()
                 .loadedSegmentsSnapshot()) {
             if (segment != null) {
                 final SegmentRuntimeSnapshot segmentRuntime = segment
-                        .getRuntimeSnapshot();
+                        .getRuntime().getRuntimeSnapshot();
                 final SegmentId segmentId = segmentRuntime.getSegmentId();
                 if (mappedSegmentIdSet.contains(segmentId)) {
                     accountedSegments++;

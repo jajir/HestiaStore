@@ -21,6 +21,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,13 @@ class RouteSplitCoordinatorTest {
     private Segment<Integer, String> parentSegment;
 
     @Mock
-    private Segment<Integer, String> currentSegment;
+    private SegmentHandle<Integer, String> parentHandle;
+
+    @Mock
+    private SegmentHandle<Integer, String> currentHandle;
+
+    @Mock
+    private SegmentHandle.Runtime parentRuntime;
 
     @Mock
     private SegmentMaterializationService<Integer, String> materializationService;
@@ -77,10 +84,13 @@ class RouteSplitCoordinatorTest {
 
     @Test
     void tryPrepareSplitReturnsMaterializedSplit() {
-        when(parentSegment.getNumberOfKeysInCache()).thenReturn(4L);
+        when(parentHandle.getRuntime()).thenReturn(parentRuntime);
+        when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
+        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
+        when(parentHandle.getSegment()).thenReturn(parentSegment);
+        when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
+                .thenReturn(Optional.of(parentHandle));
         when(parentSegment.getId()).thenReturn(PARENT_SEGMENT_ID);
-        when(segmentRegistry.findSegment(PARENT_SEGMENT_ID))
-                .thenReturn(Optional.of(parentSegment));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()),
                         iteratorResult(entries()), iteratorResult(entries()));
@@ -90,7 +100,7 @@ class RouteSplitCoordinatorTest {
         when(upperSegment.segmentId()).thenReturn(UPPER_SEGMENT_ID);
 
         final PreparedRouteSplit<Integer> prepared = coordinator
-                .tryPrepareSplit(parentSegment, 2L);
+                .tryPrepareSplit(parentHandle, 2L);
 
         assertNotNull(prepared);
         assertSame(PARENT_SEGMENT_ID, prepared.plan().getReplacedSegmentId());
@@ -110,13 +120,14 @@ class RouteSplitCoordinatorTest {
 
     @Test
     void tryPrepareSplitReturnsNullWhenLoadedSegmentChanged() {
-        when(parentSegment.getNumberOfKeysInCache()).thenReturn(4L);
-        when(parentSegment.getId()).thenReturn(PARENT_SEGMENT_ID);
-        when(segmentRegistry.findSegment(PARENT_SEGMENT_ID))
-                .thenReturn(Optional.of(currentSegment));
+        when(parentHandle.getRuntime()).thenReturn(parentRuntime);
+        when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
+        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
+        when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
+                .thenReturn(Optional.of(currentHandle));
 
         final PreparedRouteSplit<Integer> prepared = coordinator
-                .tryPrepareSplit(parentSegment, 2L);
+                .tryPrepareSplit(parentHandle, 2L);
 
         assertNull(prepared);
         verifyNoInteractions(keyToSegmentMap);

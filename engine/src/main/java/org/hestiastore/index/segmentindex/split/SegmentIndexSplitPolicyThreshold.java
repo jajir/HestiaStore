@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.split;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 
 /**
  * Threshold-based split policy that uses the in-cache key count.
@@ -16,17 +16,18 @@ final class SegmentIndexSplitPolicyThreshold<K, V>
      * Returns true when the in-memory key count reaches the configured
      * threshold.
      *
-     * @param segment evaluated segment
+     * @param segmentHandle evaluated segment
      * @param maxNumberOfKeysInSegment split threshold
      * @return true when split should be triggered
      */
     @Override
-    public boolean shouldSplit(final Segment<K, V> segment,
+    public boolean shouldSplit(final SegmentHandle<K, V> segmentHandle,
             final long maxNumberOfKeysInSegment) {
-        Vldtn.requireNonNull(segment, "segment");
+        Vldtn.requireNonNull(segmentHandle, "segmentHandle");
         if (maxNumberOfKeysInSegment < 1) {
             return false;
         }
-        return segment.getNumberOfKeysInCache() >= maxNumberOfKeysInSegment;
+        return segmentHandle.getRuntime()
+                .getNumberOfKeysInCache() >= maxNumberOfKeysInSegment;
     }
 }
