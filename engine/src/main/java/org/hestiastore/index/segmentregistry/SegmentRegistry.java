@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentregistry;
 import java.util.List;
 import java.util.Optional;
 
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentFullWriterTx;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
@@ -45,13 +44,13 @@ public interface SegmentRegistry<K, V> {
     Runtime<K, V> runtime();
 
     /**
-     * Returns the segment for the provided id, waiting until the registry can
-     * load it or a terminal failure is reached.
+     * Returns the segment handle for the provided id, waiting until the
+     * registry can load it or a terminal failure is reached.
      *
      * @param segmentId segment id to load
-     * @return loaded segment
+     * @return loaded segment handle
      */
-    Segment<K, V> getSegment(SegmentId segmentId);
+    SegmentHandle<K, V> loadSegment(SegmentId segmentId);
 
     /**
      * Performs a bounded fail-fast attempt to load the requested segment.
@@ -59,15 +58,15 @@ public interface SegmentRegistry<K, V> {
      * @param segmentId segment id to load
      * @return loaded segment when immediately available, otherwise empty
      */
-    Optional<Segment<K, V>> findSegment(SegmentId segmentId);
+    Optional<SegmentHandle<K, V>> tryGetSegment(SegmentId segmentId);
 
     /**
      * Creates and registers a new segment, waiting until the segment becomes
      * available or a terminal failure is reached.
      *
-     * @return created segment
+     * @return created segment handle
      */
-    Segment<K, V> createSegment();
+    SegmentHandle<K, V> createSegment();
 
     /**
      * Removes a segment from the registry, waiting until the segment is
@@ -152,6 +151,6 @@ public interface SegmentRegistry<K, V> {
          *
          * @return loaded segment snapshot
          */
-        List<Segment<K, V>> loadedSegmentsSnapshot();
+        List<SegmentHandle<K, V>> loadedSegmentsSnapshot();
     }
 }

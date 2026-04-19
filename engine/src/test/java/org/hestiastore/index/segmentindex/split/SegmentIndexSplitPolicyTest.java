@@ -2,8 +2,9 @@ package org.hestiastore.index.segmentindex.split;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -14,12 +15,16 @@ class SegmentIndexSplitPolicyTest {
         final SegmentIndexSplitPolicy<Integer, String> policy = SegmentIndexSplitPolicy
                 .none();
         @SuppressWarnings("unchecked")
-        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+        final SegmentHandle<Integer, String> segmentHandle = Mockito
+                .mock(SegmentHandle.class);
+        final SegmentHandle.Runtime runtime = Mockito
+                .mock(SegmentHandle.Runtime.class);
+        when(segmentHandle.getRuntime()).thenReturn(runtime);
 
-        assertFalse(policy.shouldSplit(segment, 1));
-        assertFalse(policy.shouldSplit(segment, 0));
-        assertFalse(policy.shouldSplit(segment, -5));
+        assertFalse(policy.shouldSplit(segmentHandle, 1));
+        assertFalse(policy.shouldSplit(segmentHandle, 0));
+        assertFalse(policy.shouldSplit(segmentHandle, -5));
 
-        verifyNoInteractions(segment);
+        verifyNoInteractions(segmentHandle, runtime);
     }
 }

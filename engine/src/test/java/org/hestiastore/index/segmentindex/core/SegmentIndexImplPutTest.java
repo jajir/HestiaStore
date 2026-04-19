@@ -79,7 +79,8 @@ class SegmentIndexImplPutTest {
         final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                 index);
         final SegmentId segmentId = cache.findSegmentIdForKey(1);
-        final Segment<Integer, String> segment = registry.getSegment(segmentId);
+        final Segment<Integer, String> segment = registry.loadSegment(segmentId)
+                .getSegment();
         awaitSegmentReady(segment);
         awaitSegmentCount(cache, 2);
         assertEquals(SegmentId.of(1), cache.findSegmentIdForKey(1));

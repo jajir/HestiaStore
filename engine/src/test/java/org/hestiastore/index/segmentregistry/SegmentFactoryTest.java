@@ -202,8 +202,8 @@ class SegmentFactoryTest {
                 stableSegmentMaintenancePool);
 
         try {
-            final SegmentBuilder<Integer, String> builder = factory
-                    .newSegmentBuilder(SegmentId.of(8));
+            final SegmentBuilder<Integer, String> builder = invokeNewSegmentBuilder(
+                    factory, SegmentId.of(8));
             final List<Supplier<? extends ChunkFilter>> suppliers = readEncodingSuppliers(
                     builder);
             final TrackingChunkFilter first = (TrackingChunkFilter) suppliers
@@ -270,6 +270,22 @@ class SegmentFactoryTest {
                 .withContextLoggingEnabled(false)//
                 .withName("segment-factory-test")//
                 .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentBuilder<Integer, String> invokeNewSegmentBuilder(
+            final SegmentFactory<Integer, String> factory,
+            final SegmentId segmentId) {
+        try {
+            final var method = SegmentFactory.class.getDeclaredMethod(
+                    "newSegmentBuilder", SegmentId.class);
+            method.setAccessible(true);
+            return (SegmentBuilder<Integer, String>) method.invoke(factory,
+                    segmentId);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to invoke SegmentFactory.newSegmentBuilder", ex);
+        }
     }
 
     @SuppressWarnings("unchecked")

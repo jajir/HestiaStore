@@ -61,7 +61,8 @@ class SegmentIndexImplRetryTest {
         final SegmentId segmentId = cache.findSegmentIdForKey(1);
         final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
                 index);
-        final Segment<Integer, String> original = registry.getSegment(segmentId);
+        final Segment<Integer, String> original = registry.loadSegment(segmentId)
+                .getSegment();
 
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.get(1)).thenAnswer(invocation -> {

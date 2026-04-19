@@ -156,11 +156,47 @@ class SegmentRegistryBuilderTest {
                     .withRegistryMaintenanceExecutor(
                             registryMaintenanceExecutor)
                     .build();
-            final Segment<Integer, String> created = registry.createSegment();
+            final SegmentHandle<Integer, String> created = registry
+                    .createSegment();
             assertNotNull(created);
             assertSame(SegmentResultStatus.OK,
-                    created.put(1, "value").getStatus());
+                    created.getSegment().put(1, "value").getStatus());
             registry.close();
+        } finally {
+            stableSegmentMaintenanceExecutor.shutdownNow();
+            registryMaintenanceExecutor.shutdownNow();
+        }
+    }
+
+    @Test
+    void createSegmentHandleReturnsBlockingAccessToCreatedSegment() {
+        final MemDirectory directory = new MemDirectory();
+        final ExecutorService stableSegmentMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        final ExecutorService registryMaintenanceExecutor = Executors
+                .newSingleThreadExecutor();
+        try {
+            final SegmentRegistry<Integer, String> registry = SegmentRegistry
+                    .<Integer, String>builder()
+                    .withDirectoryFacade(directory)
+                    .withKeyTypeDescriptor(new TypeDescriptorInteger())
+                    .withValueTypeDescriptor(new TypeDescriptorShortString())
+                    .withConfiguration(newConfiguration())
+                    .withSegmentMaintenanceExecutor(
+                            stableSegmentMaintenanceExecutor)
+                    .withRegistryMaintenanceExecutor(
+                            registryMaintenanceExecutor)
+                    .build();
+            try {
+                final SegmentHandle<Integer, String> handle = registry
+                        .createSegment();
+
+                handle.put(1, "value");
+
+                assertEquals("value", handle.get(1));
+            } finally {
+                registry.close();
+            }
         } finally {
             stableSegmentMaintenanceExecutor.shutdownNow();
             registryMaintenanceExecutor.shutdownNow();

@@ -9,13 +9,13 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,14 +86,14 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
     }
 
     private EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
-        final Segment<K, V> segment = awaitSegment(segmentId);
-        if (segment == null) {
+        final SegmentHandle<K, V> segmentHandle = awaitSegment(segmentId);
+        if (segmentHandle == null) {
             logger.debug(
                     "Skipping segment '{}' because it is not available in '{}' isolation mode.",
                     segmentId, isolation);
             return null;
         }
-        final EntryIterator<K, V> iterator = awaitOpenIterator(segment);
+        final EntryIterator<K, V> iterator = awaitOpenIterator(segmentHandle);
         if (iterator == null) {
             logger.debug(
                     "Skipping segment '{}' because iterator cannot be opened in '{}' isolation mode.",
@@ -109,28 +109,29 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         }
     }
 
-    private Segment<K, V> awaitSegment(final SegmentId segmentId) {
+    private SegmentHandle<K, V> awaitSegment(final SegmentId segmentId) {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
-            final Optional<Segment<K, V>> segment = segmentRegistry
-                    .findSegment(segmentId);
+            final Optional<SegmentHandle<K, V>> segment = segmentRegistry
+                    .tryGetSegment(segmentId);
             return segment.orElse(null);
         }
-        return segmentRegistry.getSegment(segmentId);
+        return segmentRegistry.loadSegment(segmentId);
     }
 
-    private EntryIterator<K, V> awaitOpenIterator(final Segment<K, V> segment) {
+    private EntryIterator<K, V> awaitOpenIterator(
+            final SegmentHandle<K, V> segmentHandle) {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
-            return awaitOpenIteratorFailFast(segment);
+            return awaitOpenIteratorFailFast(segmentHandle);
         }
-        return awaitOpenIteratorBlocking(segment);
+        return awaitOpenIteratorBlocking(segmentHandle);
     }
 
     private EntryIterator<K, V> awaitOpenIteratorFailFast(
-            final Segment<K, V> segment) {
+            final SegmentHandle<K, V> segmentHandle) {
         final long startNanos = retryPolicy.startNanos();
         for (int attempt = 0; attempt < 2; attempt++) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(isolation);
+            final SegmentResult<EntryIterator<K, V>> result = segmentHandle
+                    .tryOpenIterator(isolation);
             if (result.getStatus() == SegmentResultStatus.OK
                     && result.getValue() != null) {
                 return result.getValue();
@@ -140,31 +141,15 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             }
             if (attempt == 0) {
                 retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                        segment.getId());
+                        segmentHandle.getId());
             }
         }
         return null;
     }
 
     private EntryIterator<K, V> awaitOpenIteratorBlocking(
-            final Segment<K, V> segment) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(isolation);
-            if (result.getStatus() == SegmentResultStatus.OK
-                    && result.getValue() != null) {
-                return result.getValue();
-            }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "openIterator",
-                        segment.getId());
-                continue;
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to open iterator: %s", segment.getId(),
-                    result.getStatus()));
-        }
+            final SegmentHandle<K, V> segmentHandle) {
+        return segmentHandle.openIterator(isolation);
     }
 
     /** {@inheritDoc} */

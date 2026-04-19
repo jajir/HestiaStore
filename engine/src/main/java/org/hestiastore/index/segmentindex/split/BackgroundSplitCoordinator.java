@@ -2,8 +2,8 @@ package org.hestiastore.index.segmentindex.split;
 
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 
 /**
  * Public runtime boundary for background split scheduling, admission, and
@@ -17,14 +17,14 @@ public interface BackgroundSplitCoordinator<K, V> {
     /**
      * Attempts to schedule a background split for the provided segment.
      *
-     * @param segment split candidate
+     * @param segmentHandle split candidate
      * @param splitThreshold minimum number of keys that makes the candidate
      *        eligible
      * @param ignoreCooldown whether failed-attempt cooldown should be bypassed
      * @return {@code true} when split work was scheduled
      */
-    boolean handleSplitCandidate(Segment<K, V> segment, long splitThreshold,
-            boolean ignoreCooldown);
+    boolean handleSplitCandidate(SegmentHandle<K, V> segmentHandle,
+            long splitThreshold, boolean ignoreCooldown);
 
     /**
      * Waits until in-flight splits finish or the timeout expires.
