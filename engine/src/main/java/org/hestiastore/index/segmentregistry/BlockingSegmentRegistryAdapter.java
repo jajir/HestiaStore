@@ -39,18 +39,18 @@ final class BlockingSegmentRegistryAdapter<K, V> {
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
-    Segment<K, V> getSegment(final SegmentId segmentId) {
+    Segment<K, V> loadSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                    .tryGetSegment(segmentId);
+                    .tryLoadSegment(segmentId);
             if (loaded.getStatus() == SegmentRegistryResultStatus.OK
                     && loaded.getValue() != null) {
                 return loaded.getValue();
             }
             if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos, "getSegment",
+                retryPolicy.backoffOrThrow(startNanos, "loadSegment",
                         segmentId);
                 continue;
             }
@@ -60,10 +60,10 @@ final class BlockingSegmentRegistryAdapter<K, V> {
         }
     }
 
-    Optional<Segment<K, V>> findSegment(final SegmentId segmentId) {
+    Optional<Segment<K, V>> tryGetSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
-                .tryGetSegment(segmentId);
+                .tryLoadSegment(segmentId);
         if (loaded.getStatus() == SegmentRegistryResultStatus.OK
                 && loaded.getValue() != null) {
             return Optional.of(loaded.getValue());

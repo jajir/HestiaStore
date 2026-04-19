@@ -14,10 +14,10 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 
 /**
  * Default implementation of background split scheduling and split-publish
@@ -119,13 +119,14 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
     }
 
     @Override
-    public boolean handleSplitCandidate(final Segment<K, V> segment,
+    public boolean handleSplitCandidate(
+            final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold, final boolean ignoreCooldown) {
-        if (segment == null) {
+        if (segmentHandle == null) {
             return false;
         }
-        final SegmentId segmentId = segment.getId();
-        if (segment.getState() == SegmentState.CLOSED) {
+        final SegmentId segmentId = segmentHandle.getId();
+        if (segmentHandle.getRuntime().getState() == SegmentState.CLOSED) {
             if (segmentId != null) {
                 splitAttemptStates.remove(segmentId);
             }
@@ -140,7 +141,7 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
             }
             return false;
         }
-        return optionallyScheduleSplit(segment, splitThreshold,
+        return optionallyScheduleSplit(segmentHandle, splitThreshold,
                 ignoreCooldown);
     }
 
@@ -233,14 +234,16 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
         }
     }
 
-    private boolean optionallyScheduleSplit(final Segment<K, V> segment,
+    private boolean optionallyScheduleSplit(
+            final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold, final boolean ignoreCooldown) {
         if (!isSplitSchedulingEnabled(splitThreshold)
                 || splitSchedulingPauseCount.get() > 0) {
             return false;
         }
-        final SegmentId segmentId = segment.getId();
-        final long totalKeys = segment.getNumberOfKeysInCache();
+        final SegmentId segmentId = segmentHandle.getId();
+        final long totalKeys = segmentHandle.getRuntime()
+                .getNumberOfKeysInCache();
         if (totalKeys <= splitThreshold) {
             splitAttemptStates.remove(segmentId);
             return false;
@@ -253,12 +256,13 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
         if (ignoreCooldown) {
             splitAttemptStates.remove(segmentId);
         }
-        return scheduleSplitAsync(segment, splitThreshold, totalKeys);
+        return scheduleSplitAsync(segmentHandle, splitThreshold, totalKeys);
     }
 
-    private boolean scheduleSplitAsync(final Segment<K, V> segment,
+    private boolean scheduleSplitAsync(
+            final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount) {
-        final SegmentId segmentId = segment.getId();
+        final SegmentId segmentId = segmentHandle.getId();
         if (!runWithExclusiveSplitAdmission(() -> tryMarkSplitScheduled(
                 segmentId))) {
             return false;
@@ -266,7 +270,7 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
         final long scheduledAtNanos = nanoTimeSupplier.getAsLong();
         try {
             splitExecutor.execute(
-                    () -> executeScheduledSplit(segment, splitThreshold,
+                    () -> executeScheduledSplit(segmentHandle, splitThreshold,
                             observedKeyCount, scheduledAtNanos));
         } catch (final RuntimeException e) {
             scheduledSplits.remove(segmentId);
@@ -276,14 +280,15 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
         return true;
     }
 
-    private void executeScheduledSplit(final Segment<K, V> segment,
+    private void executeScheduledSplit(
+            final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount,
             final long scheduledAtNanos) {
         final long startedAtNanos = nanoTimeSupplier.getAsLong();
         metrics.recordSplitTaskStartDelayNanos(
                 Math.max(0L, startedAtNanos - scheduledAtNanos));
         try {
-            executeSplitAsync(segment, splitThreshold, observedKeyCount,
+            executeSplitAsync(segmentHandle, splitThreshold, observedKeyCount,
                     startedAtNanos);
         } finally {
             metrics.recordSplitTaskRunLatencyNanos(Math.max(0L,
@@ -291,14 +296,14 @@ public final class BackgroundSplitCoordinatorImpl<K, V>
         }
     }
 
-    private void executeSplitAsync(final Segment<K, V> segment,
+    private void executeSplitAsync(final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount,
             final long startNanos) {
-        final SegmentId segmentId = segment.getId();
+        final SegmentId segmentId = segmentHandle.getId();
         boolean splitApplied = false;
         try {
             final PreparedRouteSplit<K> preparedSplit = routeSplitCoordinator
-                    .tryPrepareSplit(segment, splitThreshold);
+                    .tryPrepareSplit(segmentHandle, splitThreshold);
             if (preparedSplit != null) {
                 final boolean published = runWithExclusiveSplitAdmission(
                         () -> routeSplitCoordinator

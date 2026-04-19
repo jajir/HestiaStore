@@ -225,7 +225,8 @@ public final class SegmentRegistryBuilder<K, V> {
             final Segment<K, V> segment, final Set<SegmentId> pinnedSegments,
             final SegmentRegistryStateMachine gate) {
         final boolean closing = gate.getState() != SegmentRegistryState.READY;
-        return !pinnedSegments.contains(segment.getId())
+        final SegmentId segmentId = segment.getId();
+        return segmentId != null && !pinnedSegments.contains(segmentId)
                 && segment.getState() == SegmentState.READY
                 && (closing || segment.getNumberOfKeysInWriteCache() == 0);
     }

@@ -6,15 +6,13 @@ import java.util.Optional;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.split.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 
@@ -26,7 +24,6 @@ final class StableSegmentCoordinator<K, V> {
 
     private static final String OPERATION_COMPACT = "compact";
     private static final String OPERATION_FLUSH = "flush";
-    private static final String OPERATION_DRAIN = "drain";
     private static final String OPERATION_LABEL_COMPACT = "Compact";
     private static final String OPERATION_LABEL_FLUSH = "Flush";
 
@@ -73,23 +70,9 @@ final class StableSegmentCoordinator<K, V> {
 
     void putEntryForDrain(final SegmentId segmentId, final K key,
             final V value) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final Segment<K, V> segment = segmentRegistry.getSegment(segmentId);
-            final SegmentResult<Void> putResult = segment.put(key, value);
-            if (putResult.getStatus() == SegmentResultStatus.OK) {
-                return;
-            }
-            if (putResult.getStatus() == SegmentResultStatus.BUSY
-                    || putResult.getStatus() == SegmentResultStatus.CLOSED) {
-                retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN,
-                        segmentId);
-            } else {
-                throw new IndexException(String.format(
-                        "Segment '%s' failed to accept drain entry: %s",
-                        segmentId, putResult.getStatus()));
-            }
-        }
+        final SegmentHandle<K, V> handle = segmentRegistry.loadSegment(
+                segmentId);
+        handle.put(key, value);
     }
 
     void flushSegments(final boolean waitForCompletion) {
@@ -147,8 +130,8 @@ final class StableSegmentCoordinator<K, V> {
     void invalidateIterators() {
         keyToSegmentMap.getSegmentIds().forEach(segmentId -> {
             try {
-                final Optional<Segment<K, V>> loaded = segmentRegistry
-                        .findSegment(segmentId);
+                final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
+                        .tryGetSegment(segmentId);
                 if (loaded.isPresent()) {
                     loaded.get().invalidateIterators();
                     return;
@@ -172,10 +155,10 @@ final class StableSegmentCoordinator<K, V> {
     }
 
     private void awaitSegmentReady(final SegmentId segmentId,
-            final String operation, final Segment<K, V> segment) {
+            final String operation, final SegmentHandle<K, V> segment) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentState state = segment.getState();
+            final SegmentState state = segment.getRuntime().getState();
             if (state == SegmentState.READY || state == SegmentState.CLOSED) {
                 return;
             }
@@ -196,7 +179,7 @@ final class StableSegmentCoordinator<K, V> {
                 operationLabel, segmentId, waitForCompletion);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<Segment<K, V>> result = operationRunner
+            final IndexResult<SegmentHandle<K, V>> result = operationRunner
                     .run(segmentId);
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.OK) {
@@ -232,10 +215,10 @@ final class StableSegmentCoordinator<K, V> {
 
     private void completeAcceptedOperation(final SegmentId segmentId,
             final boolean waitForCompletion, final String operation,
-            final String operationLabel, final Segment<K, V> segment) {
+            final String operationLabel, final SegmentHandle<K, V> segment) {
         logOperation("{} accepted: segment='{}' wait='{}' state='{}'",
                 operationLabel, segmentId, waitForCompletion,
-                segment == null ? null : segment.getState());
+                segment == null ? null : segment.getRuntime().getState());
         if (waitForCompletion && segment != null) {
             final long acceptedAtNanos = nanoTimeSupplier.getAsLong();
             awaitSegmentReady(segmentId, operation, segment);
@@ -303,6 +286,6 @@ final class StableSegmentCoordinator<K, V> {
 
     @FunctionalInterface
     private interface StableSegmentOperation<K, V> {
-        IndexResult<Segment<K, V>> run(SegmentId segmentId);
+        IndexResult<SegmentHandle<K, V>> run(SegmentId segmentId);
     }
 }

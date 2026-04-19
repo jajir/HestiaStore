@@ -6,16 +6,14 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +85,7 @@ class IndexConsistencyChecker<K, V> {
                 return;
             }
             logger.debug("checking segment '{}'.", segmentId);
-            final Segment<K, V> segment = awaitLoadedSegment(segmentId);
+            final SegmentHandle<K, V> segment = awaitLoadedSegment(segmentId);
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {
                 removeEmptySegment(segmentId, segment);
@@ -105,7 +103,7 @@ class IndexConsistencyChecker<K, V> {
     }
 
     private void removeEmptySegment(final SegmentId segmentId,
-            final Segment<K, V> segment) {
+            final SegmentHandle<K, V> segment) {
         if (!confirmEmptyUnderIsolation(segment)) {
             return;
         }
@@ -116,30 +114,17 @@ class IndexConsistencyChecker<K, V> {
         segmentRegistry.deleteSegment(segmentId);
     }
 
-    private boolean confirmEmptyUnderIsolation(final Segment<K, V> segment) {
-        final long startNanos = retryPolicy.startNanos();
-        while (true) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
-                    .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
-            if (result.getStatus() == SegmentResultStatus.OK) {
-                try (EntryIterator<K, V> iterator = result.getValue()) {
-                    return !iterator.hasNext();
-                }
-            }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
-                retryPolicy.backoffOrThrow(startNanos,
-                        "openConsistencyIterator", segment.getId());
-                continue;
-            }
-            throw new IndexException(String.format(
-                    "Segment '%s' failed to open iterator: %s", segment.getId(),
-                    result.getStatus()));
+    private boolean confirmEmptyUnderIsolation(
+            final SegmentHandle<K, V> segment) {
+        try (EntryIterator<K, V> iterator = segment
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)) {
+            return !iterator.hasNext();
         }
     }
 
-    private Segment<K, V> awaitLoadedSegment(final SegmentId segmentId) {
+    private SegmentHandle<K, V> awaitLoadedSegment(final SegmentId segmentId) {
         try {
-            return segmentRegistry.getSegment(segmentId);
+            return segmentRegistry.loadSegment(segmentId);
         } catch (final IndexException e) {
             throw new IndexException(String.format(
                     ERROR_MSG + "Segment '%s' is not found in index.",

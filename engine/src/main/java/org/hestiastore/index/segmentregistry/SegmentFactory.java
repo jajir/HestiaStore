@@ -88,7 +88,7 @@ final class SegmentFactory<K, V>
      * @param segmentId segment id
      * @return configured segment builder
      */
-    SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
+    private SegmentBuilder<K, V> newSegmentBuilder(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentRuntimeLimits limits = resolveRuntimeLimits();
         final Directory segmentDirectory = openSegmentDirectory(segmentId);

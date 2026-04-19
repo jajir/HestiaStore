@@ -15,10 +15,10 @@ import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,10 +35,10 @@ class SegmentsIteratorTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private Segment<String, String> segment17;
+    private SegmentHandle<String, String> handle17;
 
     @Mock
-    private Segment<String, String> segment23;
+    private SegmentHandle<String, String> handle23;
 
     @Mock
     private EntryIterator<String, String> entryIterator17;
@@ -59,9 +59,9 @@ class SegmentsIteratorTest {
 
     @Test
     void test_segments_in_one() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
@@ -84,9 +84,9 @@ class SegmentsIteratorTest {
 
     @Test
     void test_segment_load_retries_when_registry_is_busy() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
@@ -103,12 +103,12 @@ class SegmentsIteratorTest {
             assertFalse(iterator.hasNext());
         }
 
-        verify(segmentRegistry).findSegment(SEGMENT_ID_17);
+        verify(segmentRegistry).tryGetSegment(SEGMENT_ID_17);
     }
 
     @Test
     void test_fail_fast_skips_segment_when_registry_stays_busy() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
                 .thenReturn(Optional.empty());
 
         final ArrayList<SegmentId> ids = new ArrayList<>();
@@ -119,14 +119,14 @@ class SegmentsIteratorTest {
             assertFalse(iterator.hasNext());
         }
 
-        verify(segmentRegistry).findSegment(SEGMENT_ID_17);
+        verify(segmentRegistry).tryGetSegment(SEGMENT_ID_17);
     }
 
     @Test
     void test_open_iterator_retries_when_segment_is_busy() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.busy())
                 .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
@@ -142,15 +142,15 @@ class SegmentsIteratorTest {
             assertFalse(iterator.hasNext());
         }
 
-        verify(segment17, times(2))
-                .openIterator(SegmentIteratorIsolation.FAIL_FAST);
+        verify(handle17, times(2))
+                .tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
     @Test
     void test_fail_fast_skips_segment_when_open_iterator_stays_busy() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.busy());
 
         final ArrayList<SegmentId> ids = new ArrayList<>();
@@ -161,22 +161,22 @@ class SegmentsIteratorTest {
             assertFalse(iterator.hasNext());
         }
 
-        verify(segment17, times(2))
-                .openIterator(SegmentIteratorIsolation.FAIL_FAST);
+        verify(handle17, times(2))
+                .tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
     @Test
     void test_segments_are_two() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
-        when(segmentRegistry.findSegment(SEGMENT_ID_23))
-                .thenReturn(Optional.of(segment23));
-        when(segment23.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_23))
+                .thenReturn(Optional.of(handle23));
+        when(handle23.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator23));
         when(entryIterator23.hasNext()).thenReturn(true, false);
         when(entryIterator23.next()).thenReturn(new Entry<>("key2", "value2"));
@@ -205,9 +205,9 @@ class SegmentsIteratorTest {
 
     @Test
     void testClose() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator17));
 
         final ArrayList<SegmentId> tst = new ArrayList<SegmentId>();
@@ -223,9 +223,9 @@ class SegmentsIteratorTest {
 
     @Test
     void test_close_does_throw_when_already_closed() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator17));
 
         final ArrayList<SegmentId> ids = new ArrayList<>();
@@ -240,9 +240,9 @@ class SegmentsIteratorTest {
 
     @Test
     void test_make_sure_that_lastSegmentIterator_in_not_closed_double_time() {
-        when(segmentRegistry.findSegment(SEGMENT_ID_17))
-                .thenReturn(Optional.of(segment17));
-        when(segment17.openIterator(SegmentIteratorIsolation.FAIL_FAST))
+        when(segmentRegistry.tryGetSegment(SEGMENT_ID_17))
+                .thenReturn(Optional.of(handle17));
+        when(handle17.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(entryIterator17));
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
@@ -261,9 +261,9 @@ class SegmentsIteratorTest {
 
     @Test
     void test_full_isolation_is_propagated_to_segment() {
-        when(segmentRegistry.getSegment(SEGMENT_ID_17)).thenReturn(segment17);
-        when(segment17.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(SegmentResult.ok(entryIterator17));
+        when(segmentRegistry.loadSegment(SEGMENT_ID_17)).thenReturn(handle17);
+        when(handle17.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(entryIterator17);
         when(entryIterator17.hasNext()).thenReturn(true, false);
         when(entryIterator17.next()).thenReturn(new Entry<>("key1", "value1"));
 
@@ -276,7 +276,7 @@ class SegmentsIteratorTest {
             iterator.next();
         }
 
-        verify(segment17).openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+        verify(handle17).openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
     }
 
 }

@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex.core;
 import java.util.Map;
 
 import org.hestiastore.index.control.model.RuntimeSettingKey;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
+import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -43,9 +43,9 @@ final class SegmentRuntimeLimitApplier<K, V> {
                 maxSegmentCache, maxSegmentWriteCache,
                 maxMaintenanceWriteCache);
         segmentRuntime.updateRuntimeLimits(limits);
-        for (final Segment<K, V> segment : segmentRuntime
+        for (final SegmentHandle<K, V> segment : segmentRuntime
                 .loadedSegmentsSnapshot()) {
-            segment.applyRuntimeLimits(limits);
+            segment.getRuntime().updateRuntimeLimits(limits);
         }
     }
 }

@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 
 import java.util.List;
 
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,10 +19,10 @@ class SegmentRegistryRuntimeViewTest {
     private SegmentRuntimeTuner runtimeTuner;
 
     @Mock
-    private Segment<Integer, String> firstSegment;
+    private SegmentHandle<Integer, String> firstSegment;
 
     @Mock
-    private Segment<Integer, String> secondSegment;
+    private SegmentHandle<Integer, String> secondSegment;
 
     @Test
     void updateRuntimeLimits_delegatesToRuntimeTuner() {
@@ -38,7 +37,8 @@ class SegmentRegistryRuntimeViewTest {
 
     @Test
     void loadedSegmentsSnapshot_returnsDelegatedSnapshot() {
-        final List<Segment<Integer, String>> snapshot = List.of(firstSegment,
+        final List<SegmentHandle<Integer, String>> snapshot = List.of(
+                firstSegment,
                 secondSegment);
         final SegmentRegistryRuntimeView<Integer, String> view = new SegmentRegistryRuntimeView<>(
                 runtimeTuner, () -> snapshot);
@@ -50,7 +50,7 @@ class SegmentRegistryRuntimeViewTest {
     void constructorRejectsNullRuntimeTuner() {
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentRegistryRuntimeView<Integer, String>(null,
-                        List::<Segment<Integer, String>>of));
+                        List::<SegmentHandle<Integer, String>>of));
     }
 
     @Test
