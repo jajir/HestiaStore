@@ -1,8 +1,13 @@
 package org.hestiastore.index.segmentindex.core;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Comparator;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.hestiastore.index.AbstractCloseableResource;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
@@ -15,9 +20,16 @@ import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.hestiastore.index.segmentindex.core.facade.SegmentIndexMaintenanceCommands;
+import org.hestiastore.index.segmentindex.core.facade.SegmentIndexMutationFacade;
+import org.hestiastore.index.segmentindex.core.facade.SegmentIndexReadFacade;
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternal;
+import org.hestiastore.index.segmentindex.core.runtime.SegmentIndexRuntime;
+import org.hestiastore.index.segmentindex.core.state.IndexState;
+import org.hestiastore.index.segmentindex.core.state.IndexStateCoordinator;
+import org.hestiastore.index.segmentindex.core.state.IndexStateOpening;
+import org.hestiastore.index.sorteddatafile.EntryComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,15 +46,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
-    private final Stats stats = new Stats();
-    private final IndexOperationTracker operationTracker = new IndexOperationTracker();
-    private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
-    private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
-    private final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
-    private final IndexStateCoordinator<K, V> stateCoordinator;
-    private final SegmentIndexRuntime<K, V> runtime;
-    private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
-    private final IndexCloseCoordinator closeCoordinator;
+    private final SegmentIndexMutationFacade<K, V> mutationFacade;
+    private final SegmentIndexReadFacade<K, V> readFacade;
+    private final SegmentIndexMaintenanceCommands<K, V> maintenanceCommands;
+    private final SegmentIndexCoreOwner<K, V> coreOwner;
 
     protected SegmentIndexImpl(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -50,49 +57,43 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final IndexExecutorRegistry executorRegistry) {
-        final Directory nonNullDirectory = Vldtn.requireNonNull(directoryFacade,
-                "directoryFacade");
-        final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
-                nonNullDirectory);
-        this.stateCoordinator = new IndexStateCoordinator<>(openingState,
-                SegmentIndexState.OPENING);
+        IndexStateCoordinator<K, V> initializedStateCoordinator = null;
         try {
+            final IndexConfiguration<K, V> validatedConfiguration = Vldtn
+                    .requireNonNull(conf, "conf");
+            final TypeDescriptor<K> validatedKeyTypeDescriptor = Vldtn
+                    .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
+            final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
+                    directoryFacade);
+            final IndexStateCoordinator<K, V> createdStateCoordinator =
+                    new IndexStateCoordinator<>(openingState,
+                            SegmentIndexState.OPENING);
+            initializedStateCoordinator = createdStateCoordinator;
+            final SegmentIndexCoreGraph<K, V> composition =
+                    SegmentIndexCoreGraph.create(
+                            SegmentIndexCoreInputs.create(logger,
+                                    directoryFacade,
+                                    validatedKeyTypeDescriptor,
+                                    valueTypeDescriptor,
+                                    validatedConfiguration,
+                                    runtimeConfiguration, executorRegistry,
+                                    createdStateCoordinator,
+                                    openingState.wasStaleLockRecovered()));
             this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                     "keyTypeDescriptor");
-            Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
-            this.conf = Vldtn.requireNonNull(conf, "conf");
-            try (IndexNameMdcScope ignored = IndexNameMdcScope
-                    .openIfConfigured(this.conf)) {
-                final SegmentIndexAssembly<K, V> assembly = SegmentIndexAssembly
-                        .open(logger, nonNullDirectory, keyTypeDescriptor,
-                                valueTypeDescriptor, conf, runtimeConfiguration,
-                                executorRegistry,
-                                stats, compactRequestHighWaterMark,
-                                flushRequestHighWaterMark, lastAppliedWalLsn,
-                                new SegmentIndexAssembly.Callbacks(
-                                        this::getState, this::awaitSplitsIdle,
-                                        this::failWithError,
-                                        this::onBackgroundSplitApplied,
-                                        () -> stateCoordinator.beginClose(this),
-                                        operationTracker::awaitOperations,
-                                        () -> setSegmentIndexState(
-                                                SegmentIndexState.CLOSED),
-                                        stats::getGetCx, stats::getPutCx,
-                                        stats::getDeleteCx,
-                                        () -> stateCoordinator
-                                                .completeCloseStateTransition(
-                                                        this)));
-                this.runtime = assembly.runtime();
-                this.closeCoordinator = assembly.closeCoordinator();
-                this.consistencyCoordinator = assembly
-                        .consistencyCoordinator();
-                assembly.completeOpen(logger, conf.getIndexName(),
-                        openingState.wasStaleLockRecovered(),
-                        () -> stateCoordinator.markReady(this),
-                        this::checkAndRepairConsistency);
-            }
+            this.conf = validatedConfiguration;
+            this.mutationFacade = composition.mutationFacade();
+            this.readFacade = composition.readFacade();
+            this.maintenanceCommands = composition.maintenanceCommands();
+            this.coreOwner = new SegmentIndexCoreOwner<>(validatedConfiguration,
+                    createdStateCoordinator, composition.runtime(),
+                    composition.maintenanceAccess(),
+                    composition.closeCoordinator(),
+                    composition.startupCoordinator());
         } catch (final RuntimeException e) {
-            failWithError(e);
+            if (initializedStateCoordinator != null) {
+                initializedStateCoordinator.failWithError(e);
+            }
             throw e;
         }
     }
@@ -100,11 +101,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void put(final K key, final V value) {
-        operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            runtime.operationCoordinator().put(key, value);
-            return null;
-        });
+        mutationFacade.put(key, value);
     }
 
     /**
@@ -120,13 +117,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        return operationTracker.runTracked(() -> {
-            Vldtn.requireNonNull(segmentId, "segmentId");
-            Vldtn.requireNonNull(isolation, "isolation");
-            getIndexState().tryPerformOperation();
-            return runtime.stableSegmentCoordinator()
-                    .openIteratorWithRetry(segmentId, isolation);
-        });
+        return readFacade.openSegmentIterator(segmentId, isolation);
     }
 
     /**
@@ -153,156 +144,167 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     public EntryIterator<K, V> openSegmentIterator(
             final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
-        return operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            final SegmentWindow resolvedWindows = segmentWindows == null
-                    ? SegmentWindow.unbounded()
-                    : segmentWindows;
-            Vldtn.requireNonNull(isolation, "isolation");
-            final EntryIterator<K, V> segmentIterator = runtime
-                    .directSegmentReadCoordinator()
-                    .openWindowIterator(resolvedWindows, isolation);
-            if (isContextLoggingEnabled()) {
-                return new EntryIteratorLoggingContext<>(segmentIterator, conf);
+        return readFacade.openWindowIterator(segmentWindows, isolation);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindow) {
+        return getStream(segmentWindow, SegmentIteratorIsolation.FAIL_FAST);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Stream<Entry<K, V>> getStream(
+            final SegmentWindow segmentWindow,
+            final SegmentIteratorIsolation isolation) {
+        ensureOperational();
+        final EntryIterator<K, V> iterator = openSegmentIterator(segmentWindow,
+                isolation);
+        return StreamSupport.stream(newEntryIteratorSpliterator(iterator), false)
+                .onClose(iterator::close);
+    }
+
+    private Spliterator<Entry<K, V>> newEntryIteratorSpliterator(
+            final EntryIterator<K, V> iterator) {
+        final EntryIterator<K, V> validatedIterator = Vldtn
+                .requireNonNull(iterator, "iterator");
+        final Comparator<? super Entry<K, V>> comparator =
+                new EntryComparator<>(keyTypeDescriptor.getComparator());
+        return new Spliterator<>() {
+
+            @Override
+            public boolean tryAdvance(
+                    final Consumer<? super Entry<K, V>> action) {
+                if (validatedIterator.hasNext()) {
+                    action.accept(validatedIterator.next());
+                    return true;
+                }
+                return false;
             }
-            return segmentIterator;
-        });
+
+            @Override
+            public Spliterator<Entry<K, V>> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public int characteristics() {
+                return Spliterator.DISTINCT | Spliterator.IMMUTABLE
+                        | Spliterator.NONNULL | Spliterator.SORTED;
+            }
+
+            @Override
+            public Comparator<? super Entry<K, V>> getComparator() {
+                return comparator;
+            }
+        };
     }
 
     /** {@inheritDoc} */
     @Override
     public void compact() {
-        operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            runtime.maintenanceCoordinator().compact();
-            return null;
-        });
+        runMaintenanceOperation(maintenanceCommands::compact);
     }
 
     /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
-        operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            runtime.maintenanceCoordinator().compactAndWait();
-            return null;
-        });
+        runMaintenanceOperation(maintenanceCommands::compactAndWait);
     }
 
     /** {@inheritDoc} */
     @Override
     public V get(final K key) {
-        return operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            return runtime.operationCoordinator().get(key);
-        });
+        return mutationFacade.get(key);
     }
 
     /** {@inheritDoc} */
     @Override
     public void delete(final K key) {
-        operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            runtime.operationCoordinator().delete(key);
-            return null;
-        });
+        mutationFacade.delete(key);
     }
 
     /** {@inheritDoc} */
     @Override
     public void checkAndRepairConsistency() {
-        operationTracker.runTracked(() -> {
-            getIndexState().tryPerformOperation();
-            consistencyCoordinator.checkAndRepairConsistency();
-            return null;
-        });
+        runMaintenanceOperation(maintenanceCommands::checkAndRepairConsistency);
     }
 
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        closeCoordinator.close();
+        coreOwner.close();
     }
 
-    final void setIndexState(final IndexState<K, V> indexState) {
-        stateCoordinator.setIndexState(indexState);
-    }
-
-    protected final IndexState<K, V> getIndexState() {
-        return stateCoordinator.getIndexState();
+    public final IndexState<K, V> getIndexState() {
+        return coreOwner.getIndexState();
     }
 
     /** {@inheritDoc} */
     @Override
     public SegmentIndexState getState() {
-        return stateCoordinator.getState();
+        return coreOwner.getState();
     }
 
     /** {@inheritDoc} */
     @Override
     public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return runtime.metricsCollector().metricsSnapshot();
+        return coreOwner.metricsSnapshot();
     }
 
-    final void setSegmentIndexState(final SegmentIndexState state) {
-        stateCoordinator.setSegmentIndexState(state);
+    protected final void failWithError(final Throwable failure) {
+        coreOwner.failWithError(failure);
     }
 
-    final void failWithError(final Throwable failure) {
-        stateCoordinator.failWithError(failure);
+    /**
+     * Startup-only extension point invoked immediately before the first
+     * consistency repair that runs after stale lock recovery.
+     */
+    protected void onStartupConsistencyCheck() {
     }
 
-    private void onBackgroundSplitApplied() {
-        if (runtime != null) {
-            runtime.backgroundSplitPolicyLoop().scheduleScanIfIdle();
-        }
+    protected final void completeStartup() {
+        coreOwner.completeStartup(this::onStartupConsistencyCheck);
     }
 
     /** {@inheritDoc} */
     @Override
     public void flush() {
-        runtime.maintenanceCoordinator().flush();
+        runMaintenanceOperation(maintenanceCommands::flush);
     }
 
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        runtime.maintenanceCoordinator().flushAndWait();
+        runMaintenanceOperation(maintenanceCommands::flushAndWait);
     }
 
-    protected void invalidateSegmentIterators() {
-        runtime.invalidateSegmentIterators();
+    protected void ensureOperational() {
+        coreOwner.ensureOperational();
     }
 
-    protected void awaitSplitsIdle() {
-        runtime.awaitSplitsIdle(conf.getIndexBusyTimeoutMillis());
+    protected void runMaintenanceOperation(final Runnable action) {
+        coreOwner.runMaintenanceOperation(action);
     }
 
-    final KeyToSegmentMap<K> keyToSegmentMap() {
-        return runtime.keyToSegmentMap();
+    protected final IndexStateCoordinator<K, V> stateCoordinator() {
+        return coreOwner.stateCoordinator();
     }
 
-    final SegmentRegistry<K, V> segmentRegistry() {
-        return runtime.segmentRegistry();
-    }
-
-    final WalRuntime<K, V> walRuntime() {
-        return runtime.walRuntime();
-    }
-
-    final IndexStateCoordinator<K, V> stateCoordinator() {
-        return stateCoordinator;
-    }
-
-    private boolean isContextLoggingEnabled() {
-        final Boolean enabled = conf.isContextLoggingEnabled();
-        return enabled != null && enabled;
+    final SegmentIndexRuntime<K, V> runtime() {
+        return coreOwner.runtime();
     }
 
     /** {@inheritDoc} */
     @Override
     public IndexControlPlane controlPlane() {
-        return runtime.controlPlane();
+        return coreOwner.controlPlane();
     }
 
     /** {@inheritDoc} */

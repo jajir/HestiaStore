@@ -59,20 +59,46 @@ WAL segment files are named as `<20-digit-base-lsn>.wal`.
 - `verify` for integrity checks
 - `dump` for record-level diagnostics
 
-Run it from compiled classes:
+Use the standalone `wal-tools-<version>.zip` distribution on the operator host
+or diagnostic workstation. The distribution contains:
 
-```bash
-java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool verify /path/to/index/wal
-java -cp engine/target/classes org.hestiastore.index.segmentindex.wal.WalTool dump /path/to/index/wal
+```text
+wal-tools-<version>.zip
+wal-tools-<version>.zip.sha256
 ```
 
-Or use the packaged CLI:
+Example installation:
 
 ```bash
-mvn -pl wal-tools -am package
-unzip wal-tools/target/wal-tools-<version>.zip -d /tmp
-/tmp/wal-tools-<version>/bin/wal_verify /path/to/index/wal
-/tmp/wal-tools-<version>/bin/wal_dump /path/to/index/wal
+sha256sum -c wal-tools-<version>.zip.sha256
+unzip wal-tools-<version>.zip -d /opt/hestiastore/wal-tools
+```
+
+Concrete example:
+
+```bash
+VERSION=1.2.3
+RELEASE_DIR=/srv/releases/hestiastore
+INSTALL_DIR=/opt/hestiastore/wal-tools
+
+cd "$RELEASE_DIR"
+sha256sum -c "wal-tools-${VERSION}.zip.sha256"
+unzip -o "wal-tools-${VERSION}.zip" -d "$INSTALL_DIR"
+```
+
+Example usage:
+
+```bash
+/opt/hestiastore/wal-tools/bin/wal_verify /path/to/index/wal
+/opt/hestiastore/wal-tools/bin/wal_dump /path/to/index/wal
+```
+
+Concrete examples:
+
+```bash
+/opt/hestiastore/wal-tools/bin/wal_verify /srv/hestia/indexes/orders/wal
+/opt/hestiastore/wal-tools/bin/wal_verify /srv/hestia/indexes/orders/wal --json
+/opt/hestiastore/wal-tools/bin/wal_dump /srv/hestia/indexes/orders/wal --json
 ```
 
 JSON output is available through `--json` for both commands.

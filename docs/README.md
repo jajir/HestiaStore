@@ -41,6 +41,8 @@ range scans, and operational simplicity inside a single application process.
   caching, filters, or custom data types.
 - [Operations](operations/index.md) if you need WAL, monitoring, backups, or
   tuning guidance.
+- [Export & Import](operations/export-import.md) if you need the standalone
+  operational CLI for logical backup, migration, or export to other systems.
 - [Architecture](architecture/index.md) if you need implementation detail and
   internal contracts.
 - [Contribute & Community](development/index.md) if you are contributing code,

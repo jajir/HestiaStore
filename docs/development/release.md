@@ -50,6 +50,13 @@ matching release version.
 Releases are published to Maven Central. Release credentials and signing
 configuration live in `~/.m2/settings.xml`.
 
+Standalone operational ZIP distributions are also part of the release build.
+For export/import, the official CLI artifact is
+`index-tools/target/index-tools-<version>.zip` with
+`index-tools/target/index-tools-<version>.zip.sha256`. For WAL inspection, the
+official CLI artifact is `wal-tools/target/wal-tools-<version>.zip` with
+`wal-tools/target/wal-tools-<version>.zip.sha256`.
+
 Releases must be prepared from a clean `main` branch worktree with push access
 to the repository and tags.
 
@@ -102,6 +109,8 @@ GPG secret key exists locally before starting a release.
 - Commit and tag the release.
 - Run `mvn -P release -DskipTests verify`.
 - Deploy the release artifact from the repository root.
+- Confirm the standalone CLI ZIP and SHA-256 artifacts were produced for
+  operational tools.
 - Bump to the next snapshot version.
 - Verify again after the next snapshot bump.
 - Publish the GitHub release manually.
@@ -215,6 +224,17 @@ Deploy the release to Maven Central from the repository root:
 mvn -P release -DskipTests deploy
 ```
 
+After the release build, confirm these standalone tool distributions exist:
+
+```text
+index-tools/target/index-tools-X.Y.Z.zip
+index-tools/target/index-tools-X.Y.Z.zip.sha256
+wal-tools/target/wal-tools-X.Y.Z.zip
+wal-tools/target/wal-tools-X.Y.Z.zip.sha256
+```
+
+Treat them as the official downloadable distributions for operational CLI use.
+
 ### 9. Prepare the next development snapshot
 
 After the release is deployed, bump to the next snapshot version:
@@ -245,7 +265,9 @@ not in the generated documentation site:
 3. Keep `main` as the target branch.
 4. Set the release title to `Release X.Y.Z`.
 5. In the description, include notable changes, any migration or compatibility
-   notes, and the dependency snippet below.
+   notes, the dependency snippet below, and mention the standalone
+   `index-tools-X.Y.Z.zip` operational distribution plus its SHA-256 file when
+   export/import changed.
 6. If the release contains breaking changes, add a dedicated `Breaking changes`
    section with migration steps.
 7. Press `Publish release`.
