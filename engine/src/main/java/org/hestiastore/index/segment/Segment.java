@@ -279,17 +279,16 @@ public interface Segment<K, V> {
     SegmentState getState();
 
     /**
-     * Starts closing the segment, releasing locks and resources in the
-     * background. Close is asynchronous and returns once the close workflow is
-     * accepted.
+     * Closes the segment and releases its locks and resources before
+     * returning.
      *
      * <p>
      * Close starts only from {@link SegmentState#READY} and transitions the
      * segment into {@link SegmentState#FREEZE} while in-flight operations are
-     * drained. When the background close completes, the segment moves to
-     * {@link SegmentState#CLOSED}. After close, all segment operations return
-     * {@link SegmentResultStatus#CLOSED} (or throw) and no further maintenance
-     * is performed.
+     * drained. When the method returns {@link SegmentResultStatus#OK}, the
+     * segment is already in {@link SegmentState#CLOSED}. After close, all
+     * segment operations return {@link SegmentResultStatus#CLOSED} (or throw)
+     * and no further maintenance is performed.
      * </p>
      *
      * Calls in other states return BUSY/CLOSED/ERROR as appropriate.

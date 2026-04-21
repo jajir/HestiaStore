@@ -1,6 +1,6 @@
 package org.hestiastore.index.it;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
@@ -40,12 +40,12 @@ class SegmentLockIT {
                             List.of(new ChunkFilterDoNothing()))//
                     .build().getStatus());
         } finally {
-            closeAndAwait(first);
+            closeAndAssertClosed(first);
         }
 
         final Segment<Integer, String> reopened = newSegment(directory,
                 segmentId);
-        closeAndAwait(reopened);
+        closeAndAssertClosed(reopened);
     }
 
     private Segment<Integer, String> newSegment(final Directory directory,

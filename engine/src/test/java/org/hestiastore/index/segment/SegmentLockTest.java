@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,7 +55,7 @@ class SegmentLockTest {
         try {
             assertTrue(directory.isFileExists(lockFileName));
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         assertFalse(directory.isFileExists(lockFileName));
@@ -75,7 +75,7 @@ class SegmentLockTest {
         try {
             assertTrue(directory.isFileExists(lockFileName));
         } finally {
-            closeAndAwait(result.getValue());
+            closeAndAssertClosed(result.getValue());
         }
         assertTrue(directory.isFileExists(lockFileName));
     }
@@ -93,7 +93,7 @@ class SegmentLockTest {
         try {
             assertFalse(directory.isFileExists(lockFileName));
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
         assertFalse(directory.isFileExists(lockFileName));
     }

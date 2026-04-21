@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,7 +49,7 @@ class SegmentImplConcurrencyContractTest {
                     segment.put(2, "b").getStatus());
             assertEquals(SegmentResultStatus.OK, segment.get(1).getStatus());
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -77,7 +77,7 @@ class SegmentImplConcurrencyContractTest {
             exclusive.getValue().close();
             failFast.close();
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -100,7 +100,7 @@ class SegmentImplConcurrencyContractTest {
             assertFalse(failFast.hasNext());
             failFast.close();
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -129,7 +129,7 @@ class SegmentImplConcurrencyContractTest {
             assertEquals("a", segment.get(1).getValue());
             assertEquals("b", segment.get(2).getValue());
         } finally {
-            closeAndDrainExecutor(segment, executor);
+            closeAfterMaintenanceIfNeeded(segment, executor);
         }
     }
 
@@ -142,7 +142,7 @@ class SegmentImplConcurrencyContractTest {
             assertEquals(SegmentResultStatus.BUSY,
                     segment.put(2, "b").getStatus());
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -171,7 +171,7 @@ class SegmentImplConcurrencyContractTest {
             assertEquals("a", segment.get(1).getValue());
             assertEquals("b", segment.get(2).getValue());
         } finally {
-            closeAndDrainExecutor(segment, executor);
+            closeAfterMaintenanceIfNeeded(segment, executor);
         }
     }
 
@@ -232,7 +232,7 @@ class SegmentImplConcurrencyContractTest {
                 assertEquals("v" + i, result.getValue());
             }
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -261,7 +261,8 @@ class SegmentImplConcurrencyContractTest {
         return builder.build().getValue();
     }
 
-    private static void closeAndDrainExecutor(final Segment<?, ?> segment,
+    private static void closeAfterMaintenanceIfNeeded(
+            final Segment<?, ?> segment,
             final CapturingExecutor executor) {
         if (segment == null) {
             return;
@@ -271,9 +272,6 @@ class SegmentImplConcurrencyContractTest {
                 && executor.hasTask()) {
             executor.runTask();
             segment.close();
-        }
-        if (executor.hasTask()) {
-            executor.runTask();
         }
         if (segment.getState() != SegmentState.CLOSED) {
             throw new AssertionError("Segment did not close.");

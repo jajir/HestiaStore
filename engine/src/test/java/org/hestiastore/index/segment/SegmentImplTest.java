@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -177,7 +177,7 @@ class SegmentImplTest {
     @AfterEach
     void tearDown() {
         if (subject != null && subject.getState() != SegmentState.ERROR) {
-            closeAndAwait(subject);
+            closeAndAssertClosed(subject);
         }
     }
 
@@ -276,7 +276,7 @@ class SegmentImplTest {
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             verify(segment).compact();
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -293,7 +293,7 @@ class SegmentImplTest {
             verify(segment).flush();
             verify(segment, never()).compact();
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -310,7 +310,7 @@ class SegmentImplTest {
             verify(segment).compact();
             verify(segment, never()).flush();
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
     }
 
@@ -401,7 +401,6 @@ class SegmentImplTest {
             assertEquals(SegmentState.READY, segment.getState());
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -429,7 +428,6 @@ class SegmentImplTest {
             assertEquals("B", segment.get(2).getValue());
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -459,7 +457,6 @@ class SegmentImplTest {
             verify(segment, times(1)).compact();
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -479,7 +476,6 @@ class SegmentImplTest {
             executor.runTask();
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -489,8 +485,6 @@ class SegmentImplTest {
         final SegmentImpl<Integer, String> segment = newSegment(executor,
                 versionController);
         segment.close();
-        assertTrue(executor.hasTask());
-        executor.runTask();
 
         final SegmentResult<Void> result = segment.flush();
 
@@ -521,7 +515,6 @@ class SegmentImplTest {
             assertEquals(SegmentState.READY, segment.getState());
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -544,7 +537,6 @@ class SegmentImplTest {
             executor.runTask();
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -566,7 +558,6 @@ class SegmentImplTest {
             assertEquals(SegmentState.READY, segment.getState());
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -588,7 +579,6 @@ class SegmentImplTest {
             executor.runTask();
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -611,7 +601,6 @@ class SegmentImplTest {
             assertEquals(SegmentState.ERROR, segment.getState());
         } finally {
             segment.close();
-            executor.runTask();
         }
     }
 
@@ -667,6 +656,27 @@ class SegmentImplTest {
     }
 
     @Test
+    void close_returns_error_when_core_close_fails() {
+        final SegmentCore<Integer, String> failingCore = spy(
+                createCore(versionController));
+        doThrow(new RuntimeException("close failed")).when(failingCore)
+                .close();
+        final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
+                versionController);
+        final SegmentMaintenancePolicyThreshold<Integer, String> maintenancePolicy = new SegmentMaintenancePolicyThreshold<>(
+                conf.getMaxNumberOfKeysInSegmentCache(),
+                conf.getMaxNumberOfKeysInSegmentWriteCache(),
+                conf.getMaxNumberOfDeltaCacheFiles());
+        final SegmentImpl<Integer, String> segment = new SegmentImpl<>(
+                failingCore, compacter, Runnable::run, maintenancePolicy);
+
+        final SegmentResult<Void> result = segment.close();
+
+        assertEquals(SegmentResultStatus.ERROR, result.getStatus());
+        assertEquals(SegmentState.ERROR, segment.getState());
+    }
+
+    @Test
     void maintenance_keeps_closed_state_after_completion() {
         final CapturingExecutor executor = new CapturingExecutor();
         final SegmentCompacter<Integer, String> compacter = new SegmentCompacter<>(
@@ -689,8 +699,6 @@ class SegmentImplTest {
 
         final SegmentResult<Void> secondClose = segment.close();
         assertEquals(SegmentResultStatus.OK, secondClose.getStatus());
-        assertTrue(executor.hasTask());
-        executor.runTask();
 
         assertEquals(SegmentState.CLOSED, segment.getState());
     }

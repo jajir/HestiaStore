@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,7 +54,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         "Expected flat segment files in base directory.");
             }
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final Segment<Integer, String> reopened = applyConf(
@@ -66,7 +66,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         try {
             verifySegmentSearch(reopened, entries);
         } finally {
-            closeAndAwait(reopened);
+            closeAndAssertClosed(reopened);
         }
     }
 
@@ -93,7 +93,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
             assertEquals(SegmentResultStatus.OK, result.getStatus());
             awaitReady(segment);
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final Directory rootDirectory = asyncDirectory
@@ -120,7 +120,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         try {
             assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final Directory rootDirectory = asyncDirectory
@@ -153,7 +153,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
         try {
             assertNotNull(segment);
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final SegmentPropertiesManager reloaded = new SegmentPropertiesManager(

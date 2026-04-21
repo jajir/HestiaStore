@@ -62,7 +62,7 @@ class SegmentFactoryTest {
             assertNotNull(segment);
             assertEquals(segmentId, segment.getId());
         } finally {
-            SegmentTestHelper.closeAndAwait(segment);
+            SegmentTestHelper.closeAndAssertClosed(segment);
             stableSegmentMaintenancePool.shutdownNow();
         }
     }
@@ -91,7 +91,7 @@ class SegmentFactoryTest {
             assertEquals(SegmentBuildStatus.OK, buildResult.getStatus());
             assertTrue(segmentDirectory.isFileExists(lockFileName));
         } finally {
-            SegmentTestHelper.closeAndAwait(segment);
+            SegmentTestHelper.closeAndAssertClosed(segment);
             stableSegmentMaintenancePool.shutdownNow();
         }
         assertFalse(segmentDirectory.isFileExists(lockFileName));
@@ -124,7 +124,7 @@ class SegmentFactoryTest {
                 assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")),
                         readEntries(segment));
             } finally {
-                SegmentTestHelper.closeAndAwait(segment);
+                SegmentTestHelper.closeAndAssertClosed(segment);
             }
         } finally {
             stableSegmentMaintenancePool.shutdownNow();
