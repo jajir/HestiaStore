@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternalConcurrent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

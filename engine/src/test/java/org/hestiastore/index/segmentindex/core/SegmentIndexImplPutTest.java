@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternalConcurrent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +36,7 @@ class SegmentIndexImplPutTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
-    private TestIndex<Integer, String> index;
+    private IndexInternalConcurrent<Integer, String> index;
     private Directory directory;
 
     @BeforeEach
@@ -180,7 +183,9 @@ class SegmentIndexImplPutTest {
             index.close();
         }
         directory = new MemDirectory();
-        index = new TestIndex<>(directory, tdi, tds, conf);
+        index = new IndexInternalConcurrent<>(directory, tdi, tds, conf,
+                conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
 
         index.put(1, "one");
         index.put(2, "two");
@@ -201,25 +206,11 @@ class SegmentIndexImplPutTest {
             index.close();
         }
         directory = new MemDirectory();
-        index = new TestIndex<>(directory, tdi, tds, buildConf(maxKeysInSegment,
-                maxNumberOfKeysInActivePartition, wal));
-    }
-
-    private static final class TestIndex<K, V>
-            extends IndexInternalConcurrent<K, V> {
-
-        private TestIndex(final Directory directoryFacade,
-                final TypeDescriptor<K> keyTypeDescriptor,
-                final TypeDescriptor<V> valueTypeDescriptor,
-                final IndexConfiguration<K, V> conf) {
-            super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
-                    conf, conf.resolveRuntimeConfiguration(),
-                    new IndexExecutorRegistry(conf));
-        }
-
-        void awaitSplitsIdlePublic() {
-            awaitSplitsIdle();
-        }
+        final IndexConfiguration<Integer, String> conf = buildConf(
+                maxKeysInSegment, maxNumberOfKeysInActivePartition, wal);
+        index = new IndexInternalConcurrent<>(directory, tdi, tds, conf,
+                conf.resolveRuntimeConfiguration(),
+                new IndexExecutorRegistry(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf(
@@ -281,29 +272,30 @@ class SegmentIndexImplPutTest {
 
     @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
-            final SegmentIndexImpl<K, V> index) {
-        return index.keyToSegmentMap();
+            final Object index) {
+        return SegmentIndexTestAccess.keyToSegmentMap(index);
     }
 
     @SuppressWarnings("unchecked")
     private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
-            final SegmentIndexImpl<K, V> index) {
-        return (SegmentRegistry<K, V>) index.segmentRegistry();
+            final Object index) {
+        return (SegmentRegistry<K, V>) SegmentIndexTestAccess
+                .segmentRegistry(index);
     }
 
-    private static void injectWalSyncFailure(final SegmentIndexImpl<?, ?> index,
+    private static void injectWalSyncFailure(final Object index,
             final RuntimeException failure) {
         setWalSyncFailure(index, failure);
     }
 
-    private static void clearWalSyncFailure(final SegmentIndexImpl<?, ?> index) {
+    private static void clearWalSyncFailure(final Object index) {
         setWalSyncFailure(index, null);
     }
 
-    private static void setWalSyncFailure(final SegmentIndexImpl<?, ?> index,
+    private static void setWalSyncFailure(final Object index,
             final RuntimeException failure) {
         try {
-            final Object walRuntime = index.walRuntime();
+            final Object walRuntime = SegmentIndexTestAccess.walRuntime(index);
             final Field syncFailureField = walRuntime.getClass()
                     .getDeclaredField("syncFailure");
             syncFailureField.setAccessible(true);

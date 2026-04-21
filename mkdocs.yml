@@ -39,6 +39,7 @@ nav:
         - Monitoring: operations/monitoring.md
         - Performance Tuning: operations/tuning.md
         - Backup & Restore: operations/backup-restore.md
+        - Export & Import: operations/export-import.md
         - WAL Canary Runbook: operations/wal-canary-runbook.md
     - Architecture:
         - Overview: architecture/index.md

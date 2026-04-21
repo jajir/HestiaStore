@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.InetAddress;
@@ -60,7 +62,7 @@ class SegmentIndexStartupRecoveryTest {
     }
 
     private static final class TrackingIndex
-            extends IndexInternalConcurrent<Integer, String> {
+            extends SegmentIndexImpl<Integer, String> {
 
         private int startupConsistencyChecks;
 
@@ -74,12 +76,12 @@ class SegmentIndexStartupRecoveryTest {
                     new TypeDescriptorShortString(), conf,
                     conf.resolveRuntimeConfiguration(),
                     new IndexExecutorRegistry(conf));
+            completeStartup();
         }
 
         @Override
-        public void checkAndRepairConsistency() {
+        protected void onStartupConsistencyCheck() {
             startupConsistencyChecks++;
-            super.checkAndRepairConsistency();
         }
 
         private int getStartupConsistencyChecks() {

@@ -1,0 +1,13 @@
+package org.hestiastore.index.segmentindex.core.observability;
+
+/**
+ * Stable read-only metrics view for executor groups owned by one registry.
+ */
+public interface IndexExecutorRuntimeAccess {
+
+    IndexExecutorMetricsAccess getIndexMaintenance();
+
+    IndexExecutorMetricsAccess getSplitMaintenance();
+
+    IndexExecutorMetricsAccess getStableSegmentMaintenance();
+}

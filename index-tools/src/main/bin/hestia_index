@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly DIST_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+readonly LIB_DIR="${DIST_ROOT}/lib"
+readonly TOOL_MAIN_CLASS="org.hestiastore.indextools.IndexTool"
+readonly JAVA_BIN="${JAVA_BIN:-java}"
+
+print_usage() {
+  cat <<'USAGE'
+Usage: hestia_index <export|import|init-target-config|inspect-export|verify-export> [options]
+USAGE
+  return 0
+}
+
+if [[ $# -lt 1 ]]; then
+  print_usage
+  exit 1
+fi
+
+if ! command -v "${JAVA_BIN}" >/dev/null 2>&1; then
+  echo "HestiaStore index tool failed: Java binary not found: ${JAVA_BIN}" >&2
+  exit 1
+fi
+
+if [[ ! -d "${LIB_DIR}" ]]; then
+  echo "HestiaStore index tool failed: Missing distribution lib directory: ${LIB_DIR}" >&2
+  exit 1
+fi
+
+if ! compgen -G "${LIB_DIR}/engine-*.jar" >/dev/null; then
+  echo "HestiaStore index tool failed: Missing engine jar in distribution lib directory: ${LIB_DIR}" >&2
+  exit 1
+fi
+
+readonly EXTRA_CLASSPATH="${HST_EXTRA_CLASSPATH:-}"
+if [[ -n "${EXTRA_CLASSPATH}" ]]; then
+  readonly CLASSPATH="${LIB_DIR}/*:${EXTRA_CLASSPATH}"
+else
+  readonly CLASSPATH="${LIB_DIR}/*"
+fi
+exec "${JAVA_BIN}" -cp "${CLASSPATH}" "${TOOL_MAIN_CLASS}" "$@"

@@ -5,7 +5,7 @@ import java.util.List;
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.split.RouteSplitPlan;
+import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 
 /**
  * Holds {@code map<key, segmentId>} where each key is the max key in a given
