@@ -128,7 +128,8 @@ final class VerifyExportCommand {
                         try {
                             final int keyLength = dataInput.readInt();
                             final int valueLength = dataInput.readInt();
-                            dataInput.skipNBytes(keyLength + valueLength);
+                            dataInput.skipNBytes(
+                                    (long) keyLength + valueLength);
                             count++;
                         } catch (final java.io.EOFException eofException) {
                             break;

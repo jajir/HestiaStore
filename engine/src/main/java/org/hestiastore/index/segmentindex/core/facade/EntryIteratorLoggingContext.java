@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core.facade;
 
+import java.util.NoSuchElementException;
+import java.util.function.Supplier;
+
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -38,6 +41,10 @@ final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
 
     @Override
     public Entry<K, V> next() {
+        if (!hasNext()) {
+            throw new NoSuchElementException(
+                    "No more entries in the iterator.");
+        }
         return runWithIndexName(entryIterator::next);
     }
 
@@ -49,7 +56,7 @@ final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         });
     }
 
-    private <T> T runWithIndexName(final java.util.function.Supplier<T> action) {
+    private <T> T runWithIndexName(final Supplier<T> action) {
         final String previousIndexName = MDC.get(INDEX_NAME_MDC_KEY);
         MDC.put(INDEX_NAME_MDC_KEY, indexName);
         try {

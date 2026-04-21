@@ -1,9 +1,12 @@
 package org.hestiastore.index.segmentindex.core.facade;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+
+import java.util.NoSuchElementException;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -56,6 +59,15 @@ class EntryIteratorLoggingContextTest {
         assertNull(MDC.get("index.name"));
     }
 
+    @Test
+    void nextThrowsWhenIteratorIsExhausted() {
+        iterator.hasNext = false;
+
+        assertThrows(NoSuchElementException.class, () -> loggingContext.next());
+        assertEquals("idx", iterator.mdcAtHasNext);
+        assertNull(MDC.get("index.name"));
+    }
+
     private static final class CapturingIterator
             implements EntryIterator<String, String> {
 
@@ -63,11 +75,12 @@ class EntryIteratorLoggingContextTest {
         private String mdcAtNext;
         private String mdcAtClose;
         private boolean closed;
+        private boolean hasNext = true;
 
         @Override
         public boolean hasNext() {
             mdcAtHasNext = MDC.get("index.name");
-            return true;
+            return hasNext;
         }
 
         @Override

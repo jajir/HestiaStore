@@ -319,8 +319,8 @@ final class ExportCommand {
             if (currentOutput == null) {
                 openNextPart();
             }
-            final long recordSize = Integer.BYTES + Integer.BYTES + keyBytes.length
-                    + valueBytes.length;
+            final long recordSize = (long) Integer.BYTES + Integer.BYTES
+                    + keyBytes.length + valueBytes.length;
             if (currentRecords > 0L
                     && countingOutput.getWrittenBytes() + recordSize > maxPartSizeBytes) {
                 closeCurrentPart();
