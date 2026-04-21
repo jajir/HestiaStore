@@ -549,8 +549,8 @@
         "219": {
           "channel": "pr-219",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-219/latest.json",
-          "sha": "d17c87e33e42663be8d0f9c711f887e34d857ec8",
-          "timestampUtc": "2026-04-21T20:52:53.244132+00:00"
+          "sha": "e13f1423948b75fff547281df46c96dd9d1f5528",
+          "timestampUtc": "2026-04-21T21:07:26.157203+00:00"
         }
       },
       "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
