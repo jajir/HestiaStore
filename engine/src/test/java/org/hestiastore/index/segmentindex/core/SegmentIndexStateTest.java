@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternalConcurrent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -51,7 +54,8 @@ class SegmentIndexStateTest {
 
     @Test
     void errorStateRejectsOperations() {
-        errorIndex.failWithError(new IllegalStateException("boom"));
+        SegmentIndexTestAccess.stateCoordinator(errorIndex)
+                .failWithError(new IllegalStateException("boom"));
         assertEquals(SegmentIndexState.ERROR, errorIndex.getState());
         assertThrows(IllegalStateException.class, () -> errorIndex.get(1));
     }

@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternalConcurrent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -142,7 +145,7 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @Test
-    void closeExposesClosedStateWhileBlockedSegmentCloseCompletes()
+    void closeExposesClosingStateWhileBlockedSegmentCloseCompletes()
             throws Exception {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
@@ -167,10 +170,11 @@ class SegmentIndexAsyncMaintenanceTest {
                 final Future<?> closeTask = executor.submit(index::close);
                 assertTrue(started.await(1, TimeUnit.SECONDS));
 
-                awaitCondition(() -> index.getState() == SegmentIndexState.CLOSED,
+                awaitCondition(
+                        () -> index.getState() == SegmentIndexState.CLOSING,
                         5_000L);
                 assertFalse(closeTask.isDone());
-                assertEquals(SegmentIndexState.CLOSED, index.metricsSnapshot()
+                assertEquals(SegmentIndexState.CLOSING, index.metricsSnapshot()
                         .getState());
                 assertEquals(SegmentState.MAINTENANCE_RUNNING,
                         stateRef.get());
@@ -297,14 +301,15 @@ class SegmentIndexAsyncMaintenanceTest {
 
     @SuppressWarnings("unchecked")
     private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
-            final SegmentIndexImpl<K, V> index) {
-        return (SegmentRegistry<K, V>) index.segmentRegistry();
+            final Object index) {
+        return (SegmentRegistry<K, V>) SegmentIndexTestAccess
+                .segmentRegistry(index);
     }
 
     @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
-            final SegmentIndexImpl<K, V> index) {
-        return index.keyToSegmentMap();
+            final Object index) {
+        return SegmentIndexTestAccess.keyToSegmentMap(index);
     }
 
     @SuppressWarnings("unchecked")

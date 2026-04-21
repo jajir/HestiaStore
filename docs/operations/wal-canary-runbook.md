@@ -20,8 +20,20 @@ Scope:
 2. `wal-tools` distribution is available for verification:
 
 ```bash
-mvn -pl wal-tools -am -DskipTests package
-unzip wal-tools/target/wal-tools-<version>.zip -d /tmp
+sha256sum -c wal-tools-<version>.zip.sha256
+unzip wal-tools-<version>.zip -d /opt/hestia/wal-tools
+```
+
+Concrete example:
+
+```bash
+VERSION=1.2.3
+RELEASE_DIR=/srv/releases/hestiastore
+WAL_TOOLS_DIR=/opt/hestia/wal-tools
+
+cd "$RELEASE_DIR"
+sha256sum -c "wal-tools-${VERSION}.zip.sha256"
+unzip -o "wal-tools-${VERSION}.zip" -d "$WAL_TOOLS_DIR"
 ```
 
 3. Monitoring is collecting `SegmentIndex.metricsSnapshot()` WAL fields.
@@ -70,8 +82,18 @@ Open/create the canary index with this config.
 Run WAL verification during rollout windows:
 
 ```bash
-/tmp/wal-tools-<version>/bin/wal_verify /path/to/index/wal
-/tmp/wal-tools-<version>/bin/wal_verify /path/to/index/wal --json
+/opt/hestia/wal-tools/bin/wal_verify /path/to/index/wal
+/opt/hestia/wal-tools/bin/wal_verify /path/to/index/wal --json
+```
+
+Concrete example:
+
+```bash
+WAL_VERIFY=/opt/hestia/wal-tools/bin/wal_verify
+CANARY_WAL=/srv/hestia/indexes/orders-canary/wal
+
+"$WAL_VERIFY" "$CANARY_WAL"
+"$WAL_VERIFY" "$CANARY_WAL" --json
 ```
 
 If verification fails (`exit code 2`), stop rollout and execute rollback.
@@ -79,7 +101,13 @@ If verification fails (`exit code 2`), stop rollout and execute rollback.
 Use dump for diagnostics:
 
 ```bash
-/tmp/wal-tools-<version>/bin/wal_dump /path/to/index/wal --json
+/opt/hestia/wal-tools/bin/wal_dump /path/to/index/wal --json
+```
+
+Concrete example:
+
+```bash
+/opt/hestia/wal-tools/bin/wal_dump /srv/hestia/indexes/orders-canary/wal --json
 ```
 
 ### Phase 3 - Expand rollout
