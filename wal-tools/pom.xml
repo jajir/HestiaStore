@@ -59,6 +59,26 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${antrun.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>wal-tools-distribution-checksum</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <checksum file="${project.build.directory}/${project.artifactId}-${project.version}.zip"
+                                    algorithm="SHA-256" fileext=".sha256" format="MD5SUM" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

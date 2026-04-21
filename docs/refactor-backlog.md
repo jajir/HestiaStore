@@ -1,10 +1,10 @@
 # Refactor backlog
 
-## Active
+## Open Items
 
-## Planned
+No open items.
 
-### High
+### Strategic epics
 
 [ ] 79 Replace live-segment write path with range-partitioned ingest (Risk: HIGH)
     - Replace direct `Segment.put()/flush()/split` write admission with
@@ -20,1242 +20,320 @@
       metrics docs, and benchmark/test expectations.
 
 [ ] 79.1 Freeze architecture, docs, and migration contract (Risk: HIGH)
-    - Rewrite `range-partitioned-ingest.md` as architecture-only; remove class/
-      package-level implementation detail from that page.
-    - Add one implementation/migration doc that defines:
-      immediate read-after-write, delete visibility, flush/compact semantics,
-      split/drain lifecycle, crash-recovery rules, and config migration rules.
-    - Document that unpublished partition state is transient and recovered only
-      through WAL replay; no new partition manifest in this epic.
-    - Acceptance:
-      - architecture docs match the final behavior,
-      - upgrade notes describe old config key removal and new key mapping.
-
 [ ] 79.2 Introduce partition runtime and routing layer (Risk: HIGH)
-    - Add internal partition runtime with:
-      range partition, mutable layer, immutable run, read/write route table,
-      drain scheduler, and local/global backpressure controller.
-    - Build runtime route tables from `KeyToSegmentMap.snapshot()` and existing
-      stable segments at open time.
-    - Keep partition state in memory only; do not persist mutable/immutable
-      runs or a separate manifest in v1.
-    - Acceptance:
-      - unit tests cover single-partition put/get/delete,
-      - rotation to immutable is bounded,
-      - local and global backpressure are deterministic.
-
 [ ] 79.3 Switch `SegmentIndexImpl` read/write/delete paths to partitions (Risk: HIGH)
-    - Change `put()` and `delete()` to: WAL append -> resolve write route ->
-      mutate active partition -> rotate when full -> local/global throttle when
-      bounds are exceeded.
-    - Change `get()` to read only inside the resolved read route in this order:
-      active layer, immutable runs newest-first, then stable segment sources.
-    - Change index iterators/streaming to merge partition overlays with stable
-      segment reads; `FULL_ISOLATION` must open over a route snapshot and
-      immutable copies of active layers without freezing live writers.
-    - Remove hot-path dependence on `SegmentIndexCore` calling `Segment.put()`
-      and retire or replace the current maintenance coordinator accordingly.
-    - Acceptance:
-      - read-after-write always holds before any drain completes,
-      - unrelated partitions keep working when one partition is throttled.
-
 [ ] 79.4 Implement drain, publish, flush, close, and WAL recovery (Risk: HIGH)
-    - Drain immutable runs in background by sorting/partitioning keys and
-      publishing them to stable segment storage using existing writer/publish
-      utilities; user threads must not write into live segments.
-    - Make `flush()/flushAndWait()` drain all partition queues and checkpoint
-      WAL; make `compact()/compactAndWait()` first drain overlays, then compact
-      stable segment storage only.
-    - On open, rebuild routes from `KeyToSegmentMap`, clean unpublished temp
-      drain/split artifacts, and replay WAL into fresh active partitions.
-    - Acceptance:
-      - crash during drain or publish loses no acknowledged write,
-      - close/reopen and crash/reopen produce the same final visible data.
-
-[x] 79.5 Replace live-segment split with partition draining split (Risk: HIGH)
-    - Remove the current split model that opens a `FULL_ISOLATION` iterator on
-      a live segment and makes writers wait.
-    - New split flow:
-      route new writes to child partitions immediately,
-      mark parent partition `DRAINING`,
-      keep parent stable sources readable during transition,
-      publish child stable segments,
-      atomically update `KeyToSegmentMap`,
-      retire the parent route.
-    - Delete or retire the current `segmentindex.split` pipeline and its live-
-      segment lock/freeze tests once partition split parity is reached.
-    - Acceptance:
-      - reproduced hot-range write scenario no longer stalls near deadlock,
-      - split of one range does not stop writes to other ranges.
-    - Delivered:
-      - Removed legacy live-segment split pipeline classes from
-        `segmentindex.split` and deleted their lock/freeze-oriented tests.
-      - Kept only route-first split primitives
-        (route split coordinator, split policy/plan/result DTOs).
-      - Converted post-drain split triggering to background hinting:
-        drain now only enqueues per-partition split hints and split candidate
-        evaluation runs exclusively inside the autonomous background split loop.
-      - Added integration regression
-        `SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall`
-        to validate 20 hot-range writers + concurrent cold-range writes under
-        autonomous split policy.
-
 [ ] 79.6 Clean up config, metrics, control-plane tuning, and obsolete code (Risk: HIGH)
-    - Replace old segment write-cache config keys with the new partition budget
-      keys and migrate persisted/opened configs once at load time.
-    - Update runtime tuning allowlist, snapshots, and docs to use partition
-      terminology and metrics.
-    - Remove dead or unreachable code paths tied only to live-segment write
-      admission, including old retry/split glue that no longer participates in
-      the new runtime.
-    - Acceptance:
-      - existing indexes open with migrated config,
-      - no old segment-write config key remains in public docs or runtime APIs.
-    - Delivered (partial):
-      - Removed public legacy write-cache alias constants from
-        `IndexPropertiesSchema.IndexConfigurationKeys`; kept migration fallback
-        internal to schema/default resolution during load.
-      - Updated configuration migration tests
-        (`IndexConfigurationStorageTest`) to assert fallback behavior without
-        exposing removed aliases in public API.
-      - Removed obsolete `runtimeConfigAllowlist` constructor parameter from
-        `ManagementAgentServer`; runtime-tunable key allowlist is now derived
-        only from `RuntimeSettingKey` mapping (`supportedRuntimeConfigKeys()`).
-      - Normalized runtime-limit naming in write-admission code so partition
-        semantics are explicit (`activePartition`/`partitionBuffer`) in
-        `SegmentFactory` and `SegmentIndexImpl` instead of legacy
-        `segmentWriteCache` naming.
-      - Added `drainLatencyP95Micros` metric end-to-end:
-        engine snapshot production, REST report payload, Micrometer/Prometheus
-        export, monitoring console parsing, and architecture/operations docs.
-      - Refreshed architecture docs and glossary to reference current
-        partition-overlay + route-first split runtime instead of deleted
-        live-segment split pipeline classes.
-      - Renamed config flag `segmentMaintenanceAutoEnabled` to
-        `backgroundMaintenanceAutoEnabled` across builder/config/storage/docs;
-        kept load-time migration fallback for legacy manifests.
-      - Migrated SegmentIndex JMH benchmark sources to the new builder/config
-        terminology (`backgroundMaintenanceAutoEnabled`) so benchmark code no
-        longer depends on removed public alias methods.
-      - Renamed internal split admission/scheduling runtime from
-        `SegmentMaintenanceCoordinator` to `BackgroundSplitCoordinator` so the
-        core implementation reflects the current partition-first split model
-        instead of the retired generic segment-maintenance wording.
-      - Renamed `SegmentIndexImpl` stable-storage aggregation and
-        `IndexExecutorRegistry` stable-segment executor internals so the core
-        code clearly separates partition overlay runtime from stable segment
-        backend maintenance while keeping the public metrics snapshot contract
-        unchanged.
-      - Renamed route-first split DTO/policy/plan types from `SegmentSplit*` /
-        `SegmentSplitter*` to `PartitionSplit*` across
-        `segmentindex.split`, `partition`, `mapping`, and their tests; also
-        aligned nearest method names
-        (`applyPartitionSplitPlan`, `reassignOverlayAfterPartitionSplit`) so
-        the partition-first split flow no longer mixes segment-era type names
-        into the runtime overlay layer.
-      - Cleaned residual engine-only helper/scenario naming around partition
-        defaults and stable-segment test fixtures:
-        `IndexPropertiesSchema` now derives partition buffer defaults from
-        `activePartitionKeyLimit` wording, schema tests assert
-        `expectedActivePartition` / `expectedPartitionBuffer`, and selected
-        engine/registry tests plus concurrency scenario labels no longer use
-        stale `write-cache-*` or ambiguous segment-maintenance pool naming for
-        partition-first ingest cases.
-    - Delivered (additional):
-      - Finished the public config cleanup around
-        `numberOfSegmentMaintenanceThreads`: storage/tests now verify
-        round-trip persistence under the new key, schema/storage load still
-        migrate legacy `segmentIndexMaintenanceThreads` manifests, and save
-        removes the legacy alias from rewritten manifests.
-      - Refreshed architecture/development docs to reference
-        `BackgroundSplitCoordinator` / `PartitionSplitApplyPlan` and the
-        current split-vs-drain responsibilities, so the documentation no
-        longer points at deleted segment-era coordinator classes after the
-        rename sweep.
-      - Removed the last public doc examples that still enumerated legacy
-        partition-migration aliases (`segmentMaintenanceAutoEnabled` and
-        segment-write fallback keys); docs now describe compatibility only as
-        load-time manifest migration plus canonical rewrite-on-save.
-      - Updated the segment overview diagram and historical segment API notes
-        so they reflect the current public `Segment` contract and no longer
-        point at deleted `SegmentSplitter.Result` / split-wrapper APIs.
-
 [ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
-    - Add a dedicated unit suite for partition runtime, route snapshots, drain
-      publish ordering, backpressure, iterator snapshots, and crash cleanup.
-    - Update or replace current concurrency/split suites, including:
-      `SegmentIndexImplConcurrencyTest`,
-      `SegmentIndexConcurrentIT`,
-      `SegmentIndexConcurrencyStressIT`,
-      and the current split coordinator tests.
-    - Add JMH benchmarks for:
-      hot-route concurrent `put()`,
-      mixed `put()+get()` during drain,
-      and update `SegmentIndexGetBenchmark` to measure reads with live-update data
-      present.
-    - Acceptance:
-      - 20-writer random-put reproduction completes without timeout/stall,
-      - read-after-write and reopen consistency tests pass,
-      - pre/post JMH baselines are captured under `benchmarks/results`.
-    - Delivered (partial):
-      - Expanded the partition-runtime unit suite with deterministic coverage for:
-        global index-buffer throttling across partitions, duplicate-key updates
-        staying within the active-layer budget, drain schedule monotonicity,
-        overlay precedence across older/newer immutable runs plus active data,
-        and overlay reassignment for `COMPACTED` split apply plans.
-      - Expanded `SegmentIndexImplConcurrencyTest` with deterministic
-        core-level coverage for immediate `put/get/delete` visibility while a
-        background split remaps routes from a parent partition to child
-        routes.
-      - Expanded `SegmentIndexAsyncMaintenanceTest` with blocked-drain
-        maintenance boundary coverage proving `flushAndWait()` and
-        `compactAndWait()` wait for in-flight partition drain publish to
-        stable segments.
-      - Expanded `IntegrationSegmentIndexIteratorTest` with deterministic
-        `FULL_ISOLATION` coverage for:
-        active-overlay merge over stable segments with tombstone filtering,
-        open-stream snapshot stability while later `put()/delete()` calls
-        immediately change live `get()` visibility,
-        route-remap consistency while split apply reassigns buffered overlay
-        entries from a parent partition to child partitions,
-        and `FAIL_FAST` prefix behavior for streams opened before split remap.
-      - Expanded `IndexInternalConcurrentTest` with deterministic `FAIL_FAST`
-        prefix behavior coverage across maintenance boundaries
-        (`flushAndWait()` and `compactAndWait()`).
-      - Expanded `IntegrationSegmentIndexWalRecoveryTest` with a crash-style
-        reopen snapshot covering:
-        split-apply durability, persisted child-route recovery from
-        `index.map`, WAL replay of unpublished overlay writes above the
-        post-split stable layout, and cleanup of unpublished split-child
-        segment artifacts when restart still routes reads/writes through the
-        original parent segment.
-      - Expanded `IntegrationSegmentIndexMetricsSnapshotTest` with
-        maintenance-boundary metrics coverage for `flushAndWait()` and
-        `compactAndWait()` after scheduled split backlog, asserting buffered
-        overlay metrics settle to zero while split evidence and visible data
-        remain correct.
-      - Added maintenance-boundary recovery coverage to
-        `IntegrationSegmentIndexWalRecoveryTest` for:
-        `flushAndWait()`, `compactAndWait()`, and `close()/reopen()` over a
-        scheduled split backlog, asserting consistent final visibility and
-        persisted child-route layout after reopen.
-      - Added hot-range concurrency regression
-        `SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall`
-        (20 hot writers + concurrent cold-range writers).
-      - Added autonomous split lifecycle regression
-        `SegmentIndexConcurrentIT.hotRangeAutonomousSplitSurvivesCloseReopenRotations`
-        to cover hot-range write pressure plus repeated `flush/close/open`
-        rotations while preserving cold-range correctness after reopen.
-      - Expanded `SegmentIndexConcurrencyStressIT` with repeated lifecycle
-        stress under autonomous split pressure:
-        hot-range biased writes, background split enabled, and repeated
-        `close/open` rotations with explicit split-evidence assertion.
-      - Exposed split scheduling/in-flight counters in monitoring exporters
-        (`monitoring-micrometer`, `monitoring-prometheus`) and covered with
-        module-level exact-value tests, including live refresh across
-        successive scrape/snapshot reads.
-      - Added `monitoring-console-web` parser coverage so `/api/v1/report`
-        partition/split/drain metrics are verified through the UI backend
-        client path, not only at exporter/source level.
-      - Extended canonical JMH profiles
-        (`segment-index-pr-smoke`, `segment-index-nightly`) with
-        `SegmentIndexHotRoutePutBenchmark`.
-      - Improved benchmark compare tooling:
-        `compare_jmh_profile.py` now reports `new`/`removed` metrics when
-        profile coverage differs between baseline and candidate.
-      - Improved benchmark workflow fallback compatibility:
-        `benchmark-compare.yml` now validates all benchmark classes referenced
-        by the selected profile instead of one hardcoded class path.
-      - Added `BenchmarkProfileContractTest` plus benchmark-workflow preflight
-        gating so canonical profiles are checked for:
-        required SegmentIndex scenarios, duplicate labels, resolvable
-        benchmark classes, and accidental reintroduction of removed public
-        config names in benchmark sources.
-      - Added script-level smoke coverage for
-        `compare_jmh_profile.py`, `publish_jmh_history.py`, and
-        `resolve_jmh_history_baseline.py` by executing the real Python CLIs
-        from JUnit against temporary benchmark-history fixtures.
-      - Ran the broader engine-only regression sweep for the renamed
-        partition split vocabulary across split/remap/recovery/concurrency
-        suites. The only issue found was a flaky 10s timeout in
-        `IntegrationSegmentIndexIteratorTest` while waiting for split remap
-        under full-suite load; the fix was to widen the test-only split
-        remapping wait window to 30s. No production runtime change was needed.
-      - Ran a cross-module monitoring/control-plane regression sweep after the
-        config/runtime rename cleanup:
-        `ManagementApiContractCompatibilityTest`,
-        `ManagementAgentServerTest`,
-        `ManagementAgentServerSecurityTest`,
-        `ConsoleBackendClientTest`,
-        `HestiaStoreMicrometerBinderTest`,
-        `HestiaStorePrometheusExporterTest`,
-        plus `test-compile` for monitoring modules and benchmarks. All passed;
-        only expected JDK/Mockito/SLF4J warnings were emitted.
 
 [ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
-    - Goal: evolve from in-process counters to multi-JVM monitoring and control
-      without forcing Micrometer/Prometheus dependencies into core.
-    - Delivery model: phase-gated rollout where each phase is releasable and
-      backward compatible.
-    - Constraints:
-      - Core package must not depend on Micrometer, Prometheus, servlet stacks,
-        or UI classes.
-      - Runtime control endpoints must be explicit allowlist operations only
-        (no generic "execute command" style endpoint).
-      - All mutating management operations must be auditable.
 
-[x] 78.1 Define source/module boundaries and package contracts (Risk: HIGH)
-    - Target logical modules/packages:
-      - `org.hestiastore.index.*` (core)
-      - `org.hestiastore.monitoring.json.api.*` (metrics contracts/shared abstractions)
-      - `org.hestiastore.monitoring.micrometer.*` (Micrometer bridge)
-      - `org.hestiastore.monitoring.prometheus.*` (Prometheus bridge)
-      - `org.hestiastore.monitoring.json.api.*` (shared DTOs/contracts)
-      - `org.hestiastore.management.restjson.*` (node-local REST API in index JVM)
-      - `org.hestiastore.console.*` (web UI / control plane)
-    - Start in single-module codebase with strict package boundaries to keep
-      later physical split low risk.
-    - Add architecture doc with allowed dependency direction:
-      `core <- monitoring <- management.agent <- console` and
-      `management.api` shared by agent/console.
-    - Acceptance:
-      - No core imports from monitoring/agent/console packages.
-      - Checkstyle/ArchUnit (or similar) rule blocks forbidden imports.
-    - Delivered:
-      - Added architecture page: `docs/architecture/package-boundaries.md`.
-      - Added automated guard: `PackageDependencyBoundaryTest`.
-
-[x] 78.2 Add stable core metrics snapshot API (Risk: HIGH)
-    - Introduce immutable public snapshot types in core for index/segment
-      metrics (e.g. op counters, bloom stats, segment counts, state).
-    - Add `SegmentIndex.metricsSnapshot()` (or equivalent read-only API).
-    - Keep existing behavior intact while wiring current counters into snapshot.
-    - Make counters thread-safe (`LongAdder`/`AtomicLong`) where currently not.
-    - Define compatibility policy:
-      - new fields may be added,
-      - existing field names/semantics cannot silently change.
-    - Acceptance:
-      - Unit/integration tests for snapshot consistency under concurrent load.
-      - Docs page with metric field definitions and semantics.
-    - Delivered:
-      - Added immutable `SegmentIndexMetricsSnapshot` and
-        `SegmentIndex.metricsSnapshot()`.
-      - Wired snapshot delegation through SegmentIndex adapters.
-      - Added concurrent consistency test:
-        `IntegrationSegmentIndexMetricsSnapshotConcurrencyTest`.
-      - Added metrics contract docs:
-        `docs/architecture/segmentindex/metrics-snapshot.md`.
-
-[x] 78.3 Build monitoring bridge layer (Micrometer/Prometheus) (Risk: HIGH)
-    - Implement monitoring adapters:
-      - `org.hestiastore.monitoring.json.api.*`
-      - `org.hestiastore.monitoring.micrometer.*`
-      - `org.hestiastore.monitoring.prometheus.*`
-      - Micrometer binder reading from core snapshot API.
-      - Prometheus exposition support (via Micrometer registry or direct bridge).
-    - Ensure adapters can be created/removed without restarting index
-      (where runtime allows).
-    - Define metric naming/tag conventions (`hestiastore_*`, stable tag set).
-    - Acceptance:
-      - Prometheus scrape returns expected metrics and labels.
-      - Zero adapter overhead when monitoring package is not used.
-    - Delivered:
-      - Introduced dedicated modules:
-        `monitoring-rest-json-api`, `monitoring-micrometer`, `monitoring-prometheus`.
-      - Added `HestiaStoreMicrometerBinder` in
-        `org.hestiastore.monitoring.micrometer.*`.
-      - Added `HestiaStorePrometheusExporter` in
-        `org.hestiastore.monitoring.prometheus.*`.
-      - Added Prometheus scrape test:
-        `HestiaStorePrometheusExporterTest` (checks names and `index` label).
-      - Kept core `engine` module free of Micrometer/Prometheus dependencies.
-
-[x] 78.4 Add management API contracts and versioning (Risk: HIGH)
-    - Create `org.hestiastore.monitoring.json.api.*` DTOs:
-      - `NodeReportResponse` (`JvmMetricsResponse` + per-index sections),
-        `ActionRequest/Response`,
-        `ConfigPatchRequest`, `ErrorResponse`.
-    - Version endpoints from start (`/api/v1/...`) and define deprecation rules.
-    - Include idempotency and safety semantics for actions:
-      - `flush`, `compact`, selected config patch operations.
-    - Acceptance:
-      - OpenAPI (or equivalent) published with examples.
-      - Contract tests verify backward-compatible serialization.
-    - Delivered:
-      - Added shared DTO/contracts in `monitoring-rest-json-api` module:
-        `NodeReportResponse`, `IndexReportResponse`, `JvmMetricsResponse`,
-        `ActionRequest`, `ActionResponse`, `ConfigPatchRequest`,
-        `ErrorResponse`.
-      - Added versioned path contract constants in `ManagementApiPaths`
-        (`/api/v1/...`).
-      - Added compatibility contract tests:
-        `ManagementApiContractCompatibilityTest`.
-      - Added API contract documentation with example payloads:
-        `docs/architecture/monitoring/monitoring-api.md`.
-
-[x] 78.5 Implement node-local management agent (Risk: HIGH)
-    - Add lightweight REST server integration for index JVM process:
-      - `GET /api/v1/report`
-      - `POST /api/v1/actions/flush`
-      - `POST /api/v1/actions/compact`
-      - `PATCH /api/v1/config` (allowlist runtime-safe keys only)
-    - Include health and readiness endpoints for deployment integration.
-    - Add per-request audit logging for mutating endpoints.
-    - Acceptance:
-      - End-to-end test: invoke actions and verify effect on index state.
-      - Negative tests for forbidden config keys and invalid state transitions.
-    - Delivered:
-      - Implemented `ManagementAgentServer` in `monitoring-rest-json` module with
-        versioned management endpoints, plus `/health` and `/ready`.
-      - `ManagementAgentServer` now supports M:N mapping between one agent and
-        multiple indexes via `addIndex`/`removeIndex`.
-      - `GET /api/v1/report` returns one node-wide JVM section and per-index
-        metrics sections.
-      - Added allowlist enforcement for `PATCH /api/v1/config`.
-      - Added per-request audit log entries for mutating endpoints including
-        actor, endpoint, status, outcome and payload digest (SHA-256).
-      - Added tests in `ManagementAgentServerTest` for:
-        report reads, targeted/all-index actions, forbidden config key, invalid
-        state transition after close, and readiness transitions.
-
-[x] 78.6 Implement central console web application (Risk: HIGH)
-    - Build `org.hestiastore.console.*` with capabilities:
-      - register/manage multiple index JVM nodes,
-      - poll agent APIs and display key read/write/latency/segment metrics,
-      - trigger safe operations (flush/compact) with confirmation UX,
-      - show recent audit/event log entries.
-    - Keep UI read-first: write controls separated and permission-gated.
-    - Define minimal dashboard first; defer advanced analytics to later items.
-    - Acceptance:
-      - Multi-node dashboard works for at least 3 registered nodes.
-      - Action execution shows pending/success/failure lifecycle.
-    - Delivered:
-      - Added monitoring console runtime in `monitoring-console-web` module.
-      - Implemented APIs for:
-        - node registration/list/removal (`/console/v1/nodes`),
-        - aggregated dashboard polling (`/console/v1/dashboard`),
-        - action submit/status (`/console/v1/actions/flush`,
-          `/console/v1/actions/compact`, `/console/v1/actions/{id}`),
-        - recent event timeline (`/console/v1/events`).
-      - Added write-token gate (`X-Hestia-Console-Token`) for mutating
-        endpoints and explicit action confirmation requirement.
-      - Added integration tests in `MonitoringConsoleServerTest` verifying:
-        - 3-node dashboard polling,
-        - action lifecycle transitions (PENDING -> SUCCESS/FAILED),
-        - write-endpoint access control.
-
-[x] 78.7 Secure transport, authz, and audit trail (Risk: HIGH)
-    - Agent <-> console transport:
-      - enforce TLS (prefer mTLS in production profiles),
-      - token- or cert-based authn,
-      - role-based authz (`read`, `operate`, `admin`).
-    - Add immutable audit records for mutating calls:
-      actor, target node, endpoint, payload digest, result, timestamp.
-    - Add rate limits and retry/backoff policy for control operations.
-    - Acceptance:
-      - Security integration tests for unauthorized/forbidden scenarios.
-      - Audit log verification tests for all mutating endpoints.
-    - Delivered:
-      - Added agent security policy and role model:
-        `ManagementAgentSecurityPolicy` + `AgentRole` (`READ`, `OPERATE`,
-        `ADMIN`).
-      - Enforced token authn + role-based authz in `ManagementAgentServer`
-        for all endpoints (read vs mutating vs admin config patch).
-      - Added optional TLS-only enforcement mode in `ManagementAgentServer`
-        and HTTPS-only node registration mode in `MonitoringConsoleServer`.
-      - Added per-actor mutating endpoint rate limiter in agent (`429` on
-        exceed) via `FixedWindowRateLimiter`.
-      - Added immutable in-memory audit trail records for mutating calls in
-        agent (`auditTrailSnapshot`) with actor, endpoint, payload digest,
-        result, status code and timestamp.
-      - Added console retry/backoff policy for mutating control operations and
-        per-node bearer-token forwarding for agent calls.
-      - Added security integration tests:
-        `ManagementAgentServerSecurityTest` verifies unauthorized/forbidden
-        flows, role permissions, rate limiting, and audit coverage for all
-        mutating endpoints.
-
-[x] 78.8 Packaging, release strategy, and migration path (Risk: HIGH)
-    - Release artifacts initially from same repo:
-      - `engine` (core)
-      - `monitoring-rest-json-api`
-      - `monitoring-micrometer`
-      - `monitoring-prometheus`
-      - `monitoring-rest-json`
-      - `monitoring-console-web`
-    - Keep aligned versions per release line (for example `0.2.x` for all).
-    - Document migration from single-module to multi-module build:
-      move packages with no API break using prior boundary rules from 78.1.
-    - Acceptance:
-      - Build produces separate jars and integration tests across artifacts pass.
-      - Release docs include compatibility matrix and upgrade notes.
-    - Delivered:
-      - Added module target-state documentation:
-        `docs/architecture/package-boundaries.md`.
-      - Added release compatibility matrix:
-        `docs/development/compatibility-matrix.md`.
-      - Added multi-module upgrade notes:
-        `docs/development/upgrade-notes-multimodule.md`.
-      - Updated release process docs with module verification commands and
-        corrected artifact coordinates:
-        `docs/development/release.md`.
-      - Added documentation navigation entries in `mkdocs.yml` and
-        `docs/development/index.md`.
-      - Verified packaging and cross-module tests:
-        - `mvn -pl engine,monitoring-rest-json-api,monitoring-micrometer,monitoring-prometheus,monitoring-rest-json,monitoring-console-web -DskipTests package`
-        - `mvn -pl monitoring-rest-json,monitoring-console-web,monitoring-prometheus test`
-
-[x] 78.9 Rollout stages with explicit quality gates (Risk: HIGH)
-    - Stage A: core snapshot API only; no external exporters.
-    - Stage B: monitoring bridge with Prometheus scrape + docs.
-    - Stage C: node agent endpoints (read-only first, then mutating).
-    - Stage D: console UI for multi-node visibility, then controlled actions.
-    - Required gates per stage:
-      - load/perf regression budget defined and met,
-      - concurrency tests for stats correctness,
-      - failure-mode tests (node down, timeout, partial responses),
-      - operational docs/runbook updated.
-    - Acceptance:
-      - Each stage releasable independently.
-      - Rollback procedure documented and tested.
-    - Delivered:
-      - Added staged rollout quality-gate documentation:
-        `docs/development/rollout-quality-gates.md`.
-      - Added rollback runbook with stage-specific rollback procedure:
-        `docs/development/rollout-rollback-runbook.md`.
-      - Extended console failure-mode tests in
-        `MonitoringConsoleServerTest` to cover:
-        - node down (`UNAVAILABLE`),
-        - partial responses (state ok, metrics 500),
-        - timeout behavior.
-      - Updated release docs to include rollout gate execution:
-        `docs/development/release.md`.
-      - Added docs navigation entries in `mkdocs.yml` and
-        `docs/development/index.md`.
-      - Verified stage gates end-to-end:
-        explicit Maven gate commands (Stages A-D all passing).
-
-### Medium
+### Other open items
 
 [ ] 54 Dedicated executor for index async ops (Risk: MEDIUM)
-    - Use a dedicated, bounded executor for `SegmentIndexImpl.runAsyncTracked`
-      (no common pool).
-    - Define rejection policy: map saturation to BUSY/error with clear message.
-    - Ensure close waits for in‑flight async work or cancels safely.
-    - Tests: saturation/backpressure, close ordering, no caller‑thread IO.
-
 [ ] 55 Replace busy spin loops with retry + jitter (Risk: MEDIUM)
-    - Replace `Thread.onSpinWait`/busy loops in split iterator open and other
-      retry paths with `IndexRetryPolicy` + jitter.
-    - Make timeouts explicit and surface `IndexException` with operation name.
-    - Tests: BUSY retry exits on READY, timeout path, interrupt handling.
-
 [ ] 56 Key‑to‑segment map read contention reduction (Risk: MEDIUM)
-    - Evaluate snapshot‑based reads or `StampedLock` for high‑read workloads.
-    - Keep version validation semantics intact for split/extend paths.
-    - Tests: concurrent get/put under splits, no missing mappings, no deadlocks.
-
 [ ] 57 Streaming iterators without full materialization (Risk: MEDIUM)
-    - Replace list materialization in `getStream`/FULL_ISOLATION with streaming
-      merge iterators over write/delta caches and segment files.
-    - Ensure iterator close releases resources and does not leak locks.
-    - Tests: large data set memory profile, iterator isolation correctness.
-
 [ ] 5 Stop materializing merged cache lists on read (Risk: MEDIUM)
-    - Problem: `SegmentReadPath.openIterator` calls `getAsSortedList`, building
-      full merged lists for each iterator.
-    - Fix: provide streaming merge iterator over delta/write caches without
-      full list materialization.
-    - Options:
-      - Option A (recommended): switch `UniqueCache` to `TreeMap` /
-        `ConcurrentSkipListMap`, add a sorted iterator API, and merge cache
-        iterators (write/frozen/delta) with `MergedEntryIterator` in the
-        FULL_ISOLATION path.
-      - Option B: keep `HashMap` / `ConcurrentHashMap` for get/put and maintain
-        a sorted key index (`TreeSet` / `ConcurrentSkipListSet`) for iteration;
-        expose a sorted iterator over keys + map values and merge like Option A.
 [ ] 6 Stream compaction without full cache snapshot (Risk: MEDIUM)
-    - Problem: compaction snapshots the full cache list in memory.
-    - Fix: stream from iterators or chunk snapshot to bounded buffers.
 [ ] 7 Stream split without full cache snapshot (Risk: MEDIUM)
-    - Problem: split uses FULL_ISOLATION iterator backed by full list snapshot.
-    - Fix: use streaming iterator or chunked splitting to cap memory.
 [ ] 8 Avoid full materialization in `IndexInternalConcurrent.getStream` (Risk: MEDIUM)
-    - Problem: method loads all entries into a list before returning a stream.
-    - Fix: return a streaming spliterator tied to iterator close.
 [ ] 9 Add eviction for heavy segment resources (Risk: MEDIUM)
-    - Problem: `SegmentResourcesImpl` caches bloom/scarce forever.
-    - Fix: tie resource lifetime to segment eviction or add per-resource LRU;
-      ensure invalidate/close releases memory.
-
-#### Low
-
 [ ] 10 Allow cache shrink after peaks (Risk: LOW)
-    - Problem: `UniqueCache.clear()` keeps underlying `HashMap` capacity.
-    - Fix: rebuild map on clear when size exceeds a threshold; add tests.
-
-### Other refactors (non-OOM)
-
 [ ] 13 Implement a real registry lock (Risk: MEDIUM)
-    - Add an explicit lock around registry mutations + file ops.
-    - Replace/rename `executeWithRegistryLock` to actually serialize callers.
-    - Add tests for split/compact interleaving and segment visibility.
 [ ] 16 Replace busy-spin loops with retry+backoff+timeout (Risk: MEDIUM)
-    - Use `IndexRetryPolicy` in `SegmentsIterator` and split iterator open.
-    - Add interrupt handling and timeout paths with clear error messaging.
-    - Add tests for BUSY loops and timeout behavior.
 [ ] 17 Stop returning `null` on CLOSED in `SegmentIndexImpl.get` (Risk: MEDIUM)
-    - Decide API surface (exception vs status/Optional).
-    - Update callers and docs to distinguish "missing" vs "closed".
-    - Add tests for CLOSED/ERROR paths.
 [ ] 19 Propagate MDC context to stream consumption (Risk: LOW)
-    - Wrap stream/iterator consumption with MDC scope; clear on close.
-    - Add tests asserting `index.name` appears in streamed-operation logs.
 [ ] 42 Revisit `SegmentAsyncExecutor` rejection policy (Risk: MEDIUM)
-    - Ensure maintenance IO never runs on caller threads.
-    - Choose `AbortPolicy` + BUSY/error mapping or custom handler.
-    - Update docs and metrics if behavior changes.
 [ ] 43 Replace registry close polling with completion signal (Risk: MEDIUM)
-    - Add a close completion handle or signal in `Segment`.
-    - Update `SegmentRegistry.closeSegmentIfNeeded` to wait on completion rather
-      than polling `getState()`.
-    - Ensure close-from-maintenance thread does not deadlock.
 [ ] 44 Normalize split close/eviction flow (Risk: MEDIUM)
-    - Centralize segment close/eviction in `SegmentRegistry`.
-    - Remove direct `segment.close()` calls from split coordinator.
-    - Ensure split outcome updates mapping, eviction, and close are ordered.
 [ ] 46 Align iterator isolation naming and semantics (Risk: LOW)
-    - Choose between `FAIL_FAST`/`FULL_ISOLATION` and the legacy
-      `INTERRUPT_FAST`/`STOP_FAST` terminology.
-    - Update docs, comments, and any mapping code consistently.
 [ ] 47 Consolidate BUSY/CLOSED retry loops (Risk: LOW)
-    - Extract shared retry helper for segmentindex operations.
-    - Replace ad-hoc loops in `SegmentRegistry`, `SegmentSplitCoordinator`,
-      and `SegmentIndexImpl`.
-    - Keep backoff/timeout semantics and error messages consistent.
-
-### Testing/Quality
-
 [ ] 48 Test executor saturation and backpressure paths (Risk: MEDIUM)
-    - Add tests for `SegmentAsyncExecutor` queue saturation and rejection handling.
-    - Add tests for `SplitAsyncExecutor` rejection and in-flight cleanup.
-    - Verify maintenance IO never runs on caller threads.
 [ ] 49 Test close path interactions (Risk: MEDIUM)
-    - Close while segment is `MAINTENANCE_RUNNING` and ensure backoff/timeout works.
-    - Close during async operations should fail fast with clear error.
-    - Assert no deadlock when waiting for segment READY/CLOSED.
 [ ] 50 Test split failure cleanup (Risk: MEDIUM)
-    - Force exceptions in split steps and assert `splitsInFlight` clears.
-    - Validate directory swap and key-to-segment map remain consistent.
-    - Ensure resources/locks are released on failure.
 [ ] 51 Test maintenance failure transitions (Risk: MEDIUM)
-    - Inject failures in maintenance IO and publish phases.
-    - Assert segment moves to `ERROR` and callers see ERROR status.
-    - Verify rejection handling does not leave the segment in FREEZE.
 
-## Ready
-
-- (move items here when they are scoped and ready to execute)
-
-## Deferred (segment scope, do not touch now)
-
-## Maintenance tasks
+### Maintenance
 
 [ ] M37 Audit `segment` package for unused or test-only code (Risk: LOW)
-    - Limit class, method and variables visiblity
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
 [ ] M38 Review `segment` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
 [ ] M39 Audit `segmentindex` package for unused or test-only code (Risk: LOW)
-    - Limit class, method and variables visiblity
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
 [ ] M40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
 [ ] M41 Audit `segmentregistry` package for unused or test-only code (Risk: LOW)
-    - Limit class, method and variables visiblity
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
 [ ] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
-    - See `docs/development/segmentregistry-audit.md` for audit notes.
 
 ## Done (Archive)
 
-- (keep completed items here; do not delete)
+[x] 80 Clarify `segmentindex.core` architecture seams (Risk: MEDIUM)
+    - Closed after the `80.*` wave removed the major wrapper layers, split the
+      runtime graph into storage/split/service steps, normalized package
+      ownership, and reduced the remaining issues to local readability and
+      naming.
 
-[x] 61.1 Wire `SegmentHandler` into key-to-segment map usage (Risk: HIGH)
-    - Replace direct segment references in key-to-segment map paths with
-      `SegmentHandler` usage.
-    - Ensure handlers are used consistently for segment access in index flows.
+[x] 80.26 Revisit eager executor creation strategy in `IndexExecutorRegistry` (Risk: MEDIUM)
+    - Kept observed hot-path pools eager and moved support executors to lazy
+      creation through `LazyExecutorReference`, so startup wiring is smaller
+      without losing runtime monitoring or close-order guarantees.
 
-[x] 61.2 Refactor split algorithm around handler locks (Risk: HIGH)
-    - When a segment is eligible for split: acquire handler lock, re-check
-      eligibility under lock, then either unlock or proceed with split.
-    - Split apply ordering: update map on disk first, then in-memory map,
-      then close old segment, delete files, and finally unlock.
-    - Ensure failures unlock the handler and clean up temporary segments.
-    - Update `docs/architecture/registry/registry.md` to reflect handler-based locking.
+[x] 80.30 Rename framework-style types to domain-style names where behavior is now stable (Risk: LOW)
+    - Renamed the major misleading roots and bags, including
+      `SegmentIndexCoreComposition -> SegmentIndexCoreGraph`,
+      `SegmentIndexCoreAssemblyRequest -> SegmentIndexCoreInputs`,
+      `SegmentIndexRuntimeAssemblyRequest -> SegmentIndexRuntimeInputs`,
+      `SegmentIndexServiceRuntimeState -> SegmentIndexRuntimeServices`,
+      `SegmentIndexStorageRuntimeState -> SegmentIndexRuntimeStorage`,
+      `SegmentIndexSplitRuntimeState -> SegmentIndexRuntimeSplits`, and
+      `SegmentIndexManagedIndexAssembler -> SegmentIndexManagedIndexFactory`.
 
-[x] 61.3 Simplify `SegmentHandler` lock API (Risk: MEDIUM)
-    - Keep internal handler state as `READY`/`LOCKED`.
-    - `lock()` returns `SegmentHandlerLockStatus` with `OK` or `BUSY`.
-    - Replace token-based lock/unlock usage across registry + split flows.
-    - Update handler-related tests to match the new API.
+[x] 80.30.a Rename the most misleading framework-style type names
+    - Removed the largest remaining names that hid ownership or behavior.
 
-[x] 60 Move registry implementation to `segmentregistry` package (Risk: MEDIUM)
-    - Move `SegmentRegistryImpl`, `SegmentRegystryState`, `SegmentRegistryCache`,
-      `SegmentRegistryState`, and `SegmentRegistryResult`
-      to `org.hestiastore.index.segmentregistry`.
-    - Update imports/usages in `segmentindex` and tests.
-    - Keep public API surface the same; verify no package-private access leaks.
+[x] 80.30.b Rename the remaining framework-style type names
+    - Finished the stable rename sweep once the structural seams stopped moving.
 
-[x] M41 Audit `segmentregistry` package for unused or test-only code (Risk: LOW)
-    - Limit class, method and variables visiblity
-    - Identify unused classes/methods/fields.
-    - Remove code only referenced by tests or move test helpers into test scope.
-    - Ensure public API docs and tests remain consistent after cleanup.
-[x] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
-    - Ensure each class has a JUnit test or document why coverage is excluded.
-    - Ensure each public class/method has Javadoc; add missing docs.
+[x] 80.31 Normalize package boundaries between `runtime`, `lifecycle`, `maintenance`, and `control` (Risk: MEDIUM)
+    - Moved classes by ownership rather than historical placement, including
+      the whole split subsystem under `core.split`, lifecycle-owned MDC
+      decorators under `core.lifecycle`, and facade/maintenance/consistency
+      seams next to the packages that actually own them.
 
-[x] 59 Introduce `SegmentHandler` lock gate in segmentindex (Risk: HIGH)
-    - Add `SegmentHandler` with `getSegment()` returning `SegmentHandlerResult`:
-      `OK` (segment), `LOCKED`, and handler states `READY`/`LOCKED`.
-    - `lock()` returns a privileged handle/token that allows access to the
-      underlying segment while handler state is `LOCKED`.
-    - `getSegment()` must return `LOCKED` while locked for all non-privileged
-      callers (no segment exposure during lock).
-    - Wire split flow to lock via handler before opening `FULL_ISOLATION`
-      iterator, then unlock after apply/cleanup.
-    - Add tests: `LOCKED` is returned during lock; lock holder can operate;
-      unlock restores `OK`.
+[x] 80.33 Consolidate stable-segment maintenance read/write helpers around one boundary (Risk: MEDIUM)
+    - Collapsed stable-segment and split helper chains into a smaller set of
+      real boundaries (`StableSegmentCoordinator`, `DirectSegmentCoordinator`,
+      `StableSegmentGateway`, `DefaultSegmentMaterializationService`,
+      `RouteSplitPublishCoordinator`).
 
-[x] 59.2 Concurrency: reduce redundant key-map read locks (Risk: MEDIUM)
-    - Make `KeyToSegmentMapSynchronizedAdapter.snapshot()` lock-free
-      (volatile snapshot + AtomicLong version).
-    - Keep read locks only for map-only operations; do not wrap segment calls.
-    - Tests: snapshot consistency + existing `KeyToSegmentMapTest`.
+[x] 80.34 Reduce factory chaining in runtime graph assembly (Risk: MEDIUM)
+    - Closed with the current `core storage -> split infra -> services` shape
+      and the removal of the remaining top-level assembly shells and pass-through
+      bags.
 
-[x] 59.3 Concurrency: limit registry FREEZE to split apply (Risk: MEDIUM)
-    - Remove `FreezeGuard` usage from `SegmentRegistryImpl.getSegment` create/
-      eviction path; keep cache lock for LRU safety.
-    - Reserve registry `FREEZE` for split apply only.
-    - Tests: split + eviction concurrency (`SegmentRegistryCacheTest`,
-      `SegmentSplitCoordinatorConcurrencyTest`, integration stress).
+[x] 80.35 Rework observability package count by deleting or merging low-value microtypes (Risk: MEDIUM)
+    - Reduced `core.observability` to a smaller cohesive set of types
+      (currently 11 Java classes), with counters, latency views, and snapshot
+      glue folded into `Stats`, `SegmentIndexMetricsCollector`,
+      `SegmentIndexMetricsSnapshotFactory`, and `StableSegmentRuntimeMetrics`.
 
-[x] 59.1 Concurrency: remove lock-order inversion in core ops (Risk: HIGH)
-    - Replaced direct stable-read routing through `SegmentIndexCore` with
-      snapshot-based stable gateway reads that do not hold key-map read locks
-      while loading or touching segments.
-    - Stable reads now validate the captured topology version after
-      `SegmentRegistry.getSegment()` + `segment.get(...)`, so route remaps
-      surface as `BUSY` instead of returning stale data.
-    - Tests: `PartitionReadCoordinatorTest`,
-      `StableSegmentGatewayTest`,
-      `IntegrationSegmentIndexConcurrencyTest`,
-      `SegmentIndexConcurrentIT.hotRangeRandomPutsWithAutonomousSplitDoNotStall`.
+[x] 80.36 Rework maintenance package count by merging one-use policy helpers (Risk: MEDIUM)
+    - Collapsed the maintenance micro-helper graph into `BackgroundSplitPolicyLoop`,
+      `StableSegmentCoordinator`, and a smaller set of explicit maintenance
+      seams.
 
-[x] 45 Replace spin-wait in `SegmentConcurrencyGate.awaitNoInFlight` (Risk: LOW)
-    - Replaced the old spin/yield drain loop with a short progressive
-      `LockSupport.parkNanos(...)` wait strategy, keeping FREEZE-only exit
-      semantics without burning CPU during close/maintenance drains.
-    - Removed remaining production `Thread.onSpinWait()` calls from the engine
-      runtime and moved consistency-check BUSY retries onto `IndexRetryPolicy`
-      with bounded jittered backoff.
-    - Tests: `SegmentConcurrencyGateTest`, `IndexConsistencyCheckerTest`,
-      `IndexRetryPolicyTest`, plus full `mvn clean verify`.
+[x] 80.37 Rework operation package count by collapsing trivial result/mapper glue where possible (Risk: LOW)
+    - Removed iterator-opening and stable-gateway glue seams so the operation
+      package keeps behavior close to the actual routed read/write boundaries.
 
-[x] 52 Remove automatic compaction from `segmentindex` (Risk: MEDIUM)
-    - Drop pre-split compaction in `SegmentSplitCoordinator` and remove
-      `SegmentSplitterPolicy.shouldBeCompactedBeforeSplitting` + related retry
-      logic.
-    - Simplify split planning to use estimated key counts directly (remove
-      compaction/tombstone hints from `SegmentSplitterPolicy` or replace with a
-      minimal estimate helper).
-    - Keep `SegmentIndex.compact` / `compactAndWait` as the only
-      segmentindex-triggered compaction entry point; update Javadocs to reflect
-      compaction being handled inside the segment package otherwise.
-    - Update tests that construct `SegmentSplitterPolicy` and add coverage that
-      split does not call `Segment.compact` while user-invoked compaction still
-      does.
+[x] 80.38 Revisit public vs package-private visibility across `core.*` (Risk: LOW)
+    - Shrunk visibility to stable seams only and hid concrete maintenance,
+      operation, split, executor, and observability implementation types where
+      callers no longer need them.
 
-[x] 1 everiwhere rename maxNumberOfKeysInSegmentWriteCacheDuringFlush to maxNumberOfKeysInSegmentWriteCacheDuringMaintenance including all configurations setter getter all all posssible usages.
-[x] 2 Wnen write cache reach size as maxNumberOfKeysInSegmentWriteCacheDuringMaintenance than response to put with BUSY.
-[x] 3 UniqueCache should not use read/write reentrant lock. It's property of concurrent hash map.
-[x] 4 Enforce `maxNumberOfSegmentsInCache` in `SegmentRegistry` (Risk: MEDIUM)
-    - Problem: segments are cached unbounded; memory grows as segments grow.
-    - Fix: implement LRU or size-bounded cache; evict + close segments and
-      invalidate resources on eviction.
-[x] 18 Provide index-level FULL_ISOLATION streaming (Risk: MEDIUM)
-    - Add overload or option to request FULL_ISOLATION on index iterators.
-    - Implement iterator that holds exclusivity across segments safely.
-    - Add tests for long-running scans during maintenance.
-[x] 23 Refactor `Segment.close()` to async fire-and-forget with READY-only entry (Risk: MEDIUM)
-    - Change `Segment` to drop `CloseableResource` and return
-      `SegmentResult<Void>` from `close()`.
-    - Close starts only in `READY`: transition to `FREEZE`, drain, optionally
-      flush write cache, then run close work on maintenance thread.
-    - Completion marks `CLOSED`, releases locks/resources, and stops admissions.
-    - Move close-state tracking into segment index (avoid `Segment.wasClosed()`).
-    - Update state machine/gate/docs/tests to match the new close lifecycle.
-[x] 24 Add integration test: in-memory segment lock prevents double-open (Risk: LOW)
-    - Create an integration test that opens a segment in a directory and
-      asserts a second open in the same directory fails (lock enforcement).
-[x] 25 Simplify `Segment.flush()`/`compact()` to return status only (Risk: MEDIUM)
-    - Remove `CompletionStage` return values from `flush()` and `compact()`.
-    - Operation completion is observable when segment state returns to `READY`.
-    - Update callers, docs, and tests that wait on completion stages.
-[x] 25 Create directory API and layout helpers (Risk: HIGH)
-    - Add `Directory.openSubDirectory(String)`
-      and lifecycle helpers `Directory.mkdir(String)` / `Directory.rmdir(String)`.
-    - Implement in `FsDirectory` and in-memory
-      `MemDirectory` equivalents; define semantics for non-empty rmdir.
-    - Add `SegmentDirectoryLayout` (or similar) that builds names for:
-      index, scarce, bloom, delta, properties, and lock files.
-    - Add tests for directory creation and layout mapping.
+[x] 80.39 Run a final naming sweep once structural seams stop moving (Risk: LOW)
+    - Closed after the final rename-only pass across `core.*` and the last
+      local vocabulary cleanup in runtime/lifecycle naming.
 
-[x] 26 Introduce segment-rooted `SegmentFiles` (Risk: HIGH)
-    - Add a `SegmentFiles` constructor that accepts a segment root
-      `Directory` (instead of a flat base directory + id).
-    - Keep legacy flat layout working (auto-detect existing files, or flag in
-      `SegmentBuilder`).
-    - Update `SegmentBuilder` to create/use the segment root directory.
-    - Add tests that both layouts open the same data correctly.
+[x] 80.39.a Run final rename-only pass across `core.*`
+    - Completed without structural moves.
 
-[x] 27 Add per-segment `.lock` file (Risk: MEDIUM)
-    - Add `segment.lock` (or `.lock`) inside the segment directory.
-    - Acquire lock on segment open; release on close. Fail fast on lock held.
-    - Add stale-lock recovery policy (manual delete or metadata timestamp).
-    - Add tests for lock contention and cleanup.
+[x] 80.39.b Run final method/field naming pass
+    - Normalized local vocabulary such as `create(...)`, `storage()`,
+      `splits()`, `services()`, and the last remaining factory helper method
+      names.
 
-[x] 28 Shared properties file structure (Risk: MEDIUM)
-    - Introduce a common property schema used by segment + segmentindex
-      packages (e.g. `IndexPropertiesSchema`).
-    - Store schema version and required keys; add migration helpers.
-    - Update `SegmentPropertiesManager` and `IndexConfigurationStorage`
-      to use the shared schema.
+[x] 80.40 Finish when the dominant remaining issues are mostly names, comments, and local method shape (Risk: LOW)
+    - Closed after the final audit showed that the remaining adapters and
+      decorators are behavior-owning lifecycle/infrastructure types, not
+      empty pass-through hot-path shells.
 
-[x] 29 Compact flow for directory layout (publish protocol) (Risk: HIGH)
-    - IO phase (`MAINTENANCE_RUNNING`):
-      - Create a new directory, e.g. `segment-00001.next/` or versioned
-        `segment-00001/v2/`.
-      - Write new index/scarce/bloom/cache files there.
-      - Write properties with state `PREPARED` + metadata.
-    - Publish phase (short `FREEZE`):
-      - Mark new directory as `ACTIVE` in properties (or update a pointer
-        file `segment-00001.active`).
-      - Reload `SegmentFiles`/`SegmentResources` to the new root.
-      - Bump version and return to `READY`.
-    - Cleanup:
-      - Delete old directory only after publish and resource reload.
-      - Add startup recovery for `PREPARED` without `ACTIVE`.
-    - Align with items 11/12 (atomic swaps + map updates).
+[x] 80.40.a Verify no obvious wrapper-only hot-path types remain
+    - Remaining wrappers are lifecycle/infrastructure decorators with concrete
+      behavior such as MDC scoping or managed close, not empty forwarding
+      layers in the main runtime graph.
 
-[x] 30 Split + replace updates (Risk: HIGH)
-    - Update split/rename logic to use directory swaps or pointer updates.
-    - Ensure registry + `segmentindex` metadata remain consistent.
-    - Add tests for crash recovery and partial swaps.
-[x] 31 Segment layout uses versioned file names in a single directory (Risk: HIGH)
-    - Name index/scarce/bloom/delta as `vNN-*` (for example `v01-index.sst`,
-      `v01-scarce.sst`, `v01-bloom-filter.bin`, `v01-delta-0000.cache`).
-    - Store the active version and counters in `manifest.txt` (no `.active`
-      pointer).
-    - Use zero-padded 2-digit versions and 4-digit delta ids.
-[x] 32 Builder/files treat the provided directory as the segment home (Risk: HIGH)
-    - Require `Segment.builder(Directory)` for construction.
-    - Lock + properties live inside the segment directory.
-    - Resolve active version from properties or detected index files.
-[x] 33 Compaction/flush publish is memory-only (Risk: HIGH)
-    - IO phase writes versioned files and property updates.
-    - Publish swaps in-memory version/resources and bumps iterator version.
-    - Cleanup old version files asynchronously.
-[x] 34 Registry/tests align with single-directory versioning (Risk: MEDIUM)
-    - Registry passes segment directories; no active-directory switching.
-    - Update tests to accept versioned names and per-segment directories.
-[x] 35 Remove unused close monitor in `SegmentConcurrencyGate` (Risk: LOW)
-    - Remove `closeMonitor` and `signalCloseMonitor` since nothing waits on it.
-    - Keep drain behavior in `awaitNoInFlight()` unchanged.
-[x] 36 Consolidate in-flight read/write counters in `SegmentConcurrencyGate` (Risk: LOW)
-    - Replace `inFlightReads`/`inFlightWrites` with a single counter.
-    - Keep admission rules and drain behavior unchanged.
-    - Update any stats or tests that rely on read/write split (if introduced).
-[x] 11 Remove `segmentState` from segment properties schema (Risk: MEDIUM)
-    - Remove `SegmentKeys.SEGMENT_STATE` from `IndexPropertiesSchema`.
-    - Update `SegmentPropertiesManager` to drop `getState`/`setState` usage.
-    - Decide migration behavior for existing properties files.
-[x] 12 Add `getMaxNumberOfDeltaCacheFiles()` to `Segment` (Risk: LOW)
-    - Implement in `SegmentImpl`.
-    - Update any callers/tests that need the accessor.
-[x] 13 Add `maxNumberOfDeltaCacheFiles` to `IndexConfiguration` + builder (Risk: MEDIUM)
-    - Add config property, validation, defaults, and persistence.
-    - Plumb through `SegmentBuilder`/`SegmentConf` as needed.
-[x] 14 Wire delta cache file cap into `SegmentMaintenancePolicyThreshold` (Risk: MEDIUM)
-    - Add the max file count to policy constructor/state.
-    - Pass the value from configuration.
-[x] 15 Enforce delta cache file cap in policy (Risk: MEDIUM)
-    - In `SegmentMaintenancePolicyThreshold` (~line 44), trigger maintenance
-      when delta cache file count exceeds the cap.
-[x] 16 Enforce segment lock test on open (Risk: MEDIUM)
-    - Add a test that opening a segment with an existing `.lock` fails.
-    - Cover both in-memory and filesystem-backed directories.
-[x] 17 Document locked-directory behavior in `SegmentBuilder` (Risk: LOW)
-    - Clarify how builder reacts when the segment directory is already locked.
-[x] 18 Acquire segment lock before `prepareBuildContext()` (Risk: MEDIUM)
-[x] 19 Add `SegmentRegistryResult` + status + adapters (Risk: MEDIUM)
-    - Define result/status types and adapters to/from `SegmentResult`.
-    - Unit tests only; no wiring.
-[x] 20 Add registry state enum + gate (Risk: MEDIUM)
-    - Define `SegmentRegistryState` and a small gate/state holder.
-    - Unit tests only; no integration.
-[x] 21 Introduce `SegmentRegistry` interface + `SegmentRegistryImpl` (Risk: MEDIUM)
-    - Keep interface minimal and keep `SegmentResult` returns for now.
-    - Rename existing class to impl and update call sites in same step.
-[x] 22 Add `SegmentRegistrySyncAdapter` with BUSY retry (Risk: MEDIUM)
-    - Wrap `SegmentRegistry` and retry BUSY (use `IndexRetryPolicy`).
-[x] 23 Wire state gate into impl (Risk: HIGH)
-    - BUSY only from registry state; FREEZE only around map changes.
-    - Keep `SegmentResult` API to avoid broad changes.
-[x] 24 Switch registry API to `SegmentRegistryResult` (Risk: HIGH)
-    - Introduce `SegmentRegistryLegacyAdapter` to keep old callers working.
-    - Migrate call sites/tests, then remove legacy adapter.
-[x] 53.1 Split “apply” DTO (Risk: LOW)
-    - Introduce a small DTO for split apply (oldId, lowerId, upperId,
-      min/max keys, status).
-    - Unit tests for DTO invariants.
-[x] 53.2 Split worker extraction (Risk: MEDIUM)
-    - Refactor split execution to: open FULL_ISOLATION iterator, run split on
-      maintenance executor, return DTO without touching registry or map.
-    - Ensure iterator is closed in all paths.
-    - Unit tests for result wiring.
-[x] 53.3 Registry apply entry point (Risk: MEDIUM)
-    - Add registry apply method that (a) FREEZE, (b) update cache
-      (remove old, add new ids), (c) exit FREEZE.
-    - Keep key‑map lock separate.
-    - Unit tests for cache mutation under FREEZE.
-[x] 53.4 Key‑map persistence (Risk: MEDIUM)
-    - Update key‑to‑segment map using its own lock/adapter.
-    - Persist map file after in‑memory registry apply.
-    - Tests that map persistence order is enforced.
-[x] 53.5 Old segment deletion (Risk: MEDIUM)
-    - Delete old segment directory only after map persistence and after
-      iterator/segment locks are released.
-    - Tests that deletion never happens before map persistence.
-[x] 53.6 Lock order contract (Risk: LOW)
-    - Enforce lock order (segment → registry → map; release map → registry
-      → segment) and document in code.
-    - Add a small test or assertion helper to catch order violations.
-[x] 53.7 Split concurrency scenarios (Risk: HIGH)
-    - Tests:
-      - split does not run under registry FREEZE (short window)
-      - split returns BUSY on lock conflict and retries safely
-      - concurrent get/put during split never sees missing segment mapping
-[x] 58.1 Split: keep split IO outside registry freeze (Risk: HIGH)
-    - `SegmentSplitCoordinator.split(...)`: ensure all IO (iterator open, writes)
-      happens before any registry `FREEZE`.
-    - `SegmentSplitStepOpenIterator`: keep `FULL_ISOLATION` acquisition once per split.
-    - `SegmentSplitCoordinator.hasLiveEntries(...)`: now uses `FAIL_FAST` to
-      avoid a second `FULL_ISOLATION` lock.
-    - Tests may fail if ordering assumptions change; fix after step 58.4.
-[x] 58.2 Split: invert lock order for apply phase (Risk: HIGH)
-    - `SegmentSplitCoordinator.applySplitPlan(...)`: remove outer
-      `keyToSegmentMap.withWriteLock(...)`.
-    - `SegmentRegistryImpl.applySplitPlan(...)`: acquire registry freeze first,
-      then call `onApplied` which acquires key-map write lock.
-    - Update lock-order enforcement to match registry -> key-map.
-[x] 58.3 Split: propagate lock-order flags into key-map adapter (Risk: MEDIUM)
-    - `KeyToSegmentMapSynchronizedAdapter`: mark key-map write-lock ownership
-      during enforcement checks.
-    - Ensure registry checks validate registry ownership before key-map lock.
-[x] 58.4 Split: finalize apply/cleanup ordering (Risk: MEDIUM)
-    - Ensure apply evicts old segment instance and closes it via
-      `SegmentRegistryImpl.closeSegmentInstance(...)`.
-    - Keep key-map flush outside registry freeze:
-      `keyToSegmentMap.flushIfDirty()` only after apply OK.
-    - Delete old segment files only after apply succeeds and locks released.
-[x] 58.5 Split: test alignment (Risk: MEDIUM)
-    - Add/update tests to assert no directory swap in split flow.
-    - Add tests for enforced lock order (registry -> key-map).
-    - Add tests for split failure cleanup of new segments.
-[x] 63 SegmentIdAllocator in segmentregistry (Risk: MEDIUM)
-    - Add `SegmentIdAllocator` interface and directory-backed implementation.
-    - Scan `Directory.getFileNames()` for segment directories named
-      `segment-00001` (prefix `segment-` + 5 digits) and initialize next id
-      to max+1 (or 1 when none found).
-    - Allocate ids with thread-safe counter.
+[x] 80.40.b Verify dominant remaining findings are local readability issues
+    - The remaining cleanup surface is now mostly local naming, comments, and
+      small method shape rather than another structural refactor wave.
 
-[x] 64 Include directories in `Directory.getFileNames()` (Risk: LOW)
-    - Ensure `Directory.getFileNames()` returns subdirectory names as well.
-    - Update `MemDirectory` to include subdirectory names in its stream.
-    - Verify no tests rely on file-only behavior.
+[x] 80.26.a Decide executor topology ownership
+    - Chose eager ownership only for observed hot-path maintenance pools.
+    - Chose lazy ownership for split-policy scheduling and
+      registry-maintenance support executors.
 
-[x] 65 Remove id allocation from key-to-segment map (Risk: MEDIUM)
-    - Remove `nextSegmentId` and `findNewSegmentId()` from `KeyToSegmentMap`
-      and its synchronized adapter.
-    - Remove updates to `nextSegmentId` in `tryExtendMaxKey`/`updateMaxKey`.
+[x] 80.26.b Implement lazy creation where it actually reduces startup noise
+    - Implemented `LazyExecutorReference` for support executors.
+    - `IndexExecutorRegistry` now keeps runtime-observed pools eager while
+      creating split-policy and registry-maintenance executors only on first
+      access.
 
-[x] 66 Wire allocator into registry + index (Risk: MEDIUM)
-    - Update `SegmentRegistryImpl` to use `SegmentIdAllocator` instead of
-      supplier.
-    - Update `SegmentIndexImpl` wiring and split coordinator to use registry
-      allocation only.
-    - Update tests to stub allocator or use directory-backed allocator.
+[x] 80.27 Replace inheritance-based policy in `IndexInternalConcurrent` with composition (Risk: MEDIUM)
+    - Removed subclass-only seams, moved stream behavior into `SegmentIndexImpl`,
+      and replaced direct `SegmentIndexImpl` inheritance with a composition
+      wrapper for the caller-thread implementation.
+    - Maintenance policy stays in explicit collaborators while test unwrapping
+      continues through the wrapper `delegate` field.
 
-[x] 67 Tests + docs for allocator move (Risk: LOW)
-    - Add allocator tests (empty dir, max id, thread-safety).
-    - Update `docs/architecture/registry/registry.md` to reflect registry allocator.
+[x] 80.27.b Replace `IndexInternalConcurrent` inheritance with a composition wrapper
+    - Replaced direct `SegmentIndexImpl` inheritance with a composition wrapper
+      that delegates to a started internal `SegmentIndexImpl`.
+    - Test unwrapping now goes through the wrapper `delegate` field, so the
+      public/internal API shape stays intact without subclassing as the policy
+      seam.
 
-[x] 62 Add `SegmentRegistryBuilder` modeled after `Segment.builder(...)` (Risk: MEDIUM)
-    - Add `SegmentRegistryBuilder` in `segmentregistry` with required inputs
-      (directory, type descriptors, config, maintenance executor).
-    - Provide optional setters for `SegmentIdAllocator` and `SegmentFactory`.
-    - Add static factory `SegmentRegistry.builder(...)` (or on impl) to return builder.
-    - Move default wiring (factory + allocator creation) into builder.
-    - Keep `SegmentRegistryImpl` constructor with full DI for tests.
-    - Update `SegmentIndexImpl` (and other callers) to use the builder.
-    - Add unit tests for missing required fields and default wiring.
+[x] 80.12 Reduce `SegmentIndexFactory` overload matrix to a smaller set of real use cases (Risk: MEDIUM)
+    - `SegmentIndexFactory` now exposes only the canonical lifecycle
+      entrypoints `create`, `open`, `openStored`, and `tryOpen`.
+    - Convenience overloads now live only on the public `SegmentIndex` API,
+      while stored/open-maybe flows route through the same canonical factory
+      entrypoints instead of duplicating parallel shapes inside `core.lifecycle`.
 
-[x] 68 Align split apply with registry FREEZE + lock-order enforcement (Risk: MEDIUM)
-    - Expose registry FREEZE in `SegmentRegistryAccess` (or equivalent) so
-      split apply can run under FREEZE while holding handler + key-map locks.
-    - While FREEZE is active, expose registry lock ownership so key-map lock
-      order enforcement can be enabled safely.
-    - Wrap key-map apply + cache eviction inside the FREEZE window.
+[x] 80.12.a Remove redundant `SegmentIndexFactory` convenience overloads
+    - `SegmentIndexFactory` keeps only real lifecycle entrypoints with an
+      explicit chunk-filter provider registry.
 
-[x] 69 Separate cache eviction from file deletion in split apply (Risk: MEDIUM)
-    - Add registry operation to evict a specific segment from cache while the
-      handler lock is held (no file deletion).
-    - After apply: evict old segment under handler+FREEZE, release iterator,
-      unlock handler, then delete old segment files via registry helper.
-    - Keep `deleteSegment` behavior for general callers unchanged.
+[x] 80.12.b Route remaining factory entrypoints through one canonical path
+    - Stored/open-maybe flows now delegate through the same canonical
+      `SegmentIndexFactory` entrypoints instead of duplicating alternate
+      lifecycle shapes.
 
-[x] 70 Apply-failure should mark registry ERROR (Risk: LOW)
-    - When split apply fails mid-update, set registry gate to ERROR and
-      surface the failure (avoid silent BUSY loops).
-    - Add tests for apply-failure transitions.
+[x] 80.38.a Make internal assembly/maintenance collaborators package-private
+    - Introduced narrow maintenance capability seams
+      `BackgroundSplitPolicyAccess` and `StableSegmentMaintenanceAccess`.
+    - `BackgroundSplitPolicyLoop`, `StableSegmentCoordinator`, and the already
+      hidden `IndexMaintenanceCoordinator` now stay package-private inside
+      `core.maintenance`, while runtime/factory code depends only on the
+      smaller maintenance-owned views.
 
-[x] 71 SegmentRegistry: expose NOT_FOUND for missing segments (Risk: LOW)
-    - Add `NOT_FOUND` to `SegmentRegistryResultStatus` + factory method.
-    - Return NOT_FOUND when `getSegment` targets a missing directory.
-    - Keep `createSegment` creating new segments even when others exist.
-    - Tests: missing-segment lookup, status plumbing.
+[x] 80.38.b Make operation/runtime helper types package-private
+    - Introduced `StableSegmentAccess` and `DirectSegmentAccess`.
+    - `StableSegmentGateway` and `DirectSegmentCoordinator` are now
+      package-private, while runtime and maintenance keep only the smaller
+      routed-operation capability seams.
 
-[x] 72 SegmentRegistryBuilder: configure only via `with*` methods (Risk: LOW)
-    - Remove constructor parameters from `SegmentRegistryBuilder`.
-    - Ensure all required inputs are set via `with...` methods.
-    - Update call sites and tests to use the builder setters.
+[x] 80.34.a Reduce runtime graph assembly to `storage -> split -> services`
+    - `SegmentIndexRuntimeGraphBuilder` now reads directly as
+      `core storage -> split state -> service state`.
+    - The runtime path no longer bounces through extra split/runtime bags just
+      to reach the final assembled runtime.
 
-[x] 73 SegmentRegistry handler-backed cache (Risk: MEDIUM)
-    - Make `SegmentRegistryCache` store `SegmentHandler` per `SegmentId`
-      (segment + lock state as one entry).
-    - Keep `SegmentRegistry.getSegment` returning `SegmentRegistryResult`
-      to signal registry state; map LOCKED to BUSY.
-    - Add internal accessors for handler-only flows (split/evict) without
-      exposing handler in the public registry API.
-    - Update eviction logic to skip LOCKED handlers and keep cache/handler
-      in sync.
-    - Tests: locked entry not evicted, handler/segment consistency, BUSY
-      returned when handler locked.
+[x] 80.34.b Remove leftover assembly helper types that no longer buy readability
+    - Removed `SegmentIndexLifecycleAssembly` and
+      `SegmentIndexRuntimeAssembly`.
+    - `SegmentIndexCoreGraph` now assembles runtime, consistency,
+      facades, close, and startup collaborators directly through named helper
+      methods instead of routing through additional root-level assembly bags.
 
-[x] 74 RegistryAccess: lock via `SegmentHandler` (Risk: MEDIUM)
-    - Add internal accessor that returns the `SegmentHandler` for a
-      `segmentId` + expected segment instance (BUSY/ERROR when mismatch).
-    - Remove `lockSegmentHandler`/`unlockSegmentHandler` from
-      `SegmentRegistryLocking` and `SegmentRegistryAccess`.
-    - Update `SegmentRegistryAccessAdapter` to expose handler instead of
-      lock/unlock methods.
+[x] 80.33.c Collapse prepared split/materialization wrapper chain
+    - Removed `PreparedRouteSplit`, `PreparedSegmentHandle`,
+      `DefaultPreparedSegmentHandle`, and `SegmentMaterializationFileSystem`.
+    - Split child preparation and materialization now live directly in the
+      owning split services without a one-use wrapper stack.
 
-[x] 75 Split flow: use handler lock directly (Risk: MEDIUM)
-    - In `SegmentSplitCoordinator`, acquire handler via registry access and
-      call `handler.lock()`/`handler.unlock()` directly.
-    - Keep BUSY mapping when handler is locked.
-    - Ensure eviction path still validates handler instance + state.
+[x] 80.33.d Reduce `RouteSplitCoordinator` ownership
+    - Split preparation moved into `RouteSplitPreparationService` and
+      publish/cleanup moved into `RouteSplitPublishCoordinator`.
+    - `RouteSplitCoordinator` now stays focused on eligibility,
+      current-segment validation, and handing the parent segment into the
+      preparation flow instead of owning the full route split lifecycle.
 
-[x] 76 Tests + cleanup for handler locking (Risk: LOW)
-    - Update tests that currently call registry lock/unlock to use handler
-      locking instead.
-    - Remove unused lock methods from `SegmentRegistryImpl`.
-    - Verify eviction skips locked handlers and BUSY is returned when locked.
+[x] 80.31.a Move remaining observability-owned classes out of `core.runtime`
+    - Runtime no longer owns observability-only helper classes or pass-through
+      metrics bags.
+    - Observability-owned snapshot and logging concerns now live under
+      `core.observability`, `core.lifecycle`, or `core.infrastructure`
+      according to ownership.
 
-[x] 77 SegmentRegistry target-state rollout from `docs/architecture/registry/registry.md` (Risk: HIGH)
-    - Goal: make implementation fully match the documented registry model
-      (state gate + per-key `Entry` state machine + single-flight load +
-      bounded cache eviction + unload semantics).
-    - Global rule: every step in 77.x must preserve behavioral parity with
-      `docs/architecture/registry/registry.md`. If behavior must change, update
-      `registry.md` and diagrams first in the same PR before code changes.
-    - Hard constraints:
-      - no global lock in `get` hot path
-      - unrelated keys must not block each other
-      - per-key wait only on the same `Entry`
-      - `LOADING` waits, `UNLOADING` maps to `BUSY`
-      - load/open failures are exception-driven
-    - Exit criteria:
-      - behavior parity with `docs/architecture/registry/registry.md` and
-        `docs/architecture/images/registry-seq*.plantuml`
-      - all new/updated tests green
-      - no flakiness in repeated concurrency runs
+[x] 80.31.b Move remaining maintenance-owned classes out of `runtime/control`
+    - Runtime/control no longer own maintenance-loop or stable-segment
+      implementation classes.
+    - Maintenance flow now lives behind
+      `BackgroundSplitPolicyAccess` / `StableSegmentMaintenanceAccess`
+      inside `core.maintenance`.
 
-[x] 77.1 Freeze target contract and remove ambiguity (Risk: HIGH)
-    - Pin `docs/architecture/registry/registry.md` + diagrams as source of truth.
-    - Explicitly list non-negotiable runtime rules in code comments/Javadocs:
-      - state gate mapping: `READY` normal, `FREEZE` -> `BUSY`,
-        `CLOSED` -> `CLOSED`, `ERROR` -> `ERROR`
-      - cache state mapping: `LOADING` wait, `UNLOADING` -> `BUSY`
-      - failed unload leaves `UNLOADING` (documented behavior)
-    - Acceptance:
-      - no contradictory comments/Javadocs in `segmentregistry` package
-      - docs and code contracts use same method names
+[x] 80.31.c Re-pack visible seams by ownership
+    - Visible seams now live under the packages that actually own them:
+      split under `core.split`, maintenance under `core.maintenance`,
+      lifecycle-managed MDC under `core.lifecycle`, and stable executor
+      snapshot interfaces under `core.observability` with package-private
+      infrastructure implementations.
+    - The remaining issues are now mostly naming and final readability
+      cleanup, not package-placement drift from earlier refactor waves.
 
-[x] 77.2 Implement/align per-key `Entry` API contract (Risk: HIGH)
-    - Ensure `SegmentRegistryCache.Entry` exposes and follows:
-      - `tryStartLoad()`
-      - `waitWhileLoading(currentAccessCx)`
-      - `finishLoad(value)`
-      - `fail(exception)`
-      - `tryStartUnload()`
-      - `finishUnload()`
-      - `getEvictionOrder()`
-    - Ensure lock/condition is strictly per-entry (no cross-key monitor).
-    - Acceptance:
-      - transitions only: `MISSING->LOADING->READY->UNLOADING->MISSING`
-      - invalid transitions return fast/fail predictably
+[x] 80.33.b Collapse trivial stable-segment direct read/write glue
+    - Merged `DirectSegmentReadCoordinator` and
+      `DirectSegmentWriteCoordinator` into `DirectSegmentCoordinator`.
+    - Runtime split state and operation wiring now depend on one direct
+      routed-access boundary instead of parallel read/write glue.
 
-[x] 77.3 Align `get(key)` miss path to single-flight semantics (Risk: HIGH)
-    - Use `putIfAbsent` race semantics correctly:
-      - winner: `entryInMap == null` then load
-      - loser: wait on the existing entry from map
-    - Ensure wait target is the entry stored in map, not a local temporary.
-    - Ensure load failure path calls `fail(exception)`, wakes waiters, and
-      removes the expected entry from map.
-    - Acceptance:
-      - exactly one loader execution per key under high contention
-      - all losers observe winner result or propagated exception
+[x] 80.33.a Collapse trivial stable-segment topology/read helpers into one boundary
+    - Folded `StableSegmentTopologyLookup`, `StableSegmentReadTarget`, and the
+      remaining `StableSegmentGateway` load-target/helper seams into direct
+      stable gateway logic.
+    - Stable reads now flow from route snapshot to loaded segment access
+      without extra topology/read-target wrapper types.
 
-[x] 77.4 Align `get(key)` hit path semantics (Risk: HIGH)
-    - READY: immediate return + recency update.
-    - LOADING: block only on same entry until READY/failure.
-    - UNLOADING: do not wait; return BUSY to caller.
-    - Acceptance:
-      - no waiting on keys in `UNLOADING`
-      - no blocking between unrelated keys
+[x] 80.36.b Merge remaining stable-segment maintenance one-use helpers
+    - Folded `BackgroundSplitCandidateScheduler` into
+      `BackgroundSplitPolicyLoop`.
+    - Candidate scheduling now lives directly in the loop/work-state boundary,
+      so the maintenance package is down to the real long-lived owners.
 
-[x] 77.5 Implement bounded eviction flow per docs (Risk: HIGH)
-    - Keep capacity enforcement in cache layer.
-    - Candidate selection:
-      - LRU by `accessCx`
-      - exclude requested key in `removeLastRecentUsedSegment(exceptSegmentId)`
-      - only READY candidates can move to UNLOADING
-    - Start close asynchronously, remove only after close success.
-    - Acceptance:
-      - eviction never unloads `exceptSegmentId`
-      - failed `tryStartUnload` retries candidate selection without global stall
+[x] 80.35.b Merge observability snapshot/input glue
+    - Removed `SegmentIndexMetricsSnapshotInputsCollector` and
+      `SegmentIndexMetricsRequestCounter`.
+    - `SegmentIndexMetricsCollector` now collects runtime inputs and resolves
+      maintenance request high-water marks directly.
 
-[x] 77.6 Lifecycle executor behavior and failure handling (Risk: HIGH)
-    - Verify load/open and close/unload execution contexts follow design:
-      - load for seq03 scenario in caller thread
-      - close/unload on lifecycle executor thread
-    - Define exact reaction to close failure:
-      - keep entry `UNLOADING`
-      - subsequent `get` returns BUSY
-      - do not remove cache entry
-    - Acceptance:
-      - no caller-thread close IO
-      - failed close path is deterministic and test-covered
+[x] 80.27.a Remove remaining subclass-only seams from `IndexInternalConcurrent`
+    - Removed all remaining test-only `extends IndexInternalConcurrent`
+      seams by switching tests to direct instantiation or targeted
+      `SegmentIndexImpl` subclasses.
+    - Marked `IndexInternalConcurrent` as `final`.
 
-[x] 77.7 Registry gate lifecycle alignment (Risk: MEDIUM)
-    - Ensure startup: `FREEZE -> READY`.
-    - Ensure close flow: `READY -> FREEZE -> CLOSED`.
-    - Ensure idempotent close and terminal ERROR semantics.
-    - Acceptance:
-      - gate transitions are atomic and race-safe under concurrent calls
-      - status mapping is consistent for all operations
+[x] 80.37.a Collapse trivial stable-segment gateway helper seams
+    - Folded `StableSegmentHandleAccess`, `StableSegmentResultMapper`,
+      `StableSegmentTopologyLookup`, and `StableSegmentReadTarget` into
+      `StableSegmentGateway`.
 
-[x] 77.8 API/status cleanup to match exception-driven load policy (Risk: MEDIUM)
-    - Preserve `SegmentRegistryAccess` for status-oriented flows.
-    - Keep load/open failure as propagated runtime exception from registry
-      load paths (per docs).
-    - Remove or deprecate status branches that conflict with this policy.
-    - Acceptance:
-      - no mixed behavior where same failure is sometimes status, sometimes throw
+[x] 80.37.b Collapse trivial operation retry/value-guard glue
+    - Folded `IndexOperationRetryRunner` and `IndexOperationValueGuard` into
+      `IndexOperationCoordinator`.
 
-[x] 77.9 Unit tests for Entry/cache state machine (Risk: HIGH)
-    - Extend `SegmentRegistryCacheTest` with deterministic tests:
-      - single-flight: same key, many threads -> loader called once
-      - wait-on-loading: loser threads block and then return same value
-      - load failure wakeup: all waiters receive same failure
-      - unloading maps to BUSY (no waiting)
-      - eviction excludes `exceptSegmentId`
-      - close failure leaves `UNLOADING`
-    - Use `CountDownLatch`/`CyclicBarrier` to force races.
-    - Add `@Timeout` to every concurrency-sensitive test.
+[x] 80.31.d Move split assembly ownership fully into `core.split`
+    - Deleted `BackgroundSplitCoordinatorFactory`.
+    - Moved split assembly onto `BackgroundSplitCoordinator.create(...)`.
+    - Runtime now depends on the split runtime contract instead of a separate
+      split assembly helper type.
 
-[x] 77.10 Registry-level behavior tests (Risk: HIGH)
-    - Update/add tests in:
-      - `SegmentRegistryImplTest`
-      - `SegmentRegistryStateMachineTest`
-      - `SegmentRegistryAccessImplTest`
-    - Verify:
-      - gate mapping (`FREEZE/BUSY`, `CLOSED/CLOSED`, `ERROR/ERROR`)
-      - startup transition (`FREEZE->READY`)
-      - `getSegment` behavior across READY/LOADING/UNLOADING
-      - exception propagation on load/open failure
+[x] 80.38.c Shrink `core.split` public surface to stable contracts only
+    - Moved `BackgroundSplitMetrics` under `core.observability`.
+    - `core.split` public surface is now down to `BackgroundSplitCoordinator`
+      and `RouteSplitPlan`.
 
-[x] 77.11 High-concurrency integration verification (Risk: HIGH)
-    - Extend/execute:
-      - `IntegrationSegmentIndexConcurrencyTest`
-      - `SegmentIndexImplConcurrencyTest`
-      - `SegmentSplitCoordinatorConcurrencyTest`
-    - Add focused registry stress tests (new class):
-      - many threads on same key (single-flight proof)
-      - many threads on different keys (independence proof)
-      - eviction + concurrent gets + split coordinator interaction
-    - Run repeated stress cycles to catch flakes.
-    - Completed:
-      - Added and executed
-        `src/test/java/org/hestiastore/index/segmentindex/SegmentRegistryConcurrencyStressTest.java`.
-      - Passed:
-        `mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest,SegmentRegistryConcurrencyStressTest test`
-      - Flake gate passed: 20/20 repeated runs with 0 failures.
+[x] 80.35.a Merge low-value observability counter/set microtypes
+    - Collapsed thin `Stats*Set` types into `Stats` / `StatsLatencySet`.
+    - Folded `SegmentIndexMetricsSnapshotInputs` into
+      `SegmentIndexMetricsSnapshotFactory`.
+    - The remaining observability helper types now carry runtime behavior or
+      a real metrics aggregate.
 
-[x] 77.12 Quality gates and release checklist (Risk: HIGH)
-    - Mandatory local gates before merge:
-      - targeted unit tests:
-        `mvn -q -Dtest=SegmentRegistryCacheTest,SegmentRegistryImplTest,SegmentRegistryStateMachineTest test`
-      - concurrency/integration tests:
-        `mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest test`
-      - full verification:
-        `mvn verify`
-    - Flake gate:
-      - rerun concurrency suite N times (recommended N=20) and require 0 flakes.
-    - Code quality gate:
-      - no TODO/FIXME left in touched files
-      - Javadocs reflect final behavior
-      - diagrams and `registry.md` updated if behavior changed
-    - Completed:
-      - Passed targeted unit tests:
-        `mvn -q -Dtest=SegmentRegistryCacheTest,SegmentRegistryImplTest,SegmentRegistryStateMachineTest test`
-      - Passed concurrency/integration tests:
-        `mvn -q -Dtest=IntegrationSegmentIndexConcurrencyTest,SegmentIndexImplConcurrencyTest,SegmentSplitCoordinatorConcurrencyTest,SegmentRegistryConcurrencyStressTest test`
-      - Passed full verification:
-        `mvn verify`
-      - `TODO/FIXME` scan on touched files: none found.
+[x] 80.35.c Hide observability implementation details behind smaller public seams
+    - Removed the public `SegmentIndexMetricsAccess` seam and now route
+      runtime/control through `Supplier<SegmentIndexMetricsSnapshot>` from
+      `SegmentIndexMetricsSnapshots.create(...)`.
+    - Concrete collector and executor snapshot implementation types now stay
+      hidden behind stable metrics snapshot suppliers and executor snapshot
+      interfaces.
 
-[x] 77.13 Rollout and fallback plan (Risk: MEDIUM)
-    - Deliver in small PRs matching 77.1-77.12 order.
-    - After each PR:
-      - run targeted regression suite
-      - update `docs/architecture/registry/registry.md` if contract changed
-    - Keep a temporary feature flag only if needed for safe migration.
-    - Remove fallback/compatibility code when final parity is reached.
-    - Completed:
-      - Work delivered incrementally following 77.1 -> 77.12 sequence.
-      - Regression suites executed after key steps and before final merge gate.
-      - No temporary feature flag required for this rollout.
+[x] 80.36.a Merge remaining background split scheduling helpers
+    - Folded `BackgroundSplitPolicyGate` and
+      `BackgroundSplitPolicyAwaiter` into `BackgroundSplitPolicyLoop`.
+    - Earlier cleanup had already removed request/dispatcher/autonomous-loop
+      helper seams, so the scheduling path now reads directly off the loop,
+      work state, and candidate scheduler.
+
+[x] 80.32 Remove test-only production hooks that exist only for white-box assertions (Risk: MEDIUM)
+    - Replaced those white-box assertions with test-only access helpers and
+      collaborator-focused tests.
+    - Removed `IndexInternalConcurrent.testStateCoordinator()`.
+    - Removed `IndexInternalConcurrent.transitionToErrorForTest()`.

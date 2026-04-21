@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternalConcurrent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -143,14 +146,15 @@ class SegmentIndexImplRetryTest {
 
     @SuppressWarnings("unchecked")
     private static <K, V> SegmentRegistry<K, V> readSegmentRegistry(
-            final SegmentIndexImpl<K, V> index) {
-        return (SegmentRegistry<K, V>) index.segmentRegistry();
+            final Object index) {
+        return (SegmentRegistry<K, V>) SegmentIndexTestAccess
+                .segmentRegistry(index);
     }
 
     @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
-            final SegmentIndexImpl<K, V> index) {
-        return index.keyToSegmentMap();
+            final Object index) {
+        return SegmentIndexTestAccess.keyToSegmentMap(index);
     }
 
     private static Object readCache(final Object registry) {

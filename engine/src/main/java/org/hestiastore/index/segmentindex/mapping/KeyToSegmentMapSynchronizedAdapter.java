@@ -8,7 +8,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.split.RouteSplitPlan;
+import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 
 /**
  * Thread-safe adapter for {@link KeyToSegmentMapImpl} backed by a read/write

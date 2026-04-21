@@ -1,0 +1,52 @@
+{
+  "indexName" : "fixture-source",
+  "keyClassName" : "java.lang.Integer",
+  "valueClassName" : "java.lang.String",
+  "keyTypeDescriptor" : "org.hestiastore.index.datatype.TypeDescriptorInteger",
+  "valueTypeDescriptor" : "org.hestiastore.index.datatype.TypeDescriptorShortString",
+  "maxNumberOfKeysInSegmentCache" : 500000,
+  "maxNumberOfKeysInActivePartition" : 250000,
+  "maxNumberOfKeysInPartitionBuffer" : 350000,
+  "maxNumberOfImmutableRunsPerPartition" : 2,
+  "maxNumberOfKeysInIndexBuffer" : 3500000,
+  "maxNumberOfKeysInSegmentChunk" : 1000,
+  "maxNumberOfDeltaCacheFiles" : 10,
+  "maxNumberOfKeysInPartitionBeforeSplit" : 10000000,
+  "maxNumberOfKeysInSegment" : 10000000,
+  "maxNumberOfSegmentsInCache" : 10,
+  "numberOfSegmentMaintenanceThreads" : 10,
+  "numberOfIndexMaintenanceThreads" : 10,
+  "numberOfRegistryLifecycleThreads" : 3,
+  "indexBusyBackoffMillis" : 5,
+  "indexBusyTimeoutMillis" : 30000,
+  "backgroundMaintenanceAutoEnabled" : true,
+  "bloomFilterNumberOfHashFunctions" : 2,
+  "bloomFilterIndexSizeInBytes" : 100000,
+  "bloomFilterProbabilityOfFalsePositive" : 0.01,
+  "diskIoBufferSize" : 1048576,
+  "contextLoggingEnabled" : true,
+  "wal" : {
+    "enabled" : false,
+    "durabilityMode" : "GROUP_SYNC",
+    "segmentSizeBytes" : 67108864,
+    "groupSyncDelayMillis" : 5,
+    "groupSyncMaxBatchBytes" : 1048576,
+    "maxBytesBeforeForcedCheckpoint" : 536870912,
+    "corruptionPolicy" : "TRUNCATE_INVALID_TAIL",
+    "epochSupport" : false
+  },
+  "encodingChunkFilters" : [ {
+    "providerId" : "crc32",
+    "parameters" : { }
+  }, {
+    "providerId" : "magic-number",
+    "parameters" : { }
+  } ],
+  "decodingChunkFilters" : [ {
+    "providerId" : "magic-number",
+    "parameters" : { }
+  }, {
+    "providerId" : "crc32",
+    "parameters" : { }
+  } ]
+}

@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.core;
 
+import org.hestiastore.index.segmentindex.core.infrastructure.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.internal.IndexInternalConcurrent;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -138,44 +141,6 @@ class IndexInternalConcurrentTest {
     }
 
     @Test
-    void getStreamFailFastDoesNotAwaitSplitIdleBarrier() {
-        final AtomicInteger awaitSplitsIdleCalls = new AtomicInteger();
-        final ObservingIndex streamingIndex = new ObservingIndex(
-                EntryIterator.make(List.<Entry<Integer, String>>of().iterator()),
-                buildConf(), awaitSplitsIdleCalls);
-        try (Stream<Entry<Integer, String>> stream = streamingIndex.getStream(
-                SegmentWindow.unbounded(),
-                SegmentIteratorIsolation.FAIL_FAST)) {
-            stream.count();
-            assertEquals(0, awaitSplitsIdleCalls.get());
-        } finally {
-            streamingIndex.close();
-        }
-        assertTrue(awaitSplitsIdleCalls.get() >= 2,
-                "Streaming should not wait on split barriers, but close() may perform multiple shutdown settlement passes.");
-    }
-
-    @Test
-    void fullIsolationStreamUsesRouteSnapshotInsteadOfSplitIdleBarrier() {
-        final AtomicInteger awaitSplitsIdleCalls = new AtomicInteger();
-        try (SplitBarrierObservingIndex streamingIndex = new SplitBarrierObservingIndex(
-                buildConf(), awaitSplitsIdleCalls)) {
-            streamingIndex.put(1, "one");
-            streamingIndex.put(2, "two");
-
-            try (Stream<Entry<Integer, String>> stream = streamingIndex
-                    .getStream(SegmentWindow.unbounded(),
-                            SegmentIteratorIsolation.FULL_ISOLATION)) {
-                assertEquals(2, stream.count());
-                assertEquals(0, awaitSplitsIdleCalls.get());
-            }
-        }
-
-        assertTrue(awaitSplitsIdleCalls.get() >= 2,
-                "FULL_ISOLATION streaming should not hit split-idle barriers, but close() may perform multiple shutdown settlement passes.");
-    }
-
-    @Test
     void failFastIteratorKeepsOrderedPrefixAcrossFlushAndWaitBoundary() {
         index.put(1, "one");
         index.put(2, "two");
@@ -232,8 +197,8 @@ class IndexInternalConcurrentTest {
         return entries;
     }
 
-    private static class RecordingIndex
-            extends IndexInternalConcurrent<Integer, String> {
+    private static final class RecordingIndex
+            extends SegmentIndexImpl<Integer, String> {
 
         private final EntryIterator<Integer, String> iterator;
         private SegmentIteratorIsolation lastIsolation;
@@ -245,6 +210,7 @@ class IndexInternalConcurrentTest {
                     conf, conf.resolveRuntimeConfiguration(),
                     new IndexExecutorRegistry(conf));
             this.iterator = iterator;
+            completeStartup();
         }
 
         @Override
@@ -257,44 +223,6 @@ class IndexInternalConcurrentTest {
 
         SegmentIteratorIsolation getLastIsolation() {
             return lastIsolation;
-        }
-    }
-
-    private static final class ObservingIndex extends RecordingIndex {
-
-        private final AtomicInteger awaitSplitsIdleCalls;
-
-        private ObservingIndex(final EntryIterator<Integer, String> iterator,
-                final IndexConfiguration<Integer, String> conf,
-                final AtomicInteger awaitSplitsIdleCalls) {
-            super(iterator, conf);
-            this.awaitSplitsIdleCalls = awaitSplitsIdleCalls;
-        }
-
-        @Override
-        protected void awaitSplitsIdle() {
-            awaitSplitsIdleCalls.incrementAndGet();
-        }
-    }
-
-    private static final class SplitBarrierObservingIndex
-            extends IndexInternalConcurrent<Integer, String> {
-
-        private final AtomicInteger awaitSplitsIdleCalls;
-
-        private SplitBarrierObservingIndex(
-                final IndexConfiguration<Integer, String> conf,
-                final AtomicInteger awaitSplitsIdleCalls) {
-            super(new MemDirectory(),
-                    new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                    conf, conf.resolveRuntimeConfiguration(),
-                    new IndexExecutorRegistry(conf));
-            this.awaitSplitsIdleCalls = awaitSplitsIdleCalls;
-        }
-
-        @Override
-        protected void awaitSplitsIdle() {
-            awaitSplitsIdleCalls.incrementAndGet();
         }
     }
 

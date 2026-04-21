@@ -9,6 +9,7 @@ reliably in production-like environments.
 - monitoring and alerting
 - tuning for memory, I/O, and maintenance behavior
 - backup, restore, and post-crash validation
+- offline export/import for migration and portability
 - staged rollout and rollback procedures
 
 ## Recommended operating path
@@ -18,7 +19,9 @@ reliably in production-like environments.
 3. Use [Performance Tuning](tuning.md) only after you have workload evidence.
 4. Define [Backup & Restore](backup-restore.md) before calling the system
    production-ready.
-5. Use [WAL Canary Runbook](wal-canary-runbook.md) for staged WAL rollouts.
+5. Add [Export & Import](export-import.md) when you need portable logical
+   backups or migration tooling.
+6. Use [WAL Canary Runbook](wal-canary-runbook.md) for staged WAL rollouts.
 
 ## After an unexpected shutdown
 
@@ -38,3 +41,5 @@ Recommended recovery sequence:
   monitoring design
 - [Performance Model & Sizing](../architecture/segmentindex/performance.md) for
   implementation-level tuning context
+- [Export & Import](export-import.md) for offline logical backup and migration
+  flows

@@ -20,3 +20,4 @@ mvn -pl wal-tools -am package
 Distribution artifact:
 
 - `wal-tools/target/wal-tools-<version>.zip`
+- `wal-tools/target/wal-tools-<version>.zip.sha256`

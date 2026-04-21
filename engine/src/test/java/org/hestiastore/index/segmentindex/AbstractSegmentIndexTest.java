@@ -211,8 +211,8 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         Object current = index;
         while (!(current instanceof SegmentIndexImpl<?, ?>)) {
             try {
-                final Field field = current.getClass()
-                        .getDeclaredField("index");
+                final Field field = current.getClass().getDeclaredField(
+                        "delegate");
                 field.setAccessible(true);
                 current = field.get(current);
             } catch (final ReflectiveOperationException ex) {
