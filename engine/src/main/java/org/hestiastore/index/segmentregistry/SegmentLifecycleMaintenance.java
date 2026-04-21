@@ -90,7 +90,6 @@ final class SegmentLifecycleMaintenance<K, V> {
             final SegmentResult<Void> result = segment.close();
             final SegmentResultStatus status = result.getStatus();
             if (status == SegmentResultStatus.OK) {
-                awaitSegmentClosed(segment, startNanos);
                 return;
             }
             if (status == SegmentResultStatus.CLOSED) {
@@ -104,23 +103,6 @@ final class SegmentLifecycleMaintenance<K, V> {
             throw new IndexException(
                     String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                             segment.getId(), status));
-        }
-    }
-
-    private void awaitSegmentClosed(final Segment<K, V> segment,
-            final long startNanos) {
-        while (true) {
-            final SegmentState state = segment.getState();
-            if (state == SegmentState.CLOSED) {
-                return;
-            }
-            if (state == SegmentState.ERROR) {
-                throw new IndexException(
-                        String.format(SEGMENT_CLOSE_FAILED_FORMAT,
-                                segment.getId(), state));
-            }
-            closeRetryPolicy.backoffOrThrow(startNanos, "close",
-                    segment.getId());
         }
     }
 }

@@ -11,7 +11,7 @@ public final class SegmentTestHelper {
     private SegmentTestHelper() {
     }
 
-    public static void closeAndAwait(final Segment<?, ?> segment) {
+    public static void closeAndAssertClosed(final Segment<?, ?> segment) {
         if (segment == null) {
             return;
         }
@@ -30,6 +30,10 @@ public final class SegmentTestHelper {
             if (result.getStatus() == SegmentResultStatus.ERROR) {
                 throw new AssertionError(String.format(
                         "Segment '%s' failed to close.", segment.getId()));
+            }
+            if (result.getStatus() == SegmentResultStatus.OK
+                    && segment.getState() == SegmentState.CLOSED) {
+                return;
             }
             LockSupport.parkNanos(
                     TimeUnit.MILLISECONDS.toNanos(CLOSE_POLL_MILLIS));

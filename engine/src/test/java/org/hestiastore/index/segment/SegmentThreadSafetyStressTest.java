@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.List;
@@ -79,7 +79,7 @@ class SegmentThreadSafetyStressTest {
 
                 assertNotEquals(SegmentState.ERROR, segment.getState());
             } finally {
-                closeAndAwait(segment);
+                closeAndAssertClosed(segment);
             }
         }
     }

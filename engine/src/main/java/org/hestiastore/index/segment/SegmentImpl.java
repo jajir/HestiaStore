@@ -376,7 +376,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     /**
-     * Starts closing the segment in the maintenance thread.
+     * Closes the segment synchronously on the caller thread.
      */
     @Override
     public SegmentResult<Void> close() {
@@ -384,25 +384,25 @@ class SegmentImpl<K, V> implements Segment<K, V> {
             return resultForState(gate.getState());
         }
         core.freezeWriteCacheForFlush();
-        try {
-            maintenanceExecutor.execute(this::runClose);
-        } catch (final RuntimeException e) {
-            failUnlessClosed();
+        if (!closeInternal()) {
             return SegmentResult.error();
         }
         return SegmentResult.ok();
     }
 
-    private void runClose() {
+    private boolean closeInternal() {
         try {
             core.flushFrozenWriteCacheToDeltaFile();
             core.applyFrozenWriteCacheAfterFlush();
             core.close();
             if (!gate.finishCloseToClosed()) {
                 gate.fail();
+                return false;
             }
+            return true;
         } catch (final RuntimeException e) {
             gate.fail();
+            return false;
         } finally {
             if (directoryLocking != null) {
                 directoryLocking.unlock();

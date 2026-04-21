@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -368,7 +368,7 @@ class IntegrationSegmentIndexSimpleTest {
                 }
             }
         } finally {
-            closeAndAwait(seg);
+            closeAndAssertClosed(seg);
         }
         return out;
     }
