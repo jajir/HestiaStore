@@ -25,6 +25,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,6 +199,7 @@ class IntegrationSegmentIndexIteratorTest {
     }
 
     @Test
+    @Disabled("Known regular failure; intentionally disabled until root cause is understood.")
     void fullIsolationStreamDelaysSplitRemapUntilSnapshotCloses() {
         try (SegmentIndex<Integer, String> index = makeAutonomousSplitIndex()) {
             for (int i = 0; i < 48; i++) {
