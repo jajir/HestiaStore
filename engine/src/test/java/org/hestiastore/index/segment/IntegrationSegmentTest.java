@@ -563,7 +563,7 @@ class IntegrationSegmentTest extends AbstractSegmentTest {
 
         AbstractDataTest.verifyIteratorData(entries, seg.openIterator());
         for (int i = 0; i < 1000; i++) {
-            final OperationResult<String> result = seg.get(i).orElse(null);
+            final OperationResult<String> result = seg.get(i);
             assertEquals(OperationStatus.OK, result.getStatus(),
                     "Invalid result status for key " + i);
             assertEquals("Ahoj", result.getValue(),

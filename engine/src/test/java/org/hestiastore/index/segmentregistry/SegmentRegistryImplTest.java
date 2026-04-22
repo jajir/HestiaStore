@@ -409,7 +409,7 @@ class SegmentRegistryImplTest {
             final Field cacheField = SegmentRegistryImpl.class
                     .getDeclaredField("cache");
             cacheField.setAccessible(true);
-            final Object cache = cacheField.get(registry).orElse(null);
+            final Object cache = cacheField.get(registry);
 
             final Field mapField = cache.getClass().getDeclaredField("map");
             mapField.setAccessible(true);

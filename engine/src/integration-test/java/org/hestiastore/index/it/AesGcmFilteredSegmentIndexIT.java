@@ -79,7 +79,7 @@ class AesGcmFilteredSegmentIndexIT {
 
         try (SegmentIndex<String, String> index = SegmentIndex.open(directory,
                 registry)) {
-            entries.forEach((key, expectedValue) -> assertEquals(expectedValue, index.get(key)).orElse(null));
+            entries.forEach((key, expectedValue) -> assertEquals(expectedValue, index.get(key)));
         }
     }
 

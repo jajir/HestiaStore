@@ -22,8 +22,8 @@ class LazyExecutorReferenceTest {
 
         assertNull(reference.getIfCreated());
 
-        final ExecutorService first = reference.get().orElse(null);
-        final ExecutorService second = reference.get().orElse(null);
+        final ExecutorService first = reference.get();
+        final ExecutorService second = reference.get();
 
         assertSame(first, second);
         assertSame(first, reference.getIfCreated());

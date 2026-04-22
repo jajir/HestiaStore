@@ -2,9 +2,9 @@ package org.hestiastore.index.segmentindex.core.routing;
 
 import java.util.Comparator;
 
+import java.util.Optional;
+
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.OperationResult;
-import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -86,7 +86,7 @@ final class RouteSplitCoordinator<K, V> {
     private boolean isStillCurrentSegment(
             final SegmentHandle<K, V> segmentHandle) {
         final SegmentId segmentId = segmentHandle.getId();
-        final OperationResult<SegmentHandle<K, V>> currentSegment;
+        final Optional<SegmentHandle<K, V>> currentSegment;
         try {
             currentSegment = segmentRegistry.tryGetSegment(segmentId);
         } catch (final IndexException e) {
@@ -97,8 +97,7 @@ final class RouteSplitCoordinator<K, V> {
             }
             return false;
         }
-        if (currentSegment.getStatus() != OperationStatus.OK
-                || currentSegment.getValue() == null) {
+        if (currentSegment.isEmpty()) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
                         "Route split aborted before validation because segment is not immediately available: segment='{}'",
@@ -106,7 +105,7 @@ final class RouteSplitCoordinator<K, V> {
             }
             return false;
         }
-        if (currentSegment.getValue() != segmentHandle) {
+        if (currentSegment.get() != segmentHandle) {
             if (logger.isDebugEnabled()) {
                 logger.debug(
                         "Route split aborted because loaded segment changed: segment='{}'",

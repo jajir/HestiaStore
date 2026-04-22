@@ -68,7 +68,7 @@ class PackageDependencyBoundaryTest {
                     "Failed to read source file " + path, e);
         }
         for (int i = 0; i < lines.size(); i++) {
-            final String trimmed = lines.get(i).trim().orElse(null);
+            final String trimmed = lines.get(i).trim();
             if (!trimmed.startsWith("import ")) {
                 continue;
             }

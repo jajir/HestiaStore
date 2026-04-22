@@ -70,7 +70,7 @@ class DirectSegmentCoordinatorTest {
     void get_readsValueDirectlyFromStableSegments() {
         when(stableSegmentGateway.get(10)).thenReturn(OperationResult.ok("ten"));
 
-        final OperationResult<String> result = coordinator.get(10).orElse(null);
+        final OperationResult<String> result = coordinator.get(10);
 
         assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("ten", result.getValue());
@@ -81,7 +81,7 @@ class DirectSegmentCoordinatorTest {
     void get_returnsBusyWhenStableReadCannotProceed() {
         when(stableSegmentGateway.get(10)).thenReturn(OperationResult.busy());
 
-        final OperationResult<String> result = coordinator.get(10).orElse(null);
+        final OperationResult<String> result = coordinator.get(10);
 
         assertEquals(OperationStatus.BUSY, result.getStatus());
     }

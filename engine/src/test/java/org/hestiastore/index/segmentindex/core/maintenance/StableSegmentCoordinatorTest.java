@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 
@@ -101,7 +102,7 @@ class StableSegmentCoordinatorTest {
     void invalidateIterators_invalidatesLoadedMappedSegments() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
 
         coordinator.invalidateIterators();
 

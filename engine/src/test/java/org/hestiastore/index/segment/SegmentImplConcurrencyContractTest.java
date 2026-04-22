@@ -121,7 +121,7 @@ class SegmentImplConcurrencyContractTest {
 
             assertEquals(OperationStatus.OK,
                     segment.put(2, "b").getStatus());
-            final OperationResult<String> read = segment.get(2).orElse(null);
+            final OperationResult<String> read = segment.get(2);
             assertEquals(OperationStatus.OK, read.getStatus());
             assertEquals("b", read.getValue());
 
@@ -163,7 +163,7 @@ class SegmentImplConcurrencyContractTest {
 
             assertEquals(OperationStatus.OK,
                     segment.put(2, "b").getStatus());
-            final OperationResult<String> read = segment.get(2).orElse(null);
+            final OperationResult<String> read = segment.get(2);
             assertEquals(OperationStatus.OK, read.getStatus());
             assertEquals("b", read.getValue());
 
@@ -213,7 +213,7 @@ class SegmentImplConcurrencyContractTest {
                                 "Reader interrupted before start", e);
                     }
                     for (int i = 0; i < items; i++) {
-                        final OperationResult<String> result = segment.get(i).orElse(null);
+                        final OperationResult<String> result = segment.get(i);
                         if (result.getStatus() != OperationStatus.OK) {
                             throw new IllegalStateException(
                                     "Get returned " + result.getStatus());
@@ -229,7 +229,7 @@ class SegmentImplConcurrencyContractTest {
             }
 
             for (int i = 0; i < items; i++) {
-                final OperationResult<String> result = segment.get(i).orElse(null);
+                final OperationResult<String> result = segment.get(i);
                 assertEquals(OperationStatus.OK, result.getStatus());
                 assertEquals("v" + i, result.getValue());
             }

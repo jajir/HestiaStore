@@ -122,7 +122,7 @@ class BackgroundSplitCoordinatorImplTest {
         coordinator.handleSplitCandidate(segmentHandle, 100L, false);
 
         verifyNoInteractions(splitCoordinator);
-        final Runnable task = scheduledTask.get().orElse(null);
+        final Runnable task = scheduledTask.get();
         org.junit.jupiter.api.Assertions.assertNotNull(task);
         org.junit.jupiter.api.Assertions.assertEquals(1,
                 coordinator.splitInFlightCount());

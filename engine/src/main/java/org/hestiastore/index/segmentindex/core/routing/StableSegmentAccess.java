@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -23,7 +24,8 @@ public interface StableSegmentAccess<K, V> {
 
     OperationResult<V> get(K key);
 
-    OperationResult<V> get(K key, SegmentId segmentId, long expectedTopologyVersion);
+    OperationResult<V> get(K key, SegmentId segmentId,
+            long expectedTopologyVersion);
 
     OperationResult<V> get(SegmentId segmentId, K key);
 

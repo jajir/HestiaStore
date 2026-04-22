@@ -269,17 +269,17 @@ final class StableSegmentCoordinator<K, V>
 
     private void invalidateIteratorsForSegment(final SegmentId segmentId) {
         try {
-            handleLoadedSegment(segmentId, segmentRegistry.tryGetSegment(segmentId));
+            handleLoadedSegment(segmentId,
+                    segmentRegistry.tryGetSegment(segmentId));
         } catch (final IndexException e) {
             logIteratorInvalidationLookupFailure(segmentId, e);
         }
     }
 
     private void handleLoadedSegment(final SegmentId segmentId,
-            final OperationResult<SegmentHandle<K, V>> loadedSegment) {
-        if (loadedSegment.getStatus() == OperationStatus.OK
-                && loadedSegment.getValue() != null) {
-            loadedSegment.getValue().invalidateIterators();
+            final Optional<SegmentHandle<K, V>> loadedSegment) {
+        if (loadedSegment.isPresent()) {
+            loadedSegment.get().invalidateIterators();
             return;
         }
         logMissingSegment(segmentId);

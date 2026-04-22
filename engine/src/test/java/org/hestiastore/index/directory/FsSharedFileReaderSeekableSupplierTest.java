@@ -25,7 +25,7 @@ class FsSharedFileReaderSeekableSupplierTest {
 
         final FileReaderSeekableSupplier supplier = directory
                 .getFileReaderSeekableSupplier("index.sst");
-        try (FileReaderSeekable first = supplier.get().orElse(null);
+        try (FileReaderSeekable first = supplier.get();
                 FileReaderSeekable second = supplier.get()) {
             first.seek(0L);
             second.seek(5L);

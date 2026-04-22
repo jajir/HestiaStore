@@ -68,7 +68,7 @@ class FilteredSegmentIndexIT {
         }
 
         try (SegmentIndex<String, String> index = SegmentIndex.open(directory, openConf)) {
-            entries.forEach((key, expectedValue) -> assertEquals(expectedValue, index.get(key)).orElse(null));
+            entries.forEach((key, expectedValue) -> assertEquals(expectedValue, index.get(key)));
             LOGGER.info("Opened index with configuration: {}", openConf);
             logPropertiesFile(directory, "Opened index properties file");
             LOGGER.info("Files in directory after reopen: {}",
