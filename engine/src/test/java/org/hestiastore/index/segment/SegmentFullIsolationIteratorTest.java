@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -35,7 +37,7 @@ class SegmentFullIsolationIteratorTest {
             // write-cache entries that will be flushed into delta-cache files
             segment.put(3, "delta-3");
             segment.put(4, "delta-4");
-            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
             assertEquals(0, segment.getNumberOfKeysInWriteCache());
 
             // keep some entries in the write cache only
@@ -43,9 +45,9 @@ class SegmentFullIsolationIteratorTest {
             segment.put(6, "write-6");
             assertEquals(2, segment.getNumberOfKeysInWriteCache());
 
-            final SegmentResult<EntryIterator<Integer, String>> iteratorResult = segment
+            final OperationResult<EntryIterator<Integer, String>> iteratorResult = segment
                     .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
-            assertEquals(SegmentResultStatus.OK, iteratorResult.getStatus());
+            assertEquals(OperationStatus.OK, iteratorResult.getStatus());
             assertNotNull(iteratorResult.getValue());
 
             final List<Integer> keys = new ArrayList<>();

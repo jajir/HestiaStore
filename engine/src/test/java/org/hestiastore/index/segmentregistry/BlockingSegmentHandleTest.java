@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -11,7 +12,6 @@ import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,8 +48,8 @@ class BlockingSegmentHandleTest {
                 SegmentHandle.class);
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
-        when(segment.get(11)).thenReturn(SegmentResult.busy(),
-                SegmentResult.ok("value"));
+        when(segment.get(11)).thenReturn(OperationResult.busy(),
+                OperationResult.ok("value"));
 
         assertEquals("value", handle.get(11));
         verify(segmentRegistry, times(2)).loadSegment(SEGMENT_ID);
@@ -69,8 +69,8 @@ class BlockingSegmentHandleTest {
                 secondHandle);
         when(firstHandle.getSegment()).thenReturn(segment);
         when(secondHandle.getSegment()).thenReturn(reloadedSegment);
-        when(segment.put(1, "one")).thenReturn(SegmentResult.closed());
-        when(reloadedSegment.put(1, "one")).thenReturn(SegmentResult.ok());
+        when(segment.put(1, "one")).thenReturn(OperationResult.closed());
+        when(reloadedSegment.put(1, "one")).thenReturn(OperationResult.ok());
 
         handle.put(1, "one");
 
@@ -84,7 +84,7 @@ class BlockingSegmentHandleTest {
                 SegmentHandle.class);
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
-        when(segment.compact()).thenReturn(SegmentResult.error());
+        when(segment.compact()).thenReturn(OperationResult.error());
 
         assertThrows(IndexException.class, () -> handle.compact());
     }

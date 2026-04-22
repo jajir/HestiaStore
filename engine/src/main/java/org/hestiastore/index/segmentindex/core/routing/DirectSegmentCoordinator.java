@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import java.util.List;
 
 import org.hestiastore.index.EntryIterator;
@@ -47,7 +49,7 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     }
 
     @Override
-    public IndexResult<V> get(final K key) {
+    public OperationResult<V> get(final K key) {
         final K nonNullKey = requireKey(key);
         return backgroundSplitCoordinator
                 .runWithSharedSplitAdmission(
@@ -72,36 +74,36 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     }
 
     @Override
-    public IndexResult<SegmentId> put(final K key, final V value) {
+    public OperationResult<SegmentId> put(final K key, final V value) {
         final K nonNullKey = requireKey(key);
         final V nonNullValue = requireValue(value);
         return backgroundSplitCoordinator.runWithSharedSplitAdmission(
                 () -> putWithResolvedRoute(nonNullKey, nonNullValue));
     }
 
-    private IndexResult<SegmentId> putWithResolvedRoute(final K key,
+    private OperationResult<SegmentId> putWithResolvedRoute(final K key,
             final V value) {
-        final IndexResult<SegmentId> routeResult = resolveWriteSegmentId(key);
+        final OperationResult<SegmentId> routeResult = resolveWriteSegmentId(key);
         if (!wasRouteResolved(routeResult)) {
             return toSegmentResult(routeResult.getStatus(), null);
         }
         final SegmentId segmentId = routeResult.getValue();
-        final IndexResult<Void> writeResult = stableSegmentAccess.put(segmentId,
+        final OperationResult<Void> writeResult = stableSegmentAccess.put(segmentId,
                 key, value);
         return toSegmentResult(writeResult.getStatus(), segmentId);
     }
 
-    private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
+    private OperationResult<SegmentId> resolveWriteSegmentId(final K key) {
         final Snapshot<K> snapshot = currentRouteSnapshot();
         final SegmentId routedSegmentId = snapshot.findSegmentIdForKey(key);
         if (!canResolveInitialRoute(snapshot, routedSegmentId, key)) {
-            return IndexResult.busy();
+            return OperationResult.busy();
         }
         final SegmentId segmentId = resolveStableSegmentId(key);
         if (segmentId == null) {
-            return IndexResult.busy();
+            return OperationResult.busy();
         }
-        return IndexResult.ok(segmentId);
+        return OperationResult.ok(segmentId);
     }
 
     private boolean canResolveInitialRoute(final Snapshot<K> snapshot,
@@ -157,8 +159,8 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
         return backgroundSplitCoordinator.isSplitBlocked(segmentId);
     }
 
-    private boolean wasRouteResolved(final IndexResult<SegmentId> routeResult) {
-        return routeResult.getStatus() == IndexResultStatus.OK
+    private boolean wasRouteResolved(final OperationResult<SegmentId> routeResult) {
+        return routeResult.getStatus() == OperationStatus.OK
                 && routeResult.getValue() != null;
     }
 
@@ -207,17 +209,17 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
         return snapshot.getSegmentIds(resolvedWindows);
     }
 
-    private static IndexResult<SegmentId> toSegmentResult(
-            final IndexResultStatus status, final SegmentId segmentId) {
-        if (status == IndexResultStatus.BUSY) {
-            return IndexResult.busy();
+    private static OperationResult<SegmentId> toSegmentResult(
+            final OperationStatus status, final SegmentId segmentId) {
+        if (status == OperationStatus.BUSY) {
+            return OperationResult.busy();
         }
-        if (status == IndexResultStatus.CLOSED) {
-            return IndexResult.closed();
+        if (status == OperationStatus.CLOSED) {
+            return OperationResult.closed();
         }
-        if (status == IndexResultStatus.OK) {
-            return IndexResult.ok(segmentId);
+        if (status == OperationStatus.OK) {
+            return OperationResult.ok(segmentId);
         }
-        return IndexResult.error();
+        return OperationResult.error();
     }
 }

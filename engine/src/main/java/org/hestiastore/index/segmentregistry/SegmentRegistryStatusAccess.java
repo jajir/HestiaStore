@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 
@@ -12,11 +13,11 @@ import org.hestiastore.index.segment.SegmentId;
  */
 interface SegmentRegistryStatusAccess<K, V> {
 
-    SegmentRegistryResult<Segment<K, V>> tryLoadSegment(SegmentId segmentId);
+    OperationResult<Segment<K, V>> tryLoadSegment(SegmentId segmentId);
 
-    SegmentRegistryResult<SegmentId> allocateSegmentId();
+    OperationResult<SegmentId> allocateSegmentId();
 
-    SegmentRegistryResult<Segment<K, V>> tryCreateSegment();
+    OperationResult<Segment<K, V>> tryCreateSegment();
 
-    SegmentRegistryResult<Void> tryDeleteSegment(SegmentId segmentId);
+    OperationResult<Void> tryDeleteSegment(SegmentId segmentId);
 }

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -9,41 +11,41 @@ class IndexResultTest {
 
     @Test
     void okCarriesValue() {
-        final IndexResult<String> result = IndexResult.ok("value");
+        final OperationResult<String> result = OperationResult.ok("value");
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("value", result.getValue());
     }
 
     @Test
     void okWithoutValueStoresNull() {
-        final IndexResult<Void> result = IndexResult.ok();
+        final OperationResult<Void> result = OperationResult.ok();
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertNull(result.getValue());
     }
 
     @Test
     void busyHasNullValue() {
-        final IndexResult<String> result = IndexResult.busy();
+        final OperationResult<String> result = OperationResult.busy();
 
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+        assertEquals(OperationStatus.BUSY, result.getStatus());
         assertNull(result.getValue());
     }
 
     @Test
     void closedHasNullValue() {
-        final IndexResult<String> result = IndexResult.closed();
+        final OperationResult<String> result = OperationResult.closed();
 
-        assertEquals(IndexResultStatus.CLOSED, result.getStatus());
+        assertEquals(OperationStatus.CLOSED, result.getStatus());
         assertNull(result.getValue());
     }
 
     @Test
     void errorHasNullValue() {
-        final IndexResult<String> result = IndexResult.error();
+        final OperationResult<String> result = OperationResult.error();
 
-        assertEquals(IndexResultStatus.ERROR, result.getStatus());
+        assertEquals(OperationStatus.ERROR, result.getStatus());
         assertNull(result.getValue());
     }
 }

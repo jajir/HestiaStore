@@ -23,34 +23,9 @@
 [ ] 79.4 Implement drain, publish, flush, close, and WAL recovery (Risk: HIGH)
 [ ] 79.6 Clean up config, metrics, control-plane tuning, and obsolete code (Risk: HIGH)
 [ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
-
 [ ] 78 Monitoring/Management platform rollout (Risk: HIGH)
 
 ### Other open items
-
-[ ] 54 Dedicated executor for index async ops (Risk: MEDIUM)
-[ ] 55 Replace busy spin loops with retry + jitter (Risk: MEDIUM)
-[ ] 56 Key-to-segment map read contention reduction (Risk: MEDIUM)
-[ ] 57 Streaming iterators without full materialization (Risk: MEDIUM)
-[ ] 5 Stop materializing merged cache lists on read (Risk: MEDIUM)
-[ ] 6 Stream compaction without full cache snapshot (Risk: MEDIUM)
-[ ] 7 Stream split without full cache snapshot (Risk: MEDIUM)
-[ ] 8 Avoid full materialization in `IndexInternalConcurrent.getStream` (Risk: MEDIUM)
-[ ] 9 Add eviction for heavy segment resources (Risk: MEDIUM)
-[ ] 10 Allow cache shrink after peaks (Risk: LOW)
-[ ] 13 Implement a real registry lock (Risk: MEDIUM)
-[ ] 16 Replace busy-spin loops with retry+backoff+timeout (Risk: MEDIUM)
-[ ] 17 Stop returning `null` on CLOSED in `SegmentIndexImpl.get` (Risk: MEDIUM)
-[ ] 19 Propagate MDC context to stream consumption (Risk: LOW)
-[ ] 42 Revisit `SegmentAsyncExecutor` rejection policy (Risk: MEDIUM)
-[ ] 43 Replace registry close polling with completion signal (Risk: MEDIUM)
-[ ] 44 Normalize split close/eviction flow (Risk: MEDIUM)
-[ ] 46 Align iterator isolation naming and semantics (Risk: LOW)
-[ ] 47 Consolidate BUSY/CLOSED retry loops (Risk: LOW)
-[ ] 48 Test executor saturation and backpressure paths (Risk: MEDIUM)
-[ ] 49 Test close path interactions (Risk: MEDIUM)
-[ ] 50 Test split failure cleanup (Risk: MEDIUM)
-[ ] 51 Test maintenance failure transitions (Risk: MEDIUM)
 
 ### Maintenance
 
@@ -62,6 +37,36 @@
 [ ] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
 
 ## Done (Archive)
+
+[x] 87 Decompose WAL into smaller durable-log subsystems (Risk: HIGH)
+    - End-game achieved: `WalRuntime` now reads as a compatibility-facing
+      orchestration facade instead of a monolithic durable-log implementation.
+    - End-game achieved: WAL metadata/catalog, segment inventory, recovery,
+      append-path writing, durability policy, and metrics ownership now live in
+      dedicated collaborators under `segmentindex.wal`.
+    - End-game achieved: public `WalRuntime` operations, metrics, and WAL
+      on-disk compatibility remain stable while internal ownership boundaries
+      are explicit and test-covered.
+[x] 87.1 Freeze `WalRuntime` contract, state model, and migration invariants (Risk: HIGH)
+[x] 87.2 Add characterization coverage for the current WAL orchestration seams (Risk: HIGH)
+[x] 87.3 Extract WAL metadata/catalog state behind one internal model (Risk: HIGH)
+[x] 87.4 Extract segment inventory, retention, and cleanup ownership (Risk: HIGH)
+[x] 87.5 Extract recovery scan and corruption-repair ownership (Risk: HIGH)
+[x] 87.6 Extract append writer and sync policy execution (Risk: HIGH)
+[x] 87.7 Reduce `WalRuntime` to orchestration and lifecycle assembly (Risk: HIGH)
+[x] 87.8 Refresh docs, benchmarks, and follow-on cleanup after extraction (Risk: HIGH)
+
+[x] 83 Replace compatibility-shaped public model with domain-shaped public API (Risk: HIGH)
+    - End-game achieved: canonical public configuration now exposes
+      direct-to-segment write-path vocabulary via `IndexWritePathConfiguration`
+      instead of making legacy partition naming the source of truth.
+    - End-game achieved: canonical runtime metrics now expose a dedicated
+      `SegmentIndexWritePathMetrics` model while legacy
+      `partition`/`drain`-named metrics are isolated behind a compatibility
+      view.
+    - End-game achieved: legacy accessors remain available only as deprecated
+      compatibility shims and the REST/JSON bridge reads them from the
+      compatibility boundary instead of the main runtime model.
 
 [x] 82 Collapse split scheduling into a dedicated planner package (Risk: HIGH)
     - End-game achieved: `org.hestiastore.index.segmentindex.core.splitplanner`

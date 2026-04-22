@@ -6,12 +6,12 @@ import java.util.function.Supplier;
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
@@ -65,7 +65,7 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     }
 
     @Override
-    public SegmentResult<V> tryGet(final K key) {
+    public OperationResult<V> tryGet(final K key) {
         return loadSegment().get(key);
     }
 
@@ -75,7 +75,7 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     }
 
     @Override
-    public SegmentResult<Void> tryPut(final K key, final V value) {
+    public OperationResult<Void> tryPut(final K key, final V value) {
         return loadSegment().put(key, value);
     }
 
@@ -90,7 +90,7 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     }
 
     @Override
-    public SegmentResult<EntryIterator<K, V>> tryOpenIterator(
+    public OperationResult<EntryIterator<K, V>> tryOpenIterator(
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(isolation, "isolation");
         return loadSegment().openIterator(isolation);
@@ -110,7 +110,7 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     }
 
     @Override
-    public SegmentResult<Void> tryFlush() {
+    public OperationResult<Void> tryFlush() {
         return loadSegment().flush();
     }
 
@@ -120,7 +120,7 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     }
 
     @Override
-    public SegmentResult<Void> tryCompact() {
+    public OperationResult<Void> tryCompact() {
         return loadSegment().compact();
     }
 
@@ -141,16 +141,16 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     }
 
     private <T> T runBlocking(final String operation,
-            final Function<Segment<K, V>, SegmentResult<T>> action) {
+            final Function<Segment<K, V>, OperationResult<T>> action) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final Segment<K, V> currentSegment = loadSegment();
-            final SegmentResult<T> result = action.apply(currentSegment);
-            if (result.getStatus() == SegmentResultStatus.OK) {
+            final OperationResult<T> result = action.apply(currentSegment);
+            if (result.getStatus() == OperationStatus.OK) {
                 return result.getValue();
             }
             if (isRetryable(result.getStatus())) {
-                if (result.getStatus() == SegmentResultStatus.CLOSED
+                if (result.getStatus() == OperationStatus.CLOSED
                         && segment == currentSegment) {
                     segment = null;
                 }
@@ -161,13 +161,13 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
         }
     }
 
-    private static boolean isRetryable(final SegmentResultStatus status) {
-        return status == SegmentResultStatus.BUSY
-                || status == SegmentResultStatus.CLOSED;
+    private static boolean isRetryable(final OperationStatus status) {
+        return status == OperationStatus.BUSY
+                || status == OperationStatus.CLOSED;
     }
 
     private IndexException operationFailure(final String operation,
-            final SegmentResultStatus status) {
+            final OperationStatus status) {
         return new IndexException(String.format(
                 "Segment '%s' failed to %s: %s", segmentId, operation, status));
     }

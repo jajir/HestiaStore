@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -21,18 +22,19 @@ public interface StableSegmentAccess<K, V> {
         return new StableSegmentGateway<>(keyToSegmentMap, segmentRegistry);
     }
 
-    IndexResult<V> get(K key);
+    OperationResult<V> get(K key);
 
-    IndexResult<V> get(K key, SegmentId segmentId, long expectedTopologyVersion);
+    OperationResult<V> get(K key, SegmentId segmentId,
+            long expectedTopologyVersion);
 
-    IndexResult<V> get(SegmentId segmentId, K key);
+    OperationResult<V> get(SegmentId segmentId, K key);
 
-    IndexResult<Void> put(SegmentId segmentId, K key, V value);
+    OperationResult<Void> put(SegmentId segmentId, K key, V value);
 
-    IndexResult<EntryIterator<K, V>> openIterator(SegmentId segmentId,
+    OperationResult<EntryIterator<K, V>> openIterator(SegmentId segmentId,
             SegmentIteratorIsolation isolation);
 
-    IndexResult<SegmentHandle<K, V>> compact(SegmentId segmentId);
+    OperationResult<SegmentHandle<K, V>> compact(SegmentId segmentId);
 
-    IndexResult<SegmentHandle<K, V>> flush(SegmentId segmentId);
+    OperationResult<SegmentHandle<K, V>> flush(SegmentId segmentId);
 }

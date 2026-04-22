@@ -3,11 +3,11 @@ package org.hestiastore.index.segmentindex.core.routing;
 import java.util.Optional;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
@@ -34,17 +34,17 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<V> get(final K key) {
+    public OperationResult<V> get(final K key) {
         final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
         final SegmentId segmentId = snapshot.findSegmentIdForKey(key);
         if (segmentId == null) {
-            return IndexResult.ok(null);
+            return OperationResult.ok(null);
         }
         return get(key, segmentId, snapshot.version());
     }
 
     @Override
-    public IndexResult<V> get(final K key, final SegmentId segmentId,
+    public OperationResult<V> get(final K key, final SegmentId segmentId,
             final long expectedTopologyVersion) {
         Vldtn.requireNonNull(key, "key");
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
@@ -54,14 +54,14 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<V> get(final SegmentId segmentId, final K key) {
+    public OperationResult<V> get(final SegmentId segmentId, final K key) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return withLoadedSegment(segmentId,
                 segment -> fromSegmentResult(segment.tryGet(key)));
     }
 
     @Override
-    public IndexResult<Void> put(final SegmentId segmentId, final K key,
+    public OperationResult<Void> put(final SegmentId segmentId, final K key,
             final V value) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         Vldtn.requireNonNull(key, "key");
@@ -71,7 +71,7 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<EntryIterator<K, V>> openIterator(
+    public OperationResult<EntryIterator<K, V>> openIterator(
             final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
@@ -80,83 +80,83 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<SegmentHandle<K, V>> compact(final SegmentId segmentId) {
+    public OperationResult<SegmentHandle<K, V>> compact(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return withLoadedSegment(segmentId, segment -> {
-            final IndexResult<Void> result = fromSegmentResult(
+            final OperationResult<Void> result = fromSegmentResult(
                     segment.tryCompact());
-            if (result.getStatus() == IndexResultStatus.OK) {
-                return IndexResult.ok(segment);
+            if (result.getStatus() == OperationStatus.OK) {
+                return OperationResult.ok(segment);
             }
             return fromIndexStatus(result.getStatus());
         });
     }
 
     @Override
-    public IndexResult<SegmentHandle<K, V>> flush(final SegmentId segmentId) {
+    public OperationResult<SegmentHandle<K, V>> flush(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return withLoadedSegment(segmentId, segment -> {
-            final IndexResult<Void> result = fromSegmentResult(
+            final OperationResult<Void> result = fromSegmentResult(
                     segment.tryFlush());
-            if (result.getStatus() == IndexResultStatus.OK) {
-                return IndexResult.ok(segment);
+            if (result.getStatus() == OperationStatus.OK) {
+                return OperationResult.ok(segment);
             }
             return fromIndexStatus(result.getStatus());
         });
     }
 
-    private IndexResult<V> readFromLoadedSegment(
+    private OperationResult<V> readFromLoadedSegment(
             final SegmentHandle<K, V> segment,
             final K key, final long expectedTopologyVersion) {
-        final SegmentResult<V> result = segment.tryGet(key);
-        if (result.getStatus() != SegmentResultStatus.OK) {
+        final OperationResult<V> result = segment.tryGet(key);
+        if (result.getStatus() != OperationStatus.OK) {
             return fromSegmentResult(result);
         }
         if (!isTopologyCurrent(expectedTopologyVersion)) {
-            return IndexResult.busy();
+            return OperationResult.busy();
         }
-        return IndexResult.ok(result.getValue());
+        return OperationResult.ok(result.getValue());
     }
 
     private boolean isTopologyCurrent(final long expectedTopologyVersion) {
         return keyToSegmentMap.isSnapshotVersionCurrent(expectedTopologyVersion);
     }
 
-    private <T> IndexResult<T> withLoadedSegment(final SegmentId segmentId,
-            final java.util.function.Function<SegmentHandle<K, V>, IndexResult<T>> action) {
+    private <T> OperationResult<T> withLoadedSegment(final SegmentId segmentId,
+            final java.util.function.Function<SegmentHandle<K, V>, OperationResult<T>> action) {
         final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
                 .tryGetSegment(segmentId);
         if (loaded.isEmpty()) {
-            return IndexResult.busy();
+            return OperationResult.busy();
         }
         return action.apply(loaded.get());
     }
 
-    private static <T> IndexResult<T> fromSegmentResult(
-            final SegmentResult<T> result) {
-        if (result.getStatus() == SegmentResultStatus.OK) {
-            return IndexResult.ok(result.getValue());
+    private static <T> OperationResult<T> fromSegmentResult(
+            final OperationResult<T> result) {
+        if (result.getStatus() == OperationStatus.OK) {
+            return OperationResult.ok(result.getValue());
         }
-        if (result.getStatus() == SegmentResultStatus.BUSY) {
-            return IndexResult.busy();
+        if (result.getStatus() == OperationStatus.BUSY) {
+            return OperationResult.busy();
         }
-        if (result.getStatus() == SegmentResultStatus.CLOSED) {
-            return IndexResult.closed();
+        if (result.getStatus() == OperationStatus.CLOSED) {
+            return OperationResult.closed();
         }
-        return IndexResult.error();
+        return OperationResult.error();
     }
 
-    private static <T> IndexResult<T> fromIndexStatus(
-            final IndexResultStatus status) {
-        if (status == IndexResultStatus.BUSY) {
-            return IndexResult.busy();
+    private static <T> OperationResult<T> fromIndexStatus(
+            final OperationStatus status) {
+        if (status == OperationStatus.BUSY) {
+            return OperationResult.busy();
         }
-        if (status == IndexResultStatus.CLOSED) {
-            return IndexResult.closed();
+        if (status == OperationStatus.CLOSED) {
+            return OperationResult.closed();
         }
-        if (status == IndexResultStatus.OK) {
-            return IndexResult.ok();
+        if (status == OperationStatus.OK) {
+            return OperationResult.ok();
         }
-        return IndexResult.error();
+        return OperationResult.error();
     }
 }

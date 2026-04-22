@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Entry;
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.directory.Directory;

@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationResult;
 import java.util.Comparator;
 
 import org.hestiastore.index.Entry;
@@ -44,7 +45,7 @@ class SegmentConsistencyChecker<K, V> {
     public K checkAndRepairConsistency() {
         logger.debug("Checking segment '{}'", segment.getId());
         K previousKey = null;
-        final SegmentResult<EntryIterator<K, V>> iteratorResult = segment
+        final OperationResult<EntryIterator<K, V>> iteratorResult = segment
                 .openIterator();
         if (!iteratorResult.isOk()) {
             throw new IndexException(String.format(

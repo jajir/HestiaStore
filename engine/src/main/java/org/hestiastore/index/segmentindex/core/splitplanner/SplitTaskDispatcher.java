@@ -81,10 +81,7 @@ public final class SplitTaskDispatcher<K, V> {
         try {
             final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
                     .tryGetSegment(segmentId);
-            if (loaded.isPresent()) {
-                return loaded.get();
-            }
-            return null;
+            return loaded.orElse(null);
         } catch (final IndexException e) {
             if (!isCandidateMapped(segmentId)) {
                 return null;

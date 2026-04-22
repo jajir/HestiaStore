@@ -161,18 +161,34 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Sets the maximum number of keys accepted into one routed segment write
+     * cache.
+     *
+     * @param segmentWriteCacheKeyLimit max keys in one segment write cache
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withSegmentWriteCacheKeyLimit(
+            final Integer segmentWriteCacheKeyLimit) {
+        this.maxNumberOfKeysInActivePartition = segmentWriteCacheKeyLimit;
+        return this;
+    }
+
+    /**
      * Sets the maximum number of keys accepted into the routed segment write
      * cache.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #withSegmentWriteCacheKeyLimit(Integer)} for the canonical
+     * name.
      *
      * @param maxNumberOfKeysInActivePartition max routed write-cache keys
      * @return this builder
+     * @deprecated use {@link #withSegmentWriteCacheKeyLimit(Integer)}
      */
+    @Deprecated
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInActivePartition(
             final Integer maxNumberOfKeysInActivePartition) {
-        this.maxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
-        return this;
+        return withSegmentWriteCacheKeyLimit(
+                maxNumberOfKeysInActivePartition);
     }
 
     /**
@@ -213,17 +229,35 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Sets the maximum number of keys buffered inside one routed segment while
+     * maintenance is running.
+     *
+     * @param segmentWriteCacheKeyLimitDuringMaintenance per-segment
+     *        maintenance-time buffered key count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withSegmentWriteCacheKeyLimitDuringMaintenance(
+            final Integer segmentWriteCacheKeyLimitDuringMaintenance) {
+        this.maxNumberOfKeysInPartitionBuffer = segmentWriteCacheKeyLimitDuringMaintenance;
+        return this;
+    }
+
+    /**
      * Sets the maximum number of keys buffered inside one routed segment.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #withSegmentWriteCacheKeyLimitDuringMaintenance(Integer)} for
+     * the canonical name.
      *
      * @param maxNumberOfKeysInPartitionBuffer per-segment buffered key count
      * @return this builder
+     * @deprecated use
+     *             {@link #withSegmentWriteCacheKeyLimitDuringMaintenance(Integer)}
      */
+    @Deprecated
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBuffer(
             final Integer maxNumberOfKeysInPartitionBuffer) {
-        this.maxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
-        return this;
+        return withSegmentWriteCacheKeyLimitDuringMaintenance(
+                maxNumberOfKeysInPartitionBuffer);
     }
 
     /**
@@ -240,30 +274,60 @@ public class IndexConfigurationBuilder<K, V> {
 
     /**
      * Sets the maximum number of keys buffered across the whole index.
+     *
+     * @param indexBufferedWriteKeyLimit global buffered key count
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withIndexBufferedWriteKeyLimit(
+            final Integer indexBufferedWriteKeyLimit) {
+        this.maxNumberOfKeysInIndexBuffer = indexBufferedWriteKeyLimit;
+        return this;
+    }
+
+    /**
+     * Sets the maximum number of keys buffered across the whole index.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #withIndexBufferedWriteKeyLimit(Integer)} for the canonical
+     * name.
      *
      * @param maxNumberOfKeysInIndexBuffer global buffered key count
      * @return this builder
+     * @deprecated use {@link #withIndexBufferedWriteKeyLimit(Integer)}
      */
+    @Deprecated
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInIndexBuffer(
             final Integer maxNumberOfKeysInIndexBuffer) {
-        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
+        return withIndexBufferedWriteKeyLimit(maxNumberOfKeysInIndexBuffer);
+    }
+
+    /**
+     * Sets the threshold at which one routed segment becomes eligible for
+     * split.
+     *
+     * @param segmentSplitKeyThreshold max keys before split
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> withSegmentSplitKeyThreshold(
+            final Integer segmentSplitKeyThreshold) {
+        this.maxNumberOfKeysInPartitionBeforeSplit = segmentSplitKeyThreshold;
         return this;
     }
 
     /**
      * Sets the threshold at which a routed segment becomes eligible for split.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #withSegmentSplitKeyThreshold(Integer)} for the canonical
+     * name.
      *
      * @param maxNumberOfKeysInPartitionBeforeSplit max keys before split
      * @return this builder
+     * @deprecated use {@link #withSegmentSplitKeyThreshold(Integer)}
      */
+    @Deprecated
     public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBeforeSplit(
             final Integer maxNumberOfKeysInPartitionBeforeSplit) {
-        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
-        return this;
+        return withSegmentSplitKeyThreshold(
+                maxNumberOfKeysInPartitionBeforeSplit);
     }
 
     /**

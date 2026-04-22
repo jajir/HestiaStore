@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.maintenance;
 
+import org.hestiastore.index.OperationStatus;
 import java.util.Optional;
 import java.util.function.LongSupplier;
 
@@ -11,8 +12,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.IndexResultStatus;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
@@ -125,12 +125,12 @@ final class StableSegmentCoordinator<K, V>
             final SegmentIteratorIsolation isolation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<EntryIterator<K, V>> result = stableSegmentGateway
+            final OperationResult<EntryIterator<K, V>> result = stableSegmentGateway
                     .openIterator(segmentId, isolation);
-            if (result.getStatus() == IndexResultStatus.OK) {
+            if (result.getStatus() == OperationStatus.OK) {
                 return result.getValue();
             }
-            if (result.getStatus() == IndexResultStatus.BUSY) {
+            if (result.getStatus() == OperationStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "openIterator",
                         segmentId);
                 continue;
@@ -150,27 +150,27 @@ final class StableSegmentCoordinator<K, V>
             final boolean waitForCompletion, final String operationId,
             final String operationLabel, final Runnable busyRetryRecorder,
             final java.util.function.LongConsumer acceptedToReadyLatencyRecorder,
-            final java.util.function.Function<SegmentId, IndexResult<SegmentHandle<K, V>>> operationRunner) {
+            final java.util.function.Function<SegmentId, OperationResult<SegmentHandle<K, V>>> operationRunner) {
         logger.debug("{} attempt started: segment='{}' wait='{}'",
                 operationLabel, segmentId, waitForCompletion);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<SegmentHandle<K, V>> result = operationRunner
+            final OperationResult<SegmentHandle<K, V>> result = operationRunner
                     .apply(segmentId);
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.OK) {
+            final OperationStatus status = result.getStatus();
+            if (status == OperationStatus.OK) {
                 completeAcceptedOperation(segmentId, waitForCompletion,
                         operationId, operationLabel,
                         acceptedToReadyLatencyRecorder, result.getValue());
                 return;
             }
-            if (status == IndexResultStatus.CLOSED) {
+            if (status == OperationStatus.CLOSED) {
                 logOperation(
                         "{} skipped because segment is closed: segment='{}'",
                         operationLabel, segmentId);
                 return;
             }
-            if (status == IndexResultStatus.BUSY) {
+            if (status == OperationStatus.BUSY) {
                 if (handleBusyOperation(segmentId, waitForCompletion,
                         operationLabel)) {
                     return;
@@ -223,9 +223,9 @@ final class StableSegmentCoordinator<K, V>
         return false;
     }
 
-    private boolean shouldIgnoreUnmappedError(final IndexResultStatus status,
+    private boolean shouldIgnoreUnmappedError(final OperationStatus status,
             final SegmentId segmentId, final String operationLabel) {
-        if (status != IndexResultStatus.ERROR || isSegmentStillMapped(segmentId)) {
+        if (status != OperationStatus.ERROR || isSegmentStillMapped(segmentId)) {
             return false;
         }
         logOperation(
@@ -235,7 +235,7 @@ final class StableSegmentCoordinator<K, V>
     }
 
     private IndexException newIndexException(final String operation,
-            final SegmentId segmentId, final IndexResultStatus status) {
+            final SegmentId segmentId, final OperationStatus status) {
         final String target = segmentId == null ? ""
                 : String.format(" on segment '%s'", segmentId);
         return new IndexException(
@@ -269,7 +269,8 @@ final class StableSegmentCoordinator<K, V>
 
     private void invalidateIteratorsForSegment(final SegmentId segmentId) {
         try {
-            handleLoadedSegment(segmentId, segmentRegistry.tryGetSegment(segmentId));
+            handleLoadedSegment(segmentId,
+                    segmentRegistry.tryGetSegment(segmentId));
         } catch (final IndexException e) {
             logIteratorInvalidationLookupFailure(segmentId, e);
         }
