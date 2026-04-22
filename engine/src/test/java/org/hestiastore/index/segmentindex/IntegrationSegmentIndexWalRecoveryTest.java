@@ -262,7 +262,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .open(directory)) {
             for (int i = 0; i < keySpace; i++) {
                 final String key = "k-" + i;
-                final String expectedValue = expected.get(key).orElse(null);
+                final String expectedValue = expected.get(key);
                 if (expectedValue == null) {
                     assertNull(reopened.get(key));
                 } else {
@@ -308,7 +308,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .open(directory)) {
             for (int i = 0; i < keySpace; i++) {
                 final String key = "rk-" + i;
-                final String expectedValue = expected.get(key).orElse(null);
+                final String expectedValue = expected.get(key);
                 if (expectedValue == null) {
                     assertNull(reopened.get(key));
                 } else {
@@ -532,7 +532,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             final Map<String, byte[]> actual) {
         assertEquals(expected.keySet(), actual.keySet());
         for (final Map.Entry<String, byte[]> entry : expected.entrySet()) {
-            final byte[] actualBytes = actual.get(entry.getKey()).orElse(null);
+            final byte[] actualBytes = actual.get(entry.getKey());
             assertTrue(Arrays.equals(entry.getValue(), actualBytes),
                     "WAL segment bytes changed for " + entry.getKey());
         }
@@ -599,7 +599,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertTrue(snapshot.getWalRetainedBytes() <= wal
                     .getMaxBytesBeforeForcedCheckpoint()
                     + wal.getSegmentSizeBytes());
-            assertEquals("value-299", index.get("bp-299").orElse(null));
+            assertEquals("value-299", index.get("bp-299"));
         }
     }
 

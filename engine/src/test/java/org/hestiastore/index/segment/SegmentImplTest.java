@@ -239,8 +239,8 @@ class SegmentImplTest {
         assertEquals(OperationStatus.OK,
                 subject.put(2, "B").getStatus());
 
-        final OperationResult<String> first = subject.get(1).orElse(null);
-        final OperationResult<String> second = subject.get(2).orElse(null);
+        final OperationResult<String> first = subject.get(1);
+        final OperationResult<String> second = subject.get(2);
         assertEquals(OperationStatus.OK, first.getStatus());
         assertEquals(OperationStatus.OK, second.getStatus());
         assertEquals("A", first.getValue());
@@ -320,7 +320,7 @@ class SegmentImplTest {
     void get_uses_segment_cache_when_present() {
         assertEquals(OperationStatus.OK,
                 subject.put(123, "val").getStatus());
-        final OperationResult<String> result = subject.get(123).orElse(null);
+        final OperationResult<String> result = subject.get(123);
         assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("val", result.getValue());
         verify(segmentSearcher, never()).get(any(), any(), any());
@@ -330,7 +330,7 @@ class SegmentImplTest {
     void get_returns_null_for_tombstone_without_search() {
         assertEquals(OperationStatus.OK,
                 subject.put(123, tds.getTombstone()).getStatus());
-        final OperationResult<String> result = subject.get(123).orElse(null);
+        final OperationResult<String> result = subject.get(123);
         assertEquals(OperationStatus.OK, result.getStatus());
         assertNull(result.getValue());
         verify(segmentSearcher, never()).get(any(), any(), any());
@@ -342,7 +342,7 @@ class SegmentImplTest {
                 same(segmentDataProvider), any()))
                 .thenReturn("val");
 
-        final OperationResult<String> result = subject.get(123).orElse(null);
+        final OperationResult<String> result = subject.get(123);
         assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("val", result.getValue());
         verify(segmentSearcher).get(intThat(key -> key == 123),
@@ -508,7 +508,7 @@ class SegmentImplTest {
             assertEquals(OperationStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
 
-            final OperationResult<String> read = segment.get(1).orElse(null);
+            final OperationResult<String> read = segment.get(1);
             assertEquals(OperationStatus.OK, read.getStatus());
             assertEquals("A", read.getValue());
 

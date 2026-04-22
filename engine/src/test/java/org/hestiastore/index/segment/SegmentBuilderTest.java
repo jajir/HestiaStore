@@ -313,8 +313,8 @@ class SegmentBuilderTest {
         tx.commit();
 
         final Segment<Integer, String> segment = builder.build().getValue();
-        final OperationResult<String> first = segment.get(1).orElse(null);
-        final OperationResult<String> second = segment.get(2).orElse(null);
+        final OperationResult<String> first = segment.get(1);
+        final OperationResult<String> second = segment.get(2);
         assertEquals(OperationStatus.OK, first.getStatus());
         assertEquals(OperationStatus.OK, second.getStatus());
         assertEquals("a", first.getValue());
@@ -339,7 +339,7 @@ class SegmentBuilderTest {
         final Field field = SegmentImpl.class
                 .getDeclaredField("maintenanceExecutor");
         field.setAccessible(true);
-        final Object executor = field.get(impl).orElse(null);
+        final Object executor = field.get(impl);
 
         assertEquals(DirectExecutor.class, executor.getClass());
         closeAndAssertClosed(segment);

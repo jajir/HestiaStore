@@ -89,8 +89,8 @@ public abstract class AbstractDataTest {
         assertEquals(entries.size(), data.size(),
                 "Unexpected iterator data size");
         for (int i = 0; i < entries.size(); i++) {
-            final Entry<M, N> expectedPair = entries.get(i).orElse(null);
-            final Entry<M, N> realPair = data.get(i).orElse(null);
+            final Entry<M, N> expectedPair = entries.get(i);
+            final Entry<M, N> realPair = data.get(i);
             assertEquals(expectedPair, realPair);
         }
     }

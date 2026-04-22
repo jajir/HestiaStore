@@ -71,7 +71,7 @@ class SegmentIndexImplConcurrencyTest {
                             final int key = base + i;
                             final String value = "v" + key;
                             index.put(key, value);
-                            final String stored = index.get(key).orElse(null);
+                            final String stored = index.get(key);
                             if (!value.equals(stored)) {
                                 throw new IllegalStateException(
                                         "Unexpected value for key " + key);
@@ -97,7 +97,7 @@ class SegmentIndexImplConcurrencyTest {
             index.flushAndWait();
 
             for (int key = 0; key < threads * keysPerThread; key++) {
-                assertEquals("v" + key, index.get(key).orElse(null));
+                assertEquals("v" + key, index.get(key));
             }
         } finally {
             executor.shutdownNow();
@@ -112,7 +112,7 @@ class SegmentIndexImplConcurrencyTest {
                 && index.metricsSnapshot().getSplitInFlightCount() == 0
                 && index.metricsSnapshot().getDrainInFlightCount() == 0,
                 10_000L);
-        assertEquals("stable-30", index.get(30).orElse(null));
+        assertEquals("stable-30", index.get(30));
 
         setSplitThreshold(32);
 
@@ -137,11 +137,11 @@ class SegmentIndexImplConcurrencyTest {
 
         final String finalValue = "final-5";
         index.put(5, finalValue);
-        assertEquals(finalValue, index.get(5).orElse(null));
+        assertEquals(finalValue, index.get(5));
         index.delete(18);
-        assertNull(index.get(18).orElse(null));
+        assertNull(index.get(18));
         index.put(49, "final-49");
-        assertEquals("final-49", index.get(49).orElse(null));
+        assertEquals("final-49", index.get(49));
         awaitCondition(() -> finalValue.equals(index.get(5))
                 && index.get(18) == null
                 && "final-49".equals(index.get(49)), 10_000L);

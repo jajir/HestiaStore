@@ -1,10 +1,9 @@
 package org.hestiastore.index.segmentindex.core.splitplanner;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.OperationResult;
-import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
@@ -80,12 +79,9 @@ public final class SplitTaskDispatcher<K, V> {
 
     private SegmentHandle<K, V> tryLoadCandidate(final SegmentId segmentId) {
         try {
-            final OperationResult<SegmentHandle<K, V>> loaded = segmentRegistry
+            final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
                     .tryGetSegment(segmentId);
-            if (loaded.getStatus() == OperationStatus.OK) {
-                return loaded.getValue();
-            }
-            return null;
+            return loaded.orElse(null);
         } catch (final IndexException e) {
             if (!isCandidateMapped(segmentId)) {
                 return null;

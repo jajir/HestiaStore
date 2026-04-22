@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -69,7 +70,7 @@ class StableSegmentGatewayTest {
 
     @Test
     void get_returnsOkNullWhenNoSegmentMapping() {
-        final OperationResult<String> result = stableSegmentGateway.get("missing").orElse(null);
+        final OperationResult<String> result = stableSegmentGateway.get("missing");
 
         assertEquals(OperationStatus.OK, result.getStatus());
         assertNull(result.getValue());
@@ -80,10 +81,10 @@ class StableSegmentGatewayTest {
     void get_returnsBusyWhenSegmentIsBusy() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryGet("key")).thenReturn(OperationResult.busy());
 
-        final OperationResult<String> result = stableSegmentGateway.get("key").orElse(null);
+        final OperationResult<String> result = stableSegmentGateway.get("key");
 
         assertEquals(OperationStatus.BUSY, result.getStatus());
     }
@@ -92,13 +93,13 @@ class StableSegmentGatewayTest {
     void get_returnsBusyWhenMappingChangesDuringRead() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryGet("key")).thenAnswer(invocation -> {
             synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded("key-2");
             return OperationResult.ok("value");
         });
 
-        final OperationResult<String> result = stableSegmentGateway.get("key").orElse(null);
+        final OperationResult<String> result = stableSegmentGateway.get("key");
 
         assertEquals(OperationStatus.BUSY, result.getStatus());
     }
@@ -107,10 +108,10 @@ class StableSegmentGatewayTest {
     void get_returnsOkWhenMappingAndTopologyStayStable() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryGet("key")).thenReturn(OperationResult.ok("value"));
 
-        final OperationResult<String> result = stableSegmentGateway.get("key").orElse(null);
+        final OperationResult<String> result = stableSegmentGateway.get("key");
 
         assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("value", result.getValue());
@@ -120,7 +121,7 @@ class StableSegmentGatewayTest {
     void put_returnsOkWhenSegmentAcceptsWrite() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryPut("key", "value"))
                 .thenReturn(OperationResult.ok());
 
@@ -134,7 +135,7 @@ class StableSegmentGatewayTest {
     void put_returnsBusyWhenSegmentRejectsWrite() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryPut("key", "value"))
                 .thenReturn(OperationResult.busy());
 
@@ -148,7 +149,7 @@ class StableSegmentGatewayTest {
     void put_returnsBusyWhenSegmentHandleIsNotLoaded() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.busy());
+                .thenReturn(Optional.empty());
 
         final OperationResult<Void> result = stableSegmentGateway.put(segmentId,
                 "key", "value");
@@ -162,7 +163,7 @@ class StableSegmentGatewayTest {
         final EntryIterator<String, String> iterator = EntryIterator
                 .make(List.<Entry<String, String>>of().iterator());
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(OperationResult.ok(iterator));
 
@@ -177,7 +178,7 @@ class StableSegmentGatewayTest {
     void flush_mapsClosedStatusWithoutLosingSignal() {
         final SegmentId segmentId = createBootstrapSegment("key");
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryFlush()).thenReturn(OperationResult.closed());
 
         final OperationResult<SegmentHandle<String, String>> result =

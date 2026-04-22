@@ -55,7 +55,7 @@ class SegmentIndexImplPutTest {
     void putWritesDirectlyToSegment() {
         index.put(1, "one");
 
-        assertEquals("one", index.get(1).orElse(null));
+        assertEquals("one", index.get(1));
     }
 
     @Test
@@ -94,7 +94,7 @@ class SegmentIndexImplPutTest {
         index.put(1, "one");
         index.delete(1);
 
-        assertNull(index.get(1).orElse(null));
+        assertNull(index.get(1));
     }
 
     @Test
@@ -189,8 +189,8 @@ class SegmentIndexImplPutTest {
 
         index.put(1, "one");
         index.put(2, "two");
-        assertEquals("one", index.get(1).orElse(null));
-        assertEquals("two", index.get(2).orElse(null));
+        assertEquals("one", index.get(1));
+        assertEquals("two", index.get(2));
         assertEquals(SegmentIndexState.READY, index.getState());
     }
 
@@ -296,10 +296,14 @@ class SegmentIndexImplPutTest {
             final RuntimeException failure) {
         try {
             final Object walRuntime = SegmentIndexTestAccess.walRuntime(index);
-            final Field syncFailureField = walRuntime.getClass()
+            final Field syncPolicyField = walRuntime.getClass()
+                    .getDeclaredField("syncPolicy");
+            syncPolicyField.setAccessible(true);
+            final Object syncPolicy = syncPolicyField.get(walRuntime);
+            final Field syncFailureField = syncPolicy.getClass()
                     .getDeclaredField("syncFailure");
             syncFailureField.setAccessible(true);
-            syncFailureField.set(walRuntime, failure);
+            syncFailureField.set(syncPolicy, failure);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to inject WAL sync failure for test", ex);

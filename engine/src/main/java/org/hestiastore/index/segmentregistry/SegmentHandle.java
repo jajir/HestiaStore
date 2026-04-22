@@ -1,10 +1,10 @@
 package org.hestiastore.index.segmentregistry;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;

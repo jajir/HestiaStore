@@ -46,7 +46,7 @@ class IntegrationSegmentIndexMetricsSnapshotConcurrencyTest {
                 for (int t = 0; t < threads; t++) {
                     tasks.add(() -> {
                         for (int i = 0; i < callsPerThread; i++) {
-                            assertNull(index.get(i).orElse(null));
+                            assertNull(index.get(i));
                         }
                         return null;
                     });

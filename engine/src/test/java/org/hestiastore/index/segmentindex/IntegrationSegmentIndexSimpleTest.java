@@ -61,7 +61,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
             stream.forEach(entry -> {
-                final String value = index1.get(entry.getKey()).orElse(null);
+                final String value = index1.get(entry.getKey());
                 assertEquals(entry.getValue(), value);
             });
         }
@@ -79,7 +79,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         testData.stream().forEach(entry -> {
-            final String value = index2.get(entry.getKey()).orElse(null);
+            final String value = index2.get(entry.getKey());
             assertEquals(entry.getValue(), value);
         });
         index2.close();
@@ -271,8 +271,8 @@ class IntegrationSegmentIndexSimpleTest {
                 .toList();
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
-            final Entry<Integer, String> entryData = data.get(i).orElse(null);
-            final Entry<Integer, String> entryIndex = indexData.get(i).orElse(null);
+            final Entry<Integer, String> entryData = data.get(i);
+            final Entry<Integer, String> entryIndex = indexData.get(i);
             assertEquals(entryData.getKey(), entryIndex.getKey());
             assertEquals(entryData.getValue(), entryIndex.getValue());
         }

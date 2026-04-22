@@ -66,7 +66,7 @@ final class IndexOperationCoordinator<K, V>
     }
 
     @Override
-    public OperationResult<V> get(final K key) {
+    public V get(final K key) {
         final long startedNanos = startReadOperation();
         final K nonNullKey = requireKey(key);
         stats.recordGetRequest();

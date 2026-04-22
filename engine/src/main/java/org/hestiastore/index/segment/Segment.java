@@ -1,7 +1,8 @@
 package org.hestiastore.index.segment;
 
-import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.directory.Directory;
 
 /**

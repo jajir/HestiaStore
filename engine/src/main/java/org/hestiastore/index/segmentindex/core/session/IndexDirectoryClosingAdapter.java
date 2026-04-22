@@ -3,9 +3,8 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.Entry;
-import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.CloseableResource;
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.directory.Directory;
@@ -50,7 +49,7 @@ final class IndexDirectoryClosingAdapter<K, V>
     }
 
     @Override
-    public OperationResult<V> get(final K key) {
+    public V get(final K key) {
         return delegate.get(key);
     }
 

@@ -1,10 +1,10 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
@@ -68,7 +68,7 @@ class SegmentRegistryTest {
         @Override
         public Optional<SegmentHandle<K, V>> tryGetSegment(
                 final SegmentId segmentId) {
-            return OperationResult.ok(segmentHandle);
+            return Optional.of(segmentHandle);
         }
 
         @Override

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
@@ -50,7 +51,7 @@ class SplitTaskDispatcherTest {
         final SegmentId segmentId = SegmentId.of(7);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.ok(segmentHandle));
+                .thenReturn(Optional.of(segmentHandle));
         when(backgroundSplitCoordinator.handleSplitCandidate(segmentHandle, 10,
                 false)).thenReturn(true);
 
@@ -66,7 +67,7 @@ class SplitTaskDispatcherTest {
         final SegmentId segmentId = SegmentId.of(8);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(OperationResult.busy());
+                .thenReturn(Optional.empty());
 
         dispatcher.dispatchCandidates(List.of(segmentId), 10, false);
 

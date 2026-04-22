@@ -53,7 +53,7 @@ class SegmentThreadSafetyStressTest {
                     awaitStart(start);
                     for (int i = 0; i < ITERATIONS; i++) {
                         final int key = i % 64;
-                        final OperationResult<String> result = segment.get(key).orElse(null);
+                        final OperationResult<String> result = segment.get(key);
                         if (result.getStatus() == OperationStatus.BUSY) {
                             Thread.onSpinWait();
                             continue;

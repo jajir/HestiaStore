@@ -29,7 +29,7 @@ public class ExampleIT {
         // Do some work with the index
         index.put("Hello", "World");
 
-        String value = index.get("Hello").orElse(null);
+        String value = index.get("Hello");
         System.out.println("Value for 'Hello': " + value);
 
         index.close();

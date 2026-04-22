@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;

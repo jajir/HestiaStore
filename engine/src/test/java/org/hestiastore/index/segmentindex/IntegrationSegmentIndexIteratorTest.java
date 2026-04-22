@@ -135,11 +135,11 @@ class IntegrationSegmentIndexIteratorTest {
             assertEquals(List.of(Entry.of(2, "overlay-2"),
                     Entry.of(3, "stable-3"), Entry.of(5, "overlay-5")),
                     visible);
-            assertNull(index.get(1).orElse(null));
-            assertEquals("overlay-2", index.get(2).orElse(null));
-            assertEquals("stable-3", index.get(3).orElse(null));
-            assertNull(index.get(4).orElse(null));
-            assertEquals("overlay-5", index.get(5).orElse(null));
+            assertNull(index.get(1));
+            assertEquals("overlay-2", index.get(2));
+            assertEquals("stable-3", index.get(3));
+            assertNull(index.get(4));
+            assertEquals("overlay-5", index.get(5));
         }
     }
 
@@ -184,10 +184,10 @@ class IntegrationSegmentIndexIteratorTest {
                     Entry.of(2, "stable-2"),
                     Entry.of(3, "overlay-before-open")), snapshotView);
 
-            assertNull(index.get(1).orElse(null));
-            assertEquals("overlay-after-open", index.get(2).orElse(null));
-            assertEquals("overlay-before-open", index.get(3).orElse(null));
-            assertEquals("overlay-after-open", index.get(4).orElse(null));
+            assertNull(index.get(1));
+            assertEquals("overlay-after-open", index.get(2));
+            assertEquals("overlay-before-open", index.get(3));
+            assertEquals("overlay-after-open", index.get(4));
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
@@ -237,9 +237,9 @@ class IntegrationSegmentIndexIteratorTest {
                         && snapshot.getSplitInFlightCount() == 0;
             }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
 
-            assertEquals("stable-5", index.get(5).orElse(null));
-            assertEquals("stable-18", index.get(18).orElse(null));
-            assertEquals("stable-44", index.get(44).orElse(null));
+            assertEquals("stable-5", index.get(5));
+            assertEquals("stable-18", index.get(18));
+            assertEquals("stable-44", index.get(44));
             assertFullIsolationSnapshot(index, expected);
             assertTrue(index.metricsSnapshot().getSegmentCount() > 1);
         }

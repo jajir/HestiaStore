@@ -77,7 +77,7 @@ class SegmentIndexImplRetryTest {
 
         replaceSegment(registry, segmentId, segment);
 
-        assertEquals("value", index.get(1).orElse(null));
+        assertEquals("value", index.get(1));
         verify(segment, times(2)).get(1);
 
         replaceSegment(registry, segmentId, original);
@@ -94,7 +94,7 @@ class SegmentIndexImplRetryTest {
         drainThread.start();
         try {
             index.put(3, "three");
-            assertEquals("three", index.get(3).orElse(null));
+            assertEquals("three", index.get(3));
         } finally {
             try {
                 drainThread.join(TimeUnit.SECONDS.toMillis(5L));

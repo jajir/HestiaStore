@@ -61,7 +61,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 Entry.of("a", 20), //
                 Entry.of("c", 40) //
         ));
-        assertNull(index.get("b").orElse(null));
+        assertNull(index.get("b"));
 
         verifyIndexData(index, Arrays.asList(//
                 Entry.of("a", 20), //
@@ -79,7 +79,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 Entry.of("e", 28), //
                 Entry.of("c", 40) //
         ));
-        assertNull(index.get("b").orElse(null));
+        assertNull(index.get("b"));
 
         verifyIndexData(index, Arrays.asList(//
                 Entry.of("a", 20), //

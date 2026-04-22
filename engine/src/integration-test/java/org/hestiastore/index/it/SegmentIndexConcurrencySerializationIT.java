@@ -189,7 +189,7 @@ class SegmentIndexConcurrencySerializationIT {
 
         @Override
         public String getTombstone() {
-            final Hook hook = HOOK.get().orElse(null);
+            final Hook hook = HOOK.get();
             if (hook != null) {
                 final int concurrent = hook.inCall.incrementAndGet();
                 if (concurrent > 1) {

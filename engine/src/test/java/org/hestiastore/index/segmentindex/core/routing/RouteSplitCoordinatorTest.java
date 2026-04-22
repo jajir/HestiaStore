@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -75,7 +76,7 @@ class RouteSplitCoordinatorTest {
         when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
         when(parentHandle.getSegment()).thenReturn(parentSegment);
         when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
-                .thenReturn(OperationResult.ok(parentHandle));
+                .thenReturn(Optional.of(parentHandle));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()),
                         iteratorResult(entries()), iteratorResult(entries()));
@@ -100,7 +101,7 @@ class RouteSplitCoordinatorTest {
         when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
         when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
         when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
-                .thenReturn(OperationResult.ok(currentHandle));
+                .thenReturn(Optional.of(currentHandle));
 
         final RouteSplitPlan<Integer> prepared = coordinator
                 .tryPrepareSplit(parentHandle, 2L);

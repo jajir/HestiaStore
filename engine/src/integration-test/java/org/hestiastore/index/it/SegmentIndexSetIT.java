@@ -34,10 +34,10 @@ public class SegmentIndexSetIT {
         // Do some work with the index
         index.put("Hello", NullValue.NULL);
 
-        NullValue value = index.get("Hello").orElse(null);
+        NullValue value = index.get("Hello");
         assertNotNull(value);
 
-        assertNull(index.get("test").orElse(null));
+        assertNull(index.get("test"));
         System.out.println("Value for 'Hello': " + value);
 
         index.close();

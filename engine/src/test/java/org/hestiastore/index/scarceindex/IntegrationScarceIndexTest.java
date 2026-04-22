@@ -30,9 +30,9 @@ class IntegrationScarceIndexTest {
     void test_one_key() {
         final ScarceSegmentIndex<String> index = makeIndex(List.of(P_BBB_1));
 
-        assertEquals(13, index.get("bbb").orElse(null));
-        assertNull(index.get("ddd").orElse(null));
-        assertNull(index.get("ccc").orElse(null));
+        assertEquals(13, index.get("bbb"));
+        assertNull(index.get("ddd"));
+        assertNull(index.get("ccc"));
 
         assertEquals("bbb", index.getMinKey());
         assertEquals("bbb", index.getMaxKey());
@@ -43,9 +43,9 @@ class IntegrationScarceIndexTest {
         final ScarceSegmentIndex<String> index = makeIndex(
                 Collections.emptyList());
 
-        assertNull(index.get("aaa").orElse(null));
-        assertNull(index.get("bbb").orElse(null));
-        assertNull(index.get("ccc").orElse(null));
+        assertNull(index.get("aaa"));
+        assertNull(index.get("bbb"));
+        assertNull(index.get("ccc"));
 
         assertNull(index.getMinKey());
         assertNull(index.getMaxKey());
@@ -56,13 +56,13 @@ class IntegrationScarceIndexTest {
         final ScarceSegmentIndex<String> index = makeIndex(
                 List.of(P_BBB_2, P_CCC_1, P_DDD, P_EEE, P_FFF_2));
 
-        assertEquals(1, index.get("aaa").orElse(null));
-        assertEquals(1, index.get("bbb").orElse(null));
-        assertEquals(2, index.get("ccc").orElse(null));
-        assertEquals(3, index.get("ccd").orElse(null));
-        assertEquals(3, index.get("cee").orElse(null));
-        assertEquals(5, index.get("fff").orElse(null));
-        assertNull(index.get("ggg").orElse(null));
+        assertEquals(1, index.get("aaa"));
+        assertEquals(1, index.get("bbb"));
+        assertEquals(2, index.get("ccc"));
+        assertEquals(3, index.get("ccd"));
+        assertEquals(3, index.get("cee"));
+        assertEquals(5, index.get("fff"));
+        assertNull(index.get("ggg"));
         assertEquals("bbb", index.getMinKey());
         assertEquals("fff", index.getMaxKey());
     }
@@ -90,9 +90,9 @@ class IntegrationScarceIndexTest {
             writer.write(P_BBB_2);
         });
 
-        assertEquals(1, index.get("aaa").orElse(null));
-        assertEquals(1, index.get("bbb").orElse(null));
-        assertNull(index.get("ccc").orElse(null));
+        assertEquals(1, index.get("aaa"));
+        assertEquals(1, index.get("bbb"));
+        assertNull(index.get("ccc"));
     }
 
     private ScarceSegmentIndex<String> makeIndex(
