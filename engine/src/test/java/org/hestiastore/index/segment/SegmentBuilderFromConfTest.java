@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
@@ -43,10 +45,10 @@ class SegmentBuilderFromConfTest {
                         List.of(new ChunkFilterMagicNumberValidation()))//
         ;
         Segment<Integer, String> seg = builder.build().getValue();
-        assertEquals(SegmentResultStatus.OK, seg.put(1, "A").getStatus());
-        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
-        final SegmentResult<String> result = seg.get(1);
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, seg.put(1, "A").getStatus());
+        assertEquals(OperationStatus.OK, seg.flush().getStatus());
+        final OperationResult<String> result = seg.get(1).orElse(null);
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("A", result.getValue());
         seg.close();
     }

@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationResult;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -37,7 +38,7 @@ final class SegmentMaintenanceService {
      * @param workSupplier supplier of maintenance tasks
      * @return result status for the maintenance request
      */
-    SegmentResult<Void> startMaintenance(
+    OperationResult<Void> startMaintenance(
             final Supplier<SegmentMaintenanceWork> workSupplier) {
         return startMaintenance(workSupplier, null);
     }
@@ -50,7 +51,7 @@ final class SegmentMaintenanceService {
      * @param onReady optional callback to run after maintenance completes
      * @return result status for the maintenance request
      */
-    SegmentResult<Void> startMaintenance(
+    OperationResult<Void> startMaintenance(
             final Supplier<SegmentMaintenanceWork> workSupplier,
             final Runnable onReady) {
         Vldtn.requireNonNull(workSupplier, "workSupplier");
@@ -63,20 +64,20 @@ final class SegmentMaintenanceService {
         } catch (final RuntimeException e) {
             failureObserver.accept(e);
             failUnlessClosed();
-            return SegmentResult.error();
+            return OperationResult.error();
         }
         if (!gate.enterMaintenanceRunning()) {
             failUnlessClosed();
-            return SegmentResult.error();
+            return OperationResult.error();
         }
         try {
             maintenanceExecutor.execute(() -> runMaintenance(work, onReady));
         } catch (final RuntimeException e) {
             failureObserver.accept(e);
             failUnlessClosed();
-            return SegmentResult.error();
+            return OperationResult.error();
         }
-        return SegmentResult.ok();
+        return OperationResult.ok();
     }
 
     /**
@@ -125,15 +126,15 @@ final class SegmentMaintenanceService {
         }
     }
 
-    private static <T> SegmentResult<T> resultForState(
+    private static <T> OperationResult<T> resultForState(
             final SegmentState state) {
         if (state == SegmentState.CLOSED) {
-            return SegmentResult.closed();
+            return OperationResult.closed();
         }
         if (state == SegmentState.ERROR) {
-            return SegmentResult.error();
+            return OperationResult.error();
         }
-        return SegmentResult.busy();
+        return OperationResult.busy();
     }
 
     /**

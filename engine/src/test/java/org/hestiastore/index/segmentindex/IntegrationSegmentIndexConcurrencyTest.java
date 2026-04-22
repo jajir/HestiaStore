@@ -87,7 +87,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             executor.shutdownNow();
 
             index.flush();
-            assertEquals("v-9", index.get(1));
+            assertEquals("v-9", index.get(1).orElse(null));
         } finally {
             index.close();
         }

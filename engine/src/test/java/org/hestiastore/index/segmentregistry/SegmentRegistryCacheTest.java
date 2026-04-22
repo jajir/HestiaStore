@@ -52,8 +52,8 @@ class SegmentRegistryCacheTest {
                 }, value -> {
                 });
 
-        final Object first = cache.get(1);
-        final Object second = cache.get(1);
+        final Object first = cache.get(1).orElse(null);
+        final Object second = cache.get(1).orElse(null);
 
         assertSame(first, second);
         assertEquals(1, loads.get());
@@ -136,7 +136,7 @@ class SegmentRegistryCacheTest {
 
         Object first = null;
         for (final Future<Object> future : futures) {
-            final Object value = future.get(1, TimeUnit.SECONDS);
+            final Object value = future.get(1, TimeUnit.SECONDS).orElse(null);
             if (first == null) {
                 first = value;
             } else {
@@ -424,7 +424,7 @@ class SegmentRegistryCacheTest {
                     2, key -> new TrackedValue(), TrackedValue::close,
                     unloadExecutor, value -> value.isUnloadAllowed());
 
-            final TrackedValue value = cache.get(1);
+            final TrackedValue value = cache.get(1).orElse(null);
             value.setUnloadAllowed(false);
             assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
                     cache.invalidate(1));

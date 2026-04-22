@@ -70,16 +70,16 @@
                     </article>
 
                     <article class="card section">
-                        <h3>Compaction / Drain / Split / Flush</h3>
+                        <h3>Flush / Split / Compaction</h3>
                         <div class="line"><span>Total Flush Requests</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.flushRequestCount)}">0</strong></div>
                         <div class="line"><span>Current Flush Rate</span><strong class="value-runtime"
                                 th:text="${idx.flushRateDisplay}">0 /s</strong></div>
-                        <div class="line"><span>Total Drain Schedules</span><strong class="value-runtime"
+                        <div class="line"><span>Legacy Drain Schedules (v1 compatibility)</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.drainScheduleCount)}">0</strong></div>
-                        <div class="line"><span>Current Drain Rate</span><strong class="value-runtime"
+                        <div class="line"><span>Legacy Drain Rate (v1 compatibility)</span><strong class="value-runtime"
                                 th:text="${idx.drainRateDisplay}">0 /s</strong></div>
-                        <div class="line"><span>Drain In Flight</span><strong class="value-runtime"
+                        <div class="line"><span>Legacy Drain In Flight (v1 compatibility)</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.drainInFlightCount)}">0</strong></div>
                         <div class="line"><span>Total Split Schedules</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.splitScheduleCount)}">0</strong></div>
@@ -142,15 +142,24 @@
                     </article>
 
                     <article class="card section">
-                        <h3>Partitioned Ingest</h3>
-                        <div class="line"><span>maxNumberOfKeysInActivePartition</span><strong class="value-config"
-                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInActivePartition)}">0</strong></div>
+                        <h3>Write Path</h3>
+                        <div class="line"><span>Segment Write Cache Key Limit</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.segmentWriteCacheKeyLimit)}">0</strong></div>
+                        <div class="line"><span>Segment Write Cache Key Limit During Maintenance</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.segmentWriteCacheKeyLimitDuringMaintenance)}">0</strong></div>
+                        <div class="line"><span>Index Buffered Write Key Limit</span><strong class="value-config"
+                                th:text="${node.formatWholeNumber(idx.indexBufferedWriteKeyLimit)}">0</strong></div>
+                        <div class="line"><span>Total Buffered Write Keys</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.totalBufferedWriteKeys)}">0</strong></div>
+                        <div class="line"><span>Local / Global Throttle Events</span><strong class="value-runtime"><span
+                                    th:text="${node.formatWholeNumber(idx.localThrottleCount)}">0</span> / <span
+                                    th:text="${node.formatWholeNumber(idx.globalThrottleCount)}">0</span></strong></div>
+                    </article>
+
+                    <article class="card section">
+                        <h3>Legacy Compatibility (v1)</h3>
                         <div class="line"><span>maxNumberOfImmutableRunsPerPartition</span><strong class="value-config"
                                 th:text="${node.formatWholeNumber(idx.maxNumberOfImmutableRunsPerPartition)}">0</strong></div>
-                        <div class="line"><span>maxNumberOfKeysInPartitionBuffer</span><strong class="value-config"
-                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInPartitionBuffer)}">0</strong></div>
-                        <div class="line"><span>maxNumberOfKeysInIndexBuffer</span><strong class="value-config"
-                                th:text="${node.formatWholeNumber(idx.maxNumberOfKeysInIndexBuffer)}">0</strong></div>
                         <div class="line"><span>Partitions (total/active/draining)</span><strong class="value-runtime"><span
                                     th:text="${node.formatWholeNumber(idx.partitionCount)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.activePartitionCount)}">0</span> / <span
@@ -159,9 +168,8 @@
                                 th:text="${node.formatWholeNumber(idx.immutableRunCount)}">0</strong></div>
                         <div class="line"><span>Partition Buffered Keys</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.partitionBufferedKeyCount)}">0</strong></div>
-                        <div class="line"><span>Local / Global Throttle Events</span><strong class="value-runtime"><span
-                                    th:text="${node.formatWholeNumber(idx.localThrottleCount)}">0</span> / <span
-                                    th:text="${node.formatWholeNumber(idx.globalThrottleCount)}">0</span></strong></div>
+                        <div class="line"><span>Legacy Drain Latency p95</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.drainLatencyP95Micros)}">0</strong></div>
                     </article>
 
                     <article class="card section">

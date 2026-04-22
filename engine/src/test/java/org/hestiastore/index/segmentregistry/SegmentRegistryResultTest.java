@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,24 +13,24 @@ class SegmentRegistryResultTest {
 
     @Test
     void okCarriesValue() {
-        final SegmentRegistryResult<SegmentId> result = SegmentRegistryResult
+        final OperationResult<SegmentId> result = SegmentRegistryResult
                 .ok(SegmentId.of(7));
 
-        assertEquals(SegmentRegistryResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals(SegmentId.of(7), result.getValue());
         assertTrue(result.isOk());
     }
 
     @Test
     void busyClosedAndErrorCarryNoValue() {
-        final SegmentRegistryResult<Void> busy = SegmentRegistryResult.busy();
-        final SegmentRegistryResult<Void> closed = SegmentRegistryResult
+        final OperationResult<Void> busy = OperationResult.busy();
+        final OperationResult<Void> closed = SegmentRegistryResult
                 .closed();
-        final SegmentRegistryResult<Void> error = SegmentRegistryResult.error();
+        final OperationResult<Void> error = OperationResult.error();
 
-        assertEquals(SegmentRegistryResultStatus.BUSY, busy.getStatus());
-        assertEquals(SegmentRegistryResultStatus.CLOSED, closed.getStatus());
-        assertEquals(SegmentRegistryResultStatus.ERROR, error.getStatus());
+        assertEquals(OperationStatus.BUSY, busy.getStatus());
+        assertEquals(OperationStatus.CLOSED, closed.getStatus());
+        assertEquals(OperationStatus.ERROR, error.getStatus());
         assertNull(busy.getValue());
         assertNull(closed.getValue());
         assertNull(error.getValue());
@@ -36,14 +38,14 @@ class SegmentRegistryResultTest {
 
     @Test
     void fromStatusMapsAllStatuses() {
-        assertEquals(SegmentRegistryResultStatus.OK,
-                SegmentRegistryResult.fromStatus(SegmentRegistryResultStatus.OK)
+        assertEquals(OperationStatus.OK,
+                OperationResult.fromStatus(OperationStatus.OK)
                         .getStatus());
-        assertEquals(SegmentRegistryResultStatus.BUSY, SegmentRegistryResult
-                .fromStatus(SegmentRegistryResultStatus.BUSY).getStatus());
-        assertEquals(SegmentRegistryResultStatus.CLOSED, SegmentRegistryResult
-                .fromStatus(SegmentRegistryResultStatus.CLOSED).getStatus());
-        assertEquals(SegmentRegistryResultStatus.ERROR, SegmentRegistryResult
-                .fromStatus(SegmentRegistryResultStatus.ERROR).getStatus());
+        assertEquals(OperationStatus.BUSY, SegmentRegistryResult
+                .fromStatus(OperationStatus.BUSY).getStatus());
+        assertEquals(OperationStatus.CLOSED, SegmentRegistryResult
+                .fromStatus(OperationStatus.CLOSED).getStatus());
+        assertEquals(OperationStatus.ERROR, SegmentRegistryResult
+                .fromStatus(OperationStatus.ERROR).getStatus());
     }
 }

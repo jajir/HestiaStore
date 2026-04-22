@@ -79,19 +79,19 @@ class EntryIteratorLoggingContextTest {
 
         @Override
         public boolean hasNext() {
-            mdcAtHasNext = MDC.get("index.name");
+            mdcAtHasNext = MDC.get("index.name").orElse(null);
             return hasNext;
         }
 
         @Override
         public Entry<String, String> next() {
-            mdcAtNext = MDC.get("index.name");
+            mdcAtNext = MDC.get("index.name").orElse(null);
             return Entry.of("key", "value");
         }
 
         @Override
         public void close() {
-            mdcAtClose = MDC.get("index.name");
+            mdcAtClose = MDC.get("index.name").orElse(null);
             closed = true;
         }
 

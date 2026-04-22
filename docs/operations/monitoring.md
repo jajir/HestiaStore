@@ -12,6 +12,14 @@ Use `SegmentIndex.metricsSnapshot()` as the canonical in-process source.
 Export these values into your monitoring stack (Micrometer/Prometheus, etc.)
 at a fixed scrape interval.
 
+For new in-process integrations, prefer the explicit write-path and maintenance
+views over the legacy partition-named compatibility fields:
+
+- `getWritePathMetrics()`
+- `getSegmentWriteCacheKeyLimit()`
+- `getSegmentWriteCacheKeyLimitDuringMaintenance()`
+- `getIndexBufferedWriteKeyLimit()`
+
 ## Core Index Signals
 
 - Throughput:
@@ -50,6 +58,8 @@ Compatibility note:
   compatibility with older dashboards and management clients
 - in the direct-to-segment runtime those partition-overlay counters should
   normally remain `0`
+- `drain*` counters are also compatibility names and should not be treated as
+  evidence of a separate drain subsystem
 - new dashboards and alerts should prefer the explicit split, maintenance, WAL,
   and segment-write-path fields above
 

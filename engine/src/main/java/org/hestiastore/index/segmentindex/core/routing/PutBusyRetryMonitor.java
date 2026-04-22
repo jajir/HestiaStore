@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationStatus;
 import java.util.function.LongSupplier;
 
 import org.hestiastore.index.IndexException;
@@ -28,8 +29,8 @@ final class PutBusyRetryMonitor {
                 "nanoTimeSupplier");
     }
 
-    void observeRetryableStatus(final IndexResultStatus status) {
-        if (!enabled || status != IndexResultStatus.BUSY) {
+    void observeRetryableStatus(final OperationStatus status) {
+        if (!enabled || status != OperationStatus.BUSY) {
             return;
         }
         if (busyWaitStartNanos == 0L) {

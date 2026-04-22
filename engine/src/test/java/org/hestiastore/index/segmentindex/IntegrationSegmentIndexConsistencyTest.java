@@ -80,7 +80,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
             writeEntries(index, makeList(888));
             index.flush();
             for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
-                assertNull(index.get(i * 2 + 1));
+                assertNull(index.get(i * 2 + 1).orElse(null));
             }
         }
     }

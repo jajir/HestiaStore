@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -11,14 +12,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -76,7 +75,7 @@ class RouteSplitCoordinatorTest {
         when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
         when(parentHandle.getSegment()).thenReturn(parentSegment);
         when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
-                .thenReturn(Optional.of(parentHandle));
+                .thenReturn(OperationResult.ok(parentHandle));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()),
                         iteratorResult(entries()), iteratorResult(entries()));
@@ -101,7 +100,7 @@ class RouteSplitCoordinatorTest {
         when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
         when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
         when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
-                .thenReturn(Optional.of(currentHandle));
+                .thenReturn(OperationResult.ok(currentHandle));
 
         final RouteSplitPlan<Integer> prepared = coordinator
                 .tryPrepareSplit(parentHandle, 2L);
@@ -115,8 +114,8 @@ class RouteSplitCoordinatorTest {
                 Entry.of(4, "d"));
     }
 
-    private static SegmentResult<EntryIterator<Integer, String>> iteratorResult(
+    private static OperationResult<EntryIterator<Integer, String>> iteratorResult(
             final List<Entry<Integer, String>> entries) {
-        return SegmentResult.ok(EntryIterator.make(entries.iterator()));
+        return OperationResult.ok(EntryIterator.make(entries.iterator()));
     }
 }

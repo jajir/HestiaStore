@@ -25,7 +25,7 @@ class SegmentIndexTest {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 buildConf("segment-index-test", 1))) {
             index.put(1, "one");
-            assertEquals("one", index.get(1));
+            assertEquals("one", index.get(1).orElse(null));
         }
 
         final Optional<SegmentIndex<Integer, String>> reopened = SegmentIndex

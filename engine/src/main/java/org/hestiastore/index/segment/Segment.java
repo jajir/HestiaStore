@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.directory.Directory;
 
@@ -87,7 +88,7 @@ public interface Segment<K, V> {
      *
      * When the segment is BUSY/CLOSED/ERROR, the operation is not started.
      */
-    SegmentResult<Void> compact();
+    OperationResult<Void> compact();
 
     /**
      * Validates that the logical contents of this segment are consistent.
@@ -122,7 +123,7 @@ public interface Segment<K, V> {
      * 
      * @return result with iterator over key/value entries in key order
      */
-    default SegmentResult<EntryIterator<K, V>> openIterator() {
+    default OperationResult<EntryIterator<K, V>> openIterator() {
         return openIterator(SegmentIteratorIsolation.FAIL_FAST);
     }
 
@@ -141,7 +142,7 @@ public interface Segment<K, V> {
      * @param isolation iterator isolation level (non-null)
      * @return result with iterator over key/value entries in key order
      */
-    SegmentResult<EntryIterator<K, V>> openIterator(
+    OperationResult<EntryIterator<K, V>> openIterator(
             SegmentIteratorIsolation isolation);
 
     /**
@@ -151,7 +152,7 @@ public interface Segment<K, V> {
      * @param key   key to write (non-null)
      * @param value value to write (non-null)
      */
-    SegmentResult<Void> put(K key, V value);
+    OperationResult<Void> put(K key, V value);
 
     /**
      * Starts a flush of the in-memory write cache into the delta cache. The
@@ -162,7 +163,7 @@ public interface Segment<K, V> {
      *
      * When the segment is BUSY/CLOSED/ERROR, the operation is not started.
      */
-    SegmentResult<Void> flush();
+    OperationResult<Void> flush();
 
     /**
      * Returns the current number of entries waiting in the write cache.
@@ -262,7 +263,7 @@ public interface Segment<K, V> {
      * @param key key to look up (non-null)
      * @return associated value or {@code null} if not present
      */
-    SegmentResult<V> get(K key);
+    OperationResult<V> get(K key);
 
     /**
      * Returns this segment's identity.
@@ -285,14 +286,14 @@ public interface Segment<K, V> {
      * <p>
      * Close starts only from {@link SegmentState#READY} and transitions the
      * segment into {@link SegmentState#FREEZE} while in-flight operations are
-     * drained. When the method returns {@link SegmentResultStatus#OK}, the
+     * drained. When the method returns {@link OperationStatus#OK}, the
      * segment is already in {@link SegmentState#CLOSED}. After close, all
-     * segment operations return {@link SegmentResultStatus#CLOSED} (or throw)
+     * segment operations return {@link OperationStatus#CLOSED} (or throw)
      * and no further maintenance is performed.
      * </p>
      *
      * Calls in other states return BUSY/CLOSED/ERROR as appropriate.
      */
-    SegmentResult<Void> close();
+    OperationResult<Void> close();
 
 }

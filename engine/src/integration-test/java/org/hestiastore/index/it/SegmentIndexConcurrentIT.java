@@ -166,7 +166,7 @@ class SegmentIndexConcurrentIT {
         final int finalValue = 42_4242;
         index.put(key, finalValue);
         index.flushAndWait();
-        assertEquals(finalValue, index.get(key));
+        assertEquals(finalValue, index.get(key).orElse(null));
         index.close();
 
         final SegmentIndex<Integer, Integer> reopened = SegmentIndex
@@ -259,7 +259,7 @@ class SegmentIndexConcurrentIT {
                 "Maintenance thread did not stop in time");
         executor.shutdownNow();
 
-        final Throwable backgroundFailure = maintenanceError.get();
+        final Throwable backgroundFailure = maintenanceError.get().orElse(null);
         if (backgroundFailure != null) {
             throw new AssertionError("Maintenance thread failed",
                     backgroundFailure);
@@ -365,7 +365,7 @@ class SegmentIndexConcurrentIT {
                     for (int i = 0; i < readsPerThread; i++) {
                         final int key = rnd.nextInt(keyCount);
                         try {
-                            final Integer value = index.get(key);
+                            final Integer value = index.get(key).orElse(null);
                             if (value != null) {
                                 assertEquals(key, decodeKey(value));
                             }
@@ -852,7 +852,7 @@ class SegmentIndexConcurrentIT {
     private static void assertNoWorkerFailure(
             final AtomicReference<Throwable> workerFailure,
             final String label) {
-        final Throwable failure = workerFailure.get();
+        final Throwable failure = workerFailure.get().orElse(null);
         if (failure != null) {
             throw new AssertionError(label, failure);
         }

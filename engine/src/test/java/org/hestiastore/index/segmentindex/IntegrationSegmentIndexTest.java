@@ -76,9 +76,9 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
         for (int i = 0; i < 64; i++) {
             index.put(i, "kachna");
-            assertEquals("kachna", index.get(i));
+            assertEquals("kachna", index.get(i).orElse(null));
             index.delete(i);
-            assertNull(index.get(i));
+            assertNull(index.get(i).orElse(null));
             awaitMaintenanceIdle(index);
             verifyIndexData(index, List.of());
         }
@@ -99,13 +99,13 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");
-            assertEquals("kachna", index.get(i));
+            assertEquals("kachna", index.get(i).orElse(null));
         }
         assertEquals(itemsInIndex,
                 index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
-            assertNull(index.get(i));
+            assertNull(index.get(i).orElse(null));
         }
         verifyIndexData(index, List.of());
     }
@@ -117,7 +117,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
         final SegmentIndex<Integer, String> index = makeSegmentIndex(false);
         for (int i = 0; i < iterations; i++) {
             index.put(i, "kachna");
-            assertEquals("kachna", index.get(i));
+            assertEquals("kachna", index.get(i).orElse(null));
         }
         index.compact();
         awaitMaintenanceIdle(index);
@@ -125,7 +125,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
-            assertNull(index.get(i));
+            assertNull(index.get(i).orElse(null));
         }
         index.compact();
         awaitMaintenanceIdle(index);

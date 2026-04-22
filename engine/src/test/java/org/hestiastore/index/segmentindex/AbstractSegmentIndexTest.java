@@ -59,7 +59,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         entries.forEach(entry -> {
             final M key = entry.getKey();
             final N expectedValue = entry.getValue();
-            assertEquals(expectedValue, index.get(key));
+            assertEquals(expectedValue, index.get(key).orElse(null));
         });
     }
 
@@ -79,8 +79,8 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         assertEquals(entries.size(), data.size(),
                 "Unexpected number of entries in index");
         for (int i = 0; i < entries.size(); i++) {
-            final Entry<M, N> expectedPair = entries.get(i);
-            final Entry<M, N> realPair = data.get(i);
+            final Entry<M, N> expectedPair = entries.get(i).orElse(null);
+            final Entry<M, N> realPair = data.get(i).orElse(null);
             assertEquals(expectedPair, realPair);
         }
     }
@@ -92,8 +92,8 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         assertEquals(entries.size(), data.size(),
                 "Unexpected number of entries in index");
         for (int i = 0; i < entries.size(); i++) {
-            final Entry<M, N> expectedPair = entries.get(i);
-            final Entry<M, N> realPair = data.get(i);
+            final Entry<M, N> expectedPair = entries.get(i).orElse(null);
+            final Entry<M, N> realPair = data.get(i).orElse(null);
             assertEquals(expectedPair, realPair);
         }
     }
@@ -178,7 +178,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             final Field cacheField = registry.getClass().getDeclaredField(
                     "cache");
             cacheField.setAccessible(true);
-            final Object cache = cacheField.get(registry);
+            final Object cache = cacheField.get(registry).orElse(null);
             final Class<?> cacheClass = Class.forName(
                     "org.hestiastore.index.segmentregistry.SegmentRegistryCache");
             final Field mapField = cacheClass
@@ -194,7 +194,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             for (final Map.Entry<SegmentId, ?> entry : entries
                     .entrySet()) {
                 final Object entryValue = entry.getValue();
-                final Object segmentObj = valueField.get(entryValue);
+                final Object segmentObj = valueField.get(entryValue).orElse(null);
                 if (segmentObj instanceof Segment<?, ?> segment) {
                     segments.put(entry.getKey(), segment);
                 }
@@ -214,7 +214,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
                 final Field field = current.getClass().getDeclaredField(
                         "delegate");
                 field.setAccessible(true);
-                current = field.get(current);
+                current = field.get(current).orElse(null);
             } catch (final ReflectiveOperationException ex) {
                 throw new IllegalStateException(
                         "Unable to unwrap index for test", ex);

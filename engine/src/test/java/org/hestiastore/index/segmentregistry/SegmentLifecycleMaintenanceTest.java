@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -21,7 +22,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
@@ -83,8 +83,8 @@ class SegmentLifecycleMaintenanceTest {
             final Segment<Integer, String> segment = Mockito.mock(Segment.class);
             when(segment.getState()).thenReturn(SegmentState.READY,
                     SegmentState.READY, SegmentState.CLOSED);
-            when(segment.close()).thenReturn(SegmentResult.busy())
-                    .thenReturn(SegmentResult.ok());
+            when(segment.close()).thenReturn(OperationResult.busy())
+                    .thenReturn(OperationResult.ok());
 
             fixture.maintenance.closeSegmentIfNeeded(segment);
 

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,7 +73,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
                 .build().getValue();
 
         writeEntries(segment, indexFile);
-        assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+        assertEquals(OperationStatus.OK, segment.compact().getStatus());
         writeEntries(segment, deltaCache);
         /*
          * Now Content of main sst index file and delta cache should be as
@@ -88,9 +90,9 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     @Test
     void test_case_5_compact_after_addding_entry() {
-        final SegmentResult<EntryIterator<String, Integer>> result = segment
+        final OperationResult<EntryIterator<String, Integer>> result = segment
                 .openIterator();
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         try (final EntryIterator<String, Integer> iterator = result
                 .getValue()) {
             assertTrue(iterator.hasNext());
@@ -98,7 +100,7 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
             // write <c, 10>
             writeEntries(segment, Arrays.asList(Entry.of("c", 10)));
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.compact().getStatus());
 
             assertFalse(iterator.hasNext());
@@ -107,9 +109,9 @@ class IntegrationSegmentIteratorTest extends AbstractSegmentTest {
 
     @Test
     void test_case_6_compact_includes_write_cache_and_clears_it() {
-        assertEquals(SegmentResultStatus.OK,
+        assertEquals(OperationStatus.OK,
                 segment.put("g", 13).getStatus());
-        assertEquals(SegmentResultStatus.OK, segment.compact().getStatus());
+        assertEquals(OperationStatus.OK, segment.compact().getStatus());
 
         verifySegmentSearch(segment,
                 Arrays.asList(Entry.of("a", 25), Entry.of("c", 40),

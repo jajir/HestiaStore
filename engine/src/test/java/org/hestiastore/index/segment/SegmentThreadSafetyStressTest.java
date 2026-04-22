@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
@@ -35,12 +37,12 @@ class SegmentThreadSafetyStressTest {
                     awaitStart(start);
                     for (int i = 0; i < ITERATIONS; i++) {
                         final int key = i % 64;
-                        SegmentResult<Void> result = segment.put(key, "v-" + i);
-                        while (result.getStatus() == SegmentResultStatus.BUSY) {
+                        OperationResult<Void> result = segment.put(key, "v-" + i);
+                        while (result.getStatus() == OperationStatus.BUSY) {
                             Thread.onSpinWait();
                             result = segment.put(key, "v-" + i);
                         }
-                        if (result.getStatus() != SegmentResultStatus.OK) {
+                        if (result.getStatus() != OperationStatus.OK) {
                             throw new IllegalStateException(
                                     "Put returned " + result.getStatus());
                         }
@@ -51,12 +53,12 @@ class SegmentThreadSafetyStressTest {
                     awaitStart(start);
                     for (int i = 0; i < ITERATIONS; i++) {
                         final int key = i % 64;
-                        final SegmentResult<String> result = segment.get(key);
-                        if (result.getStatus() == SegmentResultStatus.BUSY) {
+                        final OperationResult<String> result = segment.get(key).orElse(null);
+                        if (result.getStatus() == OperationStatus.BUSY) {
                             Thread.onSpinWait();
                             continue;
                         }
-                        if (result.getStatus() != SegmentResultStatus.OK) {
+                        if (result.getStatus() != OperationStatus.OK) {
                             throw new IllegalStateException(
                                     "Get returned " + result.getStatus());
                         }
@@ -95,11 +97,11 @@ class SegmentThreadSafetyStressTest {
     }
 
     private static void awaitCompletion(final Segment<?, ?> segment,
-            final SegmentResult<Void> result, final String operation) {
-        if (result.getStatus() == SegmentResultStatus.BUSY) {
+            final OperationResult<Void> result, final String operation) {
+        if (result.getStatus() == OperationStatus.BUSY) {
             return;
         }
-        if (result.getStatus() != SegmentResultStatus.OK) {
+        if (result.getStatus() != OperationStatus.OK) {
             throw new IllegalStateException(
                     operation + " returned " + result.getStatus());
         }

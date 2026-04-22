@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
@@ -20,7 +21,6 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -70,14 +70,14 @@ class SegmentIndexImplRetryTest {
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.get(1)).thenAnswer(invocation -> {
             if (attempts.getAndIncrement() == 0) {
-                return SegmentResult.busy();
+                return OperationResult.busy();
             }
-            return SegmentResult.ok("value");
+            return OperationResult.ok("value");
         });
 
         replaceSegment(registry, segmentId, segment);
 
-        assertEquals("value", index.get(1));
+        assertEquals("value", index.get(1).orElse(null));
         verify(segment, times(2)).get(1);
 
         replaceSegment(registry, segmentId, original);
@@ -94,7 +94,7 @@ class SegmentIndexImplRetryTest {
         drainThread.start();
         try {
             index.put(3, "three");
-            assertEquals("three", index.get(3));
+            assertEquals("three", index.get(3).orElse(null));
         } finally {
             try {
                 drainThread.join(TimeUnit.SECONDS.toMillis(5L));

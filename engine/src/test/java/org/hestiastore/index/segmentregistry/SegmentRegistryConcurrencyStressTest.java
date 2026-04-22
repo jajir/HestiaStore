@@ -85,7 +85,7 @@ class SegmentRegistryConcurrencyStressTest {
                     TimeUnit.SECONDS));
 
             final long startNanos = System.nanoTime();
-            final String differentKeyValue = cache.get(2);
+            final String differentKeyValue = cache.get(2).orElse(null);
             final long elapsedMillis = TimeUnit.NANOSECONDS
                     .toMillis(System.nanoTime() - startNanos);
 

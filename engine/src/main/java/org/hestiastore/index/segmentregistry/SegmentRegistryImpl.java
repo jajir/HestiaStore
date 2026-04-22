@@ -137,19 +137,19 @@ final class SegmentRegistryImpl<K, V>
      * {@inheritDoc}
      */
     @Override
-    public SegmentRegistryResult<SegmentId> allocateSegmentId() {
+    public OperationResult<SegmentId> allocateSegmentId() {
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
-            return SegmentRegistryResult.fromStatus(resultForState(state));
+            return OperationResult.fromStatus(resultForState(state));
         }
         try {
             final SegmentId segmentId = segmentIdAllocator.nextId();
             if (segmentId == null) {
-                return SegmentRegistryResult.error();
+                return OperationResult.error();
             }
-            return SegmentRegistryResult.ok(segmentId);
+            return OperationResult.ok(segmentId);
         } catch (final RuntimeException e) {
-            return SegmentRegistryResult.error();
+            return OperationResult.error();
         }
     }
 
@@ -163,7 +163,7 @@ final class SegmentRegistryImpl<K, V>
      * @return result containing the segment or a status
      */
     @Override
-    public SegmentRegistryResult<Segment<K, V>> tryLoadSegment(
+    public OperationResult<Segment<K, V>> tryLoadSegment(
             final SegmentId segmentId) {
         return loadSegmentInternal(segmentId);
     }
@@ -174,13 +174,13 @@ final class SegmentRegistryImpl<K, V>
      * @return registry result containing the new segment or a status
      */
     @Override
-    public SegmentRegistryResult<Segment<K, V>> tryCreateSegment() {
-        final SegmentRegistryResult<SegmentId> allocated = allocateSegmentId();
+    public OperationResult<Segment<K, V>> tryCreateSegment() {
+        final OperationResult<SegmentId> allocated = allocateSegmentId();
         if (!allocated.isOk()) {
-            return SegmentRegistryResult.fromStatus(allocated.getStatus());
+            return OperationResult.fromStatus(allocated.getStatus());
         }
         if (allocated.getValue() == null) {
-            return SegmentRegistryResult.error();
+            return OperationResult.error();
         }
         final SegmentId segmentId = allocated.getValue();
         fileSystem.ensureSegmentDirectory(segmentId);
@@ -193,14 +193,14 @@ final class SegmentRegistryImpl<K, V>
      * @param segmentId segment id to load
      * @return result containing the segment or a status
      */
-    private SegmentRegistryResult<Segment<K, V>> loadSegmentInternal(
+    private OperationResult<Segment<K, V>> loadSegmentInternal(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
-            return SegmentRegistryResult.fromStatus(resultForState(state));
+            return OperationResult.fromStatus(resultForState(state));
         }
-        SegmentRegistryResult<Segment<K, V>> result = loadSegmentFromCache(
+        OperationResult<Segment<K, V>> result = loadSegmentFromCache(
                 segmentId);
         while (isClosedSegment(result)) {
             cache.invalidate(segmentId);
@@ -209,26 +209,26 @@ final class SegmentRegistryImpl<K, V>
         return result;
     }
 
-    private SegmentRegistryResult<Segment<K, V>> loadSegmentFromCache(
+    private OperationResult<Segment<K, V>> loadSegmentFromCache(
             final SegmentId segmentId) {
         final Segment<K, V> segment;
         try {
             segment = cache.get(segmentId);
         } catch (final SegmentRegistryCache.EntryBusyException
                 | SegmentBusyException ex) {
-            return SegmentRegistryResult.busy();
+            return OperationResult.busy();
         } catch (final RuntimeException ex) {
             logger.error("Failed to load segment '{}'.", segmentId, ex);
-            return SegmentRegistryResult.error();
+            return OperationResult.error();
         }
         if (segment == null) {
-            return SegmentRegistryResult.error();
+            return OperationResult.error();
         }
-        return SegmentRegistryResult.ok(segment);
+        return OperationResult.ok(segment);
     }
 
     private boolean isClosedSegment(
-            final SegmentRegistryResult<Segment<K, V>> result) {
+            final OperationResult<Segment<K, V>> result) {
         return result.isOk() && result.getValue() != null
                 && result.getValue().getState() == SegmentState.CLOSED;
     }
@@ -239,24 +239,24 @@ final class SegmentRegistryImpl<K, V>
      * @param segmentId segment id to remove
      */
     @Override
-    public SegmentRegistryResult<Void> tryDeleteSegment(
+    public OperationResult<Void> tryDeleteSegment(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
-            return SegmentRegistryResult.fromStatus(resultForState(state));
+            return OperationResult.fromStatus(resultForState(state));
         }
         final SegmentRegistryCache.InvalidateStatus status = cache
                 .invalidate(segmentId);
         if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
-            return SegmentRegistryResult.busy();
+            return OperationResult.busy();
         }
         try {
             fileSystem.deleteSegmentFiles(segmentId);
         } catch (final RuntimeException ex) {
-            return SegmentRegistryResult.error();
+            return OperationResult.error();
         }
-        return SegmentRegistryResult.ok();
+        return OperationResult.ok();
     }
 
     /** {@inheritDoc} */
@@ -319,17 +319,17 @@ final class SegmentRegistryImpl<K, V>
                         blockingRetryPolicy, segment));
     }
 
-    private static SegmentRegistryResultStatus resultForState(
+    private static OperationStatus resultForState(
             final SegmentRegistryState state) {
         // Contract mapping:
         // CLOSED -> CLOSED, ERROR -> ERROR, otherwise (FREEZE) -> BUSY.
         if (state == SegmentRegistryState.CLOSED) {
-            return SegmentRegistryResultStatus.CLOSED;
+            return OperationStatus.CLOSED;
         }
         if (state == SegmentRegistryState.ERROR) {
-            return SegmentRegistryResultStatus.ERROR;
+            return OperationStatus.ERROR;
         }
-        return SegmentRegistryResultStatus.BUSY;
+        return OperationStatus.BUSY;
     }
 
     /**
@@ -342,7 +342,7 @@ final class SegmentRegistryImpl<K, V>
     public void close() {
         SegmentRegistryState state = gate.getState();
         if (state == SegmentRegistryState.ERROR) {
-            throw closeFailure(SegmentRegistryResultStatus.ERROR, null);
+            throw closeFailure(OperationStatus.ERROR, null);
         }
         if (state == SegmentRegistryState.CLOSED) {
             return;
@@ -352,23 +352,23 @@ final class SegmentRegistryImpl<K, V>
         }
         state = gate.getState();
         if (state == SegmentRegistryState.ERROR) {
-            throw closeFailure(SegmentRegistryResultStatus.ERROR, null);
+            throw closeFailure(OperationStatus.ERROR, null);
         }
         if (state == SegmentRegistryState.CLOSED) {
             return;
         }
         if (state != SegmentRegistryState.FREEZE) {
-            throw closeFailure(SegmentRegistryResultStatus.BUSY, null);
+            throw closeFailure(OperationStatus.BUSY, null);
         }
         try {
             awaitCacheClosed();
         } catch (final RuntimeException ex) {
             gate.fail();
-            throw closeFailure(SegmentRegistryResultStatus.ERROR, ex);
+            throw closeFailure(OperationStatus.ERROR, ex);
         }
         handleCache.clear();
         if (!gate.finishFreezeToClosed()) {
-            throw closeFailure(SegmentRegistryResultStatus.ERROR, null);
+            throw closeFailure(OperationStatus.ERROR, null);
         }
     }
 
@@ -384,7 +384,7 @@ final class SegmentRegistryImpl<K, V>
     }
 
     private IndexException closeFailure(
-            final SegmentRegistryResultStatus status,
+            final OperationStatus status,
             final RuntimeException cause) {
         return new IndexException(
                 String.format("Segment registry close failed: %s", status),

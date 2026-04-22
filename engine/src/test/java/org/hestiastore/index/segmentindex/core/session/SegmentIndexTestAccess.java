@@ -42,7 +42,7 @@ public final class SegmentIndexTestAccess {
                 final Field delegateField = current.getClass().getDeclaredField(
                         "delegate");
                 delegateField.setAccessible(true);
-                current = delegateField.get(current);
+                current = delegateField.get(current).orElse(null);
             } catch (final ReflectiveOperationException ex) {
                 throw new IllegalStateException(
                         "Unable to unwrap segment index for test access", ex);

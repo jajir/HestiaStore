@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,7 +21,7 @@ class SegmentMaintenanceServiceTest {
         final AtomicReference<SegmentState> stateAtCallback = new AtomicReference<>();
         final AtomicBoolean called = new AtomicBoolean(false);
 
-        final SegmentResult<Void> result = service
+        final OperationResult<Void> result = service
                 .startMaintenance(() -> new SegmentMaintenanceWork(() -> {
                 }, () -> {
                 }), () -> {
@@ -27,7 +29,7 @@ class SegmentMaintenanceServiceTest {
                     called.set(true);
                 });
 
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertTrue(called.get());
         assertEquals(SegmentState.READY, stateAtCallback.get());
         assertEquals(SegmentState.READY, gate.getState());
@@ -40,13 +42,13 @@ class SegmentMaintenanceServiceTest {
                 gate, new DirectExecutor());
         final AtomicBoolean called = new AtomicBoolean(false);
 
-        final SegmentResult<Void> result = service
+        final OperationResult<Void> result = service
                 .startMaintenance(() -> new SegmentMaintenanceWork(() -> {
                 }, () -> {
                     throw new IllegalStateException("boom");
                 }), () -> called.set(true));
 
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
 
         assertFalse(called.get());
         assertEquals(SegmentState.ERROR, gate.getState());
@@ -58,14 +60,14 @@ class SegmentMaintenanceServiceTest {
         final SegmentMaintenanceService service = new SegmentMaintenanceService(
                 gate, new DirectExecutor());
 
-        final SegmentResult<Void> result = service
+        final OperationResult<Void> result = service
                 .startMaintenance(() -> new SegmentMaintenanceWork(() -> {
                 }, () -> {
                 }), () -> {
                     throw new IllegalStateException("on ready fail");
                 });
 
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals(SegmentState.ERROR, gate.getState());
     }
 }
