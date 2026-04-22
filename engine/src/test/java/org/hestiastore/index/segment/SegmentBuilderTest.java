@@ -1,6 +1,6 @@
 package org.hestiastore.index.segment;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 
 /**
  * Class test invalid parameters of segment.
@@ -285,7 +285,7 @@ class SegmentBuilderTest {
                 .build().getValue();
 
         assertNotNull(segment);
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
     }
 
     @Test
@@ -317,7 +317,7 @@ class SegmentBuilderTest {
         assertEquals(SegmentResultStatus.OK, second.getStatus());
         assertEquals("a", first.getValue());
         assertEquals("b", second.getValue());
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
     }
 
     @Test
@@ -340,7 +340,7 @@ class SegmentBuilderTest {
         final Object executor = field.get(impl);
 
         assertEquals(DirectExecutor.class, executor.getClass());
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
     }
 
     @Test
@@ -380,7 +380,7 @@ class SegmentBuilderTest {
                     .get(core);
             assertEquals(2L, files.getActiveVersion());
         } finally {
-            closeAndAwait(segment);
+            closeAndAssertClosed(segment);
         }
 
         final SegmentPropertiesManager rootProperties = new SegmentPropertiesManager(
