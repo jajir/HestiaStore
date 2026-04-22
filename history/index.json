@@ -567,8 +567,8 @@
         "222": {
           "channel": "pr-222",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-222/latest.json",
-          "sha": "1703b98c6930756feb72344e94d1227891bf3fd2",
-          "timestampUtc": "2026-04-22T08:10:53.611632+00:00"
+          "sha": "f4ccddd061a9d27c819bed66a15005792d0cee05",
+          "timestampUtc": "2026-04-22T08:28:05.912499+00:00"
         }
       },
       "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
