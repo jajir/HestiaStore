@@ -9,6 +9,11 @@ for index-level telemetry.
   - `getOperationCount`
   - `putOperationCount`
   - `deleteOperationCount`
+- Canonical write-path view:
+  - `getWritePathMetrics()`
+  - `getSegmentWriteCacheKeyLimit()`
+  - `getSegmentWriteCacheKeyLimitDuringMaintenance()`
+  - `getIndexBufferedWriteKeyLimit()`
 - Registry and segment state:
   - `registryCache*`
   - `segment*`
@@ -16,6 +21,7 @@ for index-level telemetry.
   - `totalSegmentCacheKeys`
   - `totalBufferedWriteKeys`
 - Compatibility fields retained from the removed partition runtime:
+  - `getLegacyPartitionCompatibilityMetrics()`
   - `maxNumberOfKeysInActivePartition`
   - `maxNumberOfImmutableRunsPerPartition`
   - `maxNumberOfKeysInPartitionBuffer`
@@ -44,6 +50,8 @@ for index-level telemetry.
 - Counters are process-local and reset when a new index object is created.
 - Field values represent observed operation calls, not necessarily durable
   writes on disk.
+- `getWritePathMetrics()` is the canonical write-path view for the current
+  direct-to-segment runtime
 - partition-named fields are compatibility values; in the direct-to-segment
   runtime they typically remain `0` or act as legacy-named tuning limits
 - `split*`, `maintenance*`, `segment*`, `totalBufferedWriteKeys`, and `wal*`
@@ -57,3 +65,6 @@ for index-level telemetry.
 - Existing fields and meaning are stable and cannot change silently.
 - New fields may be added in future versions.
 - Consumers should ignore unknown fields for forward compatibility.
+- New in-process consumers should prefer canonical write-path metrics first and
+  only read partition-named fields when integrating with an older compatibility
+  contract.

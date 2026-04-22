@@ -3,8 +3,13 @@
 Management contracts are versioned under `/api/v1` and defined in the
 `monitoring-rest-json-api` module (`org.hestiastore.monitoring.json.api.*`).
 
-This page describes the target `v1` shape after runtime override support for
-selected partition/cache runtime limits is applied.
+This page describes the stable `v1` management contract.
+
+The current runtime model is direct-to-segment. Inside the engine, canonical
+configuration and metrics now use write-path terminology such as
+`segmentWriteCacheKeyLimit` and `indexBufferedWriteKeyLimit`. The `v1` REST
+contract remains partition-shaped for backward compatibility and should be read
+as a compatibility surface, not as the primary domain model.
 
 ## Versioning policy
 
@@ -29,6 +34,8 @@ selected partition/cache runtime limits is applied.
 
 ## Runtime-overridable keys
 
+`v1` keeps the historical key names below for compatibility:
+
 - `maxNumberOfSegmentsInCache`
 - `maxNumberOfKeysInSegmentCache`
 - `maxNumberOfKeysInActivePartition`
@@ -36,6 +43,15 @@ selected partition/cache runtime limits is applied.
 - `maxNumberOfKeysInPartitionBuffer`
 - `maxNumberOfKeysInIndexBuffer`
 - `maxNumberOfKeysInPartitionBeforeSplit`
+
+Canonical terminology map:
+
+- `maxNumberOfKeysInActivePartition` -> `segmentWriteCacheKeyLimit`
+- `maxNumberOfKeysInPartitionBuffer` ->
+  `segmentWriteCacheKeyLimitDuringMaintenance`
+- `maxNumberOfKeysInIndexBuffer` -> `indexBufferedWriteKeyLimit`
+- `maxNumberOfKeysInPartitionBeforeSplit` -> `segmentSplitKeyThreshold`
+- `maxNumberOfImmutableRunsPerPartition` -> legacy compatibility limit only
 
 These overrides are runtime-only:
 
@@ -46,8 +62,11 @@ These overrides are runtime-only:
 
 Compatibility note:
 
-- report and config responses emit only the canonical partition-aware names
-- `supportedKeys` and config views return only the canonical partition-aware
+- report and config responses emit only the `v1` compatibility names listed
+  above
+- `supportedKeys` and config views therefore also remain `v1` compatibility
+  names
+- clients should not infer a live partition-overlay runtime from those field
   names
 
 Lifecycle note:
@@ -58,6 +77,9 @@ Lifecycle note:
   work has not finished yet.
 
 ## Example payloads
+
+The JSON examples below intentionally keep the legacy `v1` field names because
+they show the wire contract, not the canonical in-process model.
 
 `GET /api/v1/report` response:
 
@@ -139,8 +161,10 @@ Lifecycle note:
 
 `GET /api/v1/config?indexName=orders` response:
 
-- `original` and `current` contain only the canonical runtime-tuning view used
-  by `PATCH /api/v1/config`.
+- `original` and `current` contain only the runtime-tuning subset used by
+  `PATCH /api/v1/config`.
+- within `v1`, that runtime-tuning view is still serialized with legacy
+  partition-shaped key names for compatibility.
 - Read-only or non-runtime properties are intentionally omitted from this
   endpoint even if they exist in the persisted index manifest.
 - `supportedKeys` is the exact writable subset for `PATCH /api/v1/config` and
@@ -216,6 +240,15 @@ Lifecycle note:
 - `maxNumberOfKeysInIndexBuffer >= maxNumberOfKeysInPartitionBuffer`
 - `maxNumberOfKeysInPartitionBeforeSplit >= maxNumberOfKeysInPartitionBuffer`
 - Unknown key error code: `CONFIG_KEY_NOT_SUPPORTED`
+
+Canonical interpretation:
+
+- `maxNumberOfKeysInPartitionBuffer > maxNumberOfKeysInActivePartition`
+  means maintenance-time write-cache buffering must stay above the steady-state
+  segment write-cache limit
+- `maxNumberOfKeysInIndexBuffer >= maxNumberOfKeysInPartitionBuffer`
+  means the index-wide buffered write budget must cover at least one
+  maintenance-time segment budget
 
 ## Error response
 

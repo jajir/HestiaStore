@@ -43,13 +43,13 @@ final class BlockingSegmentRegistryAdapter<K, V> {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+            final OperationResult<Segment<K, V>> loaded = segmentRegistry
                     .tryLoadSegment(segmentId);
-            if (loaded.getStatus() == SegmentRegistryResultStatus.OK
+            if (loaded.getStatus() == OperationStatus.OK
                     && loaded.getValue() != null) {
                 return loaded.getValue();
             }
-            if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY) {
+            if (loaded.getStatus() == OperationStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "loadSegment",
                         segmentId);
                 continue;
@@ -62,14 +62,14 @@ final class BlockingSegmentRegistryAdapter<K, V> {
 
     Optional<Segment<K, V>> tryGetSegment(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
-        final SegmentRegistryResult<Segment<K, V>> loaded = segmentRegistry
+        final OperationResult<Segment<K, V>> loaded = segmentRegistry
                 .tryLoadSegment(segmentId);
-        if (loaded.getStatus() == SegmentRegistryResultStatus.OK
+        if (loaded.getStatus() == OperationStatus.OK
                 && loaded.getValue() != null) {
             return Optional.of(loaded.getValue());
         }
-        if (loaded.getStatus() == SegmentRegistryResultStatus.BUSY
-                || loaded.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+        if (loaded.getStatus() == OperationStatus.BUSY
+                || loaded.getStatus() == OperationStatus.CLOSED) {
             return Optional.empty();
         }
         throw new IndexException(String.format(
@@ -80,13 +80,13 @@ final class BlockingSegmentRegistryAdapter<K, V> {
     Segment<K, V> createSegment() {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentRegistryResult<Segment<K, V>> created = segmentRegistry
+            final OperationResult<Segment<K, V>> created = segmentRegistry
                     .tryCreateSegment();
-            if (created.getStatus() == SegmentRegistryResultStatus.OK
+            if (created.getStatus() == OperationStatus.OK
                     && created.getValue() != null) {
                 return created.getValue();
             }
-            if (created.getStatus() == SegmentRegistryResultStatus.BUSY) {
+            if (created.getStatus() == OperationStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "createSegment", null);
                 continue;
             }
@@ -99,13 +99,13 @@ final class BlockingSegmentRegistryAdapter<K, V> {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentRegistryResult<Void> deleted = segmentRegistry
+            final OperationResult<Void> deleted = segmentRegistry
                     .tryDeleteSegment(segmentId);
-            if (deleted.getStatus() == SegmentRegistryResultStatus.OK
-                    || deleted.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+            if (deleted.getStatus() == OperationStatus.OK
+                    || deleted.getStatus() == OperationStatus.CLOSED) {
                 return;
             }
-            if (deleted.getStatus() == SegmentRegistryResultStatus.BUSY) {
+            if (deleted.getStatus() == OperationStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "deleteSegment",
                         segmentId);
                 continue;
@@ -118,13 +118,13 @@ final class BlockingSegmentRegistryAdapter<K, V> {
 
     boolean deleteSegmentIfAvailable(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
-        final SegmentRegistryResult<Void> deleted = segmentRegistry
+        final OperationResult<Void> deleted = segmentRegistry
                 .tryDeleteSegment(segmentId);
-        if (deleted.getStatus() == SegmentRegistryResultStatus.OK
-                || deleted.getStatus() == SegmentRegistryResultStatus.CLOSED) {
+        if (deleted.getStatus() == OperationStatus.OK
+                || deleted.getStatus() == OperationStatus.CLOSED) {
             return true;
         }
-        if (deleted.getStatus() == SegmentRegistryResultStatus.BUSY) {
+        if (deleted.getStatus() == OperationStatus.BUSY) {
             return false;
         }
         throw new IndexException(String.format(

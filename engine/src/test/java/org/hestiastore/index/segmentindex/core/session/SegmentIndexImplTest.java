@@ -47,10 +47,10 @@ class SegmentIndexImplTest {
     void putGetAndDeleteRoundTrip() {
         index.put(1, "one");
 
-        assertEquals("one", index.get(1));
+        assertEquals("one", index.get(1).orElse(null));
 
         index.delete(1);
-        assertNull(index.get(1));
+        assertNull(index.get(1).orElse(null));
     }
 
     @Test

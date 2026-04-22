@@ -52,7 +52,7 @@ class IndexInternalConcurrentTest {
         index.put(1, "one");
         index.put(2, "two");
 
-        assertEquals("one", index.get(1));
+        assertEquals("one", index.get(1).orElse(null));
 
         try (Stream<Entry<Integer, String>> stream = index
                 .getStream(SegmentWindow.unbounded())) {

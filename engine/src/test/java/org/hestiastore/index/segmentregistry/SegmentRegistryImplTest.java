@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -107,9 +109,9 @@ class SegmentRegistryImplTest {
         final SegmentRegistryStateMachine gate = readGate(registry);
         assertTrue(gate.tryEnterFreeze());
         try (GateGuard ignored = new GateGuard(gate)) {
-            final SegmentRegistryResult<Segment<Integer, String>> result = registry
+            final OperationResult<Segment<Integer, String>> result = registry
                     .tryLoadSegment(segmentId);
-            assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+            assertSame(OperationStatus.BUSY, result.getStatus());
         }
     }
 
@@ -117,9 +119,9 @@ class SegmentRegistryImplTest {
     void getSegment_returnsClosedWhenRegistryClosed() {
         registry.close();
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final OperationResult<Segment<Integer, String>> result = registry
                 .tryLoadSegment(SegmentId.of(1));
-        assertSame(SegmentRegistryResultStatus.CLOSED, result.getStatus());
+        assertSame(OperationStatus.CLOSED, result.getStatus());
     }
 
     @Test
@@ -127,9 +129,9 @@ class SegmentRegistryImplTest {
         final SegmentRegistryStateMachine gate = readGate(registry);
         gate.fail();
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final OperationResult<Segment<Integer, String>> result = registry
                 .tryLoadSegment(SegmentId.of(1));
-        assertSame(SegmentRegistryResultStatus.ERROR, result.getStatus());
+        assertSame(OperationStatus.ERROR, result.getStatus());
     }
 
     @Test
@@ -189,9 +191,9 @@ class SegmentRegistryImplTest {
                 .getValue();
         final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final OperationResult<Segment<Integer, String>> result = registry
                 .tryLoadSegment(missingId);
-        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+        assertSame(OperationStatus.BUSY, result.getStatus());
     }
 
     @Test
@@ -207,7 +209,7 @@ class SegmentRegistryImplTest {
 
         final ExecutorService callers = Executors.newSingleThreadExecutor();
         try {
-            final Future<SegmentRegistryResult<Segment<Integer, String>>> waiter = callers
+            final Future<OperationResult<Segment<Integer, String>>> waiter = callers
                     .submit(() -> registry.tryLoadSegment(segmentId));
 
             org.junit.jupiter.api.Assertions.assertThrows(
@@ -216,9 +218,9 @@ class SegmentRegistryImplTest {
 
             finishLoad(entry, segment);
 
-            final SegmentRegistryResult<Segment<Integer, String>> result = waiter
+            final OperationResult<Segment<Integer, String>> result = waiter
                     .get(1, TimeUnit.SECONDS);
-            assertSame(SegmentRegistryResultStatus.OK, result.getStatus());
+            assertSame(OperationStatus.OK, result.getStatus());
             assertSame(segment, result.getValue());
         } finally {
             callers.shutdownNow();
@@ -239,9 +241,9 @@ class SegmentRegistryImplTest {
         final Object entry = getCacheEntry(segmentId);
         assertTrue(invokeTryStartUnload(entry));
 
-        final SegmentRegistryResult<Segment<Integer, String>> result = registry
+        final OperationResult<Segment<Integer, String>> result = registry
                 .tryLoadSegment(segmentId);
-        assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
+        assertSame(OperationStatus.BUSY, result.getStatus());
 
         closeAndAssertClosed(segment);
         removeCacheEntry(segmentId);
@@ -407,7 +409,7 @@ class SegmentRegistryImplTest {
             final Field cacheField = SegmentRegistryImpl.class
                     .getDeclaredField("cache");
             cacheField.setAccessible(true);
-            final Object cache = cacheField.get(registry);
+            final Object cache = cacheField.get(registry).orElse(null);
 
             final Field mapField = cache.getClass().getDeclaredField("map");
             mapField.setAccessible(true);

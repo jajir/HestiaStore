@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationStatus;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,7 +18,7 @@ class PutBusyRetryMonitorTest {
         final PutBusyRetryMonitor monitor = new PutBusyRetryMonitor("put",
                 stats, sequenceNanoTimeSupplier(10_000L, 35_000L));
 
-        monitor.observeRetryableStatus(IndexResultStatus.BUSY);
+        monitor.observeRetryableStatus(OperationStatus.BUSY);
         monitor.finishWithoutFailure();
 
         assertEquals(1L, stats.getPutBusyRetryCount());
@@ -31,7 +32,7 @@ class PutBusyRetryMonitorTest {
         final PutBusyRetryMonitor monitor = new PutBusyRetryMonitor("put",
                 stats, sequenceNanoTimeSupplier(20_000L, 52_000L));
 
-        monitor.observeRetryableStatus(IndexResultStatus.BUSY);
+        monitor.observeRetryableStatus(OperationStatus.BUSY);
         monitor.finish(new IndexException(
                 "Index operation 'put' timed out after 30 ms"));
 
@@ -46,7 +47,7 @@ class PutBusyRetryMonitorTest {
         final PutBusyRetryMonitor monitor = new PutBusyRetryMonitor("delete",
                 stats, sequenceNanoTimeSupplier(10_000L, 35_000L));
 
-        monitor.observeRetryableStatus(IndexResultStatus.BUSY);
+        monitor.observeRetryableStatus(OperationStatus.BUSY);
         monitor.finishWithoutFailure();
 
         assertEquals(0L, stats.getPutBusyRetryCount());

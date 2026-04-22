@@ -52,6 +52,23 @@ Inside the index directory:
 
 WAL segment files are named as `<20-digit-base-lsn>.wal`.
 
+## Runtime ownership
+
+Internally, WAL is now split into smaller collaborators while keeping the
+public `WalRuntime` contract stable:
+
+- `WalMetadataCatalog` handles `format.meta`, `checkpoint.meta`, temp-file
+  promotion, and segment discovery.
+- `WalRecoveryManager` handles replay, invalid-tail handling, and checkpoint
+  clamp behavior on open.
+- `WalSegmentCatalog` handles active-segment rotation, retained-byte tracking,
+  and checkpoint cleanup.
+- `WalWriter` and `WalSyncPolicy` handle append-path durability behavior for
+  `ASYNC`, `SYNC`, and `GROUP_SYNC`.
+
+Architecture details live in
+[WAL Runtime](../architecture/segmentindex/wal-runtime.md).
+
 ## Tooling
 
 `WalTool` supports:

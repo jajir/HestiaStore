@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,8 +28,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentMaintenancePolicy;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -61,7 +61,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
             stream.forEach(entry -> {
-                final String value = index1.get(entry.getKey());
+                final String value = index1.get(entry.getKey()).orElse(null);
                 assertEquals(entry.getValue(), value);
             });
         }
@@ -79,7 +79,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         testData.stream().forEach(entry -> {
-            final String value = index2.get(entry.getKey());
+            final String value = index2.get(entry.getKey()).orElse(null);
             assertEquals(entry.getValue(), value);
         });
         index2.close();
@@ -271,8 +271,8 @@ class IntegrationSegmentIndexSimpleTest {
                 .toList();
         assertEquals(data.size(), indexData.size());
         for (int i = 0; i < data.size(); i++) {
-            final Entry<Integer, String> entryData = data.get(i);
-            final Entry<Integer, String> entryIndex = indexData.get(i);
+            final Entry<Integer, String> entryData = data.get(i).orElse(null);
+            final Entry<Integer, String> entryIndex = indexData.get(i).orElse(null);
             assertEquals(entryData.getKey(), entryIndex.getKey());
             assertEquals(entryData.getValue(), entryIndex.getValue());
         }
@@ -359,9 +359,9 @@ class IntegrationSegmentIndexSimpleTest {
         final List<Entry<Integer, String>> out = new ArrayList<>();
         final Segment<Integer, String> seg = makeSegment(segmentId);
         try {
-            final SegmentResult<EntryIterator<Integer, String>> result = seg
+            final OperationResult<EntryIterator<Integer, String>> result = seg
                     .openIterator();
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(OperationStatus.OK, result.getStatus());
             try (EntryIterator<Integer, String> iterator = result.getValue()) {
                 while (iterator.hasNext()) {
                     out.add(iterator.next());

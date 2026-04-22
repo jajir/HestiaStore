@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,27 +29,27 @@ class SegmentImplConcurrencyContractTest {
     void exclusiveAccess_blocks_operations_until_closed() {
         final Segment<Integer, String> segment = newSegment(2);
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            final SegmentResult<EntryIterator<Integer, String>> exclusive = segment
+            final OperationResult<EntryIterator<Integer, String>> exclusive = segment
                     .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
-            assertEquals(SegmentResultStatus.OK, exclusive.getStatus());
+            assertEquals(OperationStatus.OK, exclusive.getStatus());
 
-            assertEquals(SegmentResultStatus.BUSY,
+            assertEquals(OperationStatus.BUSY,
                     segment.put(2, "b").getStatus());
-            assertEquals(SegmentResultStatus.BUSY, segment.get(1).getStatus());
-            assertEquals(SegmentResultStatus.BUSY,
+            assertEquals(OperationStatus.BUSY, segment.get(1).getStatus());
+            assertEquals(OperationStatus.BUSY,
                     segment.flush().getStatus());
-            assertEquals(SegmentResultStatus.BUSY,
+            assertEquals(OperationStatus.BUSY,
                     segment.compact().getStatus());
-            assertEquals(SegmentResultStatus.BUSY,
+            assertEquals(OperationStatus.BUSY,
                     segment.openIterator().getStatus());
 
             exclusive.getValue().close();
 
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(2, "b").getStatus());
-            assertEquals(SegmentResultStatus.OK, segment.get(1).getStatus());
+            assertEquals(OperationStatus.OK, segment.get(1).getStatus());
         } finally {
             closeAndAssertClosed(segment);
         }
@@ -57,20 +59,20 @@ class SegmentImplConcurrencyContractTest {
     void exclusiveAccess_invalidates_failFast_iterators() {
         final Segment<Integer, String> segment = newSegment(2);
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(2, "b").getStatus());
-            final SegmentResult<EntryIterator<Integer, String>> failFastResult = segment
+            final OperationResult<EntryIterator<Integer, String>> failFastResult = segment
                     .openIterator();
-            assertEquals(SegmentResultStatus.OK, failFastResult.getStatus());
+            assertEquals(OperationStatus.OK, failFastResult.getStatus());
             final EntryIterator<Integer, String> failFast = failFastResult
                     .getValue();
             assertTrue(failFast.hasNext());
 
-            final SegmentResult<EntryIterator<Integer, String>> exclusive = segment
+            final OperationResult<EntryIterator<Integer, String>> exclusive = segment
                     .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
-            assertEquals(SegmentResultStatus.OK, exclusive.getStatus());
+            assertEquals(OperationStatus.OK, exclusive.getStatus());
 
             assertFalse(failFast.hasNext());
 
@@ -85,16 +87,16 @@ class SegmentImplConcurrencyContractTest {
     void flush_invalidates_failFast_iterators() {
         final Segment<Integer, String> segment = newSegment(2);
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            final SegmentResult<EntryIterator<Integer, String>> failFastResult = segment
+            final OperationResult<EntryIterator<Integer, String>> failFastResult = segment
                     .openIterator();
-            assertEquals(SegmentResultStatus.OK, failFastResult.getStatus());
+            assertEquals(OperationStatus.OK, failFastResult.getStatus());
             final EntryIterator<Integer, String> failFast = failFastResult
                     .getValue();
             assertTrue(failFast.hasNext());
 
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.flush().getStatus());
 
             assertFalse(failFast.hasNext());
@@ -109,18 +111,18 @@ class SegmentImplConcurrencyContractTest {
         final CapturingExecutor executor = new CapturingExecutor();
         final Segment<Integer, String> segment = newSegment(4, executor);
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
 
-            final SegmentResult<Void> result = segment.flush();
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final OperationResult<Void> result = segment.flush();
+            assertEquals(OperationStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertTrue(executor.hasTask());
 
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(2, "b").getStatus());
-            final SegmentResult<String> read = segment.get(2);
-            assertEquals(SegmentResultStatus.OK, read.getStatus());
+            final OperationResult<String> read = segment.get(2).orElse(null);
+            assertEquals(OperationStatus.OK, read.getStatus());
             assertEquals("b", read.getValue());
 
             executor.runTask();
@@ -137,9 +139,9 @@ class SegmentImplConcurrencyContractTest {
     void put_returns_busy_when_write_cache_full() {
         final Segment<Integer, String> segment = newSegment(1);
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
-            assertEquals(SegmentResultStatus.BUSY,
+            assertEquals(OperationStatus.BUSY,
                     segment.put(2, "b").getStatus());
         } finally {
             closeAndAssertClosed(segment);
@@ -151,18 +153,18 @@ class SegmentImplConcurrencyContractTest {
         final CapturingExecutor executor = new CapturingExecutor();
         final Segment<Integer, String> segment = newSegment(4, executor);
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "a").getStatus());
 
-            final SegmentResult<Void> result = segment.compact();
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final OperationResult<Void> result = segment.compact();
+            assertEquals(OperationStatus.OK, result.getStatus());
             assertEquals(SegmentState.MAINTENANCE_RUNNING, segment.getState());
             assertTrue(executor.hasTask());
 
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(2, "b").getStatus());
-            final SegmentResult<String> read = segment.get(2);
-            assertEquals(SegmentResultStatus.OK, read.getStatus());
+            final OperationResult<String> read = segment.get(2).orElse(null);
+            assertEquals(OperationStatus.OK, read.getStatus());
             assertEquals("b", read.getValue());
 
             executor.runTask();
@@ -193,9 +195,9 @@ class SegmentImplConcurrencyContractTest {
                                 "Writer interrupted before start", e);
                     }
                     for (int i = 0; i < items; i++) {
-                        final SegmentResult<Void> result = segment.put(i,
+                        final OperationResult<Void> result = segment.put(i,
                                 "v" + i);
-                        if (result.getStatus() != SegmentResultStatus.OK) {
+                        if (result.getStatus() != OperationStatus.OK) {
                             throw new IllegalStateException(
                                     "Put returned " + result.getStatus());
                         }
@@ -211,8 +213,8 @@ class SegmentImplConcurrencyContractTest {
                                 "Reader interrupted before start", e);
                     }
                     for (int i = 0; i < items; i++) {
-                        final SegmentResult<String> result = segment.get(i);
-                        if (result.getStatus() != SegmentResultStatus.OK) {
+                        final OperationResult<String> result = segment.get(i).orElse(null);
+                        if (result.getStatus() != OperationStatus.OK) {
                             throw new IllegalStateException(
                                     "Get returned " + result.getStatus());
                         }
@@ -227,8 +229,8 @@ class SegmentImplConcurrencyContractTest {
             }
 
             for (int i = 0; i < items; i++) {
-                final SegmentResult<String> result = segment.get(i);
-                assertEquals(SegmentResultStatus.OK, result.getStatus());
+                final OperationResult<String> result = segment.get(i).orElse(null);
+                assertEquals(OperationStatus.OK, result.getStatus());
                 assertEquals("v" + i, result.getValue());
             }
         } finally {
@@ -267,8 +269,8 @@ class SegmentImplConcurrencyContractTest {
         if (segment == null) {
             return;
         }
-        final SegmentResult<Void> closeResult = segment.close();
-        if (closeResult.getStatus() == SegmentResultStatus.BUSY
+        final OperationResult<Void> closeResult = segment.close();
+        if (closeResult.getStatus() == OperationStatus.BUSY
                 && executor.hasTask()) {
             executor.runTask();
             segment.close();

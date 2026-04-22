@@ -45,10 +45,10 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 conf)) {
             index.put(1, "a");
             index.put(2, "b");
-            assertEquals("a", index.get(1));
-            assertNull(index.get(99));
-            assertNull(index.get(100));
-            assertNull(index.get(101));
+            assertEquals("a", index.get(1).orElse(null));
+            assertNull(index.get(99).orElse(null));
+            assertNull(index.get(100).orElse(null));
+            assertNull(index.get(101).orElse(null));
             index.delete(2);
 
             final SegmentIndexMetricsSnapshot snapshot = index
@@ -254,7 +254,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 index.put(i, "v-" + i);
             }
             index.flushAndWait();
-            assertEquals("v-0", index.get(0));
+            assertEquals("v-0", index.get(0).orElse(null));
 
             final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
             final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
@@ -318,7 +318,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             }, 10_000L);
 
             for (int i = 0; i < 48; i++) {
-                assertEquals("v-" + i, index.get(i));
+                assertEquals("v-" + i, index.get(i).orElse(null));
             }
         }
     }
@@ -376,7 +376,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             }, 10_000L);
 
             for (int i = 0; i < 48; i++) {
-                assertEquals("v-" + i, index.get(i));
+                assertEquals("v-" + i, index.get(i).orElse(null));
             }
         } finally {
             if (previousValue == null) {
@@ -452,10 +452,10 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(0, after.getSplitInFlightCount());
             assertTrue(after.getDrainLatencyP95Micros() >= 0L);
 
-            assertEquals("buffered-5", index.get(5));
-            assertNull(index.get(18));
-            assertEquals("buffered-44", index.get(44));
-            assertEquals("buffered-49", index.get(49));
+            assertEquals("buffered-5", index.get(5).orElse(null));
+            assertNull(index.get(18).orElse(null));
+            assertEquals("buffered-44", index.get(44).orElse(null));
+            assertEquals("buffered-49", index.get(49).orElse(null));
         }
     }
 

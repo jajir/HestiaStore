@@ -1574,6 +1574,33 @@ public class ConsoleBackendClient {
             List<SegmentRow> segmentRuntimeSnapshots) {
 
         /**
+         * Canonical write-path limit for one routed segment write cache.
+         *
+         * @return segment write-cache key limit
+         */
+        public int segmentWriteCacheKeyLimit() {
+            return maxNumberOfKeysInActivePartition;
+        }
+
+        /**
+         * Canonical write-path limit used while segment maintenance is running.
+         *
+         * @return maintenance-time buffered key limit
+         */
+        public int segmentWriteCacheKeyLimitDuringMaintenance() {
+            return maxNumberOfKeysInPartitionBuffer;
+        }
+
+        /**
+         * Canonical buffered key limit across the whole index.
+         *
+         * @return index-wide buffered key limit
+         */
+        public int indexBufferedWriteKeyLimit() {
+            return maxNumberOfKeysInIndexBuffer;
+        }
+
+        /**
          * Total operations count.
          *
          * @return sum of get/put/delete

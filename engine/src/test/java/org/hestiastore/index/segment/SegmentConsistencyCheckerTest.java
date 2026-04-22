@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,7 +37,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_noData() {
-        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
+        when(segment.openIterator()).thenReturn(OperationResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(false);
 
@@ -46,7 +47,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_3_records() {
-        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
+        when(segment.openIterator()).thenReturn(OperationResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY2)
@@ -58,7 +59,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_same_records() {
-        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
+        when(segment.openIterator()).thenReturn(OperationResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY3)
@@ -75,7 +76,7 @@ class SegmentConsistencyCheckerTest {
 
     @Test
     void test_invalid_order() {
-        when(segment.openIterator()).thenReturn(SegmentResult.ok(iterator));
+        when(segment.openIterator()).thenReturn(OperationResult.ok(iterator));
         when(segment.getId()).thenReturn(SEGMENT_ID);
         when(iterator.hasNext()).thenReturn(true, true, true, false);
         when(iterator.next()).thenReturn(ENTRY1).thenReturn(ENTRY3)

@@ -28,19 +28,19 @@ final class IndexOperationOutcomeHandler<K, V> {
         this.splitPlanner = Vldtn.requireNonNull(splitPlanner, "splitPlanner");
     }
 
-    <T> T finishRead(final String operation, final IndexResult<T> result,
+    <T> T finishRead(final String operation, final OperationResult<T> result,
             final long startedNanos) {
         recordReadLatency(startedNanos);
-        if (result.getStatus() == IndexResultStatus.OK) {
+        if (result.getStatus() == OperationStatus.OK) {
             return result.getValue();
         }
         throw newIndexException(operation, null, result.getStatus());
     }
 
     void finishWrite(final String operation,
-            final IndexResult<SegmentId> result,
+            final OperationResult<SegmentId> result,
             final long walLsn, final long startedNanos) {
-        if (result.getStatus() == IndexResultStatus.OK) {
+        if (result.getStatus() == OperationStatus.OK) {
             walCoordinator.recordAppliedLsn(walLsn);
             if (result.getValue() != null) {
                 splitPlanner.hintSegment(result.getValue());
@@ -53,7 +53,7 @@ final class IndexOperationOutcomeHandler<K, V> {
     }
 
     IndexException newIndexException(final String operation,
-            final SegmentId segmentId, final IndexResultStatus status) {
+            final SegmentId segmentId, final OperationStatus status) {
         final String target = segmentId == null ? ""
                 : String.format(" on segment '%s'", segmentId);
         return new IndexException(

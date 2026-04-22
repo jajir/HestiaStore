@@ -4,6 +4,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
@@ -49,7 +50,7 @@ public final class IndexContextLoggingAdapter<K, V>
     }
 
     @Override
-    public V get(final K key) {
+    public OperationResult<V> get(final K key) {
         return contextScopeRunner.supply(() -> delegate.get(key));
     }
 

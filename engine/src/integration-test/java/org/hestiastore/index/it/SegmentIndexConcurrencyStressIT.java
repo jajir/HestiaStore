@@ -181,7 +181,7 @@ class SegmentIndexConcurrencyStressIT {
             rotator.shutdownNow();
             lifecycleLock.writeLock().lock();
             try {
-                final SegmentIndex<Integer, Integer> current = indexRef.get();
+                final SegmentIndex<Integer, Integer> current = indexRef.get().orElse(null);
                 if (!current.wasClosed()) {
                     current.flushAndWait();
                     current.compactAndWait();
@@ -218,7 +218,7 @@ class SegmentIndexConcurrencyStressIT {
 
         lifecycleLock.writeLock().lock();
         try {
-            final SegmentIndex<Integer, Integer> index = indexRef.get();
+            final SegmentIndex<Integer, Integer> index = indexRef.get().orElse(null);
             for (int key = 0; key < hotKeyRange; key++) {
                 index.put(key, -key);
             }
@@ -306,7 +306,7 @@ class SegmentIndexConcurrencyStressIT {
 
             lifecycleLock.writeLock().lock();
             try {
-                final SegmentIndex<Integer, Integer> current = indexRef.get();
+                final SegmentIndex<Integer, Integer> current = indexRef.get().orElse(null);
                 if (!current.wasClosed()) {
                     current.flushAndWait();
                     current.compactAndWait();
@@ -324,7 +324,7 @@ class SegmentIndexConcurrencyStressIT {
             rotator.shutdownNow();
             lifecycleLock.writeLock().lock();
             try {
-                final SegmentIndex<Integer, Integer> current = indexRef.get();
+                final SegmentIndex<Integer, Integer> current = indexRef.get().orElse(null);
                 if (!current.wasClosed()) {
                     current.close();
                 }

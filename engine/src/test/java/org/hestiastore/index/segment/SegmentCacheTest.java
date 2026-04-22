@@ -401,7 +401,7 @@ class SegmentCacheTest {
         startGate.countDown();
         CompletableFuture.allOf(reader, maintenance).get(10,
                 TimeUnit.SECONDS);
-        final Throwable detectedFailure = failure.get();
+        final Throwable detectedFailure = failure.get().orElse(null);
         if (detectedFailure != null) {
             throw new AssertionError(
                     "Concurrent frozen-cache access failed", detectedFailure);

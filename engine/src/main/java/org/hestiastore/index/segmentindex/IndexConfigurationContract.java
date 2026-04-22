@@ -76,15 +76,44 @@ public interface IndexConfigurationContract {
     }
 
     /**
-     * Returns the default maximum number of keys accepted into the routed
-     * segment write cache.
-     * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Returns the default maximum number of keys accepted into one routed
+     * segment write cache in the direct-to-segment runtime.
      *
-     * @return default routed write-cache key count
+     * @return default segment write-cache key count
      */
-    default int getMaxNumberOfKeysInActivePartition() {
+    default int getSegmentWriteCacheKeyLimit() {
         return getMaxNumberOfKeysInSegmentCache() / 2;
+    }
+
+    /**
+     * Returns the default buffered key limit allowed while segment maintenance
+     * is running.
+     *
+     * @return default maintenance-time buffered key limit
+     */
+    default int getSegmentWriteCacheKeyLimitDuringMaintenance() {
+        return Math.max(getSegmentWriteCacheKeyLimit() + 1,
+                (int) Math.ceil(getSegmentWriteCacheKeyLimit() * 1.4));
+    }
+
+    /**
+     * Returns the default buffered key limit across the whole index.
+     *
+     * @return default total buffered key count
+     */
+    default int getIndexBufferedWriteKeyLimit() {
+        return Math.max(getSegmentWriteCacheKeyLimitDuringMaintenance(),
+                getSegmentWriteCacheKeyLimitDuringMaintenance()
+                        * getMaxNumberOfSegmentsInCache());
+    }
+
+    /**
+     * Returns the default split threshold for a routed segment.
+     *
+     * @return default segment split threshold
+     */
+    default int getSegmentSplitKeyThreshold() {
+        return MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
     }
 
     /**
@@ -98,39 +127,58 @@ public interface IndexConfigurationContract {
     }
 
     /**
+     * Returns the default maximum number of keys accepted into the routed
+     * segment write cache.
+     * <p>
+     * Use {@link #getSegmentWriteCacheKeyLimit()} for the canonical name.
+     *
+     * @return default routed write-cache key count
+     * @deprecated use {@link #getSegmentWriteCacheKeyLimit()}
+     */
+    @Deprecated
+    default int getMaxNumberOfKeysInActivePartition() {
+        return getSegmentWriteCacheKeyLimit();
+    }
+
+    /**
      * Returns the default buffered key limit inside one routed segment.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()} for the
+     * canonical name.
      *
      * @return default buffered key count per routed segment
+     * @deprecated use
+     *             {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()}
      */
+    @Deprecated
     default int getMaxNumberOfKeysInPartitionBuffer() {
-        return Math.max(getMaxNumberOfKeysInActivePartition() + 1,
-                (int) Math.ceil(getMaxNumberOfKeysInActivePartition() * 1.4));
+        return getSegmentWriteCacheKeyLimitDuringMaintenance();
     }
 
     /**
      * Returns the default buffered key limit across the whole index.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getIndexBufferedWriteKeyLimit()} for the canonical name.
      *
      * @return default total buffered key count
+     * @deprecated use {@link #getIndexBufferedWriteKeyLimit()}
      */
+    @Deprecated
     default int getMaxNumberOfKeysInIndexBuffer() {
-        return Math.max(getMaxNumberOfKeysInPartitionBuffer(),
-                getMaxNumberOfKeysInPartitionBuffer()
-                        * getMaxNumberOfSegmentsInCache());
+        return getIndexBufferedWriteKeyLimit();
     }
 
     /**
      * Returns the default split threshold for a routed segment.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getSegmentSplitKeyThreshold()} for the canonical name.
      *
      * @return default routed-segment split threshold
+     * @deprecated use {@link #getSegmentSplitKeyThreshold()}
      */
+    @Deprecated
     default int getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
+        return getSegmentSplitKeyThreshold();
     }
 
     /**

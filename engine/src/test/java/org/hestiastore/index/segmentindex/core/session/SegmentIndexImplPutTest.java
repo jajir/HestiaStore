@@ -55,7 +55,7 @@ class SegmentIndexImplPutTest {
     void putWritesDirectlyToSegment() {
         index.put(1, "one");
 
-        assertEquals("one", index.get(1));
+        assertEquals("one", index.get(1).orElse(null));
     }
 
     @Test
@@ -94,7 +94,7 @@ class SegmentIndexImplPutTest {
         index.put(1, "one");
         index.delete(1);
 
-        assertNull(index.get(1));
+        assertNull(index.get(1).orElse(null));
     }
 
     @Test
@@ -189,8 +189,8 @@ class SegmentIndexImplPutTest {
 
         index.put(1, "one");
         index.put(2, "two");
-        assertEquals("one", index.get(1));
-        assertEquals("two", index.get(2));
+        assertEquals("one", index.get(1).orElse(null));
+        assertEquals("two", index.get(2).orElse(null));
         assertEquals(SegmentIndexState.READY, index.getState());
     }
 

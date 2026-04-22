@@ -38,19 +38,19 @@ public final class RuntimeTuningState {
                 configuration.getMaxNumberOfKeysInSegmentCache());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                configuration.getMaxNumberOfKeysInActivePartition());
+                configuration.getSegmentWriteCacheKeyLimit());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
                 configuration.getMaxNumberOfImmutableRunsPerPartition());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                configuration.getMaxNumberOfKeysInPartitionBuffer());
+                configuration.getSegmentWriteCacheKeyLimitDuringMaintenance());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
-                configuration.getMaxNumberOfKeysInIndexBuffer());
+                configuration.getIndexBufferedWriteKeyLimit());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                configuration.getMaxNumberOfKeysInPartitionBeforeSplit());
+                configuration.getSegmentSplitKeyThreshold());
         return new RuntimeTuningState(configuration.getIndexName(),
                 baselineValues);
     }

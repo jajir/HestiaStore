@@ -127,7 +127,7 @@ class BiteArrayTest {
         bitArray.setBit(5);
 
         // Act
-        boolean result = bitArray.get(5);
+        boolean result = bitArray.get(5).orElse(null);
 
         // Assert
         log(bitArray);
@@ -141,7 +141,7 @@ class BiteArrayTest {
         BitArray bitArray = new BitArray(10);
 
         // Act
-        boolean result = bitArray.get(5);
+        boolean result = bitArray.get(5).orElse(null);
 
         // Assert
         log(bitArray);

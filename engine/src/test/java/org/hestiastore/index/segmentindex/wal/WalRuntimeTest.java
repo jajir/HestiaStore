@@ -1037,7 +1037,7 @@ class WalRuntimeTest {
         }
         final List<String> beforeCorruption = walSegmentNames(root);
         assertTrue(beforeCorruption.size() >= 3);
-        final String corruptedSegment = beforeCorruption.get(1);
+        final String corruptedSegment = beforeCorruption.get(1).orElse(null);
         final Set<String> expectedDeleted = new HashSet<>(
                 beforeCorruption.subList(2, beforeCorruption.size()));
         appendGarbageTail(root, corruptedSegment);
@@ -1115,7 +1115,7 @@ class WalRuntimeTest {
         }
         final List<String> beforeCorruption = walSegmentNames(storage);
         assertTrue(beforeCorruption.size() >= 3);
-        final String corruptedSegment = beforeCorruption.get(1);
+        final String corruptedSegment = beforeCorruption.get(1).orElse(null);
         final Set<String> expectedDeleted = new HashSet<>(
                 beforeCorruption.subList(2, beforeCorruption.size()));
         storage.append(corruptedSegment, new byte[] { 0x01, 0x02, 0x03, 0x04 },
@@ -1164,8 +1164,8 @@ class WalRuntimeTest {
         }
         final List<String> segmentNames = walSegmentNames(root);
         assertTrue(segmentNames.size() >= 2);
-        final String firstSegment = segmentNames.get(0);
-        final String secondSegment = segmentNames.get(1);
+        final String firstSegment = segmentNames.get(0).orElse(null);
+        final String secondSegment = segmentNames.get(1).orElse(null);
         final long firstSegmentMaxLsn = maxLsnInSegment(root, firstSegment);
         assertTrue(firstSegmentMaxLsn > 0L);
         rewriteFirstRecordLsn(root, secondSegment,
@@ -1454,7 +1454,7 @@ class WalRuntimeTest {
             final Map<String, byte[]> actual) {
         assertEquals(expected.keySet(), actual.keySet());
         for (final Map.Entry<String, byte[]> entry : expected.entrySet()) {
-            final byte[] actualBytes = actual.get(entry.getKey());
+            final byte[] actualBytes = actual.get(entry.getKey()).orElse(null);
             assertTrue(Arrays.equals(entry.getValue(), actualBytes),
                     "WAL segment bytes changed for " + entry.getKey());
         }
@@ -2048,14 +2048,14 @@ class WalRuntimeTest {
 
         @Override
         public synchronized long size(final String fileName) {
-            final byte[] bytes = workingFiles.get(fileName);
+            final byte[] bytes = workingFiles.get(fileName).orElse(null);
             return bytes == null ? 0L : bytes.length;
         }
 
         @Override
         public synchronized void append(final String fileName, final byte[] bytes,
                 final int offset, final int length) {
-            final byte[] current = workingFiles.get(fileName);
+            final byte[] current = workingFiles.get(fileName).orElse(null);
             if (current == null) {
                 throw new IndexException(
                         String.format("Missing WAL file '%s'.", fileName));
@@ -2076,14 +2076,14 @@ class WalRuntimeTest {
 
         @Override
         public synchronized byte[] readAll(final String fileName) {
-            final byte[] bytes = workingFiles.get(fileName);
+            final byte[] bytes = workingFiles.get(fileName).orElse(null);
             return bytes == null ? new byte[0] : Arrays.copyOf(bytes, bytes.length);
         }
 
         @Override
         public synchronized int read(final String fileName, final long position,
                 final byte[] destination, final int offset, final int length) {
-            final byte[] data = workingFiles.get(fileName);
+            final byte[] data = workingFiles.get(fileName).orElse(null);
             if (data == null || position >= data.length) {
                 return -1;
             }
@@ -2098,7 +2098,7 @@ class WalRuntimeTest {
         @Override
         public synchronized void truncate(final String fileName,
                 final long sizeBytes) {
-            final byte[] current = workingFiles.get(fileName);
+            final byte[] current = workingFiles.get(fileName).orElse(null);
             if (current == null) {
                 return;
             }
@@ -2131,7 +2131,7 @@ class WalRuntimeTest {
 
         @Override
         public synchronized void sync(final String fileName) {
-            final byte[] bytes = workingFiles.get(fileName);
+            final byte[] bytes = workingFiles.get(fileName).orElse(null);
             if (bytes == null) {
                 return;
             }
@@ -2142,7 +2142,7 @@ class WalRuntimeTest {
         public synchronized void syncMetadata() {
             final Map<String, byte[]> synced = new LinkedHashMap<>();
             for (final Map.Entry<String, byte[]> entry : workingFiles.entrySet()) {
-                final byte[] durable = durableFiles.get(entry.getKey());
+                final byte[] durable = durableFiles.get(entry.getKey()).orElse(null);
                 if (durable != null) {
                     synced.put(entry.getKey(),
                             Arrays.copyOf(durable, durable.length));
