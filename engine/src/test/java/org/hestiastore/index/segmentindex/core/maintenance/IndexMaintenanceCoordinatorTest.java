@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
@@ -31,7 +32,7 @@ class IndexMaintenanceCoordinatorTest {
     private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
 
     @Mock
-    private BackgroundSplitPolicyLoop<Integer, String> backgroundSplitPolicyLoop;
+    private SplitPlanner<Integer, String> splitPlanner;
 
     @Mock
     private StableSegmentCoordinator<Integer, String> stableSegmentCoordinator;
@@ -47,7 +48,7 @@ class IndexMaintenanceCoordinatorTest {
     @BeforeEach
     void setUp() {
         coordinator = new IndexMaintenanceCoordinator<>(keyToSegmentMap,
-                backgroundSplitCoordinator, backgroundSplitPolicyLoop,
+                backgroundSplitCoordinator, splitPlanner,
                 stableSegmentCoordinator, walCoordinator);
     }
 
@@ -57,7 +58,7 @@ class IndexMaintenanceCoordinatorTest {
 
         coordinator.compact();
 
-        verifyNoInteractions(stableSegmentCoordinator, backgroundSplitPolicyLoop);
+        verifyNoInteractions(stableSegmentCoordinator, splitPlanner);
     }
 
     @Test
@@ -70,7 +71,7 @@ class IndexMaintenanceCoordinatorTest {
         coordinator.compact();
 
         verify(stableSegmentCoordinator).compactSegment(segmentId, false);
-        verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
+        verify(splitPlanner).scheduleIfIdle();
     }
 
     @Test
@@ -81,9 +82,9 @@ class IndexMaintenanceCoordinatorTest {
 
         coordinator.flushAndWait();
 
-        verify(backgroundSplitPolicyLoop, times(2)).awaitExhausted();
+        verify(splitPlanner, times(2)).awaitExhausted();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
-        verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
+        verify(splitPlanner).scheduleIfIdle();
         verify(keyToSegmentMap).flushIfDirty();
         verify(walCoordinator).checkpoint();
     }

@@ -6,7 +6,10 @@
 - Mapping version: monotonically increasing counter for optimistic mapping
   checks.
 - Segment registry: cache of Segment instances plus the maintenance executor.
-- Background split coordinator: decides split scheduling after writes.
+- Split planner: accepts write hints, periodic reconciliation, and candidate
+  admission into split workers.
+- Background split coordinator: owns split execution admission, cooldowns, and
+  split-publish exclusivity once a candidate was already admitted.
 - Split: replace one routed segment range with child ranges and update the
   route map atomically.
 
@@ -56,8 +59,12 @@
 ## Maintenance & Splits
 - SegmentIndex evaluates split thresholds after successful writes and schedules
   follow-up maintenance only when `backgroundMaintenanceAutoEnabled` is true.
-- Splits are scheduled by BackgroundSplitCoordinator on the shared split
-  executor; only one split per segment id can be in flight.
+- Successful writes and maintenance follow-ups emit planner hints or rescan
+  requests; the split planner is the only place that may admit split work.
+- The split planner runs on one dedicated planner thread and performs both
+  hint-driven wakeups and periodic reconciliation.
+- Admitted splits run on the shared split-maintenance executor; only one split
+  per segment id can be in flight.
 - RouteSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts throw.
 - Split materialization reads the parent stable data through
   `FULL_ISOLATION`, materializes child stable segments first, and then performs
@@ -113,7 +120,12 @@ Notes:
 - KeyToSegmentMap: mapping, snapshot versioning, and persistence of segment ids.
 - SegmentRegistry(Synchronized): caches Segment instances and supplies the
   maintenance executor.
-- BackgroundSplitCoordinator: post-write split scheduling decisions.
+- SplitPlanner: single control-plane admission point for write hints and
+  periodic split reconciliation.
+- SplitTaskDispatcher: hands planner-selected candidates into split execution
+  admission.
+- BackgroundSplitCoordinator: split execution admission, cooldowns, and split
+  worker scheduling.
 - RouteSplitCoordinator: split execution and route-map publish.
 
 ## Iterator Isolation
@@ -128,6 +140,8 @@ Notes:
 - Mapping version: KeyToSegmentMap.version (AtomicLong).
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
   IndexConfiguration.numberOfSegmentMaintenanceThreads (default 10).
+- Split planner thread: `split-planner-*` from IndexExecutorRegistry.
+- Split worker pool: `split-maintenance-*` from IndexExecutorRegistry.
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.
 - Retry policy: IndexConfiguration.indexBusyBackoffMillis and
   IndexConfiguration.indexBusyTimeoutMillis.

@@ -68,7 +68,7 @@ class SegmentIndexSplitInfrastructureFactoryTest {
 
         assertNotNull(splitState.backgroundSplitCoordinator());
         assertNotNull(splitState.stableSegmentCoordinator());
-        assertNotNull(splitState.backgroundSplitPolicyLoop());
+        assertNotNull(splitState.splitPlanner());
         assertNotNull(splitState.directSegmentCoordinator());
         assertNotNull(splitState.recoveryCleanupCoordinator());
     }

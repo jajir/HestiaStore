@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.maintenance;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 
@@ -14,22 +15,22 @@ final class IndexMaintenanceCoordinator<K, V>
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
-    private final BackgroundSplitPolicyAccess<K, V> backgroundSplitPolicyLoop;
+    private final SplitPlanner<K, V> splitPlanner;
     private final StableSegmentMaintenanceAccess<K, V> stableSegmentCoordinator;
     private final IndexWalCoordinator<K, V> walCoordinator;
 
     IndexMaintenanceCoordinator(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
-            final BackgroundSplitPolicyAccess<K, V> backgroundSplitPolicyLoop,
+            final SplitPlanner<K, V> splitPlanner,
             final StableSegmentMaintenanceAccess<K, V> stableSegmentCoordinator,
             final IndexWalCoordinator<K, V> walCoordinator) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.backgroundSplitCoordinator = Vldtn.requireNonNull(
                 backgroundSplitCoordinator, "backgroundSplitCoordinator");
-        this.backgroundSplitPolicyLoop = Vldtn.requireNonNull(
-                backgroundSplitPolicyLoop, "backgroundSplitPolicyLoop");
+        this.splitPlanner = Vldtn.requireNonNull(splitPlanner,
+                "splitPlanner");
         this.stableSegmentCoordinator = Vldtn.requireNonNull(
                 stableSegmentCoordinator, "stableSegmentCoordinator");
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
@@ -97,17 +98,17 @@ final class IndexMaintenanceCoordinator<K, V>
     }
 
     private void awaitSettledSplitPolicyLoop() {
-        backgroundSplitPolicyLoop.awaitExhausted();
+        splitPlanner.awaitExhausted();
     }
 
     private void scheduleSplitScanIfIdle() {
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
+        splitPlanner.scheduleIfIdle();
     }
 
     private void finalizeSettledMaintenance(final Runnable rerunAction) {
         final long topologyVersion = keyToSegmentMap.snapshot().version();
-        backgroundSplitPolicyLoop.scheduleScanIfIdle();
-        backgroundSplitPolicyLoop.awaitExhausted();
+        splitPlanner.scheduleIfIdle();
+        splitPlanner.awaitExhausted();
         rerunIfTopologyChanged(topologyVersion, rerunAction);
         keyToSegmentMap.flushIfDirty();
         walCoordinator.checkpoint();

@@ -72,19 +72,23 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     }
 
     @Override
-    public IndexResult<Void> put(final K key, final V value) {
+    public IndexResult<SegmentId> put(final K key, final V value) {
         final K nonNullKey = requireKey(key);
         final V nonNullValue = requireValue(value);
         return backgroundSplitCoordinator.runWithSharedSplitAdmission(
                 () -> putWithResolvedRoute(nonNullKey, nonNullValue));
     }
 
-    private IndexResult<Void> putWithResolvedRoute(final K key, final V value) {
+    private IndexResult<SegmentId> putWithResolvedRoute(final K key,
+            final V value) {
         final IndexResult<SegmentId> routeResult = resolveWriteSegmentId(key);
         if (!wasRouteResolved(routeResult)) {
-            return toVoidResult(routeResult.getStatus());
+            return toSegmentResult(routeResult.getStatus(), null);
         }
-        return stableSegmentAccess.put(routeResult.getValue(), key, value);
+        final SegmentId segmentId = routeResult.getValue();
+        final IndexResult<Void> writeResult = stableSegmentAccess.put(segmentId,
+                key, value);
+        return toSegmentResult(writeResult.getStatus(), segmentId);
     }
 
     private IndexResult<SegmentId> resolveWriteSegmentId(final K key) {
@@ -203,8 +207,8 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
         return snapshot.getSegmentIds(resolvedWindows);
     }
 
-    private static IndexResult<Void> toVoidResult(
-            final IndexResultStatus status) {
+    private static IndexResult<SegmentId> toSegmentResult(
+            final IndexResultStatus status, final SegmentId segmentId) {
         if (status == IndexResultStatus.BUSY) {
             return IndexResult.busy();
         }
@@ -212,7 +216,7 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
             return IndexResult.closed();
         }
         if (status == IndexResultStatus.OK) {
-            return IndexResult.ok();
+            return IndexResult.ok(segmentId);
         }
         return IndexResult.error();
     }

@@ -23,9 +23,9 @@ class IndexExecutorRuntimeMonitorTest {
         final IndexExecutorRuntimeAccess snapshot = runtimeMonitor
                 .runtimeSnapshot();
 
-        assertEquals(4, snapshot.getIndexMaintenance().getQueueCapacity());
-        assertEquals(1L, snapshot.getIndexMaintenance().getRejectedTaskCount());
-        assertEquals(2L, snapshot.getIndexMaintenance().getCallerRunsCount());
+        assertEquals(4, snapshot.getSplitPlanner().getQueueCapacity());
+        assertEquals(1L, snapshot.getSplitPlanner().getRejectedTaskCount());
+        assertEquals(2L, snapshot.getSplitPlanner().getCallerRunsCount());
         assertEquals(8, snapshot.getSplitMaintenance().getQueueCapacity());
         assertEquals(3L, snapshot.getSplitMaintenance().getRejectedTaskCount());
         assertEquals(16,

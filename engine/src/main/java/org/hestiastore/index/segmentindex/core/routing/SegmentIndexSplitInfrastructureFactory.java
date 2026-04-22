@@ -3,9 +3,10 @@ package org.hestiastore.index.segmentindex.core.routing;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.maintenance.BackgroundSplitPolicyAccess;
 import org.hestiastore.index.segmentindex.core.maintenance.StableSegmentMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeInputs;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitTaskDispatcher;
 import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 
@@ -34,9 +35,9 @@ public final class SegmentIndexSplitInfrastructureFactory<K, V> {
                 });
         final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator =
                 newBackgroundSplitCoordinator(splitAppliedListener);
-        final BackgroundSplitPolicyAccess<K, V> backgroundSplitPolicyLoop =
-                newBackgroundSplitPolicyLoop(backgroundSplitCoordinator);
-        splitAppliedListener.set(backgroundSplitPolicyLoop::scheduleScanIfIdle);
+        final SplitPlanner<K, V> splitPlanner = newSplitPlanner(
+                backgroundSplitCoordinator);
+        splitAppliedListener.set(splitPlanner::scheduleIfIdle);
         final StableSegmentAccess<K, V> stableSegmentGateway = newStableSegmentGateway();
         final StableSegmentMaintenanceAccess<K, V> stableSegmentCoordinator = newStableSegmentCoordinator(
                 backgroundSplitCoordinator, stableSegmentGateway);
@@ -44,7 +45,7 @@ public final class SegmentIndexSplitInfrastructureFactory<K, V> {
                 stableSegmentGateway, backgroundSplitCoordinator);
         final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator = newRecoveryCleanupCoordinator();
         return new SegmentIndexRuntimeSplits<>(backgroundSplitCoordinator,
-                stableSegmentCoordinator, backgroundSplitPolicyLoop,
+                stableSegmentCoordinator, splitPlanner,
                 directSegmentCoordinator,
                 recoveryCleanupCoordinator);
     }
@@ -65,15 +66,15 @@ public final class SegmentIndexSplitInfrastructureFactory<K, V> {
                 request.stats::recordSplitTaskRunLatencyNanos);
     }
 
-    private BackgroundSplitPolicyAccess<K, V> newBackgroundSplitPolicyLoop(
+    private SplitPlanner<K, V> newSplitPlanner(
             final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator) {
-        return BackgroundSplitPolicyAccess.create(
+        return SplitPlanner.create(
                 request.conf, coreStorage.runtimeTuningState(),
-                coreStorage.keyToSegmentMap(), coreStorage.segmentRegistry(),
                 backgroundSplitCoordinator,
-                request.executorRegistry.getIndexMaintenanceExecutor(),
-                request.executorRegistry.getSplitPolicyScheduler(),
-                request.stats,
+                new SplitTaskDispatcher<>(coreStorage.keyToSegmentMap(),
+                        coreStorage.segmentRegistry(),
+                        backgroundSplitCoordinator, request.stats),
+                request.executorRegistry.getSplitPlannerExecutor(),
                 request.stateSupplier,
                 () -> backgroundSplitCoordinator.awaitSplitsIdle(
                         request.conf.getIndexBusyTimeoutMillis()),
