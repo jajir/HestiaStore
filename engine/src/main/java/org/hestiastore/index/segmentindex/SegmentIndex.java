@@ -12,7 +12,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.core.lifecycle.SegmentIndexFactory;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexFactory;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
