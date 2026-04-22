@@ -16,7 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
+import org.hestiastore.index.segmentindex.core.routing.RouteSplitPlan;
 import org.junit.jupiter.api.Test;
 
 class KeyToSegmentMapTest {

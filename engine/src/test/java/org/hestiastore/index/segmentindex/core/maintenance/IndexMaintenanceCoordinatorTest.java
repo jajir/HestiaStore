@@ -11,10 +11,10 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.core.durability.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentindex.core.split.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

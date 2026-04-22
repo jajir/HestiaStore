@@ -1,9 +1,9 @@
 package org.hestiastore.index.segmentindex.core.maintenance;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.durability.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.split.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 
 /**
  * Capability view exposing only the runtime services needed by maintenance
