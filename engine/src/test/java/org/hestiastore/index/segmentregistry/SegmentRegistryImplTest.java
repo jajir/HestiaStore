@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
-import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAwait;
+import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -87,7 +87,7 @@ class SegmentRegistryImplTest {
                 .getValue();
 
         assertSame(first, second);
-        closeAndAwait(first);
+        closeAndAssertClosed(first);
         final Segment<Integer, String> third = registry.tryLoadSegment(segmentId)
                 .getValue();
 
@@ -243,7 +243,7 @@ class SegmentRegistryImplTest {
                 .tryLoadSegment(segmentId);
         assertSame(SegmentRegistryResultStatus.BUSY, result.getStatus());
 
-        closeAndAwait(segment);
+        closeAndAssertClosed(segment);
         removeCacheEntry(segmentId);
     }
 

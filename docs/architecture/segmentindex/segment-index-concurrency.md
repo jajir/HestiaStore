@@ -46,10 +46,12 @@
   default segment iterator isolation (FAIL_FAST). An overload allows
   FULL_ISOLATION for per-segment exclusivity; the stream must be closed to
   release the segment lock.
-- Segment close (async): once close starts, the segment drains in-flight work
-  and rejects/blocks new operations until CLOSED. The registry should not
-  reopen a closing segment; attempts should retry until the close completes.
-  The per-segment `.lock` file enforces single-open at the directory level.
+- Segment close (sync): once close starts, the segment drains in-flight work
+  and rejects/blocks new operations until CLOSED. The caller returns only
+  after locks/resources are released or the segment enters `ERROR`. The
+  registry should not reopen a closing segment; attempts should retry until
+  the close completes. The per-segment `.lock` file enforces single-open at
+  the directory level.
 
 ## Maintenance & Splits
 - SegmentIndex evaluates split thresholds after successful writes and schedules

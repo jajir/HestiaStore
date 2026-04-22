@@ -110,7 +110,7 @@ Segment can be accessd from multiple threads in paraell. Segment
 | `openIterator(INTERRUPT_FAST)` | `READY` | No | Throws on version change | Yes (snapshot) | Yes | Default mode. |
 | `openIterator(STOP_FAST)` | `READY` | No | Stops on version change | Yes (snapshot) | Yes | Snapshot captured at open time. |
 | `openIterator(EXCLUSIVE_ACCESS)` | `READY` | Yes (on lock acquisition) | Invalidates existing iterators; blocks others | Yes | Yes | Maintenance only; must be short. |
-| `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, schedules close on maintenance thread, then transitions to `CLOSED`. |
+| `close` | `READY` | No | Invalidates existing iterators; blocks others | N/A | N/A | Sets `FREEZE`, optionally flushes the write cache, completes close on the caller thread, then transitions to `CLOSED`. |
 
 ### Flush/Compact Lifecycle
 
@@ -209,8 +209,8 @@ Segment can be accessd from multiple threads in paraell. Segment
 - `SegmentCore.invalidateIterators()` bumps the version for explicit invalidation or exclusive access.
 
 ### Close Workflow
-- `SegmentImpl.close()` enters `FREEZE`, drains in-flight ops, freezes the write cache, and schedules `runClose(...)` on the maintenance executor.
-- `runClose(...)` flushes frozen data (if any), closes the core, transitions to `CLOSED`, and releases the segment lock.
+- `SegmentImpl.close()` enters `FREEZE`, drains in-flight ops, freezes the write cache, and completes close synchronously on the caller thread.
+- `closeInternal(...)` flushes frozen data (if any), closes the core, transitions to `CLOSED`, and releases the segment lock.
 
 ### Components
 - **Segment**: user-facing API (`put`, `get`, `openIterator`, `flush`,
