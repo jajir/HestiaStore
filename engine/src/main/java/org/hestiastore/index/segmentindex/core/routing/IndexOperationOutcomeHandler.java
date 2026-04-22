@@ -5,6 +5,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 
 /**
  * Applies common success/failure handling for read and write operations.
@@ -16,12 +17,15 @@ final class IndexOperationOutcomeHandler<K, V> {
 
     private final Stats stats;
     private final IndexWalCoordinator<K, V> walCoordinator;
+    private final SplitPlanner<K, V> splitPlanner;
 
     IndexOperationOutcomeHandler(final Stats stats,
-            final IndexWalCoordinator<K, V> walCoordinator) {
+            final IndexWalCoordinator<K, V> walCoordinator,
+            final SplitPlanner<K, V> splitPlanner) {
         this.stats = Vldtn.requireNonNull(stats, "stats");
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
+        this.splitPlanner = Vldtn.requireNonNull(splitPlanner, "splitPlanner");
     }
 
     <T> T finishRead(final String operation, final IndexResult<T> result,
@@ -33,10 +37,14 @@ final class IndexOperationOutcomeHandler<K, V> {
         throw newIndexException(operation, null, result.getStatus());
     }
 
-    void finishWrite(final String operation, final IndexResult<Void> result,
+    void finishWrite(final String operation,
+            final IndexResult<SegmentId> result,
             final long walLsn, final long startedNanos) {
         if (result.getStatus() == IndexResultStatus.OK) {
             walCoordinator.recordAppliedLsn(walLsn);
+            if (result.getValue() != null) {
+                splitPlanner.hintSegment(result.getValue());
+            }
             recordWriteLatency(startedNanos);
             return;
         }

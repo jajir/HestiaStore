@@ -9,16 +9,16 @@ import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAcces
  */
 final class IndexExecutorRuntimeMonitor {
 
-    private final ObservedThreadPool indexMaintenanceThreadPool;
+    private final ObservedThreadPool splitPlannerThreadPool;
     private final ObservedThreadPool splitMaintenanceThreadPool;
     private final ObservedThreadPool stableSegmentMaintenanceThreadPool;
 
     IndexExecutorRuntimeMonitor(
-            final ObservedThreadPool indexMaintenanceThreadPool,
+            final ObservedThreadPool splitPlannerThreadPool,
             final ObservedThreadPool splitMaintenanceThreadPool,
             final ObservedThreadPool stableSegmentMaintenanceThreadPool) {
-        this.indexMaintenanceThreadPool = Vldtn.requireNonNull(
-                indexMaintenanceThreadPool, "indexMaintenanceThreadPool");
+        this.splitPlannerThreadPool = Vldtn.requireNonNull(
+                splitPlannerThreadPool, "splitPlannerThreadPool");
         this.splitMaintenanceThreadPool = Vldtn.requireNonNull(
                 splitMaintenanceThreadPool, "splitMaintenanceThreadPool");
         this.stableSegmentMaintenanceThreadPool = Vldtn.requireNonNull(
@@ -28,7 +28,7 @@ final class IndexExecutorRuntimeMonitor {
 
     IndexExecutorRuntimeAccess runtimeSnapshot() {
         return new IndexExecutorRuntimeSnapshot(
-                indexMaintenanceThreadPool.snapshot(),
+                splitPlannerThreadPool.snapshot(),
                 splitMaintenanceThreadPool.snapshot(),
                 stableSegmentMaintenanceThreadPool.snapshot());
     }

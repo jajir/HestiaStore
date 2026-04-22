@@ -54,7 +54,7 @@ public final class IndexCloseCoordinator<K, V> {
     }
 
     private void quiesceBackgroundSplits() {
-        runtime.awaitBackgroundSplitsExhausted();
+        runtime.awaitSplitPlannerExhausted();
     }
 
     private void sealAndFlushRuntimeState() {
