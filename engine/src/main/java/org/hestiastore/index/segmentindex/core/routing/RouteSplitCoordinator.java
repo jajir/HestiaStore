@@ -1,7 +1,9 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
 import java.util.Comparator;
+
 import java.util.Optional;
+
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;

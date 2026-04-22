@@ -2,6 +2,8 @@ package org.hestiastore.index.segmentindex.core.routing;
 
 import java.util.function.Supplier;
 
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
@@ -56,7 +58,7 @@ final class IndexOperationCoordinator<K, V>
         stats.recordPutRequest();
         rejectTombstoneValue(nonNullValue);
         final long walLsn = walCoordinator.appendPut(nonNullKey, nonNullValue);
-        final IndexResult<SegmentId> result = retryWrite(
+        final OperationResult<SegmentId> result = retryWrite(
                 () -> directSegmentCoordinator.put(nonNullKey,
                         nonNullValue),
                 "put");
@@ -68,7 +70,7 @@ final class IndexOperationCoordinator<K, V>
         final long startedNanos = startReadOperation();
         final K nonNullKey = requireKey(key);
         stats.recordGetRequest();
-        final IndexResult<V> result = retryRead(
+        final OperationResult<V> result = retryRead(
                 () -> directSegmentCoordinator.get(nonNullKey));
         return outcomeHandler.finishRead("get", result, startedNanos);
     }
@@ -79,7 +81,7 @@ final class IndexOperationCoordinator<K, V>
         final K nonNullKey = requireKey(key);
         stats.recordDeleteRequest();
         final long walLsn = walCoordinator.appendDelete(nonNullKey);
-        final IndexResult<SegmentId> result = retryWrite(
+        final OperationResult<SegmentId> result = retryWrite(
                 () -> directSegmentCoordinator.put(nonNullKey,
                         tombstoneValue()),
                 "delete");
@@ -91,12 +93,12 @@ final class IndexOperationCoordinator<K, V>
             final WalRuntime.ReplayRecord<K, V> replayRecord) {
         final WalRuntime.ReplayRecord<K, V> nonNullReplayRecord = Vldtn
                 .requireNonNull(replayRecord, "replayRecord");
-        final IndexResult<SegmentId> result = retryWrite(
+        final OperationResult<SegmentId> result = retryWrite(
                 () -> directSegmentCoordinator.put(
                         nonNullReplayRecord.getKey(),
                         replayValue(nonNullReplayRecord)),
                 "walReplay");
-        if (result.getStatus() != IndexResultStatus.OK) {
+        if (result.getStatus() != OperationStatus.OK) {
             throw outcomeHandler.newIndexException("walReplay", null,
                     result.getStatus());
         }
@@ -114,24 +116,24 @@ final class IndexOperationCoordinator<K, V>
         return System.nanoTime();
     }
 
-    private <T> IndexResult<T> retryWrite(
-            final Supplier<IndexResult<T>> operation,
+    private <T> OperationResult<T> retryWrite(
+            final Supplier<OperationResult<T>> operation,
             final String operationName) {
         return retryWhileBusy(operation, operationName, false);
     }
 
-    private <T> IndexResult<T> retryRead(
-            final Supplier<IndexResult<T>> operation) {
+    private <T> OperationResult<T> retryRead(
+            final Supplier<OperationResult<T>> operation) {
         return retryWhileBusy(operation, "get", true);
     }
 
-    private <T> IndexResult<T> retryWhileBusy(
-            final Supplier<IndexResult<T>> operation, final String opName,
+    private <T> OperationResult<T> retryWhileBusy(
+            final Supplier<OperationResult<T>> operation, final String opName,
             final boolean retryClosed) {
         final PutBusyRetryMonitor putBusyRetryMonitor =
                 new PutBusyRetryMonitor(opName, stats, System::nanoTime);
         final long startNanos = retryPolicy.startNanos();
-        IndexResult<T> result = operation.get();
+        OperationResult<T> result = operation.get();
         while (shouldRetry(result.getStatus(), retryClosed)) {
             putBusyRetryMonitor.observeRetryableStatus(result.getStatus());
             try {
@@ -146,10 +148,10 @@ final class IndexOperationCoordinator<K, V>
         return result;
     }
 
-    private boolean shouldRetry(final IndexResultStatus status,
+    private boolean shouldRetry(final OperationStatus status,
             final boolean retryClosed) {
-        return status == IndexResultStatus.BUSY
-                || retryClosed && status == IndexResultStatus.CLOSED;
+        return status == OperationStatus.BUSY
+                || retryClosed && status == OperationStatus.CLOSED;
     }
 
     private K requireKey(final K key) {

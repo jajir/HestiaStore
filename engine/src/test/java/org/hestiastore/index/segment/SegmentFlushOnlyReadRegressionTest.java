@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,20 +58,20 @@ class SegmentFlushOnlyReadRegressionTest {
                                 new ChunkFilterDoNothing()))//
                 .build().getValue();
         try {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(1, "one").getStatus());
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     segment.put(2, "two").getStatus());
-            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
 
             assertTrue(segmentDirectory.isFileExists(layout.getIndexFileName()),
                     "Freshly created segment should materialize an empty base SST.");
 
-            final SegmentResult<String> result = assertDoesNotThrow(
+            final OperationResult<String> result = assertDoesNotThrow(
                     () -> segment.get(99),
                     "Missing-key lookup on a flush-only segment must not try to open a non-existent base SST.");
 
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            assertEquals(OperationStatus.OK, result.getStatus());
             assertNull(result.getValue());
         } finally {
             closeAndAssertClosed(segment);

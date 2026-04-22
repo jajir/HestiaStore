@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.splitplanner;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;

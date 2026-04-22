@@ -6,11 +6,11 @@ import java.util.NoSuchElementException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.slf4j.Logger;
 
@@ -136,18 +136,18 @@ final class RouteSplitPreparationService<K, V> {
             final SegmentIteratorIsolation isolation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final SegmentResult<EntryIterator<K, V>> result = segment
+            final OperationResult<EntryIterator<K, V>> result = segment
                     .openIterator(isolation);
-            if (result.getStatus() == SegmentResultStatus.OK
+            if (result.getStatus() == OperationStatus.OK
                     && result.getValue() != null) {
                 return result.getValue();
             }
-            if (result.getStatus() == SegmentResultStatus.BUSY) {
+            if (result.getStatus() == OperationStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, "openIterator",
                         segment.getId());
                 continue;
             }
-            if (result.getStatus() == SegmentResultStatus.CLOSED) {
+            if (result.getStatus() == OperationStatus.CLOSED) {
                 return null;
             }
             throw new IndexException(String.format(

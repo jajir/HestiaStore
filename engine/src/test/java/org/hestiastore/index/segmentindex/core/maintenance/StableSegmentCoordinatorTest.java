@@ -25,7 +25,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
@@ -125,7 +125,7 @@ class StableSegmentCoordinatorTest {
                 .make(List.<Entry<String, String>>of().iterator());
         when(stableSegmentGateway.openIterator(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                .thenReturn(IndexResult.ok(iterator));
+                .thenReturn(OperationResult.ok(iterator));
 
         final EntryIterator<String, String> result = coordinator
                 .openIteratorWithRetry(segmentId,
@@ -143,8 +143,8 @@ class StableSegmentCoordinatorTest {
                 .make(List.<Entry<String, String>>of().iterator());
         when(stableSegmentGateway.openIterator(busySegmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                        .thenReturn(IndexResult.busy(),
-                                IndexResult.ok(iterator));
+                        .thenReturn(OperationResult.busy(),
+                                OperationResult.ok(iterator));
 
         assertSame(iterator,
                 coordinator.openIteratorWithRetry(busySegmentId,
@@ -153,7 +153,7 @@ class StableSegmentCoordinatorTest {
         final SegmentId errorSegmentId = createBootstrapSegment("error-key");
         when(stableSegmentGateway.openIterator(errorSegmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                        .thenReturn(IndexResult.error());
+                        .thenReturn(OperationResult.error());
 
         assertThrows(IndexException.class,
                 () -> coordinator.openIteratorWithRetry(errorSegmentId,
@@ -171,7 +171,7 @@ class StableSegmentCoordinatorTest {
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId)).thenReturn(
-                IndexResult.busy(), IndexResult.ok(segmentHandle));
+                OperationResult.busy(), OperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.READY);
 
         coordinator.flushSegment(segmentId, true);
@@ -191,7 +191,7 @@ class StableSegmentCoordinatorTest {
                 sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.compact(segmentId)).thenReturn(
-                IndexResult.busy(), IndexResult.ok(segmentHandle));
+                OperationResult.busy(), OperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.READY);
 
         coordinator.compactSegment(segmentId, true);
@@ -204,7 +204,7 @@ class StableSegmentCoordinatorTest {
     void compactSegment_coalescesBusyOperationWhenWaitingIsDisabled() {
         final SegmentId segmentId = createBootstrapSegment("busy-key");
         when(stableSegmentGateway.compact(segmentId))
-                .thenReturn(IndexResult.busy());
+                .thenReturn(OperationResult.busy());
 
         assertDoesNotThrow(() -> coordinator.compactSegment(segmentId, false));
         assertEquals(0L, stats.getCompactBusyRetryCount());
@@ -214,7 +214,7 @@ class StableSegmentCoordinatorTest {
     void compactSegment_ignoresUnmappedErrorStatus() {
         final SegmentId segmentId = SegmentId.of(999);
         when(stableSegmentGateway.compact(segmentId))
-                .thenReturn(IndexResult.error());
+                .thenReturn(OperationResult.error());
 
         assertDoesNotThrow(() -> coordinator.compactSegment(segmentId, true));
     }
@@ -223,7 +223,7 @@ class StableSegmentCoordinatorTest {
     void flushSegment_throwsForMappedErrorStatus() {
         final SegmentId segmentId = createBootstrapSegment("error-key");
         when(stableSegmentGateway.flush(segmentId))
-                .thenReturn(IndexResult.error());
+                .thenReturn(OperationResult.error());
 
         assertThrows(IndexException.class,
                 () -> coordinator.flushSegment(segmentId, true));
@@ -234,7 +234,7 @@ class StableSegmentCoordinatorTest {
         final SegmentId segmentId = createBootstrapSegment("error-state-key");
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(OperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.ERROR);
 
         assertThrows(IndexException.class,
@@ -248,9 +248,9 @@ class StableSegmentCoordinatorTest {
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(stableSegmentGateway.flush(firstSegment))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(OperationResult.ok(segmentHandle));
         when(stableSegmentGateway.flush(secondSegment))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(OperationResult.ok(segmentHandle));
         doAnswer(invocation -> {
             ((Runnable) invocation.getArgument(0)).run();
             return null;

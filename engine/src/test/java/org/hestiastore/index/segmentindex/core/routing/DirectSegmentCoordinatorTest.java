@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -66,32 +68,32 @@ class DirectSegmentCoordinatorTest {
 
     @Test
     void get_readsValueDirectlyFromStableSegments() {
-        when(stableSegmentGateway.get(10)).thenReturn(IndexResult.ok("ten"));
+        when(stableSegmentGateway.get(10)).thenReturn(OperationResult.ok("ten"));
 
-        final IndexResult<String> result = coordinator.get(10);
+        final OperationResult<String> result = coordinator.get(10);
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("ten", result.getValue());
         verify(stableSegmentGateway).get(10);
     }
 
     @Test
     void get_returnsBusyWhenStableReadCannotProceed() {
-        when(stableSegmentGateway.get(10)).thenReturn(IndexResult.busy());
+        when(stableSegmentGateway.get(10)).thenReturn(OperationResult.busy());
 
-        final IndexResult<String> result = coordinator.get(10);
+        final OperationResult<String> result = coordinator.get(10);
 
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+        assertEquals(OperationStatus.BUSY, result.getStatus());
     }
 
     @Test
     void put_createsBootstrapRouteAndWritesDirectlyToStableSegment() {
         when(stableSegmentGateway.put(SegmentId.of(0), 11, "v11"))
-                .thenReturn(IndexResult.ok());
+                .thenReturn(OperationResult.ok());
 
-        final IndexResult<SegmentId> result = coordinator.put(11, "v11");
+        final OperationResult<SegmentId> result = coordinator.put(11, "v11");
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals(SegmentId.of(0), result.getValue());
         assertEquals(SegmentId.of(0),
                 synchronizedKeyToSegmentMap.findSegmentIdForKey(11));
@@ -102,11 +104,11 @@ class DirectSegmentCoordinatorTest {
     void put_returnsBusyWhenStableSegmentRejectsWrite() {
         synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
         when(stableSegmentGateway.put(SegmentId.of(0), 10, "v10"))
-                .thenReturn(IndexResult.busy());
+                .thenReturn(OperationResult.busy());
 
-        final IndexResult<SegmentId> result = coordinator.put(10, "v10");
+        final OperationResult<SegmentId> result = coordinator.put(10, "v10");
 
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+        assertEquals(OperationStatus.BUSY, result.getStatus());
     }
 
     @Test
@@ -115,9 +117,9 @@ class DirectSegmentCoordinatorTest {
         when(backgroundSplitCoordinator.isSplitBlocked(SegmentId.of(0)))
                 .thenReturn(true);
 
-        final IndexResult<SegmentId> result = coordinator.put(10, "v10");
+        final OperationResult<SegmentId> result = coordinator.put(10, "v10");
 
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+        assertEquals(OperationStatus.BUSY, result.getStatus());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

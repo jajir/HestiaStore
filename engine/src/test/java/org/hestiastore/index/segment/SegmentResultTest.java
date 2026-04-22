@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -11,37 +13,37 @@ class SegmentResultTest {
 
     @Test
     void ok_withValue_setsStatusAndValue() {
-        final SegmentResult<String> result = SegmentResult.ok("value");
+        final OperationResult<String> result = OperationResult.ok("value");
 
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertEquals("value", result.getValue());
         assertTrue(result.isOk());
     }
 
     @Test
     void ok_withoutValue_setsStatusAndNullValue() {
-        final SegmentResult<Void> result = SegmentResult.ok();
+        final OperationResult<Void> result = OperationResult.ok();
 
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         assertNull(result.getValue());
         assertTrue(result.isOk());
     }
 
     @Test
     void nonOk_results_haveNullValue_and_areNotOk() {
-        final SegmentResult<String> busy = SegmentResult.busy();
-        final SegmentResult<String> closed = SegmentResult.closed();
-        final SegmentResult<String> error = SegmentResult.error();
+        final OperationResult<String> busy = OperationResult.busy();
+        final OperationResult<String> closed = OperationResult.closed();
+        final OperationResult<String> error = OperationResult.error();
 
-        assertEquals(SegmentResultStatus.BUSY, busy.getStatus());
+        assertEquals(OperationStatus.BUSY, busy.getStatus());
         assertNull(busy.getValue());
         assertFalse(busy.isOk());
 
-        assertEquals(SegmentResultStatus.CLOSED, closed.getStatus());
+        assertEquals(OperationStatus.CLOSED, closed.getStatus());
         assertNull(closed.getValue());
         assertFalse(closed.isOk());
 
-        assertEquals(SegmentResultStatus.ERROR, error.getStatus());
+        assertEquals(OperationStatus.ERROR, error.getStatus());
         assertNull(error.getValue());
         assertFalse(error.isOk());
     }

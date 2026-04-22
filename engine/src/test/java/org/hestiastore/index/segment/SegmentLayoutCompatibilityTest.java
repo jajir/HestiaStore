@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -89,8 +91,8 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                 segmentConf).build().getValue();
         try {
             writeEntries(segment, entries);
-            final SegmentResult<Void> result = segment.compact();
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final OperationResult<Void> result = segment.compact();
+            assertEquals(OperationStatus.OK, result.getStatus());
             awaitReady(segment);
         } finally {
             closeAndAssertClosed(segment);
@@ -118,7 +120,7 @@ class SegmentLayoutCompatibilityTest extends AbstractSegmentTest {
                         .withValueTypeDescriptor(valueDescriptor),
                 segmentConf).build().getValue();
         try {
-            assertEquals(SegmentResultStatus.OK, segment.flush().getStatus());
+            assertEquals(OperationStatus.OK, segment.flush().getStatus());
         } finally {
             closeAndAssertClosed(segment);
         }

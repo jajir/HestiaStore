@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -54,7 +55,7 @@ class IndexOperationCoordinatorTest {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
         when(directSegmentCoordinator.put(1, "one"))
-                .thenReturn(IndexResult.busy(), IndexResult.ok(SegmentId.of(7)));
+                .thenReturn(OperationResult.busy(), OperationResult.ok(SegmentId.of(7)));
 
         coordinator.put(1, "one");
 
@@ -71,7 +72,7 @@ class IndexOperationCoordinatorTest {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
         when(directSegmentCoordinator.put(1, "one"))
-                .thenReturn(IndexResult.busy());
+                .thenReturn(OperationResult.busy());
         final IndexException timeout = new IndexException(
                 "Index operation 'put' timed out after 30 ms");
         org.mockito.Mockito.doThrow(timeout).when(retryPolicy)
@@ -91,7 +92,7 @@ class IndexOperationCoordinatorTest {
     void getRetriesClosedResultUntilReadSucceeds() {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(directSegmentCoordinator.get(1))
-                .thenReturn(IndexResult.closed(), IndexResult.ok("one"));
+                .thenReturn(OperationResult.closed(), OperationResult.ok("one"));
 
         assertEquals("one", coordinator.get(1));
 
@@ -110,7 +111,7 @@ class IndexOperationCoordinatorTest {
         when(replayRecord.getLsn()).thenReturn(11L);
         when(directSegmentCoordinator.put(3,
                 TypeDescriptorShortString.TOMBSTONE_VALUE))
-                        .thenReturn(IndexResult.ok(SegmentId.of(3)));
+                        .thenReturn(OperationResult.ok(SegmentId.of(3)));
 
         coordinator.replayWalRecord(replayRecord);
 

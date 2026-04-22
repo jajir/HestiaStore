@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -29,7 +30,7 @@ class IndexOperationOutcomeHandlerTest {
                 new IndexOperationOutcomeHandler<>(new Stats(), walCoordinator,
                         splitPlanner);
 
-        handler.finishWrite("put", IndexResult.ok(SegmentId.of(7)), 17L,
+        handler.finishWrite("put", OperationResult.ok(SegmentId.of(7)), 17L,
                 System.nanoTime());
 
         verify(walCoordinator).recordAppliedLsn(17L);
@@ -43,7 +44,7 @@ class IndexOperationOutcomeHandlerTest {
                         splitPlanner);
 
         final IndexException thrown = assertThrows(IndexException.class,
-                () -> handler.finishWrite("put", IndexResult.<SegmentId>error(),
+                () -> handler.finishWrite("put", OperationResult.<SegmentId>error(),
                         17L,
                         System.nanoTime()));
 
@@ -58,7 +59,7 @@ class IndexOperationOutcomeHandlerTest {
                         splitPlanner);
 
         assertEquals("one",
-                handler.finishRead("get", IndexResult.ok("one"),
+                handler.finishRead("get", OperationResult.ok("one"),
                         System.nanoTime()));
     }
 }

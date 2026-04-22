@@ -1,10 +1,10 @@
 package org.hestiastore.index.segmentregistry;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
@@ -52,7 +52,7 @@ public interface SegmentHandle<K, V> {
      * @param key key to look up
      * @return raw segment result
      */
-    SegmentResult<V> tryGet(K key);
+    OperationResult<V> tryGet(K key);
 
     /**
      * Performs a blocking lookup of a key in the segment.
@@ -69,7 +69,7 @@ public interface SegmentHandle<K, V> {
      * @param value value to write
      * @return raw segment result
      */
-    SegmentResult<Void> tryPut(K key, V value);
+    OperationResult<Void> tryPut(K key, V value);
 
     /**
      * Performs a blocking write into the segment.
@@ -85,7 +85,7 @@ public interface SegmentHandle<K, V> {
      * @param isolation iterator isolation
      * @return raw segment result
      */
-    SegmentResult<EntryIterator<K, V>> tryOpenIterator(
+    OperationResult<EntryIterator<K, V>> tryOpenIterator(
             SegmentIteratorIsolation isolation);
 
     /**
@@ -108,7 +108,7 @@ public interface SegmentHandle<K, V> {
      *
      * @return raw segment result
      */
-    SegmentResult<Void> tryFlush();
+    OperationResult<Void> tryFlush();
 
     /**
      * Starts a flush and waits until the request is accepted.
@@ -120,7 +120,7 @@ public interface SegmentHandle<K, V> {
      *
      * @return raw segment result
      */
-    SegmentResult<Void> tryCompact();
+    OperationResult<Void> tryCompact();
 
     /**
      * Starts a compaction pass and waits until the request is accepted.

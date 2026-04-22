@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
@@ -21,10 +23,10 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
     protected <M, N> void writeEntries(final Segment<M, N> seg,
             final List<Entry<M, N>> entries) {
         for (final Entry<M, N> entry : entries) {
-            assertEquals(SegmentResultStatus.OK,
+            assertEquals(OperationStatus.OK,
                     seg.put(entry.getKey(), entry.getValue()).getStatus());
         }
-        assertEquals(SegmentResultStatus.OK, seg.flush().getStatus());
+        assertEquals(OperationStatus.OK, seg.flush().getStatus());
     }
 
     /**
@@ -41,8 +43,8 @@ public abstract class AbstractSegmentTest extends AbstractDataTest {
         entries.forEach(entry -> {
             final M key = entry.getKey();
             final N expectedValue = entry.getValue();
-            final SegmentResult<N> result = seg.get(key);
-            assertEquals(SegmentResultStatus.OK, result.getStatus());
+            final OperationResult<N> result = seg.get(key);
+            assertEquals(OperationStatus.OK, result.getStatus());
             assertEquals(expectedValue, result.getValue(),
                     String.format("Unable to find value for key '%s'.", key));
         });

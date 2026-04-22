@@ -17,7 +17,8 @@ Per‑segment probabilistic set that quickly proves absence and reduces on‑dis
 Capacity model that bounds segment-local write-cache and maintenance backlog
 growth so ingest memory stays predictable under load. Some settings still keep
 historical `partition` names for compatibility. Code:
-`segmentindex/IndexConfiguration.java`,
+`segmentindex/IndexWritePathConfiguration.java`,
+`segmentindex/LegacyPartitionCompatibilityConfiguration.java`,
 `control/model/RuntimeSettingKey.java`,
 `segment/SegmentRuntimeLimits.java`.
 

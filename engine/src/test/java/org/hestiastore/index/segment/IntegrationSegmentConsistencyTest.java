@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,9 +81,9 @@ class IntegrationSegmentConsistencyTest extends AbstractSegmentTest {
     @Test
     void test_iterator_should_close_after_data_update() {
         writeEntries(seg, makeList(0));
-        final SegmentResult<EntryIterator<Integer, Integer>> result = seg
+        final OperationResult<EntryIterator<Integer, Integer>> result = seg
                 .openIterator();
-        assertEquals(SegmentResultStatus.OK, result.getStatus());
+        assertEquals(OperationStatus.OK, result.getStatus());
         final EntryIterator<Integer, Integer> iterator = result.getValue();
         assertTrue(iterator.hasNext());
         assertEquals(Entry.of(0, 0), iterator.next());
