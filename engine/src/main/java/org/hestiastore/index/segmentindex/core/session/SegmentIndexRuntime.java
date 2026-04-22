@@ -171,8 +171,8 @@ public final class SegmentIndexRuntime<K, V>
         splits.backgroundSplitCoordinator().awaitSplitsIdle(timeoutMillis);
     }
 
-    public void scheduleBackgroundSplitScan() {
-        splits.backgroundSplitPolicyLoop().scheduleScan();
+    public void requestSplitPlannerRescan() {
+        splits.splitPlanner().requestRescan();
     }
 
     public void validateUniqueSegmentIds() {
@@ -186,8 +186,8 @@ public final class SegmentIndexRuntime<K, V>
                         .checkAndRepairConsistency();
     }
 
-    public void awaitBackgroundSplitsExhausted() {
-        splits.backgroundSplitPolicyLoop().awaitExhausted();
+    public void awaitSplitPlannerExhausted() {
+        splits.splitPlanner().awaitExhausted();
     }
 
     public void flushStableSegmentsWithSplitSchedulingPaused() {

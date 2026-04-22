@@ -4,9 +4,11 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -20,6 +22,7 @@ final class IndexOperationCoordinator<K, V>
 
     private final Stats stats;
     private final DirectSegmentAccess<K, V> directSegmentCoordinator;
+    private final SplitPlanner<K, V> splitPlanner;
     private final IndexWalCoordinator<K, V> walCoordinator;
     private final IndexOperationOutcomeHandler<K, V> outcomeHandler;
     private final TypeDescriptor<V> valueTypeDescriptor;
@@ -28,18 +31,21 @@ final class IndexOperationCoordinator<K, V>
     IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
             final Stats stats,
             final DirectSegmentAccess<K, V> directSegmentCoordinator,
+            final SplitPlanner<K, V> splitPlanner,
             final IndexWalCoordinator<K, V> walCoordinator,
             final IndexRetryPolicy retryPolicy) {
         this.stats = Vldtn.requireNonNull(stats, "stats");
         this.directSegmentCoordinator = Vldtn.requireNonNull(
                 directSegmentCoordinator, "directSegmentCoordinator");
+        this.splitPlanner = Vldtn.requireNonNull(splitPlanner,
+                "splitPlanner");
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         this.outcomeHandler = new IndexOperationOutcomeHandler<>(this.stats,
-                this.walCoordinator);
+                this.walCoordinator, this.splitPlanner);
     }
 
     @Override
@@ -50,7 +56,7 @@ final class IndexOperationCoordinator<K, V>
         stats.recordPutRequest();
         rejectTombstoneValue(nonNullValue);
         final long walLsn = walCoordinator.appendPut(nonNullKey, nonNullValue);
-        final IndexResult<Void> result = retryWrite(
+        final IndexResult<SegmentId> result = retryWrite(
                 () -> directSegmentCoordinator.put(nonNullKey,
                         nonNullValue),
                 "put");
@@ -73,7 +79,7 @@ final class IndexOperationCoordinator<K, V>
         final K nonNullKey = requireKey(key);
         stats.recordDeleteRequest();
         final long walLsn = walCoordinator.appendDelete(nonNullKey);
-        final IndexResult<Void> result = retryWrite(
+        final IndexResult<SegmentId> result = retryWrite(
                 () -> directSegmentCoordinator.put(nonNullKey,
                         tombstoneValue()),
                 "delete");
@@ -85,7 +91,7 @@ final class IndexOperationCoordinator<K, V>
             final WalRuntime.ReplayRecord<K, V> replayRecord) {
         final WalRuntime.ReplayRecord<K, V> nonNullReplayRecord = Vldtn
                 .requireNonNull(replayRecord, "replayRecord");
-        final IndexResult<Void> result = retryWrite(
+        final IndexResult<SegmentId> result = retryWrite(
                 () -> directSegmentCoordinator.put(
                         nonNullReplayRecord.getKey(),
                         replayValue(nonNullReplayRecord)),
@@ -93,6 +99,9 @@ final class IndexOperationCoordinator<K, V>
         if (result.getStatus() != IndexResultStatus.OK) {
             throw outcomeHandler.newIndexException("walReplay", null,
                     result.getStatus());
+        }
+        if (result.getValue() != null) {
+            splitPlanner.hintSegment(result.getValue());
         }
         walCoordinator.recordAppliedLsn(nonNullReplayRecord.getLsn());
     }
@@ -105,8 +114,8 @@ final class IndexOperationCoordinator<K, V>
         return System.nanoTime();
     }
 
-    private IndexResult<Void> retryWrite(
-            final Supplier<IndexResult<Void>> operation,
+    private <T> IndexResult<T> retryWrite(
+            final Supplier<IndexResult<T>> operation,
             final String operationName) {
         return retryWhileBusy(operation, operationName, false);
     }

@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.maintenance;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 import org.hestiastore.index.AbstractCloseableResource;
@@ -22,14 +21,13 @@ import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAcces
 public final class IndexExecutorRegistry extends AbstractCloseableResource {
 
     private static final String ARG_INDEX_CONFIGURATION = "indexConfiguration";
-    private static final String ARG_INDEX_MAINTENANCE_THREADS = "indexMaintenanceThreads";
+    private static final String ARG_SPLIT_PLANNER_THREADS = "splitPlannerThreads";
     private static final String ARG_SPLIT_MAINTENANCE_THREADS = "splitMaintenanceThreads";
     private static final String ARG_SEGMENT_MAINTENANCE_THREADS = "numberOfSegmentMaintenanceThreads";
     private static final String ARG_REGISTRY_MAINTENANCE_THREADS = "registryMaintenanceThreads";
     private static final String MESSAGE_ALREADY_CLOSED = "IndexExecutorRegistry already closed";
-    private static final String THREAD_NAME_PREFIX_INDEX_MAINTENANCE = "index-maintenance-";
+    private static final String THREAD_NAME_PREFIX_SPLIT_PLANNER = "split-planner-";
     private static final String THREAD_NAME_PREFIX_SPLIT_MAINTENANCE = "split-maintenance-";
-    private static final String THREAD_NAME_PREFIX_SPLIT_POLICY = "split-policy-";
     private static final String THREAD_NAME_PREFIX_SEGMENT_MAINTENANCE = "segment-maintenance-";
     private static final String THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE = "registry-maintenance-";
 
@@ -61,36 +59,14 @@ public final class IndexExecutorRegistry extends AbstractCloseableResource {
     }
 
     /**
-     * Returns shared index-maintenance executor.
+     * Returns shared split-planner executor.
      *
-     * @return index-maintenance executor service
+     * @return split-planner executor service
      * @throws IllegalStateException when registry has already been closed
      */
-    public ExecutorService getIndexMaintenanceExecutor() {
+    public ExecutorService getSplitPlannerExecutor() {
         ensureOpen();
-        return topology.indexMaintenanceExecutor();
-    }
-
-    /**
-     * Returns shared split-maintenance executor.
-     *
-     * @return split-maintenance executor service
-     * @throws IllegalStateException when registry has already been closed
-     */
-    public ExecutorService getSplitMaintenanceExecutor() {
-        ensureOpen();
-        return topology.splitMaintenanceExecutor();
-    }
-
-    /**
-     * Returns shared split-policy scheduler.
-     *
-     * @return split-policy scheduler
-     * @throws IllegalStateException when registry has already been closed
-     */
-    public ScheduledExecutorService getSplitPolicyScheduler() {
-        ensureOpen();
-        return topology.splitPolicyScheduler();
+        return topology.splitPlannerExecutor();
     }
 
     /**
@@ -102,6 +78,17 @@ public final class IndexExecutorRegistry extends AbstractCloseableResource {
     public ExecutorService getRegistryMaintenanceExecutor() {
         ensureOpen();
         return topology.registryMaintenanceExecutor();
+    }
+
+    /**
+     * Returns shared split-maintenance executor.
+     *
+     * @return split-maintenance executor service
+     * @throws IllegalStateException when registry has already been closed
+     */
+    public ExecutorService getSplitMaintenanceExecutor() {
+        ensureOpen();
+        return topology.splitMaintenanceExecutor();
     }
 
     public IndexExecutorRuntimeAccess runtimeSnapshot() {
@@ -135,8 +122,8 @@ public final class IndexExecutorRegistry extends AbstractCloseableResource {
                 new ObservedThreadPoolFactory(configuration);
         final IndexExecutorContextDecorator contextDecorator =
                 new IndexExecutorContextDecorator(configuration);
-        final ObservedThreadPool indexMaintenanceThreadPool =
-                createIndexMaintenanceThreadPool(threadPoolFactory);
+        final ObservedThreadPool splitPlannerThreadPool =
+                createSplitPlannerThreadPool(threadPoolFactory);
         final ObservedThreadPool splitMaintenanceThreadPool =
                 createSplitMaintenanceThreadPool(threadPoolFactory);
         final ObservedThreadPool stableSegmentMaintenanceThreadPool =
@@ -148,12 +135,9 @@ public final class IndexExecutorRegistry extends AbstractCloseableResource {
         return new ExecutorAssembly(
                 new IndexExecutorTopology(
                         contextAwareObservedExecutor(contextDecorator,
-                                indexMaintenanceThreadPool),
+                                splitPlannerThreadPool),
                         contextAwareObservedExecutor(contextDecorator,
                                 splitMaintenanceThreadPool),
-                        new LazyExecutorReference<>(
-                                () -> createSplitPolicyScheduler(
-                                        threadPoolFactory)),
                         contextAwareObservedExecutor(contextDecorator,
                                 stableSegmentMaintenanceThreadPool),
                         new LazyExecutorReference<>(
@@ -161,17 +145,17 @@ public final class IndexExecutorRegistry extends AbstractCloseableResource {
                                         createRegistryMaintenanceExecutor(
                                                 threadPoolFactory,
                                                 registryMaintenanceThreadCount)))),
-                new IndexExecutorRuntimeMonitor(indexMaintenanceThreadPool,
+                new IndexExecutorRuntimeMonitor(splitPlannerThreadPool,
                         splitMaintenanceThreadPool,
                         stableSegmentMaintenanceThreadPool));
     }
 
-    private static ObservedThreadPool createIndexMaintenanceThreadPool(
+    private static ObservedThreadPool createSplitPlannerThreadPool(
             final ObservedThreadPoolFactory threadPoolFactory) {
         return threadPoolFactory.createAbortingPool(
-                IndexConfiguration::getNumberOfIndexMaintenanceThreads,
-                ARG_INDEX_MAINTENANCE_THREADS,
-                THREAD_NAME_PREFIX_INDEX_MAINTENANCE);
+                ignored -> 1,
+                ARG_SPLIT_PLANNER_THREADS,
+                THREAD_NAME_PREFIX_SPLIT_PLANNER);
     }
 
     private static ObservedThreadPool createStableSegmentMaintenanceThreadPool(
@@ -202,13 +186,6 @@ public final class IndexExecutorRegistry extends AbstractCloseableResource {
         return createFixedDaemonExecutor(threadPoolFactory,
                 threadCount,
                 THREAD_NAME_PREFIX_REGISTRY_MAINTENANCE);
-    }
-
-    private static ScheduledExecutorService createSplitPolicyScheduler(
-            final ObservedThreadPoolFactory threadPoolFactory) {
-        return Executors.newSingleThreadScheduledExecutor(
-                threadPoolFactory.daemonThreadFactory(
-                        THREAD_NAME_PREFIX_SPLIT_POLICY));
     }
 
     private static ExecutorService createFixedDaemonExecutor(

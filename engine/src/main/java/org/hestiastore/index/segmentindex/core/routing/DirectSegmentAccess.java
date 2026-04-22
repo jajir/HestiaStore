@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.routing;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -31,5 +32,5 @@ public interface DirectSegmentAccess<K, V> {
     EntryIterator<K, V> openWindowIterator(SegmentWindow resolvedWindows,
             SegmentIteratorIsolation isolation);
 
-    IndexResult<Void> put(K key, V value);
+    IndexResult<SegmentId> put(K key, V value);
 }

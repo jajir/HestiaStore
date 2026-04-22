@@ -3,8 +3,9 @@ package org.hestiastore.index.segmentindex.core.routing;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
+import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -20,6 +21,7 @@ public interface SegmentIndexOperationAccess<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final Stats stats,
             final DirectSegmentAccess<K, V> directSegmentCoordinator,
+            final SplitPlanner<K, V> splitPlanner,
             final IndexWalCoordinator<K, V> walCoordinator,
             final IndexRetryPolicy retryPolicy) {
         return new IndexOperationCoordinator<>(
@@ -28,6 +30,7 @@ public interface SegmentIndexOperationAccess<K, V> {
                 Vldtn.requireNonNull(stats, "stats"),
                 Vldtn.requireNonNull(directSegmentCoordinator,
                         "directSegmentCoordinator"),
+                Vldtn.requireNonNull(splitPlanner, "splitPlanner"),
                 Vldtn.requireNonNull(walCoordinator, "walCoordinator"),
                 Vldtn.requireNonNull(retryPolicy, "retryPolicy"));
     }

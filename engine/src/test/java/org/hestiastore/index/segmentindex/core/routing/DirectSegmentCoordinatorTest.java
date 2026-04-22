@@ -89,9 +89,10 @@ class DirectSegmentCoordinatorTest {
         when(stableSegmentGateway.put(SegmentId.of(0), 11, "v11"))
                 .thenReturn(IndexResult.ok());
 
-        final IndexResult<Void> result = coordinator.put(11, "v11");
+        final IndexResult<SegmentId> result = coordinator.put(11, "v11");
 
         assertEquals(IndexResultStatus.OK, result.getStatus());
+        assertEquals(SegmentId.of(0), result.getValue());
         assertEquals(SegmentId.of(0),
                 synchronizedKeyToSegmentMap.findSegmentIdForKey(11));
         verify(stableSegmentGateway).put(SegmentId.of(0), 11, "v11");
@@ -103,7 +104,7 @@ class DirectSegmentCoordinatorTest {
         when(stableSegmentGateway.put(SegmentId.of(0), 10, "v10"))
                 .thenReturn(IndexResult.busy());
 
-        final IndexResult<Void> result = coordinator.put(10, "v10");
+        final IndexResult<SegmentId> result = coordinator.put(10, "v10");
 
         assertEquals(IndexResultStatus.BUSY, result.getStatus());
     }
@@ -114,7 +115,7 @@ class DirectSegmentCoordinatorTest {
         when(backgroundSplitCoordinator.isSplitBlocked(SegmentId.of(0)))
                 .thenReturn(true);
 
-        final IndexResult<Void> result = coordinator.put(10, "v10");
+        final IndexResult<SegmentId> result = coordinator.put(10, "v10");
 
         assertEquals(IndexResultStatus.BUSY, result.getStatus());
     }

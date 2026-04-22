@@ -9,16 +9,16 @@ import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAcces
  */
 final class IndexExecutorRuntimeSnapshot implements IndexExecutorRuntimeAccess {
 
-    private final IndexExecutorMetricsAccess indexMaintenance;
+    private final IndexExecutorMetricsAccess splitPlanner;
     private final IndexExecutorMetricsAccess splitMaintenance;
     private final IndexExecutorMetricsAccess stableSegmentMaintenance;
 
     IndexExecutorRuntimeSnapshot(
-            final IndexExecutorMetricsAccess indexMaintenance,
+            final IndexExecutorMetricsAccess splitPlanner,
             final IndexExecutorMetricsAccess splitMaintenance,
             final IndexExecutorMetricsAccess stableSegmentMaintenance) {
-        this.indexMaintenance = Vldtn.requireNonNull(indexMaintenance,
-                "indexMaintenance");
+        this.splitPlanner = Vldtn.requireNonNull(splitPlanner,
+                "splitPlanner");
         this.splitMaintenance = Vldtn.requireNonNull(splitMaintenance,
                 "splitMaintenance");
         this.stableSegmentMaintenance = Vldtn.requireNonNull(
@@ -26,8 +26,8 @@ final class IndexExecutorRuntimeSnapshot implements IndexExecutorRuntimeAccess {
     }
 
     @Override
-    public IndexExecutorMetricsAccess getIndexMaintenance() {
-        return indexMaintenance;
+    public IndexExecutorMetricsAccess getSplitPlanner() {
+        return splitPlanner;
     }
 
     @Override

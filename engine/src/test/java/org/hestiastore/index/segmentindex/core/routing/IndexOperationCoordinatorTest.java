@@ -8,9 +8,11 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,9 @@ class IndexOperationCoordinatorTest {
     private DirectSegmentAccess<Integer, String> directSegmentCoordinator;
 
     @Mock
+    private SplitPlanner<Integer, String> splitPlanner;
+
+    @Mock
     private IndexWalCoordinator<Integer, String> walCoordinator;
 
     @Mock
@@ -40,6 +45,7 @@ class IndexOperationCoordinatorTest {
         stats = new Stats();
         coordinator = new IndexOperationCoordinator<>(typeDescriptor, stats,
                 directSegmentCoordinator,
+                splitPlanner,
                 walCoordinator, retryPolicy);
     }
 
@@ -48,7 +54,7 @@ class IndexOperationCoordinatorTest {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
         when(directSegmentCoordinator.put(1, "one"))
-                .thenReturn(IndexResult.busy(), IndexResult.ok());
+                .thenReturn(IndexResult.busy(), IndexResult.ok(SegmentId.of(7)));
 
         coordinator.put(1, "one");
 
@@ -57,6 +63,7 @@ class IndexOperationCoordinatorTest {
         assertEquals(0L, stats.getPutBusyTimeoutCount());
         verify(retryPolicy).backoffOrThrow(1L, "put", null);
         verify(walCoordinator).recordAppliedLsn(7L);
+        verify(splitPlanner).hintSegment(SegmentId.of(7));
     }
 
     @Test
@@ -103,13 +110,14 @@ class IndexOperationCoordinatorTest {
         when(replayRecord.getLsn()).thenReturn(11L);
         when(directSegmentCoordinator.put(3,
                 TypeDescriptorShortString.TOMBSTONE_VALUE))
-                        .thenReturn(IndexResult.ok());
+                        .thenReturn(IndexResult.ok(SegmentId.of(3)));
 
         coordinator.replayWalRecord(replayRecord);
 
         verify(directSegmentCoordinator).put(3,
                 TypeDescriptorShortString.TOMBSTONE_VALUE);
         verify(walCoordinator).recordAppliedLsn(11L);
+        verify(splitPlanner).hintSegment(SegmentId.of(3));
     }
 
     @Test

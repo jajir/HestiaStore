@@ -63,6 +63,31 @@
 
 ## Done (Archive)
 
+[x] 82 Collapse split scheduling into a dedicated planner package (Risk: HIGH)
+    - End-game achieved: `org.hestiastore.index.segmentindex.core.splitplanner`
+      is now the control-plane package for split hint intake, periodic
+      reconciliation, candidate selection, and admission into the split worker
+      pool.
+    - End-game achieved: split execution stays separate from planning. The
+      planner owns "what should be scheduled"; split workers own "execute this
+      already admitted split".
+    - End-game achieved: planner is the only place allowed to submit split
+      work. Write paths, maintenance finalization, and timer ticks emit only
+      hints or rescan requests.
+    - End-game achieved: thread topology is reduced to one planner thread plus
+      one split worker pool, while route publish exclusivity, retry behavior,
+      and candidate deduplication remain explicit and test-covered.
+
+[x] 82.1 Freeze target split-planner architecture and migration invariants (Risk: HIGH)
+[x] 82.2 Add characterization tests for current split trigger and admission behavior (Risk: HIGH)
+[x] 82.3 Introduce `core.splitplanner` package with behavior-preserving type moves (Risk: MEDIUM)
+[x] 82.4 Extract explicit planner state and planner-facing API (Risk: MEDIUM)
+[x] 82.5 Introduce a single split-task dispatch seam (Risk: HIGH)
+[x] 82.6 Route all split triggers through planner requests only (Risk: HIGH)
+[x] 82.7 Separate candidate discovery from split execution in code and tests (Risk: HIGH)
+[x] 82.8 Replace dual policy executors with a single planner thread model (Risk: HIGH)
+[x] 82.9 Simplify executor topology and runtime assembly (Risk: HIGH)
+[x] 82.10 Remove obsolete policy vocabulary and close the migration (Risk: MEDIUM)
 [x] 81 Replace technical `segmentindex.core` package vocabulary with domain ownership packages (Risk: HIGH)
 [x] 81.1 Freeze the target package model and migration rules (Risk: HIGH)
 [x] 81.2 Move root/session ownership into `core.session` (Risk: HIGH)
