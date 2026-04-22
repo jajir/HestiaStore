@@ -80,15 +80,15 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 compactRequestCount, flushRequestCount,
                 stats.getSplitScheduleCount(),
                 backgroundSplitCoordinator.splitInFlightCount(),
-                indexMaintenanceSnapshot(executorSnapshot).getQueueSize(),
-                indexMaintenanceSnapshot(executorSnapshot).getQueueCapacity(),
+                splitPlannerSnapshot(executorSnapshot).getQueueSize(),
+                splitPlannerSnapshot(executorSnapshot).getQueueCapacity(),
                 splitMaintenanceSnapshot(executorSnapshot).getQueueSize(),
                 splitMaintenanceSnapshot(executorSnapshot).getQueueCapacity(),
-                indexMaintenanceSnapshot(executorSnapshot)
+                splitPlannerSnapshot(executorSnapshot)
                         .getActiveThreadCount(),
-                indexMaintenanceSnapshot(executorSnapshot)
+                splitPlannerSnapshot(executorSnapshot)
                         .getCompletedTaskCount(),
-                indexMaintenanceSnapshot(executorSnapshot)
+                splitPlannerSnapshot(executorSnapshot)
                         .getRejectedTaskCount(),
                 splitMaintenanceSnapshot(executorSnapshot)
                         .getActiveThreadCount(),
@@ -153,9 +153,9 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
         return runtimeTuningState.effectiveValue(key);
     }
 
-    private static IndexExecutorMetricsAccess indexMaintenanceSnapshot(
+    private static IndexExecutorMetricsAccess splitPlannerSnapshot(
             final IndexExecutorRuntimeAccess executorSnapshot) {
-        return executorSnapshot.getIndexMaintenance();
+        return executorSnapshot.getSplitPlanner();
     }
 
     private static IndexExecutorMetricsAccess splitMaintenanceSnapshot(

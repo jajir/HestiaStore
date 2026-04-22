@@ -86,7 +86,7 @@ Good first refactoring slices are:
 - open/close/recovery
 - put/delete with WAL interaction
 - flush/drain/compaction orchestration
-- background split policy
+- split planner and split execution admission
 - runtime tuning and control-plane logic
 
 ## Performance Gates

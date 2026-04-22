@@ -11,6 +11,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenan
 import org.hestiastore.index.segmentindex.core.metrics.SegmentIndexMetricsSnapshots;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -77,6 +78,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                 request.valueTypeDescriptor,
                 request.stats,
                 splitState.directSegmentCoordinator(),
+                splitState.splitPlanner(),
                 Vldtn.requireNonNull(walCoordinator, "walCoordinator"),
                 coreStorage.retryPolicy());
     }
@@ -86,7 +88,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
         return SegmentIndexMaintenanceAccess.create(
                 coreStorage.keyToSegmentMap(),
                 splitState.backgroundSplitCoordinator(),
-                splitState.backgroundSplitPolicyLoop(),
+                splitState.splitPlanner(),
                 splitState.stableSegmentCoordinator(),
                 Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
     }
@@ -119,6 +121,6 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                         "metricsSnapshotSupplier"),
                 Vldtn.requireNonNull(runtimeLimitApplier,
                         "runtimeLimitApplier")::apply,
-                splitState.backgroundSplitPolicyLoop()::scheduleScan);
+                splitState.splitPlanner()::requestRescan);
     }
 }

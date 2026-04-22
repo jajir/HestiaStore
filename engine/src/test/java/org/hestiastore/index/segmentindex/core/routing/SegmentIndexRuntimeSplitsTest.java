@@ -6,10 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.BackgroundSplitPolicyAccess;
 import org.hestiastore.index.segmentindex.core.maintenance.StableSegmentMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.routing.DirectSegmentAccess;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.splitplanner.SplitPlanner;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexRuntimeSplitsTest {
@@ -20,7 +18,7 @@ class SegmentIndexRuntimeSplitsTest {
                 IllegalArgumentException.class,
                 () -> new SegmentIndexRuntimeSplits<>(null,
                         mock(StableSegmentMaintenanceAccess.class),
-                        mock(BackgroundSplitPolicyAccess.class),
+                        mock(SplitPlanner.class),
                         mock(DirectSegmentAccess.class),
                         mock(IndexRecoveryCleanupCoordinator.class)));
 
@@ -34,8 +32,8 @@ class SegmentIndexRuntimeSplitsTest {
                 mock(BackgroundSplitCoordinator.class);
         final StableSegmentMaintenanceAccess<Integer, String> stableSegmentCoordinator =
                 mock(StableSegmentMaintenanceAccess.class);
-        final BackgroundSplitPolicyAccess<Integer, String> backgroundSplitPolicyLoop =
-                mock(BackgroundSplitPolicyAccess.class);
+        final SplitPlanner<Integer, String> splitPlanner =
+                mock(SplitPlanner.class);
         final DirectSegmentAccess<Integer, String> directSegmentCoordinator =
                 mock(DirectSegmentAccess.class);
         final IndexRecoveryCleanupCoordinator<Integer, String> recoveryCleanupCoordinator =
@@ -43,15 +41,14 @@ class SegmentIndexRuntimeSplitsTest {
 
         final SegmentIndexRuntimeSplits<Integer, String> state =
                 new SegmentIndexRuntimeSplits<>(backgroundSplitCoordinator,
-                        stableSegmentCoordinator, backgroundSplitPolicyLoop,
+                        stableSegmentCoordinator, splitPlanner,
                         directSegmentCoordinator,
                         recoveryCleanupCoordinator);
 
         assertSame(backgroundSplitCoordinator,
                 state.backgroundSplitCoordinator());
         assertSame(stableSegmentCoordinator, state.stableSegmentCoordinator());
-        assertSame(backgroundSplitPolicyLoop,
-                state.backgroundSplitPolicyLoop());
+        assertSame(splitPlanner, state.splitPlanner());
         assertSame(directSegmentCoordinator, state.directSegmentCoordinator());
         assertSame(recoveryCleanupCoordinator,
                 state.recoveryCleanupCoordinator());

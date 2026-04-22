@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.maintenance;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.Vldtn;
@@ -11,23 +10,19 @@ import org.hestiastore.index.Vldtn;
  */
 final class IndexExecutorTopology {
 
-    private final ExecutorService indexMaintenanceExecutor;
+    private final ExecutorService splitPlannerExecutor;
     private final ExecutorService splitMaintenanceExecutor;
-    private final LazyExecutorReference<ScheduledExecutorService> splitPolicyScheduler;
     private final ExecutorService stableSegmentMaintenanceExecutor;
     private final LazyExecutorReference<ExecutorService> registryMaintenanceExecutor;
 
-    IndexExecutorTopology(final ExecutorService indexMaintenanceExecutor,
+    IndexExecutorTopology(final ExecutorService splitPlannerExecutor,
             final ExecutorService splitMaintenanceExecutor,
-            final LazyExecutorReference<ScheduledExecutorService> splitPolicyScheduler,
             final ExecutorService stableSegmentMaintenanceExecutor,
             final LazyExecutorReference<ExecutorService> registryMaintenanceExecutor) {
-        this.indexMaintenanceExecutor = Vldtn.requireNonNull(
-                indexMaintenanceExecutor, "indexMaintenanceExecutor");
+        this.splitPlannerExecutor = Vldtn.requireNonNull(
+                splitPlannerExecutor, "splitPlannerExecutor");
         this.splitMaintenanceExecutor = Vldtn.requireNonNull(
                 splitMaintenanceExecutor, "splitMaintenanceExecutor");
-        this.splitPolicyScheduler = Vldtn.requireNonNull(splitPolicyScheduler,
-                "splitPolicyScheduler");
         this.stableSegmentMaintenanceExecutor = Vldtn.requireNonNull(
                 stableSegmentMaintenanceExecutor,
                 "stableSegmentMaintenanceExecutor");
@@ -35,20 +30,16 @@ final class IndexExecutorTopology {
                 registryMaintenanceExecutor, "registryMaintenanceExecutor");
     }
 
-    ExecutorService indexMaintenanceExecutor() {
-        return indexMaintenanceExecutor;
-    }
-
-    ExecutorService splitMaintenanceExecutor() {
-        return splitMaintenanceExecutor;
-    }
-
-    ScheduledExecutorService splitPolicyScheduler() {
-        return splitPolicyScheduler.get();
+    ExecutorService splitPlannerExecutor() {
+        return splitPlannerExecutor;
     }
 
     ExecutorService stableSegmentMaintenanceExecutor() {
         return stableSegmentMaintenanceExecutor;
+    }
+
+    ExecutorService splitMaintenanceExecutor() {
+        return splitMaintenanceExecutor;
     }
 
     ExecutorService registryMaintenanceExecutor() {
@@ -57,9 +48,8 @@ final class IndexExecutorTopology {
 
     RuntimeException shutdownExecutorsInCloseOrder() {
         RuntimeException failure = null;
-        failure = shutdownAndAwait(indexMaintenanceExecutor, failure);
+        failure = shutdownAndAwait(splitPlannerExecutor, failure);
         failure = shutdownAndAwait(splitMaintenanceExecutor, failure);
-        failure = shutdownAndAwait(splitPolicyScheduler.getIfCreated(), failure);
         failure = shutdownAndAwait(stableSegmentMaintenanceExecutor, failure);
         failure = shutdownAndAwait(registryMaintenanceExecutor.getIfCreated(),
                 failure);

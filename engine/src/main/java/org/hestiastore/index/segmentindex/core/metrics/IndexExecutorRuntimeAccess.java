@@ -5,7 +5,7 @@ package org.hestiastore.index.segmentindex.core.metrics;
  */
 public interface IndexExecutorRuntimeAccess {
 
-    IndexExecutorMetricsAccess getIndexMaintenance();
+    IndexExecutorMetricsAccess getSplitPlanner();
 
     IndexExecutorMetricsAccess getSplitMaintenance();
 
