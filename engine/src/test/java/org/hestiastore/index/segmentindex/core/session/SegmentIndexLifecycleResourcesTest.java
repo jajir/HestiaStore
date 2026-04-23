@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -31,6 +32,37 @@ class SegmentIndexLifecycleResourcesTest {
     }
 
     @Test
+    void emptyStateRejectsRequireOpenedAndReusesSingleton() {
+        final SegmentIndexLifecycleResources<Integer, String> first =
+                SegmentIndexLifecycleResources.empty();
+        final SegmentIndexLifecycleResources<Integer, String> second =
+                SegmentIndexLifecycleResources.empty();
+
+        assertSame(first, second);
+        assertThrows(IllegalStateException.class, first::requireOpened);
+    }
+
+    @Test
+    void openedStateExposesResourcesAndReturnsItselfFromRequireOpened() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfiguration<Integer, String> configuration = buildConf(
+                "lifecycle-resources");
+        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
+                configuration.resolveRuntimeConfiguration();
+        final IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+                configuration);
+        final SegmentIndexLifecycleResources<Integer, String> resources =
+                SegmentIndexLifecycleResources.opened(directory, configuration,
+                        runtimeConfiguration, executorRegistry);
+
+        assertSame(directory, resources.managedDirectory());
+        assertSame(configuration, resources.indexConfiguration());
+        assertSame(runtimeConfiguration, resources.runtimeConfiguration());
+        assertSame(executorRegistry, resources.executorRegistry());
+        assertSame(resources, resources.requireOpened());
+    }
+
+    @Test
     void openedStateClosesResourcesAndReturnsEmptyState() {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> configuration = buildConf(
@@ -46,6 +78,7 @@ class SegmentIndexLifecycleResourcesTest {
         final SegmentIndexLifecycleResources<Integer, String> closedResources =
                 resources.close(LoggerFactory.getLogger(getClass()));
 
+        assertSame(SegmentIndexLifecycleResources.empty(), closedResources);
         assertNull(closedResources.managedDirectory());
         assertNull(closedResources.indexConfiguration());
         assertNull(closedResources.runtimeConfiguration());

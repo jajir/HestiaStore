@@ -21,13 +21,13 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
  */
-public final class IndexContextLoggingAdapter<K, V>
+final class IndexContextLoggingAdapter<K, V>
         extends AbstractCloseableResource implements SegmentIndex<K, V> {
     private final SegmentIndex<K, V> delegate;
     private final IndexContextScopeRunner contextScopeRunner;
     private final IndexControlPlane controlPlane;
 
-    public IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
+    IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
             final SegmentIndex<K, V> index) {
         this.delegate = Vldtn.requireNonNull(index, "index");
         final IndexConfiguration<K, V> configuration = Vldtn

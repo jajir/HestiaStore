@@ -20,7 +20,8 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.split.SplitRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -34,7 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentIndexMetricsSnapshotFactoryTest {
 
     @Mock
-    private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
+    private SplitService<Integer, String> splitService;
 
     private WalRuntime<Integer, String> walRuntime;
     private IndexExecutorRegistry executorRegistry;
@@ -58,12 +59,12 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         executorRegistry = new IndexExecutorRegistry(conf);
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
                 new SegmentIndexMetricsSnapshotFactory<>(conf,
-                        backgroundSplitCoordinator,
+                        splitService,
                         RuntimeTuningState.fromConfiguration(conf),
                         openDisabledWalRuntime(), stats, new AtomicLong(17L),
                         () -> SegmentIndexState.READY);
-        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(3);
-        when(backgroundSplitCoordinator.splitBlockedCount()).thenReturn(2);
+        when(splitService.runtimeSnapshot())
+                .thenReturn(new SplitRuntimeSnapshot(3, 2));
         final StableSegmentRuntimeMetrics stableSegmentRuntime =
                 new StableSegmentRuntimeMetrics();
         stableSegmentRuntime.setTotalMappedStableSegmentCount(1);

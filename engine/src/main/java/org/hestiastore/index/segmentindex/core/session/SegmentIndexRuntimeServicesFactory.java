@@ -10,7 +10,6 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.metrics.SegmentIndexMetricsSnapshots;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -26,15 +25,16 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
 
     private final SegmentIndexRuntimeInputs<K, V> request;
     private final SegmentIndexCoreStorage<K, V> coreStorage;
-    private final SegmentIndexRuntimeSplits<K, V> splitState;
+    private final SegmentTopologyRuntime<K, V> topologyRuntime;
 
     SegmentIndexRuntimeServicesFactory(
             final SegmentIndexRuntimeInputs<K, V> request,
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentIndexRuntimeSplits<K, V> splitState) {
+            final SegmentTopologyRuntime<K, V> topologyRuntime) {
         this.request = Vldtn.requireNonNull(request, "request");
         this.coreStorage = Vldtn.requireNonNull(coreStorage, "coreStorage");
-        this.splitState = Vldtn.requireNonNull(splitState, "splitState");
+        this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
+                "topologyRuntime");
     }
 
     SegmentIndexRuntimeServices<K, V> create(
@@ -67,7 +67,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
     }
 
     private void flushStableStorage() {
-        splitState.stableSegmentCoordinator().flushSegments(true);
+        topologyRuntime.flushStableSegmentsWithSplitSchedulingPaused();
         coreStorage.keyToSegmentMap().flushIfDirty();
     }
 
@@ -76,19 +76,16 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
         return SegmentIndexOperationAccess.create(
                 request.valueTypeDescriptor,
                 request.stats,
-                splitState.directSegmentCoordinator(),
+                topologyRuntime.directSegmentAccess(),
                 Vldtn.requireNonNull(walCoordinator, "walCoordinator"),
                 coreStorage.retryPolicy());
     }
 
     private SegmentIndexMaintenanceAccess<K, V> createMaintenanceAccess(
             final IndexWalCoordinator<K, V> walCoordinator) {
-        return SegmentIndexMaintenanceAccess.create(
-                coreStorage.keyToSegmentMap(),
-                splitState.backgroundSplitCoordinator(),
-                splitState.backgroundSplitPolicyLoop(),
-                splitState.stableSegmentCoordinator(),
-                Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
+        return topologyRuntime
+                .maintenanceAccess(Vldtn.requireNonNull(walCoordinator,
+                        "walCoordinator"));
     }
 
     private SegmentRuntimeLimitApplier<K, V> createRuntimeLimitApplier() {
@@ -101,7 +98,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
         return SegmentIndexMetricsSnapshots.create(
                 request.conf, coreStorage.keyToSegmentMap(),
                 coreStorage.segmentRegistry(),
-                splitState.backgroundSplitCoordinator(),
+                topologyRuntime.splitService(),
                 request.executorRegistry,
                 coreStorage.runtimeTuningState(), walRuntime,
                 request.stats, request.compactRequestHighWaterMark,
@@ -119,6 +116,6 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                         "metricsSnapshotSupplier"),
                 Vldtn.requireNonNull(runtimeLimitApplier,
                         "runtimeLimitApplier")::apply,
-                splitState.backgroundSplitPolicyLoop()::scheduleScan);
+                topologyRuntime::scheduleBackgroundSplitScan);
     }
 }

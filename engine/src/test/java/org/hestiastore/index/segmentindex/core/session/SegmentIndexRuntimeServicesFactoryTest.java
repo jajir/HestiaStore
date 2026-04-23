@@ -13,8 +13,6 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexSplitInfrastructureFactory;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -66,12 +64,11 @@ class SegmentIndexRuntimeServicesFactoryTest {
     void createBuildsRuntimeCollaborators() {
         final SegmentIndexRuntimeInputs<Integer, String> request =
                 newRequest();
-        final SegmentIndexRuntimeSplits<Integer, String> splitState =
-                new SegmentIndexSplitInfrastructureFactory<>(request,
-                        coreStorage).create();
+        final SegmentTopologyRuntime<Integer, String> topologyRuntime =
+                new SegmentTopologyRuntime<>(request, coreStorage);
         final SegmentIndexRuntimeServicesFactory<Integer, String> factory =
                 new SegmentIndexRuntimeServicesFactory<>(request, coreStorage,
-                        splitState);
+                        topologyRuntime);
 
         final SegmentIndexRuntimeServices<Integer, String> services =
                 factory.create(walRuntime);

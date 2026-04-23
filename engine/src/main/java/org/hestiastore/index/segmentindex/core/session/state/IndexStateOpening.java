@@ -18,6 +18,12 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
     private final FileLock fileLock;
     private final boolean staleLockRecovered;
 
+    /**
+     * Opens the index directory lock and records whether a stale lock marker
+     * had to be recovered.
+     *
+     * @param directoryFacade managed index directory
+     */
     public IndexStateOpening(final Directory directoryFacade) {
         final Directory nonNullDirectory = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -33,12 +39,7 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
         fileLock.lock();
     }
 
-    /**
-     * Transitions the index to the ready state while keeping the acquired
-     * directory lock.
-     *
-     * @param index index instance
-     */
+    /** {@inheritDoc} */
     @Override
     public SegmentIndexState state() {
         return SegmentIndexState.OPENING;
@@ -58,7 +59,7 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
     /**
      * Closing is not allowed while the index is still opening.
      *
-     * @param index index instance
+     * @throws IllegalStateException always
      */
     @Override
     public IndexState<K, V> onClose() {
@@ -84,6 +85,10 @@ public final class IndexStateOpening<K, V> implements IndexState<K, V> {
         return fileLock;
     }
 
+    /**
+     * @return {@code true} when a pre-existing lock marker was present but not
+     *         actively held
+     */
     public boolean wasStaleLockRecovered() {
         return staleLockRecovered;
     }

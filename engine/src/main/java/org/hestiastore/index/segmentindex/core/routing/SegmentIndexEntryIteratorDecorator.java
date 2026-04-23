@@ -15,11 +15,22 @@ public final class SegmentIndexEntryIteratorDecorator<K, V> {
 
     private final IndexConfiguration<K, V> conf;
 
+    /**
+     * Creates an iterator decorator bound to one index configuration.
+     *
+     * @param conf index configuration controlling optional context logging
+     */
     public SegmentIndexEntryIteratorDecorator(
             final IndexConfiguration<K, V> conf) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
     }
 
+    /**
+     * Applies the configured iterator decoration.
+     *
+     * @param iterator iterator to expose through the routing facade
+     * @return original iterator or a context-logging wrapper when enabled
+     */
     public EntryIterator<K, V> decorate(final EntryIterator<K, V> iterator) {
         final EntryIterator<K, V> validatedIterator = Vldtn
                 .requireNonNull(iterator, "iterator");

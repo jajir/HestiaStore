@@ -87,6 +87,29 @@ class IndexStateCoordinatorTest {
         assertTrue(index.getIndexState() instanceof IndexStateError);
     }
 
+    @Test
+    void constructorRejectsMismatchedExposedState() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new IndexStateCoordinator<>(
+                        new IndexStateClosed<Integer, String>(),
+                        SegmentIndexState.READY));
+    }
+
+    @Test
+    void completeCloseStateTransitionIsNoOpForClosedState() {
+        SegmentIndexTestAccess.stateCoordinator(index).beginClose();
+        SegmentIndexTestAccess.stateCoordinator(index)
+                .completeCloseStateTransition();
+
+        final IndexState<Integer, String> closedState = index.getIndexState();
+
+        SegmentIndexTestAccess.stateCoordinator(index)
+                .completeCloseStateTransition();
+
+        assertSame(closedState, index.getIndexState());
+        assertEquals(SegmentIndexState.CLOSED, index.getState());
+    }
+
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()
                 .withKeyClass(Integer.class)

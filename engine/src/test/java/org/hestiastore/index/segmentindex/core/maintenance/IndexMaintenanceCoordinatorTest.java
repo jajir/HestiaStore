@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.List;
 
@@ -14,7 +14,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,10 +27,7 @@ class IndexMaintenanceCoordinatorTest {
     private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
-    private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
-
-    @Mock
-    private BackgroundSplitPolicyLoop<Integer, String> backgroundSplitPolicyLoop;
+    private SplitMaintenanceSynchronization<Integer, String> splitSynchronization;
 
     @Mock
     private StableSegmentCoordinator<Integer, String> stableSegmentCoordinator;
@@ -47,30 +43,32 @@ class IndexMaintenanceCoordinatorTest {
     @BeforeEach
     void setUp() {
         coordinator = new IndexMaintenanceCoordinator<>(keyToSegmentMap,
-                backgroundSplitCoordinator, backgroundSplitPolicyLoop,
+                splitSynchronization,
                 stableSegmentCoordinator, walCoordinator);
     }
 
     @Test
     void compact_skipsStableCompactionWhileSplitIsStillRunning() {
-        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(1);
+        when(splitSynchronization.splitInFlightCount()).thenReturn(1);
 
         coordinator.compact();
 
-        verifyNoInteractions(stableSegmentCoordinator, backgroundSplitPolicyLoop);
+        verify(splitSynchronization).splitInFlightCount();
+        verifyNoMoreInteractions(splitSynchronization);
+        verifyNoMoreInteractions(stableSegmentCoordinator);
     }
 
     @Test
     void compact_compactsMappedSegmentsWhenRuntimeIsSettled() {
         final SegmentId segmentId = SegmentId.of(7);
-        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(0);
+        when(splitSynchronization.splitInFlightCount()).thenReturn(0);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         runPausedActionImmediately();
 
         coordinator.compact();
 
         verify(stableSegmentCoordinator).compactSegment(segmentId, false);
-        verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
+        verify(splitSynchronization).scheduleScanIfIdle();
     }
 
     @Test
@@ -81,9 +79,9 @@ class IndexMaintenanceCoordinatorTest {
 
         coordinator.flushAndWait();
 
-        verify(backgroundSplitPolicyLoop, times(2)).awaitExhausted();
+        verify(splitSynchronization, times(2)).awaitExhausted();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
-        verify(backgroundSplitPolicyLoop).scheduleScanIfIdle();
+        verify(splitSynchronization).scheduleScanIfIdle();
         verify(keyToSegmentMap).flushIfDirty();
         verify(walCoordinator).checkpoint();
     }
@@ -92,6 +90,6 @@ class IndexMaintenanceCoordinatorTest {
         doAnswer(invocation -> {
             ((Runnable) invocation.getArgument(0)).run();
             return null;
-        }).when(backgroundSplitCoordinator).runWithSplitSchedulingPaused(any(Runnable.class));
+        }).when(splitSynchronization).runWithSplitSchedulingPaused(any(Runnable.class));
     }
 }

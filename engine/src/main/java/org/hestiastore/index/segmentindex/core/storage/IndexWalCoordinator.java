@@ -31,6 +31,20 @@ public final class IndexWalCoordinator<K, V> {
     private final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator;
     private final WalFailureTransitionHandler walFailureTransitionHandler;
 
+    /**
+     * Creates a coordinator for WAL replay, append, checkpoint, and failure
+     * handling concerns.
+     *
+     * @param logger runtime logger
+     * @param conf index configuration
+     * @param walRuntime WAL runtime
+     * @param retryPolicy retry policy used under retention pressure
+     * @param prepareDurableStateAction callback run before checkpointing
+     * @param flushDurableStateAction callback run to flush durable state
+     * @param stateSupplier runtime state supplier
+     * @param failureHandler runtime failure handler
+     * @param lastAppliedWalLsn mutable last-applied LSN holder
+     */
     public IndexWalCoordinator(final Logger logger,
             final IndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
@@ -65,10 +79,18 @@ public final class IndexWalCoordinator<K, V> {
                 this.walFailureTransitionHandler);
     }
 
+    /**
+     * Replays unapplied WAL entries into the runtime.
+     *
+     * @param replayConsumer replay consumer invoked for each recovered entry
+     */
     public void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
         walReplayProgressTracker.recover(replayConsumer);
     }
 
+    /**
+     * Runs a checkpoint when WAL is enabled.
+     */
     public void checkpoint() {
         if (!isWalEnabled()) {
             return;
@@ -76,14 +98,32 @@ public final class IndexWalCoordinator<K, V> {
         walCheckpointExecutor.checkpoint();
     }
 
+    /**
+     * Appends one put entry to the WAL.
+     *
+     * @param key entry key
+     * @param value entry value
+     * @return appended WAL LSN or {@code 0} when WAL is disabled
+     */
     public long appendPut(final K key, final V value) {
         return appendWalEntry(() -> walRuntime.appendPut(key, value));
     }
 
+    /**
+     * Appends one delete entry to the WAL.
+     *
+     * @param key deleted key
+     * @return appended WAL LSN or {@code 0} when WAL is disabled
+     */
     public long appendDelete(final K key) {
         return appendWalEntry(() -> walRuntime.appendDelete(key));
     }
 
+    /**
+     * Records the highest WAL LSN already applied to durable runtime state.
+     *
+     * @param walLsn applied WAL LSN
+     */
     public void recordAppliedLsn(final long walLsn) {
         walReplayProgressTracker.recordAppliedLsn(walLsn);
     }

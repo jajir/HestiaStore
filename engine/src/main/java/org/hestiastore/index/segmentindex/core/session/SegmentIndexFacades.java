@@ -18,7 +18,7 @@ import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinat
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexFacades<K, V> {
+final class SegmentIndexFacades<K, V> {
 
     private final SegmentIndexMutationFacade<K, V> mutationFacade;
     private final SegmentIndexReadFacade<K, V> readFacade;
@@ -35,7 +35,7 @@ public final class SegmentIndexFacades<K, V> {
                 "maintenanceCommands");
     }
 
-    public static <K, V> SegmentIndexFacades<K, V> create(
+    static <K, V> SegmentIndexFacades<K, V> create(
             final IndexConfiguration<K, V> conf,
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
             final SegmentIndexDataAccess<K, V> dataAccess,
@@ -67,15 +67,15 @@ public final class SegmentIndexFacades<K, V> {
                         validatedConsistencyCoordinator));
     }
 
-    public SegmentIndexMutationFacade<K, V> mutationFacade() {
+    SegmentIndexMutationFacade<K, V> mutationFacade() {
         return mutationFacade;
     }
 
-    public SegmentIndexReadFacade<K, V> readFacade() {
+    SegmentIndexReadFacade<K, V> readFacade() {
         return readFacade;
     }
 
-    public SegmentIndexMaintenanceCommands<K, V> maintenanceCommands() {
+    SegmentIndexMaintenanceCommands<K, V> maintenanceCommands() {
         return maintenanceCommands;
     }
 }
