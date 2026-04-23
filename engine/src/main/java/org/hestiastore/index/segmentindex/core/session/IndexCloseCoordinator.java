@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 /**
  * Owns the ordered close sequence for index runtime collaborators.
  */
-public final class IndexCloseCoordinator<K, V> {
+final class IndexCloseCoordinator<K, V> {
 
     private final Logger logger;
     private final String indexName;
@@ -19,7 +19,7 @@ public final class IndexCloseCoordinator<K, V> {
     private final Stats stats;
     private final SegmentIndexRuntime<K, V> runtime;
 
-    public IndexCloseCoordinator(final Logger logger, final String indexName,
+    IndexCloseCoordinator(final Logger logger, final String indexName,
             final IndexStateCoordinator<K, V> stateCoordinator,
             final IndexOperationTrackingAccess operationTracker,
             final Stats stats,
@@ -34,7 +34,7 @@ public final class IndexCloseCoordinator<K, V> {
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
     }
 
-    public void close() {
+    void close() {
         logger.debug("Closing index '{}'.", indexName);
         try {
             stateCoordinator.beginClose();

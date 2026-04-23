@@ -24,7 +24,6 @@ import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenan
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
@@ -66,13 +65,13 @@ public final class SegmentIndexRuntime<K, V>
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexRuntimeStorage<K, V> storage;
-    private final SegmentIndexRuntimeSplits<K, V> splits;
+    private final SegmentTopologyRuntime<K, V> topologyRuntime;
     private final SegmentIndexRuntimeServices<K, V> services;
     private final WalRuntime<K, V> walRuntime;
 
     SegmentIndexRuntime(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentIndexRuntimeSplits<K, V> splits,
+            final SegmentTopologyRuntime<K, V> topologyRuntime,
             final WalRuntime<K, V> walRuntime,
             final SegmentIndexRuntimeServices<K, V> services) {
         final SegmentIndexCoreStorage<K, V> validatedCoreStorage = Vldtn
@@ -84,7 +83,8 @@ public final class SegmentIndexRuntime<K, V>
                 validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(),
                 validatedCoreStorage.retryPolicy());
-        this.splits = Vldtn.requireNonNull(splits, "splits");
+        this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
+                "topologyRuntime");
         this.services = Vldtn.requireNonNull(services, "services");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
     }
@@ -94,11 +94,11 @@ public final class SegmentIndexRuntime<K, V>
     }
 
     public void cleanupOrphanedSegmentDirectories() {
-        splits.recoveryCleanupCoordinator().cleanupOrphanedSegmentDirectories();
+        topologyRuntime.cleanupOrphanedSegmentDirectories();
     }
 
     public boolean hasSegmentLockFile(final SegmentId segmentId) {
-        return splits.recoveryCleanupCoordinator().hasSegmentLockFile(segmentId);
+        return topologyRuntime.hasSegmentLockFile(segmentId);
     }
 
     TypeDescriptor<K> keyTypeDescriptor() {
@@ -107,10 +107,6 @@ public final class SegmentIndexRuntime<K, V>
 
     SegmentIndexRuntimeStorage<K, V> storage() {
         return storage;
-    }
-
-    SegmentIndexRuntimeSplits<K, V> splits() {
-        return splits;
     }
 
     WalRuntime<K, V> walRuntime() {
@@ -163,16 +159,16 @@ public final class SegmentIndexRuntime<K, V>
 
     @Override
     public void invalidateSegmentIterators() {
-        splits.stableSegmentCoordinator().invalidateIterators();
+        topologyRuntime.invalidateSegmentIterators();
     }
 
     @Override
     public void awaitSplitsIdle(final long timeoutMillis) {
-        splits.backgroundSplitCoordinator().awaitSplitsIdle(timeoutMillis);
+        topologyRuntime.awaitSplitsIdle(timeoutMillis);
     }
 
     public void scheduleBackgroundSplitScan() {
-        splits.backgroundSplitPolicyLoop().scheduleScan();
+        topologyRuntime.scheduleBackgroundSplitScan();
     }
 
     public void validateUniqueSegmentIds() {
@@ -187,12 +183,11 @@ public final class SegmentIndexRuntime<K, V>
     }
 
     public void awaitBackgroundSplitsExhausted() {
-        splits.backgroundSplitPolicyLoop().awaitExhausted();
+        topologyRuntime.awaitBackgroundSplitsExhausted();
     }
 
     public void flushStableSegmentsWithSplitSchedulingPaused() {
-        splits.backgroundSplitCoordinator().runWithSplitSchedulingPaused(
-                () -> splits.stableSegmentCoordinator().flushSegments(true));
+        topologyRuntime.flushStableSegmentsWithSplitSchedulingPaused();
     }
 
     public void closeSegmentRegistry() {
@@ -210,16 +205,14 @@ public final class SegmentIndexRuntime<K, V>
     @Override
     public EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        return splits.stableSegmentCoordinator().openIteratorWithRetry(segmentId,
-                isolation);
+        return topologyRuntime.openSegmentIterator(segmentId, isolation);
     }
 
     @Override
     public EntryIterator<K, V> openWindowIterator(
             final SegmentWindow segmentWindow,
             final SegmentIteratorIsolation isolation) {
-        return splits.directSegmentCoordinator()
-                .openWindowIterator(segmentWindow, isolation);
+        return topologyRuntime.openWindowIterator(segmentWindow, isolation);
     }
 
     @Override

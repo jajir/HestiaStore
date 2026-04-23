@@ -30,7 +30,6 @@ import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -48,7 +47,7 @@ class StableSegmentCoordinatorTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private BackgroundSplitCoordinator<String, String> backgroundSplitCoordinator;
+    private SplitMaintenanceSynchronization<String, String> splitSynchronization;
 
     @Mock
     private StableSegmentAccess<String, String> stableSegmentGateway;
@@ -76,7 +75,7 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, stableSegmentGateway,
+                splitSynchronization, stableSegmentGateway,
                 new IndexRetryPolicy(1, 10), stats);
     }
 
@@ -166,7 +165,7 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, stableSegmentGateway,
+                splitSynchronization, stableSegmentGateway,
                 new IndexRetryPolicy(1, 10), stats,
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
@@ -186,7 +185,7 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, stableSegmentGateway,
+                splitSynchronization, stableSegmentGateway,
                 new IndexRetryPolicy(1, 10), stats,
                 sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
@@ -254,12 +253,12 @@ class StableSegmentCoordinatorTest {
         doAnswer(invocation -> {
             ((Runnable) invocation.getArgument(0)).run();
             return null;
-        }).when(backgroundSplitCoordinator)
+        }).when(splitSynchronization)
                 .runWithSplitSchedulingPaused(any(Runnable.class));
 
         coordinator.flushMappedSegmentsAndWait();
 
-        verify(backgroundSplitCoordinator)
+        verify(splitSynchronization)
                 .runWithSplitSchedulingPaused(any(Runnable.class));
         verify(stableSegmentGateway).flush(firstSegment);
         verify(stableSegmentGateway).flush(secondSegment);

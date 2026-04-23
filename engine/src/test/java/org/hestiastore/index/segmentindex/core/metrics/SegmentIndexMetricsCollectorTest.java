@@ -23,7 +23,8 @@ import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.split.SplitRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -51,7 +52,7 @@ class SegmentIndexMetricsCollectorTest {
     private SegmentRegistry.Runtime<Integer, String> segmentRegistryRuntime;
 
     @Mock
-    private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
+    private SplitService<Integer, String> splitService;
 
     @Mock
     private SegmentHandle<Integer, String> segmentHandle;
@@ -78,7 +79,7 @@ class SegmentIndexMetricsCollectorTest {
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 conf, keyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, executorRegistry,
+                splitService, executorRegistry,
                 RuntimeTuningState.fromConfiguration(conf), walRuntime, stats,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn, () -> SegmentIndexState.READY);
@@ -100,8 +101,8 @@ class SegmentIndexMetricsCollectorTest {
         when(segmentRegistry.metricsSnapshot())
                 .thenReturn(new SegmentRegistryCacheStats(11L, 12L, 13L, 14L, 2,
                         9));
-        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(4);
-        when(backgroundSplitCoordinator.splitBlockedCount()).thenReturn(3);
+        when(splitService.runtimeSnapshot())
+                .thenReturn(new SplitRuntimeSnapshot(4, 3));
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(SegmentId.of(1)));
         when(segmentRegistryRuntime.loadedSegmentsSnapshot())
                 .thenReturn(List.of(segmentHandle), List.of());
@@ -158,7 +159,7 @@ class SegmentIndexMetricsCollectorTest {
                 .assertThrows(IllegalArgumentException.class,
                         () -> SegmentIndexMetricsCollector.create(null,
                                 keyToSegmentMap, segmentRegistry,
-                                backgroundSplitCoordinator, executorRegistry,
+                                splitService, executorRegistry,
                                 mock(RuntimeTuningState.class), walRuntime,
                                 stats, compactRequestHighWaterMark,
                                 flushRequestHighWaterMark, lastAppliedWalLsn,

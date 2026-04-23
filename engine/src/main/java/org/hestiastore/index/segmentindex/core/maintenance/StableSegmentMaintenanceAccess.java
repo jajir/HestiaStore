@@ -10,7 +10,6 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 
@@ -26,11 +25,11 @@ public interface StableSegmentMaintenanceAccess<K, V> {
             final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats) {
         return create(logger, keyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, stableSegmentGateway, retryPolicy,
+                splitSynchronization, stableSegmentGateway, retryPolicy,
                 stats, System::nanoTime);
     }
 
@@ -38,7 +37,7 @@ public interface StableSegmentMaintenanceAccess<K, V> {
             final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final LongSupplier nanoTimeSupplier) {
@@ -46,8 +45,8 @@ public interface StableSegmentMaintenanceAccess<K, V> {
                 Vldtn.requireNonNull(logger, "logger"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
-                Vldtn.requireNonNull(backgroundSplitCoordinator,
-                        "backgroundSplitCoordinator"),
+                Vldtn.requireNonNull(splitSynchronization,
+                        "splitSynchronization"),
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),
                 Vldtn.requireNonNull(retryPolicy, "retryPolicy"),

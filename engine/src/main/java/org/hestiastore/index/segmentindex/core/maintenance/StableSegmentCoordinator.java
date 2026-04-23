@@ -15,7 +15,6 @@ import org.hestiastore.index.segmentindex.core.routing.IndexResult;
 import org.hestiastore.index.segmentindex.core.routing.IndexResultStatus;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
@@ -34,7 +33,7 @@ final class StableSegmentCoordinator<K, V>
     private final Logger logger;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
+    private final SplitMaintenanceSynchronization<K, V> splitSynchronization;
     private final StableSegmentAccess<K, V> stableSegmentGateway;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats;
@@ -43,17 +42,17 @@ final class StableSegmentCoordinator<K, V>
     StableSegmentCoordinator(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats) {
-        this(logger, keyToSegmentMap, segmentRegistry, backgroundSplitCoordinator,
+        this(logger, keyToSegmentMap, segmentRegistry, splitSynchronization,
                 stableSegmentGateway, retryPolicy, stats, System::nanoTime);
     }
 
     StableSegmentCoordinator(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final LongSupplier nanoTimeSupplier) {
@@ -62,8 +61,8 @@ final class StableSegmentCoordinator<K, V>
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.backgroundSplitCoordinator = Vldtn.requireNonNull(
-                backgroundSplitCoordinator, "backgroundSplitCoordinator");
+        this.splitSynchronization = Vldtn.requireNonNull(splitSynchronization,
+                "splitSynchronization");
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
                 "stableSegmentGateway");
         final IndexRetryPolicy nonNullRetryPolicy = Vldtn
@@ -74,7 +73,7 @@ final class StableSegmentCoordinator<K, V>
                 "nanoTimeSupplier");
     }
 
-    public void putEntryForDrain(final SegmentId segmentId, final K key,
+    void putEntryForDrain(final SegmentId segmentId, final K key,
             final V value) {
         segmentRegistry.loadSegment(segmentId).put(key, value);
     }
@@ -110,7 +109,7 @@ final class StableSegmentCoordinator<K, V>
                 stableSegmentGateway::compact);
     }
 
-    public void flushSegment(final SegmentId segmentId,
+    void flushSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
         stats.recordFlushRequest();
         runStableSegmentOperation(segmentId, waitForCompletion,
@@ -313,7 +312,7 @@ final class StableSegmentCoordinator<K, V>
     }
 
     private void runWithSplitSchedulingPaused(final Runnable batchOperation) {
-        backgroundSplitCoordinator.runWithSplitSchedulingPaused(
+        splitSynchronization.runWithSplitSchedulingPaused(
                 Vldtn.requireNonNull(batchOperation, "batchOperation"));
     }
 

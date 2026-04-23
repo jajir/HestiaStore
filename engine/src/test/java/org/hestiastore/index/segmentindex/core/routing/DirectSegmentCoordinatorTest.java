@@ -16,7 +16,6 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,7 @@ class DirectSegmentCoordinatorTest {
     private StableSegmentGateway<Integer, String> stableSegmentGateway;
 
     @Mock
-    private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
+    private SplitAdmissionAccess<Integer, String> splitAdmissionAccess;
 
     @Mock
     private IndexRetryPolicy retryPolicy;
@@ -53,7 +52,7 @@ class DirectSegmentCoordinatorTest {
         stubAdmissionRunner();
         coordinator = new DirectSegmentCoordinator<>(synchronizedKeyToSegmentMap,
                 segmentRegistry, stableSegmentGateway,
-                backgroundSplitCoordinator, retryPolicy);
+                splitAdmissionAccess, retryPolicy);
     }
 
     @AfterEach
@@ -111,7 +110,7 @@ class DirectSegmentCoordinatorTest {
     @Test
     void put_returnsBusyWhenRouteIsSplitBlocked() {
         synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
-        when(backgroundSplitCoordinator.isSplitBlocked(SegmentId.of(0)))
+        when(splitAdmissionAccess.isSplitBlocked(SegmentId.of(0)))
                 .thenReturn(true);
 
         final IndexResult<Void> result = coordinator.put(10, "v10");
@@ -122,7 +121,7 @@ class DirectSegmentCoordinatorTest {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private void stubAdmissionRunner() {
         doAnswer(invocation -> ((Supplier) invocation.getArgument(0)).get())
-                .when(backgroundSplitCoordinator)
+                .when(splitAdmissionAccess)
                 .runWithSharedSplitAdmission(any());
     }
 }

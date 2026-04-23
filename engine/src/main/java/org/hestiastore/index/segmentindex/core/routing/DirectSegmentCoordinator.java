@@ -10,7 +10,6 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -26,14 +25,14 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentAccess<K, V> stableSegmentAccess;
-    private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
+    private final SplitAdmissionAccess<K, V> splitAdmissionAccess;
     private final IndexRetryPolicy retryPolicy;
 
     DirectSegmentCoordinator(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentAccess<K, V> stableSegmentAccess,
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final SplitAdmissionAccess<K, V> splitAdmissionAccess,
             final IndexRetryPolicy retryPolicy) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -41,15 +40,15 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
                 "segmentRegistry");
         this.stableSegmentAccess = Vldtn.requireNonNull(stableSegmentAccess,
                 "stableSegmentAccess");
-        this.backgroundSplitCoordinator = Vldtn.requireNonNull(
-                backgroundSplitCoordinator, "backgroundSplitCoordinator");
+        this.splitAdmissionAccess = Vldtn.requireNonNull(splitAdmissionAccess,
+                "splitAdmissionAccess");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
     @Override
     public IndexResult<V> get(final K key) {
         final K nonNullKey = requireKey(key);
-        return backgroundSplitCoordinator
+        return splitAdmissionAccess
                 .runWithSharedSplitAdmission(
                         () -> stableSegmentAccess.get(nonNullKey));
     }
@@ -63,7 +62,7 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
         final SegmentIteratorIsolation nonNullIsolation = requireIsolation(
                 isolation);
         if (isFullIsolation(nonNullIsolation)) {
-            return backgroundSplitCoordinator.runWithSharedSplitAdmission(
+            return splitAdmissionAccess.runWithSharedSplitAdmission(
                     () -> openStableIteratorWithRouteSnapshot(nonNullWindow,
                             nonNullIsolation));
         }
@@ -75,7 +74,7 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     public IndexResult<Void> put(final K key, final V value) {
         final K nonNullKey = requireKey(key);
         final V nonNullValue = requireValue(value);
-        return backgroundSplitCoordinator.runWithSharedSplitAdmission(
+        return splitAdmissionAccess.runWithSharedSplitAdmission(
                 () -> putWithResolvedRoute(nonNullKey, nonNullValue));
     }
 
@@ -150,7 +149,7 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     }
 
     private boolean isSplitBlocked(final SegmentId segmentId) {
-        return backgroundSplitCoordinator.isSplitBlocked(segmentId);
+        return splitAdmissionAccess.isSplitBlocked(segmentId);
     }
 
     private boolean wasRouteResolved(final IndexResult<SegmentId> routeResult) {
