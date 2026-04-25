@@ -85,14 +85,6 @@ public final class SegmentTopology<K> {
         }
     }
 
-    public RouteState routeState(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
-        synchronized (monitor) {
-            final RouteEntry entry = routes.get(segmentId);
-            return entry == null ? RouteState.RETIRED : entry.state();
-        }
-    }
-
     void releaseLease(final SegmentId segmentId) {
         synchronized (monitor) {
             final RouteEntry entry = routes.get(segmentId);
