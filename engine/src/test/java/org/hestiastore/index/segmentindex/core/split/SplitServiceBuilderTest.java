@@ -54,7 +54,6 @@ class SplitServiceBuilderTest {
                     .stats(new Stats())
                     .build();
 
-            assertSame(service, service.splitMaintenance());
             assertSame(service, service.splitMetricsView());
         } finally {
             scheduler.shutdownNow();

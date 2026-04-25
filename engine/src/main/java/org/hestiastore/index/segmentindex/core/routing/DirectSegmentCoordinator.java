@@ -9,12 +9,11 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLease;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLeaseResult;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentindex.core.topology.RouteLease;
-import org.hestiastore.index.segmentindex.core.topology.RouteLeaseResult;
-import org.hestiastore.index.segmentindex.core.topology.RouteLeaseStatus;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -163,7 +162,7 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
         if (result.isAcquired()) {
             return IndexResult.ok(result.lease());
         }
-        if (result.status() == RouteLeaseStatus.STALE_TOPOLOGY) {
+        if (result.isStaleTopology()) {
             segmentTopology.reconcile(snapshot);
         }
         return IndexResult.busy();

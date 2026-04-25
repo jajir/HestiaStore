@@ -91,7 +91,7 @@ class SplitServiceImplTest {
                         SplitFailureReporter.noOp(),
                         SplitTelemetry.from(new Stats()), policyState);
 
-        runtime.splitMaintenance().awaitQuiescence();
+        runtime.awaitQuiescence();
 
         assertFalse(policyState.isFullScanRequested());
         verify(splitExecutionCoordinator).awaitSplitsIdle(50);
@@ -408,7 +408,7 @@ class SplitServiceImplTest {
             assertTrue(splitEntered.await(1, TimeUnit.SECONDS));
 
             final Future<?> quiescenceFuture = waitExecutor.submit(() -> {
-                runtime.splitMaintenance().awaitQuiescence();
+                runtime.awaitQuiescence();
                 quiescenceReturned.countDown();
             });
 

@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 
 /**
  * Public split-management boundary exposed to the rest of the runtime.
@@ -30,12 +29,15 @@ public interface SplitService<K, V> extends AutoCloseable {
     void hintSplitCandidate(SegmentId segmentId);
 
     /**
-     * Returns the maintenance-facing synchronization view backed by the same
-     * split runtime.
-     *
-     * @return maintenance-facing synchronization view
+     * Requests a full split-policy scan regardless of current in-flight split
+     * state.
      */
-    SplitMaintenanceSynchronization<K, V> splitMaintenance();
+    void requestFullSplitScan();
+
+    /**
+     * Waits until split-policy work and in-flight splits are quiescent.
+     */
+    void awaitQuiescence();
 
     /**
      * Returns the metrics-facing split runtime view backed by the same split
