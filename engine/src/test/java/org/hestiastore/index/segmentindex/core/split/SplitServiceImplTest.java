@@ -32,7 +32,7 @@ import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ class SplitServiceImplTest {
     private SplitExecutionCoordinator<String, String> splitExecutionCoordinator;
 
     @Mock
-    private SegmentHandle<String, String> segmentHandle;
+    private BlockingSegment<String, String> segmentHandle;
 
     @Mock
     private ScheduledExecutorService splitPolicyScheduler;
@@ -168,8 +168,8 @@ class SplitServiceImplTest {
     @Test
     void hintAndFullSplitScanDeduplicateSegmentBeforeWorkerRuns() {
         final SegmentId segmentId = SegmentId.of(13);
-        final SegmentHandle.Runtime segmentRuntime =
-                mock(SegmentHandle.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime =
+                mock(BlockingSegment.Runtime.class);
         final List<Runnable> scheduledWorkers = new ArrayList<>();
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
         when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
@@ -230,8 +230,8 @@ class SplitServiceImplTest {
     @Test
     void requestFullSplitScan_schedulesEligibleMappedSegments() {
         final SegmentId segmentId = SegmentId.of(3);
-        final SegmentHandle.Runtime segmentRuntime =
-                mock(SegmentHandle.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime =
+                mock(BlockingSegment.Runtime.class);
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
@@ -293,7 +293,7 @@ class SplitServiceImplTest {
     @Test
     void requestFullSplitScan_skipsCandidatesBelowThreshold() {
         final SegmentId segmentId = SegmentId.of(11);
-        final SegmentHandle.Runtime runtime = mock(SegmentHandle.Runtime.class);
+        final BlockingSegment.Runtime runtime = mock(BlockingSegment.Runtime.class);
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
@@ -364,8 +364,8 @@ class SplitServiceImplTest {
     @Test
     void awaitQuiescenceWaitsForRunningPolicyWorker() throws Exception {
         final SegmentId segmentId = SegmentId.of(21);
-        final SegmentHandle.Runtime segmentRuntime =
-                mock(SegmentHandle.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime =
+                mock(BlockingSegment.Runtime.class);
         final CountDownLatch splitEntered = new CountDownLatch(1);
         final CountDownLatch releaseSplit = new CountDownLatch(1);
         final CountDownLatch quiescenceReturned = new CountDownLatch(1);
@@ -427,8 +427,8 @@ class SplitServiceImplTest {
     @Test
     void closeWaitsForRunningPolicyWorkerToDrain() throws Exception {
         final SegmentId segmentId = SegmentId.of(22);
-        final SegmentHandle.Runtime segmentRuntime =
-                mock(SegmentHandle.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime =
+                mock(BlockingSegment.Runtime.class);
         final CountDownLatch splitEntered = new CountDownLatch(1);
         final CountDownLatch releaseSplit = new CountDownLatch(1);
         final CountDownLatch closeReturned = new CountDownLatch(1);

@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -112,7 +112,7 @@ final class SplitServiceImpl<K, V>
     }
 
     boolean scheduleEligibleSplit(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount) {
         return splitCoordinator.scheduleEligibleSplit(segmentHandle,
                 splitThreshold, observedKeyCount);

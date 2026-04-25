@@ -10,7 +10,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 
 /**
  * Coordinates split execution and topology-aware split publishing after the
@@ -78,7 +78,7 @@ interface SplitExecutionCoordinator<K, V> {
      * @param observedKeyCount key count observed by policy evaluation
      * @return {@code true} when split work was scheduled
      */
-    boolean scheduleEligibleSplit(SegmentHandle<K, V> segmentHandle,
+    boolean scheduleEligibleSplit(BlockingSegment<K, V> segmentHandle,
             long splitThreshold, long observedKeyCount);
 
     /**

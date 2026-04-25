@@ -44,13 +44,13 @@ public interface SegmentRegistry<K, V> {
     Runtime<K, V> runtime();
 
     /**
-     * Returns the segment handle for the provided id, waiting until the
+     * Returns the blocking segment for the provided id, waiting until the
      * registry can load it or a terminal failure is reached.
      *
      * @param segmentId segment id to load
-     * @return loaded segment handle
+     * @return loaded blocking segment
      */
-    SegmentHandle<K, V> loadSegment(SegmentId segmentId);
+    BlockingSegment<K, V> loadSegment(SegmentId segmentId);
 
     /**
      * Performs a bounded fail-fast attempt to load the requested segment.
@@ -58,15 +58,15 @@ public interface SegmentRegistry<K, V> {
      * @param segmentId segment id to load
      * @return loaded segment when immediately available, otherwise empty
      */
-    Optional<SegmentHandle<K, V>> tryGetSegment(SegmentId segmentId);
+    Optional<BlockingSegment<K, V>> tryGetSegment(SegmentId segmentId);
 
     /**
      * Creates and registers a new segment, waiting until the segment becomes
      * available or a terminal failure is reached.
      *
-     * @return created segment handle
+     * @return created blocking segment
      */
-    SegmentHandle<K, V> createSegment();
+    BlockingSegment<K, V> createSegment();
 
     /**
      * Removes a segment from the registry, waiting until the segment is
@@ -151,6 +151,6 @@ public interface SegmentRegistry<K, V> {
          *
          * @return loaded segment snapshot
          */
-        List<SegmentHandle<K, V>> loadedSegmentsSnapshot();
+        List<BlockingSegment<K, V>> loadedSegmentsSnapshot();
     }
 }

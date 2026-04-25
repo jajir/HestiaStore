@@ -12,7 +12,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,80 +27,13 @@ class StableSegmentGatewayTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private SegmentHandle<String, String> segmentHandle;
+    private BlockingSegment<String, String> segmentHandle;
 
     private StableSegmentGateway<String, String> stableSegmentGateway;
 
     @BeforeEach
     void setUp() {
         stableSegmentGateway = new StableSegmentGateway<>(segmentRegistry);
-    }
-
-    @Test
-    void get_returnsBusyWhenSegmentIsBusy() {
-        final SegmentId segmentId = segmentId();
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
-        when(segmentHandle.tryGet("key")).thenReturn(SegmentResult.busy());
-
-        final IndexResult<String> result = stableSegmentGateway.get(segmentId,
-                "key");
-
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
-    }
-
-    @Test
-    void get_returnsOkWhenMappingAndTopologyStayStable() {
-        final SegmentId segmentId = segmentId();
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
-        when(segmentHandle.tryGet("key")).thenReturn(SegmentResult.ok("value"));
-
-        final IndexResult<String> result = stableSegmentGateway.get(segmentId,
-                "key");
-
-        assertEquals(IndexResultStatus.OK, result.getStatus());
-        assertEquals("value", result.getValue());
-    }
-
-    @Test
-    void put_returnsOkWhenSegmentAcceptsWrite() {
-        final SegmentId segmentId = segmentId();
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
-        when(segmentHandle.tryPut("key", "value"))
-                .thenReturn(SegmentResult.ok());
-
-        final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
-                "key", "value");
-
-        assertEquals(IndexResultStatus.OK, result.getStatus());
-    }
-
-    @Test
-    void put_returnsBusyWhenSegmentRejectsWrite() {
-        final SegmentId segmentId = segmentId();
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
-        when(segmentHandle.tryPut("key", "value"))
-                .thenReturn(SegmentResult.busy());
-
-        final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
-                "key", "value");
-
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
-    }
-
-    @Test
-    void put_returnsBusyWhenSegmentHandleIsNotLoaded() {
-        final SegmentId segmentId = segmentId();
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.empty());
-
-        final IndexResult<Void> result = stableSegmentGateway.put(segmentId,
-                "key", "value");
-
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
     }
 
     @Test
@@ -127,7 +60,7 @@ class StableSegmentGatewayTest {
                 .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryFlush()).thenReturn(SegmentResult.closed());
 
-        final IndexResult<SegmentHandle<String, String>> result =
+        final IndexResult<BlockingSegment<String, String>> result =
                 stableSegmentGateway.flush(segmentId);
 
         assertEquals(IndexResultStatus.CLOSED, result.getStatus());

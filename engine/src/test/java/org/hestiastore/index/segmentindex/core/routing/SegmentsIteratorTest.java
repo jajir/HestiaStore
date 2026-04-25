@@ -17,7 +17,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,10 +34,10 @@ class SegmentsIteratorTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private SegmentHandle<String, String> handle17;
+    private BlockingSegment<String, String> handle17;
 
     @Mock
-    private SegmentHandle<String, String> handle23;
+    private BlockingSegment<String, String> handle23;
 
     @Mock
     private EntryIterator<String, String> entryIterator17;

@@ -28,7 +28,7 @@ import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,10 +48,10 @@ class StableSegmentCoordinatorTest {
     private StableSegmentAccess<String, String> stableSegmentGateway;
 
     @Mock
-    private SegmentHandle<String, String> segmentHandle;
+    private BlockingSegment<String, String> segmentHandle;
 
     @Mock
-    private SegmentHandle.Runtime runtime;
+    private BlockingSegment.Runtime runtime;
 
     private Directory directory;
     private KeyToSegmentMapImpl<String> keyToSegmentMap;

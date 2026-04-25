@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -15,10 +15,10 @@ class SegmentIndexSplitPolicyTest {
         final SegmentIndexSplitPolicy<Integer, String> policy = SegmentIndexSplitPolicy
                 .none();
         @SuppressWarnings("unchecked")
-        final SegmentHandle<Integer, String> segmentHandle = Mockito
-                .mock(SegmentHandle.class);
-        final SegmentHandle.Runtime runtime = Mockito
-                .mock(SegmentHandle.Runtime.class);
+        final BlockingSegment<Integer, String> segmentHandle = Mockito
+                .mock(BlockingSegment.class);
+        final BlockingSegment.Runtime runtime = Mockito
+                .mock(BlockingSegment.Runtime.class);
         when(segmentHandle.getRuntime()).thenReturn(runtime);
 
         assertFalse(policy.shouldSplit(segmentHandle, 1));

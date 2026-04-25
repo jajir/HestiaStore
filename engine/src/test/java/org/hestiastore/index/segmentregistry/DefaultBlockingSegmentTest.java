@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class BlockingSegmentHandleTest {
+class DefaultBlockingSegmentTest {
 
     private static final SegmentId SEGMENT_ID = SegmentId.of(7);
 
@@ -33,19 +33,19 @@ class BlockingSegmentHandleTest {
     @Mock
     private SegmentRuntimeLimits runtimeLimits;
 
-    private SegmentHandle<Integer, String> handle;
+    private BlockingSegment<Integer, String> handle;
 
     @BeforeEach
     void setUp() {
-        handle = new BlockingSegmentHandle<>(SEGMENT_ID,
+        handle = new DefaultBlockingSegment<>(SEGMENT_ID,
                 () -> segmentRegistry.loadSegment(SEGMENT_ID).getSegment(),
                 new BusyRetryPolicy(1, 25));
     }
 
     @Test
     void getRetriesBusyStatusUntilSuccessful() {
-        final SegmentHandle<Integer, String> segmentHandle = mock(
-                SegmentHandle.class);
+        final BlockingSegment<Integer, String> segmentHandle = mock(
+                BlockingSegment.class);
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.get(11)).thenReturn(SegmentResult.busy(),
@@ -61,10 +61,10 @@ class BlockingSegmentHandleTest {
         @SuppressWarnings("unchecked")
         final Segment<Integer, String> reloadedSegment = (Segment<Integer, String>) mock(
                 Segment.class);
-        final SegmentHandle<Integer, String> firstHandle = mock(
-                SegmentHandle.class);
-        final SegmentHandle<Integer, String> secondHandle = mock(
-                SegmentHandle.class);
+        final BlockingSegment<Integer, String> firstHandle = mock(
+                BlockingSegment.class);
+        final BlockingSegment<Integer, String> secondHandle = mock(
+                BlockingSegment.class);
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(firstHandle,
                 secondHandle);
         when(firstHandle.getSegment()).thenReturn(segment);
@@ -80,8 +80,8 @@ class BlockingSegmentHandleTest {
 
     @Test
     void compactThrowsOnErrorStatus() {
-        final SegmentHandle<Integer, String> segmentHandle = mock(
-                SegmentHandle.class);
+        final BlockingSegment<Integer, String> segmentHandle = mock(
+                BlockingSegment.class);
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.compact()).thenReturn(SegmentResult.error());
@@ -91,8 +91,8 @@ class BlockingSegmentHandleTest {
 
     @Test
     void updateRuntimeLimitsDelegatesToLoadedSegment() {
-        final SegmentHandle<Integer, String> segmentHandle = mock(
-                SegmentHandle.class);
+        final BlockingSegment<Integer, String> segmentHandle = mock(
+                BlockingSegment.class);
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
 

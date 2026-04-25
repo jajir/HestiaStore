@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
@@ -9,15 +8,13 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLease;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLeaseResult;
+import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
- * Owns routed direct reads and writes against stable segments.
+ * Coordinates direct reads, writes, and stable segment window iterators.
  *
  * @param <K> key type
  * @param <V> value type
@@ -28,41 +25,28 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final StableSegmentAccess<K, V> stableSegmentAccess;
-    private final SegmentTopology<K> segmentTopology;
+    private final SegmentAccessService<K, V> segmentAccessService;
     private final IndexRetryPolicy retryPolicy;
 
     DirectSegmentCoordinator(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final StableSegmentAccess<K, V> stableSegmentAccess,
-            final SegmentTopology<K> segmentTopology,
+            final SegmentAccessService<K, V> segmentAccessService,
             final IndexRetryPolicy retryPolicy) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.stableSegmentAccess = Vldtn.requireNonNull(stableSegmentAccess,
-                "stableSegmentAccess");
-        this.segmentTopology = Vldtn.requireNonNull(segmentTopology,
-                "segmentTopology");
+        this.segmentAccessService = Vldtn.requireNonNull(segmentAccessService,
+                "segmentAccessService");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
     @Override
-    public IndexResult<V> get(final K key) {
+    public V get(final K key) {
         final K nonNullKey = requireKey(key);
-        final IndexResult<RouteLease> leaseResult = acquireReadRouteLease(
-                nonNullKey);
-        if (!wasRouteResolved(leaseResult)) {
-            return toReadResult(leaseResult.getStatus());
-        }
-        try (RouteLease lease = leaseResult.getValue()) {
-            return stableReadWithRetry(
-                    () -> stableSegmentAccess.get(lease.segmentId(),
-                            nonNullKey),
-                    "get", lease.segmentId());
-        }
+        return segmentAccessService.withSegmentForRead(nonNullKey,
+                segment -> segment.get(nonNullKey));
     }
 
     @Override
@@ -82,90 +66,13 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     }
 
     @Override
-    public IndexResult<Void> put(final K key, final V value) {
+    public void put(final K key, final V value) {
         final K nonNullKey = requireKey(key);
         final V nonNullValue = requireValue(value);
-        return putWithResolvedRoute(nonNullKey, nonNullValue);
-    }
-
-    private IndexResult<Void> putWithResolvedRoute(final K key, final V value) {
-        final IndexResult<RouteLease> routeResult = acquireWriteRouteLease(key);
-        if (!wasRouteResolved(routeResult)) {
-            return toVoidResult(routeResult.getStatus());
-        }
-        try (RouteLease lease = routeResult.getValue()) {
-            return stableWriteWithRetry(
-                    () -> stableSegmentAccess.put(lease.segmentId(), key,
-                            value),
-                    "put", lease.segmentId());
-        }
-    }
-
-    private IndexResult<RouteLease> acquireReadRouteLease(final K key) {
-        final Snapshot<K> snapshot = currentRouteSnapshot();
-        final SegmentId routedSegmentId = snapshot.findSegmentIdForKey(key);
-        if (routedSegmentId == null) {
-            return IndexResult.ok(null);
-        }
-        return acquireRouteLease(routedSegmentId, snapshot);
-    }
-
-    private IndexResult<RouteLease> acquireWriteRouteLease(final K key) {
-        Snapshot<K> snapshot = currentRouteSnapshot();
-        SegmentId routedSegmentId = snapshot.findSegmentIdForKey(key);
-        if (routedSegmentId == null) {
-            final IndexResult<RouteLease> extendedRoute = acquireTailRoute(
-                    snapshot, key);
-            if (wasRouteResolved(extendedRoute)) {
-                return extendedRoute;
-            }
-            return extendedRoute;
-        }
-        return acquireRouteLease(routedSegmentId, snapshot);
-    }
-
-    private IndexResult<RouteLease> acquireTailRoute(
-            final Snapshot<K> snapshot, final K key) {
-        final var segmentIds = snapshot.getSegmentIds(SegmentWindow.unbounded());
-        if (segmentIds.isEmpty()) {
-            if (!keyToSegmentMap.extendMaxKeyIfNeeded(key)) {
-                return IndexResult.busy();
-            }
-            final Snapshot<K> bootstrappedSnapshot = currentRouteSnapshot();
-            segmentTopology.reconcile(bootstrappedSnapshot);
-            final SegmentId bootstrappedSegmentId = bootstrappedSnapshot
-                    .findSegmentIdForKey(key);
-            if (bootstrappedSegmentId == null) {
-                return IndexResult.busy();
-            }
-            return acquireRouteLease(bootstrappedSegmentId,
-                    bootstrappedSnapshot);
-        }
-        final SegmentId tailSegmentId = segmentIds.get(segmentIds.size() - 1);
-        final IndexResult<RouteLease> leaseResult = acquireRouteLease(
-                tailSegmentId, snapshot);
-        if (!wasRouteResolved(leaseResult)) {
-            return leaseResult;
-        }
-        if (!keyToSegmentMap.extendMaxKeyIfNeeded(key)) {
-            leaseResult.getValue().close();
-            return IndexResult.busy();
-        }
-        return leaseResult;
-    }
-
-    private IndexResult<RouteLease> acquireRouteLease(
-            final SegmentId segmentId,
-            final Snapshot<K> snapshot) {
-        final RouteLeaseResult result = segmentTopology.tryAcquire(segmentId,
-                snapshot.version());
-        if (result.isAcquired()) {
-            return IndexResult.ok(result.lease());
-        }
-        if (result.isStaleTopology()) {
-            segmentTopology.reconcile(snapshot);
-        }
-        return IndexResult.busy();
+        segmentAccessService.withSegmentForWrite(nonNullKey, segment -> {
+            segment.put(nonNullKey, nonNullValue);
+            return null;
+        });
     }
 
     private EntryIterator<K, V> openStableIteratorWithRouteSnapshot(
@@ -193,11 +100,6 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
 
     private boolean isSnapshotCurrent(final Snapshot<K> snapshot) {
         return keyToSegmentMap.isAtVersion(snapshot.version());
-    }
-
-    private boolean wasRouteResolved(final IndexResult<RouteLease> routeResult) {
-        return routeResult.getStatus() == IndexResultStatus.OK
-                && routeResult.getValue() != null;
     }
 
     private K requireKey(final K key) {
@@ -235,57 +137,5 @@ final class DirectSegmentCoordinator<K, V> implements DirectSegmentAccess<K, V> 
     private List<SegmentId> segmentIdsForWindow(final Snapshot<K> snapshot,
             final SegmentWindow resolvedWindows) {
         return snapshot.getSegmentIds(resolvedWindows);
-    }
-
-    private IndexResult<V> stableReadWithRetry(
-            final Supplier<IndexResult<V>> operation,
-            final String operationName, final SegmentId segmentId) {
-        return retryStableOperation(operation, operationName, segmentId);
-    }
-
-    private IndexResult<Void> stableWriteWithRetry(
-            final Supplier<IndexResult<Void>> operation,
-            final String operationName, final SegmentId segmentId) {
-        return retryStableOperation(operation, operationName, segmentId);
-    }
-
-    private <T> IndexResult<T> retryStableOperation(
-            final Supplier<IndexResult<T>> operation,
-            final String operationName, final SegmentId segmentId) {
-        final long startNanos = retryPolicy.startNanos();
-        IndexResult<T> result = operation.get();
-        while (result.getStatus() == IndexResultStatus.BUSY) {
-            retryPolicy.backoffOrThrow(startNanos, operationName, segmentId);
-            result = operation.get();
-        }
-        return result;
-    }
-
-    private static <T> IndexResult<T> toReadResult(
-            final IndexResultStatus status) {
-        if (status == IndexResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (status == IndexResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        if (status == IndexResultStatus.OK) {
-            return IndexResult.ok();
-        }
-        return IndexResult.error();
-    }
-
-    private static IndexResult<Void> toVoidResult(
-            final IndexResultStatus status) {
-        if (status == IndexResultStatus.BUSY) {
-            return IndexResult.busy();
-        }
-        if (status == IndexResultStatus.CLOSED) {
-            return IndexResult.closed();
-        }
-        if (status == IndexResultStatus.OK) {
-            return IndexResult.ok();
-        }
-        return IndexResult.error();
     }
 }

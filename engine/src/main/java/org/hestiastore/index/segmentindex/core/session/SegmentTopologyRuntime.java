@@ -7,9 +7,10 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.maintenance.StableSegmentMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.split.SplitService;
+import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.routing.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
@@ -45,6 +46,15 @@ final class SegmentTopologyRuntime<K, V> {
         final StableSegmentAccess<K, V> stableSegmentGateway =
                 StableSegmentAccess.create(
                         validatedCoreStorage.segmentRegistry());
+        final SegmentAccessService<K, V> segmentAccessService =
+                SegmentAccessService.<K, V>builder()
+                        .keyToSegmentMap(
+                                validatedCoreStorage.keyToSegmentMap())
+                        .segmentRegistry(
+                                validatedCoreStorage.segmentRegistry())
+                        .segmentTopology(segmentTopology)
+                        .retryPolicy(validatedCoreStorage.retryPolicy())
+                        .build();
         this.splitService = SplitService.<K, V>builder()
                 .conf(validatedRequest.conf)
                 .runtimeTuningState(validatedCoreStorage.runtimeTuningState())
@@ -71,8 +81,8 @@ final class SegmentTopologyRuntime<K, V> {
                 validatedRequest.stats);
         this.directSegmentAccess = DirectSegmentAccess.create(
                 validatedCoreStorage.keyToSegmentMap(),
-                validatedCoreStorage.segmentRegistry(), stableSegmentGateway,
-                segmentTopology, validatedCoreStorage.retryPolicy());
+                validatedCoreStorage.segmentRegistry(), segmentAccessService,
+                validatedCoreStorage.retryPolicy());
         this.recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
                 validatedRequest.logger, validatedRequest.directoryFacade,
                 validatedCoreStorage.keyToSegmentMap(),

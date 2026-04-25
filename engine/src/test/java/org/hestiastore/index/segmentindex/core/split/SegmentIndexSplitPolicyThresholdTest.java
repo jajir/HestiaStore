@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -14,10 +14,10 @@ class SegmentIndexSplitPolicyThresholdTest {
     @Test
     void shouldSplitWhenCacheMeetsThreshold() {
         @SuppressWarnings("unchecked")
-        final SegmentHandle<Integer, String> segmentHandle = Mockito
-                .mock(SegmentHandle.class);
-        final SegmentHandle.Runtime runtime = Mockito
-                .mock(SegmentHandle.Runtime.class);
+        final BlockingSegment<Integer, String> segmentHandle = Mockito
+                .mock(BlockingSegment.class);
+        final BlockingSegment.Runtime runtime = Mockito
+                .mock(BlockingSegment.Runtime.class);
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getNumberOfKeysInCache()).thenReturn(3L, 2L);
 
@@ -30,8 +30,8 @@ class SegmentIndexSplitPolicyThresholdTest {
     @Test
     void shouldNotSplitWhenThresholdIsNonPositive() {
         @SuppressWarnings("unchecked")
-        final SegmentHandle<Integer, String> segmentHandle = Mockito
-                .mock(SegmentHandle.class);
+        final BlockingSegment<Integer, String> segmentHandle = Mockito
+                .mock(BlockingSegment.class);
         final SegmentIndexSplitPolicyThreshold<Integer, String> policy = new SegmentIndexSplitPolicyThreshold<>();
 
         assertFalse(policy.shouldSplit(segmentHandle, 0));
