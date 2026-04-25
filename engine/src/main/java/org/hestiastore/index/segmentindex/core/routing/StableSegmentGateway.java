@@ -8,8 +8,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -21,36 +19,11 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
 
     private static final String SEGMENT_ID_ARG = "segmentId";
 
-    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
 
-    StableSegmentGateway(
-            final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry) {
-        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
-                "keyToSegmentMap");
+    StableSegmentGateway(final SegmentRegistry<K, V> segmentRegistry) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-    }
-
-    @Override
-    public IndexResult<V> get(final K key) {
-        final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
-        final SegmentId segmentId = snapshot.findSegmentIdForKey(key);
-        if (segmentId == null) {
-            return IndexResult.ok(null);
-        }
-        return get(key, segmentId, snapshot.version());
-    }
-
-    @Override
-    public IndexResult<V> get(final K key, final SegmentId segmentId,
-            final long expectedTopologyVersion) {
-        Vldtn.requireNonNull(key, "key");
-        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
-        return withLoadedSegment(segmentId,
-                segment -> readFromLoadedSegment(segment, key,
-                        expectedTopologyVersion));
     }
 
     @Override
@@ -103,23 +76,6 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
             }
             return fromIndexStatus(result.getStatus());
         });
-    }
-
-    private IndexResult<V> readFromLoadedSegment(
-            final SegmentHandle<K, V> segment,
-            final K key, final long expectedTopologyVersion) {
-        final SegmentResult<V> result = segment.tryGet(key);
-        if (result.getStatus() != SegmentResultStatus.OK) {
-            return fromSegmentResult(result);
-        }
-        if (!isTopologyCurrent(expectedTopologyVersion)) {
-            return IndexResult.busy();
-        }
-        return IndexResult.ok(result.getValue());
-    }
-
-    private boolean isTopologyCurrent(final long expectedTopologyVersion) {
-        return keyToSegmentMap.isSnapshotVersionCurrent(expectedTopologyVersion);
     }
 
     private <T> IndexResult<T> withLoadedSegment(final SegmentId segmentId,

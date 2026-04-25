@@ -46,7 +46,7 @@ final class SegmentTopologyRuntime<K, V> {
         this.segmentTopology = SegmentTopology.from(
                 validatedCoreStorage.keyToSegmentMap().snapshot());
         final StableSegmentAccess<K, V> stableSegmentGateway =
-                StableSegmentAccess.create(validatedCoreStorage.keyToSegmentMap(),
+                StableSegmentAccess.create(
                         validatedCoreStorage.segmentRegistry());
         this.splitService = SplitService.<K, V>builder()
                 .conf(validatedRequest.conf)

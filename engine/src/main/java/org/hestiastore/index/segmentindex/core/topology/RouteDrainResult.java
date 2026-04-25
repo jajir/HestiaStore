@@ -8,36 +8,27 @@ import org.hestiastore.index.Vldtn;
 public final class RouteDrainResult {
 
     private final RouteDrain drain;
-    private final RouteDrainStatus status;
 
-    private RouteDrainResult(final RouteDrain drain,
-            final RouteDrainStatus status) {
+    private RouteDrainResult(final RouteDrain drain) {
         this.drain = drain;
-        this.status = Vldtn.requireNonNull(status, "status");
     }
 
     static RouteDrainResult acquired(final RouteDrain drain) {
-        return new RouteDrainResult(Vldtn.requireNonNull(drain, "drain"),
-                RouteDrainStatus.ACQUIRED);
+        return new RouteDrainResult(Vldtn.requireNonNull(drain, "drain"));
     }
 
     static RouteDrainResult routeUnavailable() {
-        return new RouteDrainResult(null, RouteDrainStatus.ROUTE_UNAVAILABLE);
+        return new RouteDrainResult(null);
     }
 
     public boolean isAcquired() {
-        return status == RouteDrainStatus.ACQUIRED;
+        return drain != null;
     }
 
     public RouteDrain drain() {
         if (!isAcquired()) {
-            throw new IllegalStateException(String.format(
-                    "Route drain is not available for status '%s'.", status));
+            throw new IllegalStateException("Route drain is not available.");
         }
         return drain;
-    }
-
-    public RouteDrainStatus status() {
-        return status;
     }
 }

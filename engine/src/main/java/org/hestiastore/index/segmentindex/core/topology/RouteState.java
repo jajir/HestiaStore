@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.topology;
 /**
  * Runtime state of a route entry in {@link SegmentTopology}.
  */
-public enum RouteState {
+enum RouteState {
 
     /** Route accepts new foreground operation leases. */
     ACTIVE,

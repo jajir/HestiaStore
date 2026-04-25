@@ -19,10 +19,6 @@ public final class RouteDrain {
         this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");
     }
 
-    public SegmentId segmentId() {
-        return segmentId;
-    }
-
     public void awaitDrained() {
         topology.awaitDrained(segmentId);
     }
