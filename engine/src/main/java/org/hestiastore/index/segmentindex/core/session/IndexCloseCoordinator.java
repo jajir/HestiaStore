@@ -39,7 +39,7 @@ final class IndexCloseCoordinator<K, V> {
         try {
             stateCoordinator.beginClose();
             awaitForegroundOperations();
-            quiesceBackgroundSplits();
+            closeSplitRuntime();
             sealAndFlushRuntimeState();
             logOperationCounts();
             logger.debug("Index '{}' closed.", indexName);
@@ -53,8 +53,8 @@ final class IndexCloseCoordinator<K, V> {
         operationTracker.awaitOperations();
     }
 
-    private void quiesceBackgroundSplits() {
-        runtime.awaitBackgroundSplitsExhausted();
+    private void closeSplitRuntime() {
+        runtime.closeSplitRuntime();
     }
 
     private void sealAndFlushRuntimeState() {

@@ -8,7 +8,6 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
@@ -36,8 +35,8 @@ public final class SplitRuntimeFactory {
      * @param segmentRegistry segment registry
      * @param directoryFacade root segment directory
      * @param splitExecutor split executor
-     * @param workerExecutor split-policy worker executor
-     * @param splitPolicyScheduler split-policy scheduler
+     * @param workerExecutor policy worker executor
+     * @param splitPolicyScheduler policy scheduler
      * @param stateSupplier host runtime state supplier
      * @param failureHandler fatal split failure handler
      * @param stats split telemetry source
@@ -57,24 +56,30 @@ public final class SplitRuntimeFactory {
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler,
             final Stats stats) {
-        return BackgroundSplitRuntimeAccess.create(
-                Vldtn.requireNonNull(conf, "conf"),
-                Vldtn.requireNonNull(runtimeTuningState,
-                        "runtimeTuningState"),
-                Vldtn.requireNonNull(keyComparator, "keyComparator"),
-                Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
-                Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
-                Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
-                Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
-                Vldtn.requireNonNull(workerExecutor, "workerExecutor"),
-                Vldtn.requireNonNull(splitPolicyScheduler,
-                        "splitPolicyScheduler"),
-                SplitRuntimeLifecycle.from(Vldtn.requireNonNull(stateSupplier,
-                        "stateSupplier")),
-                SplitFailureReporter.from(Vldtn.requireNonNull(failureHandler,
-                        "failureHandler")),
-                SplitRuntimeTelemetry.from(Vldtn.requireNonNull(stats,
-                        "stats")));
+        return SplitService.<K, V>builder()
+                .conf(Vldtn.requireNonNull(conf, "conf"))
+                .runtimeTuningState(Vldtn.requireNonNull(runtimeTuningState,
+                        "runtimeTuningState"))
+                .keyComparator(Vldtn.requireNonNull(keyComparator,
+                        "keyComparator"))
+                .keyToSegmentMap(Vldtn.requireNonNull(keyToSegmentMap,
+                        "keyToSegmentMap"))
+                .segmentRegistry(Vldtn.requireNonNull(segmentRegistry,
+                        "segmentRegistry"))
+                .directoryFacade(Vldtn.requireNonNull(directoryFacade,
+                        "directoryFacade"))
+                .splitExecutor(Vldtn.requireNonNull(splitExecutor,
+                        "splitExecutor"))
+                .workerExecutor(Vldtn.requireNonNull(workerExecutor,
+                        "workerExecutor"))
+                .splitPolicyScheduler(Vldtn.requireNonNull(
+                        splitPolicyScheduler, "splitPolicyScheduler"))
+                .stateSupplier(Vldtn.requireNonNull(stateSupplier,
+                        "stateSupplier"))
+                .failureHandler(Vldtn.requireNonNull(failureHandler,
+                        "failureHandler"))
+                .stats(Vldtn.requireNonNull(stats, "stats"))
+                .build();
     }
 
     /**
@@ -88,19 +93,8 @@ public final class SplitRuntimeFactory {
      */
     public static <K, V> SplitAdmissionAccess<K, V> admissionAccess(
             final SplitService<K, V> splitService) {
-        final BackgroundSplitRuntimeAccess<K, V> runtimeAccess = runtimeAccess(
-                Vldtn.requireNonNull(splitService, "splitService"));
-        return new SplitAdmissionAccess<>() {
-            @Override
-            public <T> T runWithSharedSplitAdmission(final Supplier<T> action) {
-                return runtimeAccess.runWithSharedSplitAdmission(action);
-            }
-
-            @Override
-            public boolean isSplitBlocked(final SegmentId segmentId) {
-                return runtimeAccess.isSplitBlocked(segmentId);
-            }
-        };
+        return Vldtn.requireNonNull(splitService, "splitService")
+                .splitAdmission();
     }
 
     /**
@@ -114,51 +108,37 @@ public final class SplitRuntimeFactory {
      */
     public static <K, V> SplitMaintenanceSynchronization<K, V> maintenanceSynchronization(
             final SplitService<K, V> splitService) {
-        final BackgroundSplitRuntimeAccess<K, V> runtimeAccess = runtimeAccess(
-                Vldtn.requireNonNull(splitService, "splitService"));
-        return new SplitMaintenanceSynchronization<>() {
-            @Override
-            public void awaitIdle(final long timeoutMillis) {
-                runtimeAccess.awaitSplitsIdle(timeoutMillis);
-            }
-
-            @Override
-            public int splitInFlightCount() {
-                return runtimeAccess.splitInFlightCount();
-            }
-
-            @Override
-            public void scheduleScanIfIdle() {
-                runtimeAccess.scheduleScanIfIdle();
-            }
-
-            @Override
-            public void awaitExhausted() {
-                runtimeAccess.awaitExhausted();
-            }
-
-            @Override
-            public <T> T runWithSplitSchedulingPaused(
-                    final Supplier<T> action) {
-                return runtimeAccess.runWithSplitSchedulingPaused(action);
-            }
-
-            @Override
-            public void runWithSplitSchedulingPaused(final Runnable action) {
-                runtimeAccess.runWithSplitSchedulingPaused(action);
-            }
-        };
+        return Vldtn.requireNonNull(splitService, "splitService")
+                .splitMaintenance();
     }
 
-    private static <K, V> BackgroundSplitRuntimeAccess<K, V> runtimeAccess(
+    /**
+     * Requests an internal reconciliation pass.
+     *
+     * @param splitService split service instance created by this factory
+     * @param <K> key type
+     * @param <V> value type
+     */
+    public static <K, V> void requestReconciliation(
             final SplitService<K, V> splitService) {
-        if (splitService instanceof BackgroundSplitRuntimeAccess<?, ?> access) {
-            @SuppressWarnings("unchecked")
-            final BackgroundSplitRuntimeAccess<K, V> typedAccess =
-                    (BackgroundSplitRuntimeAccess<K, V>) access;
-            return typedAccess;
-        }
-        throw new IllegalArgumentException(
-                "Split service does not expose default runtime access.");
+        Vldtn.requireNonNull(splitService, "splitService")
+                .splitMaintenance()
+                .requestReconciliation();
+    }
+
+    /**
+     * Returns the immutable runtime snapshot exposed by the default split
+     * runtime.
+     *
+     * @param splitService split service instance created by this factory
+     * @param <K> key type
+     * @param <V> value type
+     * @return split runtime snapshot
+     */
+    public static <K, V> SplitMetricsSnapshot metricsSnapshot(
+            final SplitService<K, V> splitService) {
+        return Vldtn.requireNonNull(splitService, "splitService")
+                .splitMetricsView()
+                .metricsSnapshot();
     }
 }

@@ -49,7 +49,7 @@ final class SegmentIndexStartupCoordinator<K, V> {
             logger.info(STALE_LOCK_RECOVERY_MESSAGE);
             consistencyCoordinator.runStartupConsistencyCheck(consistencyCheck);
         }
-        runtime.scheduleBackgroundSplitScan();
+        runtime.requestSplitReconciliation();
         logger.debug("Index '{}' opened.", indexName);
     }
 }

@@ -30,7 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class BackgroundSplitCoordinatorImplTest {
+class SplitExecutionCoordinatorImplTest {
 
     @Mock
     private KeyToSegmentMapImpl<String> keyToSegmentMap;
@@ -66,29 +66,27 @@ class BackgroundSplitCoordinatorImplTest {
     void returnsEarlyWhenSegmentIsClosed() {
         when(runtime.getState()).thenReturn(SegmentState.CLOSED);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         verifyNoInteractions(keyToSegmentMap, splitCoordinator);
         verify(runtime, never()).getNumberOfKeysInCache();
     }
 
     @Test
-    void usesSegmentSizeThreshold_notSegmentCacheThreshold() {
+    void scheduleEligibleSplitSkipsUnmappedSegment() {
         final SegmentId segmentId = SegmentId.of(1);
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
-        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(50L);
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of());
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
 
-        coordinator.handleSplitCandidate(segmentHandle, 1000L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 1000L, 50L);
 
-        verify(runtime).getNumberOfKeysInCache();
         verifyNoInteractions(splitCoordinator);
     }
 
@@ -98,14 +96,29 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         verify(splitCoordinator).tryPrepareSplit(eq(segmentHandle), eq(100L));
+    }
+
+    @Test
+    void scheduleEligibleSplitUsesObservedKeyCountWithoutRecounting() {
+        final SegmentId segmentId = SegmentId.of(12);
+        when(segmentHandle.getId()).thenReturn(segmentId);
+        when(runtime.getState()).thenReturn(SegmentState.READY);
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+
+        final SplitExecutionCoordinator<String, String> coordinator =
+                newCoordinator();
+
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
+
+        verify(splitCoordinator).tryPrepareSplit(eq(segmentHandle), eq(100L));
+        verify(runtime, never()).getNumberOfKeysInCache();
     }
 
     @Test
@@ -116,12 +129,11 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(splitExecutor);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         verifyNoInteractions(splitCoordinator);
         final Runnable task = scheduledTask.get();
@@ -148,14 +160,13 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenAnswer(invocation -> {
                     nowNanos.set(TimeUnit.MILLISECONDS.toNanos(9));
                     return null;
                 });
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(scheduledTask::set,
                         nanos -> splitTaskStartDelayMicros.set(
                                 TimeUnit.NANOSECONDS.toMicros(nanos)),
@@ -163,7 +174,7 @@ class BackgroundSplitCoordinatorImplTest {
                                 TimeUnit.NANOSECONDS.toMicros(nanos)),
                         nowNanos::get);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         nowNanos.set(TimeUnit.MILLISECONDS.toNanos(5));
 
         scheduledTask.get().run();
@@ -181,14 +192,13 @@ class BackgroundSplitCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
 
         final boolean scheduled = coordinator
                 .runWithSplitSchedulingPaused(
-                        () -> coordinator.handleSplitCandidate(segmentHandle,
-                                100L,
-                                false));
+                        () -> coordinator.scheduleEligibleSplit(segmentHandle,
+                                100L, 101L));
 
         org.junit.jupiter.api.Assertions.assertFalse(scheduled);
         verifyNoInteractions(splitCoordinator);
@@ -202,22 +212,17 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.TRUE);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(scheduledTask::set,
-                        new SplitRuntimeEvents() {
-                            @Override
-                            public void onSplitApplied() {
-                                splitAppliedCallbacks.incrementAndGet();
-                            }
-                        });
+                        (Runnable) () -> splitAppliedCallbacks
+                                .incrementAndGet());
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         scheduledTask.get().run();
 
         org.junit.jupiter.api.Assertions.assertEquals(1,
@@ -231,16 +236,15 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.FALSE);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         verify(splitPublishCoordinator).applyPreparedSplit(splitPlan);
     }
@@ -252,16 +256,15 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenThrow(new IllegalStateException("publish failed"));
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(scheduledTask::set);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         scheduledTask.get().run();
 
         assertThrows(IllegalStateException.class,
@@ -281,18 +284,17 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(null);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(splitExecutor, nowNanos::get);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         scheduledTask.get().run();
 
         final boolean rescheduled = coordinator
-                .handleSplitCandidate(segmentHandle, 100L, false);
+                .scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         org.junit.jupiter.api.Assertions.assertFalse(rescheduled);
         org.junit.jupiter.api.Assertions.assertEquals(1,
@@ -313,20 +315,20 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache())
-                .thenAnswer(invocation -> currentKeys.get());
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(null);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(splitExecutor, nowNanos::get);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L,
+                currentKeys.get());
         scheduledTask.get().run();
 
         currentKeys.set(112L);
         final boolean rescheduled = coordinator
-                .handleSplitCandidate(segmentHandle, 100L, false);
+                .scheduleEligibleSplit(segmentHandle, 100L,
+                        currentKeys.get());
 
         org.junit.jupiter.api.Assertions.assertTrue(rescheduled);
         org.junit.jupiter.api.Assertions.assertEquals(2,
@@ -346,19 +348,18 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(null);
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(splitExecutor, nowNanos::get);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         scheduledTask.get().run();
 
         nowNanos.set(600_000_000L);
         final boolean rescheduled = coordinator
-                .handleSplitCandidate(segmentHandle, 100L, false);
+                .scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         org.junit.jupiter.api.Assertions.assertTrue(rescheduled);
         org.junit.jupiter.api.Assertions.assertEquals(2,
@@ -378,22 +379,21 @@ class BackgroundSplitCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(runtime.getNumberOfKeysInCache()).thenReturn(101L);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenAnswer(invocation -> {
                     nowNanos.addAndGet(TimeUnit.SECONDS.toNanos(2L));
                     return null;
                 });
 
-        final BackgroundSplitCoordinator<String, String> coordinator =
+        final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(splitExecutor, nowNanos::get);
 
-        coordinator.handleSplitCandidate(segmentHandle, 100L, false);
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         scheduledTask.get().run();
 
         nowNanos.addAndGet(TimeUnit.MILLISECONDS.toNanos(600L));
         final boolean blockedByAdaptiveCooldown = coordinator
-                .handleSplitCandidate(segmentHandle, 100L, false);
+                .scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         org.junit.jupiter.api.Assertions
                 .assertFalse(blockedByAdaptiveCooldown);
@@ -402,41 +402,42 @@ class BackgroundSplitCoordinatorImplTest {
 
         nowNanos.addAndGet(TimeUnit.MILLISECONDS.toNanos(800L));
         final boolean rescheduled = coordinator
-                .handleSplitCandidate(segmentHandle, 100L, false);
+                .scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         org.junit.jupiter.api.Assertions.assertTrue(rescheduled);
         org.junit.jupiter.api.Assertions.assertEquals(2,
                 scheduledCount.get());
     }
 
-    private BackgroundSplitCoordinator<String, String> newCoordinator() {
+    private SplitExecutionCoordinator<String, String> newCoordinator() {
         return newCoordinator(Runnable::run);
     }
 
-    private BackgroundSplitCoordinator<String, String> newCoordinator(
+    private SplitExecutionCoordinator<String, String> newCoordinator(
             final Executor splitExecutor) {
-        return new BackgroundSplitCoordinatorImpl<>(synchronizedKeyToSegmentMap,
+        return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), SplitRuntimeEvents.noOp());
+                SplitFailureReporter.noOp(), () -> {
+                });
     }
 
-    private BackgroundSplitCoordinator<String, String> newCoordinator(
+    private SplitExecutionCoordinator<String, String> newCoordinator(
             final Executor splitExecutor,
-            final SplitRuntimeEvents runtimeEvents) {
-        return new BackgroundSplitCoordinatorImpl<>(synchronizedKeyToSegmentMap,
+            final Runnable onSplitApplied) {
+        return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), runtimeEvents);
+                SplitFailureReporter.noOp(), onSplitApplied);
     }
 
-    private BackgroundSplitCoordinator<String, String> newCoordinator(
+    private SplitExecutionCoordinator<String, String> newCoordinator(
             final Executor splitExecutor,
             final LongConsumer splitTaskStartDelayRecorder,
             final LongConsumer splitTaskRunLatencyRecorder,
             final java.util.function.LongSupplier nanoTimeSupplier) {
-        return new BackgroundSplitCoordinatorImpl<>(synchronizedKeyToSegmentMap,
+        return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), SplitRuntimeEvents.noOp(),
-                new SplitRuntimeTelemetry() {
+                SplitFailureReporter.noOp(), () -> {
+                }, new SplitTelemetry() {
                     @Override
                     public void recordSplitScheduled() {
                     }
@@ -455,12 +456,13 @@ class BackgroundSplitCoordinatorImplTest {
                 }, nanoTimeSupplier);
     }
 
-    private BackgroundSplitCoordinator<String, String> newCoordinator(
+    private SplitExecutionCoordinator<String, String> newCoordinator(
             final Executor splitExecutor,
             final java.util.function.LongSupplier nanoTimeSupplier) {
-        return new BackgroundSplitCoordinatorImpl<>(synchronizedKeyToSegmentMap,
+        return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), SplitRuntimeEvents.noOp(),
+                SplitFailureReporter.noOp(), () -> {
+                },
                 nanoTimeSupplier);
     }
 }

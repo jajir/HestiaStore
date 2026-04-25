@@ -1,31 +1,38 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
+import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
- * Aggregates split execution and split-policy scheduling behind one owned
+ * Aggregates split execution and policy scheduling inside one managed runtime
  * boundary.
  *
  * @param <K> key type
  * @param <V> value type
  */
 final class SplitServiceImpl<K, V>
-        implements BackgroundSplitRuntimeAccess<K, V> {
+        implements SplitService<K, V>, SplitAdmissionAccess<K, V>,
+        SplitMaintenanceSynchronization<K, V>, SplitMetricsView {
 
-    private final BackgroundSplitCoordinator<K, V> splitCoordinator;
-    private final BackgroundSplitPolicyLoop<K, V> splitPolicyLoop;
+    private final SplitExecutionCoordinator<K, V> splitCoordinator;
+    private final SplitPolicyCoordinator<K, V> splitPolicyCoordinator;
+    private final ManagedSplitRuntimeState managedState;
 
     SplitServiceImpl(
             final IndexConfiguration<K, V> conf,
@@ -37,10 +44,10 @@ final class SplitServiceImpl<K, V>
             final Executor splitExecutor,
             final Executor workerExecutor,
             final ScheduledExecutorService splitPolicyScheduler,
-            final SplitRuntimeLifecycle lifecycle,
+            final Supplier<SegmentIndexState> stateSupplier,
             final SplitFailureReporter failureReporter,
-            final SplitRuntimeTelemetry telemetry,
-            final BackgroundSplitPolicyWorkState workState) {
+            final SplitTelemetry telemetry,
+            final SplitPolicyState policyState) {
         final IndexConfiguration<K, V> validatedConf = Vldtn
                 .requireNonNull(conf, "conf");
         final RuntimeTuningState validatedRuntimeTuningState = Vldtn
@@ -51,44 +58,46 @@ final class SplitServiceImpl<K, V>
                 .requireNonNull(segmentRegistry, "segmentRegistry");
         final SplitFailureReporter validatedFailureReporter = Vldtn
                 .requireNonNull(failureReporter, "failureReporter");
-        final SplitRuntimeTelemetry validatedTelemetry = Vldtn
+        final SplitTelemetry validatedTelemetry = Vldtn
                 .requireNonNull(telemetry, "telemetry");
-        final SplitRuntimeEventRouter runtimeEvents =
-                new SplitRuntimeEventRouter();
-        this.splitCoordinator = BackgroundSplitCoordinator.create(
+        final AtomicReference<Runnable> onSplitAppliedRef = new AtomicReference<>(() -> {
+        });
+        this.splitCoordinator = SplitExecutionCoordinator.create(
                 validatedConf,
                 Vldtn.requireNonNull(keyComparator, "keyComparator"),
                 validatedKeyToSegmentMap, validatedSegmentRegistry,
                 Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
                 Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
-                validatedFailureReporter, runtimeEvents, validatedTelemetry);
-        this.splitPolicyLoop = new BackgroundSplitPolicyLoop<>(
+                validatedFailureReporter,
+                () -> onSplitAppliedRef.get().run(), validatedTelemetry);
+        this.splitPolicyCoordinator = new SplitPolicyCoordinator<>(
                 validatedConf, validatedRuntimeTuningState,
                 validatedKeyToSegmentMap, validatedSegmentRegistry,
                 this.splitCoordinator,
                 Vldtn.requireNonNull(workerExecutor, "workerExecutor"),
                 Vldtn.requireNonNull(splitPolicyScheduler,
                         "splitPolicyScheduler"),
-                Vldtn.requireNonNull(lifecycle, "lifecycle"),
+                Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
                 validatedFailureReporter, validatedTelemetry,
-                Vldtn.requireNonNull(workState, "workState"));
-        runtimeEvents.attach(splitPolicyLoop);
+                Vldtn.requireNonNull(policyState, "policyState"));
+        this.managedState = initializeManagedState();
+        onSplitAppliedRef.set(splitPolicyCoordinator::onSplitApplied);
     }
 
     SplitServiceImpl(final IndexConfiguration<K, V> conf,
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final BackgroundSplitCoordinator<K, V> splitCoordinator,
+            final SplitExecutionCoordinator<K, V> splitCoordinator,
             final Executor workerExecutor,
             final ScheduledExecutorService splitPolicyScheduler,
-            final SplitRuntimeLifecycle lifecycle,
+            final Supplier<SegmentIndexState> stateSupplier,
             final SplitFailureReporter failureReporter,
-            final SplitRuntimeTelemetry telemetry,
-            final BackgroundSplitPolicyWorkState workState) {
+            final SplitTelemetry telemetry,
+            final SplitPolicyState policyState) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
-        this.splitPolicyLoop = new BackgroundSplitPolicyLoop<>(
+        this.splitPolicyCoordinator = new SplitPolicyCoordinator<>(
                 Vldtn.requireNonNull(conf, "conf"),
                 Vldtn.requireNonNull(runtimeTuningState,
                         "runtimeTuningState"),
@@ -98,23 +107,27 @@ final class SplitServiceImpl<K, V>
                 Vldtn.requireNonNull(workerExecutor, "workerExecutor"),
                 Vldtn.requireNonNull(splitPolicyScheduler,
                         "splitPolicyScheduler"),
-                Vldtn.requireNonNull(lifecycle, "lifecycle"),
+                Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
                 Vldtn.requireNonNull(failureReporter, "failureReporter"),
                 Vldtn.requireNonNull(telemetry, "telemetry"),
-                Vldtn.requireNonNull(workState, "workState"));
+                Vldtn.requireNonNull(policyState, "policyState"));
+        this.managedState = initializeManagedState();
     }
 
-    @Override
-    public boolean handleSplitCandidate(
+    boolean scheduleEligibleSplit(
             final SegmentHandle<K, V> segmentHandle,
-            final long splitThreshold, final boolean ignoreCooldown) {
-        return splitCoordinator.handleSplitCandidate(segmentHandle,
-                splitThreshold, ignoreCooldown);
+            final long splitThreshold, final long observedKeyCount) {
+        return splitCoordinator.scheduleEligibleSplit(segmentHandle,
+                splitThreshold, observedKeyCount);
+    }
+
+    void awaitSplitsIdle(final long timeoutMillis) {
+        splitCoordinator.awaitSplitsIdle(timeoutMillis);
     }
 
     @Override
-    public void awaitSplitsIdle(final long timeoutMillis) {
-        splitCoordinator.awaitSplitsIdle(timeoutMillis);
+    public void awaitIdle(final long timeoutMillis) {
+        awaitSplitsIdle(timeoutMillis);
     }
 
     @Override
@@ -127,14 +140,8 @@ final class SplitServiceImpl<K, V>
         return splitCoordinator.isSplitBlocked(segmentId);
     }
 
-    @Override
-    public int splitBlockedCount() {
+    int splitBlockedCount() {
         return splitCoordinator.splitBlockedCount();
-    }
-
-    @Override
-    public <T> T runWithSplitSchedulingPaused(final Supplier<T> action) {
-        return splitCoordinator.runWithSplitSchedulingPaused(action);
     }
 
     @Override
@@ -148,38 +155,70 @@ final class SplitServiceImpl<K, V>
     }
 
     @Override
-    public void requestSegmentCheck(final SegmentId segmentId) {
-        splitPolicyLoop.requestSegmentCheck(segmentId);
+    public void hintSplitCandidate(final SegmentId segmentId) {
+        managedState.requireRunning("accept split candidate hints");
+        splitPolicyCoordinator.hintSplitCandidate(segmentId);
     }
 
     @Override
-    public void requestFullScan() {
-        scheduleScan();
+    public void awaitQuiescence(final Duration timeout) {
+        managedState.requireRunning("await quiescence");
+        final Duration validatedTimeout = Vldtn.requireNonNull(timeout,
+                "timeout");
+        splitPolicyCoordinator.awaitQuiescence(validatedTimeout.toMillis());
     }
 
     @Override
-    public void awaitIdle(final long timeoutMillis) {
-        splitPolicyLoop.awaitExhausted(timeoutMillis);
+    public SplitAdmissionAccess<K, V> splitAdmission() {
+        return this;
     }
 
     @Override
-    public SplitRuntimeSnapshot runtimeSnapshot() {
-        return new SplitRuntimeSnapshot(splitCoordinator.splitInFlightCount(),
+    public SplitMaintenanceSynchronization<K, V> splitMaintenance() {
+        return this;
+    }
+
+    @Override
+    public SplitMetricsView splitMetricsView() {
+        return this;
+    }
+
+    @Override
+    public void close() {
+        if (!managedState.beginClose()) {
+            return;
+        }
+        try {
+            splitPolicyCoordinator.awaitQuiescence();
+        } finally {
+            managedState.markClosed();
+        }
+    }
+
+    @Override
+    public void requestReconciliation() {
+        splitPolicyCoordinator.requestReconciliation();
+    }
+
+    @Override
+    public void requestReconciliationIfIdle() {
+        splitPolicyCoordinator.requestReconciliationIfIdle();
+    }
+
+    @Override
+    public void awaitQuiescence() {
+        splitPolicyCoordinator.awaitQuiescence();
+    }
+
+    @Override
+    public SplitMetricsSnapshot metricsSnapshot() {
+        return new SplitMetricsSnapshot(splitCoordinator.splitInFlightCount(),
                 splitCoordinator.splitBlockedCount());
     }
 
-    @Override
-    public void scheduleScan() {
-        splitPolicyLoop.scheduleScan();
-    }
-
-    @Override
-    public void scheduleScanIfIdle() {
-        splitPolicyLoop.scheduleScanIfIdle();
-    }
-
-    @Override
-    public void awaitExhausted() {
-        splitPolicyLoop.awaitExhausted();
+    private ManagedSplitRuntimeState initializeManagedState() {
+        final ManagedSplitRuntimeState state = new ManagedSplitRuntimeState();
+        state.markRunning();
+        return state;
     }
 }

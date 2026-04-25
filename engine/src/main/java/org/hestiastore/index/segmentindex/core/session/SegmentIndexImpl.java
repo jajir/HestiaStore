@@ -349,7 +349,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 validatedRuntime::validateUniqueSegmentIds,
                 validatedRuntime::checkAndRepairConsistency,
                 validatedRuntime::cleanupOrphanedSegmentDirectories,
-                validatedRuntime::scheduleBackgroundSplitScan,
+                validatedRuntime::requestSplitReconciliation,
                 validatedRuntime::hasSegmentLockFile);
     }
 

@@ -167,8 +167,8 @@ public final class SegmentIndexRuntime<K, V>
         topologyRuntime.awaitSplitsIdle(timeoutMillis);
     }
 
-    public void scheduleBackgroundSplitScan() {
-        topologyRuntime.scheduleBackgroundSplitScan();
+    public void requestSplitReconciliation() {
+        topologyRuntime.requestSplitReconciliation();
     }
 
     public void validateUniqueSegmentIds() {
@@ -182,8 +182,8 @@ public final class SegmentIndexRuntime<K, V>
                         .checkAndRepairConsistency();
     }
 
-    public void awaitBackgroundSplitsExhausted() {
-        topologyRuntime.awaitBackgroundSplitsExhausted();
+    public void closeSplitRuntime() {
+        topologyRuntime.closeSplitRuntime();
     }
 
     public void flushStableSegmentsWithSplitSchedulingPaused() {

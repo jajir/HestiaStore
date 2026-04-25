@@ -98,7 +98,9 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
         return SegmentIndexMetricsSnapshots.create(
                 request.conf, coreStorage.keyToSegmentMap(),
                 coreStorage.segmentRegistry(),
-                topologyRuntime.splitService(),
+                () -> topologyRuntime.splitService()
+                        .splitMetricsView()
+                        .metricsSnapshot(),
                 request.executorRegistry,
                 coreStorage.runtimeTuningState(), walRuntime,
                 request.stats, request.compactRequestHighWaterMark,
@@ -116,6 +118,6 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                         "metricsSnapshotSupplier"),
                 Vldtn.requireNonNull(runtimeLimitApplier,
                         "runtimeLimitApplier")::apply,
-                topologyRuntime::scheduleBackgroundSplitScan);
+                topologyRuntime::requestSplitReconciliation);
     }
 }
