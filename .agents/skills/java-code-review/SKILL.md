@@ -20,6 +20,8 @@ Use this skill when the task is to review a diff, branch, or pull request in Hes
 - Do not flag every nested class by default; flag them when they hide meaningful logic, grow beyond a tiny scoped helper, or make the host class harder to understand.
 - Keep summaries brief and secondary.
 - If no findings are present, state that explicitly and mention any remaining verification gaps.
+- Limit visibility of classes, methods, and variables to the minimum needed for their intended use.
+- Remove all unused code, including imports, variables, methods, and classes.
 
 ## Review Workflow
 

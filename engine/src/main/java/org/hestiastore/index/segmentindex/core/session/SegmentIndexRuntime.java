@@ -162,13 +162,8 @@ public final class SegmentIndexRuntime<K, V>
         topologyRuntime.invalidateSegmentIterators();
     }
 
-    @Override
-    public void awaitSplitsIdle(final long timeoutMillis) {
-        topologyRuntime.awaitSplitsIdle(timeoutMillis);
-    }
-
-    public void requestSplitReconciliation() {
-        topologyRuntime.requestSplitReconciliation();
+    public void requestFullSplitScan() {
+        topologyRuntime.requestFullSplitScan();
     }
 
     public void validateUniqueSegmentIds() {
@@ -186,8 +181,8 @@ public final class SegmentIndexRuntime<K, V>
         topologyRuntime.closeSplitRuntime();
     }
 
-    public void flushStableSegmentsWithSplitSchedulingPaused() {
-        topologyRuntime.flushStableSegmentsWithSplitSchedulingPaused();
+    public void flushStableSegments() {
+        topologyRuntime.flushStableSegments();
     }
 
     public void closeSegmentRegistry() {

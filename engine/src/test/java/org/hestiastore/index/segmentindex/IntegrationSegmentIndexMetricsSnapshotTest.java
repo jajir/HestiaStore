@@ -267,7 +267,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     }
 
     @Test
-    void runtimeThresholdPatchTriggersSplitReconciliationWithoutNewWrites() {
+    void runtimeThresholdPatchTriggersFullSplitScanWithoutNewWrites() {
         final Directory directory = new MemDirectory();
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();

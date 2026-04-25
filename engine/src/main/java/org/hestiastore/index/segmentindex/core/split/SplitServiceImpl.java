@@ -1,10 +1,8 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import java.time.Duration;
 import java.util.Comparator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
@@ -63,8 +61,6 @@ final class SplitServiceImpl<K, V>
                 .requireNonNull(failureReporter, "failureReporter");
         final SplitTelemetry validatedTelemetry = Vldtn
                 .requireNonNull(telemetry, "telemetry");
-        final AtomicReference<Runnable> onSplitAppliedRef = new AtomicReference<>(() -> {
-        });
         this.splitCoordinator = SplitExecutionCoordinator.create(
                 validatedConf,
                 Vldtn.requireNonNull(keyComparator, "keyComparator"),
@@ -73,7 +69,7 @@ final class SplitServiceImpl<K, V>
                 Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
                 Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
                 validatedFailureReporter,
-                () -> onSplitAppliedRef.get().run(), validatedTelemetry);
+                validatedTelemetry);
         this.splitPolicyCoordinator = new SplitPolicyCoordinator<>(
                 validatedConf, validatedRuntimeTuningState,
                 validatedKeyToSegmentMap, validatedSegmentRegistry,
@@ -85,7 +81,6 @@ final class SplitServiceImpl<K, V>
                 validatedFailureReporter, validatedTelemetry,
                 Vldtn.requireNonNull(policyState, "policyState"));
         this.managedState = initializeManagedState();
-        onSplitAppliedRef.set(splitPolicyCoordinator::onSplitApplied);
     }
 
     SplitServiceImpl(final IndexConfiguration<K, V> conf,
@@ -125,20 +120,6 @@ final class SplitServiceImpl<K, V>
                 splitThreshold, observedKeyCount);
     }
 
-    void awaitSplitsIdle(final long timeoutMillis) {
-        splitCoordinator.awaitSplitsIdle(timeoutMillis);
-    }
-
-    @Override
-    public void awaitIdle(final long timeoutMillis) {
-        awaitSplitsIdle(timeoutMillis);
-    }
-
-    @Override
-    public int splitInFlightCount() {
-        return splitCoordinator.splitInFlightCount();
-    }
-
     public boolean isSplitBlocked(final SegmentId segmentId) {
         return splitCoordinator.isSplitBlocked(segmentId);
     }
@@ -148,22 +129,9 @@ final class SplitServiceImpl<K, V>
     }
 
     @Override
-    public void runWithSplitSchedulingPaused(final Runnable action) {
-        splitCoordinator.runWithSplitSchedulingPaused(action);
-    }
-
-    @Override
     public void hintSplitCandidate(final SegmentId segmentId) {
         managedState.requireRunning("accept split candidate hints");
         splitPolicyCoordinator.hintSplitCandidate(segmentId);
-    }
-
-    @Override
-    public void awaitQuiescence(final Duration timeout) {
-        managedState.requireRunning("await quiescence");
-        final Duration validatedTimeout = Vldtn.requireNonNull(timeout,
-                "timeout");
-        splitPolicyCoordinator.awaitQuiescence(validatedTimeout.toMillis());
     }
 
     @Override
@@ -189,13 +157,8 @@ final class SplitServiceImpl<K, V>
     }
 
     @Override
-    public void requestReconciliation() {
-        splitPolicyCoordinator.requestReconciliation();
-    }
-
-    @Override
-    public void requestReconciliationIfIdle() {
-        splitPolicyCoordinator.requestReconciliationIfIdle();
+    public void requestFullSplitScan() {
+        splitPolicyCoordinator.requestFullSplitScan();
     }
 
     @Override

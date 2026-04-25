@@ -22,14 +22,14 @@ public final class IndexConsistencyCoordinator<K, V> {
     private final Runnable verifyUniqueSegmentIds;
     private final ConsistencyCheckRunner consistencyCheckRunner;
     private final Runnable cleanupOrphanedSegmentDirectories;
-    private final Runnable requestSplitReconciliation;
+    private final Runnable requestFullSplitScan;
     private final Predicate<SegmentId> startupSegmentFilter;
     private boolean startupSegmentLockValidationEnabled;
 
     public IndexConsistencyCoordinator(final Runnable verifyUniqueSegmentIds,
             final ConsistencyCheckRunner consistencyCheckRunner,
             final Runnable cleanupOrphanedSegmentDirectories,
-            final Runnable requestSplitReconciliation,
+            final Runnable requestFullSplitScan,
             final Predicate<SegmentId> startupSegmentFilter) {
         this.verifyUniqueSegmentIds = Vldtn
                 .requireNonNull(verifyUniqueSegmentIds, "verifyUniqueSegmentIds");
@@ -38,8 +38,8 @@ public final class IndexConsistencyCoordinator<K, V> {
         this.cleanupOrphanedSegmentDirectories = Vldtn.requireNonNull(
                 cleanupOrphanedSegmentDirectories,
                 "cleanupOrphanedSegmentDirectories");
-        this.requestSplitReconciliation = Vldtn.requireNonNull(
-                requestSplitReconciliation, "requestSplitReconciliation");
+        this.requestFullSplitScan = Vldtn.requireNonNull(
+                requestFullSplitScan, "requestFullSplitScan");
         this.startupSegmentFilter = Vldtn.requireNonNull(startupSegmentFilter,
                 "startupSegmentFilter");
     }
@@ -48,7 +48,7 @@ public final class IndexConsistencyCoordinator<K, V> {
         verifyUniqueSegmentIds.run();
         consistencyCheckRunner.run(resolveSegmentFilter());
         cleanupOrphanedSegmentDirectories.run();
-        requestSplitReconciliation.run();
+        requestFullSplitScan.run();
     }
 
     public void runStartupConsistencyCheck(final Runnable consistencyCheck) {

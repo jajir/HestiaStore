@@ -94,8 +94,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.readFacade = facades.readFacade();
             this.maintenanceCommands = facades.maintenanceCommands();
             this.sessionOwner = new SegmentIndexSessionOwner<>(
-                    validatedConfiguration, createdStateCoordinator, runtime,
-                    runtime,
+                    createdStateCoordinator, runtime, runtime,
                     createCloseCoordinator(logger, validatedConfiguration,
                             createdStateCoordinator, operationTracker, stats,
                             runtime),
@@ -349,7 +348,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 validatedRuntime::validateUniqueSegmentIds,
                 validatedRuntime::checkAndRepairConsistency,
                 validatedRuntime::cleanupOrphanedSegmentDirectories,
-                validatedRuntime::requestSplitReconciliation,
+                validatedRuntime::requestFullSplitScan,
                 validatedRuntime::hasSegmentLockFile);
     }
 

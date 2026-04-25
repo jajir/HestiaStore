@@ -58,7 +58,7 @@ class SegmentIndexStartupCoordinatorTest {
         inOrder.verify(runtime).recoverFromWal();
         inOrder.verify(runtime).cleanupOrphanedSegmentDirectories();
         inOrder.verify(stateCoordinator).markReady();
-        inOrder.verify(runtime).requestSplitReconciliation();
+        inOrder.verify(runtime).requestFullSplitScan();
         verify(consistencyCoordinator, never()).runStartupConsistencyCheck(any());
         assertEquals(0, startupConsistencyChecks.get());
     }
@@ -84,7 +84,7 @@ class SegmentIndexStartupCoordinatorTest {
         inOrder.verify(stateCoordinator).markReady();
         inOrder.verify(consistencyCoordinator)
                 .runStartupConsistencyCheck(any());
-        inOrder.verify(runtime).requestSplitReconciliation();
+        inOrder.verify(runtime).requestFullSplitScan();
         assertEquals(1, startupConsistencyChecks.get());
     }
 }

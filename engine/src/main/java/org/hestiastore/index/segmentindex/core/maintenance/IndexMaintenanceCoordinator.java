@@ -33,11 +33,7 @@ final class IndexMaintenanceCoordinator<K, V>
 
     @Override
     public void compact() {
-        if (hasSplitInFlight()) {
-            return;
-        }
-        runWithSplitSchedulingPaused(this::compactMappedSegments);
-        scheduleSplitScanIfIdle();
+        compactMappedSegments();
     }
 
     @Override
@@ -50,9 +46,8 @@ final class IndexMaintenanceCoordinator<K, V>
 
     @Override
     public void flush() {
-        runWithSplitSchedulingPaused(this::flushSegmentsWithoutWaiting);
+        flushSegmentsWithoutWaiting();
         keyToSegmentMap.flushIfDirty();
-        scheduleSplitScanIfIdle();
     }
 
     @Override
@@ -66,19 +61,6 @@ final class IndexMaintenanceCoordinator<K, V>
     @Override
     public void invalidateSegmentIterators() {
         stableSegmentCoordinator.invalidateIterators();
-    }
-
-    @Override
-    public void awaitSplitsIdle(final long timeoutMillis) {
-        splitSynchronization.awaitIdle(timeoutMillis);
-    }
-
-    private boolean hasSplitInFlight() {
-        return splitSynchronization.splitInFlightCount() > 0;
-    }
-
-    private void runWithSplitSchedulingPaused(final Runnable action) {
-        splitSynchronization.runWithSplitSchedulingPaused(action);
     }
 
     private void compactMappedSegments() {
@@ -95,13 +77,8 @@ final class IndexMaintenanceCoordinator<K, V>
         splitSynchronization.awaitQuiescence();
     }
 
-    private void scheduleSplitScanIfIdle() {
-        splitSynchronization.requestReconciliationIfIdle();
-    }
-
     private void finalizeSettledMaintenance(final Runnable rerunAction) {
         final long topologyVersion = keyToSegmentMap.snapshot().version();
-        splitSynchronization.requestReconciliationIfIdle();
         splitSynchronization.awaitQuiescence();
         rerunIfTopologyChanged(topologyVersion, rerunAction);
         keyToSegmentMap.flushIfDirty();

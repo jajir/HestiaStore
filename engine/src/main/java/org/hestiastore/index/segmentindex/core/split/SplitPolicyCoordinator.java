@@ -19,8 +19,8 @@ import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
- * Owns periodic reconciliation scans, candidate deduplication, and policy
- * workers inside the managed split runtime.
+ * Owns periodic full split scans, candidate deduplication, and policy workers
+ * inside the managed split runtime.
  *
  * @param <K> key type
  * @param <V> value type
@@ -77,23 +77,12 @@ final class SplitPolicyCoordinator<K, V> {
         this.telemetry = Vldtn.requireNonNull(telemetry, "telemetry");
     }
 
-    void requestReconciliation() {
+    void requestFullSplitScan() {
         if (!isPolicyEnabled()) {
             return;
         }
         ensureAutonomousSchedulerScheduled();
-        requestReconciliationScan();
-    }
-
-    void requestReconciliationIfIdle() {
-        if (!isPolicyEnabled()) {
-            return;
-        }
-        ensureAutonomousSchedulerScheduled();
-        if (!isAutonomousSchedulerIdle()) {
-            return;
-        }
-        requestReconciliationScan();
+        requestFullSplitScanWork();
     }
 
     void awaitQuiescence() {
@@ -114,8 +103,8 @@ final class SplitPolicyCoordinator<K, V> {
         }
     }
 
-    private void requestReconciliationScan() {
-        policyState.markReconciliationRequested();
+    private void requestFullSplitScanWork() {
+        policyState.markFullScanRequested();
         scheduleWorkers();
     }
 
@@ -158,7 +147,7 @@ final class SplitPolicyCoordinator<K, V> {
 
     private void runWorkerUntilIdle() {
         while (isPolicyEnabled()) {
-            if (policyState.consumeReconciliationRequested()) {
+            if (policyState.consumeFullScanRequested()) {
                 enqueueCurrentSplitCandidates();
             }
             final Optional<SegmentId> nextCandidate = waitForNextCandidate();
@@ -198,8 +187,8 @@ final class SplitPolicyCoordinator<K, V> {
             if (!isPolicyEnabled()) {
                 return;
             }
-            if (isAutonomousSchedulerIdle()) {
-                requestReconciliationScan();
+            if (hasNoSplitInFlight()) {
+                requestFullSplitScanWork();
             }
         } catch (final RuntimeException e) {
             if (!isClosedOrClosingState()) {
@@ -243,7 +232,7 @@ final class SplitPolicyCoordinator<K, V> {
             return !policyState.isWorkerActive()
                     && splitExecutionCoordinator.splitInFlightCount() == 0;
         }
-        return !policyState.isReconciliationRequested()
+        return !policyState.isFullScanRequested()
                 && !policyState.isWorkerActive()
                 && !candidateRegistry.hasPendingCandidates()
                 && splitExecutionCoordinator.splitInFlightCount() == 0;
@@ -261,7 +250,7 @@ final class SplitPolicyCoordinator<K, V> {
                 || state == SegmentIndexState.ERROR;
     }
 
-    private boolean isAutonomousSchedulerIdle() {
+    private boolean hasNoSplitInFlight() {
         return splitExecutionCoordinator.splitInFlightCount() == 0;
     }
 
@@ -398,9 +387,5 @@ final class SplitPolicyCoordinator<K, V> {
     private boolean isSegmentStillMapped(final SegmentId segmentId) {
         return segmentId != null
                 && keyToSegmentMap.getSegmentIds().contains(segmentId);
-    }
-
-    void onSplitApplied() {
-        requestReconciliationIfIdle();
     }
 }
