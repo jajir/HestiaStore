@@ -4,7 +4,6 @@ import java.time.Duration;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
-import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
 
 /**
  * Public split-management boundary exposed to the rest of the runtime.
@@ -39,14 +38,6 @@ public interface SplitService<K, V> extends AutoCloseable {
      * @param timeout wait timeout
      */
     void awaitQuiescence(Duration timeout);
-
-    /**
-     * Returns the routing-facing split admission view backed by the same split
-     * runtime.
-     *
-     * @return split admission view
-     */
-    SplitAdmissionAccess<K, V> splitAdmission();
 
     /**
      * Returns the maintenance-facing synchronization view backed by the same

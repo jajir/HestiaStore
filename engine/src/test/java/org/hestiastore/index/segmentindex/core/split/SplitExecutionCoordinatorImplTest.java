@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -22,6 +24,9 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.core.topology.RouteDrain;
+import org.hestiastore.index.segmentindex.core.topology.RouteDrainResult;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +59,15 @@ class SplitExecutionCoordinatorImplTest {
 
     @Mock
     private RouteSplitPlan<String> splitPlan;
+
+    @Mock
+    private SegmentTopology<String> segmentTopology;
+
+    @Mock
+    private RouteDrainResult routeDrainResult;
+
+    @Mock
+    private RouteDrain routeDrain;
 
     @BeforeEach
     void setUp() {
@@ -96,6 +110,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
 
         final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
@@ -111,6 +126,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
 
         final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator();
@@ -129,6 +145,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
 
         final SplitExecutionCoordinator<String, String> coordinator =
                 newCoordinator(splitExecutor);
@@ -160,6 +177,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenAnswer(invocation -> {
                     nowNanos.set(TimeUnit.MILLISECONDS.toNanos(9));
@@ -212,6 +230,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
@@ -228,6 +247,9 @@ class SplitExecutionCoordinatorImplTest {
         org.junit.jupiter.api.Assertions.assertEquals(1,
                 splitAppliedCallbacks.get());
         verify(splitPublishCoordinator).applyPreparedSplit(splitPlan);
+        verify(segmentTopology).reconcile(any());
+        verify(routeDrain).complete();
+        verify(routeDrain, never()).abort();
     }
 
     @Test
@@ -236,6 +258,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
@@ -247,6 +270,63 @@ class SplitExecutionCoordinatorImplTest {
         coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
         verify(splitPublishCoordinator).applyPreparedSplit(splitPlan);
+        verify(routeDrain).abort();
+        verify(routeDrain, never()).complete();
+        verify(segmentTopology, never()).reconcile(any());
+    }
+
+    @Test
+    void persistenceFailureAfterMapPublishCompletesDrainAndFailsCoordinator() {
+        final SegmentId segmentId = SegmentId.of(19);
+        final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
+        when(segmentHandle.getId()).thenReturn(segmentId);
+        when(runtime.getState()).thenReturn(SegmentState.READY);
+        when(keyToSegmentMap.getSegmentIds())
+                .thenReturn(List.of(segmentId), List.of());
+        allowTopologyDrain(segmentId);
+        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+                .thenReturn(splitPlan);
+        when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
+                .thenThrow(new IllegalStateException("flush failed"));
+
+        final SplitExecutionCoordinator<String, String> coordinator =
+                newCoordinator(scheduledTask::set);
+
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
+        scheduledTask.get().run();
+
+        assertThrows(IllegalStateException.class,
+                () -> coordinator.awaitSplitsIdle(1_000L));
+        verify(segmentTopology).reconcile(any());
+        verify(routeDrain).complete();
+        verify(routeDrain, never()).abort();
+    }
+
+    @Test
+    void topologyReconcileFailureAfterPublishCompletesDrainAndFailsCoordinator() {
+        final SegmentId segmentId = SegmentId.of(20);
+        final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
+        when(segmentHandle.getId()).thenReturn(segmentId);
+        when(runtime.getState()).thenReturn(SegmentState.READY);
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
+        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+                .thenReturn(splitPlan);
+        when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
+                .thenReturn(Boolean.TRUE);
+        doThrow(new IllegalStateException("topology failed"))
+                .when(segmentTopology).reconcile(any());
+
+        final SplitExecutionCoordinator<String, String> coordinator =
+                newCoordinator(scheduledTask::set);
+
+        coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
+        scheduledTask.get().run();
+
+        assertThrows(IllegalStateException.class,
+                () -> coordinator.awaitSplitsIdle(1_000L));
+        verify(routeDrain).complete();
+        verify(routeDrain, never()).abort();
     }
 
     @Test
@@ -256,6 +336,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
@@ -284,6 +365,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(null);
 
@@ -315,6 +397,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(null);
 
@@ -348,6 +431,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenReturn(null);
 
@@ -379,6 +463,7 @@ class SplitExecutionCoordinatorImplTest {
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
                 .thenAnswer(invocation -> {
                     nowNanos.addAndGet(TimeUnit.SECONDS.toNanos(2L));
@@ -416,8 +501,8 @@ class SplitExecutionCoordinatorImplTest {
     private SplitExecutionCoordinator<String, String> newCoordinator(
             final Executor splitExecutor) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
-                splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), () -> {
+                segmentTopology, splitCoordinator, splitPublishCoordinator,
+                splitExecutor, SplitFailureReporter.noOp(), () -> {
                 });
     }
 
@@ -425,8 +510,8 @@ class SplitExecutionCoordinatorImplTest {
             final Executor splitExecutor,
             final Runnable onSplitApplied) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
-                splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), onSplitApplied);
+                segmentTopology, splitCoordinator, splitPublishCoordinator,
+                splitExecutor, SplitFailureReporter.noOp(), onSplitApplied);
     }
 
     private SplitExecutionCoordinator<String, String> newCoordinator(
@@ -435,8 +520,8 @@ class SplitExecutionCoordinatorImplTest {
             final LongConsumer splitTaskRunLatencyRecorder,
             final java.util.function.LongSupplier nanoTimeSupplier) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
-                splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), () -> {
+                segmentTopology, splitCoordinator, splitPublishCoordinator,
+                splitExecutor, SplitFailureReporter.noOp(), () -> {
                 }, new SplitTelemetry() {
                     @Override
                     public void recordSplitScheduled() {
@@ -460,9 +545,16 @@ class SplitExecutionCoordinatorImplTest {
             final Executor splitExecutor,
             final java.util.function.LongSupplier nanoTimeSupplier) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
-                splitCoordinator, splitPublishCoordinator, splitExecutor,
-                SplitFailureReporter.noOp(), () -> {
+                segmentTopology, splitCoordinator, splitPublishCoordinator,
+                splitExecutor, SplitFailureReporter.noOp(), () -> {
                 },
                 nanoTimeSupplier);
+    }
+
+    private void allowTopologyDrain(final SegmentId segmentId) {
+        when(segmentTopology.tryBeginDrain(segmentId))
+                .thenReturn(routeDrainResult);
+        when(routeDrainResult.isAcquired()).thenReturn(true);
+        when(routeDrainResult.drain()).thenReturn(routeDrain);
     }
 }

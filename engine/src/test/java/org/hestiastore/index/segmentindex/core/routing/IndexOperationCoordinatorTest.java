@@ -60,6 +60,21 @@ class IndexOperationCoordinatorTest {
     }
 
     @Test
+    void putRetriesClosedWriteAndRecordsAppliedWalLsn() {
+        when(retryPolicy.startNanos()).thenReturn(1L);
+        when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
+        when(directSegmentCoordinator.put(1, "one"))
+                .thenReturn(IndexResult.closed(), IndexResult.ok());
+
+        coordinator.put(1, "one");
+
+        assertEquals(1L, stats.getPutCount());
+        assertEquals(0L, stats.getPutBusyRetryCount());
+        verify(retryPolicy).backoffOrThrow(1L, "put", null);
+        verify(walCoordinator).recordAppliedLsn(7L);
+    }
+
+    @Test
     void putBusyTimeoutIncrementsTimeoutMetrics() {
         when(retryPolicy.startNanos()).thenReturn(1L);
         when(walCoordinator.appendPut(1, "one")).thenReturn(7L);

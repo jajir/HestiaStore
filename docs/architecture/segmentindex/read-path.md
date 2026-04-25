@@ -12,7 +12,7 @@ SegmentIndex-level orchestration path.
 ## High‑Level Flow (Point Lookup)
 
 1. API call: `SegmentIndex.get(key)`
-1. Resolve the target segment using the key→segment map
+1. Resolve the target segment using the key→segment map and `SegmentTopology`
 1. Read directly from the routed segment
 1. Inside the segment: consult write cache → delta cache → Bloom filter →
    sparse index → local scan
@@ -24,14 +24,14 @@ in-memory write cache before falling back to stable on-disk state.
 
 - `segmentindex/core/SegmentIndexImpl#get(K)` delegates to
   `IndexOperationCoordinator#get(K)`.
-- `DirectSegmentReadCoordinator#get(K)` resolves the current route and calls
-  the stable-segment gateway.
+- `DirectSegmentCoordinator#get(K)` resolves the current route, acquires a
+  `SegmentTopology` lease, and calls the stable-segment gateway.
 - `StableSegmentGateway#get(K)` delegates to the loaded `Segment`.
 
 Key classes:
 `segmentindex/core/SegmentIndexImpl.java`,
 `segmentindex/core/IndexOperationCoordinator.java`,
-`segmentindex/core/DirectSegmentReadCoordinator.java`,
+`segmentindex/core/routing/DirectSegmentCoordinator.java`,
 `segmentindex/core/StableSegmentGateway.java`,
 `segmentindex/mapping/KeyToSegmentMap.java`.
 
@@ -63,7 +63,7 @@ Key classes:
 
 - `SegmentIndex.getStream()` and `SegmentIndex.openSegmentIterator(...)`
   produce iterators over routed segments in order.
-- `DirectSegmentReadCoordinator.openWindowIterator(...)` opens iterators
+- `DirectSegmentCoordinator.openWindowIterator(...)` opens iterators
   against a route snapshot.
 - `segment/SegmentImpl.openIterator()` merges the on-disk main SST with the
   segment's delta cache via `MergeDeltaCacheWithIndexIterator`, skipping
@@ -75,7 +75,7 @@ Key classes:
   changes while the iterator is being opened.
 
 Key classes:
-`segmentindex/core/DirectSegmentReadCoordinator.java`,
+`segmentindex/core/routing/DirectSegmentCoordinator.java`,
 `segmentindex/core/SegmentsIterator.java`,
 `segment/MergeDeltaCacheWithIndexIterator.java`,
 `EntryIteratorWithLock.java`,
@@ -133,9 +133,9 @@ Key classes:
 ## Where to Look in the Code
 
 - Point lookup orchestration:
-  `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/session/SegmentIndexImpl.java`
 - Direct routed reads:
-  `src/main/java/org/hestiastore/index/segmentindex/core/DirectSegmentReadCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/routing/DirectSegmentCoordinator.java`
 - Segment search path:
   `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`
 - Sparse index: `src/main/java/org/hestiastore/index/scarceindex/*`

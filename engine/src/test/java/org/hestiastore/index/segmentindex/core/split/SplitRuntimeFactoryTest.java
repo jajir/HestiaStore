@@ -1,11 +1,13 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -16,8 +18,8 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -36,12 +38,18 @@ class SplitRuntimeFactoryTest {
             when(conf.getIndexBusyTimeoutMillis()).thenReturn(1);
             when(segmentRegistry.materialization())
                     .thenReturn(mock(SegmentRegistry.Materialization.class));
+            final KeyToSegmentMap<String> keyToSegmentMap = mock(
+                    KeyToSegmentMap.class);
+            final Snapshot<String> snapshot = mock(Snapshot.class);
+            when(snapshot.getSegmentIds(any())).thenReturn(List.of());
+            when(snapshot.version()).thenReturn(0L);
+            when(keyToSegmentMap.snapshot()).thenReturn(snapshot);
             final SplitService<String, String> service =
                     SplitRuntimeFactory.create(
                             conf,
                             mock(RuntimeTuningState.class),
                             mockComparator(),
-                            mock(KeyToSegmentMap.class),
+                            keyToSegmentMap,
                             segmentRegistry,
                             mock(Directory.class),
                             directExecutor(),
@@ -52,7 +60,6 @@ class SplitRuntimeFactoryTest {
                             },
                             new Stats());
 
-            assertSame(service, SplitRuntimeFactory.admissionAccess(service));
             assertSame(service,
                     SplitRuntimeFactory.maintenanceSynchronization(service));
             assertSame(service, service.splitMetricsView());
@@ -64,19 +71,15 @@ class SplitRuntimeFactoryTest {
     @Test
     void helperMethodsDelegateToSplitServiceViews() {
         final SplitService<String, String> service = mock(SplitService.class);
-        final SplitAdmissionAccess<String, String> admission = mock(
-                SplitAdmissionAccess.class);
         final SplitMaintenanceSynchronization<String, String> maintenance =
                 mock(SplitMaintenanceSynchronization.class);
         final SplitMetricsView metricsView = mock(SplitMetricsView.class);
         final SplitMetricsSnapshot snapshot =
                 new SplitMetricsSnapshot(3, 4);
-        when(service.splitAdmission()).thenReturn(admission);
         when(service.splitMaintenance()).thenReturn(maintenance);
         when(service.splitMetricsView()).thenReturn(metricsView);
         when(metricsView.metricsSnapshot()).thenReturn(snapshot);
 
-        assertSame(admission, SplitRuntimeFactory.admissionAccess(service));
         assertSame(maintenance,
                 SplitRuntimeFactory.maintenanceSynchronization(service));
         SplitRuntimeFactory.requestReconciliation(service);

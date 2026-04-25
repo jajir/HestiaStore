@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -64,6 +64,7 @@ public final class SplitRuntimeFactory {
                         "keyComparator"))
                 .keyToSegmentMap(Vldtn.requireNonNull(keyToSegmentMap,
                         "keyToSegmentMap"))
+                .segmentTopology(SegmentTopology.from(keyToSegmentMap.snapshot()))
                 .segmentRegistry(Vldtn.requireNonNull(segmentRegistry,
                         "segmentRegistry"))
                 .directoryFacade(Vldtn.requireNonNull(directoryFacade,
@@ -80,21 +81,6 @@ public final class SplitRuntimeFactory {
                         "failureHandler"))
                 .stats(Vldtn.requireNonNull(stats, "stats"))
                 .build();
-    }
-
-    /**
-     * Creates the routing-facing split admission adapter for the split
-     * service.
-     *
-     * @param splitService split service instance created by this factory
-     * @param <K> key type
-     * @param <V> value type
-     * @return routing-facing split admission adapter
-     */
-    public static <K, V> SplitAdmissionAccess<K, V> admissionAccess(
-            final SplitService<K, V> splitService) {
-        return Vldtn.requireNonNull(splitService, "splitService")
-                .splitAdmission();
     }
 
     /**
