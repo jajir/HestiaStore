@@ -99,17 +99,17 @@ public final class SplitRuntimeFactory {
     }
 
     /**
-     * Requests an internal reconciliation pass.
+     * Requests an internal full split-policy scan.
      *
      * @param splitService split service instance created by this factory
      * @param <K> key type
      * @param <V> value type
      */
-    public static <K, V> void requestReconciliation(
+    public static <K, V> void requestFullSplitScan(
             final SplitService<K, V> splitService) {
         Vldtn.requireNonNull(splitService, "splitService")
                 .splitMaintenance()
-                .requestReconciliation();
+                .requestFullSplitScan();
     }
 
     /**

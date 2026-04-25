@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import java.time.Duration;
-
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -21,7 +19,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 
 /**
  * Owns the segment-topology subsystem that coordinates direct access, stable
- * segment maintenance, split reconciliation, and recovery cleanup.
+ * segment maintenance, full split scans, and recovery cleanup.
  *
  * @param <K> key type
  * @param <V> value type
@@ -71,8 +69,8 @@ final class SegmentTopologyRuntime<K, V> {
         this.stableSegmentMaintenance = StableSegmentMaintenanceAccess.create(
                 validatedRequest.logger, validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(),
-                splitSynchronization, stableSegmentGateway,
-                validatedCoreStorage.retryPolicy(), validatedRequest.stats);
+                stableSegmentGateway, validatedCoreStorage.retryPolicy(),
+                validatedRequest.stats);
         this.directSegmentAccess = DirectSegmentAccess.create(
                 validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(), stableSegmentGateway,
@@ -111,21 +109,16 @@ final class SegmentTopologyRuntime<K, V> {
         stableSegmentMaintenance.invalidateIterators();
     }
 
-    void awaitSplitsIdle(final long timeoutMillis) {
-        splitService.awaitQuiescence(Duration.ofMillis(timeoutMillis));
-    }
-
-    void requestSplitReconciliation() {
-        splitSynchronization.requestReconciliation();
+    void requestFullSplitScan() {
+        splitSynchronization.requestFullSplitScan();
     }
 
     void closeSplitRuntime() {
         splitService.close();
     }
 
-    void flushStableSegmentsWithSplitSchedulingPaused() {
-        splitSynchronization.runWithSplitSchedulingPaused(
-                () -> stableSegmentMaintenance.flushSegments(true));
+    void flushStableSegments() {
+        stableSegmentMaintenance.flushSegments(true);
     }
 
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,

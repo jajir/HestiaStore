@@ -33,7 +33,6 @@ final class StableSegmentCoordinator<K, V>
     private final Logger logger;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final SplitMaintenanceSynchronization<K, V> splitSynchronization;
     private final StableSegmentAccess<K, V> stableSegmentGateway;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats;
@@ -42,17 +41,15 @@ final class StableSegmentCoordinator<K, V>
     StableSegmentCoordinator(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats) {
-        this(logger, keyToSegmentMap, segmentRegistry, splitSynchronization,
-                stableSegmentGateway, retryPolicy, stats, System::nanoTime);
+        this(logger, keyToSegmentMap, segmentRegistry, stableSegmentGateway,
+                retryPolicy, stats, System::nanoTime);
     }
 
     StableSegmentCoordinator(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final LongSupplier nanoTimeSupplier) {
@@ -61,8 +58,6 @@ final class StableSegmentCoordinator<K, V>
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
-        this.splitSynchronization = Vldtn.requireNonNull(splitSynchronization,
-                "splitSynchronization");
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
                 "stableSegmentGateway");
         final IndexRetryPolicy nonNullRetryPolicy = Vldtn
@@ -86,17 +81,13 @@ final class StableSegmentCoordinator<K, V>
 
     @Override
     public void flushMappedSegmentsAndWait() {
-        runWithSplitSchedulingPaused(
-                () -> forEachMappedSegment(
-                        segmentId -> flushSegment(segmentId, true)));
+        forEachMappedSegment(segmentId -> flushSegment(segmentId, true));
     }
 
     @Override
     public void compactMappedSegmentsAndFlush() {
-        runWithSplitSchedulingPaused(() -> {
-            forEachMappedSegment(segmentId -> compactSegment(segmentId, true));
-            flushSegments(true);
-        });
+        forEachMappedSegment(segmentId -> compactSegment(segmentId, true));
+        flushSegments(true);
     }
 
     @Override
@@ -309,11 +300,6 @@ final class StableSegmentCoordinator<K, V>
     private void forEachMappedSegment(final java.util.function.Consumer<SegmentId> segmentAction) {
         keyToSegmentMap.getSegmentIds().forEach(
                 Vldtn.requireNonNull(segmentAction, "segmentAction"));
-    }
-
-    private void runWithSplitSchedulingPaused(final Runnable batchOperation) {
-        splitSynchronization.runWithSplitSchedulingPaused(
-                Vldtn.requireNonNull(batchOperation, "batchOperation"));
     }
 
     private void logOperation(final String message, final Object... args) {

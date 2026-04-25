@@ -36,6 +36,4 @@ public interface SegmentIndexMaintenanceAccess<K, V> {
     void flushAndWait();
 
     void invalidateSegmentIterators();
-
-    void awaitSplitsIdle(long timeoutMillis);
 }

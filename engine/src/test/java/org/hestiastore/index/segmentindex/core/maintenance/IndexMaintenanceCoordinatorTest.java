@@ -1,12 +1,9 @@
 package org.hestiastore.index.segmentindex.core.maintenance;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.List;
 
@@ -48,27 +45,13 @@ class IndexMaintenanceCoordinatorTest {
     }
 
     @Test
-    void compact_skipsStableCompactionWhileSplitIsStillRunning() {
-        when(splitSynchronization.splitInFlightCount()).thenReturn(1);
-
-        coordinator.compact();
-
-        verify(splitSynchronization).splitInFlightCount();
-        verifyNoMoreInteractions(splitSynchronization);
-        verifyNoMoreInteractions(stableSegmentCoordinator);
-    }
-
-    @Test
-    void compact_compactsMappedSegmentsWhenRuntimeIsSettled() {
+    void compact_compactsMappedSegments() {
         final SegmentId segmentId = SegmentId.of(7);
-        when(splitSynchronization.splitInFlightCount()).thenReturn(0);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        runPausedActionImmediately();
 
         coordinator.compact();
 
         verify(stableSegmentCoordinator).compactSegment(segmentId, false);
-        verify(splitSynchronization).requestReconciliationIfIdle();
     }
 
     @Test
@@ -81,15 +64,7 @@ class IndexMaintenanceCoordinatorTest {
 
         verify(splitSynchronization, times(2)).awaitQuiescence();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
-        verify(splitSynchronization).requestReconciliationIfIdle();
         verify(keyToSegmentMap).flushIfDirty();
         verify(walCoordinator).checkpoint();
-    }
-
-    private void runPausedActionImmediately() {
-        doAnswer(invocation -> {
-            ((Runnable) invocation.getArgument(0)).run();
-            return null;
-        }).when(splitSynchronization).runWithSplitSchedulingPaused(any(Runnable.class));
     }
 }

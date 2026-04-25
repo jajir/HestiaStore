@@ -8,21 +8,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class SplitPolicyState {
 
-    private final AtomicBoolean reconciliationRequested =
+    private final AtomicBoolean fullScanRequested =
             new AtomicBoolean(false);
     private final AtomicBoolean tickScheduled = new AtomicBoolean(false);
     private final AtomicInteger activeWorkerCount = new AtomicInteger();
 
-    void markReconciliationRequested() {
-        reconciliationRequested.set(true);
+    void markFullScanRequested() {
+        fullScanRequested.set(true);
     }
 
-    boolean consumeReconciliationRequested() {
-        return reconciliationRequested.getAndSet(false);
+    boolean consumeFullScanRequested() {
+        return fullScanRequested.getAndSet(false);
     }
 
-    boolean isReconciliationRequested() {
-        return reconciliationRequested.get();
+    boolean isFullScanRequested() {
+        return fullScanRequested.get();
     }
 
     int reserveWorkers(final int maxWorkers) {
@@ -54,10 +54,10 @@ final class SplitPolicyState {
     }
 
     void clearPendingWork() {
-        reconciliationRequested.set(false);
+        fullScanRequested.set(false);
     }
 
     boolean hasPendingWork() {
-        return reconciliationRequested.get();
+        return fullScanRequested.get();
     }
 }

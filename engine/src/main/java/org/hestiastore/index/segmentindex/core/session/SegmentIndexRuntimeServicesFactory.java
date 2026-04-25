@@ -67,7 +67,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
     }
 
     private void flushStableStorage() {
-        topologyRuntime.flushStableSegmentsWithSplitSchedulingPaused();
+        topologyRuntime.flushStableSegments();
         coreStorage.keyToSegmentMap().flushIfDirty();
     }
 
@@ -118,6 +118,6 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                         "metricsSnapshotSupplier"),
                 Vldtn.requireNonNull(runtimeLimitApplier,
                         "runtimeLimitApplier")::apply,
-                topologyRuntime::requestSplitReconciliation);
+                topologyRuntime::requestFullSplitScan);
     }
 }

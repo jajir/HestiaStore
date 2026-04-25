@@ -11,7 +11,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -82,7 +81,7 @@ class SplitServiceImplTest {
                 SegmentIndexState.CLOSING);
         final SplitPolicyState policyState =
                 new SplitPolicyState();
-        policyState.markReconciliationRequested();
+        policyState.markFullScanRequested();
         final SplitServiceImpl<String, String> runtime =
                 new SplitServiceImpl<>(
                         conf, runtimeTuningState, synchronizedKeyToSegmentMap,
@@ -92,9 +91,9 @@ class SplitServiceImplTest {
                         SplitFailureReporter.noOp(),
                         SplitTelemetry.from(new Stats()), policyState);
 
-        runtime.awaitQuiescence();
+        runtime.splitMaintenance().awaitQuiescence();
 
-        assertFalse(policyState.isReconciliationRequested());
+        assertFalse(policyState.isFullScanRequested());
         verify(splitExecutionCoordinator).awaitSplitsIdle(50);
     }
 
@@ -116,7 +115,7 @@ class SplitServiceImplTest {
     }
 
     @Test
-    void requestReconciliation_requestsFullScanWhenPolicyEnabled() {
+    void requestFullSplitScan_requestsFullScanWhenPolicyEnabled() {
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
@@ -133,40 +132,16 @@ class SplitServiceImplTest {
                         SplitFailureReporter.noOp(),
                         SplitTelemetry.from(new Stats()), policyState);
 
-        runtime.requestReconciliation();
+        runtime.requestFullSplitScan();
 
-        assertTrue(policyState.isReconciliationRequested());
+        assertTrue(policyState.isFullScanRequested());
         verify(workerExecutor).execute(any(Runnable.class));
         verify(splitPolicyScheduler).schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS));
     }
 
     @Test
-    void requestReconciliationIfIdle_skipsRequestWhenSplitCoordinatorBusy() {
-        when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
-        when(splitExecutionCoordinator.splitInFlightCount()).thenReturn(1);
-        when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
-                eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mock(ScheduledFuture.class));
-        final SplitPolicyState policyState =
-                new SplitPolicyState();
-        final Executor workerExecutor = mock(Executor.class);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        workerExecutor, splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()), policyState);
-
-        runtime.requestReconciliationIfIdle();
-
-        assertFalse(policyState.isReconciliationRequested());
-    }
-
-    @Test
-    void requestReconciliation_drainsHintedAndFullScanWorkOnWorker() {
+    void requestFullSplitScan_drainsHintedAndFullScanWorkOnWorker() {
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
@@ -184,14 +159,14 @@ class SplitServiceImplTest {
                         SplitTelemetry.from(new Stats()), policyState);
 
         runtime.hintSplitCandidate(SegmentId.of(1));
-        runtime.requestReconciliation();
+        runtime.requestFullSplitScan();
 
         assertFalse(policyState.isWorkerActive());
-        assertFalse(policyState.isReconciliationRequested());
+        assertFalse(policyState.isFullScanRequested());
     }
 
     @Test
-    void hintAndReconciliationDeduplicateSegmentBeforeWorkerRuns() {
+    void hintAndFullSplitScanDeduplicateSegmentBeforeWorkerRuns() {
         final SegmentId segmentId = SegmentId.of(13);
         final SegmentHandle.Runtime segmentRuntime =
                 mock(SegmentHandle.Runtime.class);
@@ -220,7 +195,7 @@ class SplitServiceImplTest {
                         new SplitPolicyState());
 
         runtime.hintSplitCandidate(segmentId);
-        runtime.requestReconciliation();
+        runtime.requestFullSplitScan();
         assertEquals(1, scheduledWorkers.size());
 
         scheduledWorkers.get(0).run();
@@ -253,7 +228,7 @@ class SplitServiceImplTest {
     }
 
     @Test
-    void requestReconciliation_schedulesEligibleMappedSegments() {
+    void requestFullSplitScan_schedulesEligibleMappedSegments() {
         final SegmentId segmentId = SegmentId.of(3);
         final SegmentHandle.Runtime segmentRuntime =
                 mock(SegmentHandle.Runtime.class);
@@ -280,14 +255,14 @@ class SplitServiceImplTest {
                         SplitTelemetry.from(new Stats()),
                         new SplitPolicyState());
 
-        runtime.requestReconciliation();
+        runtime.requestFullSplitScan();
 
         verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentHandle,
                 10, 11L);
     }
 
     @Test
-    void requestReconciliation_skipsUnloadedCandidates() {
+    void requestFullSplitScan_skipsUnloadedCandidates() {
         final SegmentId segmentId = SegmentId.of(9);
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
@@ -308,7 +283,7 @@ class SplitServiceImplTest {
                         SplitTelemetry.from(new Stats()),
                         new SplitPolicyState());
 
-        runtime.requestReconciliation();
+        runtime.requestFullSplitScan();
 
         verify(segmentRegistry).tryGetSegment(segmentId);
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
@@ -316,7 +291,7 @@ class SplitServiceImplTest {
     }
 
     @Test
-    void requestReconciliation_skipsCandidatesBelowThreshold() {
+    void requestFullSplitScan_skipsCandidatesBelowThreshold() {
         final SegmentId segmentId = SegmentId.of(11);
         final SegmentHandle.Runtime runtime = mock(SegmentHandle.Runtime.class);
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
@@ -339,7 +314,7 @@ class SplitServiceImplTest {
                         SplitTelemetry.from(new Stats()),
                         new SplitPolicyState());
 
-        runtimeUnderTest.requestReconciliation();
+        runtimeUnderTest.requestFullSplitScan();
 
         verify(segmentRegistry).tryGetSegment(segmentId);
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
@@ -367,7 +342,7 @@ class SplitServiceImplTest {
     }
 
     @Test
-    void publicMethodsRejectCallsAfterClose() {
+    void hintSplitCandidateRejectsCallsAfterClose() {
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(25);
         when(splitExecutionCoordinator.splitInFlightCount()).thenReturn(0);
         final SplitServiceImpl<String, String> runtime =
@@ -384,8 +359,6 @@ class SplitServiceImplTest {
 
         assertThrows(IllegalStateException.class,
                 () -> runtime.hintSplitCandidate(SegmentId.of(4)));
-        assertThrows(IllegalStateException.class,
-                () -> runtime.awaitQuiescence(Duration.ofMillis(5)));
     }
 
     @Test
@@ -400,6 +373,7 @@ class SplitServiceImplTest {
                 .newSingleThreadExecutor();
         final ExecutorService waitExecutor = Executors.newSingleThreadExecutor();
         when(conf.isBackgroundMaintenanceAutoEnabled()).thenReturn(Boolean.TRUE);
+        when(conf.getIndexBusyTimeoutMillis()).thenReturn(1_000);
         when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
         when(conf.getNumberOfIndexMaintenanceThreads()).thenReturn(1);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
@@ -434,7 +408,7 @@ class SplitServiceImplTest {
             assertTrue(splitEntered.await(1, TimeUnit.SECONDS));
 
             final Future<?> quiescenceFuture = waitExecutor.submit(() -> {
-                runtime.awaitQuiescence(Duration.ofMillis(1_000));
+                runtime.splitMaintenance().awaitQuiescence();
                 quiescenceReturned.countDown();
             });
 

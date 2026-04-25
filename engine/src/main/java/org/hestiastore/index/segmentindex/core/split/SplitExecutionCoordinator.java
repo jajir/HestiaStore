@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.Comparator;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
@@ -34,8 +33,6 @@ interface SplitExecutionCoordinator<K, V> {
      * @param directoryFacade root segment directory
      * @param splitExecutor   split executor
      * @param failureReporter split failure reporter
-     * @param onSplitApplied  callback invoked after a split is successfully
-     *                        applied
      * @param telemetry       split telemetry recorder
      * @param <K>             key type
      * @param <V>             value type
@@ -50,7 +47,7 @@ interface SplitExecutionCoordinator<K, V> {
             final Directory directoryFacade,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
-            final Runnable onSplitApplied, final SplitTelemetry telemetry) {
+            final SplitTelemetry telemetry) {
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");
         final DefaultSegmentMaterializationService<K, V> materializationService = new DefaultSegmentMaterializationService<>(
@@ -69,7 +66,6 @@ interface SplitExecutionCoordinator<K, V> {
                         materializationService),
                 Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
                 Vldtn.requireNonNull(failureReporter, "failureReporter"),
-                Vldtn.requireNonNull(onSplitApplied, "onSplitApplied"),
                 Vldtn.requireNonNull(telemetry, "telemetry"));
     }
 
@@ -108,21 +104,5 @@ interface SplitExecutionCoordinator<K, V> {
      * @return number of blocked segments with scheduled or running splits
      */
     int splitBlockedCount();
-
-    /**
-     * Runs the supplied action while new split scheduling is paused.
-     *
-     * @param action action to run
-     * @param <T>    action result type
-     * @return action result
-     */
-    <T> T runWithSplitSchedulingPaused(Supplier<T> action);
-
-    /**
-     * Runs the supplied action while new split scheduling is paused.
-     *
-     * @param action action to run
-     */
-    void runWithSplitSchedulingPaused(Runnable action);
 
 }

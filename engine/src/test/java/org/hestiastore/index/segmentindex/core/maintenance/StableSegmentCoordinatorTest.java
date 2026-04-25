@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,9 +45,6 @@ class StableSegmentCoordinatorTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private SplitMaintenanceSynchronization<String, String> splitSynchronization;
-
-    @Mock
     private StableSegmentAccess<String, String> stableSegmentGateway;
 
     @Mock
@@ -75,8 +70,7 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                splitSynchronization, stableSegmentGateway,
-                new IndexRetryPolicy(1, 10), stats);
+                stableSegmentGateway, new IndexRetryPolicy(1, 10), stats);
     }
 
     @AfterEach
@@ -165,8 +159,7 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                splitSynchronization, stableSegmentGateway,
-                new IndexRetryPolicy(1, 10), stats,
+                stableSegmentGateway, new IndexRetryPolicy(1, 10), stats,
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId)).thenReturn(
@@ -185,8 +178,7 @@ class StableSegmentCoordinatorTest {
         coordinator = new StableSegmentCoordinator<>(
                 LoggerFactory.getLogger(StableSegmentCoordinatorTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                splitSynchronization, stableSegmentGateway,
-                new IndexRetryPolicy(1, 10), stats,
+                stableSegmentGateway, new IndexRetryPolicy(1, 10), stats,
                 sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.compact(segmentId)).thenReturn(
@@ -241,7 +233,7 @@ class StableSegmentCoordinatorTest {
     }
 
     @Test
-    void flushMappedSegmentsAndWait_runsInsidePausedSplitScope() {
+    void flushMappedSegmentsAndWait_flushesMappedSegments() {
         final SegmentId firstSegment = createBootstrapSegment("key-a");
         final SegmentId secondSegment = createBootstrapSegment("key-z");
         when(segmentHandle.getRuntime()).thenReturn(runtime);
@@ -250,16 +242,9 @@ class StableSegmentCoordinatorTest {
                 .thenReturn(IndexResult.ok(segmentHandle));
         when(stableSegmentGateway.flush(secondSegment))
                 .thenReturn(IndexResult.ok(segmentHandle));
-        doAnswer(invocation -> {
-            ((Runnable) invocation.getArgument(0)).run();
-            return null;
-        }).when(splitSynchronization)
-                .runWithSplitSchedulingPaused(any(Runnable.class));
 
         coordinator.flushMappedSegmentsAndWait();
 
-        verify(splitSynchronization)
-                .runWithSplitSchedulingPaused(any(Runnable.class));
         verify(stableSegmentGateway).flush(firstSegment);
         verify(stableSegmentGateway).flush(secondSegment);
     }

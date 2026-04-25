@@ -4,13 +4,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.session.IndexCloseCoordinator;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexStartupCoordinator;
 import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntime;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 
@@ -26,27 +22,21 @@ final class SegmentIndexSessionOwner<K, V> {
     private final IndexStateCoordinator<K, V> stateCoordinator;
     private final SegmentIndexRuntime<K, V> runtime;
     private final SegmentIndexMaintenanceAccess<K, V> maintenanceAccess;
-    private final long indexBusyTimeoutMillis;
     private final IndexCloseCoordinator<K, V> closeCoordinator;
     private final SegmentIndexStartupCoordinator<K, V> startupCoordinator;
     private final AtomicBoolean startupCompleted = new AtomicBoolean();
 
     SegmentIndexSessionOwner(
-            final IndexConfiguration<K, V> conf,
             final IndexStateCoordinator<K, V> stateCoordinator,
             final SegmentIndexRuntime<K, V> runtime,
             final SegmentIndexMaintenanceAccess<K, V> maintenanceAccess,
             final IndexCloseCoordinator<K, V> closeCoordinator,
             final SegmentIndexStartupCoordinator<K, V> startupCoordinator) {
-        final IndexConfiguration<K, V> validatedConfiguration = Vldtn
-                .requireNonNull(conf, "conf");
         this.stateCoordinator = Vldtn.requireNonNull(stateCoordinator,
                 "stateCoordinator");
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
         this.maintenanceAccess = Vldtn.requireNonNull(maintenanceAccess,
                 "maintenanceAccess");
-        this.indexBusyTimeoutMillis = validatedConfiguration
-                .getIndexBusyTimeoutMillis();
         this.closeCoordinator = Vldtn.requireNonNull(closeCoordinator,
                 "closeCoordinator");
         this.startupCoordinator = Vldtn.requireNonNull(startupCoordinator,
@@ -71,7 +61,6 @@ final class SegmentIndexSessionOwner<K, V> {
 
     void runMaintenanceOperation(final Runnable action) {
         ensureOperational();
-        maintenanceAccess.awaitSplitsIdle(indexBusyTimeoutMillis);
         Vldtn.requireNonNull(action, "action").run();
         maintenanceAccess.invalidateSegmentIterators();
     }

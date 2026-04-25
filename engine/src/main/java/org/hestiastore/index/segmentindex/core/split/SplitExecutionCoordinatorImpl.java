@@ -3,11 +3,9 @@ package org.hestiastore.index.segmentindex.core.split;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -28,7 +26,6 @@ import org.hestiastore.index.segmentregistry.SegmentHandle;
 final class SplitExecutionCoordinatorImpl<K, V>
         implements SplitExecutionCoordinator<K, V> {
 
-    private static final String ACTION_PARAMETER = "action";
     private static final long SPLIT_RESCHEDULE_COOLDOWN_MILLIS = 500L;
     private static final long SPLIT_RESCHEDULE_COOLDOWN_NANOS = TimeUnit.MILLISECONDS
             .toNanos(SPLIT_RESCHEDULE_COOLDOWN_MILLIS);
@@ -48,14 +45,12 @@ final class SplitExecutionCoordinatorImpl<K, V>
     private final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator;
     private final Executor splitExecutor;
     private final SplitFailureReporter failureReporter;
-    private final Runnable onSplitApplied;
     private final SplitTelemetry telemetry;
     private final LongSupplier nanoTimeSupplier;
     private final Object splitMonitor = new Object();
     private final ConcurrentHashMap<SegmentId, Boolean> scheduledSplits = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<SegmentId, SplitAttemptState> splitAttemptStates = new ConcurrentHashMap<>();
     private final AtomicReference<RuntimeException> splitFailure = new AtomicReference<>();
-    private final AtomicInteger splitSchedulingPauseCount = new AtomicInteger();
     private final AtomicLong adaptiveSplitCooldownNanos = new AtomicLong(
             SPLIT_RESCHEDULE_COOLDOWN_NANOS);
     private int splitInFlightCount;
@@ -66,12 +61,10 @@ final class SplitExecutionCoordinatorImpl<K, V>
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
-            final SplitFailureReporter failureReporter,
-            final Runnable onSplitApplied) {
+            final SplitFailureReporter failureReporter) {
         this(keyToSegmentMap, segmentTopology, routeSplitCoordinator,
                 routeSplitPublishCoordinator, splitExecutor,
-                failureReporter, onSplitApplied,
-                SplitTelemetry.noOp(), System::nanoTime);
+                failureReporter, SplitTelemetry.noOp(), System::nanoTime);
     }
 
     SplitExecutionCoordinatorImpl(
@@ -81,11 +74,10 @@ final class SplitExecutionCoordinatorImpl<K, V>
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
-            final Runnable onSplitApplied, final SplitTelemetry telemetry) {
+            final SplitTelemetry telemetry) {
         this(keyToSegmentMap, segmentTopology, routeSplitCoordinator,
                 routeSplitPublishCoordinator, splitExecutor,
-                failureReporter, onSplitApplied, telemetry,
-                System::nanoTime);
+                failureReporter, telemetry, System::nanoTime);
     }
 
     SplitExecutionCoordinatorImpl(final KeyToSegmentMap<K> keyToSegmentMap,
@@ -94,12 +86,10 @@ final class SplitExecutionCoordinatorImpl<K, V>
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
-            final Runnable onSplitApplied,
             final LongSupplier nanoTimeSupplier) {
         this(keyToSegmentMap, segmentTopology, routeSplitCoordinator,
                 routeSplitPublishCoordinator, splitExecutor,
-                failureReporter, onSplitApplied,
-                SplitTelemetry.noOp(), nanoTimeSupplier);
+                failureReporter, SplitTelemetry.noOp(), nanoTimeSupplier);
     }
 
     SplitExecutionCoordinatorImpl(final KeyToSegmentMap<K> keyToSegmentMap,
@@ -108,7 +98,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
-            final Runnable onSplitApplied, final SplitTelemetry telemetry,
+            final SplitTelemetry telemetry,
             final LongSupplier nanoTimeSupplier) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -123,8 +113,6 @@ final class SplitExecutionCoordinatorImpl<K, V>
                 "splitExecutor");
         this.failureReporter = Vldtn.requireNonNull(failureReporter,
                 "failureReporter");
-        this.onSplitApplied = Vldtn.requireNonNull(onSplitApplied,
-                "onSplitApplied");
         this.telemetry = Vldtn.requireNonNull(telemetry, "telemetry");
         this.nanoTimeSupplier = Vldtn.requireNonNull(nanoTimeSupplier,
                 "nanoTimeSupplier");
@@ -204,26 +192,6 @@ final class SplitExecutionCoordinatorImpl<K, V>
         return scheduledSplits.size();
     }
 
-    @Override
-    public <T> T runWithSplitSchedulingPaused(final Supplier<T> action) {
-        Vldtn.requireNonNull(action, ACTION_PARAMETER);
-        splitSchedulingPauseCount.incrementAndGet();
-        try {
-            return action.get();
-        } finally {
-            splitSchedulingPauseCount.decrementAndGet();
-        }
-    }
-
-    @Override
-    public void runWithSplitSchedulingPaused(final Runnable action) {
-        Vldtn.requireNonNull(action, ACTION_PARAMETER);
-        runWithSplitSchedulingPaused(() -> {
-            action.run();
-            return null;
-        });
-    }
-
     private boolean scheduleAcceptedSplit(
             final SegmentHandle<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount) {
@@ -291,7 +259,6 @@ final class SplitExecutionCoordinatorImpl<K, V>
         observeSplitDuration(durationNanos);
         if (splitApplied) {
             splitAttemptStates.remove(segmentId);
-            notifySplitApplied();
         } else {
             recordFailedSplitAttempt(segmentId, observedKeyCount);
         }
@@ -316,8 +283,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private boolean canScheduleSplit(final long splitThreshold) {
-        return isSplitSchedulingEnabled(splitThreshold)
-                && splitSchedulingPauseCount.get() == 0;
+        return isSplitSchedulingEnabled(splitThreshold);
     }
 
     private boolean tryApplyPreparedSplit(final SegmentHandle<K, V> segmentHandle,
@@ -450,15 +416,6 @@ final class SplitExecutionCoordinatorImpl<K, V>
                 splitInFlightCount--;
             }
             splitMonitor.notifyAll();
-        }
-    }
-
-    private void notifySplitApplied() {
-        try {
-            onSplitApplied.run();
-        } catch (final RuntimeException e) {
-            splitFailure.compareAndSet(null, e);
-            failureReporter.reportFailure(e);
         }
     }
 

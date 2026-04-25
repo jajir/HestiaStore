@@ -82,10 +82,10 @@ class SplitRuntimeFactoryTest {
 
         assertSame(maintenance,
                 SplitRuntimeFactory.maintenanceSynchronization(service));
-        SplitRuntimeFactory.requestReconciliation(service);
+        SplitRuntimeFactory.requestFullSplitScan(service);
         assertSame(snapshot, SplitRuntimeFactory.metricsSnapshot(service));
 
-        verify(maintenance).requestReconciliation();
+        verify(maintenance).requestFullSplitScan();
     }
 
     @SuppressWarnings("unchecked")

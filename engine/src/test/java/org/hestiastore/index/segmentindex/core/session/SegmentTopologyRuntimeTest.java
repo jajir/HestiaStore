@@ -65,7 +65,7 @@ class SegmentTopologyRuntimeTest {
         assertNotNull(topologyRuntime.directSegmentAccess());
         assertNotNull(topologyRuntime
                 .maintenanceAccess(mock(IndexWalCoordinator.class)));
-        assertDoesNotThrow(topologyRuntime::requestSplitReconciliation);
+        assertDoesNotThrow(topologyRuntime::requestFullSplitScan);
         assertDoesNotThrow(
                 topologyRuntime::cleanupOrphanedSegmentDirectories);
     }

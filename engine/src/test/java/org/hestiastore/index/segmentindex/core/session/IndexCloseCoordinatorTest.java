@@ -2,9 +2,9 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,22 +30,7 @@ class IndexCloseCoordinatorTest {
     private Runnable awaitOperations;
 
     @Mock
-    private Runnable flushStableSegmentsWithSplitPaused;
-
-    @Mock
-    private Runnable closeSegmentRegistry;
-
-    @Mock
-    private Runnable flushKeyToSegmentMap;
-
-    @Mock
-    private Runnable checkpointWal;
-
-    @Mock
     private Runnable finishCloseTransition;
-
-    @Mock
-    private Runnable closeWalRuntime;
 
     @Mock
     private SegmentIndexRuntime<Integer, String> runtime;
@@ -84,7 +69,7 @@ class IndexCloseCoordinatorTest {
         inOrder.verify(stateCoordinator).beginClose();
         inOrder.verify(awaitOperations).run();
         inOrder.verify(runtime).closeSplitRuntime();
-        inOrder.verify(runtime).flushStableSegmentsWithSplitSchedulingPaused();
+        inOrder.verify(runtime).flushStableSegments();
         inOrder.verify(runtime).closeSegmentRegistry();
         inOrder.verify(runtime).flushKeyToSegmentMap();
         inOrder.verify(runtime).checkpointWal();
@@ -94,12 +79,12 @@ class IndexCloseCoordinatorTest {
 
     @Test
     void close_stillFinishesAndClosesWalWhenRegistryCloseFails() {
-        org.mockito.Mockito.doThrow(new IndexException("close failed"))
-                .when(runtime).closeSegmentRegistry();
+        doThrow(new IndexException("close failed")).when(runtime)
+                .closeSegmentRegistry();
 
         assertThrows(IndexException.class, () -> closeCoordinator.close());
 
-        verify(runtime).flushStableSegmentsWithSplitSchedulingPaused();
+        verify(runtime).flushStableSegments();
         verify(runtime, never()).flushKeyToSegmentMap();
         verify(runtime, never()).checkpointWal();
         verify(finishCloseTransition).run();

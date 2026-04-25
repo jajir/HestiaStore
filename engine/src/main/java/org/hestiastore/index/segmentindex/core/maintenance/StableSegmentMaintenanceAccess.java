@@ -25,19 +25,16 @@ public interface StableSegmentMaintenanceAccess<K, V> {
             final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats) {
         return create(logger, keyToSegmentMap, segmentRegistry,
-                splitSynchronization, stableSegmentGateway, retryPolicy,
-                stats, System::nanoTime);
+                stableSegmentGateway, retryPolicy, stats, System::nanoTime);
     }
 
     static <K, V> StableSegmentMaintenanceAccess<K, V> create(
             final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitMaintenanceSynchronization<K, V> splitSynchronization,
             final StableSegmentAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final LongSupplier nanoTimeSupplier) {
@@ -45,8 +42,6 @@ public interface StableSegmentMaintenanceAccess<K, V> {
                 Vldtn.requireNonNull(logger, "logger"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
-                Vldtn.requireNonNull(splitSynchronization,
-                        "splitSynchronization"),
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),
                 Vldtn.requireNonNull(retryPolicy, "retryPolicy"),

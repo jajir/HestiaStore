@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import java.time.Duration;
-
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 
@@ -30,14 +28,6 @@ public interface SplitService<K, V> extends AutoCloseable {
      * @param segmentId mapped segment id
      */
     void hintSplitCandidate(SegmentId segmentId);
-
-    /**
-     * Waits until split policy work and in-flight splits have drained or the
-     * timeout expires.
-     *
-     * @param timeout wait timeout
-     */
-    void awaitQuiescence(Duration timeout);
 
     /**
      * Returns the maintenance-facing synchronization view backed by the same

@@ -204,28 +204,8 @@ class SplitExecutionCoordinatorImplTest {
     }
 
     @Test
-    void splitSchedulingPauseSkipsNewCandidate() {
-        final SegmentId segmentId = SegmentId.of(17);
-        when(segmentHandle.getId()).thenReturn(segmentId);
-        when(runtime.getState()).thenReturn(SegmentState.READY);
-        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-
-        final SplitExecutionCoordinator<String, String> coordinator =
-                newCoordinator();
-
-        final boolean scheduled = coordinator
-                .runWithSplitSchedulingPaused(
-                        () -> coordinator.scheduleEligibleSplit(segmentHandle,
-                                100L, 101L));
-
-        org.junit.jupiter.api.Assertions.assertFalse(scheduled);
-        verifyNoInteractions(splitCoordinator);
-    }
-
-    @Test
-    void successfulSplitRequestsBackgroundRescan() {
+    void successfulSplitPublishesPreparedPlan() {
         final SegmentId segmentId = SegmentId.of(2);
-        final AtomicInteger splitAppliedCallbacks = new AtomicInteger();
         final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
@@ -237,15 +217,11 @@ class SplitExecutionCoordinatorImplTest {
                 .thenReturn(Boolean.TRUE);
 
         final SplitExecutionCoordinator<String, String> coordinator =
-                newCoordinator(scheduledTask::set,
-                        (Runnable) () -> splitAppliedCallbacks
-                                .incrementAndGet());
+                newCoordinator(scheduledTask::set);
 
         coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
         scheduledTask.get().run();
 
-        org.junit.jupiter.api.Assertions.assertEquals(1,
-                splitAppliedCallbacks.get());
         verify(splitPublishCoordinator).applyPreparedSplit(splitPlan);
         verify(segmentTopology).reconcile(any());
         verify(routeDrain).complete();
@@ -502,16 +478,7 @@ class SplitExecutionCoordinatorImplTest {
             final Executor splitExecutor) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 segmentTopology, splitCoordinator, splitPublishCoordinator,
-                splitExecutor, SplitFailureReporter.noOp(), () -> {
-                });
-    }
-
-    private SplitExecutionCoordinator<String, String> newCoordinator(
-            final Executor splitExecutor,
-            final Runnable onSplitApplied) {
-        return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
-                segmentTopology, splitCoordinator, splitPublishCoordinator,
-                splitExecutor, SplitFailureReporter.noOp(), onSplitApplied);
+                splitExecutor, SplitFailureReporter.noOp());
     }
 
     private SplitExecutionCoordinator<String, String> newCoordinator(
@@ -521,8 +488,8 @@ class SplitExecutionCoordinatorImplTest {
             final java.util.function.LongSupplier nanoTimeSupplier) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 segmentTopology, splitCoordinator, splitPublishCoordinator,
-                splitExecutor, SplitFailureReporter.noOp(), () -> {
-                }, new SplitTelemetry() {
+                splitExecutor, SplitFailureReporter.noOp(),
+                new SplitTelemetry() {
                     @Override
                     public void recordSplitScheduled() {
                     }
@@ -546,9 +513,7 @@ class SplitExecutionCoordinatorImplTest {
             final java.util.function.LongSupplier nanoTimeSupplier) {
         return new SplitExecutionCoordinatorImpl<>(synchronizedKeyToSegmentMap,
                 segmentTopology, splitCoordinator, splitPublishCoordinator,
-                splitExecutor, SplitFailureReporter.noOp(), () -> {
-                },
-                nanoTimeSupplier);
+                splitExecutor, SplitFailureReporter.noOp(), nanoTimeSupplier);
     }
 
     private void allowTopologyDrain(final SegmentId segmentId) {
