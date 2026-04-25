@@ -83,7 +83,7 @@ class IndexCloseCoordinatorTest {
                 finishCloseTransition);
         inOrder.verify(stateCoordinator).beginClose();
         inOrder.verify(awaitOperations).run();
-        inOrder.verify(runtime).awaitBackgroundSplitsExhausted();
+        inOrder.verify(runtime).closeSplitRuntime();
         inOrder.verify(runtime).flushStableSegmentsWithSplitSchedulingPaused();
         inOrder.verify(runtime).closeSegmentRegistry();
         inOrder.verify(runtime).flushKeyToSegmentMap();

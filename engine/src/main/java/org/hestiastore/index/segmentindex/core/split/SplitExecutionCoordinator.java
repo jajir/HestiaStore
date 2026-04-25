@@ -13,32 +13,33 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 
 /**
- * Public runtime boundary for background split scheduling, admission, and
- * lifecycle coordination.
+ * Coordinates split execution, admission, and split-publish synchronization
+ * after the policy layer has already accepted a candidate.
  *
  * @param <K> key type
  * @param <V> value type
  */
-interface BackgroundSplitCoordinator<K, V> {
+interface SplitExecutionCoordinator<K, V> {
 
     /**
-     * Builds the default runtime background split coordinator from split
-     * collaborators and policies.
+     * Builds the default split-execution coordinator from split collaborators
+     * and policies.
      *
-     * @param conf index configuration
-     * @param keyComparator key comparator
+     * @param conf            index configuration
+     * @param keyComparator   key comparator
      * @param keyToSegmentMap route map
      * @param segmentRegistry segment registry
      * @param directoryFacade root segment directory
-     * @param splitExecutor split executor
+     * @param splitExecutor   split executor
      * @param failureReporter split failure reporter
-     * @param runtimeEvents internal split-runtime events
-     * @param telemetry split telemetry recorder
-     * @param <K> key type
-     * @param <V> value type
-     * @return background split coordinator
+     * @param onSplitApplied  callback invoked after a split is successfully
+     *                        applied
+     * @param telemetry       split telemetry recorder
+     * @param <K>             key type
+     * @param <V>             value type
+     * @return split-execution coordinator
      */
-    static <K, V> BackgroundSplitCoordinator<K, V> create(
+    static <K, V> SplitExecutionCoordinator<K, V> create(
             final IndexConfiguration<K, V> conf,
             final Comparator<K> keyComparator,
             final KeyToSegmentMap<K> keyToSegmentMap,
@@ -46,16 +47,14 @@ interface BackgroundSplitCoordinator<K, V> {
             final Directory directoryFacade,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
-            final SplitRuntimeEvents runtimeEvents,
-            final SplitRuntimeTelemetry telemetry) {
+            final Runnable onSplitApplied, final SplitTelemetry telemetry) {
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");
-        final DefaultSegmentMaterializationService<K, V> materializationService =
-                new DefaultSegmentMaterializationService<>(
-                        Vldtn.requireNonNull(directoryFacade,
-                                "directoryFacade"),
-                        validatedSegmentRegistry.materialization());
-        return new BackgroundSplitCoordinatorImpl<>(
+        final DefaultSegmentMaterializationService<K, V> materializationService = new DefaultSegmentMaterializationService<>(
+                Vldtn.requireNonNull(directoryFacade,
+                        "directoryFacade"),
+                validatedSegmentRegistry.materialization());
+        return new SplitExecutionCoordinatorImpl<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 new RouteSplitCoordinator<>(
                         Vldtn.requireNonNull(conf, "conf"),
@@ -66,21 +65,21 @@ interface BackgroundSplitCoordinator<K, V> {
                         materializationService),
                 Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
                 Vldtn.requireNonNull(failureReporter, "failureReporter"),
-                Vldtn.requireNonNull(runtimeEvents, "runtimeEvents"),
+                Vldtn.requireNonNull(onSplitApplied, "onSplitApplied"),
                 Vldtn.requireNonNull(telemetry, "telemetry"));
     }
 
     /**
-     * Attempts to schedule a background split for the provided segment.
+     * Schedules split execution for a candidate already accepted by the policy
+     * layer.
      *
-     * @param segmentHandle split candidate
-     * @param splitThreshold minimum number of keys that makes the candidate
-     *        eligible
-     * @param ignoreCooldown whether failed-attempt cooldown should be bypassed
+     * @param segmentHandle    accepted split candidate
+     * @param splitThreshold   active split threshold
+     * @param observedKeyCount key count observed by policy evaluation
      * @return {@code true} when split work was scheduled
      */
-    boolean handleSplitCandidate(SegmentHandle<K, V> segmentHandle,
-            long splitThreshold, boolean ignoreCooldown);
+    boolean scheduleEligibleSplit(SegmentHandle<K, V> segmentHandle,
+            long splitThreshold, long observedKeyCount);
 
     /**
      * Waits until in-flight splits finish or the timeout expires.
@@ -110,7 +109,7 @@ interface BackgroundSplitCoordinator<K, V> {
      * Runs the supplied action while new split scheduling is paused.
      *
      * @param action action to run
-     * @param <T> action result type
+     * @param <T>    action result type
      * @return action result
      */
     <T> T runWithSplitSchedulingPaused(Supplier<T> action);
@@ -127,7 +126,7 @@ interface BackgroundSplitCoordinator<K, V> {
      * publish.
      *
      * @param action action to run
-     * @param <T> action result type
+     * @param <T>    action result type
      * @return action result
      */
     <T> T runWithSharedSplitAdmission(Supplier<T> action);

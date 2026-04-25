@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import java.time.Duration;
+
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -8,7 +10,6 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 import org.hestiastore.index.segmentindex.core.maintenance.StableSegmentMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.split.SplitRuntimeFactory;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.routing.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
@@ -20,7 +21,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 
 /**
  * Owns the segment-topology subsystem that coordinates direct access, stable
- * segment maintenance, background split policy, and recovery cleanup.
+ * segment maintenance, split reconciliation, and recovery cleanup.
  *
  * @param <K> key type
  * @param <V> value type
@@ -28,7 +29,6 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 final class SegmentTopologyRuntime<K, V> {
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
-    private final long indexBusyTimeoutMillis;
     private final SplitService<K, V> splitService;
     private final SplitMaintenanceSynchronization<K, V> splitSynchronization;
     private final StableSegmentMaintenanceAccess<K, V> stableSegmentMaintenance;
@@ -42,28 +42,30 @@ final class SegmentTopologyRuntime<K, V> {
         final SegmentIndexCoreStorage<K, V> validatedCoreStorage = Vldtn
                 .requireNonNull(coreStorage, "coreStorage");
         this.keyToSegmentMap = validatedCoreStorage.keyToSegmentMap();
-        this.indexBusyTimeoutMillis = validatedRequest.conf
-                .getIndexBusyTimeoutMillis();
         final StableSegmentAccess<K, V> stableSegmentGateway =
                 StableSegmentAccess.create(validatedCoreStorage.keyToSegmentMap(),
                         validatedCoreStorage.segmentRegistry());
-        this.splitService = SplitRuntimeFactory.create(
-                validatedRequest.conf,
-                validatedCoreStorage.runtimeTuningState(),
-                validatedRequest.keyTypeDescriptor.getComparator(),
-                validatedCoreStorage.keyToSegmentMap(),
-                validatedCoreStorage.segmentRegistry(),
-                validatedRequest.directoryFacade,
-                validatedRequest.executorRegistry.getSplitMaintenanceExecutor(),
-                validatedRequest.executorRegistry.getIndexMaintenanceExecutor(),
-                validatedRequest.executorRegistry.getSplitPolicyScheduler(),
-                validatedRequest.stateSupplier,
-                validatedRequest.failureHandler, validatedRequest.stats);
-        this.splitSynchronization = SplitRuntimeFactory
-                .maintenanceSynchronization(splitService);
+        this.splitService = SplitService.<K, V>builder()
+                .conf(validatedRequest.conf)
+                .runtimeTuningState(validatedCoreStorage.runtimeTuningState())
+                .keyComparator(
+                        validatedRequest.keyTypeDescriptor.getComparator())
+                .keyToSegmentMap(validatedCoreStorage.keyToSegmentMap())
+                .segmentRegistry(validatedCoreStorage.segmentRegistry())
+                .directoryFacade(validatedRequest.directoryFacade)
+                .splitExecutor(validatedRequest.executorRegistry
+                        .getSplitMaintenanceExecutor())
+                .workerExecutor(validatedRequest.executorRegistry
+                        .getIndexMaintenanceExecutor())
+                .splitPolicyScheduler(validatedRequest.executorRegistry
+                        .getSplitPolicyScheduler())
+                .stateSupplier(validatedRequest.stateSupplier)
+                .failureHandler(validatedRequest.failureHandler)
+                .stats(validatedRequest.stats)
+                .build();
+        this.splitSynchronization = splitService.splitMaintenance();
         final SplitAdmissionAccess<K, V> splitAdmissionAccess =
-                SplitRuntimeFactory
-                .admissionAccess(splitService);
+                splitService.splitAdmission();
         this.stableSegmentMaintenance = StableSegmentMaintenanceAccess.create(
                 validatedRequest.logger, validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(),
@@ -108,15 +110,15 @@ final class SegmentTopologyRuntime<K, V> {
     }
 
     void awaitSplitsIdle(final long timeoutMillis) {
-        splitService.awaitIdle(timeoutMillis);
+        splitService.awaitQuiescence(Duration.ofMillis(timeoutMillis));
     }
 
-    void scheduleBackgroundSplitScan() {
-        splitService.requestFullScan();
+    void requestSplitReconciliation() {
+        splitSynchronization.requestReconciliation();
     }
 
-    void awaitBackgroundSplitsExhausted() {
-        splitService.awaitIdle(indexBusyTimeoutMillis);
+    void closeSplitRuntime() {
+        splitService.close();
     }
 
     void flushStableSegmentsWithSplitSchedulingPaused() {

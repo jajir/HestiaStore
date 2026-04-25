@@ -10,20 +10,23 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
+@Deprecated
 public interface SplitAdmissionAccess<K, V> {
 
     /**
      * Runs an action under shared split admission against split publish.
      *
      * @param action action to run
-     * @param <T> result type
+     * @param <T>    result type
      * @return action result
      */
+    @Deprecated
     <T> T runWithSharedSplitAdmission(Supplier<T> action);
 
     /**
      * @param segmentId segment id
      * @return {@code true} when the segment currently has active split work
      */
+    @Deprecated
     boolean isSplitBlocked(SegmentId segmentId);
 }

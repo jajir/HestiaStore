@@ -10,7 +10,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.split.SplitService;
+import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -57,7 +57,7 @@ final class SegmentIndexMetricsCollector<K, V> {
             final IndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitService<K, V> splitService,
+            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final IndexExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
@@ -79,7 +79,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                         "compactRequestHighWaterMark"),
                 Vldtn.requireNonNull(flushRequestHighWaterMark,
                         "flushRequestHighWaterMark"),
-                newSnapshotFactory(conf, splitService,
+                newSnapshotFactory(conf, splitSnapshotSupplier,
                         runtimeTuningState, walRuntime, stats,
                         lastAppliedWalLsn, stateSupplier));
     }
@@ -102,14 +102,15 @@ final class SegmentIndexMetricsCollector<K, V> {
 
     private static <K, V> SegmentIndexMetricsSnapshotFactory<K, V> newSnapshotFactory(
             final IndexConfiguration<K, V> conf,
-            final SplitService<K, V> splitService,
+            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
         return new SegmentIndexMetricsSnapshotFactory<>(
                 Vldtn.requireNonNull(conf, "conf"),
-                Vldtn.requireNonNull(splitService, "splitService"),
+                Vldtn.requireNonNull(splitSnapshotSupplier,
+                        "splitSnapshotSupplier"),
                 Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
                 Vldtn.requireNonNull(walRuntime, "walRuntime"),
                 Vldtn.requireNonNull(stats, "stats"),

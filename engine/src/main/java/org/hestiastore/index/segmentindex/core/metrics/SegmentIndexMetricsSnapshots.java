@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.split.SplitService;
+import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -29,7 +29,7 @@ public final class SegmentIndexMetricsSnapshots {
      * @param conf index configuration
      * @param keyToSegmentMap runtime route map
      * @param segmentRegistry runtime segment registry
-     * @param splitService split service
+     * @param splitSnapshotSupplier split runtime snapshot supplier
      * @param executorRegistry executor runtime registry
      * @param runtimeTuningState mutable runtime tuning state
      * @param walRuntime WAL runtime
@@ -46,7 +46,7 @@ public final class SegmentIndexMetricsSnapshots {
             final IndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final SplitService<K, V> splitService,
+            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final IndexExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
@@ -55,7 +55,7 @@ public final class SegmentIndexMetricsSnapshots {
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
         return SegmentIndexMetricsCollector.create(conf, keyToSegmentMap,
-                segmentRegistry, splitService, executorRegistry,
+                segmentRegistry, splitSnapshotSupplier, executorRegistry,
                 runtimeTuningState, walRuntime, stats,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn, stateSupplier)::metricsSnapshot;

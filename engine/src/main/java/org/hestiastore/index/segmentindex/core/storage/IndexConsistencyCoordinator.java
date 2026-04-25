@@ -22,14 +22,14 @@ public final class IndexConsistencyCoordinator<K, V> {
     private final Runnable verifyUniqueSegmentIds;
     private final ConsistencyCheckRunner consistencyCheckRunner;
     private final Runnable cleanupOrphanedSegmentDirectories;
-    private final Runnable scheduleBackgroundSplitScan;
+    private final Runnable requestSplitReconciliation;
     private final Predicate<SegmentId> startupSegmentFilter;
     private boolean startupSegmentLockValidationEnabled;
 
     public IndexConsistencyCoordinator(final Runnable verifyUniqueSegmentIds,
             final ConsistencyCheckRunner consistencyCheckRunner,
             final Runnable cleanupOrphanedSegmentDirectories,
-            final Runnable scheduleBackgroundSplitScan,
+            final Runnable requestSplitReconciliation,
             final Predicate<SegmentId> startupSegmentFilter) {
         this.verifyUniqueSegmentIds = Vldtn
                 .requireNonNull(verifyUniqueSegmentIds, "verifyUniqueSegmentIds");
@@ -38,8 +38,8 @@ public final class IndexConsistencyCoordinator<K, V> {
         this.cleanupOrphanedSegmentDirectories = Vldtn.requireNonNull(
                 cleanupOrphanedSegmentDirectories,
                 "cleanupOrphanedSegmentDirectories");
-        this.scheduleBackgroundSplitScan = Vldtn.requireNonNull(
-                scheduleBackgroundSplitScan, "scheduleBackgroundSplitScan");
+        this.requestSplitReconciliation = Vldtn.requireNonNull(
+                requestSplitReconciliation, "requestSplitReconciliation");
         this.startupSegmentFilter = Vldtn.requireNonNull(startupSegmentFilter,
                 "startupSegmentFilter");
     }
@@ -48,7 +48,7 @@ public final class IndexConsistencyCoordinator<K, V> {
         verifyUniqueSegmentIds.run();
         consistencyCheckRunner.run(resolveSegmentFilter());
         cleanupOrphanedSegmentDirectories.run();
-        scheduleBackgroundSplitScan.run();
+        requestSplitReconciliation.run();
     }
 
     public void runStartupConsistencyCheck(final Runnable consistencyCheck) {

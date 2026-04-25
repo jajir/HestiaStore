@@ -92,17 +92,17 @@ final class IndexMaintenanceCoordinator<K, V>
     }
 
     private void awaitSettledSplitPolicyLoop() {
-        splitSynchronization.awaitExhausted();
+        splitSynchronization.awaitQuiescence();
     }
 
     private void scheduleSplitScanIfIdle() {
-        splitSynchronization.scheduleScanIfIdle();
+        splitSynchronization.requestReconciliationIfIdle();
     }
 
     private void finalizeSettledMaintenance(final Runnable rerunAction) {
         final long topologyVersion = keyToSegmentMap.snapshot().version();
-        splitSynchronization.scheduleScanIfIdle();
-        splitSynchronization.awaitExhausted();
+        splitSynchronization.requestReconciliationIfIdle();
+        splitSynchronization.awaitQuiescence();
         rerunIfTopologyChanged(topologyVersion, rerunAction);
         keyToSegmentMap.flushIfDirty();
         walCoordinator.checkpoint();

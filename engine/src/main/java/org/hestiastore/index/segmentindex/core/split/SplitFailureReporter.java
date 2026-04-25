@@ -11,7 +11,7 @@ import org.hestiastore.index.Vldtn;
 interface SplitFailureReporter {
 
     /**
-     * Reports a fatal background split failure.
+     * Reports a fatal split-runtime failure.
      *
      * @param failure fatal failure
      */

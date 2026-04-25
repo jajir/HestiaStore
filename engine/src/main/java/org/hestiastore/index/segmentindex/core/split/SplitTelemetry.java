@@ -4,10 +4,10 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 
 /**
- * Records split-runtime telemetry without exposing metrics implementation
- * details to split orchestration code.
+ * Records split telemetry without exposing metrics implementation details to
+ * split orchestration code.
  */
-interface SplitRuntimeTelemetry {
+interface SplitTelemetry {
 
     /**
      * Records that a split candidate was scheduled.
@@ -34,9 +34,9 @@ interface SplitRuntimeTelemetry {
      * @param stats stats collector
      * @return split telemetry adapter
      */
-    static SplitRuntimeTelemetry from(final Stats stats) {
+    static SplitTelemetry from(final Stats stats) {
         final Stats validatedStats = Vldtn.requireNonNull(stats, "stats");
-        return new SplitRuntimeTelemetry() {
+        return new SplitTelemetry() {
             @Override
             public void recordSplitScheduled() {
                 validatedStats.recordSplitScheduled();
@@ -57,8 +57,8 @@ interface SplitRuntimeTelemetry {
     /**
      * @return no-op telemetry for tests that do not care about metrics
      */
-    static SplitRuntimeTelemetry noOp() {
-        return new SplitRuntimeTelemetry() {
+    static SplitTelemetry noOp() {
+        return new SplitTelemetry() {
             @Override
             public void recordSplitScheduled() {
             }

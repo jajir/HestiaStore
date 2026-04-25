@@ -68,7 +68,7 @@ class IndexMaintenanceCoordinatorTest {
         coordinator.compact();
 
         verify(stableSegmentCoordinator).compactSegment(segmentId, false);
-        verify(splitSynchronization).scheduleScanIfIdle();
+        verify(splitSynchronization).requestReconciliationIfIdle();
     }
 
     @Test
@@ -79,9 +79,9 @@ class IndexMaintenanceCoordinatorTest {
 
         coordinator.flushAndWait();
 
-        verify(splitSynchronization, times(2)).awaitExhausted();
+        verify(splitSynchronization, times(2)).awaitQuiescence();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
-        verify(splitSynchronization).scheduleScanIfIdle();
+        verify(splitSynchronization).requestReconciliationIfIdle();
         verify(keyToSegmentMap).flushIfDirty();
         verify(walCoordinator).checkpoint();
     }
