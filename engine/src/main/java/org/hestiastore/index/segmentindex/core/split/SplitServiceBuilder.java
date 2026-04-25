@@ -12,6 +12,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -27,6 +28,7 @@ public final class SplitServiceBuilder<K, V> {
     private RuntimeTuningState runtimeTuningState;
     private Comparator<K> keyComparator;
     private KeyToSegmentMap<K> keyToSegmentMap;
+    private SegmentTopology<K> segmentTopology;
     private SegmentRegistry<K, V> segmentRegistry;
     private Directory directoryFacade;
     private Executor splitExecutor;
@@ -60,6 +62,12 @@ public final class SplitServiceBuilder<K, V> {
     public SplitServiceBuilder<K, V> keyToSegmentMap(
             final KeyToSegmentMap<K> keyToSegmentMap) {
         this.keyToSegmentMap = keyToSegmentMap;
+        return this;
+    }
+
+    public SplitServiceBuilder<K, V> segmentTopology(
+            final SegmentTopology<K> segmentTopology) {
+        this.segmentTopology = segmentTopology;
         return this;
     }
 
@@ -117,6 +125,7 @@ public final class SplitServiceBuilder<K, V> {
                         "runtimeTuningState"),
                 Vldtn.requireNonNull(keyComparator, "keyComparator"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
+                Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
                 Vldtn.requireNonNull(splitExecutor, "splitExecutor"),

@@ -7,22 +7,25 @@ described has been removed. The current implementation contract is:
 
 - `put()` / `delete()` append to WAL first when WAL is enabled
 - writes are routed directly to stable segments through
-  `DirectSegmentWriteCoordinator`
-- `get()` reads through `DirectSegmentReadCoordinator`
+  `DirectSegmentCoordinator`
+- `get()` reads through `DirectSegmentCoordinator`
 - `KeyToSegmentMap` remains the persisted routing source of truth
+- `SegmentTopology` owns runtime route availability and split drain state
 - WAL replay restores writes by reusing the same direct write path on open
 
 ## Split Behavior
 
 - split is no longer an overlay reassignment workflow
-- `BackgroundSplitCoordinator` schedules route-first split work in the
+- `SplitPolicyCoordinator` schedules route-first split work in the
   background
 - `RouteSplitCoordinator` materializes child stable segments from the parent
   stable snapshot before route publish
-- the split admission gate protects both split scheduling and the short
-  route-map publish step
-- writes to the affected route may be retried internally as `BUSY` while a
-  split is scheduled or publishing
+- `SegmentTopology` drains the parent route before child materialization, so
+  no new writes can enter the old parent while the split snapshot is being
+  materialized
+- writes to the affected route may be retried internally as `BUSY` while the
+  route is draining or while the topology catches up to a newer route-map
+  snapshot
 
 ## Read and Write Semantics
 

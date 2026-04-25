@@ -5,6 +5,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -19,10 +20,10 @@ public interface DirectSegmentAccess<K, V> {
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentAccess<K, V> stableSegmentAccess,
-            final SplitAdmissionAccess<K, V> splitAdmissionAccess,
+            final SegmentTopology<K> segmentTopology,
             final IndexRetryPolicy retryPolicy) {
         return new DirectSegmentCoordinator<>(keyToSegmentMap, segmentRegistry,
-                stableSegmentAccess, splitAdmissionAccess, retryPolicy);
+                stableSegmentAccess, segmentTopology, retryPolicy);
     }
 
     IndexResult<V> get(K key);

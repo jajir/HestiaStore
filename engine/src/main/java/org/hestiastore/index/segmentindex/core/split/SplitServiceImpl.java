@@ -14,7 +14,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
-import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -27,8 +27,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * @param <V> value type
  */
 final class SplitServiceImpl<K, V>
-        implements SplitService<K, V>, SplitAdmissionAccess<K, V>,
-        SplitMaintenanceSynchronization<K, V>, SplitMetricsView {
+        implements SplitService<K, V>, SplitMaintenanceSynchronization<K, V>,
+        SplitMetricsView {
 
     private final SplitExecutionCoordinator<K, V> splitCoordinator;
     private final SplitPolicyCoordinator<K, V> splitPolicyCoordinator;
@@ -39,6 +39,7 @@ final class SplitServiceImpl<K, V>
             final RuntimeTuningState runtimeTuningState,
             final Comparator<K> keyComparator,
             final KeyToSegmentMap<K> keyToSegmentMap,
+            final SegmentTopology<K> segmentTopology,
             final SegmentRegistry<K, V> segmentRegistry,
             final Directory directoryFacade,
             final Executor splitExecutor,
@@ -54,6 +55,8 @@ final class SplitServiceImpl<K, V>
                 .requireNonNull(runtimeTuningState, "runtimeTuningState");
         final KeyToSegmentMap<K> validatedKeyToSegmentMap = Vldtn
                 .requireNonNull(keyToSegmentMap, "keyToSegmentMap");
+        final SegmentTopology<K> validatedSegmentTopology = Vldtn
+                .requireNonNull(segmentTopology, "segmentTopology");
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");
         final SplitFailureReporter validatedFailureReporter = Vldtn
@@ -66,6 +69,7 @@ final class SplitServiceImpl<K, V>
                 validatedConf,
                 Vldtn.requireNonNull(keyComparator, "keyComparator"),
                 validatedKeyToSegmentMap, validatedSegmentRegistry,
+                validatedSegmentTopology,
                 Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
                 Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
                 validatedFailureReporter,
@@ -135,7 +139,6 @@ final class SplitServiceImpl<K, V>
         return splitCoordinator.splitInFlightCount();
     }
 
-    @Override
     public boolean isSplitBlocked(final SegmentId segmentId) {
         return splitCoordinator.isSplitBlocked(segmentId);
     }
@@ -150,11 +153,6 @@ final class SplitServiceImpl<K, V>
     }
 
     @Override
-    public <T> T runWithSharedSplitAdmission(final Supplier<T> action) {
-        return splitCoordinator.runWithSharedSplitAdmission(action);
-    }
-
-    @Override
     public void hintSplitCandidate(final SegmentId segmentId) {
         managedState.requireRunning("accept split candidate hints");
         splitPolicyCoordinator.hintSplitCandidate(segmentId);
@@ -166,11 +164,6 @@ final class SplitServiceImpl<K, V>
         final Duration validatedTimeout = Vldtn.requireNonNull(timeout,
                 "timeout");
         splitPolicyCoordinator.awaitQuiescence(validatedTimeout.toMillis());
-    }
-
-    @Override
-    public SplitAdmissionAccess<K, V> splitAdmission() {
-        return this;
     }
 
     @Override

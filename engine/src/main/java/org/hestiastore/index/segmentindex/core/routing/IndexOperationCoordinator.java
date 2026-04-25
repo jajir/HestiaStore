@@ -2,11 +2,12 @@ package org.hestiastore.index.segmentindex.core.routing;
 
 import java.util.function.Supplier;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -108,7 +109,7 @@ final class IndexOperationCoordinator<K, V>
     private IndexResult<Void> retryWrite(
             final Supplier<IndexResult<Void>> operation,
             final String operationName) {
-        return retryWhileBusy(operation, operationName, false);
+        return retryWhileBusy(operation, operationName, true);
     }
 
     private <T> IndexResult<T> retryRead(
@@ -127,7 +128,7 @@ final class IndexOperationCoordinator<K, V>
             putBusyRetryMonitor.observeRetryableStatus(result.getStatus());
             try {
                 retryPolicy.backoffOrThrow(startNanos, opName, null);
-            } catch (final org.hestiastore.index.IndexException e) {
+            } catch (final IndexException e) {
                 putBusyRetryMonitor.finish(e);
                 throw e;
             }

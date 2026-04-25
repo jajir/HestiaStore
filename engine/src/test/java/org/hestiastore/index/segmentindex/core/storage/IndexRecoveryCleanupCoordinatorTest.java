@@ -73,6 +73,25 @@ class IndexRecoveryCleanupCoordinatorTest {
     }
 
     @Test
+    void cleanupOrphanedSegmentDirectories_removesChildrenLeftByUnflushedSplit() {
+        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(100);
+        synchronizedKeyToSegmentMap.flushIfDirty();
+        directory.mkdir("segment-00000");
+        directory.mkdir("segment-00001");
+        directory.mkdir("segment-00002");
+        when(segmentRegistry.deleteSegmentIfAvailable(SegmentId.of(1)))
+                .thenReturn(true);
+        when(segmentRegistry.deleteSegmentIfAvailable(SegmentId.of(2)))
+                .thenReturn(true);
+
+        coordinator.cleanupOrphanedSegmentDirectories();
+
+        verify(segmentRegistry, never()).deleteSegmentIfAvailable(SegmentId.of(0));
+        verify(segmentRegistry).deleteSegmentIfAvailable(SegmentId.of(1));
+        verify(segmentRegistry).deleteSegmentIfAvailable(SegmentId.of(2));
+    }
+
+    @Test
     void hasSegmentLockFile_detectsExistingLockFileInsideSegmentDirectory() {
         final SegmentId segmentId = SegmentId.of(3);
         final Directory segmentDirectory = directory

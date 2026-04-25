@@ -3,11 +3,11 @@
 Concise definitions of terms used across HestiaStore’s architecture, with links and code pointers.
 
 ## Backpressure
-Controlled retry/throttling when a routed segment or split admission is
-temporarily `BUSY`, or when WAL retention pressure requires checkpoint
-progress before more writes are accepted. Code:
-`segmentindex/core/IndexOperationCoordinator.java`,
-`segmentindex/core/BackgroundSplitCoordinator.java`,
+Controlled retry/throttling when a routed segment, registry lookup, or route
+topology lease is temporarily `BUSY`, or when WAL retention pressure requires
+checkpoint progress before more writes are accepted. Code:
+`segmentindex/core/routing/IndexOperationCoordinator.java`,
+`segmentindex/core/split/SplitPolicyCoordinator.java`,
 `segmentindex/wal/WalRuntime.java`.
 
 ## Bloom Filter
@@ -66,18 +66,24 @@ checkpoint when WAL is enabled. Code:
 Routed key range that receives a disproportionately large share of reads or
 writes compared with the rest of the index. Hot routes are where split policy,
 segment write-cache pressure, and maintenance latency matter most. Code:
-`segmentindex/core/BackgroundSplitCoordinator.java`,
-`segmentindex/core/DirectSegmentWriteCoordinator.java`.
+`segmentindex/core/split/SplitPolicyCoordinator.java`,
+`segmentindex/core/routing/DirectSegmentCoordinator.java`.
 
 ## Ingest (Index Ingest)
 Index write path where `put` and `delete` append to WAL first when enabled,
 resolve the current route, and write directly into the target stable segment.
 Read-after-write visibility is provided by the segment write cache. Code:
-`segmentindex/core/IndexOperationCoordinator.java`,
-`segmentindex/core/DirectSegmentWriteCoordinator.java`.
+`segmentindex/core/routing/IndexOperationCoordinator.java`,
+`segmentindex/core/routing/DirectSegmentCoordinator.java`.
 
 ## Key-to-Segment Map
 Global sorted map of max key → SegmentId that routes lookups and stable publish targets. Persisted as `index.map`. Code: `segmentindex/mapping/KeyToSegmentMap.java`.
+
+## Segment Topology
+Runtime route table that tracks `ACTIVE`, `DRAINING`, and `RETIRED` route
+states plus in-flight route leases. It is rebuilt from KeyToSegmentMap
+snapshots and is not persisted independently. Code:
+`segmentindex/core/topology/SegmentTopology.java`.
 
 ## Logging Context
 Optional MDC enrichment that sets `index.name` for log correlation when enabled.
@@ -119,18 +125,18 @@ Per‑segment, sorted sample of keys that points to chunk start positions in the
 Maintenance operation that replaces one routed segment range with child ranges
 when split policy is met; the route map is remapped atomically after child
 segments are materialized. Code:
-`segmentindex/split/RouteSplitCoordinator.java`,
-`segmentindex/core/BackgroundSplitCoordinator.java`.
+`segmentindex/core/split/RouteSplitCoordinator.java`,
+`segmentindex/core/split/SplitPolicyCoordinator.java`.
 
 ## Split Policy
-Background decision logic that identifies routed ranges worth splitting and schedules the work with cooldown, hysteresis, and in-flight guards so the system avoids split thrash. Code: `segmentindex/core/BackgroundSplitCoordinator.java`, `segmentindex/core/SegmentIndexImpl.java`.
+Background decision logic that identifies routed ranges worth splitting and schedules the work with cooldown, hysteresis, and in-flight guards so the system avoids split thrash. Code: `segmentindex/core/split/SplitPolicyCoordinator.java`, `segmentindex/core/session/SegmentIndexImpl.java`.
 
 ## Split Procedure
 Route-first split flow: compute the split boundary from the parent stable
 snapshot, materialize lower/upper child stable segments, atomically apply the
 route-map update, and retire the parent segment. Code:
-`segmentindex/split/RouteSplitCoordinator.java`,
-`segmentindex/split/RouteSplitPlan.java`.
+`segmentindex/core/split/RouteSplitCoordinator.java`,
+`segmentindex/core/split/RouteSplitPlan.java`.
 
 ## Split-heavy Workload
 Workload pattern or benchmark mode that intentionally drives frequent split
@@ -138,17 +144,17 @@ candidates, typically by growing a routed keyspace under load while reads and
 writes continue. It is useful for validating autonomous split policy, child
 publish flow, and read/write behavior during repeated remapping. Code:
 `benchmark/segmentindex/SegmentIndexMixedDrainBenchmark.java`,
-`segmentindex/core/BackgroundSplitCoordinator.java`,
-`segmentindex/split/RouteSplitCoordinator.java`.
+`segmentindex/core/split/SplitPolicyCoordinator.java`,
+`segmentindex/core/split/RouteSplitCoordinator.java`.
 
 ## Stats
 Simple counters for get/put/delete to observe workload shape. Code: `segmentindex/Stats.java`.
 
 ## Thrash (Thrashing)
-Pathological churn where the system repeatedly retries, reloads, evicts, splits, or rescans the same hot range/cache entries without making proportional forward progress. In this project the term is typically used for split thrash or cache thrash, for example when a hot routed segment keeps re-entering maintenance/scheduling pressure or when registry cache entries are repeatedly unloaded and loaded again under pressure. Code: `segmentindex/core/SegmentIndexImpl.java`, `segmentindex/core/BackgroundSplitCoordinator.java`, `segmentregistry/SegmentRegistryCache.java`.
+Pathological churn where the system repeatedly retries, reloads, evicts, splits, or rescans the same hot range/cache entries without making proportional forward progress. In this project the term is typically used for split thrash or cache thrash, for example when a hot routed segment keeps re-entering maintenance/scheduling pressure or when registry cache entries are repeatedly unloaded and loaded again under pressure. Code: `segmentindex/core/session/SegmentIndexImpl.java`, `segmentindex/core/split/SplitPolicyCoordinator.java`, `segmentregistry/SegmentRegistryCache.java`.
 
 ## Tombstone
-Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: `datatype/TypeDescriptor#getTombstone()`, used in `segmentindex/core/SegmentIndexImpl#delete()`.
+Special value denoting deletion; read path treats it as absent and compaction drops obsolete values. Provided by the value type descriptor. Code: `datatype/TypeDescriptor#getTombstone()`, used in `segmentindex/core/session/SegmentIndexImpl#delete()`.
 
 ## UniqueCache
 In-memory map that keeps only the latest value per key. Used inside segment

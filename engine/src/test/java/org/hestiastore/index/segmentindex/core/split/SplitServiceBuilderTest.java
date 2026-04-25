@@ -16,6 +16,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ class SplitServiceBuilderTest {
                     .runtimeTuningState(mock(RuntimeTuningState.class))
                     .keyComparator(mockComparator())
                     .keyToSegmentMap(mock(KeyToSegmentMap.class))
+                    .segmentTopology(mock(SegmentTopology.class))
                     .segmentRegistry(segmentRegistry)
                     .directoryFacade(mock(Directory.class))
                     .splitExecutor(directExecutor())
@@ -52,7 +54,6 @@ class SplitServiceBuilderTest {
                     .stats(new Stats())
                     .build();
 
-            assertSame(service, service.splitAdmission());
             assertSame(service, service.splitMaintenance());
             assertSame(service, service.splitMetricsView());
         } finally {

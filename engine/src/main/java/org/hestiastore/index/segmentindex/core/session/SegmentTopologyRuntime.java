@@ -12,11 +12,11 @@ import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynch
 import org.hestiastore.index.segmentindex.core.maintenance.StableSegmentMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.routing.DirectSegmentAccess;
-import org.hestiastore.index.segmentindex.core.routing.SplitAdmissionAccess;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 
 /**
@@ -29,6 +29,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 final class SegmentTopologyRuntime<K, V> {
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
+    private final SegmentTopology<K> segmentTopology;
     private final SplitService<K, V> splitService;
     private final SplitMaintenanceSynchronization<K, V> splitSynchronization;
     private final StableSegmentMaintenanceAccess<K, V> stableSegmentMaintenance;
@@ -42,6 +43,8 @@ final class SegmentTopologyRuntime<K, V> {
         final SegmentIndexCoreStorage<K, V> validatedCoreStorage = Vldtn
                 .requireNonNull(coreStorage, "coreStorage");
         this.keyToSegmentMap = validatedCoreStorage.keyToSegmentMap();
+        this.segmentTopology = SegmentTopology.from(
+                validatedCoreStorage.keyToSegmentMap().snapshot());
         final StableSegmentAccess<K, V> stableSegmentGateway =
                 StableSegmentAccess.create(validatedCoreStorage.keyToSegmentMap(),
                         validatedCoreStorage.segmentRegistry());
@@ -51,6 +54,7 @@ final class SegmentTopologyRuntime<K, V> {
                 .keyComparator(
                         validatedRequest.keyTypeDescriptor.getComparator())
                 .keyToSegmentMap(validatedCoreStorage.keyToSegmentMap())
+                .segmentTopology(segmentTopology)
                 .segmentRegistry(validatedCoreStorage.segmentRegistry())
                 .directoryFacade(validatedRequest.directoryFacade)
                 .splitExecutor(validatedRequest.executorRegistry
@@ -64,8 +68,6 @@ final class SegmentTopologyRuntime<K, V> {
                 .stats(validatedRequest.stats)
                 .build();
         this.splitSynchronization = splitService.splitMaintenance();
-        final SplitAdmissionAccess<K, V> splitAdmissionAccess =
-                splitService.splitAdmission();
         this.stableSegmentMaintenance = StableSegmentMaintenanceAccess.create(
                 validatedRequest.logger, validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(),
@@ -74,7 +76,7 @@ final class SegmentTopologyRuntime<K, V> {
         this.directSegmentAccess = DirectSegmentAccess.create(
                 validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(), stableSegmentGateway,
-                splitAdmissionAccess, validatedCoreStorage.retryPolicy());
+                segmentTopology, validatedCoreStorage.retryPolicy());
         this.recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
                 validatedRequest.logger, validatedRequest.directoryFacade,
                 validatedCoreStorage.keyToSegmentMap(),

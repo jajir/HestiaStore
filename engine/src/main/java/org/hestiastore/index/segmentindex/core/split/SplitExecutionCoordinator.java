@@ -9,12 +9,13 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 
 /**
- * Coordinates split execution, admission, and split-publish synchronization
- * after the policy layer has already accepted a candidate.
+ * Coordinates split execution and topology-aware split publishing after the
+ * policy layer has already accepted a candidate.
  *
  * @param <K> key type
  * @param <V> value type
@@ -29,6 +30,7 @@ interface SplitExecutionCoordinator<K, V> {
      * @param keyComparator   key comparator
      * @param keyToSegmentMap route map
      * @param segmentRegistry segment registry
+     * @param segmentTopology runtime route topology
      * @param directoryFacade root segment directory
      * @param splitExecutor   split executor
      * @param failureReporter split failure reporter
@@ -44,6 +46,7 @@ interface SplitExecutionCoordinator<K, V> {
             final Comparator<K> keyComparator,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentTopology<K> segmentTopology,
             final Directory directoryFacade,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
@@ -56,6 +59,7 @@ interface SplitExecutionCoordinator<K, V> {
                 validatedSegmentRegistry.materialization());
         return new SplitExecutionCoordinatorImpl<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
+                Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
                 new RouteSplitCoordinator<>(
                         Vldtn.requireNonNull(conf, "conf"),
                         Vldtn.requireNonNull(keyComparator, "keyComparator"),
@@ -121,13 +125,4 @@ interface SplitExecutionCoordinator<K, V> {
      */
     void runWithSplitSchedulingPaused(Runnable action);
 
-    /**
-     * Runs the supplied action under shared split admission against split
-     * publish.
-     *
-     * @param action action to run
-     * @param <T>    action result type
-     * @return action result
-     */
-    <T> T runWithSharedSplitAdmission(Supplier<T> action);
 }
