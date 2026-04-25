@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
@@ -24,7 +25,7 @@ class IndexMaintenanceCoordinatorTest {
     private KeyToSegmentMap<Integer> keyToSegmentMap;
 
     @Mock
-    private SplitMaintenanceSynchronization<Integer, String> splitSynchronization;
+    private SplitService<Integer, String> splitService;
 
     @Mock
     private StableSegmentCoordinator<Integer, String> stableSegmentCoordinator;
@@ -40,7 +41,7 @@ class IndexMaintenanceCoordinatorTest {
     @BeforeEach
     void setUp() {
         coordinator = new IndexMaintenanceCoordinator<>(keyToSegmentMap,
-                splitSynchronization,
+                splitService,
                 stableSegmentCoordinator, walCoordinator);
     }
 
@@ -62,7 +63,7 @@ class IndexMaintenanceCoordinatorTest {
 
         coordinator.flushAndWait();
 
-        verify(splitSynchronization, times(2)).awaitQuiescence();
+        verify(splitService, times(2)).awaitQuiescence();
         verify(stableSegmentCoordinator, times(2)).flushMappedSegmentsAndWait();
         verify(keyToSegmentMap).flushIfDirty();
         verify(walCoordinator).checkpoint();

@@ -11,10 +11,10 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.topology.RouteDrain;
-import org.hestiastore.index.segmentindex.core.topology.RouteDrainResult;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrain;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrainResult;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
 
 /**

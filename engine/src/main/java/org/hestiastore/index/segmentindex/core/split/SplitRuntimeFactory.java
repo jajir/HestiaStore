@@ -11,7 +11,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -64,7 +63,8 @@ public final class SplitRuntimeFactory {
                         "keyComparator"))
                 .keyToSegmentMap(Vldtn.requireNonNull(keyToSegmentMap,
                         "keyToSegmentMap"))
-                .segmentTopology(SegmentTopology.from(keyToSegmentMap.snapshot()))
+                .segmentTopology(SegmentTopology.<K>builder()
+                        .snapshot(keyToSegmentMap.snapshot()).build())
                 .segmentRegistry(Vldtn.requireNonNull(segmentRegistry,
                         "segmentRegistry"))
                 .directoryFacade(Vldtn.requireNonNull(directoryFacade,
@@ -84,21 +84,6 @@ public final class SplitRuntimeFactory {
     }
 
     /**
-     * Creates the maintenance-facing synchronization adapter for the split
-     * service.
-     *
-     * @param splitService split service instance created by this factory
-     * @param <K> key type
-     * @param <V> value type
-     * @return maintenance-facing synchronization adapter
-     */
-    public static <K, V> SplitMaintenanceSynchronization<K, V> maintenanceSynchronization(
-            final SplitService<K, V> splitService) {
-        return Vldtn.requireNonNull(splitService, "splitService")
-                .splitMaintenance();
-    }
-
-    /**
      * Requests an internal full split-policy scan.
      *
      * @param splitService split service instance created by this factory
@@ -108,7 +93,6 @@ public final class SplitRuntimeFactory {
     public static <K, V> void requestFullSplitScan(
             final SplitService<K, V> splitService) {
         Vldtn.requireNonNull(splitService, "splitService")
-                .splitMaintenance()
                 .requestFullSplitScan();
     }
 

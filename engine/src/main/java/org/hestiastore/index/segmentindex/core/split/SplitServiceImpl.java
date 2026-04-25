@@ -11,7 +11,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentHandle;
@@ -25,8 +24,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * @param <V> value type
  */
 final class SplitServiceImpl<K, V>
-        implements SplitService<K, V>, SplitMaintenanceSynchronization<K, V>,
-        SplitMetricsView {
+        implements SplitService<K, V>, SplitMetricsView {
 
     private final SplitExecutionCoordinator<K, V> splitCoordinator;
     private final SplitPolicyCoordinator<K, V> splitPolicyCoordinator;
@@ -132,11 +130,6 @@ final class SplitServiceImpl<K, V>
     public void hintSplitCandidate(final SegmentId segmentId) {
         managedState.requireRunning("accept split candidate hints");
         splitPolicyCoordinator.hintSplitCandidate(segmentId);
-    }
-
-    @Override
-    public SplitMaintenanceSynchronization<K, V> splitMaintenance() {
-        return this;
     }
 
     @Override

@@ -50,28 +50,26 @@ class SegmentTopologyTest {
     @Test
     void tryAcquireRejectsNewerMapVersionUntilReconciled() {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
-        final SegmentTopology<Integer> topology = SegmentTopology.from(
-                keyToSegmentMap.snapshot());
+        final SegmentTopology<Integer> topology = newTopology();
         applySplitPlan();
         final long newVersion = keyToSegmentMap.snapshot().version();
 
-        final RouteLeaseResult stale = topology.tryAcquire(SegmentId.of(1),
-                newVersion);
+        final SegmentTopology.RouteLeaseResult stale = topology.tryAcquire(
+                SegmentId.of(1), newVersion);
 
-        assertEquals(RouteLeaseStatus.STALE_TOPOLOGY, stale.status());
+        assertTrue(stale.isStaleTopology());
     }
 
     @Test
     void drainWaitsForInflightLeaseAndRejectsNewLease() throws Exception {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
-        final SegmentTopology<Integer> topology = SegmentTopology.from(
-                keyToSegmentMap.snapshot());
-        final RouteLease lease = topology
+        final SegmentTopology<Integer> topology = newTopology();
+        final SegmentTopology.RouteLease lease = topology
                 .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
                         .version())
                 .lease();
-        final RouteDrain drain = topology.tryBeginDrain(SegmentId.of(0))
-                .drain();
+        final SegmentTopology.RouteDrain drain = topology
+                .tryBeginDrain(SegmentId.of(0)).drain();
         final CountDownLatch waiting = new CountDownLatch(1);
 
         final Future<?> waitFuture = executor.submit(() -> {
@@ -81,9 +79,8 @@ class SegmentTopologyTest {
 
         assertTrue(waiting.await(5, TimeUnit.SECONDS));
         assertFalse(waitFuture.isDone());
-        assertEquals(RouteLeaseStatus.ROUTE_UNAVAILABLE,
-                topology.tryAcquire(SegmentId.of(0),
-                        keyToSegmentMap.snapshot().version()).status());
+        assertTrue(topology.tryAcquire(SegmentId.of(0),
+                keyToSegmentMap.snapshot().version()).isRouteUnavailable());
 
         lease.close();
 
@@ -95,19 +92,18 @@ class SegmentTopologyTest {
     @Test
     void reconcilePublishesChildRoutesAndRetiresParentRoute() {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
-        final SegmentTopology<Integer> topology = SegmentTopology.from(
-                keyToSegmentMap.snapshot());
+        final SegmentTopology<Integer> topology = newTopology();
         applySplitPlan();
 
         topology.reconcile(keyToSegmentMap.snapshot());
 
         final long version = keyToSegmentMap.snapshot().version();
-        assertEquals(RouteLeaseStatus.ROUTE_UNAVAILABLE,
-                topology.tryAcquire(SegmentId.of(0), version).status());
-        try (RouteLease lower = topology.tryAcquire(SegmentId.of(1), version)
-                .lease();
-                RouteLease upper = topology.tryAcquire(SegmentId.of(2),
-                        version).lease()) {
+        assertTrue(topology.tryAcquire(SegmentId.of(0), version)
+                .isRouteUnavailable());
+        try (SegmentTopology.RouteLease lower = topology
+                .tryAcquire(SegmentId.of(1), version).lease();
+                SegmentTopology.RouteLease upper = topology
+                        .tryAcquire(SegmentId.of(2), version).lease()) {
             assertEquals(SegmentId.of(1), lower.segmentId());
             assertEquals(SegmentId.of(2), upper.segmentId());
         }
@@ -117,8 +113,8 @@ class SegmentTopologyTest {
     void reconcileIgnoresOlderSnapshots() {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
         final Snapshot<Integer> olderSnapshot = keyToSegmentMap.snapshot();
-        final SegmentTopology<Integer> topology = SegmentTopology.from(
-                olderSnapshot);
+        final SegmentTopology<Integer> topology = SegmentTopology
+                .<Integer>builder().snapshot(olderSnapshot).build();
         applySplitPlan();
         final Snapshot<Integer> newerSnapshot = keyToSegmentMap.snapshot();
         topology.reconcile(newerSnapshot);
@@ -126,16 +122,20 @@ class SegmentTopologyTest {
         topology.reconcile(olderSnapshot);
 
         assertEquals(newerSnapshot.version(), topology.version());
-        assertEquals(RouteLeaseStatus.STALE_TOPOLOGY,
-                topology.tryAcquire(SegmentId.of(0),
-                        olderSnapshot.version()).status());
-        assertEquals(RouteLeaseStatus.ROUTE_UNAVAILABLE,
-                topology.tryAcquire(SegmentId.of(0),
-                        newerSnapshot.version()).status());
-        try (RouteLease lease = topology.tryAcquire(SegmentId.of(1),
-                newerSnapshot.version()).lease()) {
+        assertTrue(topology.tryAcquire(SegmentId.of(0),
+                olderSnapshot.version()).isStaleTopology());
+        assertTrue(topology.tryAcquire(SegmentId.of(0),
+                newerSnapshot.version()).isRouteUnavailable());
+        try (SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(1), newerSnapshot.version())
+                .lease()) {
             assertEquals(SegmentId.of(1), lease.segmentId());
         }
+    }
+
+    private SegmentTopology<Integer> newTopology() {
+        return SegmentTopology.<Integer>builder()
+                .snapshot(keyToSegmentMap.snapshot()).build();
     }
 
     private void applySplitPlan() {

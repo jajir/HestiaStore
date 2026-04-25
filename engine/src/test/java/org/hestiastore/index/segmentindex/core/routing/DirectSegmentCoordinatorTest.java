@@ -47,8 +47,8 @@ class DirectSegmentCoordinatorTest {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 new KeyToSegmentMapImpl<>(directory,
                         new TypeDescriptorInteger()));
-        segmentTopology = SegmentTopology.from(
-                synchronizedKeyToSegmentMap.snapshot());
+        segmentTopology = SegmentTopology.<Integer>builder()
+                .snapshot(synchronizedKeyToSegmentMap.snapshot()).build();
         coordinator = new DirectSegmentCoordinator<>(synchronizedKeyToSegmentMap,
                 segmentRegistry, stableSegmentGateway,
                 segmentTopology, retryPolicy);

@@ -16,7 +16,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.SplitMaintenanceSynchronization;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
@@ -60,8 +59,6 @@ class SplitRuntimeFactoryTest {
                             },
                             new Stats());
 
-            assertSame(service,
-                    SplitRuntimeFactory.maintenanceSynchronization(service));
             assertSame(service, service.splitMetricsView());
         } finally {
             scheduler.shutdownNow();
@@ -71,21 +68,16 @@ class SplitRuntimeFactoryTest {
     @Test
     void helperMethodsDelegateToSplitServiceViews() {
         final SplitService<String, String> service = mock(SplitService.class);
-        final SplitMaintenanceSynchronization<String, String> maintenance =
-                mock(SplitMaintenanceSynchronization.class);
         final SplitMetricsView metricsView = mock(SplitMetricsView.class);
         final SplitMetricsSnapshot snapshot =
                 new SplitMetricsSnapshot(3, 4);
-        when(service.splitMaintenance()).thenReturn(maintenance);
         when(service.splitMetricsView()).thenReturn(metricsView);
         when(metricsView.metricsSnapshot()).thenReturn(snapshot);
 
-        assertSame(maintenance,
-                SplitRuntimeFactory.maintenanceSynchronization(service));
         SplitRuntimeFactory.requestFullSplitScan(service);
         assertSame(snapshot, SplitRuntimeFactory.metricsSnapshot(service));
 
-        verify(maintenance).requestFullSplitScan();
+        verify(service).requestFullSplitScan();
     }
 
     @SuppressWarnings("unchecked")
