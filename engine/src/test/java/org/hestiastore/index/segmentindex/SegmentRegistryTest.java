@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentRegistryTest {
 
     @Mock
-    private SegmentHandle<Integer, String> segmentHandle;
+    private BlockingSegment<Integer, String> segmentHandle;
 
     private StubSegmentRegistry<Integer, String> registry;
 
@@ -38,7 +38,7 @@ class SegmentRegistryTest {
     @Test
     void get_remove_close_delegate_to_registry() {
         final SegmentId segmentId = SegmentId.of(1);
-        final SegmentHandle<Integer, String> result = registry
+        final BlockingSegment<Integer, String> result = registry
                 .loadSegment(segmentId);
 
         assertSame(segmentHandle, result);
@@ -52,27 +52,27 @@ class SegmentRegistryTest {
     private static final class StubSegmentRegistry<K, V>
             implements SegmentRegistry<K, V> {
 
-        private final SegmentHandle<K, V> segmentHandle;
+        private final BlockingSegment<K, V> segmentHandle;
         private SegmentId lastRemoved;
         private boolean closed;
 
-        private StubSegmentRegistry(final SegmentHandle<K, V> segmentHandle) {
+        private StubSegmentRegistry(final BlockingSegment<K, V> segmentHandle) {
             this.segmentHandle = segmentHandle;
         }
 
         @Override
-        public SegmentHandle<K, V> loadSegment(final SegmentId segmentId) {
+        public BlockingSegment<K, V> loadSegment(final SegmentId segmentId) {
             return segmentHandle;
         }
 
         @Override
-        public Optional<SegmentHandle<K, V>> tryGetSegment(
+        public Optional<BlockingSegment<K, V>> tryGetSegment(
                 final SegmentId segmentId) {
             return Optional.of(segmentHandle);
         }
 
         @Override
-        public SegmentHandle<K, V> createSegment() {
+        public BlockingSegment<K, V> createSegment() {
             return segmentHandle;
         }
 
@@ -116,7 +116,7 @@ class SegmentRegistryTest {
                 }
 
                 @Override
-                public List<SegmentHandle<K, V>> loadedSegmentsSnapshot() {
+                public List<BlockingSegment<K, V>> loadedSegmentsSnapshot() {
                     return List.of();
                 }
             };

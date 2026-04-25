@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.routing;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -20,16 +19,14 @@ public interface SegmentIndexOperationAccess<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final Stats stats,
             final DirectSegmentAccess<K, V> directSegmentCoordinator,
-            final IndexWalCoordinator<K, V> walCoordinator,
-            final IndexRetryPolicy retryPolicy) {
+            final IndexWalCoordinator<K, V> walCoordinator) {
         return new IndexOperationCoordinator<>(
                 Vldtn.requireNonNull(valueTypeDescriptor,
                         "valueTypeDescriptor"),
                 Vldtn.requireNonNull(stats, "stats"),
                 Vldtn.requireNonNull(directSegmentCoordinator,
                         "directSegmentCoordinator"),
-                Vldtn.requireNonNull(walCoordinator, "walCoordinator"),
-                Vldtn.requireNonNull(retryPolicy, "retryPolicy"));
+                Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
     }
 
     void put(K key, V value);

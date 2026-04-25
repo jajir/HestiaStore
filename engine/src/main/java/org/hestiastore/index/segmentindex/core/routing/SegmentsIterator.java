@@ -14,7 +14,7 @@ import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +93,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
     }
 
     private EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
-        final SegmentHandle<K, V> segmentHandle = awaitSegment(segmentId);
+        final BlockingSegment<K, V> segmentHandle = awaitSegment(segmentId);
         if (segmentHandle == null) {
             logger.debug(
                     "Skipping segment '{}' because it is not available in '{}' isolation mode.",
@@ -110,9 +110,9 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         return iterator;
     }
 
-    private SegmentHandle<K, V> awaitSegment(final SegmentId segmentId) {
+    private BlockingSegment<K, V> awaitSegment(final SegmentId segmentId) {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
-            final Optional<SegmentHandle<K, V>> segment = segmentRegistry
+            final Optional<BlockingSegment<K, V>> segment = segmentRegistry
                     .tryGetSegment(segmentId);
             return segment.orElse(null);
         }
@@ -120,7 +120,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
     }
 
     private EntryIterator<K, V> awaitOpenIterator(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final SegmentId segmentId) {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
             return awaitOpenFailFastIterator(segmentHandle, segmentId);
@@ -129,7 +129,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
     }
 
     private EntryIterator<K, V> awaitOpenFailFastIterator(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final SegmentId segmentId) {
         final long startNanos = retryPolicy.startNanos();
         for (int attempt = 0; attempt < 2; attempt++) {

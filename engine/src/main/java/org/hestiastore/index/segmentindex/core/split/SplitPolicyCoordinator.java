@@ -15,7 +15,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -299,7 +299,7 @@ final class SplitPolicyCoordinator<K, V> {
         if (!isSegmentStillMapped(segmentId)) {
             return false;
         }
-        final SegmentHandle<K, V> segmentHandle = tryLoadSplitCandidate(
+        final BlockingSegment<K, V> segmentHandle = tryLoadSplitCandidate(
                 segmentId);
         if (segmentHandle == null) {
             return false;
@@ -322,7 +322,7 @@ final class SplitPolicyCoordinator<K, V> {
         if (!isSegmentStillMapped(segmentId)) {
             return;
         }
-        final SegmentHandle<K, V> segmentHandle = tryLoadSplitCandidate(
+        final BlockingSegment<K, V> segmentHandle = tryLoadSplitCandidate(
                 segmentId);
         if (segmentHandle == null) {
             return;
@@ -333,10 +333,10 @@ final class SplitPolicyCoordinator<K, V> {
         candidateRegistry.offer(segmentId);
     }
 
-    private SegmentHandle<K, V> tryLoadSplitCandidate(
+    private BlockingSegment<K, V> tryLoadSplitCandidate(
             final SegmentId segmentId) {
         try {
-            final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
+            final Optional<BlockingSegment<K, V>> loaded = segmentRegistry
                     .tryGetSegment(segmentId);
             if (loaded.isPresent()) {
                 return loaded.get();
@@ -355,7 +355,7 @@ final class SplitPolicyCoordinator<K, V> {
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT);
     }
 
-    private long observedKeyCount(final SegmentHandle<K, V> segmentHandle) {
+    private long observedKeyCount(final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle.getRuntime().getNumberOfKeysInCache();
     }
 

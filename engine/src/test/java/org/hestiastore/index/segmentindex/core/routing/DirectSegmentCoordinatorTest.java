@@ -1,23 +1,19 @@
 package org.hestiastore.index.segmentindex.core.routing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.IndexException;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segment.SegmentId;
+import java.util.function.Function;
+
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,100 +24,73 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class DirectSegmentCoordinatorTest {
 
     @Mock
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
+
+    @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private StableSegmentGateway<Integer, String> stableSegmentGateway;
+    private SegmentAccessService<Integer, String> segmentAccessService;
 
     @Mock
     private IndexRetryPolicy retryPolicy;
 
-    private Directory directory;
-    private KeyToSegmentMap<Integer> synchronizedKeyToSegmentMap;
-    private SegmentTopology<Integer> segmentTopology;
+    @Mock
+    private BlockingSegment<Integer, String> blockingSegment;
+
     private DirectSegmentCoordinator<Integer, String> coordinator;
 
     @BeforeEach
     void setUp() {
-        directory = new MemDirectory();
-        synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
-                new KeyToSegmentMapImpl<>(directory,
-                        new TypeDescriptorInteger()));
-        segmentTopology = SegmentTopology.<Integer>builder()
-                .snapshot(synchronizedKeyToSegmentMap.snapshot()).build();
-        coordinator = new DirectSegmentCoordinator<>(synchronizedKeyToSegmentMap,
-                segmentRegistry, stableSegmentGateway,
-                segmentTopology, retryPolicy);
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (synchronizedKeyToSegmentMap != null
-                && !synchronizedKeyToSegmentMap.wasClosed()) {
-            synchronizedKeyToSegmentMap.close();
-        }
+        coordinator = new DirectSegmentCoordinator<>(keyToSegmentMap,
+                segmentRegistry, segmentAccessService, retryPolicy);
     }
 
     @Test
-    void get_readsValueDirectlyFromStableSegments() {
-        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
-        segmentTopology.reconcile(synchronizedKeyToSegmentMap.snapshot());
-        when(stableSegmentGateway.get(SegmentId.of(0), 10))
-                .thenReturn(IndexResult.ok("ten"));
+    void getReadsValueThroughSegmentAccessService() {
+        when(blockingSegment.get(10)).thenReturn("ten");
+        when(segmentAccessService.withSegmentForRead(eq(10),
+                anyReadOperation())).thenAnswer(invocation -> {
+                    final Function<BlockingSegment<Integer, String>, String> operation =
+                            invocation.getArgument(1);
+                    return operation.apply(blockingSegment);
+                });
 
-        final IndexResult<String> result = coordinator.get(10);
+        final String result = coordinator.get(10);
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
-        assertEquals("ten", result.getValue());
-        verify(stableSegmentGateway).get(SegmentId.of(0), 10);
+        assertEquals("ten", result);
+        verify(blockingSegment).get(10);
     }
 
     @Test
-    void get_retriesBusyStableReadUntilRetryPolicyFails() {
-        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
-        segmentTopology.reconcile(synchronizedKeyToSegmentMap.snapshot());
-        when(stableSegmentGateway.get(SegmentId.of(0), 10))
-                .thenReturn(IndexResult.busy());
-        doThrow(new IndexException("timeout")).when(retryPolicy)
-                        .backoffOrThrow(0L, "get", SegmentId.of(0));
+    void getReturnsOkWithNullWhenKeyHasNoSegment() {
+        when(segmentAccessService.withSegmentForRead(eq(10),
+                anyReadOperation())).thenReturn(null);
 
-        assertThrows(IndexException.class, () -> coordinator.get(10));
+        final String result = coordinator.get(10);
+
+        assertNull(result);
     }
 
     @Test
-    void put_createsBootstrapRouteAndWritesDirectlyToStableSegment() {
-        when(stableSegmentGateway.put(SegmentId.of(0), 11, "v11"))
-                .thenReturn(IndexResult.ok());
+    void putWritesValueThroughSegmentAccessService() {
+        when(segmentAccessService.withSegmentForWrite(eq(11),
+                anyWriteOperation())).thenAnswer(invocation -> {
+                    final Function<BlockingSegment<Integer, String>, Void> operation =
+                            invocation.getArgument(1);
+                    return operation.apply(blockingSegment);
+                });
 
-        final IndexResult<Void> result = coordinator.put(11, "v11");
+        coordinator.put(11, "v11");
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
-        assertEquals(SegmentId.of(0),
-                synchronizedKeyToSegmentMap.findSegmentIdForKey(11));
-        verify(stableSegmentGateway).put(SegmentId.of(0), 11, "v11");
+        verify(blockingSegment).put(11, "v11");
     }
 
-    @Test
-    void put_retriesBusyStableSegmentUnderRouteLease() {
-        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
-        segmentTopology.reconcile(synchronizedKeyToSegmentMap.snapshot());
-        when(stableSegmentGateway.put(SegmentId.of(0), 10, "v10"))
-                .thenReturn(IndexResult.busy(), IndexResult.ok());
-
-        final IndexResult<Void> result = coordinator.put(10, "v10");
-
-        assertEquals(IndexResultStatus.OK, result.getStatus());
-        verify(retryPolicy).backoffOrThrow(0L, "put", SegmentId.of(0));
+    private Function<BlockingSegment<Integer, String>, String> anyReadOperation() {
+        return any();
     }
 
-    @Test
-    void put_returnsBusyWhenRouteIsSplitBlocked() {
-        synchronizedKeyToSegmentMap.extendMaxKeyIfNeeded(10);
-        segmentTopology.reconcile(synchronizedKeyToSegmentMap.snapshot());
-        segmentTopology.tryBeginDrain(SegmentId.of(0));
-
-        final IndexResult<Void> result = coordinator.put(10, "v10");
-
-        assertEquals(IndexResultStatus.BUSY, result.getStatus());
+    private Function<BlockingSegment<Integer, String>, Void> anyWriteOperation() {
+        return any();
     }
 }

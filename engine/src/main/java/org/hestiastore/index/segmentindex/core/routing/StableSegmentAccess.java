@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.routing;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -19,14 +19,10 @@ public interface StableSegmentAccess<K, V> {
         return new StableSegmentGateway<>(segmentRegistry);
     }
 
-    IndexResult<V> get(SegmentId segmentId, K key);
-
-    IndexResult<Void> put(SegmentId segmentId, K key, V value);
-
     IndexResult<EntryIterator<K, V>> openIterator(SegmentId segmentId,
             SegmentIteratorIsolation isolation);
 
-    IndexResult<SegmentHandle<K, V>> compact(SegmentId segmentId);
+    IndexResult<BlockingSegment<K, V>> compact(SegmentId segmentId);
 
-    IndexResult<SegmentHandle<K, V>> flush(SegmentId segmentId);
+    IndexResult<BlockingSegment<K, V>> flush(SegmentId segmentId);
 }

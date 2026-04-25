@@ -25,7 +25,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
@@ -51,10 +51,10 @@ class SegmentIndexMetricsCollectorTest {
     private SegmentRegistry.Runtime<Integer, String> segmentRegistryRuntime;
 
     @Mock
-    private SegmentHandle<Integer, String> segmentHandle;
+    private BlockingSegment<Integer, String> segmentHandle;
 
     @Mock
-    private SegmentHandle.Runtime segmentRuntime;
+    private BlockingSegment.Runtime segmentRuntime;
 
     private Stats stats;
     private AtomicLong compactRequestHighWaterMark;

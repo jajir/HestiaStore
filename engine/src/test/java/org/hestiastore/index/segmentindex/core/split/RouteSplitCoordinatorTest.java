@@ -20,7 +20,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,13 +45,13 @@ class RouteSplitCoordinatorTest {
     private Segment<Integer, String> parentSegment;
 
     @Mock
-    private SegmentHandle<Integer, String> parentHandle;
+    private BlockingSegment<Integer, String> parentHandle;
 
     @Mock
-    private SegmentHandle<Integer, String> currentHandle;
+    private BlockingSegment<Integer, String> currentHandle;
 
     @Mock
-    private SegmentHandle.Runtime parentRuntime;
+    private BlockingSegment.Runtime parentRuntime;
 
     @Mock
     private DefaultSegmentMaterializationService<Integer, String> materializationService;

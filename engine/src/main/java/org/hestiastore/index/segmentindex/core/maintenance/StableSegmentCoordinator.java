@@ -15,7 +15,7 @@ import org.hestiastore.index.segmentindex.core.routing.IndexResult;
 import org.hestiastore.index.segmentindex.core.routing.IndexResultStatus;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 
@@ -140,12 +140,12 @@ final class StableSegmentCoordinator<K, V>
             final boolean waitForCompletion, final String operationId,
             final String operationLabel, final Runnable busyRetryRecorder,
             final java.util.function.LongConsumer acceptedToReadyLatencyRecorder,
-            final java.util.function.Function<SegmentId, IndexResult<SegmentHandle<K, V>>> operationRunner) {
+            final java.util.function.Function<SegmentId, IndexResult<BlockingSegment<K, V>>> operationRunner) {
         logger.debug("{} attempt started: segment='{}' wait='{}'",
                 operationLabel, segmentId, waitForCompletion);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<SegmentHandle<K, V>> result = operationRunner
+            final IndexResult<BlockingSegment<K, V>> result = operationRunner
                     .apply(segmentId);
             final IndexResultStatus status = result.getStatus();
             if (status == IndexResultStatus.OK) {
@@ -180,7 +180,7 @@ final class StableSegmentCoordinator<K, V>
             final boolean waitForCompletion, final String operationId,
             final String operationLabel,
             final java.util.function.LongConsumer acceptedToReadyLatencyRecorder,
-            final SegmentHandle<K, V> segment) {
+            final BlockingSegment<K, V> segment) {
         logger.debug("{} attempt accepted: segment='{}' wait='{}'",
                 operationLabel, segmentId, waitForCompletion);
         logOperation("{} accepted: segment='{}' wait='{}' state='{}'",
@@ -234,14 +234,14 @@ final class StableSegmentCoordinator<K, V>
     }
 
     private long awaitAcceptedToReadyNanos(final SegmentId segmentId,
-            final String operation, final SegmentHandle<K, V> segment) {
+            final String operation, final BlockingSegment<K, V> segment) {
         final long acceptedAtNanos = nanoTimeSupplier.getAsLong();
         awaitSegmentReady(segmentId, operation, segment);
         return nanoTimeSupplier.getAsLong() - acceptedAtNanos;
     }
 
     private void awaitSegmentReady(final SegmentId segmentId,
-            final String operation, final SegmentHandle<K, V> segment) {
+            final String operation, final BlockingSegment<K, V> segment) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
             final SegmentState state = segment.getRuntime().getState();
@@ -266,7 +266,7 @@ final class StableSegmentCoordinator<K, V>
     }
 
     private void handleLoadedSegment(final SegmentId segmentId,
-            final Optional<SegmentHandle<K, V>> loadedSegment) {
+            final Optional<BlockingSegment<K, V>> loadedSegment) {
         if (loadedSegment.isPresent()) {
             loadedSegment.get().invalidateIterators();
             return;

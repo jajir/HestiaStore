@@ -20,7 +20,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +45,7 @@ class SegmentIndexConsistencyCheckerTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private SegmentHandle<Integer, String> segmentHandle;
+    private BlockingSegment<Integer, String> segmentHandle;
 
     private IndexConsistencyChecker<Integer, String> checker;
 

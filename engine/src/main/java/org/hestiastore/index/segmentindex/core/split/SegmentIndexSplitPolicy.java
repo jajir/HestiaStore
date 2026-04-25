@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 
 /**
  * Decides when a segment should be split by the segment-index layer.
@@ -17,7 +17,7 @@ interface SegmentIndexSplitPolicy<K, V> {
      * @param maxNumberOfKeysInSegment split threshold
      * @return true when a split should be scheduled
      */
-    boolean shouldSplit(SegmentHandle<K, V> segmentHandle,
+    boolean shouldSplit(BlockingSegment<K, V> segmentHandle,
             long maxNumberOfKeysInSegment);
 
     /**

@@ -18,12 +18,12 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segment.SegmentStats;
 
 /**
- * Registry-backed blocking handle for retry-aware segment operations.
+ * Registry-backed implementation of retry-aware blocking segment operations.
  *
  * @param <K> key type
  * @param <V> value type
  */
-final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
+final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
 
     private final SegmentId segmentId;
     private final Supplier<Segment<K, V>> segmentLoader;
@@ -31,13 +31,13 @@ final class BlockingSegmentHandle<K, V> implements SegmentHandle<K, V> {
     private final Runtime runtime;
     private volatile Segment<K, V> segment;
 
-    BlockingSegmentHandle(final SegmentId segmentId,
+    DefaultBlockingSegment(final SegmentId segmentId,
             final Supplier<Segment<K, V>> segmentLoader,
             final BusyRetryPolicy retryPolicy) {
         this(segmentId, segmentLoader, retryPolicy, null);
     }
 
-    BlockingSegmentHandle(final SegmentId segmentId,
+    DefaultBlockingSegment(final SegmentId segmentId,
             final Supplier<Segment<K, V>> segmentLoader,
             final BusyRetryPolicy retryPolicy,
             final Segment<K, V> initialSegment) {

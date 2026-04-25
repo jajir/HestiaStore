@@ -7,7 +7,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,35 +56,35 @@ final class RouteSplitCoordinator<K, V> {
     }
 
     RouteSplitPlan<K> tryPrepareSplit(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
-        final SegmentHandle<K, V> nonNullSegmentHandle = requireSegmentHandle(
+        final BlockingSegment<K, V> nonNullBlockingSegment = requireBlockingSegment(
                 segmentHandle);
         final long estimatedVisibleKeys = estimatedVisibleKeys(
-                nonNullSegmentHandle);
-        if (!isSplitEligible(nonNullSegmentHandle, estimatedVisibleKeys,
+                nonNullBlockingSegment);
+        if (!isSplitEligible(nonNullBlockingSegment, estimatedVisibleKeys,
                 splitThreshold, isSplitFeasible(estimatedVisibleKeys))) {
-            logSkippedSplit(nonNullSegmentHandle, estimatedVisibleKeys,
+            logSkippedSplit(nonNullBlockingSegment, estimatedVisibleKeys,
                     splitThreshold);
             return null;
         }
-        logStartedSplit(nonNullSegmentHandle, splitThreshold);
-        if (!isStillCurrentSegment(nonNullSegmentHandle)) {
+        logStartedSplit(nonNullBlockingSegment, splitThreshold);
+        if (!isStillCurrentSegment(nonNullBlockingSegment)) {
             return null;
         }
-        return preparationService.prepare(nonNullSegmentHandle.getSegment(),
+        return preparationService.prepare(nonNullBlockingSegment.getSegment(),
                 splitThreshold);
     }
 
-    private boolean shouldSplit(final SegmentHandle<K, V> segmentHandle,
+    private boolean shouldSplit(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         return splitPolicy.shouldSplit(segmentHandle, splitThreshold);
     }
 
     private boolean isStillCurrentSegment(
-            final SegmentHandle<K, V> segmentHandle) {
+            final BlockingSegment<K, V> segmentHandle) {
         final SegmentId segmentId = segmentHandle.getId();
-        final Optional<SegmentHandle<K, V>> currentSegment;
+        final Optional<BlockingSegment<K, V>> currentSegment;
         try {
             currentSegment = segmentRegistry.tryGetSegment(segmentId);
         } catch (final IndexException e) {
@@ -114,12 +114,12 @@ final class RouteSplitCoordinator<K, V> {
         return true;
     }
 
-    private SegmentHandle<K, V> requireSegmentHandle(
-            final SegmentHandle<K, V> segmentHandle) {
+    private BlockingSegment<K, V> requireBlockingSegment(
+            final BlockingSegment<K, V> segmentHandle) {
         return Vldtn.requireNonNull(segmentHandle, "segmentHandle");
     }
 
-    private long estimatedVisibleKeys(final SegmentHandle<K, V> segmentHandle) {
+    private long estimatedVisibleKeys(final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle.getRuntime().getNumberOfKeysInCache();
     }
 
@@ -127,7 +127,7 @@ final class RouteSplitCoordinator<K, V> {
         return estimatedVisibleKeys >= 2L;
     }
 
-    private void logSkippedSplit(final SegmentHandle<K, V> segmentHandle,
+    private void logSkippedSplit(final BlockingSegment<K, V> segmentHandle,
             final long estimatedVisibleKeys, final long splitThreshold) {
         if (logger.isDebugEnabled()) {
             logger.debug(
@@ -137,13 +137,13 @@ final class RouteSplitCoordinator<K, V> {
         }
     }
 
-    private void logStartedSplit(final SegmentHandle<K, V> segmentHandle,
+    private void logStartedSplit(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         logger.debug("Route split started: segment='{}' threshold='{}'",
                 segmentHandle.getId(), splitThreshold);
     }
 
-    private boolean isSplitEligible(final SegmentHandle<K, V> segmentHandle,
+    private boolean isSplitEligible(final BlockingSegment<K, V> segmentHandle,
             final long estimatedVisibleKeys, final long splitThreshold,
             final boolean splitFeasible) {
         if (estimatedVisibleKeys < splitThreshold || !splitFeasible) {

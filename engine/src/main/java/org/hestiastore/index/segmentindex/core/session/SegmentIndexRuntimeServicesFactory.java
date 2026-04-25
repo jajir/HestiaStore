@@ -77,8 +77,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                 request.valueTypeDescriptor,
                 request.stats,
                 topologyRuntime.directSegmentAccess(),
-                Vldtn.requireNonNull(walCoordinator, "walCoordinator"),
-                coreStorage.retryPolicy());
+                Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
     }
 
     private SegmentIndexMaintenanceAccess<K, V> createMaintenanceAccess(

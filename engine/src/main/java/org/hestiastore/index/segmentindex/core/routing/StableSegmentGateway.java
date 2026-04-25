@@ -8,7 +8,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segment.SegmentResultStatus;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -27,23 +27,6 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<V> get(final SegmentId segmentId, final K key) {
-        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
-        return withLoadedSegment(segmentId,
-                segment -> fromSegmentResult(segment.tryGet(key)));
-    }
-
-    @Override
-    public IndexResult<Void> put(final SegmentId segmentId, final K key,
-            final V value) {
-        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
-        Vldtn.requireNonNull(key, "key");
-        Vldtn.requireNonNull(value, "value");
-        return withLoadedSegment(segmentId,
-                segment -> fromSegmentResult(segment.tryPut(key, value)));
-    }
-
-    @Override
     public IndexResult<EntryIterator<K, V>> openIterator(
             final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
@@ -53,7 +36,7 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<SegmentHandle<K, V>> compact(final SegmentId segmentId) {
+    public IndexResult<BlockingSegment<K, V>> compact(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return withLoadedSegment(segmentId, segment -> {
             final IndexResult<Void> result = fromSegmentResult(
@@ -66,7 +49,7 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     @Override
-    public IndexResult<SegmentHandle<K, V>> flush(final SegmentId segmentId) {
+    public IndexResult<BlockingSegment<K, V>> flush(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         return withLoadedSegment(segmentId, segment -> {
             final IndexResult<Void> result = fromSegmentResult(
@@ -79,8 +62,8 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
     }
 
     private <T> IndexResult<T> withLoadedSegment(final SegmentId segmentId,
-            final java.util.function.Function<SegmentHandle<K, V>, IndexResult<T>> action) {
-        final Optional<SegmentHandle<K, V>> loaded = segmentRegistry
+            final java.util.function.Function<BlockingSegment<K, V>, IndexResult<T>> action) {
+        final Optional<BlockingSegment<K, V>> loaded = segmentRegistry
                 .tryGetSegment(segmentId);
         if (loaded.isEmpty()) {
             return IndexResult.busy();
@@ -90,7 +73,7 @@ final class StableSegmentGateway<K, V> implements StableSegmentAccess<K, V> {
 
     private static <T> IndexResult<T> fromSegmentResult(
             final SegmentResult<T> result) {
-        if (result.getStatus() == SegmentResultStatus.OK) {
+        if (result.isOk()) {
             return IndexResult.ok(result.getValue());
         }
         if (result.getStatus() == SegmentResultStatus.BUSY) {

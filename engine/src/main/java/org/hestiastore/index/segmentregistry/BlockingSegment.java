@@ -13,17 +13,17 @@ import org.hestiastore.index.segment.SegmentStats;
 /**
  * Blocking facade for retry-aware access to a registry-managed segment.
  * <p>
- * The handle keeps the registry as the source of truth for loading/reloading a
- * segment and converts retryable segment-operation statuses into bounded
- * blocking calls.
+ * The blocking segment keeps the registry as the source of truth for
+ * loading/reloading a segment and converts retryable operation statuses into
+ * bounded blocking calls.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public interface SegmentHandle<K, V> {
+public interface BlockingSegment<K, V> {
 
     /**
-     * Returns this handle's logical segment id.
+     * Returns this blocking segment's logical segment id.
      *
      * @return segment id
      */
@@ -140,7 +140,7 @@ public interface SegmentHandle<K, V> {
     void invalidateIterators();
 
     /**
-     * Runtime descriptors and tuning controls for a segment handle.
+     * Runtime descriptors and tuning controls for a blocking segment.
      */
     interface Runtime {
 

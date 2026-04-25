@@ -156,7 +156,7 @@ class SegmentRegistryBuilderTest {
                     .withRegistryMaintenanceExecutor(
                             registryMaintenanceExecutor)
                     .build();
-            final SegmentHandle<Integer, String> created = registry
+            final BlockingSegment<Integer, String> created = registry
                     .createSegment();
             assertNotNull(created);
             assertSame(SegmentResultStatus.OK,
@@ -169,7 +169,7 @@ class SegmentRegistryBuilderTest {
     }
 
     @Test
-    void createSegmentHandleReturnsBlockingAccessToCreatedSegment() {
+    void createBlockingSegmentReturnsBlockingAccessToCreatedSegment() {
         final MemDirectory directory = new MemDirectory();
         final ExecutorService stableSegmentMaintenanceExecutor = Executors
                 .newSingleThreadExecutor();
@@ -188,7 +188,7 @@ class SegmentRegistryBuilderTest {
                             registryMaintenanceExecutor)
                     .build();
             try {
-                final SegmentHandle<Integer, String> handle = registry
+                final BlockingSegment<Integer, String> handle = registry
                         .createSegment();
 
                 handle.put(1, "value");

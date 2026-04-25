@@ -15,7 +15,7 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrain;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrainResult;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 
 /**
  * Default implementation of split scheduling and split-publish admission.
@@ -119,7 +119,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     @Override
-    public boolean scheduleEligibleSplit(final SegmentHandle<K, V> segmentHandle,
+    public boolean scheduleEligibleSplit(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount) {
         if (!hasCandidate(segmentHandle)) {
             return false;
@@ -193,7 +193,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private boolean scheduleAcceptedSplit(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount) {
         final SegmentId segmentId = segmentHandle.getId();
         if (!isEligibleAfterCooldown(segmentId, observedKeyCount,
@@ -205,7 +205,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private boolean scheduleSplitAsync(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount) {
         final SegmentId segmentId = segmentHandle.getId();
         if (!tryMarkSplitScheduled(segmentId)) {
@@ -225,7 +225,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private void executeScheduledSplit(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount,
             final long scheduledAtNanos) {
         final long startedAtNanos = nanoTimeSupplier.getAsLong();
@@ -240,7 +240,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
         }
     }
 
-    private void executeSplitAsync(final SegmentHandle<K, V> segmentHandle,
+    private void executeSplitAsync(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold, final long observedKeyCount,
             final long startNanos) {
         final SegmentId segmentId = segmentHandle.getId();
@@ -264,11 +264,11 @@ final class SplitExecutionCoordinatorImpl<K, V>
         }
     }
 
-    private boolean hasCandidate(final SegmentHandle<K, V> segmentHandle) {
+    private boolean hasCandidate(final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle != null;
     }
 
-    private boolean isClosedCandidate(final SegmentHandle<K, V> segmentHandle) {
+    private boolean isClosedCandidate(final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle.getRuntime().getState() == SegmentState.CLOSED;
     }
 
@@ -286,7 +286,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
         return isSplitSchedulingEnabled(splitThreshold);
     }
 
-    private boolean tryApplyPreparedSplit(final SegmentHandle<K, V> segmentHandle,
+    private boolean tryApplyPreparedSplit(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         final RouteDrainResult drainResult = segmentTopology.tryBeginDrain(
                 segmentHandle.getId());
@@ -330,7 +330,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private RouteSplitPlan<K> prepareSplit(
-            final SegmentHandle<K, V> segmentHandle,
+            final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         return routeSplitCoordinator.tryPrepareSplit(segmentHandle,
                 splitThreshold);
