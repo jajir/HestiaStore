@@ -9,9 +9,9 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.IndexResultStatus;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationStatus;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -29,7 +29,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private static final String FLUSH_OPERATION_LABEL = "Flush";
     private final Logger logger;
     private final KeyToSegmentMap<K> keyToSegmentMap;
-    private final StableSegmentAccess<K, V> stableSegmentGateway;
+    private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private final SplitService<K, V> splitService;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats;
@@ -39,7 +39,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
 
     MaintenanceServiceImpl(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
-            final StableSegmentAccess<K, V> stableSegmentGateway,
+            final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService<K, V> splitService,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final ExecutorService maintenanceExecutor,
@@ -51,7 +51,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
 
     MaintenanceServiceImpl(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
-            final StableSegmentAccess<K, V> stableSegmentGateway,
+            final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService<K, V> splitService,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final ExecutorService maintenanceExecutor,
@@ -138,27 +138,28 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final boolean waitForCompletion, final String operationId,
             final String operationLabel, final Runnable busyRetryRecorder,
             final java.util.function.LongConsumer acceptedToReadyLatencyRecorder,
-            final java.util.function.Function<SegmentId, IndexResult<BlockingSegment<K, V>>> operationRunner) {
+            final java.util.function.Function<SegmentId,
+                    StableSegmentOperationResult<BlockingSegment<K, V>>> operationRunner) {
         logger.debug("{} attempt started: segment='{}' wait='{}'",
                 operationLabel, segmentId, waitForCompletion);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<BlockingSegment<K, V>> result = operationRunner
+            final StableSegmentOperationResult<BlockingSegment<K, V>> result = operationRunner
                     .apply(segmentId);
-            final IndexResultStatus status = result.getStatus();
-            if (status == IndexResultStatus.OK) {
+            final StableSegmentOperationStatus status = result.getStatus();
+            if (status == StableSegmentOperationStatus.OK) {
                 completeAcceptedOperation(segmentId, waitForCompletion,
                         operationId, operationLabel,
                         acceptedToReadyLatencyRecorder, result.getValue());
                 return;
             }
-            if (status == IndexResultStatus.CLOSED) {
+            if (status == StableSegmentOperationStatus.CLOSED) {
                 logOperation(
                         "{} skipped because segment is closed: segment='{}'",
                         operationLabel, segmentId);
                 return;
             }
-            if (status == IndexResultStatus.BUSY) {
+            if (status == StableSegmentOperationStatus.BUSY) {
                 if (handleBusyOperation(segmentId, waitForCompletion,
                         operationLabel)) {
                     return;
@@ -211,9 +212,9 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
         return false;
     }
 
-    private boolean shouldIgnoreUnmappedError(final IndexResultStatus status,
+    private boolean shouldIgnoreUnmappedError(final StableSegmentOperationStatus status,
             final SegmentId segmentId, final String operationLabel) {
-        if (status != IndexResultStatus.ERROR || isSegmentStillMapped(segmentId)) {
+        if (status != StableSegmentOperationStatus.ERROR || isSegmentStillMapped(segmentId)) {
             return false;
         }
         logOperation(
@@ -223,7 +224,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     }
 
     private IndexException newIndexException(final String operation,
-            final SegmentId segmentId, final IndexResultStatus status) {
+            final SegmentId segmentId, final StableSegmentOperationStatus status) {
         final String target = segmentId == null ? ""
                 : String.format(" on segment '%s'", segmentId);
         return new IndexException(

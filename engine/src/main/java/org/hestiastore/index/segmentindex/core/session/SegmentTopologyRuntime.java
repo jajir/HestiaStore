@@ -5,7 +5,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
@@ -39,8 +39,8 @@ final class SegmentTopologyRuntime<K, V> {
         this.segmentTopology = SegmentTopology.<K>builder()
                 .snapshot(validatedCoreStorage.keyToSegmentMap().snapshot())
                 .build();
-        final StableSegmentAccess<K, V> stableSegmentGateway =
-                StableSegmentAccess.create(
+        final StableSegmentOperationAccess<K, V> stableSegmentGateway =
+                StableSegmentOperationAccess.create(
                         validatedCoreStorage.segmentRegistry());
         this.segmentAccessService = SegmentAccessService.<K, V>builder()
                 .keyToSegmentMap(validatedCoreStorage.keyToSegmentMap())

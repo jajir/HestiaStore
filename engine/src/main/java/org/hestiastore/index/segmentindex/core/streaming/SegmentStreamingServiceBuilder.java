@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.streaming;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ public final class SegmentStreamingServiceBuilder<K, V> {
     private Logger logger;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
-    private StableSegmentAccess<K, V> stableSegmentGateway;
+    private StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private IndexRetryPolicy retryPolicy;
 
     SegmentStreamingServiceBuilder() {
@@ -68,7 +68,7 @@ public final class SegmentStreamingServiceBuilder<K, V> {
      * @return this builder
      */
     public SegmentStreamingServiceBuilder<K, V> stableSegmentGateway(
-            final StableSegmentAccess<K, V> stableSegmentGateway) {
+            final StableSegmentOperationAccess<K, V> stableSegmentGateway) {
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
                 "stableSegmentGateway");
         return this;

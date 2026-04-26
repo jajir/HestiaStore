@@ -1,9 +1,8 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.session;
 
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 
 /**

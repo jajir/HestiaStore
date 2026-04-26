@@ -6,7 +6,7 @@ import java.util.function.LongSupplier;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ public final class MaintenanceServiceBuilder<K, V> {
 
     private Logger logger;
     private KeyToSegmentMap<K> keyToSegmentMap;
-    private StableSegmentAccess<K, V> stableSegmentGateway;
+    private StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private SplitService<K, V> splitService;
     private IndexRetryPolicy retryPolicy;
     private Stats stats;
@@ -63,7 +63,7 @@ public final class MaintenanceServiceBuilder<K, V> {
      * @return this builder
      */
     public MaintenanceServiceBuilder<K, V> stableSegmentGateway(
-            final StableSegmentAccess<K, V> stableSegmentGateway) {
+            final StableSegmentOperationAccess<K, V> stableSegmentGateway) {
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
                 "stableSegmentGateway");
         return this;

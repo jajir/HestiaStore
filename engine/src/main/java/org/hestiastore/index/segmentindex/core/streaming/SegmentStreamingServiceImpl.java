@@ -8,9 +8,9 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.IndexResultStatus;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationStatus;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -24,13 +24,13 @@ final class SegmentStreamingServiceImpl<K, V>
     private final Logger logger;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
-    private final StableSegmentAccess<K, V> stableSegmentGateway;
+    private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private final IndexRetryPolicy retryPolicy;
 
     SegmentStreamingServiceImpl(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final StableSegmentAccess<K, V> stableSegmentGateway,
+            final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy) {
         this.logger = Vldtn.requireNonNull(logger, "logger");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -47,12 +47,12 @@ final class SegmentStreamingServiceImpl<K, V>
             final SegmentIteratorIsolation isolation) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
-            final IndexResult<EntryIterator<K, V>> result = stableSegmentGateway
+            final StableSegmentOperationResult<EntryIterator<K, V>> result = stableSegmentGateway
                     .openIterator(segmentId, isolation);
-            if (result.getStatus() == IndexResultStatus.OK) {
+            if (result.getStatus() == StableSegmentOperationStatus.OK) {
                 return result.getValue();
             }
-            if (result.getStatus() == IndexResultStatus.BUSY) {
+            if (result.getStatus() == StableSegmentOperationStatus.BUSY) {
                 retryPolicy.backoffOrThrow(startNanos, OPEN_ITERATOR_OPERATION,
                         segmentId);
                 continue;
@@ -91,7 +91,8 @@ final class SegmentStreamingServiceImpl<K, V>
             return;
         }
         logger.debug(
-                "Skipping iterator invalidation for segment '{}' because it is not immediately available.",
+                "Skipping iterator invalidation for segment '{}' because it is "
+                        + "not immediately available.",
                 segmentId);
     }
 

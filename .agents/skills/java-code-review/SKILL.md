@@ -22,6 +22,8 @@ Use this skill when the task is to review a diff, branch, or pull request in Hes
 - If no findings are present, state that explicitly and mention any remaining verification gaps.
 - Limit visibility of classes, methods, and variables to the minimum needed for their intended use.
 - Remove all unused code, including imports, variables, methods, and classes.
+- When builder pattern is used variables should be set with methods like `withVariableName`.
+
 
 ## Review Workflow
 

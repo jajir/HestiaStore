@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.operations;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;

@@ -9,9 +9,9 @@ import org.hestiastore.index.segmentindex.core.control.IndexRuntimeControlPlane;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.metrics.SegmentIndexMetricsSnapshots;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.metrics.MetricService;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -90,7 +90,7 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                 .logger(request.logger)
                 .keyToSegmentMap(coreStorage.keyToSegmentMap())
                 .stableSegmentGateway(
-                        StableSegmentAccess.create(
+                        StableSegmentOperationAccess.create(
                                 coreStorage.segmentRegistry()))
                 .splitService(topologyRuntime.splitService())
                 .retryPolicy(coreStorage.retryPolicy())
@@ -108,17 +108,25 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
 
     private Supplier<SegmentIndexMetricsSnapshot> createMetricsSnapshotSupplier(
             final WalRuntime<K, V> walRuntime) {
-        return SegmentIndexMetricsSnapshots.create(
-                request.conf, coreStorage.keyToSegmentMap(),
-                coreStorage.segmentRegistry(),
-                () -> topologyRuntime.splitService()
+        final MetricService metricService = MetricService.<K, V>builder()
+                .withConf(request.conf)
+                .withKeyToSegmentMap(coreStorage.keyToSegmentMap())
+                .withSegmentRegistry(coreStorage.segmentRegistry())
+                .withSplitSnapshotSupplier(() -> topologyRuntime.splitService()
                         .splitMetricsView()
-                        .metricsSnapshot(),
-                request.executorRegistry,
-                coreStorage.runtimeTuningState(), walRuntime,
-                request.stats, request.compactRequestHighWaterMark,
-                request.flushRequestHighWaterMark, request.lastAppliedWalLsn,
-                request.stateSupplier);
+                        .metricsSnapshot())
+                .withExecutorRegistry(request.executorRegistry)
+                .withRuntimeTuningState(coreStorage.runtimeTuningState())
+                .withWalRuntime(walRuntime)
+                .withStats(request.stats)
+                .withCompactRequestHighWaterMark(
+                        request.compactRequestHighWaterMark)
+                .withFlushRequestHighWaterMark(
+                        request.flushRequestHighWaterMark)
+                .withLastAppliedWalLsn(request.lastAppliedWalLsn)
+                .withStateSupplier(request.stateSupplier)
+                .build();
+        return metricService::metricsSnapshot;
     }
 
     private IndexControlPlane createControlPlane(

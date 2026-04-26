@@ -12,7 +12,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexRuntimeServicesTest {

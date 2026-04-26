@@ -6,7 +6,7 @@ Concise definitions of terms used across HestiaStore’s architecture, with link
 Controlled retry/throttling when a routed segment, registry lookup, or route
 topology lease is temporarily `BUSY`, or when WAL retention pressure requires
 checkpoint progress before more writes are accepted. Code:
-`segmentindex/core/routing/IndexOperationCoordinator.java`,
+`segmentindex/core/operations/IndexOperationCoordinator.java`,
 `segmentindex/core/split/SplitPolicyCoordinator.java`,
 `segmentindex/wal/WalRuntime.java`.
 
@@ -67,14 +67,14 @@ Routed key range that receives a disproportionately large share of reads or
 writes compared with the rest of the index. Hot routes are where split policy,
 segment write-cache pressure, and maintenance latency matter most. Code:
 `segmentindex/core/split/SplitPolicyCoordinator.java`,
-`segmentindex/core/routing/DirectSegmentCoordinator.java`.
+`segmentindex/core/segmentaccess/DefaultSegmentAccessService.java`.
 
 ## Ingest (Index Ingest)
 Index write path where `put` and `delete` append to WAL first when enabled,
 resolve the current route, and write directly into the target stable segment.
 Read-after-write visibility is provided by the segment write cache. Code:
-`segmentindex/core/routing/IndexOperationCoordinator.java`,
-`segmentindex/core/routing/DirectSegmentCoordinator.java`.
+`segmentindex/core/operations/IndexOperationCoordinator.java`,
+`segmentindex/core/segmentaccess/DefaultSegmentAccessService.java`.
 
 ## Key-to-Segment Map
 Global sorted map of max key → SegmentId that routes lookups and stable publish targets. Persisted as `index.map`. Code: `segmentindex/mapping/KeyToSegmentMap.java`.
@@ -103,7 +103,7 @@ Startup and repair path that restores stable metadata, rebuilds routing,
 replays WAL records above checkpoint through the direct write path, and handles
 invalid tails according to corruption policy before returning to ready state.
 Code: `segmentindex/wal/WalRuntime.java`,
-`segmentindex/core/IndexOperationCoordinator.java`,
+`segmentindex/core/operations/IndexOperationCoordinator.java`,
 `segmentindex/IndexConsistencyChecker.java`.
 
 ## Segment

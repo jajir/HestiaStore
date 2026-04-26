@@ -14,8 +14,8 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
@@ -30,14 +30,14 @@ class SegmentStreamingServiceBuilderTest {
                 KeyToSegmentMap.class);
         final SegmentRegistry<Integer, String> segmentRegistry = mock(
                 SegmentRegistry.class);
-        final StableSegmentAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentAccess.class);
+        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationAccess.class);
         final SegmentId segmentId = SegmentId.of(1);
         final EntryIterator<Integer, String> iterator = EntryIterator
                 .make(List.<Entry<Integer, String>>of().iterator());
         when(stableSegmentGateway.openIterator(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                .thenReturn(IndexResult.ok(iterator));
+                .thenReturn(StableSegmentOperationResult.ok(iterator));
 
         final SegmentStreamingService<Integer, String> service =
                 SegmentStreamingService.<Integer, String>builder()

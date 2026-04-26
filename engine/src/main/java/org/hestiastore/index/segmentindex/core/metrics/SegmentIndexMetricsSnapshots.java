@@ -14,8 +14,9 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
- * Public metrics snapshot factory boundary exposed outside
- * {@code core.observability}.
+ * Compatibility factory for metrics snapshots.
+ * <p>
+ * Prefer {@link MetricService#builder()} for new code.
  */
 public final class SegmentIndexMetricsSnapshots {
 
@@ -54,10 +55,20 @@ public final class SegmentIndexMetricsSnapshots {
             final AtomicLong flushRequestHighWaterMark,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
-        return SegmentIndexMetricsCollector.create(conf, keyToSegmentMap,
-                segmentRegistry, splitSnapshotSupplier, executorRegistry,
-                runtimeTuningState, walRuntime, stats,
-                compactRequestHighWaterMark, flushRequestHighWaterMark,
-                lastAppliedWalLsn, stateSupplier)::metricsSnapshot;
+        final MetricService metricService = MetricService.<K, V>builder()
+                .withConf(conf)
+                .withKeyToSegmentMap(keyToSegmentMap)
+                .withSegmentRegistry(segmentRegistry)
+                .withSplitSnapshotSupplier(splitSnapshotSupplier)
+                .withExecutorRegistry(executorRegistry)
+                .withRuntimeTuningState(runtimeTuningState)
+                .withWalRuntime(walRuntime)
+                .withStats(stats)
+                .withCompactRequestHighWaterMark(compactRequestHighWaterMark)
+                .withFlushRequestHighWaterMark(flushRequestHighWaterMark)
+                .withLastAppliedWalLsn(lastAppliedWalLsn)
+                .withStateSupplier(stateSupplier)
+                .build();
+        return metricService::metricsSnapshot;
     }
 }

@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.stablesegment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -21,7 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class StableSegmentGatewayTest {
+class StableSegmentOperationGatewayTest {
 
     @Mock
     private SegmentRegistry<String, String> segmentRegistry;
@@ -29,11 +29,12 @@ class StableSegmentGatewayTest {
     @Mock
     private BlockingSegment<String, String> segmentHandle;
 
-    private StableSegmentGateway<String, String> stableSegmentGateway;
+    private StableSegmentOperationGateway<String, String> stableSegmentGateway;
 
     @BeforeEach
     void setUp() {
-        stableSegmentGateway = new StableSegmentGateway<>(segmentRegistry);
+        stableSegmentGateway = new StableSegmentOperationGateway<>(
+                segmentRegistry);
     }
 
     @Test
@@ -46,10 +47,11 @@ class StableSegmentGatewayTest {
         when(segmentHandle.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
                 .thenReturn(SegmentResult.ok(iterator));
 
-        final IndexResult<EntryIterator<String, String>> result = stableSegmentGateway
-                .openIterator(segmentId, SegmentIteratorIsolation.FAIL_FAST);
+        final StableSegmentOperationResult<EntryIterator<String, String>> result =
+                stableSegmentGateway.openIterator(segmentId,
+                        SegmentIteratorIsolation.FAIL_FAST);
 
-        assertEquals(IndexResultStatus.OK, result.getStatus());
+        assertEquals(StableSegmentOperationStatus.OK, result.getStatus());
         assertSame(iterator, result.getValue());
     }
 
@@ -60,10 +62,10 @@ class StableSegmentGatewayTest {
                 .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryFlush()).thenReturn(SegmentResult.closed());
 
-        final IndexResult<BlockingSegment<String, String>> result =
+        final StableSegmentOperationResult<BlockingSegment<String, String>> result =
                 stableSegmentGateway.flush(segmentId);
 
-        assertEquals(IndexResultStatus.CLOSED, result.getStatus());
+        assertEquals(StableSegmentOperationStatus.CLOSED, result.getStatus());
     }
 
     private SegmentId segmentId() {

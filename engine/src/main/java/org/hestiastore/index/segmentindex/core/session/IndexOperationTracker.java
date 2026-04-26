@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.session;
 
 import java.util.function.Supplier;
 

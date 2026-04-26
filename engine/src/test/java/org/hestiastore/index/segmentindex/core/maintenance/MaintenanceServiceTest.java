@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.junit.jupiter.api.Test;
@@ -46,8 +46,8 @@ class MaintenanceServiceTest {
     void builderCreatesMaintenanceService() throws InterruptedException {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentAccess.class);
+        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationAccess.class);
         final SplitService<Integer, String> splitService = mock(
                 SplitService.class);
         final Runnable checkpointAction = mock(Runnable.class);
@@ -57,9 +57,9 @@ class MaintenanceServiceTest {
         try {
             when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
             when(stableSegmentGateway.compact(segmentId))
-                    .thenReturn(IndexResult.busy());
+                    .thenReturn(StableSegmentOperationResult.busy());
             when(stableSegmentGateway.flush(segmentId)).thenReturn(
-                    IndexResult.busy());
+                    StableSegmentOperationResult.busy());
             final MaintenanceService maintenance = MaintenanceService
                     .<Integer, String>builder()
                     .logger(LoggerFactory.getLogger(
@@ -101,8 +101,8 @@ class MaintenanceServiceTest {
     void builderRejectsMissingMaintenanceExecutor() {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentAccess.class);
+        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationAccess.class);
         final SplitService<Integer, String> splitService = mock(
                 SplitService.class);
 
@@ -127,8 +127,8 @@ class MaintenanceServiceTest {
     void builderRejectsMissingCheckpointAction() {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentAccess<Integer, String> stableSegmentGateway = mock(
-                StableSegmentAccess.class);
+        final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
+                StableSegmentOperationAccess.class);
         final SplitService<Integer, String> splitService = mock(
                 SplitService.class);
         final ExecutorService maintenanceExecutor =

@@ -28,7 +28,7 @@ public final class SegmentIndexEntryIteratorDecorator<K, V> {
     /**
      * Applies the configured iterator decoration.
      *
-     * @param iterator iterator to expose through the routing facade
+     * @param iterator iterator to expose through the read facade
      * @return original iterator or a context-logging wrapper when enabled
      */
     public EntryIterator<K, V> decorate(final EntryIterator<K, V> iterator) {
