@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,10 +68,8 @@ class IndexCloseCoordinatorTest {
         inOrder.verify(stateCoordinator).beginClose();
         inOrder.verify(awaitOperations).run();
         inOrder.verify(runtime).closeSplitRuntime();
-        inOrder.verify(runtime).flushStableSegments();
+        inOrder.verify(runtime).flushAndWait();
         inOrder.verify(runtime).closeSegmentRegistry();
-        inOrder.verify(runtime).flushKeyToSegmentMap();
-        inOrder.verify(runtime).checkpointWal();
         inOrder.verify(finishCloseTransition).run();
         inOrder.verify(runtime).closeWalRuntime();
     }
@@ -84,9 +81,7 @@ class IndexCloseCoordinatorTest {
 
         assertThrows(IndexException.class, () -> closeCoordinator.close());
 
-        verify(runtime).flushStableSegments();
-        verify(runtime, never()).flushKeyToSegmentMap();
-        verify(runtime, never()).checkpointWal();
+        verify(runtime).flushAndWait();
         verify(finishCloseTransition).run();
         verify(runtime).closeWalRuntime();
     }

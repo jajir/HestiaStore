@@ -11,7 +11,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
@@ -32,7 +32,7 @@ class SegmentIndexRuntimeServicesFactoryTest {
 
     @BeforeEach
     void setUp() {
-        executorRegistry = new IndexExecutorRegistry(buildConf());
+        executorRegistry = IndexExecutorRegistry.create(buildConf());
         coreStorage = new SegmentIndexCoreStorageFactory<>(newRequest(),
                 new SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<>() {
                 }).create();
@@ -75,7 +75,7 @@ class SegmentIndexRuntimeServicesFactoryTest {
 
         assertNotNull(services.walCoordinator());
         assertNotNull(services.operationAccess());
-        assertNotNull(services.maintenanceAccess());
+        assertNotNull(services.maintenance());
         assertNotNull(services.metricsSnapshotSupplier());
         assertNotNull(services.runtimeLimitApplier());
         assertNotNull(services.controlPlane());

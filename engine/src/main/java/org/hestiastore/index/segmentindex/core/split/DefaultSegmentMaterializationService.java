@@ -67,13 +67,11 @@ final class DefaultSegmentMaterializationService<K, V> {
             commitPreparedSegment(lowerWriterTx, lowerWriter);
             commitPreparedSegment(upperWriterTx, upperWriter);
             materializationCompleted = true;
-            final K lowerMinKey = upperSegment.lowerMinKey();
             final K lowerMaxKey = upperSegment.lowerMaxKey();
             return new RouteSplitPlan<>(
                     parentSegment.getId(),
                     lowerSegmentId,
                     upperSegmentId,
-                    lowerMinKey,
                     lowerMaxKey,
                     RouteSplitPlan.SplitMode.SPLIT);
         } finally {
@@ -132,15 +130,11 @@ final class DefaultSegmentMaterializationService<K, V> {
         SegmentId upperSegmentId = null;
         WriteTransaction<K, V> upperWriterTx = null;
         EntryWriter<K, V> upperWriter = null;
-        K lowerMinKey = null;
         K lowerMaxKey = null;
         long lowerCount = 0L;
         while (iterator.hasNext()) {
             final Entry<K, V> entry = iterator.next();
             if (lowerCount < targetLowerCount) {
-                if (lowerMinKey == null) {
-                    lowerMinKey = entry.getKey();
-                }
                 lowerMaxKey = entry.getKey();
                 lowerCount++;
                 writeEntry(lowerWriter, entry);
@@ -158,7 +152,6 @@ final class DefaultSegmentMaterializationService<K, V> {
                 Vldtn.requireNonNull(upperSegmentId, "upperSegmentId"),
                 Vldtn.requireNonNull(upperWriterTx, "upperWriterTx"),
                 Vldtn.requireNonNull(upperWriter, "upperWriter"),
-                Vldtn.requireNonNull(lowerMinKey, "lowerMinKey"),
                 Vldtn.requireNonNull(lowerMaxKey, "lowerMaxKey"));
     }
 
@@ -311,17 +304,14 @@ final class DefaultSegmentMaterializationService<K, V> {
         private final SegmentId segmentId;
         private final WriteTransaction<K, V> writerTx;
         private final EntryWriter<K, V> writer;
-        private final K lowerMinKey;
         private final K lowerMaxKey;
 
         private MaterializedUpperSegment(final SegmentId segmentId,
                 final WriteTransaction<K, V> writerTx,
-                final EntryWriter<K, V> writer,
-                final K lowerMinKey, final K lowerMaxKey) {
+                final EntryWriter<K, V> writer, final K lowerMaxKey) {
             this.segmentId = segmentId;
             this.writerTx = writerTx;
             this.writer = writer;
-            this.lowerMinKey = lowerMinKey;
             this.lowerMaxKey = lowerMaxKey;
         }
 
@@ -335,10 +325,6 @@ final class DefaultSegmentMaterializationService<K, V> {
 
         private EntryWriter<K, V> writer() {
             return writer;
-        }
-
-        private K lowerMinKey() {
-            return lowerMinKey;
         }
 
         private K lowerMaxKey() {

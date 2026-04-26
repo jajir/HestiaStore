@@ -58,8 +58,8 @@ Pluggable transformations applied to chunk payloads on write and inverted on rea
 Schedules or awaits per-segment persistence of write-cache snapshots and then
 flushes `index.map`. `flushAndWait()` also waits for split settlement and WAL
 checkpoint when WAL is enabled. Code:
-`segmentindex/core/IndexMaintenanceCoordinator.java`,
-`segmentindex/core/StableSegmentCoordinator.java`,
+`segmentindex/core/maintenance/MaintenanceService.java`,
+`segmentindex/core/maintenance/MaintenanceServiceImpl.java`,
 `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ## Hot Partition

@@ -24,7 +24,6 @@ public final class RouteSplitPlan<K> {
     private final SegmentId replacedSegmentId;
     private final SegmentId lowerSegmentId;
     private final SegmentId upperSegmentId;
-    private final K lowerMinKey;
     private final K lowerMaxKey;
     private final SplitMode splitMode;
 
@@ -35,13 +34,11 @@ public final class RouteSplitPlan<K> {
      * @param replacedSegmentId replaced segment id
      * @param lowerSegmentId newly created lower segment id
      * @param upperSegmentId new upper segment id; required for SPLIT mode
-     * @param lowerMinKey minimum key covered by the lower segment
      * @param lowerMaxKey maximum key covered by the lower segment
      * @param splitMode split outcome mode
      */
     public RouteSplitPlan(final SegmentId replacedSegmentId,
-            final SegmentId lowerSegmentId,
-            final SegmentId upperSegmentId, final K lowerMinKey,
+            final SegmentId lowerSegmentId, final SegmentId upperSegmentId,
             final K lowerMaxKey, final SplitMode splitMode) {
         this.replacedSegmentId = Vldtn.requireNonNull(replacedSegmentId,
                 "replacedSegmentId");
@@ -54,7 +51,6 @@ public final class RouteSplitPlan<K> {
         } else {
             this.upperSegmentId = upperSegmentId;
         }
-        this.lowerMinKey = Vldtn.requireNonNull(lowerMinKey, "lowerMinKey");
         this.lowerMaxKey = Vldtn.requireNonNull(lowerMaxKey, "lowerMaxKey");
     }
 
@@ -77,13 +73,6 @@ public final class RouteSplitPlan<K> {
      */
     public Optional<SegmentId> getUpperSegmentId() {
         return Optional.ofNullable(upperSegmentId);
-    }
-
-    /**
-     * @return minimum key covered by the lower segment
-     */
-    K getLowerMinKey() {
-        return lowerMinKey;
     }
 
     /**

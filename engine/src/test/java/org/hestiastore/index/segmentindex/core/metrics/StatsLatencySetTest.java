@@ -14,7 +14,6 @@ class StatsLatencySetTest {
         latencies.recordReadLatencyNanos(2_000L);
         latencies.recordWriteLatencyNanos(3_000L);
         latencies.recordDrainLatencyNanos(4_000L);
-        latencies.recordPutBusyWaitNanos(5_000L);
         latencies.recordSplitTaskStartDelayNanos(6_000L);
         latencies.recordSplitTaskRunLatencyNanos(7_000L);
         latencies.recordDrainTaskStartDelayNanos(8_000L);
@@ -29,7 +28,6 @@ class StatsLatencySetTest {
         assertTrue(latencies.getWriteLatencyP95Micros() >= 3L);
         assertTrue(latencies.getWriteLatencyP99Micros() >= 3L);
         assertTrue(latencies.getDrainLatencyP95Micros() >= 4L);
-        assertTrue(latencies.getPutBusyWaitP95Micros() >= 5L);
         assertTrue(latencies.getSplitTaskStartDelayP95Micros() >= 6L);
         assertTrue(latencies.getSplitTaskRunLatencyP95Micros() >= 7L);
         assertTrue(latencies.getDrainTaskStartDelayP95Micros() >= 8L);

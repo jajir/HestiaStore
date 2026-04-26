@@ -21,7 +21,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -71,7 +71,7 @@ class SegmentIndexMetricsCollectorTest {
         compactRequestHighWaterMark = new AtomicLong();
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(123L);
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = IndexExecutorRegistry.create(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 conf, keyToSegmentMap, segmentRegistry,
@@ -108,12 +108,8 @@ class SegmentIndexMetricsCollectorTest {
         stats.recordGetRequest();
         stats.recordPutRequest();
         stats.recordDeleteRequest();
-        stats.recordCompactRequest();
-        stats.recordCompactRequest();
         stats.recordFlushRequest();
         stats.recordSplitScheduled();
-        stats.addPutBusyRetryCount(6L);
-        stats.recordPutBusyTimeout();
         stats.recordFlushBusyRetry();
         stats.recordCompactBusyRetry();
 
@@ -132,7 +128,7 @@ class SegmentIndexMetricsCollectorTest {
         assertEquals(3L, firstSnapshot.getTotalDeltaCacheFiles());
         assertEquals(5L, firstSnapshot.getCompactRequestCount());
         assertEquals(7L, firstSnapshot.getFlushRequestCount());
-        assertEquals(6L, firstSnapshot.getPutBusyRetryCount());
+        assertEquals(0L, firstSnapshot.getPutBusyRetryCount());
         assertEquals(3, firstSnapshot.getSplitBlockedPartitionCount());
         assertEquals(123L, firstSnapshot.getWalAppliedLsn());
         assertFalse(firstSnapshot.isWalEnabled());

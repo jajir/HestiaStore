@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.segmentaccess;
 
 import java.util.List;
-import java.util.function.Function;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -12,14 +11,13 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLea
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLeaseResult;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 final class DefaultSegmentAccessService<K, V>
         implements SegmentAccessService<K, V> {
 
-    private static final String OPERATION_READ = "withSegmentForRead";
-    private static final String OPERATION_WRITE = "withSegmentForWrite";
+    private static final String OPERATION_READ = "acquireForRead";
+    private static final String OPERATION_WRITE = "acquireForWrite";
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
@@ -41,34 +39,28 @@ final class DefaultSegmentAccessService<K, V>
     }
 
     @Override
-    public <R> R withSegmentForRead(final K key,
-            final Function<BlockingSegment<K, V>, R> operation) {
+    public SegmentAccess<K, V> acquireForRead(final K key) {
         final K nonNullKey = requireKey(key);
-        final Function<BlockingSegment<K, V>, R> nonNullOperation =
-                requireOperation(operation);
         final RouteLease lease = acquireReadRouteLease(nonNullKey);
         if (lease == null) {
             return null;
         }
-        return runWithSegment(lease, nonNullOperation);
+        return loadSegmentAccess(lease);
     }
 
     @Override
-    public <R> R withSegmentForWrite(final K key,
-            final Function<BlockingSegment<K, V>, R> operation) {
+    public SegmentAccess<K, V> acquireForWrite(final K key) {
         final K nonNullKey = requireKey(key);
-        final Function<BlockingSegment<K, V>, R> nonNullOperation =
-                requireOperation(operation);
-        return runWithSegment(acquireWriteRouteLease(nonNullKey),
-                nonNullOperation);
+        return loadSegmentAccess(acquireWriteRouteLease(nonNullKey));
     }
 
-    private <R> R runWithSegment(final RouteLease lease,
-            final Function<BlockingSegment<K, V>, R> operation) {
-        try (RouteLease activeLease = lease) {
-            final BlockingSegment<K, V> segment = segmentRegistry
-                    .loadSegment(activeLease.segmentId());
-            return operation.apply(segment);
+    private SegmentAccess<K, V> loadSegmentAccess(final RouteLease lease) {
+        try {
+            return new DefaultSegmentAccess<>(lease,
+                    segmentRegistry.loadSegment(lease.segmentId()));
+        } catch (final RuntimeException e) {
+            lease.close();
+            throw e;
         }
     }
 
@@ -155,11 +147,6 @@ final class DefaultSegmentAccessService<K, V>
 
     private K requireKey(final K key) {
         return Vldtn.requireNonNull(key, "key");
-    }
-
-    private <R> Function<BlockingSegment<K, V>, R> requireOperation(
-            final Function<BlockingSegment<K, V>, R> operation) {
-        return Vldtn.requireNonNull(operation, "operation");
     }
 
     private Snapshot<K> currentRouteSnapshot() {

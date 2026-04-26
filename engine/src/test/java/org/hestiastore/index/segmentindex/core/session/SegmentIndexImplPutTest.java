@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -185,7 +185,7 @@ class SegmentIndexImplPutTest {
         directory = new MemDirectory();
         index = new IndexInternalConcurrent<>(directory, tdi, tds, conf,
                 conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                IndexExecutorRegistry.create(conf));
 
         index.put(1, "one");
         index.put(2, "two");
@@ -210,7 +210,7 @@ class SegmentIndexImplPutTest {
                 maxKeysInSegment, maxNumberOfKeysInActivePartition, wal);
         index = new IndexInternalConcurrent<>(directory, tdi, tds, conf,
                 conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                IndexExecutorRegistry.create(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf(

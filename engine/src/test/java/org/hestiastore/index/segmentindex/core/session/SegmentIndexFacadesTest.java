@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,8 +13,6 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexTrackedOperationRunner;
-import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,12 +33,6 @@ class SegmentIndexFacadesTest {
     @Mock
     private SegmentIndexDataAccess<Integer, String> dataAccess;
 
-    @Mock
-    private SegmentIndexMaintenanceAccess<Integer, String> maintenanceAccess;
-
-    @Mock
-    private IndexConsistencyCoordinator<Integer, String> consistencyCoordinator;
-
     private IndexConfiguration<Integer, String> conf;
     private SegmentIndexTrackedOperationRunner<Integer, String> trackedRunner;
 
@@ -58,7 +50,7 @@ class SegmentIndexFacadesTest {
 
         final SegmentIndexFacades<Integer, String> composition =
                 SegmentIndexFacades.create(conf, trackedRunner,
-                        dataAccess, maintenanceAccess, consistencyCoordinator);
+                        dataAccess);
 
         assertEquals("one", composition.mutationFacade().get(1));
         verify(dataAccess).get(1);
@@ -66,15 +58,12 @@ class SegmentIndexFacadesTest {
     }
 
     @Test
-    void assembleBuildsMaintenanceFacadeUsingSupportActionsAndConsistency() {
+    void assembleBuildsReadFacade() {
         final SegmentIndexFacades<Integer, String> composition =
                 SegmentIndexFacades.create(conf, trackedRunner,
-                        dataAccess, maintenanceAccess, consistencyCoordinator);
+                        dataAccess);
 
-        composition.maintenanceCommands().checkAndRepairConsistency();
-
-        verify(consistencyCoordinator).checkAndRepairConsistency();
-        verify(indexState, atLeastOnce()).tryPerformOperation();
+        assertNotNull(composition.readFacade());
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

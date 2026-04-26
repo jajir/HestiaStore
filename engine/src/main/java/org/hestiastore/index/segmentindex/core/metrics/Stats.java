@@ -10,11 +10,8 @@ public final class Stats {
     private final LongAdder putCount = new LongAdder();
     private final LongAdder getCount = new LongAdder();
     private final LongAdder deleteCount = new LongAdder();
-    private final LongAdder compactRequestCount = new LongAdder();
     private final LongAdder flushRequestCount = new LongAdder();
     private final LongAdder splitScheduleCount = new LongAdder();
-    private final LongAdder putBusyRetryCount = new LongAdder();
-    private final LongAdder putBusyTimeoutCount = new LongAdder();
     private final LongAdder flushBusyRetryCount = new LongAdder();
     private final LongAdder compactBusyRetryCount = new LongAdder();
     private final StatsLatencySet latencies = new StatsLatencySet();
@@ -34,26 +31,12 @@ public final class Stats {
         deleteCount.increment();
     }
 
-    public void recordCompactRequest() {
-        compactRequestCount.increment();
-    }
-
     public void recordFlushRequest() {
         flushRequestCount.increment();
     }
 
     public void recordSplitScheduled() {
         splitScheduleCount.increment();
-    }
-
-    public void addPutBusyRetryCount(final long retries) {
-        if (retries > 0L) {
-            putBusyRetryCount.add(retries);
-        }
-    }
-
-    public void recordPutBusyTimeout() {
-        putBusyTimeoutCount.increment();
     }
 
     public void recordFlushBusyRetry() {
@@ -74,10 +57,6 @@ public final class Stats {
 
     public void recordDrainLatencyNanos(final long nanos) {
         latencies.recordDrainLatencyNanos(nanos);
-    }
-
-    public void recordPutBusyWaitNanos(final long nanos) {
-        latencies.recordPutBusyWaitNanos(nanos);
     }
 
     public void recordSplitTaskStartDelayNanos(final long nanos) {
@@ -116,24 +95,12 @@ public final class Stats {
         return deleteCount.sum();
     }
 
-    public long getCompactRequestCount() {
-        return compactRequestCount.sum();
-    }
-
     public long getFlushRequestCount() {
         return flushRequestCount.sum();
     }
 
     public long getSplitScheduleCount() {
         return splitScheduleCount.sum();
-    }
-
-    public long getPutBusyRetryCount() {
-        return putBusyRetryCount.sum();
-    }
-
-    public long getPutBusyTimeoutCount() {
-        return putBusyTimeoutCount.sum();
     }
 
     public long getFlushBusyRetryCount() {
@@ -170,10 +137,6 @@ public final class Stats {
 
     public long getDrainLatencyP95Micros() {
         return latencies.getDrainLatencyP95Micros();
-    }
-
-    public long getPutBusyWaitP95Micros() {
-        return latencies.getPutBusyWaitP95Micros();
     }
 
     public long getSplitTaskStartDelayP95Micros() {

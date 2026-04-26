@@ -43,7 +43,7 @@ class RouteSplitPublishCoordinatorTest {
         coordinator = new RouteSplitPublishCoordinator<>(keyToSegmentMap,
                 segmentRegistry, materializationService);
         splitPlan = new RouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
-                UPPER_SEGMENT_ID, 1, 2, RouteSplitPlan.SplitMode.SPLIT);
+                UPPER_SEGMENT_ID, 2, RouteSplitPlan.SplitMode.SPLIT);
     }
 
     @Test

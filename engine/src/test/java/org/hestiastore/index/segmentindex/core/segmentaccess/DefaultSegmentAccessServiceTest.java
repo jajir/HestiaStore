@@ -65,45 +65,45 @@ class DefaultSegmentAccessServiceTest {
     }
 
     @Test
-    void withSegmentForReadReturnsNullWhenKeyHasNoRoute() {
-        final String result = service.withSegmentForRead(10,
-                segment -> "unexpected");
+    void acquireForReadReturnsNullWhenKeyHasNoRoute() {
+        final SegmentAccess<Integer, String> result = service
+                .acquireForRead(10);
 
         assertNull(result);
         verifyNoInteractions(segmentRegistry);
     }
 
     @Test
-    void withSegmentForWriteCreatesBootstrapRouteAndRunsOperation() {
+    void acquireForWriteCreatesBootstrapRouteAndReturnsAccess() {
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);
 
-        final String result = service.withSegmentForWrite(11, segment -> {
-            assertSame(blockingSegment, segment);
-            return "done";
-        });
+        try (SegmentAccess<Integer, String> access = service
+                .acquireForWrite(11)) {
+            assertSame(blockingSegment, access.segment());
+            assertEquals(SegmentId.of(0), access.segmentId());
+        }
 
-        assertEquals("done", result);
         assertEquals(SegmentId.of(0),
                 keyToSegmentMap.findSegmentIdForKey(11));
         verify(segmentRegistry).loadSegment(SegmentId.of(0));
     }
 
     @Test
-    void withSegmentForWriteRunsVoidOperationWhenNullIsReturned() {
+    void acquireForWriteProvidesSegmentForCallerOperation() {
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);
 
-        service.withSegmentForWrite(11, segment -> {
-            segment.put(11, "v11");
-            return null;
-        });
+        try (SegmentAccess<Integer, String> access = service
+                .acquireForWrite(11)) {
+            access.segment().put(11, "v11");
+        }
 
         verify(blockingSegment).put(11, "v11");
     }
 
     @Test
-    void withSegmentForWriteClosesRouteLeaseWhenOperationFails() {
+    void acquireForWriteClosesRouteLeaseWhenSegmentLoadFails() {
         keyToSegmentMap.extendMaxKeyIfNeeded(10);
         final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
         @SuppressWarnings("unchecked")
@@ -120,19 +120,18 @@ class DefaultSegmentAccessServiceTest {
         final SegmentAccessService<Integer, String> accessService =
                 new DefaultSegmentAccessService<>(keyToSegmentMap,
                         segmentRegistry, topology, retryPolicy);
-        when(segmentRegistry.loadSegment(SegmentId.of(0)))
-                .thenReturn(blockingSegment);
+        final IllegalStateException failure = new IllegalStateException(
+                "failed");
+        when(segmentRegistry.loadSegment(SegmentId.of(0))).thenThrow(failure);
 
         assertThrows(IllegalStateException.class,
-                () -> accessService.withSegmentForWrite(10, segment -> {
-                    throw new IllegalStateException("failed");
-                }));
+                () -> accessService.acquireForWrite(10));
 
         verify(lease).close();
     }
 
     @Test
-    void withSegmentForReadReconcilesStaleTopologyAndRetries() {
+    void acquireForReadReconcilesStaleTopologyAndRetries() {
         keyToSegmentMap.extendMaxKeyIfNeeded(10);
         final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
         final SegmentTopology<Integer> topology = mockTopologyStaleThenAcquired(
@@ -143,27 +142,25 @@ class DefaultSegmentAccessServiceTest {
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);
 
-        final String result = accessService.withSegmentForRead(10,
-                segment -> "value");
+        try (SegmentAccess<Integer, String> access = accessService
+                .acquireForRead(10)) {
+            assertSame(blockingSegment, access.segment());
+        }
 
-        assertEquals("value", result);
         verify(topology).reconcile(any());
     }
 
     @Test
-    void withSegmentForWriteRetriesUnavailableRouteUntilRetryPolicyFails() {
+    void acquireForWriteRetriesUnavailableRouteUntilRetryPolicyFails() {
         keyToSegmentMap.extendMaxKeyIfNeeded(10);
         segmentTopology.reconcile(keyToSegmentMap.snapshot());
         segmentTopology.tryBeginDrain(SegmentId.of(0));
         final IndexException timeout = new IndexException("timeout");
         doThrow(timeout).when(retryPolicy).backoffOrThrow(0L,
-                "withSegmentForWrite", SegmentId.of(0));
+                "acquireForWrite", SegmentId.of(0));
 
         final IndexException thrown = assertThrows(IndexException.class,
-                () -> service.withSegmentForWrite(10, segment -> {
-                    segment.put(10, "v10");
-                    return null;
-                }));
+                () -> service.acquireForWrite(10));
 
         assertSame(timeout, thrown);
     }

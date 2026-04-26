@@ -15,8 +15,6 @@ final class StatsLatencySet {
             new OperationLatencyTracker();
     private final OperationLatencyTracker drainLatency =
             new OperationLatencyTracker();
-    private final OperationLatencyTracker putBusyWaitLatency =
-            new OperationLatencyTracker();
     private final OperationLatencyTracker splitTaskStartDelayLatency =
             new OperationLatencyTracker();
     private final OperationLatencyTracker splitTaskRunLatency =
@@ -40,10 +38,6 @@ final class StatsLatencySet {
 
     void recordDrainLatencyNanos(final long nanos) {
         drainLatency.recordNanos(nanos);
-    }
-
-    void recordPutBusyWaitNanos(final long nanos) {
-        putBusyWaitLatency.recordNanos(nanos);
     }
 
     void recordSplitTaskStartDelayNanos(final long nanos) {
@@ -96,10 +90,6 @@ final class StatsLatencySet {
 
     long getDrainLatencyP95Micros() {
         return drainLatency.percentileMicros(PERCENTILE_95);
-    }
-
-    long getPutBusyWaitP95Micros() {
-        return putBusyWaitLatency.percentileMicros(PERCENTILE_95);
     }
 
     long getSplitTaskStartDelayP95Micros() {

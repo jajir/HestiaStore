@@ -24,7 +24,7 @@ class RouteSplitPlanTest {
         lowerSegmentId = SegmentId.of(2);
         upperSegmentId = SegmentId.of(3);
         splitPlan = new RouteSplitPlan<>(replacedSegmentId, lowerSegmentId,
-                upperSegmentId, 1, 10, RouteSplitPlan.SplitMode.SPLIT);
+                upperSegmentId, 10, RouteSplitPlan.SplitMode.SPLIT);
     }
 
     @AfterEach
@@ -41,7 +41,6 @@ class RouteSplitPlanTest {
         assertSame(lowerSegmentId, splitPlan.getLowerSegmentId());
         assertTrue(splitPlan.getUpperSegmentId().isPresent());
         assertSame(upperSegmentId, splitPlan.getUpperSegmentId().get());
-        assertEquals(1, splitPlan.getLowerMinKey());
         assertEquals(10, splitPlan.getLowerMaxKey());
         assertEquals(RouteSplitPlan.SplitMode.SPLIT, splitPlan.getSplitMode());
         assertTrue(splitPlan.isSplit());
@@ -50,7 +49,7 @@ class RouteSplitPlanTest {
     @Test
     void compacted_allows_missing_upper_segment() {
         final RouteSplitPlan<Integer> compacted = new RouteSplitPlan<>(
-                replacedSegmentId, lowerSegmentId, null, 1, 10,
+                replacedSegmentId, lowerSegmentId, null, 10,
                 RouteSplitPlan.SplitMode.COMPACTED);
         assertFalse(compacted.getUpperSegmentId().isPresent());
         assertEquals(RouteSplitPlan.SplitMode.COMPACTED,
@@ -63,7 +62,7 @@ class RouteSplitPlanTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new RouteSplitPlan<>(replacedSegmentId, lowerSegmentId,
-                        null, 1, 10, RouteSplitPlan.SplitMode.SPLIT));
+                        null, 10, RouteSplitPlan.SplitMode.SPLIT));
         assertEquals("Property 'upperSegmentId' must not be null.",
                 err.getMessage());
     }
@@ -73,7 +72,7 @@ class RouteSplitPlanTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new RouteSplitPlan<>(null, lowerSegmentId, upperSegmentId,
-                        1, 10, RouteSplitPlan.SplitMode.SPLIT));
+                        10, RouteSplitPlan.SplitMode.SPLIT));
         assertEquals("Property 'replacedSegmentId' must not be null.",
                 err.getMessage());
     }
@@ -83,19 +82,8 @@ class RouteSplitPlanTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new RouteSplitPlan<>(replacedSegmentId, null,
-                        upperSegmentId, 1, 10, RouteSplitPlan.SplitMode.SPLIT));
+                        upperSegmentId, 10, RouteSplitPlan.SplitMode.SPLIT));
         assertEquals("Property 'lowerSegmentId' must not be null.",
-                err.getMessage());
-    }
-
-    @Test
-    void rejects_missing_min_key() {
-        final IllegalArgumentException err = assertThrows(
-                IllegalArgumentException.class,
-                () -> new RouteSplitPlan<>(replacedSegmentId, lowerSegmentId,
-                        upperSegmentId, null, 10,
-                        RouteSplitPlan.SplitMode.SPLIT));
-        assertEquals("Property 'lowerMinKey' must not be null.",
                 err.getMessage());
     }
 
@@ -104,8 +92,7 @@ class RouteSplitPlanTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new RouteSplitPlan<>(replacedSegmentId, lowerSegmentId,
-                        upperSegmentId, 1, null,
-                        RouteSplitPlan.SplitMode.SPLIT));
+                        upperSegmentId, null, RouteSplitPlan.SplitMode.SPLIT));
         assertEquals("Property 'lowerMaxKey' must not be null.",
                 err.getMessage());
     }
@@ -115,7 +102,7 @@ class RouteSplitPlanTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new RouteSplitPlan<>(replacedSegmentId, lowerSegmentId,
-                        upperSegmentId, 1, 10, null));
+                        upperSegmentId, 10, null));
         assertEquals("Property 'splitMode' must not be null.",
                 err.getMessage());
     }

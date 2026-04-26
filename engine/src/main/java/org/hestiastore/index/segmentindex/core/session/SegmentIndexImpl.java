@@ -20,14 +20,14 @@ import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceCommands;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexMutationFacade;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexTrackedOperationRunner;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateOpening;
@@ -50,7 +50,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     protected final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexMutationFacade<K, V> mutationFacade;
     private final SegmentIndexReadFacade<K, V> readFacade;
-    private final SegmentIndexMaintenanceCommands<K, V> maintenanceCommands;
+    private final MaintenanceService maintenance;
+    private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
+    private final SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private final SegmentIndexSessionOwner<K, V> sessionOwner;
 
     protected SegmentIndexImpl(final Directory directoryFacade,
@@ -74,6 +76,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final Stats stats = new Stats();
             final IndexOperationTrackingAccess operationTracker =
                     IndexOperationTrackingAccess.create();
+            final SegmentIndexTrackedOperationRunner<K, V> createdTrackedRunner =
+                    new SegmentIndexTrackedOperationRunner<>(
+                            createdStateCoordinator::getIndexState,
+                            operationTracker);
             final SegmentIndexRuntime<K, V> runtime = createRuntime(logger,
                     directoryFacade, validatedKeyTypeDescriptor,
                     valueTypeDescriptor, validatedConfiguration,
@@ -82,19 +88,18 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator =
                     createConsistencyCoordinator(runtime);
             final SegmentIndexFacades<K, V> facades = SegmentIndexFacades
-                    .create(validatedConfiguration,
-                            new SegmentIndexTrackedOperationRunner<>(
-                                    createdStateCoordinator::getIndexState,
-                                    operationTracker),
-                            runtime, runtime, consistencyCoordinator);
+                    .create(validatedConfiguration, createdTrackedRunner,
+                            runtime);
             this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                     "keyTypeDescriptor");
             this.conf = validatedConfiguration;
             this.mutationFacade = facades.mutationFacade();
             this.readFacade = facades.readFacade();
-            this.maintenanceCommands = facades.maintenanceCommands();
+            this.maintenance = runtime.maintenance();
+            this.consistencyCoordinator = consistencyCoordinator;
+            this.trackedRunner = createdTrackedRunner;
             this.sessionOwner = new SegmentIndexSessionOwner<>(
-                    createdStateCoordinator, runtime, runtime,
+                    createdStateCoordinator, runtime,
                     createCloseCoordinator(logger, validatedConfiguration,
                             createdStateCoordinator, operationTracker, stats,
                             runtime),
@@ -221,13 +226,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void compact() {
-        runMaintenanceOperation(maintenanceCommands::compact);
+        runTrackedMaintenanceOperation(maintenance::compact);
     }
 
     /** {@inheritDoc} */
     @Override
     public void compactAndWait() {
-        runMaintenanceOperation(maintenanceCommands::compactAndWait);
+        runTrackedMaintenanceOperation(maintenance::compactAndWait);
     }
 
     /** {@inheritDoc} */
@@ -245,7 +250,8 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void checkAndRepairConsistency() {
-        runMaintenanceOperation(maintenanceCommands::checkAndRepairConsistency);
+        runTrackedMaintenanceOperation(
+                consistencyCoordinator::checkAndRepairConsistency);
     }
 
     /** {@inheritDoc} */
@@ -288,13 +294,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void flush() {
-        runMaintenanceOperation(maintenanceCommands::flush);
+        runTrackedMaintenanceOperation(maintenance::flush);
     }
 
     /** {@inheritDoc} */
     @Override
     public void flushAndWait() {
-        runMaintenanceOperation(maintenanceCommands::flushAndWait);
+        runTrackedMaintenanceOperation(maintenance::flushAndWait);
     }
 
     protected void ensureOperational() {
@@ -303,6 +309,10 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     protected void runMaintenanceOperation(final Runnable action) {
         sessionOwner.runMaintenanceOperation(action);
+    }
+
+    private void runTrackedMaintenanceOperation(final Runnable action) {
+        runMaintenanceOperation(() -> trackedRunner.runTrackedVoid(action));
     }
 
     protected final IndexStateCoordinator<K, V> stateCoordinator() {

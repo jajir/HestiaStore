@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -200,7 +200,7 @@ class SegmentIndexAsyncMaintenanceTest {
         return new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 tdi, tds, conf, conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                IndexExecutorRegistry.create(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

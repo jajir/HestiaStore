@@ -91,8 +91,8 @@ Segment-specific internals referenced here are centralized in
 ## Code Pointers
 
 - Routed direct writes and stable maintenance:
-  `src/main/java/org/hestiastore/index/segmentindex/core/routing/DirectSegmentCoordinator.java`,
-  `src/main/java/org/hestiastore/index/segmentindex/core/maintenance/IndexMaintenanceCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/maintenance/MaintenanceService.java`
 - Read path bounds: `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`,
   `src/main/java/org/hestiastore/index/segment/SegmentIndexSearcher.java`
 - Bloom filter: `src/main/java/org/hestiastore/index/bloomfilter/*`

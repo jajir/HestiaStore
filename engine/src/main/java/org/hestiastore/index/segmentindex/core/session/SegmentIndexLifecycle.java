@@ -6,7 +6,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,7 +110,7 @@ class SegmentIndexLifecycle<K, V> {
                     configurationResolver.resolveRuntimeConfiguration(
                             indexConfiguration);
             final IndexExecutorRegistry executorRegistry =
-                    new IndexExecutorRegistry(indexConfiguration);
+                    IndexExecutorRegistry.create(indexConfiguration);
             resources = SegmentIndexLifecycleResources.opened(directory,
                     indexConfiguration, runtimeConfiguration, executorRegistry);
         } catch (final RuntimeException e) {

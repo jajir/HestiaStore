@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -76,7 +76,7 @@ class SegmentIndexStartupRecoveryTest {
             super(directoryFacade, new TypeDescriptorInteger(),
                     new TypeDescriptorShortString(), conf,
                     conf.resolveRuntimeConfiguration(),
-                    new IndexExecutorRegistry(conf));
+                    IndexExecutorRegistry.create(conf));
             completeStartup();
         }
 

@@ -19,7 +19,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexCloseCoordinator;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
@@ -47,7 +47,7 @@ class SegmentIndexRuntimeGraphBuilderTest {
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = IndexExecutorRegistry.create(conf);
         closeOwner = Mockito.mock(
                 org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl.class);
         runtime = newBuilder(conf, failureRef::set, null).build();

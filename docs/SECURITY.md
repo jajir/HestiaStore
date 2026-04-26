@@ -4,7 +4,7 @@ Security and quality are important considerations in the HestiaStore project. Wh
 
 ## Dependency Scanning
 
-HestiaStore uses the [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) Maven plugin to automatically scan project dependencies for known vulnerabilities. The scan is performed during the Maven `verify` phase. This helps detect issues in third-party libraries such as outdated or vulnerable versions of common libraries.
+HestiaStore uses the [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) Maven plugin to scan project dependencies for known vulnerabilities. The scan is enabled in CI during the Maven `verify` phase. Local builds skip the scan by default; run `mvn verify -Ddependency-check.skip=false` to execute it locally. This helps detect issues in third-party libraries such as outdated or vulnerable versions of common libraries.
 
 The OWASP dependency report is also included in the Maven Site documentation.
 

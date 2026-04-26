@@ -12,7 +12,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,7 @@ class SegmentIndexLifecycleResourcesTest {
                 "lifecycle-resources");
         final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
                 configuration.resolveRuntimeConfiguration();
-        final IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+        final IndexExecutorRegistry executorRegistry = IndexExecutorRegistry.create(
                 configuration);
         final SegmentIndexLifecycleResources<Integer, String> resources =
                 SegmentIndexLifecycleResources.opened(directory, configuration,
@@ -69,7 +69,7 @@ class SegmentIndexLifecycleResourcesTest {
                 "lifecycle-resources");
         final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
                 configuration.resolveRuntimeConfiguration();
-        final IndexExecutorRegistry executorRegistry = new IndexExecutorRegistry(
+        final IndexExecutorRegistry executorRegistry = IndexExecutorRegistry.create(
                 configuration);
         final SegmentIndexLifecycleResources<Integer, String> resources =
                 SegmentIndexLifecycleResources.opened(directory, configuration,
