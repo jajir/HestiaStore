@@ -1,26 +1,23 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
 
 /**
  * Owns executor lifecycle for SegmentIndex subsystems.
  */
-public interface IndexExecutorRegistry extends CloseableResource {
+public interface ExecutorRegistry extends CloseableResource {
 
     /**
-     * Creates a registry using thread settings from index configuration.
+     * Creates a builder for executor registry instances.
      *
-     * @param indexConfiguration index configuration
-     * @return executor registry
+     * @return executor registry builder
      */
-    static IndexExecutorRegistry create(
-            final IndexConfiguration<?, ?> indexConfiguration) {
-        return new IndexExecutorRegistryImpl(indexConfiguration);
+    static ExecutorRegistryBuilder builder() {
+        return new ExecutorRegistryBuilder();
     }
 
     /**

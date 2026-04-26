@@ -19,7 +19,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
@@ -47,7 +47,7 @@ public final class SegmentIndexRuntime<K, V>
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry, final Stats stats,
+            final ExecutorRegistry executorRegistry, final Stats stats,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
         return new SegmentIndexRuntimeGraphBuilder<>(

@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -16,30 +16,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.datatype.TypeDescriptorInteger;
-import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-class IndexExecutorRegistryTest {
+class ExecutorRegistryTest {
 
     @Test
-    void configurationConstructorRejectsNullConfiguration() {
+    void builderRejectsMissingIndexMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> IndexExecutorRegistry.create((IndexConfiguration<?, ?>) null));
-        assertEquals("Property 'indexConfiguration' must not be null.",
+                () -> ExecutorRegistry.builder()
+                        .withSegmentMaintenanceThreads(1)
+                        .withSplitMaintenanceThreads(1)
+                        .withRegistryMaintenanceThreads(1)
+                        .build());
+        assertEquals("Property 'indexMaintenanceThreads' must not be null.",
                 ex.getMessage());
     }
 
     @Test
-    void configurationConstructorUsesProvidedConfiguration() {
-        final IndexConfiguration<Integer, String> conf = buildConf(2, 3, 4);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+    void builderUsesProvidedValues() {
+        final ExecutorRegistry registry = newRegistry(2, 3, 4);
         try {
             assertNotNull(registry.getIndexMaintenanceExecutor());
             assertNotNull(registry.getSplitMaintenanceExecutor());
@@ -52,109 +51,62 @@ class IndexExecutorRegistryTest {
     }
 
     @Test
-    void constructorRejectsNonPositiveSegmentMaintenanceThreads() {
-        final IndexConfiguration<Integer, String> conf = buildConf(0, 1, 1);
+    void builderRejectsNonPositiveSegmentMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> IndexExecutorRegistry.create(conf));
+                () -> newRegistry(0, 1, 1));
         assertEquals(
                 "Property 'numberOfSegmentMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
-    void constructorRejectsNonPositiveIndexMaintenanceThreads() {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 0, 1);
+    void builderRejectsNonPositiveIndexMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> IndexExecutorRegistry.create(conf));
+                () -> newRegistry(1, 0, 1));
         assertEquals(
                 "Property 'indexMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
-    void constructorRejectsNonPositiveRegistryMaintenanceThreads() {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexConfiguration<Integer, String> invalidConf = IndexConfiguration
-                .<Integer, String>builder()//
-                .withKeyClass(conf.getKeyClass())//
-                .withValueClass(conf.getValueClass())//
-                .withKeyTypeDescriptor(conf.getKeyTypeDescriptor())//
-                .withValueTypeDescriptor(conf.getValueTypeDescriptor())//
-                .withName(conf.getIndexName())//
-                .withContextLoggingEnabled(conf.isContextLoggingEnabled())//
-                .withMaxNumberOfKeysInSegmentCache(
-                        conf.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInActivePartition(
-                        conf.getMaxNumberOfKeysInActivePartition())//
-                .withMaxNumberOfKeysInPartitionBuffer(
-                        conf.getMaxNumberOfKeysInPartitionBuffer())//
-                .withMaxNumberOfKeysInSegmentChunk(
-                        conf.getMaxNumberOfKeysInSegmentChunk())//
-                .withMaxNumberOfKeysInSegment(conf.getMaxNumberOfKeysInSegment())//
-                .withMaxNumberOfSegmentsInCache(
-                        conf.getMaxNumberOfSegmentsInCache())//
-                .withBloomFilterNumberOfHashFunctions(
-                        conf.getBloomFilterNumberOfHashFunctions())//
-                .withBloomFilterIndexSizeInBytes(
-                        conf.getBloomFilterIndexSizeInBytes())//
-                .withBloomFilterProbabilityOfFalsePositive(
-                        conf.getBloomFilterProbabilityOfFalsePositive())//
-                .withDiskIoBufferSizeInBytes(conf.getDiskIoBufferSize())//
-                .withNumberOfIndexMaintenanceThreads(
-                        conf.getNumberOfIndexMaintenanceThreads())//
-                .withNumberOfSegmentMaintenanceThreads(
-                        conf.getNumberOfSegmentMaintenanceThreads())//
-                .withNumberOfRegistryLifecycleThreads(0)//
-                .withEncodingFilters(conf.getEncodingChunkFilters())//
-                .withDecodingFilters(conf.getDecodingChunkFilters())//
-                .build();
+    void builderRejectsNonPositiveSplitMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> IndexExecutorRegistry.create(invalidConf));
+                () -> newRegistryBuilder(1, 1, 1)
+                        .withSplitMaintenanceThreads(0)
+                        .build());
+        assertEquals(
+                "Property 'splitMaintenanceThreads' must be greater than 0",
+                ex.getMessage());
+    }
+
+    @Test
+    void builderRejectsNonPositiveRegistryMaintenanceThreads() {
+        final IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> newRegistry(1, 1, 0));
         assertEquals(
                 "Property 'registryMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
-    void constructorRejectsBlankIndexNameWhenContextLoggingEnabled() {
-        final IndexConfiguration<Integer, String> conf = IndexConfiguration
-                .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("  ")//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInPartitionBuffer(6)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(100)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+    void builderRejectsBlankIndexNameWhenContextLoggingEnabled() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> IndexExecutorRegistry.create(conf));
+                () -> newRegistryBuilder(1, 1, 1)
+                        .withContextLoggingEnabled(true)
+                        .withIndexName("  ")
+                        .build());
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
 
     @Test
     void closeShutsDownAllExecutors() {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
         final ExecutorService indexMaintenance = registry
                 .getIndexMaintenanceExecutor();
         final ExecutorService splitMaintenance = registry
@@ -177,8 +129,7 @@ class IndexExecutorRegistryTest {
 
     @Test
     void gettersRejectCallsAfterClose() {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
         registry.close();
 
         assertThrows(IllegalStateException.class,
@@ -195,8 +146,7 @@ class IndexExecutorRegistryTest {
 
     @Test
     void gettersReturnSameExecutorInstances() {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
         try {
             assertSame(registry.getIndexMaintenanceExecutor(),
                     registry.getIndexMaintenanceExecutor());
@@ -215,8 +165,7 @@ class IndexExecutorRegistryTest {
 
     @Test
     void closeDoesNotNeedLazyExecutorsToBeRequestedFirst() {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
 
         final ExecutorService indexMaintenance = registry
                 .getIndexMaintenanceExecutor();
@@ -235,8 +184,7 @@ class IndexExecutorRegistryTest {
     @Test
     void executorsUseExpectedThreadNamesAndDaemonThreads()
             throws InterruptedException, ExecutionException {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
         try {
             final String indexMaintenanceName = registry
                     .getIndexMaintenanceExecutor()
@@ -289,11 +237,10 @@ class IndexExecutorRegistryTest {
 
     @Test
     void stableSegmentMaintenanceExecutorUsesConfiguredThreadCount()
-            throws Exception {
+            throws InterruptedException {
         final int stableSegmentMaintenanceThreads = 4;
-        final IndexConfiguration<Integer, String> conf = buildConf(
-                stableSegmentMaintenanceThreads, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry =
+                newRegistry(stableSegmentMaintenanceThreads, 1, 1);
         final CountDownLatch started = new CountDownLatch(
                 stableSegmentMaintenanceThreads);
         final CountDownLatch release = new CountDownLatch(1);
@@ -335,8 +282,7 @@ class IndexExecutorRegistryTest {
     @Test
     void runtimeSnapshotTracksIndexMaintenanceQueuePressureAndRejections()
             throws InterruptedException {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
         final CountDownLatch workerStarted = new CountDownLatch(1);
         final CountDownLatch releaseWorker = new CountDownLatch(1);
         try {
@@ -371,8 +317,7 @@ class IndexExecutorRegistryTest {
     @Disabled("Known regular failure; intentionally disabled until root cause is understood.")
     void runtimeSnapshotTracksCompletedTasksAndCallerRuns()
             throws InterruptedException, ExecutionException {
-        final IndexConfiguration<Integer, String> conf = buildConf(1, 1, 1);
-        final IndexExecutorRegistry registry = IndexExecutorRegistry.create(conf);
+        final ExecutorRegistry registry = newRegistry(1, 1, 1);
         final CountDownLatch workerStarted = new CountDownLatch(1);
         final CountDownLatch releaseWorker = new CountDownLatch(1);
         final AtomicReference<String> callerRunThread = new AtomicReference<>();
@@ -427,35 +372,24 @@ class IndexExecutorRegistryTest {
         }
     }
 
-    private static IndexConfiguration<Integer, String> buildConf(
+    private static ExecutorRegistry newRegistry(
             final int stableSegmentMaintenanceThreads,
             final int indexMaintenanceThreads,
             final int registryMaintenanceThreads) {
-        return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("index-executor-registry-test")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInPartitionBuffer(6)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(100)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfIndexMaintenanceThreads(
-                        indexMaintenanceThreads)//
-                .withNumberOfSegmentMaintenanceThreads(
-                        stableSegmentMaintenanceThreads)//
-                .withNumberOfRegistryLifecycleThreads(
-                        registryMaintenanceThreads)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .build();
+        return newRegistryBuilder(stableSegmentMaintenanceThreads,
+                indexMaintenanceThreads, registryMaintenanceThreads).build();
+    }
+
+    private static ExecutorRegistryBuilder newRegistryBuilder(
+            final int stableSegmentMaintenanceThreads,
+            final int indexMaintenanceThreads,
+            final int registryMaintenanceThreads) {
+        return ExecutorRegistry.builder()
+                .withIndexName("executor-registry-test")
+                .withContextLoggingEnabled(false)
+                .withIndexMaintenanceThreads(indexMaintenanceThreads)
+                .withSplitMaintenanceThreads(indexMaintenanceThreads)
+                .withSegmentMaintenanceThreads(stableSegmentMaintenanceThreads)
+                .withRegistryMaintenanceThreads(registryMaintenanceThreads);
     }
 }

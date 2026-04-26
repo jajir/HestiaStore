@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +43,7 @@ class SegmentIndexImplConcurrencyTest {
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
                 conf, conf.resolveRuntimeConfiguration(),
-                IndexExecutorRegistry.create(conf));
+                ExecutorRegistryFixture.from(conf));
     }
 
     @AfterEach
@@ -212,7 +213,7 @@ class SegmentIndexImplConcurrencyTest {
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
                 conf, conf.resolveRuntimeConfiguration(),
-                IndexExecutorRegistry.create(conf));
+                ExecutorRegistryFixture.from(conf));
     }
 
     private void seedStableRange(final int count) {

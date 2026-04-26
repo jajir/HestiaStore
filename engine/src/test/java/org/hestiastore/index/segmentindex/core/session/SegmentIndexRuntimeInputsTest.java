@@ -14,7 +14,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ class SegmentIndexRuntimeInputsTest {
                         mock(Directory.class), mock(TypeDescriptor.class),
                         mock(TypeDescriptor.class), mock(IndexConfiguration.class),
                         mock(IndexRuntimeConfiguration.class),
-                        mock(IndexExecutorRegistry.class), new Stats(),
+                        mock(ExecutorRegistry.class), new Stats(),
                         new AtomicLong(), new AtomicLong(), new AtomicLong(),
                         stateSupplier(), failureHandler()));
         assertEquals("Property 'logger' must not be null.", ex.getMessage());
@@ -47,8 +47,8 @@ class SegmentIndexRuntimeInputsTest {
                 IndexConfiguration.class);
         final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
                 mock(IndexRuntimeConfiguration.class);
-        final IndexExecutorRegistry executorRegistry = mock(
-                IndexExecutorRegistry.class);
+        final ExecutorRegistry executorRegistry = mock(
+                ExecutorRegistry.class);
         final Stats stats = new Stats();
         final AtomicLong compactRequestHighWaterMark = new AtomicLong();
         final AtomicLong flushRequestHighWaterMark = new AtomicLong();

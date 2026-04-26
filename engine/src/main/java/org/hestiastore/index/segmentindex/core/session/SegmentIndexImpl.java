@@ -20,7 +20,7 @@ import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
@@ -60,7 +60,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry) {
+            final ExecutorRegistry executorRegistry) {
         IndexStateCoordinator<K, V> initializedStateCoordinator = null;
         try {
             final IndexConfiguration<K, V> validatedConfiguration = Vldtn
@@ -341,7 +341,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry, final Stats stats,
+            final ExecutorRegistry executorRegistry, final Stats stats,
             final IndexStateCoordinator<K, V> stateCoordinator) {
         return SegmentIndexRuntime.create(logger, directoryFacade,
                 keyTypeDescriptor, valueTypeDescriptor, conf,

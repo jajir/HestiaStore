@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -9,7 +9,7 @@ import org.hestiastore.index.Vldtn;
 /**
  * Holds executor instances together with their close ordering.
  */
-final class IndexExecutorTopology {
+final class ExecutorTopology {
 
     private final ExecutorService indexMaintenanceExecutor;
     private final ExecutorService splitMaintenanceExecutor;
@@ -17,7 +17,7 @@ final class IndexExecutorTopology {
     private final ExecutorService stableSegmentMaintenanceExecutor;
     private final LazyExecutorReference<ExecutorService> registryMaintenanceExecutor;
 
-    IndexExecutorTopology(final ExecutorService indexMaintenanceExecutor,
+    ExecutorTopology(final ExecutorService indexMaintenanceExecutor,
             final ExecutorService splitMaintenanceExecutor,
             final LazyExecutorReference<ScheduledExecutorService> splitPolicyScheduler,
             final ExecutorService stableSegmentMaintenanceExecutor,

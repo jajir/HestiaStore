@@ -16,7 +16,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 
 /**
@@ -49,7 +49,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry) {
+            final ExecutorRegistry executorRegistry) {
         this.delegate = new StartedSegmentIndex<>(directoryFacade,
                 keyTypeDescriptor, valueTypeDescriptor, conf,
                 runtimeConfiguration, executorRegistry);
@@ -155,7 +155,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
                 final TypeDescriptor<V> valueTypeDescriptor,
                 final IndexConfiguration<K, V> conf,
                 final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-                final IndexExecutorRegistry executorRegistry) {
+                final ExecutorRegistry executorRegistry) {
             super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
                     runtimeConfiguration, executorRegistry);
             completeStartup();

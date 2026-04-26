@@ -18,7 +18,8 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -33,7 +34,7 @@ class SegmentIndexMetricsSnapshotsTest {
     private static final String CONF_PROPERTY_MESSAGE =
             "Property 'conf' must not be null.";
 
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private WalRuntime<Integer, String> walRuntime;
 
     @AfterEach
@@ -55,7 +56,7 @@ class SegmentIndexMetricsSnapshotsTest {
                 SegmentRegistry.class);
         final SegmentRegistry.Runtime<Integer, String> runtime = mock(
                 SegmentRegistry.Runtime.class);
-        executorRegistry = IndexExecutorRegistry.create(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         Mockito.when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of());
         Mockito.when(segmentRegistry.runtime()).thenReturn(runtime);
@@ -86,7 +87,7 @@ class SegmentIndexMetricsSnapshotsTest {
                         mock(KeyToSegmentMap.class),
                         mock(SegmentRegistry.class),
                         () -> new SplitMetricsSnapshot(0, 0),
-                        mock(IndexExecutorRegistry.class),
+                        mock(ExecutorRegistry.class),
                         mock(RuntimeTuningState.class),
                         mock(WalRuntime.class), new Stats(), new AtomicLong(),
                         new AtomicLong(), new AtomicLong(),

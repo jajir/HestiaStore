@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -8,9 +8,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-final class IndexExecutorTestSupport {
+final class ExecutorTestSupport {
 
-    private IndexExecutorTestSupport() {
+    private ExecutorTestSupport() {
     }
 
     static ObservedThreadPool observedThreadPool(final int queueCapacity,
