@@ -18,8 +18,8 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
@@ -40,7 +40,7 @@ class SegmentStreamingServiceImplTest {
     private SegmentRegistry<String, String> segmentRegistry;
 
     @Mock
-    private StableSegmentAccess<String, String> stableSegmentGateway;
+    private StableSegmentOperationAccess<String, String> stableSegmentGateway;
 
     @Mock
     private BlockingSegment<String, String> segmentHandle;
@@ -98,7 +98,7 @@ class SegmentStreamingServiceImplTest {
                 .make(List.<Entry<String, String>>of().iterator());
         when(stableSegmentGateway.openIterator(segmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                .thenReturn(IndexResult.ok(iterator));
+                .thenReturn(StableSegmentOperationResult.ok(iterator));
 
         final EntryIterator<String, String> result = service.openIterator(
                 segmentId, SegmentIteratorIsolation.FAIL_FAST);
@@ -115,8 +115,8 @@ class SegmentStreamingServiceImplTest {
                 .make(List.<Entry<String, String>>of().iterator());
         when(stableSegmentGateway.openIterator(busySegmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                        .thenReturn(IndexResult.busy(),
-                                IndexResult.ok(iterator));
+                        .thenReturn(StableSegmentOperationResult.busy(),
+                                StableSegmentOperationResult.ok(iterator));
 
         assertSame(iterator, service.openIterator(busySegmentId,
                 SegmentIteratorIsolation.FAIL_FAST));
@@ -124,7 +124,7 @@ class SegmentStreamingServiceImplTest {
         final SegmentId errorSegmentId = createBootstrapSegment("error-key");
         when(stableSegmentGateway.openIterator(errorSegmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                .thenReturn(IndexResult.error());
+                .thenReturn(StableSegmentOperationResult.error());
 
         assertThrows(IndexException.class,
                 () -> service.openIterator(errorSegmentId,

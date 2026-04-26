@@ -28,3 +28,5 @@ concern above stable segments.
 - [Segment Index Concurrency](segment-index-concurrency.md) — index
   thread-safety and lifecycle behavior, including `OPENING`, `READY`,
   `CLOSING`, `CLOSED`, and `ERROR`.
+- [Implementation](implementation.md) — layer map from `SegmentIndex` down to
+  `Segment` internals and where to inspect each responsibility.

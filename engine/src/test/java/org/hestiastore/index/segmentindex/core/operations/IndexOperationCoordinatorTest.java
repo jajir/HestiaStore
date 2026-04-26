@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;

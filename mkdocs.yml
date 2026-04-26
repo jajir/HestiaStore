@@ -67,6 +67,7 @@ nav:
             - Performance Model & Sizing: architecture/segmentindex/performance.md
             - Metrics Snapshot: architecture/segmentindex/metrics-snapshot.md
             - Segment Index Concurrency: architecture/segmentindex/segment-index-concurrency.md
+            - Implementation: architecture/segmentindex/implementation.md
         - Segment:
             - Overview: architecture/segment/index.md
             - Segment Design: architecture/segment/segment.md

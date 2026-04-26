@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
 
@@ -8,12 +8,12 @@ import org.hestiastore.index.Vldtn;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexMutationFacade<K, V> {
+public final class SegmentIndexPointOperationFacade<K, V> {
 
     private final SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private final SegmentIndexDataAccess<K, V> dataAccess;
 
-    public SegmentIndexMutationFacade(
+    public SegmentIndexPointOperationFacade(
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
             final SegmentIndexDataAccess<K, V> dataAccess) {
         this.trackedRunner = Vldtn.requireNonNull(trackedRunner,

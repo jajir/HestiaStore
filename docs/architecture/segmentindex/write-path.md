@@ -48,15 +48,14 @@ additional files or provide durability.
 Every `put` / `delete` now goes straight to the routed stable segment:
 
 - `IndexOperationCoordinator` appends to WAL first when enabled
-- `DirectSegmentCoordinator` resolves the current route and acquires a
+- `SegmentAccessService` resolves the current route and acquires a
   `SegmentTopology` lease
-- `StableSegmentGateway` loads the segment and calls `Segment.put(...)`
+- the loaded segment receives the `Segment.put(...)` call
 - read-after-write is then guaranteed by the target segment's write cache
 
 Key classes:
-`segmentindex/core/IndexOperationCoordinator`,
-`segmentindex/core/DirectSegmentCoordinator`,
-`segmentindex/core/StableSegmentGateway`,
+`segmentindex/core/operations/IndexOperationCoordinator`,
+`segmentindex/core/segmentaccess/SegmentAccessService`,
 `segment/SegmentImpl`.
 
 ## Flush and Segment Maintenance
@@ -143,7 +142,7 @@ Deletes write a tombstone value:
 - reads treat tombstones as absent
 
 Key classes:
-`segmentindex/core/IndexOperationCoordinator#delete`,
+`segmentindex/core/operations/IndexOperationCoordinator#delete`,
 `datatype/TypeDescriptor#getTombstone`,
 `segment/SegmentSearcher`.
 
@@ -204,7 +203,7 @@ Key classes:
 - SegmentIndex entry points and routing:
   `src/main/java/org/hestiastore/index/segmentindex/core/session/SegmentIndexImpl.java`
 - Direct routed write path:
-  `src/main/java/org/hestiastore/index/segmentindex/core/routing/DirectSegmentCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
 - Segment write/merge path:
   `src/main/java/org/hestiastore/index/segment/*`
 - Chunk store and filters:

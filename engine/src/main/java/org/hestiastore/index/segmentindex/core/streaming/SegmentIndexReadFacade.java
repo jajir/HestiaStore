@@ -5,8 +5,8 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexTrackedOperationRunner;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexDataAccess;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexTrackedOperationRunner;
 
 /**
  * Owns iterator-oriented read operations on the index data path.

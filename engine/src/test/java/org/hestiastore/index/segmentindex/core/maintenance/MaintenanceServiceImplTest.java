@@ -23,8 +23,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexResult;
-import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
+import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 class MaintenanceServiceImplTest {
 
     @Mock
-    private StableSegmentAccess<String, String> stableSegmentGateway;
+    private StableSegmentOperationAccess<String, String> stableSegmentGateway;
 
     @Mock
     private BlockingSegment<String, String> segmentHandle;
@@ -94,7 +94,7 @@ class MaintenanceServiceImplTest {
     void compact_compactsMappedSegments() {
         final SegmentId segmentId = createBootstrapSegment("compact-key");
         when(stableSegmentGateway.compact(segmentId))
-                .thenReturn(IndexResult.busy());
+                .thenReturn(StableSegmentOperationResult.busy());
 
         service.compact();
 
@@ -107,14 +107,14 @@ class MaintenanceServiceImplTest {
     void flush_flushesMappedSegmentsAndRouteMap() {
         final KeyToSegmentMap<Integer> mappedSegments = mock(
                 KeyToSegmentMap.class);
-        final StableSegmentAccess<Integer, String> stableSegments = mock(
-                StableSegmentAccess.class);
+        final StableSegmentOperationAccess<Integer, String> stableSegments = mock(
+                StableSegmentOperationAccess.class);
         final SplitService<Integer, String> splitServiceValue = mock(
                 SplitService.class);
         final Runnable checkpoint = mock(Runnable.class);
         final SegmentId segmentId = SegmentId.of(7);
         when(mappedSegments.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(stableSegments.flush(segmentId)).thenReturn(IndexResult.busy());
+        when(stableSegments.flush(segmentId)).thenReturn(StableSegmentOperationResult.busy());
         final MaintenanceServiceImpl<Integer, String> maintenance =
                 new MaintenanceServiceImpl<>(
                         LoggerFactory.getLogger(
@@ -139,7 +139,8 @@ class MaintenanceServiceImplTest {
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId)).thenReturn(
-                IndexResult.busy(), IndexResult.ok(segmentHandle));
+                StableSegmentOperationResult.busy(),
+                StableSegmentOperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.READY);
 
         service.flushSegment(segmentId, true);
@@ -158,7 +159,8 @@ class MaintenanceServiceImplTest {
                 sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.compact(segmentId)).thenReturn(
-                IndexResult.busy(), IndexResult.ok(segmentHandle));
+                StableSegmentOperationResult.busy(),
+                StableSegmentOperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.READY);
 
         service.compactSegment(segmentId, true);
@@ -171,7 +173,7 @@ class MaintenanceServiceImplTest {
     void compactSegment_coalescesBusyOperationWhenWaitingIsDisabled() {
         final SegmentId segmentId = createBootstrapSegment("busy-key");
         when(stableSegmentGateway.compact(segmentId))
-                .thenReturn(IndexResult.busy());
+                .thenReturn(StableSegmentOperationResult.busy());
 
         assertDoesNotThrow(() -> service.compactSegment(segmentId, false));
         assertEquals(0L, stats.getCompactBusyRetryCount());
@@ -181,7 +183,7 @@ class MaintenanceServiceImplTest {
     void compactSegment_ignoresUnmappedErrorStatus() {
         final SegmentId segmentId = SegmentId.of(999);
         when(stableSegmentGateway.compact(segmentId))
-                .thenReturn(IndexResult.error());
+                .thenReturn(StableSegmentOperationResult.error());
 
         assertDoesNotThrow(() -> service.compactSegment(segmentId, true));
     }
@@ -190,7 +192,7 @@ class MaintenanceServiceImplTest {
     void flushSegment_throwsForMappedErrorStatus() {
         final SegmentId segmentId = createBootstrapSegment("error-key");
         when(stableSegmentGateway.flush(segmentId))
-                .thenReturn(IndexResult.error());
+                .thenReturn(StableSegmentOperationResult.error());
 
         assertThrows(IndexException.class,
                 () -> service.flushSegment(segmentId, true));
@@ -201,7 +203,7 @@ class MaintenanceServiceImplTest {
         final SegmentId segmentId = createBootstrapSegment("error-state-key");
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.ERROR);
 
         assertThrows(IndexException.class,
@@ -215,9 +217,9 @@ class MaintenanceServiceImplTest {
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(stableSegmentGateway.flush(firstSegment))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
         when(stableSegmentGateway.flush(secondSegment))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
 
         service.flushMappedSegmentsAndWait();
 
@@ -231,7 +233,7 @@ class MaintenanceServiceImplTest {
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(stableSegmentGateway.flush(segmentId))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
 
         service.flushAndWait();
 
@@ -246,9 +248,9 @@ class MaintenanceServiceImplTest {
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(stableSegmentGateway.compact(segmentId))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
         when(stableSegmentGateway.flush(segmentId))
-                .thenReturn(IndexResult.ok(segmentHandle));
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
 
         service.compactAndWait();
 

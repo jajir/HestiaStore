@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.routing;
+package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -6,20 +6,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class SegmentIndexMutationFacadeTest {
+class SegmentIndexPointOperationFacadeTest {
 
     private SegmentIndexDataAccess<Integer, String> dataAccess;
-    private SegmentIndexMutationFacade<Integer, String> mutationFacade;
+    private SegmentIndexPointOperationFacade<Integer, String> pointOperationFacade;
 
     @BeforeEach
     void setUp() {
         dataAccess = mock(SegmentIndexDataAccess.class);
-        mutationFacade = new SegmentIndexMutationFacade<>(
+        pointOperationFacade = new SegmentIndexPointOperationFacade<>(
                 new SegmentIndexTrackedOperationRunner<>(this::readyState,
                         IndexOperationTrackingAccess.create()),
                 dataAccess);
@@ -29,9 +28,9 @@ class SegmentIndexMutationFacadeTest {
     void putGetDeleteDelegateThroughTrackedRunner() {
         when(dataAccess.get(1)).thenReturn("one");
 
-        mutationFacade.put(1, "one");
-        assertEquals("one", mutationFacade.get(1));
-        mutationFacade.delete(1);
+        pointOperationFacade.put(1, "one");
+        assertEquals("one", pointOperationFacade.get(1));
+        pointOperationFacade.delete(1);
 
         verify(dataAccess).put(1, "one");
         verify(dataAccess).get(1);

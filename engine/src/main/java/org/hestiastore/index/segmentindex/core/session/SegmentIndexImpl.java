@@ -23,9 +23,6 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexMutationFacade;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexTrackedOperationRunner;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
@@ -48,7 +45,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IndexConfiguration<K, V> conf;
     protected final TypeDescriptor<K> keyTypeDescriptor;
-    private final SegmentIndexMutationFacade<K, V> mutationFacade;
+    private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;
     private final SegmentIndexReadFacade<K, V> readFacade;
     private final MaintenanceService maintenance;
     private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
@@ -93,7 +90,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                     "keyTypeDescriptor");
             this.conf = validatedConfiguration;
-            this.mutationFacade = facades.mutationFacade();
+            this.pointOperationFacade = facades.pointOperationFacade();
             this.readFacade = facades.readFacade();
             this.maintenance = runtime.maintenance();
             this.consistencyCoordinator = consistencyCoordinator;
@@ -118,7 +115,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public void put(final K key, final V value) {
-        mutationFacade.put(key, value);
+        pointOperationFacade.put(key, value);
     }
 
     /**
@@ -238,13 +235,13 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     /** {@inheritDoc} */
     @Override
     public V get(final K key) {
-        return mutationFacade.get(key);
+        return pointOperationFacade.get(key);
     }
 
     /** {@inheritDoc} */
     @Override
     public void delete(final K key) {
-        mutationFacade.delete(key);
+        pointOperationFacade.delete(key);
     }
 
     /** {@inheritDoc} */

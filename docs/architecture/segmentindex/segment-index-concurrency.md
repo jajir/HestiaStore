@@ -133,12 +133,13 @@ Notes:
 - SegmentIndex (public API): thread-safe entry point.
 - SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
   maintenance.
-- DirectSegmentCoordinator: route snapshot, SegmentTopology lease acquisition,
-  and direct stable-segment operation retry boundaries.
-- StableSegmentGateway: single-attempt stable-segment access through
-  SegmentRegistry.
+- SegmentAccessService: route snapshot and SegmentTopology lease acquisition
+  for point reads and writes.
+- StableSegmentOperationGateway: single-attempt stable-segment operation access
+  through SegmentRegistry.
 - IndexRetryPolicy: backoff + timeout for BUSY retries.
-- IndexResult/IndexResultStatus: internal OK/BUSY/CLOSED/ERROR wrapper.
+- StableSegmentOperationResult/StableSegmentOperationStatus: internal
+  OK/BUSY/CLOSED/ERROR wrapper for stable-segment operations.
 - KeyToSegmentMap: mapping, snapshot versioning, and persistence of segment ids.
 - SegmentTopology: runtime route state and route leases; rebuilt from
   KeyToSegmentMap snapshots.

@@ -22,8 +22,7 @@ import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplie
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
@@ -89,7 +88,8 @@ public final class SegmentIndexRuntime<K, V>
     }
 
     public void recoverFromWal() {
-        services.walCoordinator().recover(services.operationAccess()::replayWalRecord);
+        services.walCoordinator().recover(
+                services.operationAccess()::replayWalRecord);
     }
 
     public void cleanupOrphanedSegmentDirectories() {
