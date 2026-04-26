@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -8,10 +8,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Function;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 
 /**
  * Creates observed thread pools with consistent sizing, naming, and rejection
@@ -22,30 +20,24 @@ final class ObservedThreadPoolFactory {
     private static final int MIN_QUEUE_CAPACITY = 64;
     private static final int QUEUE_CAPACITY_MULTIPLIER = 64;
 
-    private final IndexConfiguration<?, ?> configuration;
-
-    ObservedThreadPoolFactory(final IndexConfiguration<?, ?> configuration) {
-        this.configuration = Vldtn.requireNonNull(configuration,
-                "configuration");
+    ObservedThreadPoolFactory() {
     }
 
-    ObservedThreadPool createAbortingPool(
-            final Function<IndexConfiguration<?, ?>, Integer> threadCountSupplier,
+    ObservedThreadPool createAbortingPool(final Integer threadCount,
             final String threadCountArgumentName,
             final String threadNamePrefix) {
         final LongAdder rejectedTaskCount = new LongAdder();
-        return createObservedThreadPool(threadCountSupplier,
+        return createObservedThreadPool(threadCount,
                 threadCountArgumentName, threadNamePrefix,
                 new CountingAbortPolicy(rejectedTaskCount), rejectedTaskCount,
                 new LongAdder());
     }
 
-    ObservedThreadPool createCallerRunsPool(
-            final Function<IndexConfiguration<?, ?>, Integer> threadCountSupplier,
+    ObservedThreadPool createCallerRunsPool(final Integer threadCount,
             final String threadCountArgumentName,
             final String threadNamePrefix) {
         final LongAdder callerRunsCount = new LongAdder();
-        return createObservedThreadPool(threadCountSupplier,
+        return createObservedThreadPool(threadCount,
                 threadCountArgumentName, threadNamePrefix,
                 new CountingCallerRunsPolicy(callerRunsCount),
                 new LongAdder(), callerRunsCount);
@@ -61,27 +53,26 @@ final class ObservedThreadPoolFactory {
         };
     }
 
-    int configuredThreadCount(
-            final Function<IndexConfiguration<?, ?>, Integer> threadCountSupplier,
+    static int configuredThreadCount(final Integer threadCount,
             final String threadCountArgumentName) {
-        return Vldtn.requireGreaterThanZero(Vldtn.requireNonNull(
-                Vldtn.requireNonNull(threadCountSupplier, "threadCountSupplier")
-                        .apply(configuration),
-                threadCountArgumentName), threadCountArgumentName);
+        return Vldtn.requireGreaterThanZero(
+                Vldtn.requireNonNull(threadCount, threadCountArgumentName),
+                threadCountArgumentName);
     }
 
     private ObservedThreadPool createObservedThreadPool(
-            final Function<IndexConfiguration<?, ?>, Integer> threadCountSupplier,
+            final Integer threadCount,
             final String threadCountArgumentName,
             final String threadNamePrefix,
             final RejectedExecutionHandler rejectedExecutionHandler,
             final LongAdder rejectedTaskCount,
             final LongAdder callerRunsCount) {
-        final int threadCount = configuredThreadCount(threadCountSupplier,
+        final int configuredThreadCount = configuredThreadCount(threadCount,
                 threadCountArgumentName);
-        final int queueCapacity = queueCapacity(threadCount);
-        return new ObservedThreadPool(new ThreadPoolExecutor(threadCount,
-                threadCount, 0L, TimeUnit.MILLISECONDS,
+        final int queueCapacity = queueCapacity(configuredThreadCount);
+        return new ObservedThreadPool(new ThreadPoolExecutor(
+                configuredThreadCount, configuredThreadCount, 0L,
+                TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(queueCapacity),
                 daemonThreadFactory(threadNamePrefix),
                 rejectedExecutionHandler), queueCapacity, rejectedTaskCount,

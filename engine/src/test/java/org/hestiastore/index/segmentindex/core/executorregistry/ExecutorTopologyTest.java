@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,28 +8,28 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.junit.jupiter.api.Test;
 
-class IndexExecutorTopologyTest {
+class ExecutorTopologyTest {
 
     @Test
     void shutdownExecutorsInCloseOrderShutsDownAllExecutors() {
         final java.util.ArrayList<String> shutdownOrder =
                 new java.util.ArrayList<>();
-        final IndexExecutorTestSupport.RecordingExecutorService indexMaintenance =
-                new IndexExecutorTestSupport.RecordingExecutorService("index",
+        final ExecutorTestSupport.RecordingExecutorService indexMaintenance =
+                new ExecutorTestSupport.RecordingExecutorService("index",
                         shutdownOrder);
-        final IndexExecutorTestSupport.RecordingExecutorService splitMaintenance =
-                new IndexExecutorTestSupport.RecordingExecutorService("split",
+        final ExecutorTestSupport.RecordingExecutorService splitMaintenance =
+                new ExecutorTestSupport.RecordingExecutorService("split",
                         shutdownOrder);
         final ScheduledExecutorService splitPolicyScheduler =
-                new IndexExecutorTestSupport.RecordingScheduledExecutorService(
+                new ExecutorTestSupport.RecordingScheduledExecutorService(
                         "scheduler", shutdownOrder);
-        final IndexExecutorTestSupport.RecordingExecutorService stableSegmentMaintenance =
-                new IndexExecutorTestSupport.RecordingExecutorService(
+        final ExecutorTestSupport.RecordingExecutorService stableSegmentMaintenance =
+                new ExecutorTestSupport.RecordingExecutorService(
                         "stable", shutdownOrder);
-        final IndexExecutorTestSupport.RecordingExecutorService registryMaintenance =
-                new IndexExecutorTestSupport.RecordingExecutorService(
+        final ExecutorTestSupport.RecordingExecutorService registryMaintenance =
+                new ExecutorTestSupport.RecordingExecutorService(
                         "registry", shutdownOrder);
-        final IndexExecutorTopology topology = new IndexExecutorTopology(
+        final ExecutorTopology topology = new ExecutorTopology(
                 indexMaintenance, splitMaintenance,
                 new LazyExecutorReference<>(() -> splitPolicyScheduler),
                 stableSegmentMaintenance,

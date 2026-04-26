@@ -21,7 +21,8 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -60,7 +61,7 @@ class SegmentIndexMetricsCollectorTest {
     private AtomicLong compactRequestHighWaterMark;
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private WalRuntime<Integer, String> walRuntime;
     private SegmentIndexMetricsCollector<Integer, String> collector;
 
@@ -71,7 +72,7 @@ class SegmentIndexMetricsCollectorTest {
         compactRequestHighWaterMark = new AtomicLong();
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(123L);
-        executorRegistry = IndexExecutorRegistry.create(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 conf, keyToSegmentMap, segmentRegistry,

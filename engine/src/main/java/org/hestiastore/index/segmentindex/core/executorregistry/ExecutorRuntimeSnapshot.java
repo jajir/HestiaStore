@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
@@ -7,13 +7,13 @@ import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAcces
 /**
  * Immutable executor runtime snapshot owned by infrastructure monitoring.
  */
-final class IndexExecutorRuntimeSnapshot implements IndexExecutorRuntimeAccess {
+final class ExecutorRuntimeSnapshot implements IndexExecutorRuntimeAccess {
 
     private final IndexExecutorMetricsAccess indexMaintenance;
     private final IndexExecutorMetricsAccess splitMaintenance;
     private final IndexExecutorMetricsAccess stableSegmentMaintenance;
 
-    IndexExecutorRuntimeSnapshot(
+    ExecutorRuntimeSnapshot(
             final IndexExecutorMetricsAccess indexMaintenance,
             final IndexExecutorMetricsAccess splitMaintenance,
             final IndexExecutorMetricsAccess stableSegmentMaintenance) {

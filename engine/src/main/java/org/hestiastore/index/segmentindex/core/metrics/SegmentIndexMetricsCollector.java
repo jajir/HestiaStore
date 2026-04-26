@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -22,7 +22,7 @@ final class SegmentIndexMetricsCollector<K, V> {
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector;
-    private final IndexExecutorRegistry executorRegistry;
+    private final ExecutorRegistry executorRegistry;
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats;
     private final AtomicLong compactRequestHighWaterMark;
@@ -32,7 +32,7 @@ final class SegmentIndexMetricsCollector<K, V> {
     private SegmentIndexMetricsCollector(
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector,
-            final IndexExecutorRegistry executorRegistry,
+            final ExecutorRegistry executorRegistry,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
@@ -58,7 +58,7 @@ final class SegmentIndexMetricsCollector<K, V> {
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
-            final IndexExecutorRegistry executorRegistry,
+            final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,

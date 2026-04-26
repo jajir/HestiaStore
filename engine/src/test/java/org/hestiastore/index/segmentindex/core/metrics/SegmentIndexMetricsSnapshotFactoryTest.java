@@ -19,7 +19,8 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
@@ -29,7 +30,7 @@ import org.junit.jupiter.api.Test;
 class SegmentIndexMetricsSnapshotFactoryTest {
 
     private WalRuntime<Integer, String> walRuntime;
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
 
     @AfterEach
     void tearDown() {
@@ -47,7 +48,7 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         final Stats stats = new Stats();
         stats.recordGetRequest();
         stats.recordPutRequest();
-        executorRegistry = IndexExecutorRegistry.create(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
                 new SegmentIndexMetricsSnapshotFactory<>(conf,
                         () -> new SplitMetricsSnapshot(3, 2),

@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
@@ -7,13 +7,13 @@ import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAcces
  * Produces runtime snapshots from observed thread pools without owning the
  * executors themselves.
  */
-final class IndexExecutorRuntimeMonitor {
+final class ExecutorRuntimeMonitor {
 
     private final ObservedThreadPool indexMaintenanceThreadPool;
     private final ObservedThreadPool splitMaintenanceThreadPool;
     private final ObservedThreadPool stableSegmentMaintenanceThreadPool;
 
-    IndexExecutorRuntimeMonitor(
+    ExecutorRuntimeMonitor(
             final ObservedThreadPool indexMaintenanceThreadPool,
             final ObservedThreadPool splitMaintenanceThreadPool,
             final ObservedThreadPool stableSegmentMaintenanceThreadPool) {
@@ -27,7 +27,7 @@ final class IndexExecutorRuntimeMonitor {
     }
 
     IndexExecutorRuntimeAccess runtimeSnapshot() {
-        return new IndexExecutorRuntimeSnapshot(
+        return new ExecutorRuntimeSnapshot(
                 indexMaintenanceThreadPool.snapshot(),
                 splitMaintenanceThreadPool.snapshot(),
                 stableSegmentMaintenanceThreadPool.snapshot());

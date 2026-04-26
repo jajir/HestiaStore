@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -33,7 +33,7 @@ final class ObservedThreadPool {
     }
 
     IndexExecutorMetricsAccess snapshot() {
-        return new IndexExecutorMetricsSnapshot(
+        return new ExecutorMetricsSnapshot(
                 executor.getActiveCount(), executor.getQueue().size(),
                 queueCapacity, executor.getCompletedTaskCount(),
                 rejectedTaskCount.sum(), callerRunsCount.sum());

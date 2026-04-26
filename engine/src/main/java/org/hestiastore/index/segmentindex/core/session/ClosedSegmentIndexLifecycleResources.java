@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.slf4j.Logger;
 
 /**
@@ -41,7 +41,7 @@ final class ClosedSegmentIndexLifecycleResources<K, V>
     }
 
     @Override
-    IndexExecutorRegistry executorRegistry() {
+    ExecutorRegistry executorRegistry() {
         return null;
     }
 

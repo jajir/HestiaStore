@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.executor;
+package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -10,12 +10,12 @@ import java.util.concurrent.atomic.LongAdder;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
 import org.junit.jupiter.api.Test;
 
-class IndexExecutorRuntimeMonitorTest {
+class ExecutorRuntimeMonitorTest {
 
     @Test
     void runtimeSnapshotUsesObservedPools() {
-        final IndexExecutorRuntimeMonitor runtimeMonitor =
-                new IndexExecutorRuntimeMonitor(
+        final ExecutorRuntimeMonitor runtimeMonitor =
+                new ExecutorRuntimeMonitor(
                         observedThreadPool(4, 1L, 2L),
                         observedThreadPool(8, 3L, 4L),
                         observedThreadPool(16, 5L, 6L));

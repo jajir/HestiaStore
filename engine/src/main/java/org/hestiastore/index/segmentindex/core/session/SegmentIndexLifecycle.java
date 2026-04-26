@@ -6,7 +6,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,14 +109,31 @@ class SegmentIndexLifecycle<K, V> {
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration =
                     configurationResolver.resolveRuntimeConfiguration(
                             indexConfiguration);
-            final IndexExecutorRegistry executorRegistry =
-                    IndexExecutorRegistry.create(indexConfiguration);
+            final ExecutorRegistry executorRegistry =
+                    createExecutorRegistry(indexConfiguration);
             resources = SegmentIndexLifecycleResources.opened(directory,
                     indexConfiguration, runtimeConfiguration, executorRegistry);
         } catch (final RuntimeException e) {
             close();
             throw e;
         }
+    }
+
+    private ExecutorRegistry createExecutorRegistry(
+            final IndexConfiguration<K, V> indexConfiguration) {
+        return ExecutorRegistry.builder()
+                .withIndexName(indexConfiguration.getIndexName())
+                .withContextLoggingEnabled(Boolean.TRUE.equals(
+                        indexConfiguration.isContextLoggingEnabled()))
+                .withIndexMaintenanceThreads(
+                        indexConfiguration.getNumberOfIndexMaintenanceThreads())
+                .withSplitMaintenanceThreads(
+                        indexConfiguration.getNumberOfIndexMaintenanceThreads())
+                .withSegmentMaintenanceThreads(indexConfiguration
+                        .getNumberOfSegmentMaintenanceThreads())
+                .withRegistryMaintenanceThreads(indexConfiguration
+                        .getNumberOfRegistryLifecycleThreads())
+                .build();
     }
 
     /**
