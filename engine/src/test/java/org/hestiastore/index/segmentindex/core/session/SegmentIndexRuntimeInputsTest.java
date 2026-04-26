@@ -14,7 +14,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

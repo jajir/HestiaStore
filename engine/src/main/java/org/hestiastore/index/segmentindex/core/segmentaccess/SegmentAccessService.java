@@ -1,15 +1,11 @@
 package org.hestiastore.index.segmentindex.core.segmentaccess;
 
-import java.util.function.Function;
-
-import org.hestiastore.index.segmentregistry.BlockingSegment;
-
 /**
  * Provides scoped blocking access to the segment that owns a key.
  * <p>
  * Implementations hide route-map lookup, topology lease acquisition, split
- * draining, and registry loading from callers. The supplied operation runs
- * while the internal topology lease is held.
+ * draining, and registry loading from callers. Callers must close returned
+ * access objects after using the segment.
  *
  * @param <K> key type
  * @param <V> value type
@@ -28,25 +24,19 @@ public interface SegmentAccessService<K, V> {
     }
 
     /**
-     * Runs a read operation with the segment mapped to the provided key.
+     * Acquires read access to the segment mapped to the provided key.
      *
      * @param key key used to find the segment
-     * @param operation operation to run while segment access is held
-     * @param <R> result type
-     * @return operation result, or {@code null} when no segment maps the key
+     * @return segment access, or {@code null} when no segment maps the key
      */
-    <R> R withSegmentForRead(K key,
-            Function<BlockingSegment<K, V>, R> operation);
+    SegmentAccess<K, V> acquireForRead(K key);
 
     /**
-     * Runs a write operation with the segment mapped to the provided key,
+     * Acquires write access to the segment mapped to the provided key,
      * extending the tail route when needed.
      *
      * @param key key used to find the segment
-     * @param operation operation to run while segment access is held
-     * @param <R> result type
-     * @return operation result
+     * @return segment access
      */
-    <R> R withSegmentForWrite(K key,
-            Function<BlockingSegment<K, V>, R> operation);
+    SegmentAccess<K, V> acquireForWrite(K key);
 }

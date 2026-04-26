@@ -1,14 +1,16 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segmentindex.core.control.IndexRuntimeControlPlane;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.SegmentIndexMetricsSnapshots;
+import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
@@ -41,12 +43,16 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
             final WalRuntime<K, V> walRuntime) {
         final WalRuntime<K, V> validatedWalRuntime = Vldtn.requireNonNull(
                 walRuntime, "walRuntime");
+        final AtomicReference<Runnable> checkpointAction =
+                new AtomicReference<>(() -> {
+                });
+        final MaintenanceService maintenance = createMaintenance(
+                () -> checkpointAction.get().run());
         final IndexWalCoordinator<K, V> walCoordinator = createWalCoordinator(
-                validatedWalRuntime);
+                validatedWalRuntime, maintenance::flushAndWait);
+        checkpointAction.set(walCoordinator::checkpoint);
         final SegmentIndexOperationAccess<K, V> operationAccess =
                 createOperationAccess(walCoordinator);
-        final SegmentIndexMaintenanceAccess<K, V> maintenanceAccess =
-                createMaintenanceAccess(walCoordinator);
         final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier =
                 createRuntimeLimitApplier();
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
@@ -54,21 +60,19 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
         final IndexControlPlane controlPlane = createControlPlane(
                 metricsSnapshotSupplier, runtimeLimitApplier);
         return new SegmentIndexRuntimeServices<>(walCoordinator,
-                operationAccess, maintenanceAccess,
+                operationAccess, maintenance,
                 runtimeLimitApplier, metricsSnapshotSupplier, controlPlane);
     }
 
     private IndexWalCoordinator<K, V> createWalCoordinator(
-            final WalRuntime<K, V> walRuntime) {
+            final WalRuntime<K, V> walRuntime,
+            final Runnable flushDurableStateAction) {
         return new IndexWalCoordinator<>(request.logger, request.conf,
                 walRuntime, coreStorage.retryPolicy(), () -> { },
-                this::flushStableStorage, request.stateSupplier,
-                request.failureHandler, request.lastAppliedWalLsn);
-    }
-
-    private void flushStableStorage() {
-        topologyRuntime.flushStableSegments();
-        coreStorage.keyToSegmentMap().flushIfDirty();
+                Vldtn.requireNonNull(flushDurableStateAction,
+                        "flushDurableStateAction"),
+                request.stateSupplier, request.failureHandler,
+                request.lastAppliedWalLsn);
     }
 
     private SegmentIndexOperationAccess<K, V> createOperationAccess(
@@ -76,15 +80,25 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
         return SegmentIndexOperationAccess.create(
                 request.valueTypeDescriptor,
                 request.stats,
-                topologyRuntime.directSegmentAccess(),
+                topologyRuntime.segmentAccessService(),
                 Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
     }
 
-    private SegmentIndexMaintenanceAccess<K, V> createMaintenanceAccess(
-            final IndexWalCoordinator<K, V> walCoordinator) {
-        return topologyRuntime
-                .maintenanceAccess(Vldtn.requireNonNull(walCoordinator,
-                        "walCoordinator"));
+    private MaintenanceService createMaintenance(
+            final Runnable checkpointAction) {
+        return MaintenanceService.<K, V>builder()
+                .logger(request.logger)
+                .keyToSegmentMap(coreStorage.keyToSegmentMap())
+                .stableSegmentGateway(
+                        StableSegmentAccess.create(
+                                coreStorage.segmentRegistry()))
+                .splitService(topologyRuntime.splitService())
+                .retryPolicy(coreStorage.retryPolicy())
+                .stats(request.stats)
+                .maintenanceExecutor(
+                        request.executorRegistry.getIndexMaintenanceExecutor())
+                .checkpointAction(checkpointAction)
+                .build();
     }
 
     private SegmentRuntimeLimitApplier<K, V> createRuntimeLimitApplier() {

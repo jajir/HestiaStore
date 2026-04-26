@@ -11,7 +11,7 @@ import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ class SegmentIndexRuntimeServicesTest {
                 IllegalArgumentException.class,
                 () -> new SegmentIndexRuntimeServices<>(null,
                         mock(SegmentIndexOperationAccess.class),
-                        mock(SegmentIndexMaintenanceAccess.class),
+                        mock(MaintenanceService.class),
                         mock(SegmentRuntimeLimitApplier.class),
                         mock(Supplier.class),
                         mock(IndexControlPlane.class)));
@@ -38,8 +38,7 @@ class SegmentIndexRuntimeServicesTest {
                 IndexWalCoordinator.class);
         final SegmentIndexOperationAccess<Integer, String> operationAccess =
                 mock(SegmentIndexOperationAccess.class);
-        final SegmentIndexMaintenanceAccess<Integer, String> maintenanceAccess =
-                mock(SegmentIndexMaintenanceAccess.class);
+        final MaintenanceService maintenance = mock(MaintenanceService.class);
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
                 mock(Supplier.class);
         final IndexControlPlane controlPlane = mock(IndexControlPlane.class);
@@ -48,13 +47,13 @@ class SegmentIndexRuntimeServicesTest {
 
         final SegmentIndexRuntimeServices<Integer, String> state =
                 new SegmentIndexRuntimeServices<>(walCoordinator,
-                        operationAccess, maintenanceAccess,
+                        operationAccess, maintenance,
                         runtimeLimitApplier, metricsSnapshotSupplier,
                         controlPlane);
 
         assertSame(walCoordinator, state.walCoordinator());
         assertSame(operationAccess, state.operationAccess());
-        assertSame(maintenanceAccess, state.maintenanceAccess());
+        assertSame(maintenance, state.maintenance());
         assertSame(metricsSnapshotSupplier, state.metricsSnapshotSupplier());
         assertSame(controlPlane, state.controlPlane());
         assertSame(runtimeLimitApplier, state.runtimeLimitApplier());

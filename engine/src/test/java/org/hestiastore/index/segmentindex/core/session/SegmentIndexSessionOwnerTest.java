@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +22,6 @@ class SegmentIndexSessionOwnerTest {
 
     private IndexStateCoordinator<Integer, String> stateCoordinator;
     private SegmentIndexRuntime<Integer, String> runtime;
-    private SegmentIndexMaintenanceAccess<Integer, String> maintenanceAccess;
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
     private SegmentIndexStartupCoordinator<Integer, String> startupCoordinator;
     private SegmentIndexSessionOwner<Integer, String> owner;
@@ -32,11 +30,10 @@ class SegmentIndexSessionOwnerTest {
     void setUp() {
         stateCoordinator = mock(IndexStateCoordinator.class);
         runtime = mock(SegmentIndexRuntime.class);
-        maintenanceAccess = mock(SegmentIndexMaintenanceAccess.class);
         closeCoordinator = mock(IndexCloseCoordinator.class);
         startupCoordinator = mock(SegmentIndexStartupCoordinator.class);
         owner = new SegmentIndexSessionOwner<>(stateCoordinator, runtime,
-                maintenanceAccess, closeCoordinator, startupCoordinator);
+                closeCoordinator, startupCoordinator);
     }
 
     @Test
@@ -103,6 +100,6 @@ class SegmentIndexSessionOwnerTest {
 
         verify(indexState).tryPerformOperation();
         verify(action).run();
-        verify(maintenanceAccess).invalidateSegmentIterators();
+        verify(runtime).invalidateSegmentIterators();
     }
 }

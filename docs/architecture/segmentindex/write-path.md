@@ -71,8 +71,8 @@ directly on mapped segments:
 1. Checkpoint WAL on `flushAndWait()` / `compactAndWait()`.
 
 Key classes:
-`segmentindex/core/IndexMaintenanceCoordinator`,
-`segmentindex/core/StableSegmentCoordinator`,
+`segmentindex/core/maintenance/MaintenanceService`,
+`segmentindex/core/maintenance/MaintenanceServiceImpl`,
 `segmentindex/mapping/KeyToSegmentMap`.
 
 ## Segment Delta Cache Files (Transactional)

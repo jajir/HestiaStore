@@ -5,17 +5,14 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.maintenance.StableSegmentMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
-import org.hestiastore.index.segmentindex.core.routing.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.routing.StableSegmentAccess;
+import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.core.streaming.DirectSegmentAccess;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 
 /**
  * Owns the segment-topology subsystem that coordinates direct access, stable
@@ -26,10 +23,10 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
  */
 final class SegmentTopologyRuntime<K, V> {
 
-    private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentTopology<K> segmentTopology;
     private final SplitService<K, V> splitService;
-    private final StableSegmentMaintenanceAccess<K, V> stableSegmentMaintenance;
+    private final SegmentStreamingService<K, V> streamingService;
+    private final SegmentAccessService<K, V> segmentAccessService;
     private final DirectSegmentAccess<K, V> directSegmentAccess;
     private final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator;
 
@@ -39,22 +36,18 @@ final class SegmentTopologyRuntime<K, V> {
                 .requireNonNull(request, "request");
         final SegmentIndexCoreStorage<K, V> validatedCoreStorage = Vldtn
                 .requireNonNull(coreStorage, "coreStorage");
-        this.keyToSegmentMap = validatedCoreStorage.keyToSegmentMap();
         this.segmentTopology = SegmentTopology.<K>builder()
                 .snapshot(validatedCoreStorage.keyToSegmentMap().snapshot())
                 .build();
         final StableSegmentAccess<K, V> stableSegmentGateway =
                 StableSegmentAccess.create(
                         validatedCoreStorage.segmentRegistry());
-        final SegmentAccessService<K, V> segmentAccessService =
-                SegmentAccessService.<K, V>builder()
-                        .keyToSegmentMap(
-                                validatedCoreStorage.keyToSegmentMap())
-                        .segmentRegistry(
-                                validatedCoreStorage.segmentRegistry())
-                        .segmentTopology(segmentTopology)
-                        .retryPolicy(validatedCoreStorage.retryPolicy())
-                        .build();
+        this.segmentAccessService = SegmentAccessService.<K, V>builder()
+                .keyToSegmentMap(validatedCoreStorage.keyToSegmentMap())
+                .segmentRegistry(validatedCoreStorage.segmentRegistry())
+                .segmentTopology(segmentTopology)
+                .retryPolicy(validatedCoreStorage.retryPolicy())
+                .build();
         this.splitService = SplitService.<K, V>builder()
                 .conf(validatedRequest.conf)
                 .runtimeTuningState(validatedCoreStorage.runtimeTuningState())
@@ -74,14 +67,16 @@ final class SegmentTopologyRuntime<K, V> {
                 .failureHandler(validatedRequest.failureHandler)
                 .stats(validatedRequest.stats)
                 .build();
-        this.stableSegmentMaintenance = StableSegmentMaintenanceAccess.create(
-                validatedRequest.logger, validatedCoreStorage.keyToSegmentMap(),
-                validatedCoreStorage.segmentRegistry(),
-                stableSegmentGateway, validatedCoreStorage.retryPolicy(),
-                validatedRequest.stats);
+        this.streamingService = SegmentStreamingService.<K, V>builder()
+                .logger(validatedRequest.logger)
+                .keyToSegmentMap(validatedCoreStorage.keyToSegmentMap())
+                .segmentRegistry(validatedCoreStorage.segmentRegistry())
+                .stableSegmentGateway(stableSegmentGateway)
+                .retryPolicy(validatedCoreStorage.retryPolicy())
+                .build();
         this.directSegmentAccess = DirectSegmentAccess.create(
                 validatedCoreStorage.keyToSegmentMap(),
-                validatedCoreStorage.segmentRegistry(), segmentAccessService,
+                validatedCoreStorage.segmentRegistry(),
                 validatedCoreStorage.retryPolicy());
         this.recoveryCleanupCoordinator = new IndexRecoveryCleanupCoordinator<>(
                 validatedRequest.logger, validatedRequest.directoryFacade,
@@ -90,19 +85,12 @@ final class SegmentTopologyRuntime<K, V> {
                 validatedCoreStorage.retryPolicy());
     }
 
-    SegmentIndexMaintenanceAccess<K, V> maintenanceAccess(
-            final IndexWalCoordinator<K, V> walCoordinator) {
-        return SegmentIndexMaintenanceAccess.create(keyToSegmentMap,
-                splitService, stableSegmentMaintenance,
-                Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
-    }
-
     SplitService<K, V> splitService() {
         return splitService;
     }
 
-    DirectSegmentAccess<K, V> directSegmentAccess() {
-        return directSegmentAccess;
+    SegmentAccessService<K, V> segmentAccessService() {
+        return segmentAccessService;
     }
 
     void cleanupOrphanedSegmentDirectories() {
@@ -114,7 +102,7 @@ final class SegmentTopologyRuntime<K, V> {
     }
 
     void invalidateSegmentIterators() {
-        stableSegmentMaintenance.invalidateIterators();
+        streamingService.invalidateIterators();
     }
 
     void requestFullSplitScan() {
@@ -125,14 +113,9 @@ final class SegmentTopologyRuntime<K, V> {
         splitService.close();
     }
 
-    void flushStableSegments() {
-        stableSegmentMaintenance.flushSegments(true);
-    }
-
     EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        return stableSegmentMaintenance.openIteratorWithRetry(segmentId,
-                isolation);
+        return streamingService.openIterator(segmentId, isolation);
     }
 
     EntryIterator<K, V> openWindowIterator(

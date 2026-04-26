@@ -140,7 +140,7 @@ class SegmentTopologyTest {
 
     private void applySplitPlan() {
         final RouteSplitPlan<Integer> splitPlan = new RouteSplitPlan<>(
-                SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 1, 50,
+                SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 50,
                 RouteSplitPlan.SplitMode.SPLIT);
         assertTrue(keyToSegmentMap.tryApplySplitPlan(splitPlan));
     }

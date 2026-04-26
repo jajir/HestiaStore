@@ -19,7 +19,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
@@ -47,7 +47,7 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         final Stats stats = new Stats();
         stats.recordGetRequest();
         stats.recordPutRequest();
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = IndexExecutorRegistry.create(conf);
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
                 new SegmentIndexMetricsSnapshotFactory<>(conf,
                         () -> new SplitMetricsSnapshot(3, 2),

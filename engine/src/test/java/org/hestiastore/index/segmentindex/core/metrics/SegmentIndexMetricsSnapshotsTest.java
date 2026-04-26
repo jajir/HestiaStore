@@ -18,7 +18,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -55,7 +55,7 @@ class SegmentIndexMetricsSnapshotsTest {
                 SegmentRegistry.class);
         final SegmentRegistry.Runtime<Integer, String> runtime = mock(
                 SegmentRegistry.Runtime.class);
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = IndexExecutorRegistry.create(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         Mockito.when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of());
         Mockito.when(segmentRegistry.runtime()).thenReturn(runtime);

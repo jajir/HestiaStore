@@ -13,7 +13,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.session.IndexCloseCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
@@ -37,7 +37,7 @@ class SegmentIndexRuntimeTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = IndexExecutorRegistry.create(conf);
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         closeOwner = Mockito.mock(
                 org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl.class);

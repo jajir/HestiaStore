@@ -3,6 +3,8 @@ package org.hestiastore.index.segmentindex.core.routing;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccess;
+import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
@@ -16,17 +18,17 @@ final class IndexOperationCoordinator<K, V>
         implements SegmentIndexOperationAccess<K, V> {
 
     private final Stats stats;
-    private final DirectSegmentAccess<K, V> directSegmentCoordinator;
+    private final SegmentAccessService<K, V> segmentAccessService;
     private final IndexWalCoordinator<K, V> walCoordinator;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
     IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
             final Stats stats,
-            final DirectSegmentAccess<K, V> directSegmentCoordinator,
+            final SegmentAccessService<K, V> segmentAccessService,
             final IndexWalCoordinator<K, V> walCoordinator) {
         this.stats = Vldtn.requireNonNull(stats, "stats");
-        this.directSegmentCoordinator = Vldtn.requireNonNull(
-                directSegmentCoordinator, "directSegmentCoordinator");
+        this.segmentAccessService = Vldtn.requireNonNull(segmentAccessService,
+                "segmentAccessService");
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -41,7 +43,7 @@ final class IndexOperationCoordinator<K, V>
         stats.recordPutRequest();
         rejectTombstoneValue(nonNullValue);
         final long walLsn = walCoordinator.appendPut(nonNullKey, nonNullValue);
-        directSegmentCoordinator.put(nonNullKey, nonNullValue);
+        writeToSegment(nonNullKey, nonNullValue);
         walCoordinator.recordAppliedLsn(walLsn);
         recordWriteLatency(startedNanos);
     }
@@ -51,7 +53,7 @@ final class IndexOperationCoordinator<K, V>
         final long startedNanos = startReadOperation();
         final K nonNullKey = requireKey(key);
         stats.recordGetRequest();
-        final V result = directSegmentCoordinator.get(nonNullKey);
+        final V result = readFromSegment(nonNullKey);
         recordReadLatency(startedNanos);
         return result;
     }
@@ -62,7 +64,7 @@ final class IndexOperationCoordinator<K, V>
         final K nonNullKey = requireKey(key);
         stats.recordDeleteRequest();
         final long walLsn = walCoordinator.appendDelete(nonNullKey);
-        directSegmentCoordinator.put(nonNullKey, tombstoneValue());
+        writeToSegment(nonNullKey, tombstoneValue());
         walCoordinator.recordAppliedLsn(walLsn);
         recordWriteLatency(startedNanos);
     }
@@ -72,9 +74,27 @@ final class IndexOperationCoordinator<K, V>
             final WalRuntime.ReplayRecord<K, V> replayRecord) {
         final WalRuntime.ReplayRecord<K, V> nonNullReplayRecord = Vldtn
                 .requireNonNull(replayRecord, "replayRecord");
-        directSegmentCoordinator.put(nonNullReplayRecord.getKey(),
+        writeToSegment(nonNullReplayRecord.getKey(),
                 replayValue(nonNullReplayRecord));
         walCoordinator.recordAppliedLsn(nonNullReplayRecord.getLsn());
+    }
+
+    private V readFromSegment(final K key) {
+        final SegmentAccess<K, V> access = segmentAccessService.acquireForRead(
+                key);
+        if (access == null) {
+            return null;
+        }
+        try (SegmentAccess<K, V> activeAccess = access) {
+            return activeAccess.segment().get(key);
+        }
+    }
+
+    private void writeToSegment(final K key, final V value) {
+        try (SegmentAccess<K, V> access = segmentAccessService
+                .acquireForWrite(key)) {
+            access.segment().put(key, value);
+        }
     }
 
     private long startWriteOperation() {

@@ -58,10 +58,8 @@ final class IndexCloseCoordinator<K, V> {
     }
 
     private void sealAndFlushRuntimeState() {
-        runtime.flushStableSegments();
+        runtime.flushAndWait();
         runtime.closeSegmentRegistry();
-        runtime.flushKeyToSegmentMap();
-        runtime.checkpointWal();
     }
 
     private void finishClosedState() {

@@ -19,8 +19,8 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
 import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
@@ -38,8 +38,7 @@ import org.slf4j.Logger;
  * @param <V> value type
  */
 public final class SegmentIndexRuntime<K, V>
-        implements SegmentIndexDataAccess<K, V>,
-        SegmentIndexMaintenanceAccess<K, V> {
+        implements SegmentIndexDataAccess<K, V> {
 
     public static <K, V> SegmentIndexRuntime<K, V> create(
             final Logger logger,
@@ -157,7 +156,6 @@ public final class SegmentIndexRuntime<K, V>
         services.runtimeLimitApplier().apply(effective);
     }
 
-    @Override
     public void invalidateSegmentIterators() {
         topologyRuntime.invalidateSegmentIterators();
     }
@@ -181,20 +179,8 @@ public final class SegmentIndexRuntime<K, V>
         topologyRuntime.closeSplitRuntime();
     }
 
-    public void flushStableSegments() {
-        topologyRuntime.flushStableSegments();
-    }
-
     public void closeSegmentRegistry() {
         storage.segmentRegistry().close();
-    }
-
-    public void flushKeyToSegmentMap() {
-        storage.keyToSegmentMap().flushIfDirty();
-    }
-
-    public void checkpointWal() {
-        services.walCoordinator().checkpoint();
     }
 
     @Override
@@ -210,27 +196,28 @@ public final class SegmentIndexRuntime<K, V>
         return topologyRuntime.openWindowIterator(segmentWindow, isolation);
     }
 
-    @Override
+    MaintenanceService maintenance() {
+        return services.maintenance();
+    }
+
     public void compact() {
-        services.maintenanceAccess().compact();
+        services.maintenance().compact();
     }
 
-    @Override
     public void compactAndWait() {
-        services.maintenanceAccess().compactAndWait();
+        services.maintenance().compactAndWait();
     }
 
-    @Override
     public void flush() {
-        services.maintenanceAccess().flush();
+        services.maintenance().flush();
     }
 
-    @Override
     public void flushAndWait() {
-        services.maintenanceAccess().flushAndWait();
+        services.maintenance().flushAndWait();
     }
 
     public void closeWalRuntime() {
         walRuntime.close();
     }
+
 }

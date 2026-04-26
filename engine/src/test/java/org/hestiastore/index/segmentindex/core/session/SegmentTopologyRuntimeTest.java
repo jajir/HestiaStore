@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -13,9 +12,8 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +31,7 @@ class SegmentTopologyRuntimeTest {
 
     @BeforeEach
     void setUp() {
-        executorRegistry = new IndexExecutorRegistry(buildConf());
+        executorRegistry = IndexExecutorRegistry.create(buildConf());
         coreStorage = new SegmentIndexCoreStorageFactory<>(newRequest(),
                 new SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<>() {
                 }).create();
@@ -62,9 +60,7 @@ class SegmentTopologyRuntimeTest {
                 new SegmentTopologyRuntime<>(newRequest(), coreStorage);
 
         assertNotNull(topologyRuntime.splitService());
-        assertNotNull(topologyRuntime.directSegmentAccess());
-        assertNotNull(topologyRuntime
-                .maintenanceAccess(mock(IndexWalCoordinator.class)));
+        assertNotNull(topologyRuntime.segmentAccessService());
         assertDoesNotThrow(topologyRuntime::requestFullSplitScan);
         assertDoesNotThrow(
                 topologyRuntime::cleanupOrphanedSegmentDirectories);

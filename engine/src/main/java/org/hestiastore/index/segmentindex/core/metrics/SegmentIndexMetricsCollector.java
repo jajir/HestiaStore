@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executor.IndexExecutorRegistry;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -92,8 +92,7 @@ final class SegmentIndexMetricsCollector<K, V> {
         return snapshotFactory.create(segmentRegistry.metricsSnapshot(),
                 stableSegmentRuntime, executorSnapshot,
                 walRuntime.statsSnapshot(),
-                resolveRequestCount(stats.getCompactRequestCount(),
-                        compactRequestHighWaterMark,
+                resolveRequestCount(0L, compactRequestHighWaterMark,
                         stableSegmentRuntime.getTotalCompactRequestCount()),
                 resolveRequestCount(stats.getFlushRequestCount(),
                         flushRequestHighWaterMark,

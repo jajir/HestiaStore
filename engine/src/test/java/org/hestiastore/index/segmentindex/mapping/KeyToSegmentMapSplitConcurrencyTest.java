@@ -37,7 +37,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
                 Entry.of(30, SegmentId.of(2))));
         adapter = new KeyToSegmentMapSynchronizedAdapter<>(rawKeyMap);
         plan = new RouteSplitPlan<>(SegmentId.of(1), SegmentId.of(3),
-                SegmentId.of(4), 1, 5, RouteSplitPlan.SplitMode.SPLIT);
+                SegmentId.of(4), 5, RouteSplitPlan.SplitMode.SPLIT);
         executor = Executors.newFixedThreadPool(2);
     }
 
