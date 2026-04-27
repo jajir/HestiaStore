@@ -59,8 +59,8 @@ These structures are shared across threads and require synchronization:
 
 - Sync operations run on caller threads.
 - Segment maintenance runs on the segment maintenance executor.
-- Background split policy and split materialization run on index-maintenance
-  executors.
+- Split planning runs on one dedicated split-planner thread.
+- Split materialization runs on the shared split-maintenance executor pool.
 
 ## Implications
 

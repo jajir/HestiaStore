@@ -15,13 +15,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -71,17 +71,19 @@ class SegmentIndexImplRetryTest {
         final AtomicInteger attempts = new AtomicInteger();
         when(segment.get(1)).thenAnswer(invocation -> {
             if (attempts.getAndIncrement() == 0) {
-                return SegmentResult.busy();
+                return OperationResult.busy();
             }
-            return SegmentResult.ok("value");
+            return OperationResult.ok("value");
         });
 
         replaceSegment(registry, segmentId, segment);
 
-        assertEquals("value", index.get(1));
-        verify(segment, times(2)).get(1);
-
-        replaceSegment(registry, segmentId, original);
+        try {
+            assertEquals("value", index.get(1));
+            verify(segment, times(2)).get(1);
+        } finally {
+            replaceSegment(registry, segmentId, original);
+        }
     }
 
     @Test

@@ -40,6 +40,10 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 .withMaxNumberOfKeysInSegmentChunk(1000) //
                 .withBloomFilterIndexSizeInBytes(1000) //
                 .withBloomFilterNumberOfHashFunctions(4) //
+                // Keep iterator CRUD tests focused on direct write semantics,
+                // not on autonomous split timing introduced by background
+                // maintenance.
+                .withBackgroundMaintenanceAutoEnabled(false) //
                 .withContextLoggingEnabled(false) //
                 .withName("test_index") //
                 .build();

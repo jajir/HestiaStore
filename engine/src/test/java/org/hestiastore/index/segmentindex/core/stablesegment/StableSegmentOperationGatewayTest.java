@@ -11,7 +11,7 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +45,7 @@ class StableSegmentOperationGatewayTest {
         when(segmentRegistry.tryGetSegment(segmentId))
                 .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.tryOpenIterator(SegmentIteratorIsolation.FAIL_FAST))
-                .thenReturn(SegmentResult.ok(iterator));
+                .thenReturn(OperationResult.ok(iterator));
 
         final StableSegmentOperationResult<EntryIterator<String, String>> result =
                 stableSegmentGateway.openIterator(segmentId,
@@ -60,7 +60,7 @@ class StableSegmentOperationGatewayTest {
         final SegmentId segmentId = segmentId();
         when(segmentRegistry.tryGetSegment(segmentId))
                 .thenReturn(Optional.of(segmentHandle));
-        when(segmentHandle.tryFlush()).thenReturn(SegmentResult.closed());
+        when(segmentHandle.tryFlush()).thenReturn(OperationResult.closed());
 
         final StableSegmentOperationResult<BlockingSegment<String, String>> result =
                 stableSegmentGateway.flush(segmentId);

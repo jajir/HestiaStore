@@ -3,11 +3,11 @@ package org.hestiastore.index.segmentindex.core.stablesegment;
 import java.util.Optional;
 
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -77,14 +77,14 @@ final class StableSegmentOperationGateway<K, V>
     }
 
     private static <T> StableSegmentOperationResult<T> fromSegmentResult(
-            final SegmentResult<T> result) {
+            final OperationResult<T> result) {
         if (result.isOk()) {
             return StableSegmentOperationResult.ok(result.getValue());
         }
-        if (result.getStatus() == SegmentResultStatus.BUSY) {
+        if (result.getStatus() == OperationStatus.BUSY) {
             return StableSegmentOperationResult.busy();
         }
-        if (result.getStatus() == SegmentResultStatus.CLOSED) {
+        if (result.getStatus() == OperationStatus.CLOSED) {
             return StableSegmentOperationResult.closed();
         }
         return StableSegmentOperationResult.error();

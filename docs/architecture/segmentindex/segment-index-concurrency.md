@@ -8,7 +8,12 @@
 - Segment topology: runtime route state (`ACTIVE`, `DRAINING`, `RETIRED`) plus
   in-flight route leases for mapped segment ids.
 - Segment registry: cache of Segment instances plus the maintenance executor.
-- Background split coordinator: decides split scheduling after writes.
+- Split service: accepts split hints, full-scan requests, quiescence waits, and
+  lifecycle shutdown for the managed split runtime.
+- Split policy coordinator: owns candidate deduplication, periodic
+  reconciliation, threshold checks, and admission into split execution.
+- Split execution coordinator: owns split execution admission, cooldowns, and
+  split-publish exclusivity once a candidate was already admitted.
 - Split: replace one routed segment range with child ranges and update the
   route map atomically.
 
@@ -64,8 +69,12 @@
 ## Maintenance & Splits
 - SegmentIndex evaluates split thresholds after successful writes and schedules
   follow-up maintenance only when `backgroundMaintenanceAutoEnabled` is true.
-- Splits are scheduled by SplitPolicyCoordinator on the shared split executor;
-  only one split per segment id can be in flight.
+- Successful writes and maintenance follow-ups emit split-service hints or
+  full-scan requests.
+- SplitPolicyCoordinator performs both hint-driven wakeups and periodic
+  reconciliation, then hands admitted work to SplitExecutionCoordinator.
+- Admitted splits run on the shared split-maintenance executor; only one split
+  per segment id can be in flight.
 - RouteSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts throw.
 - Split execution first moves the parent route to `DRAINING` in
   SegmentTopology. New foreground leases for that parent fail as BUSY and
@@ -145,8 +154,12 @@ Notes:
   KeyToSegmentMap snapshots.
 - SegmentRegistry(Synchronized): caches Segment instances and supplies the
   maintenance executor.
+- SplitService: managed split runtime boundary for hints, full scans,
+  quiescence, metrics, and shutdown.
 - SplitPolicyCoordinator: split scheduling decisions.
-- RouteSplitCoordinator: split materialization.
+- SplitExecutionCoordinator: split execution admission, cooldowns, and split
+  worker scheduling.
+- RouteSplitCoordinator: split materialization and route-map publish.
 - RouteSplitPublishCoordinator: route-map publish and split cleanup boundaries.
 
 ## Iterator Isolation
@@ -163,6 +176,9 @@ Notes:
   KeyToSegmentMap snapshots.
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
   IndexConfiguration.numberOfSegmentMaintenanceThreads (default 10).
+- Index maintenance pool: `index-maintenance-*` from ExecutorRegistry.
+- Split policy scheduler: `split-policy-*` from ExecutorRegistry.
+- Split worker pool: `split-maintenance-*` from ExecutorRegistry.
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.
 - Retry policy: IndexConfiguration.indexBusyBackoffMillis and
   IndexConfiguration.indexBusyTimeoutMillis.

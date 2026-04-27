@@ -44,8 +44,8 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(14L, snapshot.getRegistryCacheEvictionCount());
         assertEquals(2, snapshot.getRegistryCacheSize());
         assertEquals(64, snapshot.getRegistryCacheLimit());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(0, snapshot.getSegmentWriteCacheKeyLimit());
+        assertEquals(0, snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance());
     }
 
     @Test
@@ -61,6 +61,9 @@ class SegmentIndexMetricsSnapshotTest {
         assertEquals(12, snapshot.getMaxNumberOfKeysInPartitionBuffer());
         assertEquals(17, snapshot.getMaxNumberOfImmutableRunsPerPartition());
         assertEquals(18, snapshot.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(11, snapshot.getSegmentWriteCacheKeyLimit());
+        assertEquals(12, snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(18, snapshot.getIndexBufferedWriteKeyLimit());
         assertEquals(19, snapshot.getPartitionCount());
         assertEquals(20, snapshot.getActivePartitionCount());
         assertEquals(21, snapshot.getDrainingPartitionCount());
@@ -231,6 +234,12 @@ class SegmentIndexMetricsSnapshotTest {
 
     private static void assertZeroPartitionMetrics(
             final SegmentIndexMetricsSnapshot snapshot) {
+        assertEquals(0, snapshot.getWritePathMetrics().getSegmentWriteCacheKeyLimit());
+        assertEquals(0,
+                snapshot.getWritePathMetrics()
+                        .getSegmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(0,
+                snapshot.getWritePathMetrics().getIndexBufferedWriteKeyLimit());
         assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
         assertEquals(0, snapshot.getMaxNumberOfImmutableRunsPerPartition());
         assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());

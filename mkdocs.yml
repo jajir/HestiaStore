@@ -60,6 +60,7 @@ nav:
             - Overview: architecture/segmentindex/index.md
             - Write Path: architecture/segmentindex/write-path.md
             - Read Path: architecture/segmentindex/read-path.md
+            - WAL Runtime: architecture/segmentindex/wal-runtime.md
             - Range-Partitioned Ingest: architecture/segmentindex/range-partitioned-ingest.md
             - Range-Partitioned Ingest Implementation Notes: architecture/segmentindex/range-partitioned-ingest-implementation.md
             - Caching Strategy: architecture/segmentindex/caching.md

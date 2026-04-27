@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentregistry;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,8 +32,8 @@ class BlockingSegmentRegistryAdapterTest {
     @Test
     void getSegment_retriesBusyUntilSegmentLoads() {
         when(registry.tryLoadSegment(SEGMENT_ID)).thenReturn(
-                SegmentRegistryResult.busy(),
-                SegmentRegistryResult.ok(segment));
+                OperationResult.busy(),
+                OperationResult.ok(segment));
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
@@ -46,7 +47,7 @@ class BlockingSegmentRegistryAdapterTest {
     @Test
     void findSegment_returnsEmptyWhenRegistryReturnsClosed() {
         when(registry.tryLoadSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.closed());
+                .thenReturn(OperationResult.closed());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
@@ -58,7 +59,7 @@ class BlockingSegmentRegistryAdapterTest {
     @Test
     void deleteSegment_retriesBusyUntilClosed() {
         when(registry.tryDeleteSegment(SEGMENT_ID)).thenReturn(
-                SegmentRegistryResult.busy(), SegmentRegistryResult.closed());
+                OperationResult.busy(), OperationResult.closed());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
@@ -70,7 +71,7 @@ class BlockingSegmentRegistryAdapterTest {
     @Test
     void deleteSegmentIfAvailable_returnsFalseWhenRegistryStaysBusy() {
         when(registry.tryDeleteSegment(SEGMENT_ID)).thenReturn(
-                SegmentRegistryResult.busy(), SegmentRegistryResult.busy());
+                OperationResult.busy(), OperationResult.busy());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));
@@ -81,7 +82,7 @@ class BlockingSegmentRegistryAdapterTest {
     @Test
     void getSegment_throwsWhenRegistryReturnsError() {
         when(registry.tryLoadSegment(SEGMENT_ID))
-                .thenReturn(SegmentRegistryResult.error());
+                .thenReturn(OperationResult.error());
         final BlockingSegmentRegistryAdapter<Integer, String> adapter =
                 new BlockingSegmentRegistryAdapter<>(registry,
                         new BusyRetryPolicy(1, 50));

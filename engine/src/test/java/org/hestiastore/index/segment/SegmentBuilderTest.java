@@ -1,5 +1,7 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 
 /**
@@ -311,10 +313,10 @@ class SegmentBuilderTest {
         tx.commit();
 
         final Segment<Integer, String> segment = builder.build().getValue();
-        final SegmentResult<String> first = segment.get(1);
-        final SegmentResult<String> second = segment.get(2);
-        assertEquals(SegmentResultStatus.OK, first.getStatus());
-        assertEquals(SegmentResultStatus.OK, second.getStatus());
+        final OperationResult<String> first = segment.get(1);
+        final OperationResult<String> second = segment.get(2);
+        assertEquals(OperationStatus.OK, first.getStatus());
+        assertEquals(OperationStatus.OK, second.getStatus());
         assertEquals("a", first.getValue());
         assertEquals("b", second.getValue());
         closeAndAssertClosed(segment);

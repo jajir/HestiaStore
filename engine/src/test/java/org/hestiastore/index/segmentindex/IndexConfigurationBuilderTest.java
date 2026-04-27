@@ -8,34 +8,41 @@ import org.junit.jupiter.api.Test;
 class IndexConfigurationBuilderTest {
 
     @Test
-    void build_derivesPartitionBufferWhenMissing() {
+    void build_derivesMaintenanceWriteCacheLimitWhenMissing() {
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
-                .withMaxNumberOfKeysInActivePartition(10)
+                .withSegmentWriteCacheKeyLimit(10)
                 .build();
 
         assertEquals(14,
-                config.getMaxNumberOfKeysInPartitionBuffer());
+                config.getSegmentWriteCacheKeyLimitDuringMaintenance());
     }
 
     @Test
-    void build_keepsCanonicalPartitionSettingsInSync() {
+    void build_exposesCanonicalWritePathConfiguration() {
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
-                .withMaxNumberOfKeysInActivePartition(10)
-                .withMaxNumberOfKeysInPartitionBuffer(14)
+                .withSegmentWriteCacheKeyLimit(10)
+                .withSegmentWriteCacheKeyLimitDuringMaintenance(14)
+                .withIndexBufferedWriteKeyLimit(42)
+                .withSegmentSplitKeyThreshold(99)
                 .build();
 
-        assertEquals(10, config.getMaxNumberOfKeysInActivePartition());
-        assertEquals(14, config.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(10, config.getSegmentWriteCacheKeyLimit());
+        assertEquals(14, config.getSegmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(42, config.getIndexBufferedWriteKeyLimit());
+        assertEquals(99, config.getSegmentSplitKeyThreshold());
+        assertEquals(10,
+                config.getLegacyPartitionCompatibilityConfiguration()
+                        .getMaxNumberOfKeysInActivePartition());
     }
 
     @Test
-    void build_rejectsPartitionBufferNotGreaterThanActivePartition() {
+    void build_rejectsMaintenanceWriteCacheNotGreaterThanSegmentWriteCache() {
         final IndexConfigurationBuilder<Integer, String> builder = IndexConfiguration
                 .<Integer, String>builder()
-                .withMaxNumberOfKeysInActivePartition(10)
-                .withMaxNumberOfKeysInPartitionBuffer(10);
+                .withSegmentWriteCacheKeyLimit(10)
+                .withSegmentWriteCacheKeyLimitDuringMaintenance(10);
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class, builder::build);

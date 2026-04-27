@@ -1,25 +1,26 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationStatus;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-class SegmentResultStatusTest {
+class OperationStatusTest {
 
     @Test
     void valueOf_returnsExpectedValues() {
-        assertEquals(SegmentResultStatus.OK,
-                SegmentResultStatus.valueOf("OK"));
-        assertEquals(SegmentResultStatus.BUSY,
-                SegmentResultStatus.valueOf("BUSY"));
-        assertEquals(SegmentResultStatus.CLOSED,
-                SegmentResultStatus.valueOf("CLOSED"));
-        assertEquals(SegmentResultStatus.ERROR,
-                SegmentResultStatus.valueOf("ERROR"));
+        assertEquals(OperationStatus.OK,
+                OperationStatus.valueOf("OK"));
+        assertEquals(OperationStatus.BUSY,
+                OperationStatus.valueOf("BUSY"));
+        assertEquals(OperationStatus.CLOSED,
+                OperationStatus.valueOf("CLOSED"));
+        assertEquals(OperationStatus.ERROR,
+                OperationStatus.valueOf("ERROR"));
     }
 
     @Test
     void values_containsAllStatuses() {
-        assertEquals(4, SegmentResultStatus.values().length);
+        assertEquals(4, OperationStatus.values().length);
     }
 }
