@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

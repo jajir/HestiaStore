@@ -48,7 +48,7 @@ class MaintenanceServiceTest {
                 KeyToSegmentMap.class);
         final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
                 StableSegmentOperationAccess.class);
-        final SplitService<Integer, String> splitService = mock(
+        final SplitService splitService = mock(
                 SplitService.class);
         final Runnable checkpointAction = mock(Runnable.class);
         final ExecutorService maintenanceExecutor =
@@ -89,9 +89,11 @@ class MaintenanceServiceTest {
 
     @Test
     void builderRejectsMissingLogger() {
+        final MaintenanceServiceBuilder<Integer, String> builder =
+                MaintenanceService.<Integer, String>builder();
+
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> MaintenanceService.<Integer, String>builder().build());
+                IllegalArgumentException.class, builder::build);
 
         assertEquals("Property 'logger' must not be null.", ex.getMessage());
     }
@@ -103,20 +105,19 @@ class MaintenanceServiceTest {
                 KeyToSegmentMap.class);
         final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
                 StableSegmentOperationAccess.class);
-        final SplitService<Integer, String> splitService = mock(
+        final SplitService splitService = mock(
                 SplitService.class);
+        final MaintenanceServiceBuilder<Integer, String> builder = MaintenanceService
+                .<Integer, String>builder()
+                .logger(LoggerFactory.getLogger(MaintenanceServiceTest.class))
+                .keyToSegmentMap(keyToSegmentMap)
+                .stableSegmentGateway(stableSegmentGateway)
+                .splitService(splitService)
+                .retryPolicy(new IndexRetryPolicy(1, 10))
+                .stats(new Stats());
 
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> MaintenanceService.<Integer, String>builder()
-                        .logger(LoggerFactory.getLogger(
-                                MaintenanceServiceTest.class))
-                        .keyToSegmentMap(keyToSegmentMap)
-                        .stableSegmentGateway(stableSegmentGateway)
-                        .splitService(splitService)
-                        .retryPolicy(new IndexRetryPolicy(1, 10))
-                        .stats(new Stats())
-                        .build());
+                IllegalArgumentException.class, builder::build);
 
         assertEquals("Property 'maintenanceExecutor' must not be null.",
                 ex.getMessage());
@@ -129,14 +130,13 @@ class MaintenanceServiceTest {
                 KeyToSegmentMap.class);
         final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
                 StableSegmentOperationAccess.class);
-        final SplitService<Integer, String> splitService = mock(
+        final SplitService splitService = mock(
                 SplitService.class);
         final ExecutorService maintenanceExecutor =
                 Executors.newSingleThreadExecutor();
         try {
-            final IllegalArgumentException ex = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> MaintenanceService.<Integer, String>builder()
+            final MaintenanceServiceBuilder<Integer, String> builder =
+                    MaintenanceService.<Integer, String>builder()
                             .logger(LoggerFactory.getLogger(
                                     MaintenanceServiceTest.class))
                             .keyToSegmentMap(keyToSegmentMap)
@@ -144,8 +144,10 @@ class MaintenanceServiceTest {
                             .splitService(splitService)
                             .retryPolicy(new IndexRetryPolicy(1, 10))
                             .stats(new Stats())
-                            .maintenanceExecutor(maintenanceExecutor)
-                            .build());
+                            .maintenanceExecutor(maintenanceExecutor);
+
+            final IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class, builder::build);
 
             assertEquals("Property 'checkpointAction' must not be null.",
                     ex.getMessage());

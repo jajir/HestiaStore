@@ -87,6 +87,7 @@ class SegmentIndexReadFacadeTest {
 
             @Override
             public void tryPerformOperation() {
+                // The test state allows all tracked operations immediately.
             }
         };
     }

@@ -21,6 +21,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  */
 final class DefaultSegmentMaterializationService<K, V> {
 
+    private static final String SEGMENT_ID_ARG = "segmentId";
+
     private final Directory directoryFacade;
     private final SegmentRegistry.Materialization<K, V> materialization;
 
@@ -96,7 +98,7 @@ final class DefaultSegmentMaterializationService<K, V> {
 
     private SegmentId nextPreparedSegmentId() {
         final SegmentId segmentId = Vldtn.requireNonNull(
-                materialization.nextSegmentId(), "segmentId");
+                materialization.nextSegmentId(), SEGMENT_ID_ARG);
         ensureSegmentDirectory(segmentId);
         return segmentId;
     }
@@ -184,12 +186,12 @@ final class DefaultSegmentMaterializationService<K, V> {
     }
 
     private void ensureSegmentDirectory(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         directoryFacade.openSubDirectory(segmentId.getName());
     }
 
     private void deletePreparedSegmentFiles(final SegmentId segmentId) {
-        Vldtn.requireNonNull(segmentId, "segmentId");
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_ARG);
         final RuntimeException cleanupFailure = deleteDirectory(
                 segmentId.getName());
         if (cleanupFailure != null) {

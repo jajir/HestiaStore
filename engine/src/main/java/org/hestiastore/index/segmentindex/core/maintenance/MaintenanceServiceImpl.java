@@ -30,7 +30,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private final Logger logger;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
-    private final SplitService<K, V> splitService;
+    private final SplitService splitService;
     private final IndexRetryPolicy retryPolicy;
     private final Stats stats;
     private final ExecutorService maintenanceExecutor;
@@ -40,7 +40,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     MaintenanceServiceImpl(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
-            final SplitService<K, V> splitService,
+            final SplitService splitService,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction) {
@@ -52,7 +52,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     MaintenanceServiceImpl(final Logger logger,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
-            final SplitService<K, V> splitService,
+            final SplitService splitService,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction,

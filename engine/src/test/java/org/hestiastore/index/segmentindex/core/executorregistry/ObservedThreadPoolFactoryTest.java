@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.junit.jupiter.api.Test;
@@ -12,46 +13,48 @@ import org.junit.jupiter.api.Test;
 class ObservedThreadPoolFactoryTest {
 
     @Test
-    void createAbortingPoolTracksRejectedTasks() throws InterruptedException {
+    void createAbortingPoolTracksRejectedTasks() {
         final ObservedThreadPool pool = new ObservedThreadPoolFactory()
                 .createAbortingPool(1, "indexMaintenanceThreads",
                         "reject-test-");
+        final ExecutorService executor = pool.executor();
         final CountDownLatch blocker = new CountDownLatch(1);
         try {
-            pool.executor().execute(() -> await(blocker));
+            executor.execute(() -> await(blocker));
             for (int i = 0; i < 64; i++) {
-                pool.executor().execute(() -> await(blocker));
+                executor.execute(() -> await(blocker));
             }
 
             assertThrows(RejectedExecutionException.class,
-                    () -> pool.executor().execute(() -> {
+                    () -> executor.execute(() -> {
                     }));
             assertEquals(1L, pool.snapshot().getRejectedTaskCount());
         } finally {
             blocker.countDown();
-            pool.executor().shutdownNow();
+            executor.shutdownNow();
         }
     }
 
     @Test
-    void createCallerRunsPoolTracksCallerRuns() throws InterruptedException {
+    void createCallerRunsPoolTracksCallerRuns() {
         final ObservedThreadPool pool = new ObservedThreadPoolFactory()
                 .createCallerRunsPool(1, "segmentMaintenanceThreads",
                         "caller-runs-test-");
+        final ExecutorService executor = pool.executor();
         final CountDownLatch blocker = new CountDownLatch(1);
         try {
-            pool.executor().execute(() -> await(blocker));
+            executor.execute(() -> await(blocker));
             for (int i = 0; i < 64; i++) {
-                pool.executor().execute(() -> await(blocker));
+                executor.execute(() -> await(blocker));
             }
 
-            pool.executor().execute(() -> {
+            executor.execute(() -> {
             });
 
             assertEquals(1L, pool.snapshot().getCallerRunsCount());
         } finally {
             blocker.countDown();
-            pool.executor().shutdownNow();
+            executor.shutdownNow();
         }
     }
 

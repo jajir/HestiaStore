@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import org.hestiastore.index.OperationResult;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;

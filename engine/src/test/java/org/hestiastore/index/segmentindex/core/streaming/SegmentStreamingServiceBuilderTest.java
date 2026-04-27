@@ -57,10 +57,11 @@ class SegmentStreamingServiceBuilderTest {
 
     @Test
     void buildRejectsMissingLogger() {
+        final SegmentStreamingServiceBuilder<Integer, String> builder =
+                SegmentStreamingService.<Integer, String>builder();
+
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> SegmentStreamingService.<Integer, String>builder()
-                        .build());
+                IllegalArgumentException.class, builder::build);
 
         assertEquals("Property 'logger' must not be null.", ex.getMessage());
     }

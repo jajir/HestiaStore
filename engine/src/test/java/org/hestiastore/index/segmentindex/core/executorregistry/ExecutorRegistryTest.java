@@ -25,13 +25,13 @@ class ExecutorRegistryTest {
 
     @Test
     void builderRejectsMissingIndexMaintenanceThreads() {
+        final ExecutorRegistryBuilder builder = ExecutorRegistry.builder()
+                .withSegmentMaintenanceThreads(1)
+                .withSplitMaintenanceThreads(1)
+                .withRegistryMaintenanceThreads(1);
+
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> ExecutorRegistry.builder()
-                        .withSegmentMaintenanceThreads(1)
-                        .withSplitMaintenanceThreads(1)
-                        .withRegistryMaintenanceThreads(1)
-                        .build());
+                IllegalArgumentException.class, builder::build);
         assertEquals("Property 'indexMaintenanceThreads' must not be null.",
                 ex.getMessage());
     }
@@ -72,11 +72,11 @@ class ExecutorRegistryTest {
 
     @Test
     void builderRejectsNonPositiveSplitMaintenanceThreads() {
+        final ExecutorRegistryBuilder builder = newRegistryBuilder(1, 1, 1)
+                .withSplitMaintenanceThreads(0);
+
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> newRegistryBuilder(1, 1, 1)
-                        .withSplitMaintenanceThreads(0)
-                        .build());
+                IllegalArgumentException.class, builder::build);
         assertEquals(
                 "Property 'splitMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
@@ -94,12 +94,12 @@ class ExecutorRegistryTest {
 
     @Test
     void builderRejectsBlankIndexNameWhenContextLoggingEnabled() {
+        final ExecutorRegistryBuilder builder = newRegistryBuilder(1, 1, 1)
+                .withContextLoggingEnabled(true)
+                .withIndexName("  ");
+
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> newRegistryBuilder(1, 1, 1)
-                        .withContextLoggingEnabled(true)
-                        .withIndexName("  ")
-                        .build());
+                IllegalArgumentException.class, builder::build);
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
@@ -295,9 +295,11 @@ class ExecutorRegistryTest {
                 registry.getIndexMaintenanceExecutor().execute(() -> {
                 });
             }
+            final ExecutorService indexMaintenanceExecutor =
+                    registry.getIndexMaintenanceExecutor();
 
             assertThrows(RejectedExecutionException.class,
-                    () -> registry.getIndexMaintenanceExecutor().execute(() -> {
+                    () -> indexMaintenanceExecutor.execute(() -> {
                     }));
 
             final IndexExecutorMetricsAccess snapshot =

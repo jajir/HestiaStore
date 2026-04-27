@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 

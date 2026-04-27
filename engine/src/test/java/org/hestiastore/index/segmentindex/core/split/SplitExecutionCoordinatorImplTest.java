@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -117,7 +116,7 @@ class SplitExecutionCoordinatorImplTest {
 
         coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
-        verify(splitCoordinator).tryPrepareSplit(eq(segmentHandle), eq(100L));
+        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L);
     }
 
     @Test
@@ -133,7 +132,7 @@ class SplitExecutionCoordinatorImplTest {
 
         coordinator.scheduleEligibleSplit(segmentHandle, 100L, 101L);
 
-        verify(splitCoordinator).tryPrepareSplit(eq(segmentHandle), eq(100L));
+        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L);
         verify(runtime, never()).getNumberOfKeysInCache();
     }
 
@@ -160,7 +159,7 @@ class SplitExecutionCoordinatorImplTest {
 
         task.run();
 
-        verify(splitCoordinator).tryPrepareSplit(eq(segmentHandle), eq(100L));
+        verify(splitCoordinator).tryPrepareSplit(segmentHandle, 100L);
         coordinator.awaitSplitsIdle(1_000L);
         org.junit.jupiter.api.Assertions.assertEquals(0,
                 coordinator.splitInFlightCount());
@@ -178,7 +177,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenAnswer(invocation -> {
                     nowNanos.set(TimeUnit.MILLISECONDS.toNanos(9));
                     return null;
@@ -211,7 +210,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.TRUE);
@@ -235,7 +234,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.FALSE);
@@ -260,7 +259,7 @@ class SplitExecutionCoordinatorImplTest {
         when(keyToSegmentMap.getSegmentIds())
                 .thenReturn(List.of(segmentId), List.of());
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenThrow(new IllegalStateException("flush failed"));
@@ -286,7 +285,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenReturn(Boolean.TRUE);
@@ -313,7 +312,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(splitPlan);
         when(splitPublishCoordinator.applyPreparedSplit(splitPlan))
                 .thenThrow(new IllegalStateException("publish failed"));
@@ -342,7 +341,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(null);
 
         final SplitExecutionCoordinator<String, String> coordinator =
@@ -374,7 +373,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(null);
 
         final SplitExecutionCoordinator<String, String> coordinator =
@@ -408,7 +407,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(null);
 
         final SplitExecutionCoordinator<String, String> coordinator =
@@ -440,7 +439,7 @@ class SplitExecutionCoordinatorImplTest {
         when(runtime.getState()).thenReturn(SegmentState.READY);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         allowTopologyDrain(segmentId);
-        when(splitCoordinator.tryPrepareSplit(eq(segmentHandle), eq(100L)))
+        when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenAnswer(invocation -> {
                     nowNanos.addAndGet(TimeUnit.SECONDS.toNanos(2L));
                     return null;
@@ -492,6 +491,7 @@ class SplitExecutionCoordinatorImplTest {
                 new SplitTelemetry() {
                     @Override
                     public void recordSplitScheduled() {
+                        // This test only observes task delay and runtime.
                     }
 
                     @Override

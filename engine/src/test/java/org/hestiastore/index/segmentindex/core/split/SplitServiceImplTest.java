@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -99,17 +100,25 @@ class SplitServiceImplTest {
 
     @Test
     void createRejectsNullConfiguration() {
+        final RuntimeTuningState tuningState = mock(RuntimeTuningState.class);
+        final KeyToSegmentMap<String> map = mock(KeyToSegmentMap.class);
+        final SegmentRegistry<String, String> registry = mock(
+                SegmentRegistry.class);
+        final SplitExecutionCoordinator<String, String> executionCoordinator =
+                mock(SplitExecutionCoordinator.class);
+        final ScheduledExecutorService scheduler = mock(
+                ScheduledExecutorService.class);
+        final Supplier<SegmentIndexState> stateSupplier =
+                () -> SegmentIndexState.READY;
+        final SplitFailureReporter failureReporter = SplitFailureReporter.noOp();
+        final SplitTelemetry telemetry = SplitTelemetry.noOp();
+        final SplitPolicyState policyState = new SplitPolicyState();
+
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SplitServiceImpl<>(null,
-                        mock(RuntimeTuningState.class),
-                        mock(KeyToSegmentMap.class), mock(SegmentRegistry.class),
-                        mock(SplitExecutionCoordinator.class),
-                        directExecutor(), mock(ScheduledExecutorService.class),
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.noOp(),
-                        new SplitPolicyState()));
+                () -> new SplitServiceImpl<>(null, tuningState, map, registry,
+                        executionCoordinator, directExecutor(), scheduler,
+                        stateSupplier, failureReporter, telemetry, policyState));
 
         assertEquals("Property 'conf' must not be null.", ex.getMessage());
     }
@@ -343,6 +352,7 @@ class SplitServiceImplTest {
 
     @Test
     void hintSplitCandidateRejectsCallsAfterClose() {
+        final SegmentId segmentId = SegmentId.of(4);
         when(conf.getIndexBusyTimeoutMillis()).thenReturn(25);
         when(splitExecutionCoordinator.splitInFlightCount()).thenReturn(0);
         final SplitServiceImpl<String, String> runtime =
@@ -358,7 +368,7 @@ class SplitServiceImplTest {
         runtime.close();
 
         assertThrows(IllegalStateException.class,
-                () -> runtime.hintSplitCandidate(SegmentId.of(4)));
+                () -> runtime.hintSplitCandidate(segmentId));
     }
 
     @Test

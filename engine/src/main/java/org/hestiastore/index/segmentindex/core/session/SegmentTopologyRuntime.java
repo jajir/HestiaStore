@@ -24,7 +24,7 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 final class SegmentTopologyRuntime<K, V> {
 
     private final SegmentTopology<K> segmentTopology;
-    private final SplitService<K, V> splitService;
+    private final SplitService splitService;
     private final SegmentStreamingService<K, V> streamingService;
     private final SegmentAccessService<K, V> segmentAccessService;
     private final DirectSegmentAccess<K, V> directSegmentAccess;
@@ -85,7 +85,7 @@ final class SegmentTopologyRuntime<K, V> {
                 validatedCoreStorage.retryPolicy());
     }
 
-    SplitService<K, V> splitService() {
+    SplitService splitService() {
         return splitService;
     }
 

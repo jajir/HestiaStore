@@ -14,7 +14,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexTestAccess;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 import org.junit.jupiter.api.AfterEach;

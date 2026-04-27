@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
@@ -64,7 +64,7 @@ class RouteSplitPublishCoordinatorTest {
                 IllegalStateException.class,
                 () -> coordinator.applyPreparedSplit(splitPlan));
 
-        assertTrue(thrown.getSuppressed().length == 0);
+        assertEquals(0, thrown.getSuppressed().length);
         verify(materializationService).deletePreparedSegment(LOWER_SEGMENT_ID);
         verify(materializationService).deletePreparedSegment(UPPER_SEGMENT_ID);
     }
