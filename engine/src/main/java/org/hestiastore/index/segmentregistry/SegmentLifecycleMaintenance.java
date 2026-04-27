@@ -2,13 +2,13 @@ package org.hestiastore.index.segmentregistry;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentBuildResult;
 import org.hestiastore.index.segment.SegmentBuildStatus;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segment.SegmentState;
 
 /**
@@ -87,15 +87,15 @@ final class SegmentLifecycleMaintenance<K, V> {
                         String.format(SEGMENT_CLOSE_FAILED_FORMAT,
                                 segment.getId(), state));
             }
-            final SegmentResult<Void> result = segment.close();
-            final SegmentResultStatus status = result.getStatus();
-            if (status == SegmentResultStatus.OK) {
+            final OperationResult<Void> result = segment.close();
+            final OperationStatus status = result.getStatus();
+            if (status == OperationStatus.OK) {
                 return;
             }
-            if (status == SegmentResultStatus.CLOSED) {
+            if (status == OperationStatus.CLOSED) {
                 return;
             }
-            if (status == SegmentResultStatus.BUSY) {
+            if (status == OperationStatus.BUSY) {
                 closeRetryPolicy.backoffOrThrow(startNanos, "close",
                         segment.getId());
                 continue;

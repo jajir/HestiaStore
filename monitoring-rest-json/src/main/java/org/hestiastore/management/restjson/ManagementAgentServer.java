@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.monitoring.MonitoredIndexProvider;
 import org.hestiastore.index.control.model.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.LegacyPartitionCompatibilityMetrics;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -845,6 +846,8 @@ public final class ManagementAgentServer
         final SegmentIndexMetricsSnapshot snapshot = monitored
                 .metricsSnapshot();
         final SegmentIndexState state = monitored.state();
+        final LegacyPartitionCompatibilityMetrics legacyMetrics = snapshot
+                .getLegacyPartitionCompatibilityMetrics();
         return new IndexReportResponse(monitored.indexName(), state.name(),
                 state == SegmentIndexState.READY,
                 snapshot.getGetOperationCount(),
@@ -857,10 +860,10 @@ public final class ManagementAgentServer
                 snapshot.getRegistryCacheSize(),
                 snapshot.getRegistryCacheLimit(),
                 snapshot.getSegmentCacheKeyLimitPerSegment(),
-                snapshot.getMaxNumberOfKeysInActivePartition(),
-                snapshot.getMaxNumberOfImmutableRunsPerPartition(),
-                snapshot.getMaxNumberOfKeysInPartitionBuffer(),
-                snapshot.getMaxNumberOfKeysInIndexBuffer(),
+                legacyMetrics.getMaxNumberOfKeysInActivePartition(),
+                legacyMetrics.getMaxNumberOfImmutableRunsPerPartition(),
+                legacyMetrics.getMaxNumberOfKeysInPartitionBuffer(),
+                legacyMetrics.getMaxNumberOfKeysInIndexBuffer(),
                 snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                 snapshot.getSegmentMaintenanceCount(),
                 snapshot.getSegmentErrorCount(),
@@ -876,16 +879,16 @@ public final class ManagementAgentServer
                 snapshot.getMaintenanceQueueSize(),
                 snapshot.getMaintenanceQueueCapacity(),
                 snapshot.getSplitQueueSize(), snapshot.getSplitQueueCapacity(),
-                snapshot.getPartitionCount(),
-                snapshot.getActivePartitionCount(),
-                snapshot.getDrainingPartitionCount(),
-                snapshot.getImmutableRunCount(),
-                snapshot.getPartitionBufferedKeyCount(),
-                snapshot.getLocalThrottleCount(),
-                snapshot.getGlobalThrottleCount(),
-                snapshot.getDrainScheduleCount(),
-                snapshot.getDrainInFlightCount(),
-                snapshot.getDrainLatencyP95Micros(),
+                legacyMetrics.getPartitionCount(),
+                legacyMetrics.getActivePartitionCount(),
+                legacyMetrics.getDrainingPartitionCount(),
+                legacyMetrics.getImmutableRunCount(),
+                legacyMetrics.getPartitionBufferedKeyCount(),
+                legacyMetrics.getLocalThrottleCount(),
+                legacyMetrics.getGlobalThrottleCount(),
+                legacyMetrics.getDrainScheduleCount(),
+                legacyMetrics.getDrainInFlightCount(),
+                legacyMetrics.getDrainLatencyP95Micros(),
                 snapshot.getReadLatencyP50Micros(),
                 snapshot.getReadLatencyP95Micros(),
                 snapshot.getReadLatencyP99Micros(),

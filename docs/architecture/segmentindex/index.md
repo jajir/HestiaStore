@@ -16,6 +16,8 @@ concern above stable segments.
 - [Read Path](read-path.md) — request routing and lookup flow.
 - [Write Path](write-path.md) — routed writes, flush, compaction, and split
   orchestration.
+- [WAL Runtime](wal-runtime.md) — internal ownership boundaries for WAL
+  append, recovery, metadata, retention, and durability policy.
 - [Range-Partitioned Ingest](range-partitioned-ingest.md) — compatibility note
   describing what replaced the removed runtime model.
 - [Range-Partitioned Ingest Implementation Notes](range-partitioned-ingest-implementation.md)

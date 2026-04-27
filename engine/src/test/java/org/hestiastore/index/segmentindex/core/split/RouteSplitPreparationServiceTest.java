@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,7 +16,6 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,8 +80,8 @@ class RouteSplitPreparationServiceTest {
                 Entry.of(4, "d"));
     }
 
-    private static SegmentResult<EntryIterator<Integer, String>> iteratorResult(
+    private static OperationResult<EntryIterator<Integer, String>> iteratorResult(
             final List<Entry<Integer, String>> entries) {
-        return SegmentResult.ok(EntryIterator.make(entries.iterator()));
+        return OperationResult.ok(EntryIterator.make(entries.iterator()));
     }
 }

@@ -33,13 +33,10 @@ public class IndexConfiguration<K, V> {
      * Segments configuration
      */
     private final Integer maxNumberOfKeysInSegmentCache;
-    private final Integer maxNumberOfKeysInActivePartition;
-    private final Integer maxNumberOfKeysInPartitionBuffer;
-    private final Integer maxNumberOfImmutableRunsPerPartition;
-    private final Integer maxNumberOfKeysInIndexBuffer;
     private final Integer maxNumberOfKeysInSegmentChunk;
     private final Integer maxNumberOfDeltaCacheFiles;
-    private final Integer maxNumberOfKeysInPartitionBeforeSplit;
+    private final IndexWritePathConfiguration writePathConfiguration;
+    private final LegacyPartitionCompatibilityConfiguration legacyPartitionCompatibilityConfiguration;
 
     /*
      * Segment index configuration
@@ -109,13 +106,14 @@ public class IndexConfiguration<K, V> {
         this.keyTypeDescriptor = keyTypeDescriptor;
         this.valueTypeDescriptor = valueTypeDescriptor;
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
-        this.maxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
-        this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
-        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
-        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
+        this.writePathConfiguration = new IndexWritePathConfiguration(
+                maxNumberOfKeysInActivePartition,
+                maxNumberOfKeysInPartitionBuffer, maxNumberOfKeysInIndexBuffer,
+                maxNumberOfKeysInPartitionBeforeSplit);
+        this.legacyPartitionCompatibilityConfiguration = new LegacyPartitionCompatibilityConfiguration(
+                writePathConfiguration, maxNumberOfImmutableRunsPerPartition);
         this.indexName = indexName;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
@@ -145,15 +143,78 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
+     * Returns canonical write-path configuration for the direct-to-segment
+     * runtime.
+     *
+     * @return immutable write-path configuration
+     */
+    public IndexWritePathConfiguration getWritePathConfiguration() {
+        return writePathConfiguration;
+    }
+
+    /**
+     * Returns compatibility settings retained for callers that still consume
+     * legacy partition-overlay naming.
+     *
+     * @return immutable compatibility view
+     */
+    public LegacyPartitionCompatibilityConfiguration getLegacyPartitionCompatibilityConfiguration() {
+        return legacyPartitionCompatibilityConfiguration;
+    }
+
+    /**
+     * Returns the maximum number of keys accepted into one routed segment write
+     * cache in the current direct-to-segment runtime.
+     *
+     * @return max keys in one segment write cache
+     */
+    public Integer getSegmentWriteCacheKeyLimit() {
+        return writePathConfiguration.getSegmentWriteCacheKeyLimit();
+    }
+
+    /**
+     * Returns the maximum number of keys buffered in one routed segment while
+     * maintenance is running.
+     *
+     * @return maintenance-time buffered key limit
+     */
+    public Integer getSegmentWriteCacheKeyLimitDuringMaintenance() {
+        return writePathConfiguration
+                .getSegmentWriteCacheKeyLimitDuringMaintenance();
+    }
+
+    /**
+     * Returns the maximum number of buffered keys allowed across the whole
+     * index.
+     *
+     * @return index-wide buffered key limit
+     */
+    public Integer getIndexBufferedWriteKeyLimit() {
+        return writePathConfiguration.getIndexBufferedWriteKeyLimit();
+    }
+
+    /**
+     * Returns the split threshold for one routed segment.
+     *
+     * @return max keys before one routed segment is split
+     */
+    public Integer getSegmentSplitKeyThreshold() {
+        return writePathConfiguration.getSegmentSplitKeyThreshold();
+    }
+
+    /**
      * Returns the maximum number of keys accepted into the routed segment write
      * cache.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getSegmentWriteCacheKeyLimit()} for the canonical name.
      *
      * @return max routed write-cache keys
+     * @deprecated use {@link #getSegmentWriteCacheKeyLimit()}
      */
+    @Deprecated
     public Integer getMaxNumberOfKeysInActivePartition() {
-        return maxNumberOfKeysInActivePartition;
+        return legacyPartitionCompatibilityConfiguration
+                .getMaxNumberOfKeysInActivePartition();
     }
 
     /**
@@ -161,33 +222,45 @@ public class IndexConfiguration<K, V> {
      * runtime.
      *
      * @return legacy compatibility limit
+     * @deprecated use canonical write-path settings via
+     *             {@link #getWritePathConfiguration()}
      */
+    @Deprecated
     public Integer getMaxNumberOfImmutableRunsPerPartition() {
-        return maxNumberOfImmutableRunsPerPartition;
+        return legacyPartitionCompatibilityConfiguration
+                .getMaxNumberOfImmutableRunsPerPartition();
     }
 
     /**
      * Returns the maximum number of buffered keys allowed inside one routed
      * segment before local backpressure is applied.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()} for the
+     * canonical name.
      *
      * @return max buffered keys inside one routed segment
+     * @deprecated use
+     *             {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()}
      */
+    @Deprecated
     public Integer getMaxNumberOfKeysInPartitionBuffer() {
-        return maxNumberOfKeysInPartitionBuffer;
+        return legacyPartitionCompatibilityConfiguration
+                .getMaxNumberOfKeysInPartitionBuffer();
     }
 
     /**
      * Returns the maximum number of buffered keys allowed across the whole
      * index.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getIndexBufferedWriteKeyLimit()} for the canonical name.
      *
      * @return global buffered key count
+     * @deprecated use {@link #getIndexBufferedWriteKeyLimit()}
      */
+    @Deprecated
     public Integer getMaxNumberOfKeysInIndexBuffer() {
-        return maxNumberOfKeysInIndexBuffer;
+        return legacyPartitionCompatibilityConfiguration
+                .getMaxNumberOfKeysInIndexBuffer();
     }
 
     /**
@@ -231,12 +304,15 @@ public class IndexConfiguration<K, V> {
     /**
      * Returns the split threshold for a routed segment.
      * <p>
-     * The method keeps its historical name for backward compatibility.
+     * Use {@link #getSegmentSplitKeyThreshold()} for the canonical name.
      *
      * @return max keys before a routed segment is split
+     * @deprecated use {@link #getSegmentSplitKeyThreshold()}
      */
+    @Deprecated
     public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return maxNumberOfKeysInPartitionBeforeSplit;
+        return legacyPartitionCompatibilityConfiguration
+                .getMaxNumberOfKeysInPartitionBeforeSplit();
     }
 
     /**

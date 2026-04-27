@@ -18,7 +18,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -159,7 +159,7 @@ class SegmentRegistryBuilderTest {
             final BlockingSegment<Integer, String> created = registry
                     .createSegment();
             assertNotNull(created);
-            assertSame(SegmentResultStatus.OK,
+            assertSame(OperationStatus.OK,
                     created.getSegment().put(1, "value").getStatus());
             registry.close();
         } finally {

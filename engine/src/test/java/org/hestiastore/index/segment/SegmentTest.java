@@ -1,5 +1,6 @@
 package org.hestiastore.index.segment;
 
+import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
@@ -35,8 +36,8 @@ class SegmentTest {
         }
 
         @Override
-        public SegmentResult<Void> compact() {
-            return SegmentResult.ok();
+        public OperationResult<Void> compact() {
+            return OperationResult.ok();
         }
 
         @Override
@@ -50,21 +51,21 @@ class SegmentTest {
         }
 
         @Override
-        public SegmentResult<EntryIterator<Integer, String>> openIterator(
+        public OperationResult<EntryIterator<Integer, String>> openIterator(
                 final SegmentIteratorIsolation isolation) {
             this.lastIsolation = isolation;
-            return SegmentResult.ok(EntryIterator
+            return OperationResult.ok(EntryIterator
                     .make(List.<Entry<Integer, String>>of().iterator()));
         }
 
         @Override
-        public SegmentResult<Void> put(final Integer key, final String value) {
-            return SegmentResult.ok();
+        public OperationResult<Void> put(final Integer key, final String value) {
+            return OperationResult.ok();
         }
 
         @Override
-        public SegmentResult<Void> flush() {
-            return SegmentResult.ok();
+        public OperationResult<Void> flush() {
+            return OperationResult.ok();
         }
 
         @Override
@@ -93,8 +94,8 @@ class SegmentTest {
         }
 
         @Override
-        public SegmentResult<String> get(final Integer key) {
-            return SegmentResult.ok();
+        public OperationResult<String> get(final Integer key) {
+            return OperationResult.ok();
         }
 
         @Override
@@ -107,9 +108,9 @@ class SegmentTest {
         }
 
         @Override
-        public SegmentResult<Void> close() {
+        public OperationResult<Void> close() {
             state = SegmentState.CLOSED;
-            return SegmentResult.ok();
+            return OperationResult.ok();
         }
 
         @Override

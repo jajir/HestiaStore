@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class IndexConfigurationContractTest {
 
     @Test
-    void derivesActivePartitionDefaultsFromSegmentCache() {
+    void derivesCanonicalWritePathDefaultsFromSegmentCache() {
         final IndexConfigurationContract contract = new IndexConfigurationContract() {
             @Override
             public int getMaxNumberOfKeysInSegmentCache() {
@@ -22,13 +22,21 @@ class IndexConfigurationContractTest {
             }
         };
 
-        final int activePartitionLimit = contract.getMaxNumberOfKeysInActivePartition();
-        assertEquals(4, activePartitionLimit);
+        final int segmentWriteCacheLimit = contract
+                .getSegmentWriteCacheKeyLimit();
+        assertEquals(4, segmentWriteCacheLimit);
 
-        final int expectedPartitionBufferLimit = Math.max(activePartitionLimit + 1,
-                (int) Math.ceil(activePartitionLimit * 1.4));
+        final int expectedPartitionBufferLimit = Math.max(
+                segmentWriteCacheLimit + 1,
+                (int) Math.ceil(segmentWriteCacheLimit * 1.4));
+        assertEquals(expectedPartitionBufferLimit,
+                contract.getSegmentWriteCacheKeyLimitDuringMaintenance());
         assertEquals(expectedPartitionBufferLimit,
                 contract.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(Math.max(expectedPartitionBufferLimit,
+                expectedPartitionBufferLimit
+                        * contract.getMaxNumberOfSegmentsInCache()),
+                contract.getIndexBufferedWriteKeyLimit());
     }
 
     @Test

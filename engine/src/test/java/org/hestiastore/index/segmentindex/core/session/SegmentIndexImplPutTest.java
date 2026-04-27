@@ -297,10 +297,14 @@ class SegmentIndexImplPutTest {
             final RuntimeException failure) {
         try {
             final Object walRuntime = SegmentIndexTestAccess.walRuntime(index);
-            final Field syncFailureField = walRuntime.getClass()
+            final Field syncPolicyField = walRuntime.getClass()
+                    .getDeclaredField("syncPolicy");
+            syncPolicyField.setAccessible(true);
+            final Object syncPolicy = syncPolicyField.get(walRuntime);
+            final Field syncFailureField = syncPolicy.getClass()
                     .getDeclaredField("syncFailure");
             syncFailureField.setAccessible(true);
-            syncFailureField.set(walRuntime, failure);
+            syncFailureField.set(syncPolicy, failure);
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to inject WAL sync failure for test", ex);

@@ -7,11 +7,11 @@ import java.util.Optional;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -131,13 +131,13 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
             final SegmentId segmentId) {
         final long startNanos = retryPolicy.startNanos();
         for (int attempt = 0; attempt < 2; attempt++) {
-            final SegmentResult<EntryIterator<K, V>> result = segmentHandle
+            final OperationResult<EntryIterator<K, V>> result = segmentHandle
                     .tryOpenIterator(isolation);
-            if (result.getStatus() == SegmentResultStatus.OK
+            if (result.getStatus() == OperationStatus.OK
                     && result.getValue() != null) {
                 return result.getValue();
             }
-            if (result.getStatus() != SegmentResultStatus.BUSY) {
+            if (result.getStatus() != OperationStatus.BUSY) {
                 return null;
             }
             if (attempt == 0) {

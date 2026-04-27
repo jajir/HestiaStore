@@ -24,7 +24,8 @@ class ExecutorRuntimeMonitorTest {
                 .runtimeSnapshot();
 
         assertEquals(4, snapshot.getIndexMaintenance().getQueueCapacity());
-        assertEquals(1L, snapshot.getIndexMaintenance().getRejectedTaskCount());
+        assertEquals(1L,
+                snapshot.getIndexMaintenance().getRejectedTaskCount());
         assertEquals(2L, snapshot.getIndexMaintenance().getCallerRunsCount());
         assertEquals(8, snapshot.getSplitMaintenance().getQueueCapacity());
         assertEquals(3L, snapshot.getSplitMaintenance().getRejectedTaskCount());

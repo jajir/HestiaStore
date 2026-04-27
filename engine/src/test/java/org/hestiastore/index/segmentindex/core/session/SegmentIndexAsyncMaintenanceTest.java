@@ -30,7 +30,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentResult;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -237,14 +237,14 @@ class SegmentIndexAsyncMaintenanceTest {
                 stateRef.set(SegmentState.MAINTENANCE_RUNNING);
                 started.countDown();
             }
-            return SegmentResult.ok();
+            return OperationResult.ok();
         });
         lenient().when(blockingSegment.compact()).thenAnswer(invocation -> {
             if (!forFlush) {
                 stateRef.set(SegmentState.MAINTENANCE_RUNNING);
                 started.countDown();
             }
-            return SegmentResult.ok();
+            return OperationResult.ok();
         });
         return blockingSegment;
     }
@@ -262,8 +262,8 @@ class SegmentIndexAsyncMaintenanceTest {
                 invocation -> new SegmentRuntimeSnapshot(segmentId,
                         stateRef.get(), 0L, 0L, 0L, 0L, 0, 0, 0L, 0L, 0L, 0L,
                         0L, 0L));
-        lenient().when(blockedSegment.flush()).thenReturn(SegmentResult.ok());
-        lenient().when(blockedSegment.compact()).thenReturn(SegmentResult.ok());
+        lenient().when(blockedSegment.flush()).thenReturn(OperationResult.ok());
+        lenient().when(blockedSegment.compact()).thenReturn(OperationResult.ok());
         when(blockedSegment.close()).thenAnswer(invocation -> {
             stateRef.set(SegmentState.MAINTENANCE_RUNNING);
             started.countDown();
@@ -272,7 +272,7 @@ class SegmentIndexAsyncMaintenanceTest {
                         "Timed out waiting to release blocked close.");
             }
             stateRef.set(SegmentState.CLOSED);
-            return SegmentResult.ok();
+            return OperationResult.ok();
         });
         return blockedSegment;
     }

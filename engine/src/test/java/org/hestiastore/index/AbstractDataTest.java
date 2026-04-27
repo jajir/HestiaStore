@@ -10,8 +10,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segment.SegmentResult;
-import org.hestiastore.index.segment.SegmentResultStatus;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.slf4j.Logger;
@@ -107,9 +106,9 @@ public abstract class AbstractDataTest {
      */
     public static <M, N> void verifyIteratorData(
             final List<Entry<M, N>> entries,
-            final SegmentResult<EntryIterator<M, N>> result) {
+            final OperationResult<EntryIterator<M, N>> result) {
         assertNotNull(result);
-        assertEquals(SegmentResultStatus.OK, result.getStatus(),
+        assertEquals(OperationStatus.OK, result.getStatus(),
                 "Expected iterator result OK");
         assertNotNull(result.getValue());
         verifyIteratorData(entries, result.getValue());
@@ -148,9 +147,9 @@ public abstract class AbstractDataTest {
      */
     public static List<Entry<Integer, String>> segmentToList(
             final Segment<Integer, String> segment) {
-        final SegmentResult<EntryIterator<Integer, String>> result = segment
+        final OperationResult<EntryIterator<Integer, String>> result = segment
                 .openIterator();
-        assertEquals(SegmentResultStatus.OK, result.getStatus(),
+        assertEquals(OperationStatus.OK, result.getStatus(),
                 "Expected iterator result OK");
         assertNotNull(result.getValue());
         try (EntryIterator<Integer, String> iterator = result.getValue()) {
