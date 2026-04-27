@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
 import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class ExecutorRegistryTest {
@@ -239,8 +238,7 @@ class ExecutorRegistryTest {
     void stableSegmentMaintenanceExecutorUsesConfiguredThreadCount()
             throws InterruptedException {
         final int stableSegmentMaintenanceThreads = 4;
-        final ExecutorRegistry registry =
-                newRegistry(stableSegmentMaintenanceThreads, 1, 1);
+        final ExecutorRegistry registry = newRegistry(stableSegmentMaintenanceThreads, 1, 1);
         final CountDownLatch started = new CountDownLatch(
                 stableSegmentMaintenanceThreads);
         final CountDownLatch release = new CountDownLatch(1);
@@ -295,15 +293,13 @@ class ExecutorRegistryTest {
                 registry.getIndexMaintenanceExecutor().execute(() -> {
                 });
             }
-            final ExecutorService indexMaintenanceExecutor =
-                    registry.getIndexMaintenanceExecutor();
+            final ExecutorService indexMaintenanceExecutor = registry.getIndexMaintenanceExecutor();
 
             assertThrows(RejectedExecutionException.class,
                     () -> indexMaintenanceExecutor.execute(() -> {
                     }));
 
-            final IndexExecutorMetricsAccess snapshot =
-                    registry.runtimeSnapshot().getIndexMaintenance();
+            final IndexExecutorMetricsAccess snapshot = registry.runtimeSnapshot().getIndexMaintenance();
             assertEquals(1, snapshot.getActiveThreadCount());
             assertEquals(64, snapshot.getQueueSize());
             assertEquals(64, snapshot.getQueueCapacity());
@@ -316,7 +312,6 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    @Disabled("Known regular failure; intentionally disabled until root cause is understood.")
     void runtimeSnapshotTracksCompletedTasksAndCallerRuns()
             throws InterruptedException, ExecutionException {
         final ExecutorRegistry registry = newRegistry(1, 1, 1);
@@ -346,8 +341,7 @@ class ExecutorRegistryTest {
 
             assertEquals(submittingThreadName, callerRunThread.get());
 
-            final IndexExecutorRuntimeAccess runtimeSnapshot =
-                    registry.runtimeSnapshot();
+            final IndexExecutorRuntimeAccess runtimeSnapshot = registry.runtimeSnapshot();
             assertEquals(1L, runtimeSnapshot.getSplitMaintenance()
                     .getCompletedTaskCount());
             assertEquals(1L, runtimeSnapshot.getStableSegmentMaintenance()
