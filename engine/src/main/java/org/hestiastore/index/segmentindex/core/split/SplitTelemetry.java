@@ -61,14 +61,17 @@ interface SplitTelemetry {
         return new SplitTelemetry() {
             @Override
             public void recordSplitScheduled() {
+                // No telemetry sink is attached for this no-op adapter.
             }
 
             @Override
             public void recordSplitTaskStartDelayNanos(final long nanos) {
+                // No telemetry sink is attached for this no-op adapter.
             }
 
             @Override
             public void recordSplitTaskRunLatencyNanos(final long nanos) {
+                // No telemetry sink is attached for this no-op adapter.
             }
         };
     }

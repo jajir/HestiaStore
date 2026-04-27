@@ -28,9 +28,10 @@ class RouteEntryTest {
     @Test
     void releaseWithoutLeaseFails() {
         final RouteEntry entry = new RouteEntry(RouteState.ACTIVE);
+        final SegmentId segmentId = SegmentId.of(1);
 
         assertThrows(IllegalStateException.class,
-                () -> entry.releaseLease(SegmentId.of(1)));
+                () -> entry.releaseLease(segmentId));
     }
 
     @Test

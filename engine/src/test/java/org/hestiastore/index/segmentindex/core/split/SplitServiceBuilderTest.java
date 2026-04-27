@@ -36,7 +36,7 @@ class SplitServiceBuilderTest {
             when(conf.getIndexBusyTimeoutMillis()).thenReturn(1);
             when(segmentRegistry.materialization())
                     .thenReturn(mock(SegmentRegistry.Materialization.class));
-            final SplitService<String, String> service = SplitService
+            final SplitService service = SplitService
                     .<String, String>builder()
                     .conf(conf)
                     .runtimeTuningState(mock(RuntimeTuningState.class))
@@ -65,22 +65,23 @@ class SplitServiceBuilderTest {
         final ScheduledExecutorService scheduler = Executors
                 .newSingleThreadScheduledExecutor();
         try {
+            final SplitServiceBuilder<String, String> builder = SplitService
+                    .<String, String>builder()
+                    .runtimeTuningState(mock(RuntimeTuningState.class))
+                    .keyComparator(mockComparator())
+                    .keyToSegmentMap(mock(KeyToSegmentMap.class))
+                    .segmentRegistry(mock(SegmentRegistry.class))
+                    .directoryFacade(mock(Directory.class))
+                    .splitExecutor(directExecutor())
+                    .workerExecutor(directExecutor())
+                    .splitPolicyScheduler(scheduler)
+                    .stateSupplier(() -> SegmentIndexState.READY)
+                    .failureHandler(ex2 -> {
+                    })
+                    .stats(new Stats());
+
             final IllegalArgumentException ex = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> SplitService.<String, String>builder()
-                            .runtimeTuningState(mock(RuntimeTuningState.class))
-                            .keyComparator(mockComparator())
-                            .keyToSegmentMap(mock(KeyToSegmentMap.class))
-                            .segmentRegistry(mock(SegmentRegistry.class))
-                            .directoryFacade(mock(Directory.class))
-                            .splitExecutor(directExecutor())
-                            .workerExecutor(directExecutor())
-                            .splitPolicyScheduler(scheduler)
-                            .stateSupplier(() -> SegmentIndexState.READY)
-                            .failureHandler(ex2 -> {
-                            })
-                            .stats(new Stats())
-                            .build());
+                    IllegalArgumentException.class, builder::build);
 
             assertEquals("Property 'conf' must not be null.",
                     ex.getMessage());

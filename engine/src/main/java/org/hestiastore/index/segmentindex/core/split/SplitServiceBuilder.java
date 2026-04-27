@@ -118,7 +118,7 @@ public final class SplitServiceBuilder<K, V> {
         return this;
     }
 
-    public SplitService<K, V> build() {
+    public SplitService build() {
         return new SplitServiceImpl<>(
                 Vldtn.requireNonNull(conf, "conf"),
                 Vldtn.requireNonNull(runtimeTuningState,

@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.NoSuchElementException;
 
-import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;

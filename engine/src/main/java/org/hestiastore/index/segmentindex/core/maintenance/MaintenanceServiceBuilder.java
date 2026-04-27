@@ -22,7 +22,7 @@ public final class MaintenanceServiceBuilder<K, V> {
     private Logger logger;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private StableSegmentOperationAccess<K, V> stableSegmentGateway;
-    private SplitService<K, V> splitService;
+    private SplitService splitService;
     private IndexRetryPolicy retryPolicy;
     private Stats stats;
     private ExecutorService maintenanceExecutor;
@@ -77,7 +77,7 @@ public final class MaintenanceServiceBuilder<K, V> {
      * @return this builder
      */
     public MaintenanceServiceBuilder<K, V> splitService(
-            final SplitService<K, V> splitService) {
+            final SplitService splitService) {
         this.splitService = Vldtn.requireNonNull(splitService, "splitService");
         return this;
     }

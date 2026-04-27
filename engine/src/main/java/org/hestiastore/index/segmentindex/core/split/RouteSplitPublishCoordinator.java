@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
  */
 final class RouteSplitPublishCoordinator<K, V> {
 
+    private static final String SPLIT_PLAN_ARG = "splitPlan";
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
@@ -33,7 +35,7 @@ final class RouteSplitPublishCoordinator<K, V> {
     }
 
     boolean applyPreparedSplit(final RouteSplitPlan<K> splitPlan) {
-        Vldtn.requireNonNull(splitPlan, "splitPlan");
+        Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
         final boolean published;
         try {
             published = keyToSegmentMap.tryApplySplitPlan(splitPlan);
@@ -56,7 +58,7 @@ final class RouteSplitPublishCoordinator<K, V> {
     }
 
     private void completePreparedSplit(final RouteSplitPlan<K> splitPlan) {
-        Vldtn.requireNonNull(splitPlan, "splitPlan");
+        Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
         keyToSegmentMap.flushIfDirty();
         deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
         if (logger.isDebugEnabled()) {
@@ -72,7 +74,7 @@ final class RouteSplitPublishCoordinator<K, V> {
     private RuntimeException abortPreparedSplit(final RouteSplitPlan<K> splitPlan,
             final RuntimeException failure) {
         final RuntimeException cleanupFailure = deleteChildSegments(
-                Vldtn.requireNonNull(splitPlan, "splitPlan")
+                Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG)
                         .getLowerSegmentId(),
                 splitPlan.getUpperSegmentId().orElse(null));
         if (cleanupFailure == null) {
@@ -84,7 +86,7 @@ final class RouteSplitPublishCoordinator<K, V> {
 
     private void abortPreparedSplit(final RouteSplitPlan<K> splitPlan) {
         final RuntimeException cleanupFailure = deleteChildSegments(
-                Vldtn.requireNonNull(splitPlan, "splitPlan")
+                Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG)
                         .getLowerSegmentId(),
                 splitPlan.getUpperSegmentId().orElse(null));
         if (cleanupFailure != null) {

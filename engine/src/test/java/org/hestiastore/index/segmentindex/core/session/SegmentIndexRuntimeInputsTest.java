@@ -23,15 +23,31 @@ class SegmentIndexRuntimeInputsTest {
 
     @Test
     void constructorRejectsNullLogger() {
+        final Directory directory = mock(Directory.class);
+        final TypeDescriptor<Integer> keyTypeDescriptor = mock(
+                TypeDescriptor.class);
+        final TypeDescriptor<String> valueTypeDescriptor = mock(
+                TypeDescriptor.class);
+        final IndexConfiguration<Integer, String> conf = mock(
+                IndexConfiguration.class);
+        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
+                mock(IndexRuntimeConfiguration.class);
+        final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
+        final Stats stats = new Stats();
+        final AtomicLong compactRequestHighWaterMark = new AtomicLong();
+        final AtomicLong flushRequestHighWaterMark = new AtomicLong();
+        final AtomicLong lastAppliedWalLsn = new AtomicLong();
+        final Supplier<SegmentIndexState> stateSupplier = stateSupplier();
+        final Consumer<RuntimeException> failureHandler = failureHandler();
+
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentIndexRuntimeInputs<>(null,
-                        mock(Directory.class), mock(TypeDescriptor.class),
-                        mock(TypeDescriptor.class), mock(IndexConfiguration.class),
-                        mock(IndexRuntimeConfiguration.class),
-                        mock(ExecutorRegistry.class), new Stats(),
-                        new AtomicLong(), new AtomicLong(), new AtomicLong(),
-                        stateSupplier(), failureHandler()));
+                () -> new SegmentIndexRuntimeInputs<>(null, directory,
+                        keyTypeDescriptor, valueTypeDescriptor, conf,
+                        runtimeConfiguration, executorRegistry, stats,
+                        compactRequestHighWaterMark,
+                        flushRequestHighWaterMark, lastAppliedWalLsn,
+                        stateSupplier, failureHandler));
         assertEquals("Property 'logger' must not be null.", ex.getMessage());
     }
 

@@ -51,7 +51,7 @@ class MaintenanceServiceImplTest {
     private BlockingSegment.Runtime runtime;
 
     @Mock
-    private SplitService<String, String> splitService;
+    private SplitService splitService;
 
     @Mock
     private Runnable checkpointAction;
@@ -109,7 +109,7 @@ class MaintenanceServiceImplTest {
                 KeyToSegmentMap.class);
         final StableSegmentOperationAccess<Integer, String> stableSegments = mock(
                 StableSegmentOperationAccess.class);
-        final SplitService<Integer, String> splitServiceValue = mock(
+        final SplitService splitServiceValue = mock(
                 SplitService.class);
         final Runnable checkpoint = mock(Runnable.class);
         final SegmentId segmentId = SegmentId.of(7);

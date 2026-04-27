@@ -27,8 +27,11 @@ final class SplitCandidateRegistry {
         if (previous != null) {
             return false;
         }
-        readyQueue.offer(segmentId);
-        return true;
+        final boolean queued = readyQueue.offer(segmentId);
+        if (!queued) {
+            states.remove(segmentId, CandidateState.QUEUED);
+        }
+        return queued;
     }
 
     Optional<SegmentId> claimNextCandidate() {

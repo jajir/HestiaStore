@@ -24,7 +24,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * @param <V> value type
  */
 final class SplitServiceImpl<K, V>
-        implements SplitService<K, V>, SplitMetricsView {
+        implements SplitService, SplitMetricsView {
 
     private final SplitExecutionCoordinator<K, V> splitCoordinator;
     private final SplitPolicyCoordinator<K, V> splitPolicyCoordinator;

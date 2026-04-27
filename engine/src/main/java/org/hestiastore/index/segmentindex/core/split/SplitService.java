@@ -4,11 +4,8 @@ import org.hestiastore.index.segment.SegmentId;
 
 /**
  * Public split-management boundary exposed to the rest of the runtime.
- *
- * @param <K> key type
- * @param <V> value type
  */
-public interface SplitService<K, V> extends AutoCloseable {
+public interface SplitService extends AutoCloseable {
 
     /**
      * Creates a builder for the default split runtime service.

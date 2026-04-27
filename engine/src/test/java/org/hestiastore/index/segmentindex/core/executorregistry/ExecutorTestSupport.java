@@ -56,7 +56,7 @@ final class ExecutorTestSupport {
 
         @Override
         public boolean isTerminated() {
-            return shutdown;
+            return isShutdown();
         }
 
         @Override
