@@ -5,7 +5,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.slf4j.Logger;
 
 /**
@@ -20,12 +20,12 @@ final class OpenedSegmentIndexLifecycleResources<K, V>
     private final Directory managedDirectory;
     private final IndexConfiguration<K, V> indexConfiguration;
     private final IndexRuntimeConfiguration<K, V> runtimeConfiguration;
-    private final IndexExecutorRegistry executorRegistry;
+    private final ExecutorRegistry executorRegistry;
 
     OpenedSegmentIndexLifecycleResources(final Directory managedDirectory,
             final IndexConfiguration<K, V> indexConfiguration,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry) {
+            final ExecutorRegistry executorRegistry) {
         this.managedDirectory = Vldtn.requireNonNull(managedDirectory,
                 "managedDirectory");
         this.indexConfiguration = Vldtn.requireNonNull(indexConfiguration,
@@ -52,7 +52,7 @@ final class OpenedSegmentIndexLifecycleResources<K, V>
     }
 
     @Override
-    IndexExecutorRegistry executorRegistry() {
+    ExecutorRegistry executorRegistry() {
         return executorRegistry;
     }
 

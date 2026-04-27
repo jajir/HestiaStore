@@ -3,14 +3,13 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.slf4j.Logger;
 
 /**
  * Owns the ordered close sequence for index runtime collaborators.
  */
-public final class IndexCloseCoordinator<K, V> {
+final class IndexCloseCoordinator<K, V> {
 
     private final Logger logger;
     private final String indexName;
@@ -19,7 +18,7 @@ public final class IndexCloseCoordinator<K, V> {
     private final Stats stats;
     private final SegmentIndexRuntime<K, V> runtime;
 
-    public IndexCloseCoordinator(final Logger logger, final String indexName,
+    IndexCloseCoordinator(final Logger logger, final String indexName,
             final IndexStateCoordinator<K, V> stateCoordinator,
             final IndexOperationTrackingAccess operationTracker,
             final Stats stats,
@@ -34,12 +33,12 @@ public final class IndexCloseCoordinator<K, V> {
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
     }
 
-    public void close() {
+    void close() {
         logger.debug("Closing index '{}'.", indexName);
         try {
             stateCoordinator.beginClose();
             awaitForegroundOperations();
-            quiesceBackgroundSplits();
+            closeSplitRuntime();
             sealAndFlushRuntimeState();
             logOperationCounts();
             logger.debug("Index '{}' closed.", indexName);
@@ -53,15 +52,13 @@ public final class IndexCloseCoordinator<K, V> {
         operationTracker.awaitOperations();
     }
 
-    private void quiesceBackgroundSplits() {
-        runtime.awaitSplitPlannerExhausted();
+    private void closeSplitRuntime() {
+        runtime.closeSplitRuntime();
     }
 
     private void sealAndFlushRuntimeState() {
-        runtime.flushStableSegmentsWithSplitSchedulingPaused();
+        runtime.flushAndWait();
         runtime.closeSegmentRegistry();
-        runtime.flushKeyToSegmentMap();
-        runtime.checkpointWal();
     }
 
     private void finishClosedState() {

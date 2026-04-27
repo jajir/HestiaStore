@@ -57,7 +57,7 @@ the SegmentIndex integration level.
   later merges them into the main SST.
 
 Code:
-`segmentindex/core/DirectSegmentWriteCoordinator`,
+`segmentindex/core/streaming/DirectSegmentCoordinator`,
 `segment/SegmentWritePath`,
 `segment/SegmentMaintenanceService`.
 
@@ -92,7 +92,7 @@ Code:
   - providers: `segment/SegmentDataProvider` implementations
 
 Code:
-`segmentindex/core/DirectSegmentReadCoordinator`,
+`segmentindex/core/streaming/DirectSegmentCoordinator`,
 `segment/SegmentImpl#get`,
 `segment/SegmentSearcher`,
 `segment/SegmentCache`,
@@ -170,9 +170,9 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 ## Code Pointers
 
 - Routed direct writes:
-  `src/main/java/org/hestiastore/index/segmentindex/core/DirectSegmentWriteCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
 - Routed direct reads:
-  `src/main/java/org/hestiastore/index/segmentindex/core/DirectSegmentReadCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
 - Segment caches and providers:
   `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`,
   `src/main/java/org/hestiastore/index/segment/SegmentData*`

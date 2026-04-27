@@ -7,8 +7,8 @@ import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 
 /**
  * Holds runtime services that sit on top of storage and split state.
@@ -20,7 +20,7 @@ final class SegmentIndexRuntimeServices<K, V> {
 
     private final IndexWalCoordinator<K, V> walCoordinator;
     private final SegmentIndexOperationAccess<K, V> operationAccess;
-    private final SegmentIndexMaintenanceAccess<K, V> maintenanceAccess;
+    private final MaintenanceService maintenance;
     private final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier;
     private final IndexControlPlane controlPlane;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
@@ -28,7 +28,7 @@ final class SegmentIndexRuntimeServices<K, V> {
     SegmentIndexRuntimeServices(
             final IndexWalCoordinator<K, V> walCoordinator,
             final SegmentIndexOperationAccess<K, V> operationAccess,
-            final SegmentIndexMaintenanceAccess<K, V> maintenanceAccess,
+            final MaintenanceService maintenance,
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier,
             final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier,
             final IndexControlPlane controlPlane) {
@@ -36,8 +36,7 @@ final class SegmentIndexRuntimeServices<K, V> {
                 "walCoordinator");
         this.operationAccess = Vldtn.requireNonNull(
                 operationAccess, "operationAccess");
-        this.maintenanceAccess = Vldtn.requireNonNull(maintenanceAccess,
-                "maintenanceAccess");
+        this.maintenance = Vldtn.requireNonNull(maintenance, "maintenance");
         this.runtimeLimitApplier = Vldtn.requireNonNull(runtimeLimitApplier,
                 "runtimeLimitApplier");
         this.metricsSnapshotSupplier = Vldtn.requireNonNull(
@@ -53,8 +52,8 @@ final class SegmentIndexRuntimeServices<K, V> {
         return operationAccess;
     }
 
-    SegmentIndexMaintenanceAccess<K, V> maintenanceAccess() {
-        return maintenanceAccess;
+    MaintenanceService maintenance() {
+        return maintenance;
     }
 
     Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier() {

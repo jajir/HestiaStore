@@ -18,8 +18,9 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
+import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -33,7 +34,7 @@ class SegmentIndexMetricsSnapshotsTest {
     private static final String CONF_PROPERTY_MESSAGE =
             "Property 'conf' must not be null.";
 
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private WalRuntime<Integer, String> walRuntime;
 
     @AfterEach
@@ -55,9 +56,7 @@ class SegmentIndexMetricsSnapshotsTest {
                 SegmentRegistry.class);
         final SegmentRegistry.Runtime<Integer, String> runtime = mock(
                 SegmentRegistry.Runtime.class);
-        final BackgroundSplitCoordinator<Integer, String> splitCoordinator =
-                mock(BackgroundSplitCoordinator.class);
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         Mockito.when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of());
         Mockito.when(segmentRegistry.runtime()).thenReturn(runtime);
@@ -65,12 +64,12 @@ class SegmentIndexMetricsSnapshotsTest {
         Mockito.when(segmentRegistry.metricsSnapshot())
                 .thenReturn(new SegmentRegistryCacheStats(0L, 0L, 0L, 0L, 0,
                         0));
-        Mockito.when(splitCoordinator.splitInFlightCount()).thenReturn(0);
-        Mockito.when(splitCoordinator.splitBlockedCount()).thenReturn(0);
 
         final Supplier<SegmentIndexMetricsSnapshot> snapshotSupplier =
                 SegmentIndexMetricsSnapshots.create(conf, keyToSegmentMap,
-                        segmentRegistry, splitCoordinator, executorRegistry,
+                        segmentRegistry,
+                        () -> new SplitMetricsSnapshot(0, 0),
+                        executorRegistry,
                         RuntimeTuningState.fromConfiguration(conf), walRuntime,
                         new Stats(), new AtomicLong(), new AtomicLong(),
                         new AtomicLong(), () -> SegmentIndexState.READY);
@@ -87,8 +86,8 @@ class SegmentIndexMetricsSnapshotsTest {
                 () -> SegmentIndexMetricsSnapshots.create(null,
                         mock(KeyToSegmentMap.class),
                         mock(SegmentRegistry.class),
-                        mock(BackgroundSplitCoordinator.class),
-                        mock(IndexExecutorRegistry.class),
+                        () -> new SplitMetricsSnapshot(0, 0),
+                        mock(ExecutorRegistry.class),
                         mock(RuntimeTuningState.class),
                         mock(WalRuntime.class), new Stats(), new AtomicLong(),
                         new AtomicLong(), new AtomicLong(),

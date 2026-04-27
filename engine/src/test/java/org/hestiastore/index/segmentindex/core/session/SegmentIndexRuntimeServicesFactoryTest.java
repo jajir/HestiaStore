@@ -11,10 +11,9 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexSplitInfrastructureFactory;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -28,13 +27,13 @@ class SegmentIndexRuntimeServicesFactoryTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private SegmentIndexCoreStorage<Integer, String> coreStorage;
     private WalRuntime<Integer, String> walRuntime;
 
     @BeforeEach
     void setUp() {
-        executorRegistry = new IndexExecutorRegistry(buildConf());
+        executorRegistry = ExecutorRegistryFixture.from(buildConf());
         coreStorage = new SegmentIndexCoreStorageFactory<>(newRequest(),
                 new SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<>() {
                 }).create();
@@ -66,19 +65,18 @@ class SegmentIndexRuntimeServicesFactoryTest {
     void createBuildsRuntimeCollaborators() {
         final SegmentIndexRuntimeInputs<Integer, String> request =
                 newRequest();
-        final SegmentIndexRuntimeSplits<Integer, String> splitState =
-                new SegmentIndexSplitInfrastructureFactory<>(request,
-                        coreStorage).create();
+        final SegmentTopologyRuntime<Integer, String> topologyRuntime =
+                new SegmentTopologyRuntime<>(request, coreStorage);
         final SegmentIndexRuntimeServicesFactory<Integer, String> factory =
                 new SegmentIndexRuntimeServicesFactory<>(request, coreStorage,
-                        splitState);
+                        topologyRuntime);
 
         final SegmentIndexRuntimeServices<Integer, String> services =
                 factory.create(walRuntime);
 
         assertNotNull(services.walCoordinator());
         assertNotNull(services.operationAccess());
-        assertNotNull(services.maintenanceAccess());
+        assertNotNull(services.maintenance());
         assertNotNull(services.metricsSnapshotSupplier());
         assertNotNull(services.runtimeLimitApplier());
         assertNotNull(services.controlPlane());

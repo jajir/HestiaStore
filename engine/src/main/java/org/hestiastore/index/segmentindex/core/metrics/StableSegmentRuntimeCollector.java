@@ -9,7 +9,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -57,7 +57,7 @@ final class StableSegmentRuntimeCollector<K, V> {
     private int collectLoadedMappedSegments(final Set<SegmentId> mappedSegmentIdSet,
             final StableSegmentRuntimeMetrics metrics) {
         int accountedMappedSegmentCount = 0;
-        for (final SegmentHandle<K, V> segmentHandle : loadedSegmentsSnapshot()) {
+        for (final BlockingSegment<K, V> segmentHandle : loadedSegmentsSnapshot()) {
             if (!isMappedLoadedSegment(segmentHandle, mappedSegmentIdSet)) {
                 continue;
             }
@@ -68,11 +68,11 @@ final class StableSegmentRuntimeCollector<K, V> {
         return accountedMappedSegmentCount;
     }
 
-    private List<SegmentHandle<K, V>> loadedSegmentsSnapshot() {
+    private List<BlockingSegment<K, V>> loadedSegmentsSnapshot() {
         return segmentRegistry.runtime().loadedSegmentsSnapshot();
     }
 
-    private boolean isMappedLoadedSegment(final SegmentHandle<K, V> segmentHandle,
+    private boolean isMappedLoadedSegment(final BlockingSegment<K, V> segmentHandle,
             final Set<SegmentId> mappedSegmentIdSet) {
         if (segmentHandle == null) {
             return false;
@@ -82,7 +82,7 @@ final class StableSegmentRuntimeCollector<K, V> {
     }
 
     private SegmentRuntimeSnapshot runtimeSnapshot(
-            final SegmentHandle<K, V> segmentHandle) {
+            final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle.getRuntime().getRuntimeSnapshot();
     }
 

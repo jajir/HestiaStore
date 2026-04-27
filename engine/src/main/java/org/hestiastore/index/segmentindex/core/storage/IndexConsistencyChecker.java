@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +85,7 @@ public final class IndexConsistencyChecker<K, V> {
                 return;
             }
             logger.debug("checking segment '{}'.", segmentId);
-            final SegmentHandle<K, V> segment = awaitLoadedSegment(segmentId);
+            final BlockingSegment<K, V> segment = awaitLoadedSegment(segmentId);
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {
                 removeEmptySegment(segmentId, segment);
@@ -103,7 +103,7 @@ public final class IndexConsistencyChecker<K, V> {
     }
 
     private void removeEmptySegment(final SegmentId segmentId,
-            final SegmentHandle<K, V> segment) {
+            final BlockingSegment<K, V> segment) {
         if (!confirmEmptyUnderIsolation(segment)) {
             return;
         }
@@ -115,14 +115,14 @@ public final class IndexConsistencyChecker<K, V> {
     }
 
     private boolean confirmEmptyUnderIsolation(
-            final SegmentHandle<K, V> segment) {
+            final BlockingSegment<K, V> segment) {
         try (EntryIterator<K, V> iterator = segment
                 .openIterator(SegmentIteratorIsolation.FULL_ISOLATION)) {
             return !iterator.hasNext();
         }
     }
 
-    private SegmentHandle<K, V> awaitLoadedSegment(final SegmentId segmentId) {
+    private BlockingSegment<K, V> awaitLoadedSegment(final SegmentId segmentId) {
         try {
             return segmentRegistry.loadSegment(segmentId);
         } catch (final IndexException e) {

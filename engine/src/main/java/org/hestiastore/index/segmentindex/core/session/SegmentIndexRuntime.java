@@ -19,12 +19,10 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexOperationAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
+import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
@@ -39,8 +37,7 @@ import org.slf4j.Logger;
  * @param <V> value type
  */
 public final class SegmentIndexRuntime<K, V>
-        implements SegmentIndexDataAccess<K, V>,
-        SegmentIndexMaintenanceAccess<K, V> {
+        implements SegmentIndexDataAccess<K, V> {
 
     public static <K, V> SegmentIndexRuntime<K, V> create(
             final Logger logger,
@@ -49,7 +46,7 @@ public final class SegmentIndexRuntime<K, V>
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry, final Stats stats,
+            final ExecutorRegistry executorRegistry, final Stats stats,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
         return new SegmentIndexRuntimeGraphBuilder<>(
@@ -66,13 +63,13 @@ public final class SegmentIndexRuntime<K, V>
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexRuntimeStorage<K, V> storage;
-    private final SegmentIndexRuntimeSplits<K, V> splits;
+    private final SegmentTopologyRuntime<K, V> topologyRuntime;
     private final SegmentIndexRuntimeServices<K, V> services;
     private final WalRuntime<K, V> walRuntime;
 
     SegmentIndexRuntime(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentIndexRuntimeSplits<K, V> splits,
+            final SegmentTopologyRuntime<K, V> topologyRuntime,
             final WalRuntime<K, V> walRuntime,
             final SegmentIndexRuntimeServices<K, V> services) {
         final SegmentIndexCoreStorage<K, V> validatedCoreStorage = Vldtn
@@ -84,21 +81,23 @@ public final class SegmentIndexRuntime<K, V>
                 validatedCoreStorage.keyToSegmentMap(),
                 validatedCoreStorage.segmentRegistry(),
                 validatedCoreStorage.retryPolicy());
-        this.splits = Vldtn.requireNonNull(splits, "splits");
+        this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
+                "topologyRuntime");
         this.services = Vldtn.requireNonNull(services, "services");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
     }
 
     public void recoverFromWal() {
-        services.walCoordinator().recover(services.operationAccess()::replayWalRecord);
+        services.walCoordinator().recover(
+                services.operationAccess()::replayWalRecord);
     }
 
     public void cleanupOrphanedSegmentDirectories() {
-        splits.recoveryCleanupCoordinator().cleanupOrphanedSegmentDirectories();
+        topologyRuntime.cleanupOrphanedSegmentDirectories();
     }
 
     public boolean hasSegmentLockFile(final SegmentId segmentId) {
-        return splits.recoveryCleanupCoordinator().hasSegmentLockFile(segmentId);
+        return topologyRuntime.hasSegmentLockFile(segmentId);
     }
 
     TypeDescriptor<K> keyTypeDescriptor() {
@@ -107,10 +106,6 @@ public final class SegmentIndexRuntime<K, V>
 
     SegmentIndexRuntimeStorage<K, V> storage() {
         return storage;
-    }
-
-    SegmentIndexRuntimeSplits<K, V> splits() {
-        return splits;
     }
 
     WalRuntime<K, V> walRuntime() {
@@ -161,18 +156,12 @@ public final class SegmentIndexRuntime<K, V>
         services.runtimeLimitApplier().apply(effective);
     }
 
-    @Override
     public void invalidateSegmentIterators() {
-        splits.stableSegmentCoordinator().invalidateIterators();
+        topologyRuntime.invalidateSegmentIterators();
     }
 
-    @Override
-    public void awaitSplitsIdle(final long timeoutMillis) {
-        splits.backgroundSplitCoordinator().awaitSplitsIdle(timeoutMillis);
-    }
-
-    public void requestSplitPlannerRescan() {
-        splits.splitPlanner().requestRescan();
+    public void requestFullSplitScan() {
+        topologyRuntime.requestFullSplitScan();
     }
 
     public void validateUniqueSegmentIds() {
@@ -186,63 +175,49 @@ public final class SegmentIndexRuntime<K, V>
                         .checkAndRepairConsistency();
     }
 
-    public void awaitSplitPlannerExhausted() {
-        splits.splitPlanner().awaitExhausted();
-    }
-
-    public void flushStableSegmentsWithSplitSchedulingPaused() {
-        splits.backgroundSplitCoordinator().runWithSplitSchedulingPaused(
-                () -> splits.stableSegmentCoordinator().flushSegments(true));
+    public void closeSplitRuntime() {
+        topologyRuntime.closeSplitRuntime();
     }
 
     public void closeSegmentRegistry() {
         storage.segmentRegistry().close();
     }
 
-    public void flushKeyToSegmentMap() {
-        storage.keyToSegmentMap().flushIfDirty();
-    }
-
-    public void checkpointWal() {
-        services.walCoordinator().checkpoint();
-    }
-
     @Override
     public EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId,
             final SegmentIteratorIsolation isolation) {
-        return splits.stableSegmentCoordinator().openIteratorWithRetry(segmentId,
-                isolation);
+        return topologyRuntime.openSegmentIterator(segmentId, isolation);
     }
 
     @Override
     public EntryIterator<K, V> openWindowIterator(
             final SegmentWindow segmentWindow,
             final SegmentIteratorIsolation isolation) {
-        return splits.directSegmentCoordinator()
-                .openWindowIterator(segmentWindow, isolation);
+        return topologyRuntime.openWindowIterator(segmentWindow, isolation);
     }
 
-    @Override
+    MaintenanceService maintenance() {
+        return services.maintenance();
+    }
+
     public void compact() {
-        services.maintenanceAccess().compact();
+        services.maintenance().compact();
     }
 
-    @Override
     public void compactAndWait() {
-        services.maintenanceAccess().compactAndWait();
+        services.maintenance().compactAndWait();
     }
 
-    @Override
     public void flush() {
-        services.maintenanceAccess().flush();
+        services.maintenance().flush();
     }
 
-    @Override
     public void flushAndWait() {
-        services.maintenanceAccess().flushAndWait();
+        services.maintenance().flushAndWait();
     }
 
     public void closeWalRuntime() {
         walRuntime.close();
     }
+
 }

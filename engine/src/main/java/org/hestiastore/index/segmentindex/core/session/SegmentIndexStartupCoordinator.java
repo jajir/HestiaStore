@@ -12,7 +12,7 @@ import org.slf4j.Logger;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexStartupCoordinator<K, V> {
+final class SegmentIndexStartupCoordinator<K, V> {
 
     private static final String STALE_LOCK_RECOVERY_MESSAGE = "Recovered stale index lock (.lock). Index is going to be checked for consistency and unlocked.";
 
@@ -23,7 +23,7 @@ public final class SegmentIndexStartupCoordinator<K, V> {
     private final IndexStateCoordinator<K, V> stateCoordinator;
     private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
 
-    public SegmentIndexStartupCoordinator(final Logger logger,
+    SegmentIndexStartupCoordinator(final Logger logger,
             final String indexName, final boolean staleLockRecovered,
             final SegmentIndexRuntime<K, V> runtime,
             final IndexStateCoordinator<K, V> stateCoordinator,
@@ -38,7 +38,7 @@ public final class SegmentIndexStartupCoordinator<K, V> {
                 consistencyCoordinator, "consistencyCoordinator");
     }
 
-    public void completeStartup(final Runnable startupConsistencyCheck) {
+    void completeStartup(final Runnable startupConsistencyCheck) {
         final Runnable consistencyCheck = Vldtn.requireNonNull(
                 startupConsistencyCheck, "startupConsistencyCheck");
         logger.debug("Opening index '{}'.", indexName);
@@ -49,7 +49,7 @@ public final class SegmentIndexStartupCoordinator<K, V> {
             logger.info(STALE_LOCK_RECOVERY_MESSAGE);
             consistencyCoordinator.runStartupConsistencyCheck(consistencyCheck);
         }
-        runtime.requestSplitPlannerRescan();
+        runtime.requestFullSplitScan();
         logger.debug("Index '{}' opened.", indexName);
     }
 }

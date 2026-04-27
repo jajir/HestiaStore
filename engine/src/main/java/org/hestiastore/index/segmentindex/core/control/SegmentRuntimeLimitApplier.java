@@ -4,7 +4,7 @@ import java.util.Map;
 
 import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -44,7 +44,7 @@ public final class SegmentRuntimeLimitApplier<K, V> {
                 maxSegmentCache, maxSegmentWriteCache,
                 maxMaintenanceWriteCache);
         segmentRuntime.updateRuntimeLimits(limits);
-        for (final SegmentHandle<K, V> segment : segmentRuntime
+        for (final BlockingSegment<K, V> segment : segmentRuntime
                 .loadedSegmentsSnapshot()) {
             segment.getRuntime().updateRuntimeLimits(limits);
         }

@@ -19,10 +19,10 @@ class SegmentRegistryRuntimeViewTest {
     private SegmentRuntimeTuner runtimeTuner;
 
     @Mock
-    private SegmentHandle<Integer, String> firstSegment;
+    private BlockingSegment<Integer, String> firstSegment;
 
     @Mock
-    private SegmentHandle<Integer, String> secondSegment;
+    private BlockingSegment<Integer, String> secondSegment;
 
     @Test
     void updateRuntimeLimits_delegatesToRuntimeTuner() {
@@ -37,7 +37,7 @@ class SegmentRegistryRuntimeViewTest {
 
     @Test
     void loadedSegmentsSnapshot_returnsDelegatedSnapshot() {
-        final List<SegmentHandle<Integer, String>> snapshot = List.of(
+        final List<BlockingSegment<Integer, String>> snapshot = List.of(
                 firstSegment,
                 secondSegment);
         final SegmentRegistryRuntimeView<Integer, String> view = new SegmentRegistryRuntimeView<>(
@@ -50,7 +50,7 @@ class SegmentRegistryRuntimeViewTest {
     void constructorRejectsNullRuntimeTuner() {
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentRegistryRuntimeView<Integer, String>(null,
-                        List::<SegmentHandle<Integer, String>>of));
+                        List::<BlockingSegment<Integer, String>>of));
     }
 
     @Test

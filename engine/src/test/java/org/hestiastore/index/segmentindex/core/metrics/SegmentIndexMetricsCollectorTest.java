@@ -21,11 +21,12 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
@@ -51,19 +52,16 @@ class SegmentIndexMetricsCollectorTest {
     private SegmentRegistry.Runtime<Integer, String> segmentRegistryRuntime;
 
     @Mock
-    private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
+    private BlockingSegment<Integer, String> segmentHandle;
 
     @Mock
-    private SegmentHandle<Integer, String> segmentHandle;
-
-    @Mock
-    private SegmentHandle.Runtime segmentRuntime;
+    private BlockingSegment.Runtime segmentRuntime;
 
     private Stats stats;
     private AtomicLong compactRequestHighWaterMark;
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private WalRuntime<Integer, String> walRuntime;
     private SegmentIndexMetricsCollector<Integer, String> collector;
 
@@ -74,11 +72,11 @@ class SegmentIndexMetricsCollectorTest {
         compactRequestHighWaterMark = new AtomicLong();
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(123L);
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 conf, keyToSegmentMap, segmentRegistry,
-                backgroundSplitCoordinator, executorRegistry,
+                () -> new SplitMetricsSnapshot(4, 3), executorRegistry,
                 RuntimeTuningState.fromConfiguration(conf), walRuntime, stats,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn, () -> SegmentIndexState.READY);
@@ -100,8 +98,6 @@ class SegmentIndexMetricsCollectorTest {
         when(segmentRegistry.metricsSnapshot())
                 .thenReturn(new SegmentRegistryCacheStats(11L, 12L, 13L, 14L, 2,
                         9));
-        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(4);
-        when(backgroundSplitCoordinator.splitBlockedCount()).thenReturn(3);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(SegmentId.of(1)));
         when(segmentRegistryRuntime.loadedSegmentsSnapshot())
                 .thenReturn(List.of(segmentHandle), List.of());
@@ -113,12 +109,8 @@ class SegmentIndexMetricsCollectorTest {
         stats.recordGetRequest();
         stats.recordPutRequest();
         stats.recordDeleteRequest();
-        stats.recordCompactRequest();
-        stats.recordCompactRequest();
         stats.recordFlushRequest();
         stats.recordSplitScheduled();
-        stats.addPutBusyRetryCount(6L);
-        stats.recordPutBusyTimeout();
         stats.recordFlushBusyRetry();
         stats.recordCompactBusyRetry();
 
@@ -137,7 +129,7 @@ class SegmentIndexMetricsCollectorTest {
         assertEquals(3L, firstSnapshot.getTotalDeltaCacheFiles());
         assertEquals(5L, firstSnapshot.getCompactRequestCount());
         assertEquals(7L, firstSnapshot.getFlushRequestCount());
-        assertEquals(6L, firstSnapshot.getPutBusyRetryCount());
+        assertEquals(0L, firstSnapshot.getPutBusyRetryCount());
         assertEquals(3, firstSnapshot.getSplitBlockedPartitionCount());
         assertEquals(123L, firstSnapshot.getWalAppliedLsn());
         assertFalse(firstSnapshot.isWalEnabled());
@@ -158,7 +150,8 @@ class SegmentIndexMetricsCollectorTest {
                 .assertThrows(IllegalArgumentException.class,
                         () -> SegmentIndexMetricsCollector.create(null,
                                 keyToSegmentMap, segmentRegistry,
-                                backgroundSplitCoordinator, executorRegistry,
+                                () -> new SplitMetricsSnapshot(0, 0),
+                                executorRegistry,
                                 mock(RuntimeTuningState.class), walRuntime,
                                 stats, compactRequestHighWaterMark,
                                 flushRequestHighWaterMark, lastAppliedWalLsn,

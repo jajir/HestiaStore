@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,7 +37,7 @@ class IndexInternalConcurrentTest {
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 conf, conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                ExecutorRegistryFixture.from(conf));
     }
 
     @AfterEach
@@ -209,7 +209,7 @@ class IndexInternalConcurrentTest {
             super(new MemDirectory(),
                     new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                     conf, conf.resolveRuntimeConfiguration(),
-                    new IndexExecutorRegistry(conf));
+                    ExecutorRegistryFixture.from(conf));
             this.iterator = iterator;
             completeStartup();
         }

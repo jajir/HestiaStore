@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.slf4j.Logger;
 
 /**
@@ -26,7 +26,7 @@ abstract class SegmentIndexLifecycleResources<K, V> {
             final Directory managedDirectory,
             final IndexConfiguration<K, V> indexConfiguration,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry) {
+            final ExecutorRegistry executorRegistry) {
         return new OpenedSegmentIndexLifecycleResources<>(managedDirectory,
                 indexConfiguration, runtimeConfiguration, executorRegistry);
     }
@@ -37,7 +37,7 @@ abstract class SegmentIndexLifecycleResources<K, V> {
 
     abstract IndexRuntimeConfiguration<K, V> runtimeConfiguration();
 
-    abstract IndexExecutorRegistry executorRegistry();
+    abstract ExecutorRegistry executorRegistry();
 
     abstract SegmentIndexLifecycleResources<K, V> requireOpened();
 

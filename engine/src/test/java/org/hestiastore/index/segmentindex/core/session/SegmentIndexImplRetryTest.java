@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.OperationResult;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -77,10 +77,12 @@ class SegmentIndexImplRetryTest {
 
         replaceSegment(registry, segmentId, segment);
 
-        assertEquals("value", index.get(1));
-        verify(segment, times(2)).get(1);
-
-        replaceSegment(registry, segmentId, original);
+        try {
+            assertEquals("value", index.get(1));
+            verify(segment, times(2)).get(1);
+        } finally {
+            replaceSegment(registry, segmentId, original);
+        }
     }
 
     @Test
@@ -111,7 +113,7 @@ class SegmentIndexImplRetryTest {
         return new IndexInternalConcurrent<>(
                 new MemDirectory(), tdi, tds,
                 conf, conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                ExecutorRegistryFixture.from(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
