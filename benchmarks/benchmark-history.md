@@ -111,22 +111,22 @@ Current behavior:
 - pull requests
   - run `segment-index-pr-smoke`
   - first try to compare PR candidate against the latest canonical baseline
-    stored in the `perf-artifacts` branch
-  - if no stored baseline exists yet, fall back to merge-base with the target
-    branch
+    for the PR target branch stored in the `perf-artifacts` branch
+  - if no stored baseline exists yet, fall back to the current target branch
+    ref
   - if the PR already has published history, also compare against the latest
     stored PR snapshot from the same PR number
   - publish the candidate run into a PR-scoped history path on
     `perf-artifacts`
   - update a sticky PR comment with the canonical baseline comparison,
     previous-PR delta when available, and history links
-- push to `main`
+- push to `main` or `devel`
   - run `segment-index-pr-smoke`
   - compare `HEAD` against the latest stored canonical smoke baseline from
-    `perf-artifacts`
+    `perf-artifacts` for the pushed branch
   - if no stored baseline exists yet, fall back to `HEAD~1`
   - publish the new candidate run into `perf-artifacts`, advancing
-    `history/segment-index-pr-smoke/latest-main.json`
+    `history/segment-index-pr-smoke/latest-<branch>.json`
 - nightly schedule
   - run `segment-index-nightly`
   - run `diskio-nightly`
@@ -154,7 +154,7 @@ Current layout:
 history/
   index.json
   <profile>/
-    latest-main.json
+    latest-<channel>.json
     YYYY/
       MM/
         <timestamp>_<sha>_<run-id>/
@@ -176,8 +176,9 @@ history/
               comparison-vs-previous.json
 ```
 
-`latest-main.json` remains the canonical baseline pointer used by PR and
-scheduled compare runs. PR snapshots publish under
+`latest-<channel>.json` remains the canonical baseline pointer used by PR and
+scheduled compare runs. For example, PRs targeting `devel` use
+`latest-devel.json` when it is available. PR snapshots publish under
 `pull-requests/pr-<number>/latest.json` without overwriting the canonical main
 pointer.
 
@@ -186,13 +187,14 @@ pointer.
 After a PR benchmark run, the same comparison is visible in three places:
 
 - Actions job summary for the `Benchmark Compare` run
-- a sticky PR comment with the latest delta table against canonical `main`,
+- a sticky PR comment with the latest delta table against the target branch
+  channel,
   plus previous-PR delta when available, and history links
 - `perf-artifacts/history/<profile>/pull-requests/pr-<number>/...`
 
-After a canonical publish on `main`, the baseline moves forward in:
+After a canonical publish on `main` or `devel`, the baseline moves forward in:
 
-- `perf-artifacts/history/<profile>/latest-main.json`
+- `perf-artifacts/history/<profile>/latest-<branch>.json`
 - the timestamped run directory referenced by that pointer
 
 ## Recommended Interpretation Model
@@ -226,7 +228,7 @@ Current default thresholds in the compare script:
 
 This branch-based flow now gives us:
 
-- canonical `main` baselines for both smoke and nightly profiles
+- canonical `main` and `devel` smoke baselines, plus scheduled profile baselines
 - durable per-PR snapshots and comments for merged review history
 - raw JMH outputs that remain inspectable after workflow log retention expires
 
