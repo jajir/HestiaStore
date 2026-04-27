@@ -13,10 +13,10 @@ final class SegmentRegistryRuntimeView<K, V>
         implements SegmentRegistry.Runtime<K, V> {
 
     private final SegmentRuntimeTuner runtimeTuner;
-    private final Supplier<List<SegmentHandle<K, V>>> loadedSegmentsSnapshot;
+    private final Supplier<List<BlockingSegment<K, V>>> loadedSegmentsSnapshot;
 
     SegmentRegistryRuntimeView(final SegmentRuntimeTuner runtimeTuner,
-            final Supplier<List<SegmentHandle<K, V>>> loadedSegmentsSnapshot) {
+            final Supplier<List<BlockingSegment<K, V>>> loadedSegmentsSnapshot) {
         this.runtimeTuner = Vldtn.requireNonNull(runtimeTuner, "runtimeTuner");
         this.loadedSegmentsSnapshot = Vldtn
                 .requireNonNull(loadedSegmentsSnapshot,
@@ -29,7 +29,7 @@ final class SegmentRegistryRuntimeView<K, V>
     }
 
     @Override
-    public List<SegmentHandle<K, V>> loadedSegmentsSnapshot() {
+    public List<BlockingSegment<K, V>> loadedSegmentsSnapshot() {
         return loadedSegmentsSnapshot.get();
     }
 }

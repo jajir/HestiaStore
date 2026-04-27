@@ -1,9 +1,5 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.OperationResult;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -34,7 +31,7 @@ import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexTestAccess;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -200,7 +197,7 @@ class SegmentIndexAsyncMaintenanceTest {
         return new IndexInternalConcurrent<>(
                 new MemDirectory(),
                 tdi, tds, conf, conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                ExecutorRegistryFixture.from(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

@@ -13,7 +13,8 @@ orchestration and operation flow.
 
 1. API call: `SegmentIndex.put(key, value)` or `SegmentIndex.delete(key)`
 1. Append the logical operation to WAL when WAL is enabled
-1. Resolve the routed segment through `KeyToSegmentMap`
+1. Resolve the routed segment through a `KeyToSegmentMap` snapshot
+1. Acquire a matching `SegmentTopology` route lease
 1. Write directly into the target segment
 1. Segment-local maintenance later flushes or compacts that segment
 1. Autonomous split policy may remap hot routes to child segments
@@ -47,14 +48,14 @@ additional files or provide durability.
 Every `put` / `delete` now goes straight to the routed stable segment:
 
 - `IndexOperationCoordinator` appends to WAL first when enabled
-- `DirectSegmentWriteCoordinator` resolves the current route
-- `StableSegmentGateway` loads the segment and calls `Segment.put(...)`
+- `SegmentAccessService` resolves the current route and acquires a
+  `SegmentTopology` lease
+- the loaded segment receives the `Segment.put(...)` call
 - read-after-write is then guaranteed by the target segment's write cache
 
 Key classes:
-`segmentindex/core/IndexOperationCoordinator`,
-`segmentindex/core/DirectSegmentWriteCoordinator`,
-`segmentindex/core/StableSegmentGateway`,
+`segmentindex/core/operations/IndexOperationCoordinator`,
+`segmentindex/core/segmentaccess/SegmentAccessService`,
 `segment/SegmentImpl`.
 
 ## Flush and Segment Maintenance
@@ -69,8 +70,8 @@ directly on mapped segments:
 1. Checkpoint WAL on `flushAndWait()` / `compactAndWait()`.
 
 Key classes:
-`segmentindex/core/IndexMaintenanceCoordinator`,
-`segmentindex/core/StableSegmentCoordinator`,
+`segmentindex/core/maintenance/MaintenanceService`,
+`segmentindex/core/maintenance/MaintenanceServiceImpl`,
 `segmentindex/mapping/KeyToSegmentMap`.
 
 ## Segment Delta Cache Files (Transactional)
@@ -126,9 +127,9 @@ stable segments from the parent stable snapshot, and atomically updates the
 key-to-segment mapping.
 
 Key classes:
-`segmentindex/core/BackgroundSplitCoordinator`,
-`segmentindex/split/RouteSplitCoordinator`,
-`segmentindex/split/RouteSplitPlan`,
+`segmentindex/core/split/SplitPolicyCoordinator`,
+`segmentindex/core/split/RouteSplitCoordinator`,
+`segmentindex/core/split/RouteSplitPlan`,
 `segmentindex/mapping/KeyToSegmentMap`.
 
 ## Delete Semantics (Tombstones)
@@ -141,7 +142,7 @@ Deletes write a tombstone value:
 - reads treat tombstones as absent
 
 Key classes:
-`segmentindex/core/IndexOperationCoordinator#delete`,
+`segmentindex/core/operations/IndexOperationCoordinator#delete`,
 `datatype/TypeDescriptor#getTombstone`,
 `segment/SegmentSearcher`.
 
@@ -192,17 +193,17 @@ Key classes:
 
 1. `SegmentIndex.put(k,v)` → validate inputs; forbid direct tombstone values
 1. Append to WAL (when enabled)
-1. Resolve write route via key→segment map
+1. Resolve write route via key→segment map and `SegmentTopology`
 1. Write latest `(k,v)` into the routed segment write cache
-1. If the route is split-blocked or the target segment is transiently busy:
-   retry through `IndexRetryPolicy`
+1. If the route is draining, stale, closed, or transiently busy: retry through
+   `IndexRetryPolicy`
 
 ## Where to Look in the Code
 
 - SegmentIndex entry points and routing:
-  `src/main/java/org/hestiastore/index/segmentindex/core/SegmentIndexImpl.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/session/SegmentIndexImpl.java`
 - Direct routed write path:
-  `src/main/java/org/hestiastore/index/segmentindex/core/DirectSegmentWriteCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
 - Segment write/merge path:
   `src/main/java/org/hestiastore/index/segment/*`
 - Chunk store and filters:

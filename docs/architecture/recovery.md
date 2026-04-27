@@ -36,9 +36,9 @@ on policy.
   advances so replay no longer needs older records.
 
 Relevant code:
-`segmentindex/core/IndexMaintenanceCoordinator.java`,
-`segmentindex/core/StableSegmentCoordinator.java`,
-`segmentindex/core/IndexOperationCoordinator.java`,
+`segmentindex/core/maintenance/MaintenanceService.java`,
+`segmentindex/core/maintenance/MaintenanceServiceImpl.java`,
+`segmentindex/core/operations/IndexOperationCoordinator.java`,
 `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ## Transactional Write Primitives

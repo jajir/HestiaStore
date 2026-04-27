@@ -12,10 +12,9 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.session.IndexCloseCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.routing.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.mockito.Mockito;
 import org.junit.jupiter.api.AfterEach;
@@ -30,14 +29,14 @@ class SegmentIndexRuntimeTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private SegmentIndexRuntime<Integer, String> runtime;
     private org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl<Integer, String> closeOwner;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         closeOwner = Mockito.mock(
                 org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl.class);

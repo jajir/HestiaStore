@@ -47,7 +47,7 @@ final class SegmentRegistryImpl<K, V>
     private final SegmentRegistry.Materialization<K, V> materialization;
     private final SegmentRegistry.Runtime<K, V> runtime;
     private final Set<SegmentId> pinnedSegments;
-    private final ConcurrentMap<SegmentId, SegmentHandle<K, V>> handleCache;
+    private final ConcurrentMap<SegmentId, BlockingSegment<K, V>> blockingSegments;
 
     /**
      * Creates a registry using prebuilt dependencies from the builder.
@@ -84,11 +84,11 @@ final class SegmentRegistryImpl<K, V>
                 this.blockingRetryPolicy);
         this.pinnedSegments = Vldtn.requireNonNull(pinnedSegments,
                 "pinnedSegments");
-        this.handleCache = new ConcurrentHashMap<>();
+        this.blockingSegments = new ConcurrentHashMap<>();
         this.materialization = new SegmentRegistryMaterializationView<>(
                 this.segmentIdAllocator, this.preparedSegmentWriterFactory);
         this.runtime = new SegmentRegistryRuntimeView<>(this.runtimeTuner,
-                this::loadedSegmentHandlesSnapshot);
+                this::loadedBlockingSegmentsSnapshot);
         if (!gate.finishFreezeToReady()) {
             throw new IllegalStateException(
                     "Failed to transition registry from FREEZE to READY");
@@ -96,33 +96,33 @@ final class SegmentRegistryImpl<K, V>
     }
 
     @Override
-    public SegmentHandle<K, V> loadSegment(final SegmentId segmentId) {
+    public BlockingSegment<K, V> loadSegment(final SegmentId segmentId) {
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
         final Segment<K, V> loaded = blockingFacade.loadSegment(
                 validatedSegmentId);
-        return toHandle(validatedSegmentId, loaded);
+        return toBlockingSegment(validatedSegmentId, loaded);
     }
 
     @Override
-    public Optional<SegmentHandle<K, V>> tryGetSegment(
+    public Optional<BlockingSegment<K, V>> tryGetSegment(
             final SegmentId segmentId) {
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
         return blockingFacade.tryGetSegment(validatedSegmentId)
-                .map(segment -> toHandle(validatedSegmentId, segment));
+                .map(segment -> toBlockingSegment(validatedSegmentId, segment));
     }
 
     @Override
-    public SegmentHandle<K, V> createSegment() {
+    public BlockingSegment<K, V> createSegment() {
         final Segment<K, V> created = blockingFacade.createSegment();
-        return toHandle(created.getId(), created);
+        return toBlockingSegment(created.getId(), created);
     }
 
     @Override
     public void deleteSegment(final SegmentId segmentId) {
         blockingFacade.deleteSegment(segmentId);
-        handleCache.remove(segmentId);
+        blockingSegments.remove(segmentId);
     }
 
     @Override
@@ -130,7 +130,7 @@ final class SegmentRegistryImpl<K, V>
         final boolean deleted = blockingFacade.deleteSegmentIfAvailable(
                 segmentId);
         if (deleted) {
-            handleCache.remove(segmentId);
+            blockingSegments.remove(segmentId);
         }
         return deleted;
     }
@@ -293,8 +293,9 @@ final class SegmentRegistryImpl<K, V>
         return cache.readyValuesSnapshot();
     }
 
-    private List<SegmentHandle<K, V>> loadedSegmentHandlesSnapshot() {
-        return loadedSegmentsSnapshot().stream().map(this::toHandle).toList();
+    private List<BlockingSegment<K, V>> loadedBlockingSegmentsSnapshot() {
+        return loadedSegmentsSnapshot().stream().map(this::toBlockingSegment)
+                .toList();
     }
 
     /** {@inheritDoc} */
@@ -309,14 +310,15 @@ final class SegmentRegistryImpl<K, V>
         return runtime;
     }
 
-    private SegmentHandle<K, V> toHandle(final Segment<K, V> segment) {
-        return toHandle(segment.getId(), segment);
+    private BlockingSegment<K, V> toBlockingSegment(
+            final Segment<K, V> segment) {
+        return toBlockingSegment(segment.getId(), segment);
     }
 
-    private SegmentHandle<K, V> toHandle(final SegmentId segmentId,
+    private BlockingSegment<K, V> toBlockingSegment(final SegmentId segmentId,
             final Segment<K, V> segment) {
-        return handleCache.computeIfAbsent(segmentId,
-                id -> new BlockingSegmentHandle<>(id,
+        return blockingSegments.computeIfAbsent(segmentId,
+                id -> new DefaultBlockingSegment<>(id,
                         () -> blockingFacade.loadSegment(id),
                         blockingRetryPolicy, segment));
     }
@@ -368,7 +370,7 @@ final class SegmentRegistryImpl<K, V>
             gate.fail();
             throw closeFailure(OperationStatus.ERROR, ex);
         }
-        handleCache.clear();
+        blockingSegments.clear();
         if (!gate.finishFreezeToClosed()) {
             throw closeFailure(OperationStatus.ERROR, null);
         }

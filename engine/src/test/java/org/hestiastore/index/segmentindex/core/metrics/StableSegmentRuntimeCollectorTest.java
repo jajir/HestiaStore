@@ -10,7 +10,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,22 +31,22 @@ class StableSegmentRuntimeCollectorTest {
     private SegmentRegistry.Runtime<Integer, String> segmentRegistryRuntime;
 
     @Mock
-    private SegmentHandle<Integer, String> readySegmentHandle;
+    private BlockingSegment<Integer, String> readyBlockingSegment;
 
     @Mock
-    private SegmentHandle.Runtime readySegmentRuntime;
+    private BlockingSegment.Runtime readySegmentRuntime;
 
     @Mock
-    private SegmentHandle<Integer, String> maintenanceSegmentHandle;
+    private BlockingSegment<Integer, String> maintenanceBlockingSegment;
 
     @Mock
-    private SegmentHandle.Runtime maintenanceSegmentRuntime;
+    private BlockingSegment.Runtime maintenanceSegmentRuntime;
 
     @Mock
-    private SegmentHandle<Integer, String> unmappedSegmentHandle;
+    private BlockingSegment<Integer, String> unmappedBlockingSegment;
 
     @Mock
-    private SegmentHandle.Runtime unmappedSegmentRuntime;
+    private BlockingSegment.Runtime unmappedSegmentRuntime;
 
     private StableSegmentRuntimeCollector<Integer, String> collector;
 
@@ -63,21 +63,21 @@ class StableSegmentRuntimeCollectorTest {
                 .thenReturn(List.of(SegmentId.of(1), SegmentId.of(2),
                         SegmentId.of(3)));
         when(segmentRegistryRuntime.loadedSegmentsSnapshot()).thenReturn(
-                Arrays.asList(readySegmentHandle, maintenanceSegmentHandle,
-                        unmappedSegmentHandle, null));
+                Arrays.asList(readyBlockingSegment, maintenanceBlockingSegment,
+                        unmappedBlockingSegment, null));
 
-        when(readySegmentHandle.getRuntime()).thenReturn(readySegmentRuntime);
+        when(readyBlockingSegment.getRuntime()).thenReturn(readySegmentRuntime);
         when(readySegmentRuntime.getRuntimeSnapshot()).thenReturn(
                 segmentRuntimeSnapshot(1, SegmentState.READY, 10L, 3L, 2, 1, 4L,
                         6L, 7L, 1L));
 
-        when(maintenanceSegmentHandle.getRuntime())
+        when(maintenanceBlockingSegment.getRuntime())
                 .thenReturn(maintenanceSegmentRuntime);
         when(maintenanceSegmentRuntime.getRuntimeSnapshot()).thenReturn(
                 segmentRuntimeSnapshot(2, SegmentState.FREEZE, 5L, 1L, 1, 2, 2L,
                         3L, 4L, 0L));
 
-        when(unmappedSegmentHandle.getRuntime()).thenReturn(unmappedSegmentRuntime);
+        when(unmappedBlockingSegment.getRuntime()).thenReturn(unmappedSegmentRuntime);
         when(unmappedSegmentRuntime.getRuntimeSnapshot()).thenReturn(
                 segmentRuntimeSnapshot(99, SegmentState.CLOSED, 100L, 50L, 10,
                         10, 10L, 10L, 10L, 10L));

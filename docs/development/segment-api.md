@@ -7,7 +7,7 @@ and how segment-level rules interact with index-level route splitting.
 
 The public `Segment` interface exposes `flush()` and `compact()`. Split is
 owned by the segment-index layer through
-`BackgroundSplitCoordinator` + `RouteSplitCoordinator`.
+`SplitPolicyCoordinator` + `RouteSplitCoordinator`.
 
 For the current state machine and iterator rules, use
 [Segment Concurrency](../architecture/segment/segment-concurrency.md).
@@ -60,11 +60,12 @@ Practical consequences:
 
 Current index-level split behavior:
 
-- `BackgroundSplitCoordinator` decides when a routed segment should be split
+- `SplitPolicyCoordinator` decides when a routed segment should be split
 - `RouteSplitCoordinator` computes the split boundary from a parent segment
   snapshot
 - child stable segments are materialized before route-map publish
-- publish is a short exclusive update of `KeyToSegmentMap`
+- `SegmentTopology` drains the parent route before child materialization, and
+  publish updates `KeyToSegmentMap`
 - writes to the affected route may see transient internal `BUSY` and are
   retried by `IndexRetryPolicy`
 

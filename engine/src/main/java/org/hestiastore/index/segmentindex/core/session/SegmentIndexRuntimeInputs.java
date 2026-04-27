@@ -10,7 +10,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.slf4j.Logger;
 
@@ -28,7 +28,7 @@ public final class SegmentIndexRuntimeInputs<K, V> {
     public final TypeDescriptor<V> valueTypeDescriptor;
     public final IndexConfiguration<K, V> conf;
     public final IndexRuntimeConfiguration<K, V> runtimeConfiguration;
-    public final IndexExecutorRegistry executorRegistry;
+    public final ExecutorRegistry executorRegistry;
     public final Stats stats;
     public final AtomicLong compactRequestHighWaterMark;
     public final AtomicLong flushRequestHighWaterMark;
@@ -43,7 +43,7 @@ public final class SegmentIndexRuntimeInputs<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-            final IndexExecutorRegistry executorRegistry,
+            final ExecutorRegistry executorRegistry,
             final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,

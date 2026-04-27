@@ -2,80 +2,55 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceCommands;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexDataAccess;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexEntryIteratorDecorator;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexMutationFacade;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexReadFacade;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexTrackedOperationRunner;
-import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 
 /**
- * Assembles data and maintenance facades as one cohesive boundary so outer core
- * composition does not need to know facade-internal wiring details.
+ * Assembles data facades as one cohesive boundary so outer core composition
+ * does not need to know facade-internal wiring details.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexFacades<K, V> {
+final class SegmentIndexFacades<K, V> {
 
-    private final SegmentIndexMutationFacade<K, V> mutationFacade;
+    private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;
     private final SegmentIndexReadFacade<K, V> readFacade;
-    private final SegmentIndexMaintenanceCommands<K, V> maintenanceCommands;
 
     private SegmentIndexFacades(
-            final SegmentIndexMutationFacade<K, V> mutationFacade,
-            final SegmentIndexReadFacade<K, V> readFacade,
-            final SegmentIndexMaintenanceCommands<K, V> maintenanceCommands) {
-        this.mutationFacade = Vldtn.requireNonNull(mutationFacade,
-                "mutationFacade");
+            final SegmentIndexPointOperationFacade<K, V> pointOperationFacade,
+            final SegmentIndexReadFacade<K, V> readFacade) {
+        this.pointOperationFacade = Vldtn.requireNonNull(pointOperationFacade,
+                "pointOperationFacade");
         this.readFacade = Vldtn.requireNonNull(readFacade, "readFacade");
-        this.maintenanceCommands = Vldtn.requireNonNull(maintenanceCommands,
-                "maintenanceCommands");
     }
 
-    public static <K, V> SegmentIndexFacades<K, V> create(
+    static <K, V> SegmentIndexFacades<K, V> create(
             final IndexConfiguration<K, V> conf,
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
-            final SegmentIndexDataAccess<K, V> dataAccess,
-            final SegmentIndexMaintenanceAccess<K, V> maintenanceAccess,
-            final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
+            final SegmentIndexDataAccess<K, V> dataAccess) {
         final IndexConfiguration<K, V> validatedConfiguration = Vldtn
                 .requireNonNull(conf, "conf");
         final SegmentIndexTrackedOperationRunner<K, V> validatedTrackedRunner =
                 Vldtn.requireNonNull(trackedRunner, "trackedRunner");
         final SegmentIndexDataAccess<K, V> validatedDataAccess = Vldtn
                 .requireNonNull(dataAccess, "dataAccess");
-        final SegmentIndexMaintenanceAccess<K, V> validatedMaintenanceAccess =
-                Vldtn.requireNonNull(maintenanceAccess, "maintenanceAccess");
-        final IndexConsistencyCoordinator<K, V> validatedConsistencyCoordinator =
-                Vldtn.requireNonNull(consistencyCoordinator,
-                        "consistencyCoordinator");
         return new SegmentIndexFacades<>(
-                new SegmentIndexMutationFacade<>(
+                new SegmentIndexPointOperationFacade<>(
                         validatedTrackedRunner,
                         validatedDataAccess),
                 new SegmentIndexReadFacade<>(
                         validatedTrackedRunner,
                         validatedDataAccess,
                         new SegmentIndexEntryIteratorDecorator<>(
-                                validatedConfiguration)),
-                new SegmentIndexMaintenanceCommands<>(
-                        validatedTrackedRunner,
-                        validatedMaintenanceAccess,
-                        validatedConsistencyCoordinator));
+                                validatedConfiguration)));
     }
 
-    public SegmentIndexMutationFacade<K, V> mutationFacade() {
-        return mutationFacade;
+    SegmentIndexPointOperationFacade<K, V> pointOperationFacade() {
+        return pointOperationFacade;
     }
 
-    public SegmentIndexReadFacade<K, V> readFacade() {
+    SegmentIndexReadFacade<K, V> readFacade() {
         return readFacade;
-    }
-
-    public SegmentIndexMaintenanceCommands<K, V> maintenanceCommands() {
-        return maintenanceCommands;
     }
 }

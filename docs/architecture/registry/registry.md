@@ -14,8 +14,8 @@ This document describes the segment registry responsibilities and supported oper
 - The registry does **not** own split execution, scheduling, or in-flight
   tracking. Those belong to the segment index layer.
 - The registry is about safe access to segment resources and now exposes
-  `SegmentHandle` as the main public access point for loaded segments.
-- `SegmentHandle` centralizes retry-aware blocking operations and segment
+  `BlockingSegment` as the main public access point for loaded segments.
+- `BlockingSegment` centralizes retry-aware blocking operations and segment
   runtime descriptors, while callers still own higher-level operation policy
   such as fail-fast routing, split coordination, and accepted-vs-completed
   maintenance behavior.
@@ -55,14 +55,14 @@ when startup completes.
 
 | Operation             | Description                                                      |
 | --------------------- | ---------------------------------------------------------------- |
-| `getSegment(id)`      | Load or return cached segment handle by id (`SegmentHandle`). |
+| `getSegment(id)`      | Load or return cached blocking segment by id (`BlockingSegment`). |
 | `allocateSegmentId()` | Allocate a new segment id for split or growth (`SegmentRegistryResult<SegmentId>`). |
-| `createSegment()`     | Allocate id and create a new segment handle (`SegmentHandle`). |
+| `createSegment()`     | Allocate id and create a new blocking segment (`BlockingSegment`). |
 | `deleteSegment(id)`   | Close and delete a segment, then remove from cache (`SegmentRegistryResult<Void>`). |
 | `close()`             | Close cached segments (`SegmentRegistryResult<Void>`).           |
 
-The public facade returns `SegmentHandle` instances so the registry remains the
-central access point for retry-aware segment operations. These handles
+The public facade returns `BlockingSegment` instances so the registry remains the
+central access point for retry-aware segment operations. These blocking segments
 translate retryable segment-operation outcomes (`BUSY`, transient `CLOSED`)
 into bounded blocking calls while preserving the existing segment state machine
 and background-maintenance semantics. `flush()` and `compact()` on the handle

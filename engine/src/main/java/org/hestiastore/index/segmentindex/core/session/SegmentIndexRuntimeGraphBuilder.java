@@ -1,8 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexRuntimeSplits;
-import org.hestiastore.index.segmentindex.core.routing.SegmentIndexSplitInfrastructureFactory;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -18,16 +16,38 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 @SuppressWarnings({ "java:S6206", "java:S6539" })
 public final class SegmentIndexRuntimeGraphBuilder<K, V> {
 
+    /**
+     * Observer notified as selected runtime resources are created during graph
+     * assembly.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     */
     public interface ResourceCreationObserver<K, V> {
 
+        /**
+         * Called after the route map was opened.
+         *
+         * @param keyToSegmentMap created route map
+         */
         default void onKeyToSegmentMapCreated(
                 final KeyToSegmentMap<K> keyToSegmentMap) {
         }
 
+        /**
+         * Called after the segment registry was opened.
+         *
+         * @param segmentRegistry created segment registry
+         */
         default void onSegmentRegistryCreated(
                 final SegmentRegistry<K, V> segmentRegistry) {
         }
 
+        /**
+         * Called after the WAL runtime was opened.
+         *
+         * @param walRuntime created WAL runtime
+         */
         default void onWalRuntimeCreated(final WalRuntime<K, V> walRuntime) {
         }
     }
@@ -57,11 +77,12 @@ public final class SegmentIndexRuntimeGraphBuilder<K, V> {
             final SegmentIndexCoreStorage<K, V> coreStorage = openCoreStorage();
             keyToSegmentMap = coreStorage.keyToSegmentMap();
             segmentRegistry = coreStorage.segmentRegistry();
-            final SegmentIndexRuntimeSplits<K, V> splitState = createSplitState(
+            final SegmentTopologyRuntime<K, V> topologyRuntime =
+                    createTopologyRuntime(
                     coreStorage);
             walRuntime = openWalRuntime();
             notifyWalRuntimeCreated(walRuntime);
-            return createRuntime(coreStorage, splitState, walRuntime);
+            return createRuntime(coreStorage, topologyRuntime, walRuntime);
         } catch (final RuntimeException failure) {
             throw cleanupFailedBuild(failure, walRuntime, segmentRegistry,
                     keyToSegmentMap);
@@ -73,21 +94,20 @@ public final class SegmentIndexRuntimeGraphBuilder<K, V> {
                 resourceCreationObserver).create();
     }
 
-    private SegmentIndexRuntimeSplits<K, V> createSplitState(
+    private SegmentTopologyRuntime<K, V> createTopologyRuntime(
             final SegmentIndexCoreStorage<K, V> coreStorage) {
-        return new SegmentIndexSplitInfrastructureFactory<>(request, coreStorage)
-                .create();
+        return new SegmentTopologyRuntime<>(request, coreStorage);
     }
 
     private SegmentIndexRuntime<K, V> createRuntime(
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentIndexRuntimeSplits<K, V> splitState,
+            final SegmentTopologyRuntime<K, V> topologyRuntime,
             final WalRuntime<K, V> walRuntime) {
         final SegmentIndexRuntimeServices<K, V> serviceState =
                 new SegmentIndexRuntimeServicesFactory<>(request, coreStorage,
-                        splitState).create(walRuntime);
+                        topologyRuntime).create(walRuntime);
         return new SegmentIndexRuntime<>(request.keyTypeDescriptor, coreStorage,
-                splitState, walRuntime, serviceState);
+                topologyRuntime, walRuntime, serviceState);
     }
 
     private WalRuntime<K, V> openWalRuntime() {

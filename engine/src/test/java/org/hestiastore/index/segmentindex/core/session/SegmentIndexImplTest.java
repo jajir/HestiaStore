@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +34,7 @@ class SegmentIndexImplTest {
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
                 conf, conf.resolveRuntimeConfiguration(),
-                new IndexExecutorRegistry(conf));
+                ExecutorRegistryFixture.from(conf));
     }
 
     @AfterEach
@@ -57,7 +58,7 @@ class SegmentIndexImplTest {
     void constructorCompletesStartupOnlyOnce() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         try (DoubleStartupIndex doubleStartupIndex = new DoubleStartupIndex(
-                new MemDirectory(), conf, new IndexExecutorRegistry(conf))) {
+                new MemDirectory(), conf, ExecutorRegistryFixture.from(conf))) {
             assertEquals(SegmentIndexState.READY, doubleStartupIndex.getState());
             assertEquals(0, doubleStartupIndex.getStartupConsistencyChecks());
 
@@ -98,7 +99,7 @@ class SegmentIndexImplTest {
 
         private DoubleStartupIndex(final Directory directoryFacade,
                 final IndexConfiguration<Integer, String> conf,
-                final IndexExecutorRegistry executorRegistry) {
+                final ExecutorRegistry executorRegistry) {
             super(directoryFacade, new TypeDescriptorInteger(),
                     new TypeDescriptorShortString(), conf,
                     runtimeConfiguration(conf), executorRegistry);

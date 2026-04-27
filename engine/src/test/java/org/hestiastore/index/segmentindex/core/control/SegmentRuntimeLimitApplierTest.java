@@ -9,7 +9,7 @@ import java.util.Map;
 
 import org.hestiastore.index.control.model.RuntimeSettingKey;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segmentregistry.SegmentHandle;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,16 +28,16 @@ class SegmentRuntimeLimitApplierTest {
     private SegmentRegistry.Runtime<Integer, String> segmentRuntime;
 
     @Mock
-    private SegmentHandle<Integer, String> firstSegment;
+    private BlockingSegment<Integer, String> firstSegment;
 
     @Mock
-    private SegmentHandle<Integer, String> secondSegment;
+    private BlockingSegment<Integer, String> secondSegment;
 
     @Mock
-    private SegmentHandle.Runtime firstRuntime;
+    private BlockingSegment.Runtime firstRuntime;
 
     @Mock
-    private SegmentHandle.Runtime secondRuntime;
+    private BlockingSegment.Runtime secondRuntime;
 
     private SegmentRuntimeLimitApplier<Integer, String> applier;
 

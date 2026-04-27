@@ -1,0 +1,49 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+top to bottom direction
+
+component "Public API\n\nSegmentIndex\nIndexConfiguration" as API
+
+component "Session and lifecycle\ncore.session\n\nIndexInternalConcurrent\nIndexContextLoggingAdapter\nSegmentIndexImpl\nSegmentIndexTrackedOperationRunner" as SESSION
+
+component "Operation facades\n\nSegmentIndexPointOperationFacade\nSegmentIndexReadFacade\nMaintenanceService" as FACADES
+
+component "Runtime composition\ncore.session\n\nSegmentIndexRuntime\nSegmentTopologyRuntime\nSegmentIndexRuntimeServices" as RUNTIME
+
+component "Point operation orchestration\ncore.operations\n\nIndexOperationCoordinator\nSegmentIndexOperationAccess" as OPERATIONS
+
+component "Route and stable-segment access\n\nSegmentAccessService\nSegmentAccess\nStableSegmentOperationGateway\nSegmentStreamingService" as ACCESS
+
+component "Route state\n\nKeyToSegmentMap\nSegmentTopology" as ROUTE
+
+component "Registry and segment handle\norg.hestiastore.index.segmentregistry\n\nSegmentRegistry\nBlockingSegment\n(segment handler/handle)" as REGISTRY
+
+component "Segment engine\norg.hestiastore.index.segment\n\nSegment\nSegmentImpl\nSegmentCore\nSegmentSearcher\nSegmentCompacter" as SEGMENT
+
+database "Segment files\n\nmain data\ndelta cache\nsparse index\nBloom filter" as FILES
+
+API --> SESSION : public calls
+SESSION --> FACADES : point, read, maintenance entry points
+FACADES --> RUNTIME : tracked access to runtime services
+RUNTIME --> OPERATIONS : point put/get/delete
+OPERATIONS --> ACCESS : route key and load segment
+ACCESS --> REGISTRY : loaded segment handle
+REGISTRY --> SEGMENT : retry-aware segment calls
+SEGMENT --> FILES : persisted structures
+
+ACCESS --> ROUTE : route snapshot and lease
+RUNTIME --> ROUTE : split and topology coordination
+
+note right of ACCESS
+This is where routed SegmentIndex
+operations meet SegmentRegistry.
+end note
+
+note right of REGISTRY
+The current code calls the handler
+layer BlockingSegment.
+end note
+
+@enduml

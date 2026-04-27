@@ -7,13 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.session.IndexCloseCoordinator;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexStartupCoordinator;
-import org.hestiastore.index.segmentindex.core.maintenance.SegmentIndexMaintenanceAccess;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntime;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,25 +20,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SegmentIndexSessionOwnerTest {
 
-    private IndexConfiguration<Integer, String> conf;
     private IndexStateCoordinator<Integer, String> stateCoordinator;
     private SegmentIndexRuntime<Integer, String> runtime;
-    private SegmentIndexMaintenanceAccess<Integer, String> maintenanceAccess;
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
     private SegmentIndexStartupCoordinator<Integer, String> startupCoordinator;
     private SegmentIndexSessionOwner<Integer, String> owner;
 
     @BeforeEach
     void setUp() {
-        conf = mock(IndexConfiguration.class);
         stateCoordinator = mock(IndexStateCoordinator.class);
         runtime = mock(SegmentIndexRuntime.class);
-        maintenanceAccess = mock(SegmentIndexMaintenanceAccess.class);
         closeCoordinator = mock(IndexCloseCoordinator.class);
         startupCoordinator = mock(SegmentIndexStartupCoordinator.class);
-        when(conf.getIndexBusyTimeoutMillis()).thenReturn(321);
-        owner = new SegmentIndexSessionOwner<>(conf, stateCoordinator, runtime,
-                maintenanceAccess, closeCoordinator, startupCoordinator);
+        owner = new SegmentIndexSessionOwner<>(stateCoordinator, runtime,
+                closeCoordinator, startupCoordinator);
     }
 
     @Test
@@ -109,8 +99,7 @@ class SegmentIndexSessionOwnerTest {
         assertDoesNotThrow(() -> owner.runMaintenanceOperation(action));
 
         verify(indexState).tryPerformOperation();
-        verify(maintenanceAccess).awaitSplitsIdle(321L);
         verify(action).run();
-        verify(maintenanceAccess).invalidateSegmentIterators();
+        verify(runtime).invalidateSegmentIterators();
     }
 }

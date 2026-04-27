@@ -223,11 +223,11 @@ Segment can be accessd from multiple threads in paraell. Segment
   `FREEZE` → `MAINTENANCE_RUNNING` → `READY`).
 - **SegmentCompacter**: performs full rewrite compaction using
   `SegmentCore`.
-- **BackgroundSplitCoordinator** (segmentindex): decides when to call
+- **SplitPolicyCoordinator** (segmentindex): decides when to call
   `flush()`/`compact()` after writes.
 - **SegmentAsyncExecutor** + executor (segmentindex): maintenance executor
   provided to `SegmentImpl` via `SegmentRegistry`.
-- **BackgroundSplitCoordinator / RouteSplitCoordinator**
+- **SplitPolicyCoordinator / RouteSplitCoordinator**
   (segmentindex): schedule and perform route-first stable segment splits.
 
 ### Responsibilities
@@ -245,7 +245,7 @@ Segment can be accessd from multiple threads in paraell. Segment
 - State transitions are enforced by `SegmentStateMachine` and executed in
   `SegmentMaintenanceService.startMaintenance(...)` and
   `SegmentMaintenanceService.runMaintenance(...)`.
-- Maintenance scheduling lives in `BackgroundSplitCoordinator` and uses the
+- Maintenance scheduling lives in `SplitPolicyCoordinator` and uses the
   executor from `SegmentRegistry` (`SegmentAsyncExecutor`).
 
 ## Future: MVCC

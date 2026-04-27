@@ -19,25 +19,18 @@ import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
+import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-@ExtendWith(MockitoExtension.class)
 class SegmentIndexMetricsSnapshotFactoryTest {
 
-    @Mock
-    private BackgroundSplitCoordinator<Integer, String> backgroundSplitCoordinator;
-
     private WalRuntime<Integer, String> walRuntime;
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
 
     @AfterEach
     void tearDown() {
@@ -55,15 +48,13 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         final Stats stats = new Stats();
         stats.recordGetRequest();
         stats.recordPutRequest();
-        executorRegistry = new IndexExecutorRegistry(conf);
+        executorRegistry = ExecutorRegistryFixture.from(conf);
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
                 new SegmentIndexMetricsSnapshotFactory<>(conf,
-                        backgroundSplitCoordinator,
+                        () -> new SplitMetricsSnapshot(3, 2),
                         RuntimeTuningState.fromConfiguration(conf),
                         openDisabledWalRuntime(), stats, new AtomicLong(17L),
                         () -> SegmentIndexState.READY);
-        when(backgroundSplitCoordinator.splitInFlightCount()).thenReturn(3);
-        when(backgroundSplitCoordinator.splitBlockedCount()).thenReturn(2);
         final StableSegmentRuntimeMetrics stableSegmentRuntime =
                 new StableSegmentRuntimeMetrics();
         stableSegmentRuntime.setTotalMappedStableSegmentCount(1);

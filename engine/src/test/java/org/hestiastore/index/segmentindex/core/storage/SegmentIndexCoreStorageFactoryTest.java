@@ -13,7 +13,8 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.maintenance.IndexExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeGraphBuilder;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeInputs;
@@ -29,12 +30,12 @@ class SegmentIndexCoreStorageFactoryTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    private IndexExecutorRegistry executorRegistry;
+    private ExecutorRegistry executorRegistry;
     private SegmentIndexCoreStorage<Integer, String> coreStorage;
 
     @BeforeEach
     void setUp() {
-        executorRegistry = new IndexExecutorRegistry(buildConf());
+        executorRegistry = ExecutorRegistryFixture.from(buildConf());
     }
 
     @AfterEach

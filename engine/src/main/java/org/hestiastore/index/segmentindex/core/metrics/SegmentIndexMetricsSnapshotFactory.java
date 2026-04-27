@@ -9,7 +9,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.routing.BackgroundSplitCoordinator;
+import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -23,7 +23,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 final class SegmentIndexMetricsSnapshotFactory<K, V> {
 
     private final IndexConfiguration<K, V> conf;
-    private final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator;
+    private final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
     private final RuntimeTuningState runtimeTuningState;
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats;
@@ -31,14 +31,14 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
     private final Supplier<SegmentIndexState> stateSupplier;
 
     SegmentIndexMetricsSnapshotFactory(final IndexConfiguration<K, V> conf,
-            final BackgroundSplitCoordinator<K, V> backgroundSplitCoordinator,
+            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.backgroundSplitCoordinator = Vldtn.requireNonNull(
-                backgroundSplitCoordinator, "backgroundSplitCoordinator");
+        this.splitSnapshotSupplier = Vldtn.requireNonNull(
+                splitSnapshotSupplier, "splitSnapshotSupplier");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
@@ -55,6 +55,7 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
             final IndexExecutorRuntimeAccess executorSnapshot,
             final WalStats walStats, final long compactRequestCount,
             final long flushRequestCount) {
+        final SplitMetricsSnapshot splitSnapshot = splitSnapshotSupplier.get();
         return new SegmentIndexMetricsSnapshot(stats.getGetCount(),
                 stats.getPutCount(),
                 stats.getDeleteCount(), cacheStats.hitCount(),
@@ -79,16 +80,16 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 stableSegmentRuntime.getTotalStableSegmentDeltaCacheFileCount(),
                 compactRequestCount, flushRequestCount,
                 stats.getSplitScheduleCount(),
-                backgroundSplitCoordinator.splitInFlightCount(),
-                splitPlannerSnapshot(executorSnapshot).getQueueSize(),
-                splitPlannerSnapshot(executorSnapshot).getQueueCapacity(),
+                splitSnapshot.splitInFlightCount(),
+                indexMaintenanceSnapshot(executorSnapshot).getQueueSize(),
+                indexMaintenanceSnapshot(executorSnapshot).getQueueCapacity(),
                 splitMaintenanceSnapshot(executorSnapshot).getQueueSize(),
                 splitMaintenanceSnapshot(executorSnapshot).getQueueCapacity(),
-                splitPlannerSnapshot(executorSnapshot)
+                indexMaintenanceSnapshot(executorSnapshot)
                         .getActiveThreadCount(),
-                splitPlannerSnapshot(executorSnapshot)
+                indexMaintenanceSnapshot(executorSnapshot)
                         .getCompletedTaskCount(),
-                splitPlannerSnapshot(executorSnapshot)
+                indexMaintenanceSnapshot(executorSnapshot)
                         .getRejectedTaskCount(),
                 splitMaintenanceSnapshot(executorSnapshot)
                         .getActiveThreadCount(),
@@ -137,10 +138,10 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 stats.getSplitTaskRunLatencyP95Micros(),
                 stats.getDrainTaskStartDelayP95Micros(),
                 stats.getDrainTaskRunLatencyP95Micros(),
-                backgroundSplitCoordinator.splitBlockedCount(), 0L, 0L,
-                stats.getPutBusyRetryCount(),
-                stats.getPutBusyTimeoutCount(),
-                stats.getPutBusyWaitP95Micros(),
+                splitSnapshot.splitBlockedCount(), 0L, 0L,
+                0L,
+                0L,
+                0L,
                 stats.getFlushAcceptedToReadyP95Micros(),
                 stats.getCompactAcceptedToReadyP95Micros(),
                 stats.getFlushBusyRetryCount(),
@@ -153,9 +154,9 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
         return runtimeTuningState.effectiveValue(key);
     }
 
-    private static IndexExecutorMetricsAccess splitPlannerSnapshot(
+    private static IndexExecutorMetricsAccess indexMaintenanceSnapshot(
             final IndexExecutorRuntimeAccess executorSnapshot) {
-        return executorSnapshot.getSplitPlanner();
+        return executorSnapshot.getIndexMaintenance();
     }
 
     private static IndexExecutorMetricsAccess splitMaintenanceSnapshot(
