@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - devel
   workflow_dispatch:
     inputs:
       profile:
@@ -99,6 +100,7 @@ jobs:
         FAIL_ON_REGRESSION="false"
         HISTORY_BRANCH="perf-artifacts"
         HISTORY_CHANNEL="main"
+        BASELINE_CHANNEL="main"
         PR_NUMBER=""
         PUBLISH_HISTORY="false"
         FALLBACK_BASELINE_REF=""
@@ -110,21 +112,26 @@ jobs:
         elif [ "${{ github.event_name }}" = "push" ]; then
           CANDIDATE_REF="${GITHUB_SHA}"
           FALLBACK_BASELINE_REF="$(git rev-parse "${GITHUB_SHA}~1")"
+          HISTORY_CHANNEL="${GITHUB_REF_NAME}"
+          BASELINE_CHANNEL="${GITHUB_REF_NAME}"
           PUBLISH_HISTORY="true"
         elif [ "${{ github.event_name }}" = "pull_request" ]; then
           CANDIDATE_REF="${{ github.event.pull_request.head.sha }}"
-          BASE_BRANCH="origin/${{ github.event.pull_request.base.ref }}"
+          BASE_BRANCH_NAME="${{ github.event.pull_request.base.ref }}"
+          BASE_BRANCH="origin/${BASE_BRANCH_NAME}"
+          BASELINE_CHANNEL="${BASE_BRANCH_NAME}"
           HISTORY_CHANNEL="pr-${{ github.event.pull_request.number }}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
           if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
             PUBLISH_HISTORY="true"
           fi
-          git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}" "${CANDIDATE_REF}"
-          FALLBACK_BASELINE_REF="$(git merge-base "${CANDIDATE_REF}" "${BASE_BRANCH}")"
+          git fetch --no-tags origin "${BASE_BRANCH_NAME}" "${CANDIDATE_REF}"
+          FALLBACK_BASELINE_REF="${BASE_BRANCH}"
         else
           FAIL_ON_REGRESSION="${{ inputs.fail_on_regression }}"
           HISTORY_BRANCH="${{ inputs.history_branch }}"
           HISTORY_CHANNEL="${{ inputs.history_channel }}"
+          BASELINE_CHANNEL="${HISTORY_CHANNEL}"
           PR_NUMBER="${{ inputs.history_pr_number }}"
           PUBLISH_HISTORY="${{ inputs.publish_history }}"
           CANDIDATE_REF="${{ inputs.candidate_ref }}"
@@ -150,6 +157,7 @@ jobs:
         echo "fail_on_regression=${FAIL_ON_REGRESSION}" >> "${GITHUB_OUTPUT}"
         echo "history_branch=${HISTORY_BRANCH}" >> "${GITHUB_OUTPUT}"
         echo "history_channel=${HISTORY_CHANNEL}" >> "${GITHUB_OUTPUT}"
+        echo "baseline_channel=${BASELINE_CHANNEL}" >> "${GITHUB_OUTPUT}"
         echo "pr_number=${PR_NUMBER}" >> "${GITHUB_OUTPUT}"
         echo "publish_history=${PUBLISH_HISTORY}" >> "${GITHUB_OUTPUT}"
 
@@ -227,7 +235,7 @@ jobs:
           --history-dir "${{ steps.history.outputs.history_dir }}" \
           --profile "${{ steps.refs.outputs.profile }}" \
           --profile-spec "${GITHUB_WORKSPACE}/benchmarks/profiles/${{ steps.refs.outputs.profile }}.json" \
-          --channel main > "${RUNNER_TEMP}/baseline-summary-path.txt"; then
+          --channel "${{ steps.refs.outputs.baseline_channel }}" > "${RUNNER_TEMP}/baseline-summary-path.txt"; then
           BASELINE_SUMMARY="$(cat "${RUNNER_TEMP}/baseline-summary-path.txt")"
         fi
 
@@ -392,7 +400,7 @@ jobs:
         emit_publish_outputs() {
           export METADATA_PATH
           export OUTPUT_PATH
-          python3 -c 'import json, os, pathlib; metadata_path = pathlib.Path(os.environ["METADATA_PATH"]); output_path = pathlib.Path(os.environ["OUTPUT_PATH"]); metadata = json.loads(metadata_path.read_text(encoding="utf-8")); lines = [f"{key}={value}" for key in ("latestPointerPath", "runPath", "summaryPath", "comparisonMarkdownPath", "comparisonJsonPath") if (value := metadata.get(key))]; pr_number = metadata.get("prNumber"); lines.extend([f"publishedPrNumber={pr_number}"] if pr_number else []); output_path.write_text("\\n".join(lines) + ("\\n" if lines else ""), encoding="utf-8")'
+          python3 -c 'import json, os, pathlib; metadata_path = pathlib.Path(os.environ["METADATA_PATH"]); output_path = pathlib.Path(os.environ["OUTPUT_PATH"]); metadata = json.loads(metadata_path.read_text(encoding="utf-8")); lines = [f"{key}={value}" for key in ("latestPointerPath", "runPath", "summaryPath", "comparisonMarkdownPath", "comparisonJsonPath") if (value := metadata.get(key))]; pr_number = metadata.get("prNumber"); lines.extend([f"publishedPrNumber={pr_number}"] if pr_number else []); output_path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")'
         }
 
         for attempt in $(seq 1 "${MAX_PUSH_ATTEMPTS}"); do
@@ -450,7 +458,8 @@ jobs:
         RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         HISTORY_BASE_URL="${{ github.server_url }}/${{ github.repository }}"
         ARTIFACT_NAME="benchmark-compare-${{ steps.refs.outputs.profile }}-${{ github.run_id }}"
-        BASELINE_POINTER_URL="${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/history/${{ steps.refs.outputs.profile }}/latest-main.json"
+        BASELINE_CHANNEL="${{ steps.refs.outputs.baseline_channel }}"
+        BASELINE_POINTER_URL="${HISTORY_BASE_URL}/blob/${{ steps.refs.outputs.history_branch }}/history/${{ steps.refs.outputs.profile }}/latest-${BASELINE_CHANNEL}.json"
 
         {
           echo "<!-- benchmark-compare:${{ steps.refs.outputs.profile }} -->"
@@ -466,14 +475,14 @@ jobs:
             echo "- Previous PR baseline: latest stored PR snapshot before this run"
           fi
           if [ -n "${{ steps.stored-baseline.outputs.baseline_summary }}" ]; then
-            echo "- Baseline source: [canonical latest-main.json](${BASELINE_POINTER_URL})"
+            echo "- Baseline source: [canonical latest-${BASELINE_CHANNEL}.json](${BASELINE_POINTER_URL})"
           elif [ "${{ steps.fallback-compat.outputs.can_run }}" = "true" ]; then
-            echo "- Baseline source: fallback git baseline \`${{ steps.refs.outputs.fallback_baseline_ref }}\`"
+            echo "- Baseline source: fallback ${BASELINE_CHANNEL} baseline \`${{ steps.refs.outputs.fallback_baseline_ref }}\`"
           else
             echo "- Baseline source: bootstrap mode without prior canonical baseline"
           fi
           echo
-          echo "<details><summary>Comparison vs canonical baseline</summary>"
+          echo "<details><summary>Comparison vs ${BASELINE_CHANNEL} baseline</summary>"
           echo
           cat "${RUNNER_TEMP}/benchmark-results/comparison.md"
           echo
