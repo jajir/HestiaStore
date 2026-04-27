@@ -28,7 +28,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -41,8 +40,7 @@ import org.junit.jupiter.api.Timeout;
  * disjoint keyspaces (order-independent) and "last write wins" for a single
  * key.
  */
-@Timeout(value = 90, unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+@Timeout(value = 90, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrentIT {
 
     private static final int TEST_CPU_THREADS = Math.max(1,
@@ -176,7 +174,6 @@ class SegmentIndexConcurrentIT {
     }
 
     @Test
-    @Disabled("Known nondeterministic failure kept out of the architecture cleanup flow.")
     void concurrent_put_delete_with_background_flush_compact_produces_consistent_state()
             throws Exception {
         final Directory directory = new MemDirectory();
@@ -401,8 +398,7 @@ class SegmentIndexConcurrentIT {
     }
 
     @Test
-    @Timeout(value = 180, unit = TimeUnit.SECONDS,
-            threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    @Timeout(value = 180, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     void hotRangeRandomPutsWithAutonomousSplitDoNotStall() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newAutonomousSplitConfiguration(
@@ -514,7 +510,7 @@ class SegmentIndexConcurrentIT {
             for (final Map.Entry<Integer, Integer> entry : expectedCold
                     .entrySet()) {
                 assertEquals(entry.getValue(), index.get(entry.getKey()),
-                    "Unexpected value for cold key " + entry.getKey());
+                        "Unexpected value for cold key " + entry.getKey());
             }
         } finally {
             executor.shutdownNow();
@@ -527,8 +523,7 @@ class SegmentIndexConcurrentIT {
     }
 
     @Test
-    @Timeout(value = 180, unit = TimeUnit.SECONDS,
-            threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    @Timeout(value = 180, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
     void hotRangeAutonomousSplitSurvivesCloseReopenRotations() throws Exception {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, Integer> conf = newAutonomousSplitConfiguration(
