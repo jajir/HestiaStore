@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.slf4j.Logger;
 
 final class WalSegmentCatalog {
@@ -12,7 +12,7 @@ final class WalSegmentCatalog {
     private static final long CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
 
-    private final Wal wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
     private final Logger logger;
@@ -24,7 +24,7 @@ final class WalSegmentCatalog {
     private long checkpointCleanupSuppressedDeletedSegments = 0L;
     private long checkpointCleanupSuppressedDeletedBytes = 0L;
 
-    WalSegmentCatalog(final Wal wal, final WalStorage storage,
+    WalSegmentCatalog(final IndexWalConfiguration wal, final WalStorage storage,
             final WalMetadataCatalog metadataCatalog, final Logger logger) {
         this.wal = wal;
         this.storage = storage;

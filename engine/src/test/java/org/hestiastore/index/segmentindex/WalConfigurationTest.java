@@ -11,7 +11,7 @@ class WalConfigurationTest {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder().build();
 
-        assertSame(Wal.EMPTY, conf.wal());
+        assertSame(IndexWalConfiguration.EMPTY, conf.wal());
     }
 
     @Test
@@ -20,6 +20,6 @@ class WalConfigurationTest {
                 .<Integer, String>builder()
                 .wal(wal -> wal.configuration(null)).build();
 
-        assertSame(Wal.EMPTY, conf.wal());
+        assertSame(IndexWalConfiguration.EMPTY, conf.wal());
     }
 }

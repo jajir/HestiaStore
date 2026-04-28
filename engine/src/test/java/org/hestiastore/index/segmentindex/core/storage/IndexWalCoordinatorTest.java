@@ -22,7 +22,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -157,8 +157,8 @@ class IndexWalCoordinatorTest {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
-                .wal(wal -> wal.configuration(Wal.builder()
-                        .withMaxBytesBeforeForcedCheckpoint(1024L)
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
+                        .maxBytesBeforeForcedCheckpoint(1024L)
                         .build()))
                 .build();
     }

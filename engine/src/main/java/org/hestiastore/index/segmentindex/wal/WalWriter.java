@@ -2,12 +2,12 @@ package org.hestiastore.index.segmentindex.wal;
 
 import java.util.Objects;
 
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 
 final class WalWriter<K, V> {
 
-    private final Wal wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalRecordCodec<K, V> recordCodec;
     private final WalSegmentCatalog segmentCatalog;
@@ -15,7 +15,7 @@ final class WalWriter<K, V> {
     private final WalSyncPolicy syncPolicy;
     private long nextLsn = 1L;
 
-    WalWriter(final Wal wal, final WalStorage storage,
+    WalWriter(final IndexWalConfiguration wal, final WalStorage storage,
             final WalRecordCodec<K, V> recordCodec,
             final WalSegmentCatalog segmentCatalog,
             final WalRuntimeMetrics metrics, final WalSyncPolicy syncPolicy) {

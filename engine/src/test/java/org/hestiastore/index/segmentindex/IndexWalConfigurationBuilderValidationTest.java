@@ -10,70 +10,79 @@ import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 
-class WalBuilderValidationTest {
+class IndexWalConfigurationBuilderValidationTest {
 
     @Test
-    void test_withDurabilityMode_setsValue() {
-        final Wal wal = Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC)
+    void test_builderUnset_usesDefaults() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .build();
+
+        assertWalDefaults(wal);
+        assertTrue(wal.isEnabled());
+    }
+
+    @Test
+    void test_durability_setsValue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC)
                 .build();
 
         assertEquals(WalDurabilityMode.SYNC, wal.getDurabilityMode());
     }
 
     @Test
-    void test_withDurabilityMode_nullUsesDefault() {
-        final Wal wal = Wal.builder().withDurabilityMode(null).build();
+    void test_durability_nullUsesDefault() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().durability(null).build();
 
-        assertEquals(Wal.DEFAULT_DURABILITY_MODE, wal.getDurabilityMode());
+        assertEquals(IndexWalConfiguration.DEFAULT_DURABILITY_MODE, wal.getDurabilityMode());
     }
 
     @Test
-    void test_withSegmentSizeBytes_setsValue() {
-        final Wal wal = Wal.builder().withSegmentSizeBytes(1024L).build();
+    void test_segmentSizeBytes_setsValue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().segmentSizeBytes(1024L).build();
 
         assertEquals(1024L, wal.getSegmentSizeBytes());
     }
 
     @Test
-    void test_withSegmentSizeBytes_rejectsZero() {
+    void test_segmentSizeBytes_rejectsZero() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder().withSegmentSizeBytes(0L).build());
+                () -> IndexWalConfiguration.builder().segmentSizeBytes(0L).build());
 
         assertEquals("segmentSizeBytes must be greater than 0",
                 exception.getMessage());
     }
 
     @Test
-    void test_withSegmentSizeBytes_rejectsNegative() {
+    void test_segmentSizeBytes_rejectsNegative() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder().withSegmentSizeBytes(-1L).build());
+                () -> IndexWalConfiguration.builder().segmentSizeBytes(-1L).build());
 
         assertEquals("segmentSizeBytes must be greater than 0",
                 exception.getMessage());
     }
 
     @Test
-    void test_withGroupSyncDelayMillis_setsValue() {
-        final Wal wal = Wal.builder().withGroupSyncDelayMillis(17).build();
+    void test_groupSyncDelayMillis_setsValue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().groupSyncDelayMillis(17).build();
 
         assertEquals(17, wal.getGroupSyncDelayMillis());
     }
 
     @Test
-    void test_withGroupSyncDelayMillis_acceptsZero() {
-        final Wal wal = Wal.builder().withGroupSyncDelayMillis(0).build();
+    void test_groupSyncDelayMillis_acceptsZero() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().groupSyncDelayMillis(0).build();
 
         assertEquals(0, wal.getGroupSyncDelayMillis());
     }
 
     @Test
-    void test_withGroupSyncDelayMillis_rejectsNegative() {
+    void test_groupSyncDelayMillis_rejectsNegative() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder().withGroupSyncDelayMillis(-1).build());
+                () -> IndexWalConfiguration.builder().groupSyncDelayMillis(-1).build());
 
         assertEquals(
                 "Property 'groupSyncDelayMillis' must be greater than or equal to 0",
@@ -81,18 +90,18 @@ class WalBuilderValidationTest {
     }
 
     @Test
-    void test_withGroupSyncMaxBatchBytes_setsValue() {
-        final Wal wal = Wal.builder().withGroupSyncMaxBatchBytes(2048)
+    void test_groupSyncMaxBatchBytes_setsValue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().groupSyncMaxBatchBytes(2048)
                 .build();
 
         assertEquals(2048, wal.getGroupSyncMaxBatchBytes());
     }
 
     @Test
-    void test_withGroupSyncMaxBatchBytes_rejectsZero() {
+    void test_groupSyncMaxBatchBytes_rejectsZero() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder().withGroupSyncMaxBatchBytes(0).build());
+                () -> IndexWalConfiguration.builder().groupSyncMaxBatchBytes(0).build());
 
         assertEquals(
                 "Property 'groupSyncMaxBatchBytes' must be greater than 0",
@@ -100,10 +109,10 @@ class WalBuilderValidationTest {
     }
 
     @Test
-    void test_withGroupSyncMaxBatchBytes_rejectsNegative() {
+    void test_groupSyncMaxBatchBytes_rejectsNegative() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder().withGroupSyncMaxBatchBytes(-1).build());
+                () -> IndexWalConfiguration.builder().groupSyncMaxBatchBytes(-1).build());
 
         assertEquals(
                 "Property 'groupSyncMaxBatchBytes' must be greater than 0",
@@ -111,20 +120,20 @@ class WalBuilderValidationTest {
     }
 
     @Test
-    void test_withMaxBytesBeforeForcedCheckpoint_setsValue() {
-        final Wal wal = Wal.builder()
-                .withMaxBytesBeforeForcedCheckpoint(4096L)
+    void test_maxBytesBeforeForcedCheckpoint_setsValue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .maxBytesBeforeForcedCheckpoint(4096L)
                 .build();
 
         assertEquals(4096L, wal.getMaxBytesBeforeForcedCheckpoint());
     }
 
     @Test
-    void test_withMaxBytesBeforeForcedCheckpoint_rejectsZero() {
+    void test_maxBytesBeforeForcedCheckpoint_rejectsZero() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder()
-                        .withMaxBytesBeforeForcedCheckpoint(0L)
+                () -> IndexWalConfiguration.builder()
+                        .maxBytesBeforeForcedCheckpoint(0L)
                         .build());
 
         assertEquals("maxBytesBeforeForcedCheckpoint must be greater than 0",
@@ -132,11 +141,11 @@ class WalBuilderValidationTest {
     }
 
     @Test
-    void test_withMaxBytesBeforeForcedCheckpoint_rejectsNegative() {
+    void test_maxBytesBeforeForcedCheckpoint_rejectsNegative() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> Wal.builder()
-                        .withMaxBytesBeforeForcedCheckpoint(-1L)
+                () -> IndexWalConfiguration.builder()
+                        .maxBytesBeforeForcedCheckpoint(-1L)
                         .build());
 
         assertEquals("maxBytesBeforeForcedCheckpoint must be greater than 0",
@@ -144,9 +153,9 @@ class WalBuilderValidationTest {
     }
 
     @Test
-    void test_withCorruptionPolicy_setsValue() {
-        final Wal wal = Wal.builder()
-                .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+    void test_corruptionPolicy_setsValue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
                 .build();
 
         assertEquals(WalCorruptionPolicy.FAIL_FAST,
@@ -154,23 +163,23 @@ class WalBuilderValidationTest {
     }
 
     @Test
-    void test_withCorruptionPolicy_nullUsesDefault() {
-        final Wal wal = Wal.builder().withCorruptionPolicy(null).build();
+    void test_corruptionPolicy_nullUsesDefault() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().corruptionPolicy(null).build();
 
-        assertEquals(Wal.DEFAULT_CORRUPTION_POLICY,
+        assertEquals(IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY,
                 wal.getCorruptionPolicy());
     }
 
     @Test
-    void test_withEpochSupport_setsTrue() {
-        final Wal wal = Wal.builder().withEpochSupport(true).build();
+    void test_epochSupport_setsTrue() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().epochSupport(true).build();
 
         assertTrue(wal.isEpochSupport());
     }
 
     @Test
-    void test_withEpochSupport_setsFalse() {
-        final Wal wal = Wal.builder().withEpochSupport(false).build();
+    void test_epochSupport_setsFalse() {
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().epochSupport(false).build();
 
         assertFalse(wal.isEpochSupport());
     }
@@ -186,12 +195,24 @@ class WalBuilderValidationTest {
     }
 
     @Test
+    void test_walConfiguredWithoutValues_usesDefaults() {
+        final IndexConfiguration<Integer, String> config = IndexConfiguration
+                .<Integer, String>builder()
+                .wal(wal -> {
+                })
+                .build();
+
+        assertWalDefaults(config.wal());
+        assertTrue(config.wal().isEnabled());
+    }
+
+    @Test
     void test_walUnset_keepsEmpty() {
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
                 .build();
 
-        assertSame(Wal.EMPTY, config.wal());
+        assertSame(IndexWalConfiguration.EMPTY, config.wal());
     }
 
     @Test
@@ -201,12 +222,12 @@ class WalBuilderValidationTest {
                 .wal(wal -> wal.segmentSizeBytes(1024L).disabled())
                 .build();
 
-        assertSame(Wal.EMPTY, config.wal());
+        assertSame(IndexWalConfiguration.EMPTY, config.wal());
     }
 
     @Test
     void test_walDurability_setsValue() {
-        final Wal wal = buildWal(section -> section
+        final IndexWalConfiguration wal = buildWal(section -> section
                 .durability(WalDurabilityMode.SYNC));
 
         assertEquals(WalDurabilityMode.SYNC, wal.getDurabilityMode());
@@ -214,14 +235,14 @@ class WalBuilderValidationTest {
 
     @Test
     void test_walDurability_nullUsesDefault() {
-        final Wal wal = buildWal(section -> section.durability(null));
+        final IndexWalConfiguration wal = buildWal(section -> section.durability(null));
 
-        assertEquals(Wal.DEFAULT_DURABILITY_MODE, wal.getDurabilityMode());
+        assertEquals(IndexWalConfiguration.DEFAULT_DURABILITY_MODE, wal.getDurabilityMode());
     }
 
     @Test
     void test_walSegmentSizeBytes_setsValue() {
-        final Wal wal = buildWal(section -> section.segmentSizeBytes(1024L));
+        final IndexWalConfiguration wal = buildWal(section -> section.segmentSizeBytes(1024L));
 
         assertEquals(1024L, wal.getSegmentSizeBytes());
     }
@@ -248,14 +269,14 @@ class WalBuilderValidationTest {
 
     @Test
     void test_walGroupSyncDelayMillis_setsValue() {
-        final Wal wal = buildWal(section -> section.groupSyncDelayMillis(17));
+        final IndexWalConfiguration wal = buildWal(section -> section.groupSyncDelayMillis(17));
 
         assertEquals(17, wal.getGroupSyncDelayMillis());
     }
 
     @Test
     void test_walGroupSyncDelayMillis_acceptsZero() {
-        final Wal wal = buildWal(section -> section.groupSyncDelayMillis(0));
+        final IndexWalConfiguration wal = buildWal(section -> section.groupSyncDelayMillis(0));
 
         assertEquals(0, wal.getGroupSyncDelayMillis());
     }
@@ -273,7 +294,7 @@ class WalBuilderValidationTest {
 
     @Test
     void test_walGroupSyncMaxBatchBytes_setsValue() {
-        final Wal wal = buildWal(section -> section
+        final IndexWalConfiguration wal = buildWal(section -> section
                 .groupSyncMaxBatchBytes(2048));
 
         assertEquals(2048, wal.getGroupSyncMaxBatchBytes());
@@ -303,7 +324,7 @@ class WalBuilderValidationTest {
 
     @Test
     void test_walMaxBytesBeforeForcedCheckpoint_setsValue() {
-        final Wal wal = buildWal(section -> section
+        final IndexWalConfiguration wal = buildWal(section -> section
                 .maxBytesBeforeForcedCheckpoint(4096L));
 
         assertEquals(4096L, wal.getMaxBytesBeforeForcedCheckpoint());
@@ -333,7 +354,7 @@ class WalBuilderValidationTest {
 
     @Test
     void test_walCorruptionPolicy_setsValue() {
-        final Wal wal = buildWal(section -> section
+        final IndexWalConfiguration wal = buildWal(section -> section
                 .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST));
 
         assertEquals(WalCorruptionPolicy.FAIL_FAST,
@@ -342,36 +363,36 @@ class WalBuilderValidationTest {
 
     @Test
     void test_walCorruptionPolicy_nullUsesDefault() {
-        final Wal wal = buildWal(section -> section.corruptionPolicy(null));
+        final IndexWalConfiguration wal = buildWal(section -> section.corruptionPolicy(null));
 
-        assertEquals(Wal.DEFAULT_CORRUPTION_POLICY,
+        assertEquals(IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY,
                 wal.getCorruptionPolicy());
     }
 
     @Test
     void test_walEpochSupport_setsTrue() {
-        final Wal wal = buildWal(section -> section.epochSupport(true));
+        final IndexWalConfiguration wal = buildWal(section -> section.epochSupport(true));
 
         assertTrue(wal.isEpochSupport());
     }
 
     @Test
     void test_walEpochSupport_setsFalse() {
-        final Wal wal = buildWal(section -> section.epochSupport(false));
+        final IndexWalConfiguration wal = buildWal(section -> section.epochSupport(false));
 
         assertFalse(wal.isEpochSupport());
     }
 
     @Test
     void test_walConfiguration_copiesEnabledWal() {
-        final Wal source = Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC)
-                .withSegmentSizeBytes(1024L)
-                .withGroupSyncDelayMillis(7)
-                .withGroupSyncMaxBatchBytes(2048)
-                .withMaxBytesBeforeForcedCheckpoint(4096L)
-                .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
-                .withEpochSupport(true)
+        final IndexWalConfiguration source = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC)
+                .segmentSizeBytes(1024L)
+                .groupSyncDelayMillis(7)
+                .groupSyncMaxBatchBytes(2048)
+                .maxBytesBeforeForcedCheckpoint(4096L)
+                .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                .epochSupport(true)
                 .build();
 
         final IndexConfiguration<Integer, String> config = IndexConfiguration
@@ -387,10 +408,10 @@ class WalBuilderValidationTest {
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
                 .wal(wal -> wal.segmentSizeBytes(1024L)
-                        .configuration(Wal.EMPTY))
+                        .configuration(IndexWalConfiguration.EMPTY))
                 .build();
 
-        assertSame(Wal.EMPTY, config.wal());
+        assertSame(IndexWalConfiguration.EMPTY, config.wal());
     }
 
     @Test
@@ -401,26 +422,26 @@ class WalBuilderValidationTest {
                         .configuration(null))
                 .build();
 
-        assertSame(Wal.EMPTY, config.wal());
+        assertSame(IndexWalConfiguration.EMPTY, config.wal());
     }
 
-    private static void assertWalDefaults(final Wal wal) {
-        assertEquals(Wal.DEFAULT_DURABILITY_MODE, wal.getDurabilityMode());
-        assertEquals(Wal.DEFAULT_SEGMENT_SIZE_BYTES,
+    private static void assertWalDefaults(final IndexWalConfiguration wal) {
+        assertEquals(IndexWalConfiguration.DEFAULT_DURABILITY_MODE, wal.getDurabilityMode());
+        assertEquals(IndexWalConfiguration.DEFAULT_SEGMENT_SIZE_BYTES,
                 wal.getSegmentSizeBytes());
-        assertEquals(Wal.DEFAULT_GROUP_SYNC_DELAY_MILLIS,
+        assertEquals(IndexWalConfiguration.DEFAULT_GROUP_SYNC_DELAY_MILLIS,
                 wal.getGroupSyncDelayMillis());
-        assertEquals(Wal.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES,
+        assertEquals(IndexWalConfiguration.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES,
                 wal.getGroupSyncMaxBatchBytes());
-        assertEquals(Wal.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+        assertEquals(IndexWalConfiguration.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
                 wal.getMaxBytesBeforeForcedCheckpoint());
-        assertEquals(Wal.DEFAULT_CORRUPTION_POLICY,
+        assertEquals(IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY,
                 wal.getCorruptionPolicy());
         assertFalse(wal.isEpochSupport());
     }
 
-    private static Wal buildWal(
-            final Consumer<IndexWalConfigurationBuilder<Integer, String>> customizer) {
+    private static IndexWalConfiguration buildWal(
+            final Consumer<IndexWalConfigurationBuilder> customizer) {
         return IndexConfiguration.<Integer, String>builder()
                 .wal(customizer)
                 .build()

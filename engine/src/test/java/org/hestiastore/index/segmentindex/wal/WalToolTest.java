@@ -15,7 +15,7 @@ import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.FsNioDirectory;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.junit.jupiter.api.Test;
 
 class WalToolTest {
@@ -25,7 +25,7 @@ class WalToolTest {
     @Test
     void verifyPassesForValidWal() throws IOException {
         final Path root = Files.createTempDirectory("hestia-wal-tool-valid-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -42,7 +42,7 @@ class WalToolTest {
     void verifyFailsForCorruptedWalTail() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-corrupted-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -84,7 +84,7 @@ class WalToolTest {
             throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-format-tmp-only-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -103,7 +103,7 @@ class WalToolTest {
             throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-format-stale-tmp-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -123,7 +123,7 @@ class WalToolTest {
     void verifyFailsForInvalidCheckpointMetadata() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-invalid-checkpoint-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -144,7 +144,7 @@ class WalToolTest {
     void verifyFailsForInvalidCheckpointMetadataChecksum() throws IOException {
         final Path root = Files.createTempDirectory(
                 "hestia-wal-tool-invalid-checkpoint-checksum-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -169,7 +169,7 @@ class WalToolTest {
             throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-checkpoint-tmp-only-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -190,7 +190,7 @@ class WalToolTest {
             throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-checkpoint-invalid-tmp-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -210,7 +210,7 @@ class WalToolTest {
     void verifyFailsWhenCheckpointLsnIsAheadOfWalMaxLsn() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-checkpoint-ahead-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -233,7 +233,7 @@ class WalToolTest {
     void verifyFailsForInvalidSegmentFileName() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-invalid-segment-name-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -252,7 +252,7 @@ class WalToolTest {
     void verifyFailsForWalDirectoryEntry() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-segment-directory-entry-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -272,7 +272,7 @@ class WalToolTest {
     void verifyFailsForNonCanonicalSegmentFileName() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-non-canonical-segment-name-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -293,7 +293,7 @@ class WalToolTest {
     void verifyFailsForNonMonotonicLsnAcrossSegments() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-non-monotonic-lsn-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -313,7 +313,7 @@ class WalToolTest {
     @Test
     void dumpPrintsRecordMetadataAndSummary() throws IOException {
         final Path root = Files.createTempDirectory("hestia-wal-tool-dump-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -332,7 +332,7 @@ class WalToolTest {
     void dumpPrintsInvalidTailDetails() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-dump-invalid-tail-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -353,7 +353,7 @@ class WalToolTest {
             throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-dump-format-tmp-only-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -371,7 +371,7 @@ class WalToolTest {
     void runReturnsExitCodeTwoWhenVerifyFails() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-run-verify-fails-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -394,7 +394,7 @@ class WalToolTest {
     void runReturnsExitCodeZeroWhenVerifyPasses() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-run-verify-passes-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -410,7 +410,7 @@ class WalToolTest {
     void runVerifyWithJsonOutputsMachineReadableFields() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-run-verify-json-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -430,7 +430,7 @@ class WalToolTest {
     void runVerifyWithJsonReturnsExitCodeTwoWhenInvalid() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-run-verify-json-fail-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -455,7 +455,7 @@ class WalToolTest {
     void runDumpWithJsonOutputsStructuredLines() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-run-dump-json-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
@@ -476,7 +476,7 @@ class WalToolTest {
     void runReturnsExitCodeOneForUnsupportedOption() throws IOException {
         final Path root = Files
                 .createTempDirectory("hestia-wal-tool-invalid-option-");
-        final Wal wal = Wal.builder().build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
                 .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {

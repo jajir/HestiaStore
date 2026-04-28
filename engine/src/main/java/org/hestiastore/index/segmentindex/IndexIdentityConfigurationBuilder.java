@@ -11,11 +11,13 @@ import org.hestiastore.index.datatype.TypeDescriptor;
  */
 public final class IndexIdentityConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private String indexName;
+    private Class<K> keyClass;
+    private Class<V> valueClass;
+    private String keyTypeDescriptor;
+    private String valueTypeDescriptor;
 
-    IndexIdentityConfigurationBuilder(
-            final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexIdentityConfigurationBuilder() {
     }
 
     /**
@@ -25,7 +27,7 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      * @return this section builder
      */
     public IndexIdentityConfigurationBuilder<K, V> name(final String value) {
-        builder.setName(value);
+        this.indexName = value;
         return this;
     }
 
@@ -37,7 +39,7 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      */
     public IndexIdentityConfigurationBuilder<K, V> keyClass(
             final Class<K> value) {
-        builder.setKeyClass(value);
+        this.keyClass = value;
         return this;
     }
 
@@ -49,7 +51,7 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      */
     public IndexIdentityConfigurationBuilder<K, V> valueClass(
             final Class<V> value) {
-        builder.setValueClass(value);
+        this.valueClass = value;
         return this;
     }
 
@@ -61,7 +63,9 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      */
     public IndexIdentityConfigurationBuilder<K, V> keyTypeDescriptor(
             final TypeDescriptor<K> value) {
-        builder.setKeyTypeDescriptor(value);
+        this.keyTypeDescriptor = Vldtn
+                .requireNonNull(value, "keyTypeDescriptor")
+                .getClass().getName();
         return this;
     }
 
@@ -73,7 +77,7 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      */
     public IndexIdentityConfigurationBuilder<K, V> keyTypeDescriptor(
             final String value) {
-        builder.setKeyTypeDescriptor(value);
+        this.keyTypeDescriptor = value;
         return this;
     }
 
@@ -85,7 +89,9 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      */
     public IndexIdentityConfigurationBuilder<K, V> valueTypeDescriptor(
             final TypeDescriptor<V> value) {
-        builder.setValueTypeDescriptor(value);
+        this.valueTypeDescriptor = Vldtn
+                .requireNonNull(value, "valueTypeDescriptor")
+                .getClass().getName();
         return this;
     }
 
@@ -97,7 +103,12 @@ public final class IndexIdentityConfigurationBuilder<K, V> {
      */
     public IndexIdentityConfigurationBuilder<K, V> valueTypeDescriptor(
             final String value) {
-        builder.setValueTypeDescriptor(value);
+        this.valueTypeDescriptor = value;
         return this;
+    }
+
+    IndexIdentityConfiguration<K, V> build() {
+        return new IndexIdentityConfiguration<>(indexName, keyClass, valueClass,
+                keyTypeDescriptor, valueTypeDescriptor);
     }
 }

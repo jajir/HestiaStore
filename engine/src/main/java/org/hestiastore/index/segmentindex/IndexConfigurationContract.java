@@ -124,8 +124,8 @@ public interface IndexConfigurationContract {
      *
      * @return default WAL settings
      */
-    default Wal wal() {
-        return Wal.EMPTY;
+    default IndexWalConfiguration wal() {
+        return IndexWalConfiguration.EMPTY;
     }
 
     /**

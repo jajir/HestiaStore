@@ -160,7 +160,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .identity(identity -> identity.keyClass(String.class))//
                 .identity(identity -> identity.valueClass(String.class))//
                 .identity(identity -> identity.name("wal-recovery-it"))//
-                .wal(wal -> wal.configuration(Wal.builder().build()))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
@@ -185,8 +185,8 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .identity(identity -> identity.keyClass(String.class))//
                 .identity(identity -> identity.valueClass(String.class))//
                 .identity(identity -> identity.name("wal-recovery-fail-fast-it"))//
-                .wal(wal -> wal.configuration(Wal.builder()
-                        .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
+                        .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
                         .build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
@@ -207,9 +207,9 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .identity(identity -> identity.keyClass(String.class))//
                 .identity(identity -> identity.valueClass(String.class))//
                 .identity(identity -> identity.name("wal-recovery-fail-fast-immutability-it"))//
-                .wal(wal -> wal.configuration(Wal.builder()
-                        .withSegmentSizeBytes(96L)
-                        .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
+                        .segmentSizeBytes(96L)
+                        .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
                         .build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
@@ -237,7 +237,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .identity(identity -> identity.keyClass(String.class))//
                 .identity(identity -> identity.valueClass(String.class))//
                 .identity(identity -> identity.name("wal-recovery-cycle-it"))//
-                .wal(wal -> wal.configuration(Wal.builder().build()))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final int keySpace = 12;
@@ -280,7 +280,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .identity(identity -> identity.keyClass(String.class))//
                 .identity(identity -> identity.valueClass(String.class))//
                 .identity(identity -> identity.name("wal-recovery-random-cycle-it"))//
-                .wal(wal -> wal.configuration(Wal.builder().build()))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final Random random = new Random(42L);
@@ -425,7 +425,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .identity(identity -> identity
                         .valueTypeDescriptor(new TypeDescriptorShortString()))//
                 .identity(identity -> identity.name(indexName))//
-                .wal(wal -> wal.configuration(Wal.builder().build()))//
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
                 .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
@@ -574,9 +574,9 @@ class IntegrationSegmentIndexWalRecoveryTest {
     @Test
     void walRetentionPressureForcesCheckpointAndWritesKeepProgressing() {
         final MemDirectory directory = new MemDirectory();
-        final Wal wal = Wal.builder()//
-                .withSegmentSizeBytes(96L)//
-                .withMaxBytesBeforeForcedCheckpoint(192L)//
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                .segmentSizeBytes(96L)//
+                .maxBytesBeforeForcedCheckpoint(192L)//
                 .build();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
@@ -610,9 +610,9 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final TestLogAppender appender = TestLogAppender.attachWarnRootAppender();
         try {
             final MemDirectory directory = new MemDirectory();
-            final Wal wal = Wal.builder()//
-                    .withSegmentSizeBytes(96L)//
-                    .withMaxBytesBeforeForcedCheckpoint(192L)//
+            final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                    .segmentSizeBytes(96L)//
+                    .maxBytesBeforeForcedCheckpoint(192L)//
                     .build();
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
@@ -644,9 +644,9 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .attachRootAppender(Level.INFO);
         try {
             final MemDirectory directory = new MemDirectory();
-            final Wal wal = Wal.builder()//
-                    .withSegmentSizeBytes(96L)//
-                    .withMaxBytesBeforeForcedCheckpoint(192L)//
+            final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                    .segmentSizeBytes(96L)//
+                    .maxBytesBeforeForcedCheckpoint(192L)//
                     .build();
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//

@@ -11,7 +11,7 @@ import java.util.Set;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 
 /**
  * Shared properties schema metadata and migration helpers for index files.
@@ -397,20 +397,20 @@ public final class IndexPropertiesSchema {
         defaults.put(IndexConfigurationKeys.PROP_WAL_ENABLED,
                 view -> Boolean.FALSE.toString());
         defaults.put(IndexConfigurationKeys.PROP_WAL_DURABILITY_MODE,
-                view -> Wal.DEFAULT_DURABILITY_MODE.name());
+                view -> IndexWalConfiguration.DEFAULT_DURABILITY_MODE.name());
         defaults.put(IndexConfigurationKeys.PROP_WAL_SEGMENT_SIZE_BYTES,
-                view -> String.valueOf(Wal.DEFAULT_SEGMENT_SIZE_BYTES));
+                view -> String.valueOf(IndexWalConfiguration.DEFAULT_SEGMENT_SIZE_BYTES));
         defaults.put(IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
-                view -> String.valueOf(Wal.DEFAULT_GROUP_SYNC_DELAY_MILLIS));
+                view -> String.valueOf(IndexWalConfiguration.DEFAULT_GROUP_SYNC_DELAY_MILLIS));
         defaults.put(IndexConfigurationKeys.PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
                 view -> String
-                        .valueOf(Wal.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES));
+                        .valueOf(IndexWalConfiguration.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES));
         defaults.put(
                 IndexConfigurationKeys.PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
                 view -> String.valueOf(
-                        Wal.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT));
+                        IndexWalConfiguration.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT));
         defaults.put(IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY,
-                view -> Wal.DEFAULT_CORRUPTION_POLICY.name());
+                view -> IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY.name());
         defaults.put(IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT,
                 view -> Boolean.FALSE.toString());
     }
