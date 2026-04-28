@@ -9,7 +9,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -493,8 +493,8 @@ public class IndexConfigurationManager<K, V> {
                 storedConf.filters().decodingChunkFilterSpecs(),
                 indexConf.filters().decodingChunkFilterSpecs());
         throwIfChanged(
-                isChanged(indexConf.wal(), storedConf.wal()), "Wal",
-                storedConf.wal(), indexConf.wal());
+                isChanged(indexConf.wal(), storedConf.wal()),
+                "IndexWalConfiguration", storedConf.wal(), indexConf.wal());
     }
 
     private boolean chunkFiltersChanged(final List<ChunkFilterSpec> indexFilters,
@@ -556,25 +556,28 @@ public class IndexConfigurationManager<K, V> {
         return conf;
     }
 
-    private void validateWal(final Wal wal) {
+    private void validateWal(final IndexWalConfiguration wal) {
         if (!wal.isEnabled()) {
             return;
         }
         if (wal.getSegmentSizeBytes() <= 0L) {
             throw new IllegalArgumentException(
-                    "Wal segment size must be greater than zero.");
+                    "IndexWalConfiguration segment size must be greater than zero.");
         }
         if (wal.getGroupSyncDelayMillis() < 0) {
             throw new IllegalArgumentException(
-                    "Wal group sync delay must be greater than or equal to zero.");
+                    "IndexWalConfiguration group sync delay must be greater "
+                            + "than or equal to zero.");
         }
         if (wal.getGroupSyncMaxBatchBytes() <= 0) {
             throw new IllegalArgumentException(
-                    "Wal group sync max batch bytes must be greater than zero.");
+                    "IndexWalConfiguration group sync max batch bytes must be "
+                            + "greater than zero.");
         }
         if (wal.getMaxBytesBeforeForcedCheckpoint() <= 0L) {
             throw new IllegalArgumentException(
-                    "Wal max bytes before forced checkpoint must be greater than zero.");
+                    "IndexWalConfiguration max bytes before forced checkpoint "
+                            + "must be greater than zero.");
         }
     }
 

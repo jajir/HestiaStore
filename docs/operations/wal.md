@@ -22,7 +22,7 @@ IndexConfiguration<String, String> conf = IndexConfiguration
     .build();
 ```
 
-WAL is disabled by default through `Wal.EMPTY`. Use
+WAL is disabled by default through `IndexWalConfiguration.EMPTY`. Use
 `wal(wal -> wal.disabled())` to explicitly disable it in an override.
 
 ## Choose a durability mode

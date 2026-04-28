@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.hestiastore.index.directory.FsDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -139,12 +139,12 @@ public class SegmentIndexLifecycleBenchmark {
         return builder.build();
     }
 
-    private Wal resolveWal() {
+    private IndexWalConfiguration resolveWal() {
         if ("sync".equals(walMode)) {
-            return Wal.builder().withDurabilityMode(WalDurabilityMode.SYNC)
+            return IndexWalConfiguration.builder().durability(WalDurabilityMode.SYNC)
                     .build();
         }
-        return Wal.EMPTY;
+        return IndexWalConfiguration.EMPTY;
     }
 
     private void populateIndex(final SegmentIndex<Integer, String> created) {

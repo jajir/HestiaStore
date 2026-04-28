@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
-
 /**
  * Builder section for logging settings.
  *
@@ -10,11 +8,9 @@ import org.hestiastore.index.Vldtn;
  */
 public final class IndexLoggingConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private Boolean contextEnabled;
 
-    IndexLoggingConfigurationBuilder(
-            final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexLoggingConfigurationBuilder() {
     }
 
     /**
@@ -25,7 +21,11 @@ public final class IndexLoggingConfigurationBuilder<K, V> {
      */
     public IndexLoggingConfigurationBuilder<K, V> contextEnabled(
             final Boolean value) {
-        builder.setContextLoggingEnabled(value);
+        this.contextEnabled = value;
         return this;
+    }
+
+    IndexLoggingConfiguration build() {
+        return new IndexLoggingConfiguration(contextEnabled);
     }
 }

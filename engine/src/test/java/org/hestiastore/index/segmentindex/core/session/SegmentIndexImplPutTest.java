@@ -22,7 +22,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -97,8 +97,8 @@ class SegmentIndexImplPutTest {
 
     @Test
     void walSyncFailureTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        resetIndex(10, 1, IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC).build());
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
 
         try {
@@ -114,8 +114,8 @@ class SegmentIndexImplPutTest {
 
     @Test
     void walSyncFailureDuringCheckpointTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        resetIndex(10, 1, IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC).build());
         index.put(1, "one");
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
 
@@ -132,8 +132,8 @@ class SegmentIndexImplPutTest {
 
     @Test
     void walSyncFailureOnDeleteTransitionsIndexToErrorState() {
-        resetIndex(10, 1, Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.SYNC).build());
+        resetIndex(10, 1, IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC).build());
         index.put(1, "one");
         injectWalSyncFailure(index, new IllegalStateException("simulated"));
 
@@ -150,10 +150,10 @@ class SegmentIndexImplPutTest {
 
     @Test
     void walRetentionBackpressureSkipsUnsatisfiableSingleActiveSegmentCase() {
-        final Wal wal = Wal.builder()
-                .withDurabilityMode(WalDurabilityMode.ASYNC)
-                .withSegmentSizeBytes(64L * 1024L)
-                .withMaxBytesBeforeForcedCheckpoint(1L).build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.ASYNC)
+                .segmentSizeBytes(64L * 1024L)
+                .maxBytesBeforeForcedCheckpoint(1L).build();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .identity(identity -> identity.keyClass(Integer.class))//
@@ -195,11 +195,11 @@ class SegmentIndexImplPutTest {
     private void resetIndex(final int maxKeysInSegment,
             final int maxNumberOfKeysInActivePartition) {
         resetIndex(maxKeysInSegment, maxNumberOfKeysInActivePartition,
-                Wal.EMPTY);
+                IndexWalConfiguration.EMPTY);
     }
 
     private void resetIndex(final int maxKeysInSegment,
-            final int maxNumberOfKeysInActivePartition, final Wal wal) {
+            final int maxNumberOfKeysInActivePartition, final IndexWalConfiguration wal) {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
@@ -213,7 +213,7 @@ class SegmentIndexImplPutTest {
 
     private IndexConfiguration<Integer, String> buildConf(
             final int maxKeysInSegment,
-            final int maxNumberOfKeysInActivePartition, final Wal wal) {
+            final int maxNumberOfKeysInActivePartition, final IndexWalConfiguration wal) {
         return IndexConfiguration.<Integer, String>builder()//
                 .identity(identity -> identity.keyClass(Integer.class))//
                 .identity(identity -> identity.valueClass(String.class))//

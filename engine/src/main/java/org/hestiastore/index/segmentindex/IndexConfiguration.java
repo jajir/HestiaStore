@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.List;
-
 import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
-import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 
 /**
  * Immutable configuration for the segment-index layer.
@@ -20,46 +17,15 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 @SuppressWarnings("java:S107")
 public class IndexConfiguration<K, V> {
 
-    /**
-     * general Data configuration.
-     */
-    private final Class<K> keyClass;
-    private final Class<V> valueClass;
-    private final String keyTypeDescriptor;
-    private final String valueTypeDescriptor;
-
-    /*
-     * Segments configuration
-     */
-    private final Integer maxNumberOfKeysInSegmentCache;
-    private final Integer maxNumberOfKeysInSegmentChunk;
-    private final Integer maxNumberOfDeltaCacheFiles;
-    private final IndexWritePathConfiguration writePathConfiguration;
-    private final Integer legacyImmutableRunLimit;
-
-    /*
-     * Segment index configuration
-     */
-    private final String indexName;
-    private final Integer maxNumberOfKeysInSegment;
-    private final Integer maxNumberOfSegmentsInCache;
-    private final Integer numberOfSegmentMaintenanceThreads;
-    private final Integer numberOfIndexMaintenanceThreads;
-    private final Integer numberOfRegistryLifecycleThreads;
-    private final Integer indexBusyBackoffMillis;
-    private final Integer indexBusyTimeoutMillis;
-    private final Boolean backgroundMaintenanceAutoEnabled;
-
-    private final Integer bloomFilterNumberOfHashFunctions;
-    private final Integer bloomFilterIndexSizeInBytes;
-    private final Double bloomFilterProbabilityOfFalsePositive;
-
-    private final Integer diskIoBufferSize;
-    private final Boolean contextLoggingEnabled;
-    private final Wal wal;
-
-    private final List<ChunkFilterSpec> encodingChunkFilters;
-    private final List<ChunkFilterSpec> decodingChunkFilters;
+    private final IndexIdentityConfiguration<K, V> identity;
+    private final IndexSegmentConfiguration segment;
+    private final IndexRuntimeTuningConfiguration runtimeTuning;
+    private final IndexBloomFilterConfiguration bloomFilter;
+    private final IndexMaintenanceConfiguration maintenance;
+    private final IndexIoConfiguration io;
+    private final IndexLoggingConfiguration logging;
+    private final IndexWalConfiguration wal;
+    private final IndexFilterConfiguration filters;
 
     /**
      * Creates a new instance of IndexConfigurationBuilder.
@@ -72,63 +38,24 @@ public class IndexConfiguration<K, V> {
         return new IndexConfigurationBuilder<>();
     }
 
-    IndexConfiguration(final Class<K> keyClass, //
-            final Class<V> valueClass, //
-            final String keyTypeDescriptor, //
-            final String valueTypeDescriptor, //
-            final Integer maxNumberOfKeysInSegmentCache, //
-            final Integer maxNumberOfKeysInActivePartition, //
-            final Integer maxNumberOfKeysInPartitionBuffer, //
-            final Integer maxNumberOfImmutableRunsPerPartition, //
-            final Integer maxNumberOfKeysInIndexBuffer, //
-            final Integer maxNumberOfKeysInSegmentChunk, //
-            final Integer maxNumberOfDeltaCacheFiles, //
-            final Integer maxNumberOfKeysInSegment, //
-            final Integer maxNumberOfKeysInPartitionBeforeSplit, //
-            final Integer maxNumberOfSegmentsInCache, //
-            final String indexName, //
-            final Integer bloomFilterNumberOfHashFunctions, //
-            final Integer bloomFilterIndexSizeInBytes, //
-            final Double bloomFilterProbabilityOfFalsePositive, //
-            final Integer diskIoBufferSize, final Boolean contextLoggingEnabled,
-            final Integer numberOfSegmentMaintenanceThreads,
-            final Integer numberOfIndexMaintenanceThreads,
-            final Integer numberOfRegistryLifecycleThreads,
-            final Integer indexBusyBackoffMillis,
-            final Integer indexBusyTimeoutMillis,
-            final Boolean backgroundMaintenanceAutoEnabled,
-            final Wal wal,
-            final List<ChunkFilterSpec> encodingChunkFilters,
-            final List<ChunkFilterSpec> decodingChunkFilters) {
-        this.keyClass = keyClass;
-        this.valueClass = valueClass;
-        this.keyTypeDescriptor = keyTypeDescriptor;
-        this.valueTypeDescriptor = valueTypeDescriptor;
-        this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
-        this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
-        this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
-        this.writePathConfiguration = new IndexWritePathConfiguration(
-                maxNumberOfKeysInActivePartition,
-                maxNumberOfKeysInPartitionBuffer, maxNumberOfKeysInIndexBuffer,
-                maxNumberOfKeysInPartitionBeforeSplit);
-        this.legacyImmutableRunLimit = maxNumberOfImmutableRunsPerPartition;
-        this.indexName = indexName;
-        this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
-        this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
-        this.numberOfSegmentMaintenanceThreads = numberOfSegmentMaintenanceThreads;
-        this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
-        this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
-        this.indexBusyBackoffMillis = indexBusyBackoffMillis;
-        this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
-        this.backgroundMaintenanceAutoEnabled = backgroundMaintenanceAutoEnabled;
-        this.wal = Wal.orEmpty(wal);
-        this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
-        this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
-        this.bloomFilterProbabilityOfFalsePositive = bloomFilterProbabilityOfFalsePositive;
-        this.diskIoBufferSize = diskIoBufferSize;
-        this.contextLoggingEnabled = contextLoggingEnabled;
-        this.encodingChunkFilters = List.copyOf(encodingChunkFilters);
-        this.decodingChunkFilters = List.copyOf(decodingChunkFilters);
+    IndexConfiguration(final IndexIdentityConfiguration<K, V> identity,
+            final IndexSegmentConfiguration segment,
+            final IndexRuntimeTuningConfiguration runtimeTuning,
+            final IndexBloomFilterConfiguration bloomFilter,
+            final IndexMaintenanceConfiguration maintenance,
+            final IndexIoConfiguration io,
+            final IndexLoggingConfiguration logging,
+            final IndexWalConfiguration wal,
+            final IndexFilterConfiguration filters) {
+        this.identity = identity;
+        this.segment = segment;
+        this.runtimeTuning = runtimeTuning;
+        this.bloomFilter = bloomFilter;
+        this.maintenance = maintenance;
+        this.io = io;
+        this.logging = logging;
+        this.wal = IndexWalConfiguration.orEmpty(wal);
+        this.filters = filters;
     }
 
     /**
@@ -137,8 +64,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable identity view
      */
     public IndexIdentityConfiguration<K, V> identity() {
-        return new IndexIdentityConfiguration<>(indexName, keyClass, valueClass,
-                keyTypeDescriptor, valueTypeDescriptor);
+        return identity;
     }
 
     /**
@@ -147,10 +73,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable segment settings view
      */
     public IndexSegmentConfiguration segment() {
-        return new IndexSegmentConfiguration(maxNumberOfKeysInSegment,
-                maxNumberOfKeysInSegmentChunk,
-                maxNumberOfKeysInSegmentCache, maxNumberOfSegmentsInCache,
-                maxNumberOfDeltaCacheFiles);
+        return segment;
     }
 
     /**
@@ -159,7 +82,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable write-path settings
      */
     public IndexWritePathConfiguration writePath() {
-        return writePathConfiguration;
+        return runtimeTuning.writePath();
     }
 
     /**
@@ -168,10 +91,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable Bloom filter settings view
      */
     public IndexBloomFilterConfiguration bloomFilter() {
-        return new IndexBloomFilterConfiguration(
-                bloomFilterNumberOfHashFunctions,
-                bloomFilterIndexSizeInBytes,
-                bloomFilterProbabilityOfFalsePositive);
+        return bloomFilter;
     }
 
     /**
@@ -180,11 +100,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable maintenance settings view
      */
     public IndexMaintenanceConfiguration maintenance() {
-        return new IndexMaintenanceConfiguration(
-                numberOfSegmentMaintenanceThreads,
-                numberOfIndexMaintenanceThreads,
-                numberOfRegistryLifecycleThreads, indexBusyBackoffMillis,
-                indexBusyTimeoutMillis, backgroundMaintenanceAutoEnabled);
+        return maintenance;
     }
 
     /**
@@ -193,7 +109,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable I/O settings view
      */
     public IndexIoConfiguration io() {
-        return new IndexIoConfiguration(diskIoBufferSize);
+        return io;
     }
 
     /**
@@ -202,7 +118,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable logging settings view
      */
     public IndexLoggingConfiguration logging() {
-        return new IndexLoggingConfiguration(contextLoggingEnabled);
+        return logging;
     }
 
     /**
@@ -210,7 +126,7 @@ public class IndexConfiguration<K, V> {
      *
      * @return non-null WAL settings
      */
-    public Wal wal() {
+    public IndexWalConfiguration wal() {
         return wal;
     }
 
@@ -220,8 +136,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable filter settings view
      */
     public IndexFilterConfiguration filters() {
-        return new IndexFilterConfiguration(encodingChunkFilters,
-                decodingChunkFilters);
+        return filters;
     }
 
     /**
@@ -231,9 +146,7 @@ public class IndexConfiguration<K, V> {
      * @return immutable runtime tuning settings view
      */
     public IndexRuntimeTuningConfiguration runtimeTuning() {
-        return new IndexRuntimeTuningConfiguration(maxNumberOfSegmentsInCache,
-                maxNumberOfKeysInSegmentCache, writePathConfiguration,
-                legacyImmutableRunLimit);
+        return runtimeTuning;
     }
 
     /**

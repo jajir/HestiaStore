@@ -1,12 +1,11 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.Vldtn;
+
 /**
- * Builder section for WAL settings.
- *
- * @param <K> key type
- * @param <V> value type
+ * Fluent builder for {@link IndexWalConfiguration}.
  */
-public final class IndexWalConfigurationBuilder<K, V> {
+public final class IndexWalConfigurationBuilder {
 
     private Boolean enabled;
     private WalDurabilityMode durabilityMode;
@@ -17,15 +16,18 @@ public final class IndexWalConfigurationBuilder<K, V> {
     private WalCorruptionPolicy corruptionPolicy;
     private Boolean epochSupport;
 
-    IndexWalConfigurationBuilder() {
+    /**
+     * Creates a new WAL configuration builder.
+     */
+    public IndexWalConfigurationBuilder() {
     }
 
     /**
      * Enables WAL with default values unless overridden.
      *
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> enabled() {
+    public IndexWalConfigurationBuilder enabled() {
         this.enabled = Boolean.TRUE;
         return this;
     }
@@ -33,9 +35,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
     /**
      * Disables WAL.
      *
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> disabled() {
+    public IndexWalConfigurationBuilder disabled() {
         this.enabled = Boolean.FALSE;
         return this;
     }
@@ -44,10 +46,12 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Copies an existing WAL configuration into this section.
      *
      * @param value WAL configuration
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> configuration(final Wal value) {
-        final Wal wal = Wal.orEmpty(value);
+    public IndexWalConfigurationBuilder configuration(
+            final IndexWalConfiguration value) {
+        final IndexWalConfiguration wal =
+                IndexWalConfiguration.orEmpty(value);
         if (!wal.isEnabled()) {
             return disabled();
         }
@@ -69,9 +73,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets WAL durability mode.
      *
      * @param value durability mode
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> durability(
+    public IndexWalConfigurationBuilder durability(
             final WalDurabilityMode value) {
         markEnabled();
         this.durabilityMode = value;
@@ -82,9 +86,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets WAL segment size in bytes.
      *
      * @param value segment size in bytes
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> segmentSizeBytes(
+    public IndexWalConfigurationBuilder segmentSizeBytes(
             final long value) {
         markEnabled();
         this.segmentSizeBytes = Long.valueOf(value);
@@ -95,9 +99,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets group sync delay in milliseconds.
      *
      * @param value group sync delay
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> groupSyncDelayMillis(
+    public IndexWalConfigurationBuilder groupSyncDelayMillis(
             final int value) {
         markEnabled();
         this.groupSyncDelayMillis = Integer.valueOf(value);
@@ -108,9 +112,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets group sync max batch bytes.
      *
      * @param value max batch bytes
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> groupSyncMaxBatchBytes(
+    public IndexWalConfigurationBuilder groupSyncMaxBatchBytes(
             final int value) {
         markEnabled();
         this.groupSyncMaxBatchBytes = Integer.valueOf(value);
@@ -121,9 +125,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets max retained WAL bytes before forced checkpoint.
      *
      * @param value max bytes before forced checkpoint
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> maxBytesBeforeForcedCheckpoint(
+    public IndexWalConfigurationBuilder maxBytesBeforeForcedCheckpoint(
             final long value) {
         markEnabled();
         this.maxBytesBeforeForcedCheckpoint = Long.valueOf(value);
@@ -134,9 +138,9 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets corruption handling policy.
      *
      * @param value corruption policy
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> corruptionPolicy(
+    public IndexWalConfigurationBuilder corruptionPolicy(
             final WalCorruptionPolicy value) {
         markEnabled();
         this.corruptionPolicy = value;
@@ -147,51 +151,59 @@ public final class IndexWalConfigurationBuilder<K, V> {
      * Sets reserved epoch support flag.
      *
      * @param value epoch support flag
-     * @return this section builder
+     * @return this builder
      */
-    public IndexWalConfigurationBuilder<K, V> epochSupport(
+    public IndexWalConfigurationBuilder epochSupport(
             final boolean value) {
         markEnabled();
         this.epochSupport = Boolean.valueOf(value);
         return this;
     }
 
-    void applyTo(final IndexConfigurationBuilder<K, V> builder) {
-        if (enabled == null) {
-            return;
+    /**
+     * Builds immutable WAL settings.
+     *
+     * @return built WAL settings
+     */
+    public IndexWalConfiguration build() {
+        if (Boolean.FALSE.equals(enabled)) {
+            return IndexWalConfiguration.EMPTY;
         }
-        if (!enabled.booleanValue()) {
-            builder.setWal(Wal.EMPTY);
-            return;
-        }
-        WalBuilder walBuilder = Wal.builder();
-        if (durabilityMode != null) {
-            walBuilder = walBuilder.withDurabilityMode(durabilityMode);
-        }
-        if (segmentSizeBytes != null) {
-            walBuilder = walBuilder
-                    .withSegmentSizeBytes(segmentSizeBytes.longValue());
-        }
-        if (groupSyncDelayMillis != null) {
-            walBuilder = walBuilder.withGroupSyncDelayMillis(
-                    groupSyncDelayMillis.intValue());
-        }
-        if (groupSyncMaxBatchBytes != null) {
-            walBuilder = walBuilder.withGroupSyncMaxBatchBytes(
-                    groupSyncMaxBatchBytes.intValue());
-        }
-        if (maxBytesBeforeForcedCheckpoint != null) {
-            walBuilder = walBuilder.withMaxBytesBeforeForcedCheckpoint(
-                    maxBytesBeforeForcedCheckpoint.longValue());
-        }
-        if (corruptionPolicy != null) {
-            walBuilder = walBuilder.withCorruptionPolicy(corruptionPolicy);
-        }
-        if (epochSupport != null) {
-            walBuilder = walBuilder.withEpochSupport(
-                    epochSupport.booleanValue());
-        }
-        builder.setWal(walBuilder.build());
+        final WalDurabilityMode effectiveDurabilityMode = durabilityMode == null
+                ? IndexWalConfiguration.DEFAULT_DURABILITY_MODE
+                : durabilityMode;
+        final long effectiveSegmentSizeBytes = segmentSizeBytes == null
+                ? IndexWalConfiguration.DEFAULT_SEGMENT_SIZE_BYTES
+                : segmentSizeBytes.longValue();
+        final int effectiveGroupSyncDelayMillis = groupSyncDelayMillis == null
+                ? IndexWalConfiguration.DEFAULT_GROUP_SYNC_DELAY_MILLIS
+                : groupSyncDelayMillis.intValue();
+        final int effectiveGroupSyncMaxBatchBytes = groupSyncMaxBatchBytes == null
+                ? IndexWalConfiguration.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES
+                : groupSyncMaxBatchBytes.intValue();
+        final long effectiveMaxBytesBeforeForcedCheckpoint = maxBytesBeforeForcedCheckpoint == null
+                ? IndexWalConfiguration.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT
+                : maxBytesBeforeForcedCheckpoint.longValue();
+        final WalCorruptionPolicy effectiveCorruptionPolicy = corruptionPolicy == null
+                ? IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY
+                : corruptionPolicy;
+        final boolean effectiveEpochSupport = epochSupport != null
+                && epochSupport.booleanValue();
+        Vldtn.requireTrue(effectiveSegmentSizeBytes > 0L,
+                "segmentSizeBytes must be greater than 0");
+        Vldtn.requireTrue(effectiveMaxBytesBeforeForcedCheckpoint > 0L,
+                "maxBytesBeforeForcedCheckpoint must be greater than 0");
+        return new IndexWalConfiguration(true, effectiveDurabilityMode,
+                effectiveSegmentSizeBytes,
+                Vldtn.requireGreaterThanOrEqualToZero(
+                        effectiveGroupSyncDelayMillis,
+                        "groupSyncDelayMillis"),
+                Vldtn.requireGreaterThanZero(effectiveGroupSyncMaxBatchBytes,
+                        "groupSyncMaxBatchBytes"),
+                effectiveMaxBytesBeforeForcedCheckpoint,
+                Vldtn.requireNonNull(effectiveCorruptionPolicy,
+                        "corruptionPolicy"),
+                effectiveEpochSupport);
     }
 
     private void markEnabled() {

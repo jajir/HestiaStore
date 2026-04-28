@@ -13,7 +13,7 @@ import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 
@@ -225,23 +225,23 @@ public class IndexConfigurationStorage<K, V> {
             builder.wal(wal -> wal
                     .durability(resolveEnum(propsView,
                             PROP_WAL_DURABILITY_MODE,
-                            Wal.DEFAULT_DURABILITY_MODE,
+                            IndexWalConfiguration.DEFAULT_DURABILITY_MODE,
                             WalDurabilityMode.class))
                     .segmentSizeBytes(getOrDefaultLong(propsView,
                             PROP_WAL_SEGMENT_SIZE_BYTES,
-                            Wal.DEFAULT_SEGMENT_SIZE_BYTES))
+                            IndexWalConfiguration.DEFAULT_SEGMENT_SIZE_BYTES))
                     .groupSyncDelayMillis(getOrDefault(propsView,
                             PROP_WAL_GROUP_SYNC_DELAY_MILLIS,
-                            Wal.DEFAULT_GROUP_SYNC_DELAY_MILLIS))
+                            IndexWalConfiguration.DEFAULT_GROUP_SYNC_DELAY_MILLIS))
                     .groupSyncMaxBatchBytes(getOrDefault(propsView,
                             PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES,
-                            Wal.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES))
+                            IndexWalConfiguration.DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES))
                     .maxBytesBeforeForcedCheckpoint(getOrDefaultLong(propsView,
                             PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
-                            Wal.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT))
+                            IndexWalConfiguration.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT))
                     .corruptionPolicy(resolveEnum(propsView,
                             PROP_WAL_CORRUPTION_POLICY,
-                            Wal.DEFAULT_CORRUPTION_POLICY,
+                            IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY,
                             WalCorruptionPolicy.class))
                     .epochSupport(getOrDefaultBoolean(propsView,
                             PROP_WAL_EPOCH_SUPPORT, false)));
@@ -358,7 +358,7 @@ public class IndexConfigurationStorage<K, V> {
         writer.setString(PROP_DECODING_CHUNK_FILTERS,
                 ChunkFilterSpecCodec
                         .serialize(filters.decodingChunkFilterSpecs()));
-        final Wal wal = Wal.orEmpty(indexConfiguration.wal());
+        final IndexWalConfiguration wal = IndexWalConfiguration.orEmpty(indexConfiguration.wal());
         writer.setBoolean(PROP_WAL_ENABLED, wal.isEnabled());
         writer.setString(PROP_WAL_DURABILITY_MODE,
                 wal.getDurabilityMode().name());

@@ -17,7 +17,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
@@ -170,8 +170,8 @@ class SegmentIndexRuntimeGraphBuilderTest {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
                 .io(io -> io.diskBufferSizeBytes(1024))
-                .wal(wal -> wal.configuration(Wal.builder()
-                        .withDurabilityMode(WalDurabilityMode.SYNC)
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
+                        .durability(WalDurabilityMode.SYNC)
                         .build()))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))

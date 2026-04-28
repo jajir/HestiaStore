@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.wal;
 import java.util.List;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.slf4j.Logger;
 
@@ -11,7 +11,7 @@ final class WalRecoveryManager<K, V> {
 
     private static final int BUFFER_SIZE = 8 * 1024;
 
-    private final Wal wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
     private final WalRecordCodec<K, V> recordCodec;
@@ -19,7 +19,7 @@ final class WalRecoveryManager<K, V> {
     private final WalRuntimeMetrics metrics;
     private final Logger logger;
 
-    WalRecoveryManager(final Wal wal, final WalStorage storage,
+    WalRecoveryManager(final IndexWalConfiguration wal, final WalStorage storage,
             final WalMetadataCatalog metadataCatalog,
             final WalRecordCodec<K, V> recordCodec,
             final WalSegmentCatalog segmentCatalog,
