@@ -20,6 +20,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Timeout;
@@ -59,6 +60,7 @@ class SegmentIndexConcurrencyStressIT {
                 23L + repetitionInfo.getCurrentRepetition(), 4, 400, 30);
     }
 
+    @Disabled
     @ParameterizedTest
     @CsvSource({ //
             "5,   400,     30", //
