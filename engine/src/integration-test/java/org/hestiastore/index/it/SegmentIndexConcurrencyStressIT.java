@@ -37,8 +37,7 @@ import org.junit.jupiter.params.provider.CsvSource;
  * hold the read lock, rotations take the write lock. The test is deterministic
  * per repetition seed and fails on exceptions or timeouts.
  */
-@Timeout(value = 300, unit = TimeUnit.SECONDS,
-        threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+@Timeout(value = 300, unit = TimeUnit.SECONDS, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 class SegmentIndexConcurrencyStressIT {
 
     private static final long RETRY_TIMEOUT_MILLIS = 5_000L;
@@ -377,7 +376,8 @@ class SegmentIndexConcurrencyStressIT {
                         .indexThreads(Math.max(1, Math.min(cpuThreads, 2)))
                         .registryLifecycleThreads(
                                 Math.max(1, Math.min(cpuThreads, 2)))
-                        .busyTimeoutMillis(120_000))//
+                        .busyTimeoutMillis(120_000)//
+                        .busyBackoffMillis(100))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
                         .legacyImmutableRunLimit(6)
                         .maintenanceWriteCacheKeyLimit(8_192)
