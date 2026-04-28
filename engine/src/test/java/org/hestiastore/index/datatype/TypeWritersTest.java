@@ -264,7 +264,6 @@ class TypeWritersTest {
         private int byteWrites = 0;
         private int arrayWrites = 0;
         private int rangeWrites = 0;
-        private int lastArrayLength = -1;
         private int lastRangeOffset = -1;
         private int lastRangeLength = -1;
 
@@ -276,7 +275,6 @@ class TypeWritersTest {
         @Override
         public void write(final byte[] bytes) {
             arrayWrites++;
-            lastArrayLength = bytes.length;
         }
 
         @Override

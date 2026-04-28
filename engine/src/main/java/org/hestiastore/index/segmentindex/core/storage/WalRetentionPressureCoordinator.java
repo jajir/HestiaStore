@@ -93,7 +93,7 @@ final class WalRetentionPressureCoordinator<K, V> {
                 logger.warn(
                         "event=wal_retention_pressure_start retainedBytes={} threshold={} action=force_checkpoint_backpressure",
                         walRuntime.retainedBytes(),
-                        conf.getWal().getMaxBytesBeforeForcedCheckpoint());
+                        conf.wal().getMaxBytesBeforeForcedCheckpoint());
                 return;
             }
         }
@@ -109,7 +109,7 @@ final class WalRetentionPressureCoordinator<K, V> {
         logger.info(
                 "event=wal_retention_pressure_cleared retainedBytes={} threshold={} checkpointAttempts={} elapsedMillis={}",
                 walRuntime.retainedBytes(),
-                conf.getWal().getMaxBytesBeforeForcedCheckpoint(),
+                conf.wal().getMaxBytesBeforeForcedCheckpoint(),
                 Math.max(0, checkpointAttempts), Math.max(0L, elapsedMillis));
     }
 }

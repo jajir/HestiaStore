@@ -15,7 +15,6 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 
@@ -38,11 +37,11 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
      * Creates a concurrent index implementation bound to the given directory
      * and type descriptors.
      *
-     * @param directoryFacade directory facade
-     * @param keyTypeDescriptor key type descriptor
+     * @param directoryFacade     directory facade
+     * @param keyTypeDescriptor   key type descriptor
      * @param valueTypeDescriptor value type descriptor
-     * @param conf configuration for the index
-     * @param executorRegistry shared executor registry
+     * @param conf                configuration for the index
+     * @param executorRegistry    shared executor registry
      */
     public IndexInternalConcurrent(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,

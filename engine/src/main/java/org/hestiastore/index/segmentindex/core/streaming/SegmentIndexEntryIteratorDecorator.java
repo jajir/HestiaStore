@@ -41,7 +41,7 @@ public final class SegmentIndexEntryIteratorDecorator<K, V> {
     }
 
     private boolean isContextLoggingEnabled() {
-        final Boolean enabled = conf.isContextLoggingEnabled();
+        final Boolean enabled = conf.logging().contextEnabled();
         return enabled != null && enabled;
     }
 }

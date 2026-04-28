@@ -37,40 +37,40 @@ class IndexConfigurationStorageWalTest {
                 .build();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(typeDescriptor)//
-                .withValueTypeDescriptor(typeDescriptor)//
-                .withName("wal-storage-roundtrip")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(16)//
-                .withMaxNumberOfKeysInActivePartition(8)//
-                .withMaxNumberOfKeysInPartitionBuffer(12)//
-                .withMaxNumberOfKeysInSegmentChunk(4)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withMaxNumberOfKeysInSegment(32)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withBloomFilterNumberOfHashFunctions(2)//
-                .withBloomFilterIndexSizeInBytes(2048)//
-                .withBloomFilterProbabilityOfFalsePositive(0.02D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withWal(wal)//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(typeDescriptor))//
+                .identity(identity -> identity.valueTypeDescriptor(typeDescriptor))//
+                .identity(identity -> identity.name("wal-storage-roundtrip"))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(16))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(8))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(12))//
+                .segment(segment -> segment.chunkKeyLimit(4))//
+                .segment(segment -> segment.deltaCacheFileLimit(2))//
+                .segment(segment -> segment.maxKeys(32))//
+                .segment(segment -> segment.cachedSegmentLimit(8))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(2))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(2048))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.02D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .wal(walBuilder -> walBuilder.configuration(wal))//
                 .build();
 
         storage.save(conf);
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertTrue(loaded.getWal().isEnabled());
+        assertTrue(loaded.wal().isEnabled());
         assertEquals(WalDurabilityMode.SYNC,
-                loaded.getWal().getDurabilityMode());
-        assertEquals(2048L, loaded.getWal().getSegmentSizeBytes());
-        assertEquals(7, loaded.getWal().getGroupSyncDelayMillis());
-        assertEquals(512, loaded.getWal().getGroupSyncMaxBatchBytes());
+                loaded.wal().getDurabilityMode());
+        assertEquals(2048L, loaded.wal().getSegmentSizeBytes());
+        assertEquals(7, loaded.wal().getGroupSyncDelayMillis());
+        assertEquals(512, loaded.wal().getGroupSyncMaxBatchBytes());
         assertEquals(4096L,
-                loaded.getWal().getMaxBytesBeforeForcedCheckpoint());
+                loaded.wal().getMaxBytesBeforeForcedCheckpoint());
         assertEquals(WalCorruptionPolicy.FAIL_FAST,
-                loaded.getWal().getCorruptionPolicy());
-        assertTrue(loaded.getWal().isEpochSupport());
+                loaded.wal().getCorruptionPolicy());
+        assertTrue(loaded.wal().isEpochSupport());
     }
 
     @Test
@@ -102,7 +102,7 @@ class IndexConfigurationStorageWalTest {
 
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertSame(Wal.EMPTY, loaded.getWal());
-        assertFalse(loaded.getWal().isEnabled());
+        assertSame(Wal.EMPTY, loaded.wal());
+        assertFalse(loaded.wal().isEnabled());
     }
 }

@@ -136,38 +136,41 @@ class SegmentFactoryTest {
         final AtomicInteger sequence = new AtomicInteger();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(10)
-                .withMaxNumberOfKeysInSegmentChunk(4)
-                .withMaxNumberOfDeltaCacheFiles(2)
-                .withMaxNumberOfKeysInSegment(50)
-                .withMaxNumberOfSegmentsInCache(5)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(128)
-                .withBloomFilterProbabilityOfFalsePositive(0.01)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withBackgroundMaintenanceAutoEnabled(false)
-                .withNumberOfSegmentMaintenanceThreads(1)
-                .withNumberOfIndexMaintenanceThreads(1)
-                .withIndexBusyBackoffMillis(1)
-                .withIndexBusyTimeoutMillis(1000)
-                .withContextLoggingEnabled(false)
-                .withName("segment-factory-supplier-test")
-                .withEncodingFilterRegistrations(List.of())
-                .withDecodingFilterRegistrations(List.of())
-                .addEncodingFilter(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        ChunkFilterSpec.ofProvider("test")
-                                .withParameter("keyRef", "orders-main"))
-                .addDecodingFilter(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        ChunkFilterSpec.ofProvider("test")
-                                .withParameter("keyRef", "orders-main"))
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("segment-factory-supplier-test"))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(10))
+                .segment(segment -> segment.chunkKeyLimit(4)
+                        .deltaCacheFileLimit(2).maxKeys(50)
+                        .cachedSegmentLimit(5))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)
+                        .indexSizeBytes(128)
+                        .falsePositiveProbability(0.01))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false).segmentThreads(1)
+                        .indexThreads(1).busyBackoffMillis(1)
+                        .busyTimeoutMillis(1000))
+                .logging(logging -> logging.contextEnabled(false))
+                .filters(filters -> filters.encodingFilterRegistrations(List.of())
+                        .decodingFilterRegistrations(List.of())
+                        .addEncodingFilter(
+                                () -> new TrackingChunkFilter(
+                                        sequence.incrementAndGet()),
+                                ChunkFilterSpec.ofProvider("test")
+                                        .withParameter("keyRef",
+                                                "orders-main"))
+                        .addDecodingFilter(
+                                () -> new TrackingChunkFilter(
+                                        sequence.incrementAndGet()),
+                                ChunkFilterSpec.ofProvider("test")
+                                        .withParameter("keyRef",
+                                                "orders-main")))
                 .build();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
@@ -245,30 +248,33 @@ class SegmentFactoryTest {
 
     private static IndexConfiguration<Integer, String> newConfiguration() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInPartitionBuffer(10)//
-                .withMaxNumberOfKeysInSegmentChunk(4)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withMaxNumberOfKeysInSegment(50)//
-                .withMaxNumberOfSegmentsInCache(5)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(128)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withIndexBusyBackoffMillis(1)//
-                .withIndexBusyTimeoutMillis(1000)//
-                .withContextLoggingEnabled(false)//
-                .withName("segment-factory-test")//
+                .identity(identity -> identity.keyClass(Integer.class)//
+                        .valueClass(String.class)//
+                        .keyTypeDescriptor(new TypeDescriptorInteger())//
+                        .valueTypeDescriptor(new TypeDescriptorShortString())//
+                        .name("segment-factory-test"))//
+                .segment(segment -> segment.cacheKeyLimit(10))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(10))//
+                .segment(segment -> segment.chunkKeyLimit(4)//
+                        .deltaCacheFileLimit(2)//
+                        .maxKeys(50)//
+                        .cachedSegmentLimit(5))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)//
+                        .indexSizeBytes(128)//
+                        .falsePositiveProbability(0.01))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .filters(filters -> filters
+                        .encodingFilters(List.of(new ChunkFilterDoNothing()))//
+                        .decodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false)//
+                        .segmentThreads(1)//
+                        .indexThreads(1)//
+                        .busyBackoffMillis(1)//
+                        .busyTimeoutMillis(1000))//
+                .logging(logging -> logging.contextEnabled(false))//
                 .build();
     }
 

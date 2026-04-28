@@ -115,8 +115,8 @@ class SegmentStreamingServiceImplTest {
                 .make(List.<Entry<String, String>>of().iterator());
         when(stableSegmentGateway.openIterator(busySegmentId,
                 SegmentIteratorIsolation.FAIL_FAST))
-                        .thenReturn(StableSegmentOperationResult.busy(),
-                                StableSegmentOperationResult.ok(iterator));
+                        .thenReturn(StableSegmentOperationResult.busy())
+                        .thenReturn(StableSegmentOperationResult.ok(iterator));
 
         assertSame(iterator, service.openIterator(busySegmentId,
                 SegmentIteratorIsolation.FAIL_FAST));

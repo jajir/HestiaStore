@@ -29,29 +29,31 @@ public final class RuntimeTuningState {
 
     public static <K, V> RuntimeTuningState fromConfiguration(
             final IndexConfiguration<K, V> configuration) {
+        final var tuning = configuration.runtimeTuning();
+        final var writePath = tuning.writePath();
         final EnumMap<RuntimeSettingKey, Integer> baselineValues = new EnumMap<>(
                 RuntimeSettingKey.class);
         baselineValues.put(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                configuration.getMaxNumberOfSegmentsInCache());
+                tuning.maxSegmentsInCache());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
-                configuration.getMaxNumberOfKeysInSegmentCache());
+                tuning.segmentCacheKeyLimit());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                configuration.getSegmentWriteCacheKeyLimit());
+                writePath.segmentWriteCacheKeyLimit());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
-                configuration.getMaxNumberOfImmutableRunsPerPartition());
+                tuning.legacyImmutableRunLimit());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                configuration.getSegmentWriteCacheKeyLimitDuringMaintenance());
+                writePath.segmentWriteCacheKeyLimitDuringMaintenance());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
-                configuration.getIndexBufferedWriteKeyLimit());
+                writePath.indexBufferedWriteKeyLimit());
         baselineValues.put(
                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                configuration.getSegmentSplitKeyThreshold());
-        return new RuntimeTuningState(configuration.getIndexName(),
+                writePath.segmentSplitKeyThreshold());
+        return new RuntimeTuningState(configuration.identity().name(),
                 baselineValues);
     }
 

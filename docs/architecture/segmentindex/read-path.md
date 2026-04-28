@@ -48,7 +48,7 @@ segment data:
    “not stored” → absent.
 1. Sparse index ("scarce index"): returns a chunk start position for keys ≥
    query.
-1. Local scan: within at most N keys (`maxNumberOfKeysInSegmentChunk`) starting
+1. Local scan: within at most N keys (`segment().chunkKeyLimit()`) starting
    at that chunk, compare keys in ascending order and stop as soon as the
    target is found or passed.
 1. If the sparse index pointed into the file but no exact key was found, mark
@@ -97,7 +97,7 @@ Read-after-write is segment-local:
 - Bloom filter probe: O(k) where k is number of hash functions; no I/O
 - Sparse index probe: in-memory list search over a small sample set
 - Local scan: sequential read within one chunk window of up to
-  `maxNumberOfKeysInSegmentChunk` entries
+  `segment().chunkKeyLimit()` entries
 - Iterators: sequential over chunks; minimal seeks due to chunked layout
 
 These choices keep random access bounded and predictable, with sequential I/O
@@ -105,11 +105,12 @@ for scans.
 
 ## Configuration Knobs Affecting Reads
 
-- `maxNumberOfKeysInSegmentChunk` — upper bound of keys per chunk; also the
+- `segment().chunkKeyLimit()` — upper bound of keys per chunk; also the
   window size for a local scan from the sparse-index pointer
-- Bloom filter parameters — `numberOfHashFunctions`, `indexSizeInBytes`,
-  `falsePositiveProbability`
-- `diskIoBufferSize` — affects chunk and data block I/O buffering
+- Bloom filter parameters — `bloomFilter().hashFunctions()`,
+  `bloomFilter().indexSizeBytes()`,
+  `bloomFilter().falsePositiveProbability()`
+- `io().diskBufferSizeBytes()` — affects chunk and data block I/O buffering
 - Encoding/decoding filters — enable CRC32, magic number and optional Snappy
   compression on read/write paths
 

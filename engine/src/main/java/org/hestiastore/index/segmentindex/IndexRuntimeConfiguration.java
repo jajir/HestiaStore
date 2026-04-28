@@ -99,7 +99,7 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @return immutable encoding filter specs
      */
     public List<ChunkFilterSpec> getEncodingChunkFilterSpecs() {
-        return configuration.getEncodingChunkFilterSpecs();
+        return configuration.filters().encodingChunkFilterSpecs();
     }
 
     /**
@@ -108,7 +108,7 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @return immutable decoding filter specs
      */
     public List<ChunkFilterSpec> getDecodingChunkFilterSpecs() {
-        return configuration.getDecodingChunkFilterSpecs();
+        return configuration.filters().decodingChunkFilterSpecs();
     }
 
     /**
@@ -155,7 +155,7 @@ public final class IndexRuntimeConfiguration<K, V> {
             final IndexConfiguration<K, V> configuration,
             final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
         return configuration
-                .getEncodingChunkFilterSpecs().stream().map(
+                .filters().encodingChunkFilterSpecs().stream().map(
                         spec -> ChunkFilterRegistration.of(spec,
                                 chunkFilterProviderRegistry
                                         .createEncodingSupplier(spec)))
@@ -166,7 +166,7 @@ public final class IndexRuntimeConfiguration<K, V> {
             final IndexConfiguration<K, V> configuration,
             final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
         return configuration
-                .getDecodingChunkFilterSpecs().stream().map(
+                .filters().decodingChunkFilterSpecs().stream().map(
                         spec -> ChunkFilterRegistration.of(spec,
                                 chunkFilterProviderRegistry
                                         .createDecodingSupplier(spec)))

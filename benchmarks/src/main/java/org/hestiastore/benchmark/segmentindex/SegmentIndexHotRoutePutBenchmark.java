@@ -76,33 +76,28 @@ public class SegmentIndexHotRoutePutBenchmark {
 
     private IndexConfiguration<Integer, String> buildConfiguration() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withName("segment-index-hot-route-put-benchmark")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(512)//
-                // Keep the legacy-named routed write-cache limit above the hot
-                // key space so this benchmark measures the hot write path
-                // instead of maintenance churn.
-                .withMaxNumberOfKeysInActivePartition(
-                        ROUTED_WRITE_CACHE_CAPACITY)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(2048)//
-                .withMaxNumberOfKeysInIndexBuffer(8192)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(1_000_000)//
-                .withMaxNumberOfKeysInSegmentChunk(64)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(4096)//
-                .withBloomFilterNumberOfHashFunctions(2)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(2)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(false)//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(KEY_DESCRIPTOR)
+                        .valueTypeDescriptor(VALUE_DESCRIPTOR)
+                        .name("segment-index-hot-route-put-benchmark"))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(512)
+                        .chunkKeyLimit(64).cachedSegmentLimit(8)
+                        .deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(
+                                ROUTED_WRITE_CACHE_CAPACITY)
+                        .legacyImmutableRunLimit(2)
+                        .maintenanceWriteCacheKeyLimit(2048)
+                        .indexBufferedWriteKeyLimit(8192)
+                        .segmentSplitKeyThreshold(1_000_000))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4096)
+                        .hashFunctions(2).falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                        .indexThreads(2).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(false))//
                 .build();
     }
 

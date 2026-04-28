@@ -9,9 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntime;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

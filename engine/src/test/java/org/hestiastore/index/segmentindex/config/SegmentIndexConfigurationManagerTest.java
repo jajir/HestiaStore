@@ -42,26 +42,27 @@ class SegmentIndexConfigurationManagerTest {
             .getSimpleName();
     private static final IndexConfiguration<Long, String> CONFIG = IndexConfiguration
             .<Long, String>builder()//
-            .withKeyClass(Long.class) //
-            .withValueClass(String.class)//
-            .withKeyTypeDescriptor(TD_LONG)//
-            .withValueTypeDescriptor(TD_STRING)//
-            .withName("test_index")//
-            .withContextLoggingEnabled(false)//
-            .withMaxNumberOfKeysInSegmentCache(11)//
-            .withMaxNumberOfKeysInActivePartition(5)//
-            .withMaxNumberOfKeysInSegmentChunk(33)//
-            .withMaxNumberOfDeltaCacheFiles(7)//
-            .withMaxNumberOfKeysInSegment(44)//
-            .withMaxNumberOfSegmentsInCache(66)//
-            .withDiskIoBufferSizeInBytes(1024)//
-            .withBloomFilterIndexSizeInBytes(77)//
-            .withBloomFilterNumberOfHashFunctions(88)//
-            .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
-                    ChunkFilterMagicNumberWriting.class))//
-            .withDecodingFilterClasses(
-                    List.of(ChunkFilterMagicNumberValidation.class,
-                            ChunkFilterCrc32Validation.class))//
+            .identity(identity -> identity.keyClass(Long.class)) //
+            .identity(identity -> identity.valueClass(String.class))//
+            .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+            .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+            .identity(identity -> identity.name("test_index"))//
+            .logging(logging -> logging.contextEnabled(false))//
+            .segment(segment -> segment.cacheKeyLimit(11))//
+            .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+            .segment(segment -> segment.chunkKeyLimit(33))//
+            .segment(segment -> segment.deltaCacheFileLimit(7))//
+            .segment(segment -> segment.maxKeys(44))//
+            .segment(segment -> segment.cachedSegmentLimit(66))//
+            .io(io -> io.diskBufferSizeBytes(1024))//
+            .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(77))//
+            .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(88))//
+            .filters(filters -> filters.encodingFilterClasses(
+                    List.of(ChunkFilterCrc32Writing.class,
+                            ChunkFilterMagicNumberWriting.class)))//
+            .filters(filters -> filters.decodingFilterClasses(List.of(
+                    ChunkFilterMagicNumberValidation.class,
+                    ChunkFilterCrc32Validation.class)))//
             .build();
 
     @Mock
@@ -73,7 +74,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_key_class_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withValueClass(String.class)//
+                .identity(identity -> identity.valueClass(String.class))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -86,7 +87,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_value_class_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
+                .identity(identity -> identity.keyClass(Long.class))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -99,8 +100,8 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_index_name_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -114,9 +115,9 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_index_name_is_blank() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("   ")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("   "))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -130,10 +131,10 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_key_type_descriptor_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -147,11 +148,11 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_key_type_descriptor_is_empty() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor("")//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(""))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -165,11 +166,11 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_value_type_descriptor_is_empty() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor("")//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(""))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -183,11 +184,11 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_log_enabled_missing() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -201,12 +202,12 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_maxNumberOfKeysInSegment_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .logging(logging -> logging.contextEnabled(true))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -220,13 +221,13 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_maxNumberOfKeysInSegment_is_less_than_4() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegment(3)//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .segment(segment -> segment.maxKeys(3))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -240,13 +241,13 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_maxNumberOfSegmentsInCache_is_null() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegment(4)//
+                .identity(identity -> identity.keyClass(Long.class)) //
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .segment(segment -> segment.maxKeys(4))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -259,14 +260,14 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_maxNumberOfSegmentsInCache_is_less_than_3() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class) //
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInSegment(4)//
-                .withMaxNumberOfSegmentsInCache(1)//
+                .identity(identity -> identity.keyClass(Long.class)) //
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .segment(segment -> segment.maxKeys(4))//
+                .segment(segment -> segment.cachedSegmentLimit(1))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -279,22 +280,22 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_disk_reading_cache_size_in_not_1024() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInSegmentChunk(33)//
-                .withMaxNumberOfDeltaCacheFiles(7)//
-                .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfSegmentsInCache(66)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withBloomFilterIndexSizeInBytes(77)//
-                .withBloomFilterNumberOfHashFunctions(88)//
-                .withDiskIoBufferSizeInBytes(1000)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .segment(segment -> segment.chunkKeyLimit(33))//
+                .segment(segment -> segment.deltaCacheFileLimit(7))//
+                .segment(segment -> segment.maxKeys(44))//
+                .segment(segment -> segment.cachedSegmentLimit(66))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(77))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(88))//
+                .io(io -> io.diskBufferSizeBytes(1000))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -310,21 +311,21 @@ class SegmentIndexConfigurationManagerTest {
     void test_save_disk_reading_cache_size_in_0() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInSegmentChunk(33)//
-                .withMaxNumberOfDeltaCacheFiles(7)//
-                .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfSegmentsInCache(66)//
-                .withDiskIoBufferSizeInBytes(0)//
-                .withBloomFilterIndexSizeInBytes(77)//
-                .withBloomFilterNumberOfHashFunctions(88)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .segment(segment -> segment.chunkKeyLimit(33))//
+                .segment(segment -> segment.deltaCacheFileLimit(7))//
+                .segment(segment -> segment.maxKeys(44))//
+                .segment(segment -> segment.cachedSegmentLimit(66))//
+                .io(io -> io.diskBufferSizeBytes(0))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(77))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(88))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -339,9 +340,10 @@ class SegmentIndexConfigurationManagerTest {
     @Test
     void test_save_encoding_filters_empty() {
         final IndexConfiguration<Long, String> config = baseBuilder()
-                .withEncodingFilters(List.<ChunkFilter>of())
-                .withDecodingFilterClasses(
-                        List.of(ChunkFilterMagicNumberValidation.class))
+                .filters(filters -> filters
+                        .encodingFilters(List.<ChunkFilter>of()))
+                .filters(filters -> filters.decodingFilterClasses(
+                        List.of(ChunkFilterMagicNumberValidation.class)))
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
@@ -354,9 +356,11 @@ class SegmentIndexConfigurationManagerTest {
     @Test
     void test_save_decoding_filters_empty() {
         final IndexConfiguration<Long, String> config = baseBuilder()
-                .withEncodingFilterClasses(
-                        List.of(ChunkFilterCrc32Writing.class))
-                .withDecodingFilters(List.<ChunkFilter>of()).build();
+                .filters(filters -> filters.encodingFilterClasses(
+                        List.of(ChunkFilterCrc32Writing.class)))
+                .filters(filters -> filters
+                        .decodingFilters(List.<ChunkFilter>of()))
+                .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
                 () -> manager.save(config));
@@ -372,20 +376,26 @@ class SegmentIndexConfigurationManagerTest {
         final IndexConfiguration<Long, String> withDefaults = manager
                 .applyDefaults(config);
 
-        assertEquals(2, withDefaults.getEncodingChunkFilters().size());
+        assertEquals(2, withDefaults.resolveRuntimeConfiguration()
+                .getEncodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                withDefaults.getEncodingChunkFilters().get(0).getClass());
+                withDefaults.resolveRuntimeConfiguration()
+                        .getEncodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                withDefaults.getEncodingChunkFilters().get(1).getClass());
+                withDefaults.resolveRuntimeConfiguration()
+                        .getEncodingChunkFilters().get(1).getClass());
 
-        assertEquals(2, withDefaults.getDecodingChunkFilters().size());
+        assertEquals(2, withDefaults.resolveRuntimeConfiguration()
+                .getDecodingChunkFilters().size());
         assertEquals(ChunkFilterMagicNumberValidation.class,
-                withDefaults.getDecodingChunkFilters().get(0).getClass());
+                withDefaults.resolveRuntimeConfiguration()
+                        .getDecodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
-                withDefaults.getDecodingChunkFilters().get(1).getClass());
+                withDefaults.resolveRuntimeConfiguration()
+                        .getDecodingChunkFilters().get(1).getClass());
         assertEquals(
                 IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
-                withDefaults.getNumberOfRegistryLifecycleThreads(),
+                withDefaults.maintenance().registryLifecycleThreads(),
                 "Registry lifecycle threads should be defaulted");
     }
 
@@ -393,18 +403,18 @@ class SegmentIndexConfigurationManagerTest {
     void test_applyDefaults_fills_missing_type_descriptors_from_registry() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withName("defaults-fill-type-descriptors")//
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("defaults-fill-type-descriptors"))//
                 .build();
 
         final IndexConfiguration<Long, String> withDefaults = manager
                 .applyDefaults(config);
 
         assertEquals(TypeDescriptorLong.class.getName(),
-                withDefaults.getKeyTypeDescriptor());
+                withDefaults.identity().keyTypeDescriptor());
         assertEquals(TypeDescriptorShortString.class.getName(),
-                withDefaults.getValueTypeDescriptor());
+                withDefaults.identity().valueTypeDescriptor());
     }
 
     @Test
@@ -423,26 +433,26 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(0)).save(any());
 
         assertNotNull(ret);
-        assertEquals(Long.class, ret.getKeyClass());
-        assertEquals(String.class, ret.getValueClass());
-        assertEquals(TD_LONG, ret.getKeyTypeDescriptor());
-        assertEquals(TD_STRING, ret.getValueTypeDescriptor());
-        assertEquals("test_index", ret.getIndexName());
-        assertEquals(11, ret.getMaxNumberOfKeysInSegmentCache());
-        assertEquals(33, ret.getMaxNumberOfKeysInSegmentChunk());
-        assertEquals(44, ret.getMaxNumberOfKeysInSegment());
-        assertEquals(66, ret.getMaxNumberOfSegmentsInCache());
-        assertEquals(1024, ret.getDiskIoBufferSize());
-        assertEquals(77, ret.getBloomFilterIndexSizeInBytes());
-        assertEquals(88, ret.getBloomFilterNumberOfHashFunctions());
-        assertFalse(ret.isContextLoggingEnabled());
+        assertEquals(Long.class, ret.identity().keyClass());
+        assertEquals(String.class, ret.identity().valueClass());
+        assertEquals(TD_LONG, ret.identity().keyTypeDescriptor());
+        assertEquals(TD_STRING, ret.identity().valueTypeDescriptor());
+        assertEquals("test_index", ret.identity().name());
+        assertEquals(11, ret.segment().cacheKeyLimit());
+        assertEquals(33, ret.segment().chunkKeyLimit());
+        assertEquals(44, ret.segment().maxKeys());
+        assertEquals(66, ret.segment().cachedSegmentLimit());
+        assertEquals(1024, ret.io().diskBufferSizeBytes());
+        assertEquals(77, ret.bloomFilter().indexSizeBytes());
+        assertEquals(88, ret.bloomFilter().hashFunctions());
+        assertFalse(ret.logging().contextEnabled());
     }
 
     @Test
     void test_mergeWithStored_indexName() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withName("pandemonium")//
+                .identity(identity -> identity.name("pandemonium"))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -451,14 +461,14 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals("pandemonium", ret.getIndexName());
+        assertEquals("pandemonium", ret.identity().name());
     }
 
     @Test
     void test_mergeWithStored_maxNumberOfKeysInSegmentCache() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegmentCache(8)//
+                .segment(segment -> segment.cacheKeyLimit(8))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -467,14 +477,14 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(8, ret.getMaxNumberOfKeysInSegmentCache());
+        assertEquals(8, ret.segment().cacheKeyLimit());
     }
 
     @Test
     void test_mergeWithStored_diskIoBufferSize() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withDiskIoBufferSizeInBytes(1024 * 77)//
+                .io(io -> io.diskBufferSizeBytes(1024 * 77))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -483,14 +493,14 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertEquals(1024 * 77, ret.getDiskIoBufferSize());
+        assertEquals(1024 * 77, ret.io().diskBufferSizeBytes());
     }
 
     @Test
-    void test_mergeWithStored_isContextLoggingEnabled() {
+    void test_mergeWithStored_loggingContextEnabled() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withContextLoggingEnabled(true)//
+                .logging(logging -> logging.contextEnabled(true))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -499,7 +509,7 @@ class SegmentIndexConfigurationManagerTest {
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
 
-        assertTrue(ret.isContextLoggingEnabled());
+        assertTrue(ret.logging().contextEnabled());
     }
 
     @Test
@@ -515,14 +525,14 @@ class SegmentIndexConfigurationManagerTest {
         assertNotNull(ret);
 
         assertEquals(IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
-                ret.getNumberOfRegistryLifecycleThreads());
+                ret.maintenance().registryLifecycleThreads());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
     void test_mergeWithStored_keyClass() {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
-                .withKeyClass((Class) Double.class) //
+                .identity(identity -> identity.keyClass((Class) Double.class)) //
                 .build();
         when(storage.load()).thenReturn(CONFIG);
         final Exception e = assertThrows(IllegalArgumentException.class,
@@ -538,7 +548,7 @@ class SegmentIndexConfigurationManagerTest {
     @Test
     void test_mergeWithStored_valueClass() {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
-                .withValueClass((Class) Double.class) //
+                .identity(identity -> identity.valueClass((Class) Double.class)) //
                 .build();
         when(storage.load()).thenReturn(CONFIG);
         final Exception e = assertThrows(IllegalArgumentException.class,
@@ -554,7 +564,7 @@ class SegmentIndexConfigurationManagerTest {
     @Test
     void test_mergeWithStored_keyTypeDescriptor() {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
-                .withKeyTypeDescriptor("kachana") //
+                .identity(identity -> identity.keyTypeDescriptor("kachana")) //
                 .build();
         when(storage.load()).thenReturn(CONFIG);
         final Exception e = assertThrows(IllegalArgumentException.class,
@@ -569,7 +579,7 @@ class SegmentIndexConfigurationManagerTest {
     @Test
     void test_mergeWithStored_valueTypeDescriptor() {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
-                .withValueTypeDescriptor("kachna") //
+                .identity(identity -> identity.valueTypeDescriptor("kachna")) //
                 .build();
         when(storage.load()).thenReturn(CONFIG);
         final Exception e = assertThrows(IllegalArgumentException.class,
@@ -584,7 +594,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_maxNumberOfKeysInSegment() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegment(9864)//
+                .segment(segment -> segment.maxKeys(9864))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -601,7 +611,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_bloomFilterIndexSizeInBytes() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withBloomFilterIndexSizeInBytes(4620)//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4620))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -618,7 +628,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_bloomFilterNumberOfHashFunctions() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withBloomFilterNumberOfHashFunctions(4620)//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4620))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -635,7 +645,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_bloomFilterProbabilityOfFalsePositive() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withBloomFilterProbabilityOfFalsePositive(0.5)//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.5))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -652,7 +662,7 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_maxNumberOfKeysInSegmentChunk() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withMaxNumberOfKeysInSegmentChunk(4620)//
+                .segment(segment -> segment.chunkKeyLimit(4620))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -669,7 +679,8 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_encodingChunkFilters() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withEncodingFilters(List.of(new ChunkFilterCrc32Writing()))//
+                .filters(filters -> filters.encodingFilters(
+                        List.of(new ChunkFilterCrc32Writing())))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -678,9 +689,9 @@ class SegmentIndexConfigurationManagerTest {
 
         assertEquals(
                 "Value of 'EncodingChunkFilters' is already set to '"
-                        + CONFIG.getEncodingChunkFilterSpecs()
+                        + CONFIG.filters().encodingChunkFilterSpecs()
                         + "' and can't be changed to '"
-                        + config.getEncodingChunkFilterSpecs() + "'",
+                        + config.filters().encodingChunkFilterSpecs() + "'",
                 e.getMessage());
     }
 
@@ -688,8 +699,8 @@ class SegmentIndexConfigurationManagerTest {
     void test_mergeWithStored_decodingChunkFilters() {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()//
-                .withDecodingFilters(
-                        List.of(new ChunkFilterMagicNumberValidation()))//
+                .filters(filters -> filters.decodingFilters(
+                        List.of(new ChunkFilterMagicNumberValidation())))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -698,9 +709,9 @@ class SegmentIndexConfigurationManagerTest {
 
         assertEquals(
                 "Value of 'DecodingChunkFilters' is already set to '"
-                        + CONFIG.getDecodingChunkFilterSpecs()
+                        + CONFIG.filters().decodingChunkFilterSpecs()
                         + "' and can't be changed to '"
-                        + config.getDecodingChunkFilterSpecs() + "'",
+                        + config.filters().decodingChunkFilterSpecs() + "'",
                 e.getMessage());
     }
 
@@ -713,8 +724,9 @@ class SegmentIndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 // Use the exact same filter classes as in CONFIG, but create
                 // new instances.
-                .withEncodingFilters(List.of(new ChunkFilterCrc32Writing(),
-                        new ChunkFilterMagicNumberWriting()))//
+                .filters(filters -> filters.encodingFilters(
+                        List.of(new ChunkFilterCrc32Writing(),
+                                new ChunkFilterMagicNumberWriting())))//
                 .build();
 
         when(storage.load()).thenReturn(CONFIG);
@@ -724,32 +736,29 @@ class SegmentIndexConfigurationManagerTest {
     @Test
     void test_mergeWithStored_legacyBuiltInJavaClassSpecsAreEquivalent() {
         final IndexConfiguration<Long, String> storedConfig = baseBuilder()
-                .withEncodingFilterRegistrations(List.of(
-                        ChunkFilterRegistration.of(
-                                ChunkFilterSpecs.javaClass(
-                                        ChunkFilterCrc32Writing.class),
+                .filters(filters -> filters.encodingFilterRegistrations(List.of(
+                        ChunkFilterRegistration.of(ChunkFilterSpecs.javaClass(
+                                ChunkFilterCrc32Writing.class),
                                 ChunkFilterCrc32Writing::new),
-                        ChunkFilterRegistration.of(
-                                ChunkFilterSpecs.javaClass(
-                                        ChunkFilterMagicNumberWriting.class),
-                                ChunkFilterMagicNumberWriting::new)))
-                .withDecodingFilterRegistrations(List.of(
-                        ChunkFilterRegistration.of(
-                                ChunkFilterSpecs.javaClass(
-                                        ChunkFilterMagicNumberValidation.class),
+                        ChunkFilterRegistration.of(ChunkFilterSpecs.javaClass(
+                                ChunkFilterMagicNumberWriting.class),
+                                ChunkFilterMagicNumberWriting::new))))
+                .filters(filters -> filters.decodingFilterRegistrations(List.of(
+                        ChunkFilterRegistration.of(ChunkFilterSpecs.javaClass(
+                                ChunkFilterMagicNumberValidation.class),
                                 ChunkFilterMagicNumberValidation::new),
-                        ChunkFilterRegistration.of(
-                                ChunkFilterSpecs.javaClass(
-                                        ChunkFilterCrc32Validation.class),
-                                ChunkFilterCrc32Validation::new)))
+                        ChunkFilterRegistration.of(ChunkFilterSpecs.javaClass(
+                                ChunkFilterCrc32Validation.class),
+                                ChunkFilterCrc32Validation::new))))
                 .build();
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()
-                .withEncodingFilterClasses(List.of(ChunkFilterCrc32Writing.class,
-                        ChunkFilterMagicNumberWriting.class))
-                .withDecodingFilterClasses(
-                        List.of(ChunkFilterMagicNumberValidation.class,
-                                ChunkFilterCrc32Validation.class))
+                .filters(filters -> filters.encodingFilterClasses(
+                        List.of(ChunkFilterCrc32Writing.class,
+                                ChunkFilterMagicNumberWriting.class)))
+                .filters(filters -> filters.decodingFilterClasses(List.of(
+                        ChunkFilterMagicNumberValidation.class,
+                        ChunkFilterCrc32Validation.class)))
                 .build();
 
         when(storage.load()).thenReturn(storedConfig);
@@ -758,10 +767,10 @@ class SegmentIndexConfigurationManagerTest {
                 .mergeWithStored(config);
 
         assertNotNull(merged);
-        assertEquals(storedConfig.getEncodingChunkFilterSpecs(),
-                merged.getEncodingChunkFilterSpecs());
-        assertEquals(storedConfig.getDecodingChunkFilterSpecs(),
-                merged.getDecodingChunkFilterSpecs());
+        assertEquals(storedConfig.filters().encodingChunkFilterSpecs(),
+                merged.filters().encodingChunkFilterSpecs());
+        assertEquals(storedConfig.filters().decodingChunkFilterSpecs(),
+                merged.filters().decodingChunkFilterSpecs());
         Mockito.verify(storage, Mockito.never()).save(any());
     }
 
@@ -774,17 +783,20 @@ class SegmentIndexConfigurationManagerTest {
                 .withParameter("mode", "gcm")
                 .withParameter("keyRef", "orders-main");
         final IndexConfiguration<Long, String> storedConfig = baseBuilder()
-                .withEncodingFilterRegistrations(List.of(
+                .filters(filters -> filters.encodingFilterRegistrations(List.of(
                         ChunkFilterRegistration.of(storedSpec,
-                                ChunkFilterDoNothing::new)))
-                .withDecodingFilterRegistrations(List.of(
+                                ChunkFilterDoNothing::new))))
+                .filters(filters -> filters.decodingFilterRegistrations(List.of(
                         ChunkFilterRegistration.of(storedSpec,
-                                ChunkFilterDoNothing::new)))
+                                ChunkFilterDoNothing::new))))
                 .build();
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()
-                .addEncodingFilter(ChunkFilterDoNothing::new, requestSpec)
-                .addDecodingFilter(ChunkFilterDoNothing::new, requestSpec)
+                .filters(filters -> filters
+                        .addEncodingFilter(ChunkFilterDoNothing::new,
+                                requestSpec)
+                        .addDecodingFilter(ChunkFilterDoNothing::new,
+                                requestSpec))
                 .build();
 
         when(storage.load()).thenReturn(storedConfig);
@@ -793,10 +805,10 @@ class SegmentIndexConfigurationManagerTest {
                 .mergeWithStored(config);
 
         assertNotNull(merged);
-        assertEquals(storedConfig.getEncodingChunkFilterSpecs(),
-                merged.getEncodingChunkFilterSpecs());
-        assertEquals(storedConfig.getDecodingChunkFilterSpecs(),
-                merged.getDecodingChunkFilterSpecs());
+        assertEquals(storedConfig.filters().encodingChunkFilterSpecs(),
+                merged.filters().encodingChunkFilterSpecs());
+        assertEquals(storedConfig.filters().decodingChunkFilterSpecs(),
+                merged.filters().decodingChunkFilterSpecs());
         Mockito.verify(storage, Mockito.never()).save(any());
     }
 
@@ -812,21 +824,23 @@ class SegmentIndexConfigurationManagerTest {
 
     private IndexConfigurationBuilder<Long, String> baseBuilder() {
         return IndexConfiguration.<Long, String>builder()//
-                .withKeyClass(Long.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_LONG)//
-                .withValueTypeDescriptor(TD_STRING)//
-                .withName("base_index")//
-                .withContextLoggingEnabled(true)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInSegmentChunk(33)//
-                .withMaxNumberOfKeysInSegment(44)//
-                .withMaxNumberOfSegmentsInCache(66)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withBloomFilterIndexSizeInBytes(77)//
-                .withBloomFilterNumberOfHashFunctions(88)//
-                .withEncodingFilters(CONFIG.getEncodingChunkFilters())//
-                .withDecodingFilters(CONFIG.getDecodingChunkFilters());
+                .identity(identity -> identity.keyClass(Long.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
+                .identity(identity -> identity.name("base_index"))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .segment(segment -> segment.chunkKeyLimit(33))//
+                .segment(segment -> segment.maxKeys(44))//
+                .segment(segment -> segment.cachedSegmentLimit(66))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(77))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(88))//
+                .filters(filters -> filters.encodingFilterSpecs(
+                        CONFIG.filters().encodingChunkFilterSpecs()))//
+                .filters(filters -> filters.decodingFilterSpecs(
+                        CONFIG.filters().decodingChunkFilterSpecs()));
     }
 
 }

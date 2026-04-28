@@ -31,7 +31,7 @@ final class IndexRuntimeSnapshotView implements IndexRuntimeView {
 
     @Override
     public IndexRuntimeSnapshot snapshot() {
-        return new IndexRuntimeSnapshot(conf.getIndexName(),
+        return new IndexRuntimeSnapshot(conf.identity().name(),
                 stateSupplier.get(), metricsSnapshotSupplier.get(),
                 Instant.now());
     }

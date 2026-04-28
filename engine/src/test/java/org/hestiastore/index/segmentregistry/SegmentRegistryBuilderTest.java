@@ -11,14 +11,13 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -229,26 +228,27 @@ class SegmentRegistryBuilderTest {
 
     private static IndexConfiguration<Integer, String> newConfiguration() {
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName("segment-registry-builder-test")
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(6)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfKeysInSegment(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withIndexBusyBackoffMillis(1)
-                .withIndexBusyTimeoutMillis(10)
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("segment-registry-builder-test"))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath
+                        .maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2).maxKeys(100)
+                        .cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)
+                        .indexSizeBytes(1024)
+                        .falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(1)
+                        .busyTimeoutMillis(10))
+                .filters(filters -> filters
+                        .encodingFilters(List.of(new ChunkFilterDoNothing()))
+                        .decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();
     }
 }

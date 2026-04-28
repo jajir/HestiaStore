@@ -12,11 +12,11 @@ class IndexWritePathConfigurationTest {
         final IndexWritePathConfiguration configuration = new IndexWritePathConfiguration(
                 10, 14, 42, 99);
 
-        assertEquals(10, configuration.getSegmentWriteCacheKeyLimit());
+        assertEquals(10, configuration.segmentWriteCacheKeyLimit());
         assertEquals(14,
-                configuration.getSegmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(42, configuration.getIndexBufferedWriteKeyLimit());
-        assertEquals(99, configuration.getSegmentSplitKeyThreshold());
+                configuration.segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(42, configuration.indexBufferedWriteKeyLimit());
+        assertEquals(99, configuration.segmentSplitKeyThreshold());
     }
 
     @Test

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("unchecked")
 class SegmentIndexRuntimeTest {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -31,15 +32,12 @@ class SegmentIndexRuntimeTest {
 
     private ExecutorRegistry executorRegistry;
     private SegmentIndexRuntime<Integer, String> runtime;
-    private org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl<Integer, String> closeOwner;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         executorRegistry = ExecutorRegistryFixture.from(conf);
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
-        closeOwner = Mockito.mock(
-                org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl.class);
         runtime = new SegmentIndexRuntimeGraphBuilder<>(
                 new SegmentIndexRuntimeInputs<>(
                         logger, new MemDirectory(), tdi, tds, conf,
@@ -80,24 +78,24 @@ class SegmentIndexRuntimeTest {
 
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(tdi)
-                .withValueTypeDescriptor(tds)
-                .withName("segment-index-runtime-test")
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(6)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfKeysInSegment(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity.keyTypeDescriptor(tdi))
+                .identity(identity -> identity.valueTypeDescriptor(tds))
+                .identity(identity -> identity.name("segment-index-runtime-test"))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();
     }
 

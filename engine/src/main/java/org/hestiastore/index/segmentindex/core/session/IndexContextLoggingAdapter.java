@@ -33,7 +33,7 @@ final class IndexContextLoggingAdapter<K, V>
         final IndexConfiguration<K, V> configuration = Vldtn
                 .requireNonNull(indexConf, "indexConfiguration");
         this.contextScopeRunner = new IndexContextScopeRunner(
-                configuration.getIndexName());
+                configuration.identity().name());
         this.controlPlane = new IndexControlPlaneContextLoggingAdapter(
                 delegate.controlPlane(), contextScopeRunner);
     }

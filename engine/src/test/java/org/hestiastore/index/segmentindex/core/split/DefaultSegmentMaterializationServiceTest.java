@@ -187,30 +187,30 @@ class DefaultSegmentMaterializationServiceTest {
 
     private static IndexConfiguration<Integer, String> newConfiguration() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInPartitionBuffer(10)//
-                .withMaxNumberOfKeysInSegmentChunk(4)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withMaxNumberOfKeysInSegment(50)//
-                .withMaxNumberOfSegmentsInCache(5)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(128)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withIndexBusyBackoffMillis(1)//
-                .withIndexBusyTimeoutMillis(1000)//
-                .withContextLoggingEnabled(false)//
-                .withName("split-materialization-service-test")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))//
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .segment(segment -> segment.cacheKeyLimit(10))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(10))//
+                .segment(segment -> segment.chunkKeyLimit(4))//
+                .segment(segment -> segment.deltaCacheFileLimit(2))//
+                .segment(segment -> segment.maxKeys(50))//
+                .segment(segment -> segment.cachedSegmentLimit(5))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(128))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
+                .maintenance(maintenance -> maintenance.segmentThreads(1))//
+                .maintenance(maintenance -> maintenance.indexThreads(1))//
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(1))//
+                .maintenance(maintenance -> maintenance.busyTimeoutMillis(1000))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .identity(identity -> identity.name("split-materialization-service-test"))//
                 .build();
     }
 }

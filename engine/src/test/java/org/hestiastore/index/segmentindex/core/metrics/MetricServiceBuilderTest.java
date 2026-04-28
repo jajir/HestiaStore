@@ -88,7 +88,7 @@ class MetricServiceBuilderTest {
         assertEquals(1L, snapshot.getGetOperationCount());
         assertEquals(2L, snapshot.getRegistryCacheHitCount());
         assertEquals(2, snapshot.getSplitInFlightCount());
-        assertEquals(1, snapshot.getSplitBlockedPartitionCount());
+        assertEquals(1, snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount());
         assertEquals(42L, snapshot.getWalAppliedLsn());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }

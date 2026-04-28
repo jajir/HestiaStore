@@ -51,15 +51,71 @@ class IndexConfigurationStorageTest {
 
         assertTrue(storage.exists());
         final IndexConfiguration<String, String> loaded = storage.load();
-        assertEquals("index-config-storage-test", loaded.getIndexName());
-        assertEquals(2, loaded.getMaxNumberOfKeysInActivePartition());
-        assertEquals(2, loaded.getMaxNumberOfImmutableRunsPerPartition());
-        assertEquals(3, loaded.getMaxNumberOfKeysInPartitionBuffer());
-        assertEquals(9, loaded.getMaxNumberOfKeysInIndexBuffer());
-        assertEquals(11, loaded.getMaxNumberOfKeysInSegment());
-        assertEquals(10, loaded.getMaxNumberOfKeysInPartitionBeforeSplit());
-        assertEquals(7, loaded.getNumberOfSegmentMaintenanceThreads());
-        assertFalse(loaded.isBackgroundMaintenanceAutoEnabled());
+        assertEquals("index-config-storage-test", loaded.identity().name());
+        assertEquals(2, loaded.writePath().segmentWriteCacheKeyLimit());
+        assertEquals(2, loaded.runtimeTuning().legacyImmutableRunLimit());
+        assertEquals(3, loaded.writePath().segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(9, loaded.writePath().indexBufferedWriteKeyLimit());
+        assertEquals(11, loaded.segment().maxKeys());
+        assertEquals(10, loaded.writePath().segmentSplitKeyThreshold());
+        assertEquals(7, loaded.maintenance().segmentThreads());
+        assertFalse(loaded.maintenance().backgroundAutoEnabled());
+    }
+
+    @Test
+    void groupedConfigurationRoundTripsThroughStorage() {
+        final MemDirectory directory = new MemDirectory();
+        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
+                directory);
+        final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
+        final IndexConfiguration<String, String> configuration =
+                IndexConfiguration.<String, String>builder()
+                        .identity(identity -> identity.name("grouped-storage")
+                                .keyClass(String.class)
+                                .valueClass(String.class)
+                                .keyTypeDescriptor(typeDescriptor)
+                                .valueTypeDescriptor(typeDescriptor))
+                        .segment(segment -> segment.maxKeys(100)
+                                .chunkKeyLimit(10).cacheKeyLimit(20)
+                                .cachedSegmentLimit(4)
+                                .deltaCacheFileLimit(3))
+                        .writePath(writePath -> writePath
+                                .segmentWriteCacheKeyLimit(7)
+                                .maintenanceWriteCacheKeyLimit(9)
+                                .indexBufferedWriteKeyLimit(40)
+                                .segmentSplitKeyThreshold(80))
+                        .bloomFilter(bloom -> bloom.hashFunctions(2)
+                                .indexSizeBytes(1024)
+                                .falsePositiveProbability(0.05D))
+                        .maintenance(maintenance -> maintenance
+                                .segmentThreads(2).indexThreads(3)
+                                .registryLifecycleThreads(4)
+                                .busyBackoffMillis(5)
+                                .busyTimeoutMillis(6)
+                                .backgroundAutoEnabled(false))
+                        .io(io -> io.diskBufferSizeBytes(2048))
+                        .logging(logging -> logging.contextEnabled(false))
+                        .filters(filters -> filters
+                                .encodingFilterSpecs(
+                                        List.of(ChunkFilterSpecs.doNothing()))
+                                .decodingFilterSpecs(
+                                        List.of(ChunkFilterSpecs.doNothing())))
+                        .build();
+
+        storage.save(configuration);
+        final IndexConfiguration<String, String> loaded = storage.load();
+
+        assertEquals("grouped-storage", loaded.identity().name());
+        assertEquals(Integer.valueOf(100), loaded.segment().maxKeys());
+        assertEquals(Integer.valueOf(7),
+                loaded.writePath().segmentWriteCacheKeyLimit());
+        assertEquals(Integer.valueOf(1024),
+                loaded.bloomFilter().indexSizeBytes());
+        assertFalse(loaded.maintenance().backgroundAutoEnabled());
+        assertEquals(Integer.valueOf(2048), loaded.io().diskBufferSizeBytes());
+        assertFalse(loaded.logging().contextEnabled());
+        assertEquals(List.of(ChunkFilterSpecs.doNothing()),
+                loaded.filters().encodingChunkFilterSpecs());
     }
 
     @Test
@@ -102,11 +158,11 @@ class IndexConfigurationStorageTest {
                 directory);
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertEquals(5, loaded.getMaxNumberOfKeysInActivePartition());
-        assertEquals(9, loaded.getMaxNumberOfKeysInPartitionBuffer());
-        assertEquals(36, loaded.getMaxNumberOfKeysInIndexBuffer());
-        assertEquals(30, loaded.getMaxNumberOfKeysInSegment());
-        assertEquals(30, loaded.getMaxNumberOfKeysInPartitionBeforeSplit());
+        assertEquals(5, loaded.writePath().segmentWriteCacheKeyLimit());
+        assertEquals(9, loaded.writePath().segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(36, loaded.writePath().indexBufferedWriteKeyLimit());
+        assertEquals(30, loaded.segment().maxKeys());
+        assertEquals(30, loaded.writePath().segmentSplitKeyThreshold());
     }
 
     @Test
@@ -146,7 +202,7 @@ class IndexConfigurationStorageTest {
                 directory);
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertFalse(loaded.isBackgroundMaintenanceAutoEnabled());
+        assertFalse(loaded.maintenance().backgroundAutoEnabled());
     }
 
     @Test
@@ -187,7 +243,7 @@ class IndexConfigurationStorageTest {
                 directory);
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertEquals(6, loaded.getNumberOfSegmentMaintenanceThreads());
+        assertEquals(6, loaded.maintenance().segmentThreads());
     }
 
     @Test
@@ -227,7 +283,7 @@ class IndexConfigurationStorageTest {
                 directory);
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertEquals(6, loaded.getNumberOfSegmentMaintenanceThreads());
+        assertEquals(6, loaded.maintenance().segmentThreads());
     }
 
     @Test
@@ -279,13 +335,13 @@ class IndexConfigurationStorageTest {
         final IndexConfiguration<String, String> loaded = storage.load();
 
         assertEquals(List.of(ChunkFilterSpecs.magicNumber()),
-                loaded.getEncodingChunkFilterSpecs());
+                loaded.filters().encodingChunkFilterSpecs());
         assertEquals(List.of(ChunkFilterSpecs.magicNumber()),
-                loaded.getDecodingChunkFilterSpecs());
+                loaded.filters().decodingChunkFilterSpecs());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                loaded.getEncodingChunkFilters().get(0).getClass());
+                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberValidation.class,
-                loaded.getDecodingChunkFilters().get(0).getClass());
+                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -312,14 +368,14 @@ class IndexConfigurationStorageTest {
 
         assertEquals(List.of(
                 ChunkFilterSpecs.javaClass(LegacyCustomChunkFilter.class.getName())),
-                loaded.getEncodingChunkFilterSpecs());
+                loaded.filters().encodingChunkFilterSpecs());
         assertEquals(List.of(
                 ChunkFilterSpecs.javaClass(LegacyCustomChunkFilter.class.getName())),
-                loaded.getDecodingChunkFilterSpecs());
+                loaded.filters().decodingChunkFilterSpecs());
         assertEquals(LegacyCustomChunkFilter.class,
-                loaded.getEncodingChunkFilters().get(0).getClass());
+                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(0).getClass());
         assertEquals(LegacyCustomChunkFilter.class,
-                loaded.getDecodingChunkFilters().get(0).getClass());
+                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -335,31 +391,38 @@ class IndexConfigurationStorageTest {
                 .withParameter(TEST_PARAM_KEY_REF, "orders-main");
         final IndexConfiguration<String, String> config = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorShortString())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("custom-provider-test")//
-                .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInActivePartition(2)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(3)//
-                .withMaxNumberOfKeysInIndexBuffer(9)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(11)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(10)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfSegmentMaintenanceThreads(7)//
-                .withContextLoggingEnabled(false)//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .addEncodingFilter(() -> new TestEncodingChunkFilter("orders-main"),
-                        spec)//
-                .addDecodingFilter(() -> new TestDecodingChunkFilter("orders-main"),
-                        spec)//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity
+                        .valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name("custom-provider-test"))//
+                .segment(segment -> segment.cacheKeyLimit(4))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(3))//
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(11))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(10))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(7))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
+                .filters(filters -> filters
+                        .addEncodingFilter(
+                                () -> new TestEncodingChunkFilter(
+                                        "orders-main"),
+                                spec)
+                        .addDecodingFilter(
+                                () -> new TestDecodingChunkFilter(
+                                        "orders-main"),
+                                spec))//
                 .build();
 
         storage.save(config);
@@ -368,8 +431,8 @@ class IndexConfigurationStorageTest {
         final IndexRuntimeConfiguration<String, String> runtimeConfiguration = loaded
                 .resolveRuntimeConfiguration(registry);
 
-        assertEquals(List.of(spec), loaded.getEncodingChunkFilterSpecs());
-        assertEquals(List.of(spec), loaded.getDecodingChunkFilterSpecs());
+        assertEquals(List.of(spec), loaded.filters().encodingChunkFilterSpecs());
+        assertEquals(List.of(spec), loaded.filters().decodingChunkFilterSpecs());
 
         final TestEncodingChunkFilter encodingFilter = assertInstanceOf(
                 TestEncodingChunkFilter.class,
@@ -396,81 +459,88 @@ class IndexConfigurationStorageTest {
                 .withParameter(TEST_PARAM_KEY_REF, "orders-archive");
         final IndexConfiguration<String, String> config = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorShortString())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("spec-roundtrip-test")//
-                .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInActivePartition(2)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(3)//
-                .withMaxNumberOfKeysInIndexBuffer(9)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(11)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(10)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfSegmentMaintenanceThreads(7)//
-                .withContextLoggingEnabled(false)//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .addEncodingFilter(new ChunkFilterDoNothing())//
-                .addEncodingFilter(
-                        () -> new TestEncodingChunkFilter("orders-archive"),
-                        customSpec)//
-                .addDecodingFilter(
-                        () -> new TestDecodingChunkFilter("orders-archive"),
-                        customSpec)//
-                .addDecodingFilter(new ChunkFilterDoNothing())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity
+                        .valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name("spec-roundtrip-test"))//
+                .segment(segment -> segment.cacheKeyLimit(4))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(3))//
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(11))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(10))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(7))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
+                .filters(filters -> filters
+                        .addEncodingFilter(new ChunkFilterDoNothing())
+                        .addEncodingFilter(
+                                () -> new TestEncodingChunkFilter(
+                                        "orders-archive"),
+                                customSpec)
+                        .addDecodingFilter(
+                                () -> new TestDecodingChunkFilter(
+                                        "orders-archive"),
+                                customSpec)
+                        .addDecodingFilter(new ChunkFilterDoNothing()))//
                 .build();
 
         storage.save(config);
 
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertEquals(config.getEncodingChunkFilterSpecs(),
-                loaded.getEncodingChunkFilterSpecs());
-        assertEquals(config.getDecodingChunkFilterSpecs(),
-                loaded.getDecodingChunkFilterSpecs());
-        assertNotSame(config.getEncodingChunkFilterSpecs(),
-                loaded.getEncodingChunkFilterSpecs());
-        assertNotSame(config.getDecodingChunkFilterSpecs(),
-                loaded.getDecodingChunkFilterSpecs());
-        assertNotSame(config.getEncodingChunkFilterSpecs().get(1),
-                loaded.getEncodingChunkFilterSpecs().get(1));
-        assertNotSame(config.getDecodingChunkFilterSpecs().get(0),
-                loaded.getDecodingChunkFilterSpecs().get(0));
+        assertEquals(config.filters().encodingChunkFilterSpecs(),
+                loaded.filters().encodingChunkFilterSpecs());
+        assertEquals(config.filters().decodingChunkFilterSpecs(),
+                loaded.filters().decodingChunkFilterSpecs());
+        assertNotSame(config.filters().encodingChunkFilterSpecs(),
+                loaded.filters().encodingChunkFilterSpecs());
+        assertNotSame(config.filters().decodingChunkFilterSpecs(),
+                loaded.filters().decodingChunkFilterSpecs());
+        assertNotSame(config.filters().encodingChunkFilterSpecs().get(1),
+                loaded.filters().encodingChunkFilterSpecs().get(1));
+        assertNotSame(config.filters().decodingChunkFilterSpecs().get(0),
+                loaded.filters().decodingChunkFilterSpecs().get(0));
     }
 
     private IndexConfiguration<String, String> buildConf() {
         final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
         return IndexConfiguration.<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(typeDescriptor)//
-                .withValueTypeDescriptor(typeDescriptor)//
-                .withName("index-config-storage-test")//
-                .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInActivePartition(2)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(3)//
-                .withMaxNumberOfKeysInIndexBuffer(9)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(11)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(10)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfSegmentMaintenanceThreads(7)//
-                .withContextLoggingEnabled(false)//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(typeDescriptor))//
+                .identity(identity -> identity.valueTypeDescriptor(typeDescriptor))//
+                .identity(identity -> identity.name("index-config-storage-test"))//
+                .segment(segment -> segment.cacheKeyLimit(4))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(3))//
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(11))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(10))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(7))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
+                .filters(filters -> filters.encodingFilters(
+                        List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(
+                        List.of(new ChunkFilterDoNothing())))//
                 .build();
     }
 

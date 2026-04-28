@@ -157,10 +157,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-it")//
-                .withWal(Wal.builder().build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-it"))//
+                .wal(wal -> wal.configuration(Wal.builder().build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
@@ -182,12 +182,12 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-fail-fast-it")//
-                .withWal(Wal.builder()
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-fail-fast-it"))//
+                .wal(wal -> wal.configuration(Wal.builder()
                         .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
-                        .build())//
+                        .build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
@@ -204,13 +204,13 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-fail-fast-immutability-it")//
-                .withWal(Wal.builder()
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-fail-fast-immutability-it"))//
+                .wal(wal -> wal.configuration(Wal.builder()
                         .withSegmentSizeBytes(96L)
                         .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)
-                        .build())//
+                        .build()))//
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
@@ -234,10 +234,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-cycle-it")//
-                .withWal(Wal.builder().build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-cycle-it"))//
+                .wal(wal -> wal.configuration(Wal.builder().build()))//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final int keySpace = 12;
@@ -277,10 +277,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-recovery-random-cycle-it")//
-                .withWal(Wal.builder().build())//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-recovery-random-cycle-it"))//
+                .wal(wal -> wal.configuration(Wal.builder().build()))//
                 .build();
         final Map<String, String> expected = new HashMap<>();
         final Random random = new Random(42L);
@@ -399,9 +399,9 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 final SegmentIndexMetricsSnapshot snapshot = index
                         .metricsSnapshot();
                 return snapshot.getSplitInFlightCount() == 0
-                        && snapshot.getDrainInFlightCount() == 0
-                        && snapshot.getImmutableRunCount() == 0
-                        && snapshot.getDrainingPartitionCount() == 0;
+                        && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
+                        && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
+                        && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount() == 0;
             }, 10_000L);
             assertIntegerIndexSnapshot(index, expected);
 
@@ -418,24 +418,26 @@ class IntegrationSegmentIndexWalRecoveryTest {
             final String indexName,
             final boolean backgroundMaintenanceAutoEnabled) {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName(indexName)//
-                .withWal(Wal.builder().build())//
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(64) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(
-                        backgroundMaintenanceAutoEnabled) //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorInteger()))//
+                .identity(identity -> identity
+                        .valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name(indexName))//
+                .wal(wal -> wal.configuration(Wal.builder().build()))//
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(
+                        backgroundMaintenanceAutoEnabled)) //
                 .build();
     }
 
@@ -463,7 +465,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         index.flushAndWait();
         awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
                 && index.metricsSnapshot().getSplitInFlightCount() == 0
-                && index.metricsSnapshot().getDrainInFlightCount() == 0,
+                && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                 10_000L);
     }
 
@@ -546,9 +548,9 @@ class IntegrationSegmentIndexWalRecoveryTest {
             final FsDirectory directory = new FsDirectory(tempDir.toFile());
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("wal-disabled-it")//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("wal-disabled-it"))//
                     .build();
 
             try (SegmentIndex<String, String> index = SegmentIndex
@@ -578,10 +580,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .build();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("wal-retention-pressure-it")//
-                .withWal(wal)//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("wal-retention-pressure-it"))//
+                .wal(walSection -> walSection.configuration(wal))//
                 .build();
 
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
@@ -614,10 +616,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
                     .build();
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("wal-retention-pressure-log-throttle-it")//
-                    .withWal(wal)//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("wal-retention-pressure-log-throttle-it"))//
+                    .wal(walSection -> walSection.configuration(wal))//
                     .build();
 
             try (SegmentIndex<String, String> index = SegmentIndex
@@ -648,10 +650,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
                     .build();
             final IndexConfiguration<String, String> conf = IndexConfiguration
                     .<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("wal-retention-pressure-structured-events-it")//
-                    .withWal(wal)//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("wal-retention-pressure-structured-events-it"))//
+                    .wal(walSection -> walSection.configuration(wal))//
                     .build();
 
             try (SegmentIndex<String, String> index = SegmentIndex

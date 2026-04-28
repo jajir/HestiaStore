@@ -29,20 +29,20 @@ final class ImportCommand {
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         final Options options = new Options();
         options.addOption(Option.builder().longOpt("input").hasArg()
-                .desc("Export directory to import from.").required().build());
+                .desc("Export directory to import from.").required().get());
         options.addOption(Option.builder().longOpt("target-index").hasArg()
-                .desc("Target index directory to create.").required().build());
+                .desc("Target index directory to create.").required().get());
         options.addOption(Option.builder().longOpt("target-config").hasArg()
                 .desc("Optional JSON configuration manifest overriding the exported source-config.json.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("index-name").hasArg()
                 .desc("Optional index name override applied after loading target config.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("verify-after-import")
                 .desc("Reopen the target index and compare record count and logical fingerprint.")
-                .build());
+                .get());
         options.addOption(
-                Option.builder("h").longOpt("help").desc("Show help.").build());
+                Option.builder("h").longOpt("help").desc("Show help.").get());
         try {
             if (HelpSupport.isHelpRequested(args)) {
                 printHelp(options, out);

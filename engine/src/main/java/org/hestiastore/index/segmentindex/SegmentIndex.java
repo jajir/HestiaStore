@@ -10,6 +10,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.control.IndexConfigurationManagement;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexFactory;
@@ -330,6 +331,15 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     default IndexControlPlane controlPlane() {
         throw new UnsupportedOperationException(
                 "controlPlane() is not supported by this implementation.");
+    }
+
+    /**
+     * Returns runtime configuration management API.
+     *
+     * @return runtime configuration API
+     */
+    default IndexConfigurationManagement configurationManagement() {
+        return controlPlane().configuration();
     }
 
 }

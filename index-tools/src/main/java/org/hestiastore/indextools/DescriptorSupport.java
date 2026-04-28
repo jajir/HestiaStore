@@ -15,14 +15,15 @@ final class DescriptorSupport {
 
     static DescriptorPair fromConfiguration(
             final IndexConfiguration<?, ?> configuration) {
-        return new DescriptorPair(configuration.getKeyClass(),
-                configuration.getValueClass(),
-                configuration.getKeyTypeDescriptor(),
-                configuration.getValueTypeDescriptor(),
+        final var identity = configuration.identity();
+        return new DescriptorPair(identity.keyClass(),
+                identity.valueClass(),
+                identity.keyTypeDescriptor(),
+                identity.valueTypeDescriptor(),
                 castDescriptor(DataTypeDescriptorRegistry
-                        .makeInstance(configuration.getKeyTypeDescriptor())),
+                        .makeInstance(identity.keyTypeDescriptor())),
                 castDescriptor(DataTypeDescriptorRegistry
-                        .makeInstance(configuration.getValueTypeDescriptor())));
+                        .makeInstance(identity.valueTypeDescriptor())));
     }
 
     private static TypeDescriptor<Object> castDescriptor(
