@@ -52,19 +52,19 @@ public final class IndexWritePathConfiguration {
         this.segmentSplitKeyThreshold = segmentSplitKeyThreshold;
     }
 
-    public Integer getSegmentWriteCacheKeyLimit() {
+    public Integer segmentWriteCacheKeyLimit() {
         return segmentWriteCacheKeyLimit;
     }
 
-    public Integer getSegmentWriteCacheKeyLimitDuringMaintenance() {
+    public Integer segmentWriteCacheKeyLimitDuringMaintenance() {
         return segmentWriteCacheKeyLimitDuringMaintenance;
     }
 
-    public Integer getIndexBufferedWriteKeyLimit() {
+    public Integer indexBufferedWriteKeyLimit() {
         return indexBufferedWriteKeyLimit;
     }
 
-    public Integer getSegmentSplitKeyThreshold() {
+    public Integer segmentSplitKeyThreshold() {
         return segmentSplitKeyThreshold;
     }
 

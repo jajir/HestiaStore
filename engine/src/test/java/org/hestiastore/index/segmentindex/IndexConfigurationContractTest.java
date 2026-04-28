@@ -1,14 +1,11 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
-import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
-import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
-import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationContractTest {
@@ -17,26 +14,25 @@ class IndexConfigurationContractTest {
     void derivesCanonicalWritePathDefaultsFromSegmentCache() {
         final IndexConfigurationContract contract = new IndexConfigurationContract() {
             @Override
-            public int getMaxNumberOfKeysInSegmentCache() {
-                return 9;
+            public IndexSegmentConfiguration segment() {
+                return new IndexSegmentConfiguration(100, 10, 9, 10, 3);
             }
         };
 
-        final int segmentWriteCacheLimit = contract
-                .getSegmentWriteCacheKeyLimit();
+        final int segmentWriteCacheLimit = contract.writePath()
+                .segmentWriteCacheKeyLimit();
         assertEquals(4, segmentWriteCacheLimit);
 
         final int expectedPartitionBufferLimit = Math.max(
                 segmentWriteCacheLimit + 1,
                 (int) Math.ceil(segmentWriteCacheLimit * 1.4));
         assertEquals(expectedPartitionBufferLimit,
-                contract.getSegmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(expectedPartitionBufferLimit,
-                contract.getMaxNumberOfKeysInPartitionBuffer());
+                contract.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance());
         assertEquals(Math.max(expectedPartitionBufferLimit,
                 expectedPartitionBufferLimit
-                        * contract.getMaxNumberOfSegmentsInCache()),
-                contract.getIndexBufferedWriteKeyLimit());
+                        * contract.segment().cachedSegmentLimit()),
+                contract.writePath().indexBufferedWriteKeyLimit());
     }
 
     @Test
@@ -44,23 +40,20 @@ class IndexConfigurationContractTest {
         final IndexConfigurationContract contract = new IndexConfigurationContract() {
         };
 
-        assertTrue(contract.isBackgroundMaintenanceAutoEnabled());
+        assertEquals(Boolean.TRUE,
+                contract.maintenance().backgroundAutoEnabled());
         assertEquals(
                 IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
-                contract.getNumberOfSegmentMaintenanceThreads());
+                contract.maintenance().segmentThreads());
 
-        final List<?> encoding = contract.getEncodingChunkFilters();
-        assertEquals(2, encoding.size());
-        assertEquals(ChunkFilterCrc32Writing.class,
-                encoding.get(0).getClass());
-        assertEquals(ChunkFilterMagicNumberWriting.class,
-                encoding.get(1).getClass());
+        final List<ChunkFilterSpec> encoding =
+                contract.filters().encodingChunkFilterSpecs();
+        assertEquals(List.of(ChunkFilterSpecs.crc32(),
+                ChunkFilterSpecs.magicNumber()), encoding);
 
-        final List<?> decoding = contract.getDecodingChunkFilters();
-        assertEquals(2, decoding.size());
-        assertEquals(ChunkFilterMagicNumberValidation.class,
-                decoding.get(0).getClass());
-        assertEquals(ChunkFilterCrc32Validation.class,
-                decoding.get(1).getClass());
+        final List<ChunkFilterSpec> decoding =
+                contract.filters().decodingChunkFilterSpecs();
+        assertEquals(List.of(ChunkFilterSpecs.magicNumber(),
+                ChunkFilterSpecs.crc32()), decoding);
     }
 }

@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.List;
 
-import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 
@@ -36,7 +35,7 @@ public class IndexConfiguration<K, V> {
     private final Integer maxNumberOfKeysInSegmentChunk;
     private final Integer maxNumberOfDeltaCacheFiles;
     private final IndexWritePathConfiguration writePathConfiguration;
-    private final LegacyPartitionCompatibilityConfiguration legacyPartitionCompatibilityConfiguration;
+    private final Integer legacyImmutableRunLimit;
 
     /*
      * Segment index configuration
@@ -112,8 +111,7 @@ public class IndexConfiguration<K, V> {
                 maxNumberOfKeysInActivePartition,
                 maxNumberOfKeysInPartitionBuffer, maxNumberOfKeysInIndexBuffer,
                 maxNumberOfKeysInPartitionBeforeSplit);
-        this.legacyPartitionCompatibilityConfiguration = new LegacyPartitionCompatibilityConfiguration(
-                writePathConfiguration, maxNumberOfImmutableRunsPerPartition);
+        this.legacyImmutableRunLimit = maxNumberOfImmutableRunsPerPartition;
         this.indexName = indexName;
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
@@ -134,392 +132,108 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns the maximum number of keys held in the in-memory segment cache.
+     * Returns grouped identity and key/value type metadata.
      *
-     * @return max keys in segment cache
+     * @return immutable identity view
      */
-    public Integer getMaxNumberOfKeysInSegmentCache() {
-        return maxNumberOfKeysInSegmentCache;
+    public IndexIdentityConfiguration<K, V> identity() {
+        return new IndexIdentityConfiguration<>(indexName, keyClass, valueClass,
+                keyTypeDescriptor, valueTypeDescriptor);
     }
 
     /**
-     * Returns canonical write-path configuration for the direct-to-segment
-     * runtime.
+     * Returns grouped segment sizing and cache settings.
      *
-     * @return immutable write-path configuration
+     * @return immutable segment settings view
      */
-    public IndexWritePathConfiguration getWritePathConfiguration() {
+    public IndexSegmentConfiguration segment() {
+        return new IndexSegmentConfiguration(maxNumberOfKeysInSegment,
+                maxNumberOfKeysInSegmentChunk,
+                maxNumberOfKeysInSegmentCache, maxNumberOfSegmentsInCache,
+                maxNumberOfDeltaCacheFiles);
+    }
+
+    /**
+     * Returns canonical direct-to-segment write-path settings.
+     *
+     * @return immutable write-path settings
+     */
+    public IndexWritePathConfiguration writePath() {
         return writePathConfiguration;
     }
 
     /**
-     * Returns compatibility settings retained for callers that still consume
-     * legacy partition-overlay naming.
+     * Returns grouped Bloom filter settings.
      *
-     * @return immutable compatibility view
+     * @return immutable Bloom filter settings view
      */
-    public LegacyPartitionCompatibilityConfiguration getLegacyPartitionCompatibilityConfiguration() {
-        return legacyPartitionCompatibilityConfiguration;
+    public IndexBloomFilterConfiguration bloomFilter() {
+        return new IndexBloomFilterConfiguration(
+                bloomFilterNumberOfHashFunctions,
+                bloomFilterIndexSizeInBytes,
+                bloomFilterProbabilityOfFalsePositive);
     }
 
     /**
-     * Returns the maximum number of keys accepted into one routed segment write
-     * cache in the current direct-to-segment runtime.
+     * Returns grouped maintenance and retry settings.
      *
-     * @return max keys in one segment write cache
+     * @return immutable maintenance settings view
      */
-    public Integer getSegmentWriteCacheKeyLimit() {
-        return writePathConfiguration.getSegmentWriteCacheKeyLimit();
+    public IndexMaintenanceConfiguration maintenance() {
+        return new IndexMaintenanceConfiguration(
+                numberOfSegmentMaintenanceThreads,
+                numberOfIndexMaintenanceThreads,
+                numberOfRegistryLifecycleThreads, indexBusyBackoffMillis,
+                indexBusyTimeoutMillis, backgroundMaintenanceAutoEnabled);
     }
 
     /**
-     * Returns the maximum number of keys buffered in one routed segment while
-     * maintenance is running.
+     * Returns grouped disk I/O settings.
      *
-     * @return maintenance-time buffered key limit
+     * @return immutable I/O settings view
      */
-    public Integer getSegmentWriteCacheKeyLimitDuringMaintenance() {
-        return writePathConfiguration
-                .getSegmentWriteCacheKeyLimitDuringMaintenance();
+    public IndexIoConfiguration io() {
+        return new IndexIoConfiguration(diskIoBufferSize);
     }
 
     /**
-     * Returns the maximum number of buffered keys allowed across the whole
-     * index.
+     * Returns grouped logging settings.
      *
-     * @return index-wide buffered key limit
+     * @return immutable logging settings view
      */
-    public Integer getIndexBufferedWriteKeyLimit() {
-        return writePathConfiguration.getIndexBufferedWriteKeyLimit();
+    public IndexLoggingConfiguration logging() {
+        return new IndexLoggingConfiguration(contextLoggingEnabled);
     }
 
     /**
-     * Returns the split threshold for one routed segment.
+     * Returns WAL settings.
      *
-     * @return max keys before one routed segment is split
+     * @return non-null WAL settings
      */
-    public Integer getSegmentSplitKeyThreshold() {
-        return writePathConfiguration.getSegmentSplitKeyThreshold();
-    }
-
-    /**
-     * Returns the maximum number of keys accepted into the routed segment write
-     * cache.
-     * <p>
-     * Use {@link #getSegmentWriteCacheKeyLimit()} for the canonical name.
-     *
-     * @return max routed write-cache keys
-     * @deprecated use {@link #getSegmentWriteCacheKeyLimit()}
-     */
-    @Deprecated
-    public Integer getMaxNumberOfKeysInActivePartition() {
-        return legacyPartitionCompatibilityConfiguration
-                .getMaxNumberOfKeysInActivePartition();
-    }
-
-    /**
-     * Returns a legacy compatibility limit retained from the removed partition
-     * runtime.
-     *
-     * @return legacy compatibility limit
-     * @deprecated use canonical write-path settings via
-     *             {@link #getWritePathConfiguration()}
-     */
-    @Deprecated
-    public Integer getMaxNumberOfImmutableRunsPerPartition() {
-        return legacyPartitionCompatibilityConfiguration
-                .getMaxNumberOfImmutableRunsPerPartition();
-    }
-
-    /**
-     * Returns the maximum number of buffered keys allowed inside one routed
-     * segment before local backpressure is applied.
-     * <p>
-     * Use {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()} for the
-     * canonical name.
-     *
-     * @return max buffered keys inside one routed segment
-     * @deprecated use
-     *             {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()}
-     */
-    @Deprecated
-    public Integer getMaxNumberOfKeysInPartitionBuffer() {
-        return legacyPartitionCompatibilityConfiguration
-                .getMaxNumberOfKeysInPartitionBuffer();
-    }
-
-    /**
-     * Returns the maximum number of buffered keys allowed across the whole
-     * index.
-     * <p>
-     * Use {@link #getIndexBufferedWriteKeyLimit()} for the canonical name.
-     *
-     * @return global buffered key count
-     * @deprecated use {@link #getIndexBufferedWriteKeyLimit()}
-     */
-    @Deprecated
-    public Integer getMaxNumberOfKeysInIndexBuffer() {
-        return legacyPartitionCompatibilityConfiguration
-                .getMaxNumberOfKeysInIndexBuffer();
-    }
-
-    /**
-     * Returns the maximum number of keys per segment chunk used for on-disk
-     * layout and indexing.
-     *
-     * @return max keys per segment chunk
-     */
-    public Integer getMaxNumberOfKeysInSegmentChunk() {
-        return maxNumberOfKeysInSegmentChunk;
-    }
-
-    /**
-     * Returns the maximum number of delta cache files allowed before
-     * maintenance is triggered.
-     *
-     * @return max delta cache files per segment
-     */
-    public Integer getMaxNumberOfDeltaCacheFiles() {
-        return maxNumberOfDeltaCacheFiles;
-    }
-
-    /**
-     * Returns the logical name of the index.
-     *
-     * @return index name
-     */
-    public String getIndexName() {
-        return indexName;
-    }
-
-    /**
-     * Returns the maximum number of keys allowed within a single segment.
-     *
-     * @return max keys per segment
-     */
-    public Integer getMaxNumberOfKeysInSegment() {
-        return maxNumberOfKeysInSegment;
-    }
-
-    /**
-     * Returns the split threshold for a routed segment.
-     * <p>
-     * Use {@link #getSegmentSplitKeyThreshold()} for the canonical name.
-     *
-     * @return max keys before a routed segment is split
-     * @deprecated use {@link #getSegmentSplitKeyThreshold()}
-     */
-    @Deprecated
-    public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return legacyPartitionCompatibilityConfiguration
-                .getMaxNumberOfKeysInPartitionBeforeSplit();
-    }
-
-    /**
-     * Returns the number of hash functions used by the Bloom filter.
-     *
-     * @return Bloom filter hash function count
-     */
-    public Integer getBloomFilterNumberOfHashFunctions() {
-        return bloomFilterNumberOfHashFunctions;
-    }
-
-    /**
-     * Returns the size of the Bloom filter index in bytes.
-     *
-     * @return Bloom filter size in bytes
-     */
-    public Integer getBloomFilterIndexSizeInBytes() {
-        return bloomFilterIndexSizeInBytes;
-    }
-
-    /**
-     * Returns the target false-positive probability for the Bloom filter
-     * (0.0–1.0).
-     *
-     * @return Bloom filter false-positive probability
-     */
-    public Double getBloomFilterProbabilityOfFalsePositive() {
-        return bloomFilterProbabilityOfFalsePositive;
-    }
-
-    /**
-     * Returns the number of threads used for segment maintenance.
-     *
-     * @return segment maintenance thread count
-     */
-    public Integer getNumberOfSegmentMaintenanceThreads() {
-        return numberOfSegmentMaintenanceThreads;
-    }
-
-    /**
-     * Returns the number of threads used for split maintenance.
-     *
-     * @return split maintenance thread count
-     */
-    public Integer getNumberOfIndexMaintenanceThreads() {
-        return numberOfIndexMaintenanceThreads;
-    }
-
-    /**
-     * Returns the number of threads used by registry lifecycle maintenance.
-     *
-     * @return registry lifecycle thread count
-     */
-    public Integer getNumberOfRegistryLifecycleThreads() {
-        return numberOfRegistryLifecycleThreads;
-    }
-
-    /**
-     * Returns the busy backoff delay in milliseconds for index retries.
-     *
-     * @return busy backoff in milliseconds
-     */
-    public Integer getIndexBusyBackoffMillis() {
-        return indexBusyBackoffMillis;
-    }
-
-    /**
-     * Returns the busy retry timeout in milliseconds for index operations.
-     *
-     * @return busy retry timeout in milliseconds
-     */
-    public Integer getIndexBusyTimeoutMillis() {
-        return indexBusyTimeoutMillis;
-    }
-
-    /**
-     * Returns whether auto flush/compact is scheduled after writes.
-     *
-     * @return true if auto maintenance is enabled; otherwise false
-     */
-    public Boolean isBackgroundMaintenanceAutoEnabled() {
-        return backgroundMaintenanceAutoEnabled;
-    }
-
-    /**
-     * Returns the maximum number of segments retained in the in-memory segment
-     * cache.
-     *
-     * @return max segments in cache
-     */
-    public Integer getMaxNumberOfSegmentsInCache() {
-        return maxNumberOfSegmentsInCache;
-    }
-
-    /**
-     * Returns the disk I/O buffer size in bytes.
-     *
-     * @return disk I/O buffer size in bytes
-     */
-    public Integer getDiskIoBufferSize() {
-        return diskIoBufferSize;
-    }
-
-    /**
-     * Indicates whether logging context propagation via MDC is enabled.
-     *
-     * @return true if context logging is enabled; otherwise false
-     */
-    public Boolean isContextLoggingEnabled() {
-        return contextLoggingEnabled;
-    }
-
-    /**
-     * Returns WAL configuration for this index.
-     *
-     * @return non-null WAL configuration
-     */
-    public Wal getWal() {
+    public Wal wal() {
         return wal;
     }
 
     /**
-     * Returns the key class for this index.
+     * Returns grouped persisted chunk filter settings.
      *
-     * @return key class
+     * @return immutable filter settings view
      */
-    public Class<K> getKeyClass() {
-        return keyClass;
+    public IndexFilterConfiguration filters() {
+        return new IndexFilterConfiguration(encodingChunkFilters,
+                decodingChunkFilters);
     }
 
     /**
-     * Returns the value class for this index.
+     * Returns grouped runtime-tunable settings derived from this
+     * configuration.
      *
-     * @return value class
+     * @return immutable runtime tuning settings view
      */
-    public Class<V> getValueClass() {
-        return valueClass;
-    }
-
-    /**
-     * Returns the fully qualified class name of the key type descriptor used
-     * for serialization.
-     *
-     * @return key type descriptor class name
-     */
-    public String getKeyTypeDescriptor() {
-        return keyTypeDescriptor;
-    }
-
-    /**
-     * Returns the fully qualified class name of the value type descriptor used
-     * for serialization.
-     *
-     * @return value type descriptor class name
-     */
-    public String getValueTypeDescriptor() {
-        return valueTypeDescriptor;
-    }
-
-    /**
-     * Returns immutable encoding filter specs.
-     *
-     * @return encoding filter specs
-     */
-    public List<ChunkFilterSpec> getEncodingChunkFilterSpecs() {
-        return encodingChunkFilters;
-    }
-
-    /**
-     * Returns immutable decoding filter specs.
-     *
-     * @return decoding filter specs
-     */
-    public List<ChunkFilterSpec> getDecodingChunkFilterSpecs() {
-        return decodingChunkFilters;
-    }
-
-    /**
-     * Materializes encoding filters using the built-in chunk filter provider
-     * registry.
-     *
-     * <p>
-     * This is a convenience view over persisted metadata. Custom providers
-     * that are not registered in the default registry must be resolved through
-     * {@link #resolveRuntimeConfiguration(ChunkFilterProviderRegistry)}.
-     * </p>
-     *
-     * @return immutable encoding filter list
-     */
-    public List<ChunkFilter> getEncodingChunkFilters() {
-        return resolveRuntimeConfiguration().getEncodingChunkFilters();
-    }
-
-    /**
-     * Materializes decoding filters using the built-in chunk filter provider
-     * registry.
-     *
-     * <p>
-     * This is a convenience view over persisted metadata. Custom providers
-     * that are not registered in the default registry must be resolved through
-     * {@link #resolveRuntimeConfiguration(ChunkFilterProviderRegistry)}.
-     * </p>
-     *
-     * @return immutable decoding filter list
-     */
-    public List<ChunkFilter> getDecodingChunkFilters() {
-        return resolveRuntimeConfiguration().getDecodingChunkFilters();
+    public IndexRuntimeTuningConfiguration runtimeTuning() {
+        return new IndexRuntimeTuningConfiguration(maxNumberOfSegmentsInCache,
+                maxNumberOfKeysInSegmentCache, writePathConfiguration,
+                legacyImmutableRunLimit);
     }
 
     /**

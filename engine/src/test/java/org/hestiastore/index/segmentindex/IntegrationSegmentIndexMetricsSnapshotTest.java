@@ -28,17 +28,17 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInSegment(8) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 1024) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .segment(segment -> segment.maxKeys(8)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 1024)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_test_index")) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -68,17 +68,17 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInSegment(32) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 1024) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_executor_runtime_test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .segment(segment -> segment.maxKeys(32)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 1024)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_executor_runtime_test_index")) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -109,10 +109,10 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getSplitTaskRunLatencyP95Micros() >= 0L);
             assertTrue(snapshot.getDrainTaskStartDelayP95Micros() >= 0L);
             assertTrue(snapshot.getDrainTaskRunLatencyP95Micros() >= 0L);
-            assertTrue(snapshot.getSplitBlockedPartitionCount() >= 0);
-            assertTrue(snapshot.getSplitBlockedDrainScheduleCount() >= 0L);
+            assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount() >= 0);
+            assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedDrainScheduleCount() >= 0L);
             assertTrue(
-                    snapshot.getBufferFullWhileSplitBlockedCount() >= 0L);
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getBufferFullWhileSplitBlockedCount() >= 0L);
             assertTrue(snapshot.getPutBusyRetryCount() >= 0L);
             assertTrue(snapshot.getPutBusyTimeoutCount() >= 0L);
             assertTrue(snapshot.getPutBusyWaitP95Micros() >= 0L);
@@ -130,13 +130,13 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegment(64) //
-                .withName("metrics_wal_enabled_test_index") //
-                .withWal(Wal.builder().build()) //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.maxKeys(64)) //
+                .identity(identity -> identity.name("metrics_wal_enabled_test_index")) //
+                .wal(wal -> wal.configuration(Wal.builder().build())) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -178,23 +178,23 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(5) //
-                .withMaxNumberOfKeysInActivePartition(8) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(16) //
-                .withMaxNumberOfKeysInIndexBuffer(64) //
-                .withMaxNumberOfKeysInSegment(512) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withMaxNumberOfDeltaCacheFiles(1) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_compaction_monotonicity_test") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(5)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(16)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(64)) //
+                .segment(segment -> segment.maxKeys(512)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .segment(segment -> segment.deltaCacheFileLimit(1)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_compaction_monotonicity_test")) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -206,7 +206,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             awaitIdle(index);
             final SegmentIndexMetricsSnapshot beforeRotation = index
                     .metricsSnapshot();
-            assertEquals(0L, beforeRotation.getDrainScheduleCount());
+            assertEquals(0L, beforeRotation.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
 
             for (int i = 128; i < 256; i++) {
                 index.put(i, "next-" + i);
@@ -215,8 +215,8 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
             final SegmentIndexMetricsSnapshot afterRotation = index
                     .metricsSnapshot();
-            assertEquals(0L, afterRotation.getDrainScheduleCount());
-            assertTrue(afterRotation.getDrainLatencyP95Micros() >= 0L);
+            assertEquals(0L, afterRotation.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
+            assertTrue(afterRotation.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
         }
     }
 
@@ -227,25 +227,25 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(5) //
-                .withMaxNumberOfKeysInActivePartition(128) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(192) //
-                .withMaxNumberOfKeysInIndexBuffer(256) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withMaxNumberOfDeltaCacheFiles(1) //
-                .withMaxNumberOfSegmentsInCache(16) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_cache_only_runtime_test") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(5)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(192)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .segment(segment -> segment.deltaCacheFileLimit(1)) //
+                .segment(segment -> segment.cachedSegmentLimit(16)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_cache_only_runtime_test")) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -273,22 +273,22 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_runtime_split_policy_test") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_runtime_split_policy_test")) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -330,22 +330,22 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInSegment(16) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_autonomous_split_policy_test") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .segment(segment -> segment.maxKeys(16)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_autonomous_split_policy_test")) //
                 .build();
         final String propertyName = "hestiastore.disableSplits";
         final String previousValue = System.getProperty(propertyName);
@@ -371,8 +371,8 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                         .metricsSnapshot();
                 return snapshot.getSegmentCount() > 1
                         && snapshot.getSplitInFlightCount() == 0
-                        && snapshot.getDrainInFlightCount() == 0
-                        && snapshot.getImmutableRunCount() == 0;
+                        && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
+                        && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0;
             }, 10_000L);
 
             for (int i = 0; i < 48; i++) {
@@ -409,22 +409,22 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(64) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withContextLoggingEnabled(false) //
-                .withName(indexName) //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name(indexName)) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
@@ -437,20 +437,20 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
             final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
             assertTrue(before.getTotalBufferedWriteKeys() > 0L);
-            assertEquals(0, before.getPartitionBufferedKeyCount());
-            assertEquals(0, before.getActivePartitionCount());
+            assertEquals(0, before.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
+            assertEquals(0, before.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
 
             maintenanceAction.accept(index);
             awaitIdle(index);
 
             final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
             assertEquals(0L, after.getTotalBufferedWriteKeys());
-            assertEquals(0, after.getPartitionBufferedKeyCount());
-            assertEquals(0, after.getImmutableRunCount());
-            assertEquals(0, after.getDrainingPartitionCount());
-            assertEquals(0, after.getDrainInFlightCount());
+            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
+            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
+            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount());
+            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount());
             assertEquals(0, after.getSplitInFlightCount());
-            assertTrue(after.getDrainLatencyP95Micros() >= 0L);
+            assertTrue(after.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
 
             assertEquals("buffered-5", index.get(5));
             assertNull(index.get(18));
@@ -463,9 +463,9 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = index
                     .metricsSnapshot();
-            return snapshot.getDrainInFlightCount() == 0
-                    && snapshot.getImmutableRunCount() == 0
-                    && snapshot.getDrainingPartitionCount() == 0
+            return snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
+                    && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
+                    && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount() == 0
                     && snapshot.getSplitInFlightCount() == 0;
         }, 10_000L);
     }
@@ -497,15 +497,15 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     private static void assertDirectWriteBufferMetrics(
             final SegmentIndexMetricsSnapshot snapshot) {
         assertTrue(snapshot.getTotalBufferedWriteKeys() >= 2L);
-        assertEquals(0, snapshot.getPartitionCount());
-        assertEquals(0, snapshot.getActivePartitionCount());
-        assertEquals(0, snapshot.getPartitionBufferedKeyCount());
-        assertEquals(0, snapshot.getImmutableRunCount());
-        assertEquals(0, snapshot.getDrainingPartitionCount());
-        assertEquals(0, snapshot.getDrainInFlightCount());
-        assertTrue(snapshot.getLocalThrottleCount() >= 0L);
-        assertTrue(snapshot.getGlobalThrottleCount() >= 0L);
-        assertTrue(snapshot.getDrainLatencyP95Micros() >= 0L);
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount());
+        assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount() >= 0L);
+        assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount() >= 0L);
+        assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
     }
 
     private static void assertRegistryAndBloomMetrics(

@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
@@ -118,24 +117,24 @@ class SegmentIndexImplRetryTest {
 
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class).withValueClass(String.class)
-                .withKeyTypeDescriptor(tdi).withValueTypeDescriptor(tds)
-                .withName("segment-index-retry-test")
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(1)
-                .withMaxNumberOfImmutableRunsPerPartition(1)
-                .withMaxNumberOfKeysInPartitionBuffer(2)
-                .withMaxNumberOfKeysInIndexBuffer(2)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfKeysInSegment(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
+                .identity(identity -> identity.keyClass(Integer.class)).identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity.keyTypeDescriptor(tdi)).identity(identity -> identity.valueTypeDescriptor(tds))
+                .identity(identity -> identity.name("segment-index-retry-test"))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(1))
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(1))
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(2))
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(2))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();
     }
 
@@ -153,7 +152,6 @@ class SegmentIndexImplRetryTest {
                 .segmentRegistry(index);
     }
 
-    @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final Object index) {
         return SegmentIndexTestAccess.keyToSegmentMap(index);
@@ -188,8 +186,7 @@ class SegmentIndexImplRetryTest {
             stateField.setAccessible(true);
             final Class<?> stateClass = Class.forName(
                     "org.hestiastore.index.segmentregistry.SegmentRegistryCache$EntryState");
-            stateField.set(entry, Enum.valueOf(
-                    stateClass.asSubclass(Enum.class), "READY"));
+            stateField.set(entry, enumConstant(stateClass, "READY"));
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             valueField.set(entry, segment);
@@ -203,5 +200,15 @@ class SegmentIndexImplRetryTest {
             throw new IllegalStateException(
                     "Unable to update registry cache for test", ex);
         }
+    }
+
+    private static Object enumConstant(final Class<?> enumClass,
+            final String name) {
+        for (final Object constant : enumClass.getEnumConstants()) {
+            if (((Enum<?>) constant).name().equals(name)) {
+                return constant;
+            }
+        }
+        throw new IllegalArgumentException("Unknown enum constant: " + name);
     }
 }

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -110,8 +109,7 @@ class SegmentRegistryImplCloseTest {
         final BusyRetryPolicy blockingRetryPolicy = new BusyRetryPolicy(
                 backoffMillis, timeoutMillis);
         return new SegmentRegistryImpl<>(allocator, fs, cache, closeRetryPolicy,
-                gate, writerFactory, runtimeTuner, blockingRetryPolicy,
-                ConcurrentHashMap.<SegmentId>newKeySet());
+                gate, writerFactory, runtimeTuner, blockingRetryPolicy);
     }
 
     @SuppressWarnings("unchecked")

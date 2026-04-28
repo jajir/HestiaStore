@@ -130,27 +130,27 @@ public final class MonitoringConsoleWebDemoMain {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withMaxNumberOfKeysInSegmentCache(
-                        DEMO_MAX_KEYS_IN_SEGMENT_CACHE)
-                .withMaxNumberOfSegmentsInCache(DEMO_MAX_SEGMENTS_IN_CACHE)
-                .withMaxNumberOfKeysInSegment(DEMO_MAX_KEYS_PER_SEGMENT)
-                .withMaxNumberOfKeysInActivePartition(
-                        DEMO_ACTIVE_PARTITION_KEYS)
-                .withMaxNumberOfImmutableRunsPerPartition(2)
-                .withMaxNumberOfKeysInPartitionBuffer(
-                        DEMO_PARTITION_BUFFER_KEYS)
-                .withMaxNumberOfKeysInIndexBuffer(
-                        DEMO_PARTITION_BUFFER_KEYS * 4)
-                .withMaxNumberOfKeysInPartitionBeforeSplit(
-                        DEMO_MAX_KEYS_PER_SEGMENT)
-                .withMaxNumberOfDeltaCacheFiles(DEMO_MAX_DELTA_CACHE_FILES)
-                .withBloomFilterIndexSizeInBytes(DEMO_BLOOM_INDEX_SIZE_BYTES)
-                .withContextLoggingEnabled(false)
-                .withName(name)
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name(name))
+                .segment(segment -> segment
+                        .cacheKeyLimit(DEMO_MAX_KEYS_IN_SEGMENT_CACHE)
+                        .cachedSegmentLimit(DEMO_MAX_SEGMENTS_IN_CACHE)
+                        .maxKeys(DEMO_MAX_KEYS_PER_SEGMENT)
+                        .deltaCacheFileLimit(DEMO_MAX_DELTA_CACHE_FILES))
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(DEMO_ACTIVE_PARTITION_KEYS)
+                        .legacyImmutableRunLimit(2)
+                        .maintenanceWriteCacheKeyLimit(
+                                DEMO_PARTITION_BUFFER_KEYS)
+                        .indexBufferedWriteKeyLimit(
+                                DEMO_PARTITION_BUFFER_KEYS * 4)
+                        .segmentSplitKeyThreshold(DEMO_MAX_KEYS_PER_SEGMENT))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(DEMO_BLOOM_INDEX_SIZE_BYTES))
+                .logging(logging -> logging.contextEnabled(false))
                 .build();
         return SegmentIndex.create(directory, conf);
     }

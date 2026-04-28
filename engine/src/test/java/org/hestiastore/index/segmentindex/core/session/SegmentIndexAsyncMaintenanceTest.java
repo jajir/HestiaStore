@@ -202,23 +202,23 @@ class SegmentIndexAsyncMaintenanceTest {
 
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi)//
-                .withValueTypeDescriptor(tds)//
-                .withName("async-maintenance-test")//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(100)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withContextLoggingEnabled(false)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi))//
+                .identity(identity -> identity.valueTypeDescriptor(tds))//
+                .identity(identity -> identity.name("async-maintenance-test"))//
+                .segment(segment -> segment.cacheKeyLimit(10))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(100))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .build();
     }
 
@@ -304,13 +304,11 @@ class SegmentIndexAsyncMaintenanceTest {
                 .segmentRegistry(index);
     }
 
-    @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final Object index) {
         return SegmentIndexTestAccess.keyToSegmentMap(index);
     }
 
-    @SuppressWarnings("unchecked")
     private static Object readCache(final Object registry) {
         try {
             final Field cacheField = registry.getClass().getDeclaredField(
@@ -340,8 +338,7 @@ class SegmentIndexAsyncMaintenanceTest {
             stateField.setAccessible(true);
             final Class<?> stateClass = Class.forName(
                     "org.hestiastore.index.segmentregistry.SegmentRegistryCache$EntryState");
-            stateField.set(entry, Enum.valueOf(
-                    stateClass.asSubclass(Enum.class), "READY"));
+            stateField.set(entry, enumConstant(stateClass, "READY"));
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             valueField.set(entry, segment);
@@ -355,5 +352,15 @@ class SegmentIndexAsyncMaintenanceTest {
             throw new IllegalStateException(
                     "Unable to update registry cache for test", ex);
         }
+    }
+
+    private static Object enumConstant(final Class<?> enumClass,
+            final String name) {
+        for (final Object constant : enumClass.getEnumConstants()) {
+            if (((Enum<?>) constant).name().equals(name)) {
+                return constant;
+            }
+        }
+        throw new IllegalArgumentException("Unknown enum constant: " + name);
     }
 }

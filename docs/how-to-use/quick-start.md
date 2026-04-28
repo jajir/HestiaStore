@@ -17,9 +17,10 @@ public class Example {
 
     IndexConfiguration<String, String> conf = IndexConfiguration
         .<String, String>builder()
-        .withKeyClass(String.class)
-        .withValueClass(String.class)
-        .withName("example")
+        .identity(identity -> identity
+            .name("example")
+            .keyClass(String.class)
+            .valueClass(String.class))
         .build();
 
     try (SegmentIndex<String, String> index = SegmentIndex.create(directory, conf)) {

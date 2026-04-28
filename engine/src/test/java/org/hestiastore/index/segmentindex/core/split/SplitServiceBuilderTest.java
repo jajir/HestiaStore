@@ -13,6 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.metrics.Stats;
@@ -21,6 +22,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("unchecked")
 class SplitServiceBuilderTest {
 
     @Test
@@ -30,10 +32,12 @@ class SplitServiceBuilderTest {
         try {
             final IndexConfiguration<String, String> conf = mock(
                     IndexConfiguration.class);
-            final SegmentRegistry<String, String> segmentRegistry =
-                    mock(SegmentRegistry.class);
-            when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
-            when(conf.getIndexBusyTimeoutMillis()).thenReturn(1);
+            final IndexMaintenanceConfiguration maintenance = mock(
+                    IndexMaintenanceConfiguration.class);
+            final SegmentRegistry<String, String> segmentRegistry = mock(SegmentRegistry.class);
+            when(conf.maintenance()).thenReturn(maintenance);
+            when(maintenance.busyBackoffMillis()).thenReturn(1);
+            when(maintenance.busyTimeoutMillis()).thenReturn(1);
             when(segmentRegistry.materialization())
                     .thenReturn(mock(SegmentRegistry.Materialization.class));
             final SplitService service = SplitService
@@ -90,7 +94,6 @@ class SplitServiceBuilderTest {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Comparator<String> mockComparator() {
         return mock(Comparator.class);
     }

@@ -12,7 +12,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
@@ -72,7 +71,7 @@ class IndexConsistencyCheckerTest {
     }
 
     @Test
-    void busySegmentLoad_retriesUntilSegmentIsAvailable() {
+    void segmentLoad_usesLoadedSegment() {
         when(segmentHandle.checkAndRepairConsistency()).thenReturn(10);
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SegmentId.of(1)));
@@ -81,22 +80,20 @@ class IndexConsistencyCheckerTest {
                 .thenReturn(segmentHandle);
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                new TypeDescriptorInteger(), segmentId -> true,
-                new IndexRetryPolicy(1, 20));
+                new TypeDescriptorInteger(), segmentId -> true);
 
         checker.checkAndRepairConsistency();
     }
 
     @Test
-    void busySegmentLoad_timesOutWithRetryPolicyMessage() {
+    void segmentLoad_wrapsLoadFailure() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SegmentId.of(1)));
         when(segmentRegistry.loadSegment(SegmentId.of(1))).thenThrow(
                 new IndexException("loadSegmentForConsistency timed out"));
 
         checker = new IndexConsistencyChecker<>(keyToSegmentMap, segmentRegistry,
-                new TypeDescriptorInteger(), segmentId -> true,
-                new IndexRetryPolicy(1, 1));
+                new TypeDescriptorInteger(), segmentId -> true);
 
         final IndexException ex = assertThrows(IndexException.class,
                 () -> checker.checkAndRepairConsistency());

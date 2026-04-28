@@ -31,21 +31,21 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
     void setUp() {
         directory = new MemDirectory();
         IndexConfiguration<String, Integer> conf = IndexConfiguration
-                .<String, Integer>builder().withKeyClass(String.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(tds) //
-                .withValueTypeDescriptor(tdi) //
-                .withMaxNumberOfKeysInSegmentCache(100) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(1000) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(4) //
+                .<String, Integer>builder().identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(Integer.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tds)) //
+                .identity(identity -> identity.valueTypeDescriptor(tdi)) //
+                .segment(segment -> segment.cacheKeyLimit(100)) //
+                .segment(segment -> segment.maxKeys(4)) //
+                .segment(segment -> segment.chunkKeyLimit(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
                 // Keep iterator CRUD tests focused on direct write semantics,
                 // not on autonomous split timing introduced by background
                 // maintenance.
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withContextLoggingEnabled(false) //
-                .withName("test_index") //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
         index = SegmentIndex.<String, Integer>create(directory, conf);
 

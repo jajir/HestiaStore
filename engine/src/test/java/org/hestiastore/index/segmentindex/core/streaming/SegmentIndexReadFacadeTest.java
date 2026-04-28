@@ -17,6 +17,7 @@ import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("unchecked")
 class SegmentIndexReadFacadeTest {
 
     private SegmentIndexDataAccess<Integer, String> dataAccess;

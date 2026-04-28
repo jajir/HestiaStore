@@ -364,7 +364,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexStateCoordinator<K, V> stateCoordinator,
             final IndexOperationTrackingAccess operationTracker,
             final Stats stats, final SegmentIndexRuntime<K, V> runtime) {
-        return new IndexCloseCoordinator<>(logger, conf.getIndexName(),
+        return new IndexCloseCoordinator<>(logger, conf.identity().name(),
                 stateCoordinator,
                 Vldtn.requireNonNull(operationTracker, "operationTracker"),
                 Vldtn.requireNonNull(stats, "stats"),
@@ -378,7 +378,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexStateCoordinator<K, V> stateCoordinator,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
         return new SegmentIndexStartupCoordinator<>(logger,
-                conf.getIndexName(), staleLockRecovered,
+                conf.identity().name(), staleLockRecovered,
                 Vldtn.requireNonNull(runtime, "runtime"),
                 stateCoordinator,
                 Vldtn.requireNonNull(consistencyCoordinator,

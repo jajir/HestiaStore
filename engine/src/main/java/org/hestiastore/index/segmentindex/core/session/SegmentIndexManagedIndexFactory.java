@@ -5,10 +5,10 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.config.DataTypeDescriptorRegistry;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 /**
- * Creates the managed runtime index and close wrappers once lifecycle resources are
+ * Creates the managed runtime index and close wrappers once lifecycle resources
+ * are
  * already opened.
  */
 final class SegmentIndexManagedIndexFactory {
@@ -20,8 +20,8 @@ final class SegmentIndexManagedIndexFactory {
             final SegmentIndexLifecycle<M, N> lifecycle) {
         final SegmentIndexLifecycle<M, N> openedLifecycle = Vldtn.requireNonNull(
                 lifecycle, "lifecycle");
-        final SegmentIndexLifecycleResources<M, N> openedResources =
-                openedLifecycle.openedResources();
+        final SegmentIndexLifecycleResources<M, N> openedResources = openedLifecycle
+                .openedResources();
         return new IndexDirectoryClosingAdapter<>(
                 createManagedIndex(openedResources),
                 openedResources.managedDirectory(),
@@ -35,34 +35,43 @@ final class SegmentIndexManagedIndexFactory {
                 .requireOpened();
         final IndexConfiguration<M, N> configuration = openedResources
                 .indexConfiguration();
-        return wrapWithContextLoggingIfEnabled(configuration,
-                new IndexInternalConcurrent<>(
-                        openedResources.managedDirectory(),
-                        resolveKeyTypeDescriptor(configuration),
-                        resolveValueTypeDescriptor(configuration), configuration,
-                        openedResources.runtimeConfiguration(),
-                        openedResources.executorRegistry()));
+        return createRuntimeIndexWithContextLoggingIfEnabled(openedResources,
+                configuration);
     }
 
     private static <M> TypeDescriptor<M> resolveKeyTypeDescriptor(
             final IndexConfiguration<M, ?> configuration) {
         return DataTypeDescriptorRegistry
-                .makeInstance(configuration.getKeyTypeDescriptor());
+                .makeInstance(configuration.identity().keyTypeDescriptor());
     }
 
     private static <N> TypeDescriptor<N> resolveValueTypeDescriptor(
             final IndexConfiguration<?, N> configuration) {
         return DataTypeDescriptorRegistry
-                .makeInstance(configuration.getValueTypeDescriptor());
+                .makeInstance(configuration.identity().valueTypeDescriptor());
     }
 
-    private static <M, N> SegmentIndex<M, N> wrapWithContextLoggingIfEnabled(
-            final IndexConfiguration<M, N> configuration,
-            final SegmentIndex<M, N> runtimeIndex) {
-        if (!Boolean.TRUE.equals(configuration.isContextLoggingEnabled())) {
-            return runtimeIndex;
+    private static <M, N> SegmentIndex<M, N> createRuntimeIndexWithContextLoggingIfEnabled(
+            final SegmentIndexLifecycleResources<M, N> resources,
+            final IndexConfiguration<M, N> configuration) {
+        if (!Boolean.TRUE.equals(configuration.logging().contextEnabled())) {
+            return createRuntimeIndex(resources, configuration);
         }
-        Vldtn.requireNotBlank(configuration.getIndexName(), "indexName");
-        return new IndexContextLoggingAdapter<>(configuration, runtimeIndex);
+        Vldtn.requireNotBlank(configuration.identity().name(), "indexName");
+        final IndexContextScopeRunner contextScopeRunner = new IndexContextScopeRunner(
+                configuration.identity().name());
+        return contextScopeRunner.supply(() -> new IndexContextLoggingAdapter<>(
+                configuration, createRuntimeIndex(resources, configuration)));
+    }
+
+    private static <M, N> SegmentIndex<M, N> createRuntimeIndex(
+            final SegmentIndexLifecycleResources<M, N> resources,
+            final IndexConfiguration<M, N> configuration) {
+        return new IndexInternalConcurrent<>(
+                resources.managedDirectory(),
+                resolveKeyTypeDescriptor(configuration),
+                resolveValueTypeDescriptor(configuration), configuration,
+                resources.runtimeConfiguration(),
+                resources.executorRegistry());
     }
 }

@@ -22,6 +22,7 @@ import org.hestiastore.index.control.model.RuntimePatchResult;
 import org.hestiastore.index.control.model.RuntimePatchValidation;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexIdentityConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -34,10 +35,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")
 class IndexContextLoggingAdapterTest {
 
     @Mock
     private IndexConfiguration<String, String> conf;
+
+    @Mock
+    private IndexIdentityConfiguration<String, String> identity;
 
     @Mock
     private SegmentIndex<String, String> delegate;
@@ -46,7 +51,8 @@ class IndexContextLoggingAdapterTest {
 
     @BeforeEach
     void setUp() {
-        when(conf.getIndexName()).thenReturn("idx");
+        when(conf.identity()).thenReturn(identity);
+        when(identity.name()).thenReturn("idx");
         when(delegate.controlPlane()).thenReturn(mock(IndexControlPlane.class));
         adapter = new IndexContextLoggingAdapter<>(conf, delegate);
     }
@@ -63,7 +69,10 @@ class IndexContextLoggingAdapterTest {
     void constructorRejectsBlankIndexName() {
         final IndexConfiguration<String, String> blankConf = mock(
                 IndexConfiguration.class);
-        when(blankConf.getIndexName()).thenReturn("  ");
+        final IndexIdentityConfiguration<String, String> blankIdentity = mock(
+                IndexIdentityConfiguration.class);
+        when(blankConf.identity()).thenReturn(blankIdentity);
+        when(blankIdentity.name()).thenReturn("  ");
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> new IndexContextLoggingAdapter<>(blankConf, delegate));

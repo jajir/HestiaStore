@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.List;
 
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.directory.FsNioDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -90,12 +91,13 @@ class IndexToolTest {
                 targetConfigPath.toString(), "--verify-after-import"));
 
         final IndexConfiguration<Integer, Long> configuration = IndexConfiguration
-                .<Integer, Long>builder().withName("migrated-values")
-                .withKeyClass(Integer.class).withValueClass(Long.class)
-                .withKeyTypeDescriptor(
-                        "org.hestiastore.index.datatype.TypeDescriptorInteger")
-                .withValueTypeDescriptor(
-                        "org.hestiastore.index.datatype.TypeDescriptorLong")
+                .<Integer, Long>builder()
+                .identity(identity -> identity.name("migrated-values")
+                        .keyClass(Integer.class).valueClass(Long.class)
+                        .keyTypeDescriptor(
+                                "org.hestiastore.index.datatype.TypeDescriptorInteger")
+                        .valueTypeDescriptor(
+                                "org.hestiastore.index.datatype.TypeDescriptorLong"))
                 .build();
         try (SegmentIndex<Integer, Long> index = SegmentIndex.open(
                 new FsNioDirectory(importedIndex.toFile()), configuration)) {
@@ -123,6 +125,62 @@ class IndexToolTest {
         assertSuccess(delegatedHelp);
         assertTrue(
                 delegatedHelp.stdout().contains("hestia_index verify-export"));
+    }
+
+    @Test
+    void groupedConfigurationRoundTripsThroughManifestMapper()
+            throws Exception {
+        final IndexConfiguration<Integer, String> configuration =
+                IndexConfiguration.<Integer, String>builder()
+                        .identity(identity -> identity.name("grouped-manifest")
+                                .keyClass(Integer.class)
+                                .valueClass(String.class)
+                                .keyTypeDescriptor(
+                                        "org.hestiastore.index.datatype.TypeDescriptorInteger")
+                                .valueTypeDescriptor(
+                                        "org.hestiastore.index.datatype.TypeDescriptorShortString"))
+                        .segment(segment -> segment.maxKeys(100)
+                                .chunkKeyLimit(10).cacheKeyLimit(20)
+                                .cachedSegmentLimit(4)
+                                .deltaCacheFileLimit(3))
+                        .writePath(writePath -> writePath
+                                .segmentWriteCacheKeyLimit(7)
+                                .maintenanceWriteCacheKeyLimit(9)
+                                .indexBufferedWriteKeyLimit(40)
+                                .segmentSplitKeyThreshold(80))
+                        .bloomFilter(bloom -> bloom.hashFunctions(2)
+                                .indexSizeBytes(1024)
+                                .falsePositiveProbability(0.05D))
+                        .maintenance(maintenance -> maintenance
+                                .segmentThreads(2).indexThreads(3)
+                                .registryLifecycleThreads(4)
+                                .busyBackoffMillis(5)
+                                .busyTimeoutMillis(6)
+                                .backgroundAutoEnabled(false))
+                        .io(io -> io.diskBufferSizeBytes(2048))
+                        .logging(logging -> logging.contextEnabled(false))
+                        .filters(filters -> filters
+                                .encodingFilterSpecs(
+                                        List.of(ChunkFilterSpecs.doNothing()))
+                                .decodingFilterSpecs(
+                                        List.of(ChunkFilterSpecs.doNothing())))
+                        .build();
+
+        final IndexConfigurationManifest manifest = IndexConfigurationMapper
+                .toManifest(configuration);
+        final IndexConfiguration<?, ?> roundTrip = IndexConfigurationMapper
+                .fromManifest(manifest);
+
+        assertEquals("grouped-manifest", roundTrip.identity().name());
+        assertEquals(Integer.valueOf(100), roundTrip.segment().maxKeys());
+        assertEquals(Integer.valueOf(7),
+                roundTrip.writePath().segmentWriteCacheKeyLimit());
+        assertEquals(Integer.valueOf(1024),
+                roundTrip.bloomFilter().indexSizeBytes());
+        assertEquals(Integer.valueOf(2048),
+                roundTrip.io().diskBufferSizeBytes());
+        assertEquals(List.of(ChunkFilterSpecs.doNothing()),
+                roundTrip.filters().encodingChunkFilterSpecs());
     }
 
     @Test
@@ -264,8 +322,9 @@ class IndexToolTest {
     private void createStringIndex(final Path indexPath,
             final List<Entry<Integer, String>> entries) {
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration
-                .<Integer, String>builder().withName("source")
-                .withKeyClass(Integer.class).withValueClass(String.class)
+                .<Integer, String>builder()
+                .identity(identity -> identity.name("source")
+                        .keyClass(Integer.class).valueClass(String.class))
                 .build();
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(
                 new FsNioDirectory(indexPath.toFile()), configuration)) {
@@ -278,8 +337,9 @@ class IndexToolTest {
     private void createStringKeyIndex(final Path indexPath,
             final List<Entry<String, String>> entries) {
         final IndexConfiguration<String, String> configuration = IndexConfiguration
-                .<String, String>builder().withName("string-keys")
-                .withKeyClass(String.class).withValueClass(String.class)
+                .<String, String>builder()
+                .identity(identity -> identity.name("string-keys")
+                        .keyClass(String.class).valueClass(String.class))
                 .build();
         try (SegmentIndex<String, String> index = SegmentIndex.create(
                 new FsNioDirectory(indexPath.toFile()), configuration)) {

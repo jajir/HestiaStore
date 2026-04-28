@@ -63,7 +63,7 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
 
     private IndexRetryPolicy newRetryPolicy(
             final IndexConfiguration<K, V> conf) {
-        return new IndexRetryPolicy(conf.getIndexBusyBackoffMillis(),
-                conf.getIndexBusyTimeoutMillis());
+        return new IndexRetryPolicy(conf.maintenance().busyBackoffMillis(),
+                conf.maintenance().busyTimeoutMillis());
     }
 }

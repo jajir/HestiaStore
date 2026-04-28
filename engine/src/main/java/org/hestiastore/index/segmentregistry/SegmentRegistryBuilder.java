@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentregistry;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -169,16 +167,16 @@ public final class SegmentRegistryBuilder<K, V> {
                 ? resolvedConf.resolveRuntimeConfiguration()
                 : runtimeConfiguration;
         final int maxSegments = Vldtn
-                .requireNonNull(resolvedConf.getMaxNumberOfSegmentsInCache(),
+                .requireNonNull(resolvedConf.segment().cachedSegmentLimit(),
                         "maxNumberOfSegmentsInCache")
                 .intValue();
         final int maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
                 maxSegments, "maxNumberOfSegmentsInCache");
         final int busyBackoffMillis = sanitizeRetryConf(
-                resolvedConf.getIndexBusyBackoffMillis(),
+                resolvedConf.maintenance().busyBackoffMillis(),
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS);
         final int busyTimeoutMillis = sanitizeRetryConf(
-                resolvedConf.getIndexBusyTimeoutMillis(),
+                resolvedConf.maintenance().busyTimeoutMillis(),
                 IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
@@ -200,7 +198,6 @@ public final class SegmentRegistryBuilder<K, V> {
         final BusyRetryPolicy resolvedRegistryCloseRetryPolicy = new BusyRetryPolicy(
                 busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        final Set<SegmentId> pinnedSegments = ConcurrentHashMap.newKeySet();
         final SegmentLifecycleMaintenance<K, V> maintenance = new SegmentLifecycleMaintenance<>(
                 resolvedFactory, resolvedFileSystem, resolvedCloseRetryPolicy,
                 gate);
@@ -208,26 +205,24 @@ public final class SegmentRegistryBuilder<K, V> {
                 maxNumberOfSegmentsInCache, maintenance::loadSegment,
                 maintenance::closeSegmentIfNeeded,
                 resolvedRegistryMaintenanceExecutor,
-                segment -> isEvictable(segment, pinnedSegments, gate));
+                segment -> isEvictable(segment, gate));
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
-                resolvedFactory, resolvedBlockingRetryPolicy, pinnedSegments);
+                resolvedFactory, resolvedBlockingRetryPolicy);
     }
 
     private static <K, V> boolean isEvictable(final Segment<K, V> segment,
-            final Set<SegmentId> pinnedSegments,
             final SegmentRegistryStateMachine gate) {
         return segment != null && (segment.getState() == SegmentState.CLOSED
-                || isUnpinnedReadySegment(segment, pinnedSegments, gate));
+                || isReadySegmentEvictable(segment, gate));
     }
 
-    private static <K, V> boolean isUnpinnedReadySegment(
-            final Segment<K, V> segment, final Set<SegmentId> pinnedSegments,
+    private static <K, V> boolean isReadySegmentEvictable(
+            final Segment<K, V> segment,
             final SegmentRegistryStateMachine gate) {
         final boolean closing = gate.getState() != SegmentRegistryState.READY;
         final SegmentId segmentId = segment.getId();
-        return segmentId != null && !pinnedSegments.contains(segmentId)
-                && segment.getState() == SegmentState.READY
+        return segmentId != null && segment.getState() == SegmentState.READY
                 && (closing || segment.getNumberOfKeysInWriteCache() == 0);
     }
 

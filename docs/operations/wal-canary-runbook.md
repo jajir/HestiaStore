@@ -4,7 +4,7 @@ This runbook defines a safe rollout process for enabling WAL on production index
 
 Scope:
 
-- WAL is opt-in per index (`withWal(...)`).
+- WAL is opt-in per index through the grouped `wal(...)` builder section.
 - Default remains disabled (`Wal.EMPTY`).
 - One WAL lives inside each index directory (`<index>/wal`).
 
@@ -57,21 +57,19 @@ Collect baseline:
 Use explicit WAL config:
 
 ```java
-Wal wal = Wal.builder()
-    .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
-    .withSegmentSizeBytes(64L * 1024L * 1024L)
-    .withGroupSyncDelayMillis(5L)
-    .withGroupSyncMaxBatchBytes(1L * 1024L * 1024L)
-    .withMaxBytesBeforeForcedCheckpoint(512L * 1024L * 1024L)
-    .withCorruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)
-    .build();
-
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders-canary")
-    .withWal(wal)
+    .identity(identity -> identity
+        .name("orders-canary")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .wal(wal -> wal
+        .durability(WalDurabilityMode.GROUP_SYNC)
+        .segmentSizeBytes(64L * 1024L * 1024L)
+        .groupSyncDelayMillis(5)
+        .groupSyncMaxBatchBytes(1024 * 1024)
+        .maxBytesBeforeForcedCheckpoint(512L * 1024L * 1024L)
+        .corruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL))
     .build();
 ```
 
@@ -147,10 +145,11 @@ Critical signals (`sync failure`, `corruption`, `unexpected truncation`) are fai
 ```java
 IndexConfiguration<String, String> rollbackConf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders-canary")
-    .withWal(Wal.EMPTY)
+    .identity(identity -> identity
+        .name("orders-canary")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .wal(wal -> wal.disabled())
     .build();
 
 try (SegmentIndex<String, String> index = SegmentIndex.open(directory, rollbackConf)) {

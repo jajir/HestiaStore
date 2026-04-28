@@ -18,7 +18,7 @@ Capacity model that bounds segment-local write-cache and maintenance backlog
 growth so ingest memory stays predictable under load. Some settings still keep
 historical `partition` names for compatibility. Code:
 `segmentindex/IndexWritePathConfiguration.java`,
-`segmentindex/LegacyPartitionCompatibilityConfiguration.java`,
+`segmentindex/IndexRuntimeTuningConfiguration.java`,
 `control/model/RuntimeSettingKey.java`,
 `segment/SegmentRuntimeLimits.java`.
 

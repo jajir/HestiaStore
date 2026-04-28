@@ -87,26 +87,26 @@ class IndexPropertiesSchemaTest {
         assertEquals(IndexPropertiesSchema.CURRENT_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
         assertEquals(
-                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+                IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
-        final int expectedActivePartition = IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE
+        final int expectedActivePartition = IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT
                 / 2;
         final int expectedPartitionBuffer = Math.max(
                 expectedActivePartition * 2, expectedActivePartition + 1);
         assertEquals(expectedActivePartition, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
         assertEquals(
-                IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
+                IndexConfigurationContract.DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
         assertEquals(expectedPartitionBuffer, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
         assertEquals(expectedPartitionBuffer
-                * IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+                * IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
-        assertEquals(IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES,
+        assertEquals(IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
         assertEquals(

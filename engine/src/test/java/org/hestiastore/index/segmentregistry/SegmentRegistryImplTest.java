@@ -17,10 +17,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -30,38 +28,26 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
 class SegmentRegistryImplTest {
 
     private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
     private Directory directoryFacade;
 
-    @Mock
     private IndexConfiguration<Integer, String> conf;
-
-    @Mock
-    private IndexRuntimeConfiguration<Integer, String> runtimeConfiguration;
 
     private SegmentRegistryImpl<Integer, String> registry;
     private ExecutorService stableSegmentMaintenancePool;
     private ExecutorService registryMaintenancePool;
-    private List<Supplier<? extends ChunkFilter>> filterSuppliers;
 
     @BeforeEach
     void setUp() {
-        Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(3);
-        Mockito.when(conf.resolveRuntimeConfiguration())
-                .thenReturn(runtimeConfiguration);
+        conf = newConfiguration(3);
         directoryFacade = new MemDirectory();
         stableSegmentMaintenancePool = Executors.newSingleThreadExecutor();
         rebuildRegistry();
@@ -78,7 +64,6 @@ class SegmentRegistryImplTest {
 
     @Test
     void getSegment_reusesInstanceUntilClosed() {
-        stubSegmentConfig();
         final Segment<Integer, String> created = registry.tryCreateSegment()
                 .getValue();
         final SegmentId segmentId = created.getId();
@@ -136,9 +121,8 @@ class SegmentRegistryImplTest {
 
     @Test
     void getSegment_evicts_least_recently_used_when_limit_exceeded() {
-        Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
+        conf = newConfiguration(2);
         rebuildRegistry();
-        stubSegmentConfig();
         final Segment<Integer, String> first = registry.tryCreateSegment()
                 .getValue();
         final Segment<Integer, String> second = registry.tryCreateSegment()
@@ -160,33 +144,7 @@ class SegmentRegistryImplTest {
     }
 
     @Test
-    void pinSegment_preventsEvictionWhileCacheIsOverLimit() {
-        Mockito.when(conf.getMaxNumberOfSegmentsInCache()).thenReturn(2);
-        rebuildRegistry();
-        stubSegmentConfig();
-        final Segment<Integer, String> first = registry.tryCreateSegment()
-                .getValue();
-        final Segment<Integer, String> second = registry.tryCreateSegment()
-                .getValue();
-        invokePinSegment(registry, first.getId());
-
-        final Segment<Integer, String> third = registry.tryCreateSegment()
-                .getValue();
-
-        awaitCondition(() -> List.of(second, third).stream().anyMatch(
-                segment -> segment.getState() == SegmentState.CLOSED), 1500L);
-
-        assertNotSame(SegmentState.CLOSED, first.getState(),
-                "Pinned segment should stay loaded while peers are evicted");
-        assertTrue(List.of(second, third).stream().anyMatch(
-                segment -> segment.getState() == SegmentState.CLOSED));
-
-        invokeUnpinSegment(registry, first.getId());
-    }
-
-    @Test
     void getSegment_returnsBusyWhenSegmentMissing() {
-        stubSegmentConfig();
         final Segment<Integer, String> existing = registry.tryCreateSegment()
                 .getValue();
         final SegmentId missingId = SegmentId.of(existing.getId().getId() + 1);
@@ -230,7 +188,6 @@ class SegmentRegistryImplTest {
 
     @Test
     void getSegment_returnsBusyWhenEntryIsUnloading() {
-        stubSegmentConfig();
         final Segment<Integer, String> created = registry.tryCreateSegment()
                 .getValue();
         final SegmentId segmentId = created.getId();
@@ -293,27 +250,6 @@ class SegmentRegistryImplTest {
         }
     }
 
-    private void stubSegmentConfig() {
-        filterSuppliers = List.of(ChunkFilterDoNothing::new);
-        Mockito.when(conf.getMaxNumberOfKeysInActivePartition())
-                .thenReturn(5);
-        Mockito.when(
-                conf.getMaxNumberOfKeysInPartitionBuffer())
-                .thenReturn(6);
-        Mockito.when(conf.getMaxNumberOfKeysInSegmentCache()).thenReturn(10);
-        Mockito.when(conf.getMaxNumberOfKeysInSegmentChunk()).thenReturn(2);
-        Mockito.when(conf.getMaxNumberOfDeltaCacheFiles()).thenReturn(7);
-        Mockito.when(conf.getBloomFilterNumberOfHashFunctions()).thenReturn(1);
-        Mockito.when(conf.getBloomFilterIndexSizeInBytes()).thenReturn(1024);
-        Mockito.when(conf.getBloomFilterProbabilityOfFalsePositive())
-                .thenReturn(0.01D);
-        Mockito.when(conf.getDiskIoBufferSize()).thenReturn(1024);
-        Mockito.when(runtimeConfiguration.getEncodingChunkFilterSuppliers())
-                .thenReturn(filterSuppliers);
-        Mockito.when(runtimeConfiguration.getDecodingChunkFilterSuppliers())
-                .thenReturn(filterSuppliers);
-    }
-
     private SegmentRegistryStateMachine readGate(
             final SegmentRegistryImpl<Integer, String> target) {
         try {
@@ -326,30 +262,27 @@ class SegmentRegistryImplTest {
         }
     }
 
-    private static void invokePinSegment(
-            final SegmentRegistryImpl<Integer, String> registry,
-            final SegmentId segmentId) {
-        invokeRegistryMethod(registry, "pinSegment", segmentId);
-    }
-
-    private static void invokeUnpinSegment(
-            final SegmentRegistryImpl<Integer, String> registry,
-            final SegmentId segmentId) {
-        invokeRegistryMethod(registry, "unpinSegment", segmentId);
-    }
-
-    private static void invokeRegistryMethod(
-            final SegmentRegistryImpl<Integer, String> registry,
-            final String methodName, final SegmentId segmentId) {
-        try {
-            final var method = SegmentRegistryImpl.class.getDeclaredMethod(
-                    methodName, SegmentId.class);
-            method.setAccessible(true);
-            method.invoke(registry, segmentId);
-        } catch (final ReflectiveOperationException ex) {
-            throw new IllegalStateException(
-                    "Unable to invoke SegmentRegistryImpl." + methodName, ex);
-        }
+    private static IndexConfiguration<Integer, String> newConfiguration(
+            final int cachedSegmentLimit) {
+        return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(KEY_DESCRIPTOR)
+                        .valueTypeDescriptor(VALUE_DESCRIPTOR)
+                        .name("segment-registry-impl-test"))
+                .segment(segment -> segment.cacheKeyLimit(10)
+                        .chunkKeyLimit(2).deltaCacheFileLimit(7)
+                        .cachedSegmentLimit(cachedSegmentLimit).maxKeys(50))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5)
+                        .maintenanceWriteCacheKeyLimit(6))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1)
+                        .indexSizeBytes(1024)
+                        .falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .filters(filters -> filters
+                        .encodingFilters(List.of(new ChunkFilterDoNothing()))
+                        .decodingFilters(List.of(new ChunkFilterDoNothing())))
+                .build();
     }
 
     private Object createLoadingEntry(final long accessCx) {

@@ -86,7 +86,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     void awaitQuiescence() {
-        awaitQuiescence(conf.getIndexBusyTimeoutMillis());
+        awaitQuiescence(conf.maintenance().busyTimeoutMillis());
     }
 
     void awaitQuiescence(final long timeoutMillis) {
@@ -239,7 +239,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private boolean isPolicyEnabled() {
-        return Boolean.TRUE.equals(conf.isBackgroundMaintenanceAutoEnabled())
+        return Boolean.TRUE.equals(conf.maintenance().backgroundAutoEnabled())
                 && !isClosedOrClosingState();
     }
 
@@ -365,7 +365,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private int workerParallelism() {
-        final Integer configured = conf.getNumberOfIndexMaintenanceThreads();
+        final Integer configured = conf.maintenance().indexThreads();
         if (configured == null || configured < 1) {
             return 1;
         }
@@ -373,7 +373,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private long workerKeepAliveMillis() {
-        final Integer configured = conf.getIndexBusyBackoffMillis();
+        final Integer configured = conf.maintenance().busyBackoffMillis();
         if (configured == null || configured < 1) {
             return 1L;
         }

@@ -256,8 +256,8 @@ class SplitExecutionCoordinatorImplTest {
         final AtomicReference<Runnable> scheduledTask = new AtomicReference<>();
         when(segmentHandle.getId()).thenReturn(segmentId);
         when(runtime.getState()).thenReturn(SegmentState.READY);
-        when(keyToSegmentMap.getSegmentIds())
-                .thenReturn(List.of(segmentId), List.of());
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
+                .thenReturn(List.of());
         allowTopologyDrain(segmentId);
         when(splitCoordinator.tryPrepareSplit(segmentHandle, 100L))
                 .thenReturn(splitPlan);

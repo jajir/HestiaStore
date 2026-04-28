@@ -30,7 +30,7 @@ final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
         this.entryIterator = Vldtn.requireNonNull(entryIterator, "entryIterator");
         final IndexConfiguration<K, V> configuration = Vldtn
                 .requireNonNull(indexConf, "indexConf");
-        this.indexName = Vldtn.requireNotBlank(configuration.getIndexName(),
+        this.indexName = Vldtn.requireNotBlank(configuration.identity().name(),
                 "indexName");
     }
 

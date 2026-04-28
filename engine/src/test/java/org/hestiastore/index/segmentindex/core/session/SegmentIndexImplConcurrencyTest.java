@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -110,7 +109,7 @@ class SegmentIndexImplConcurrencyTest {
         seedStableRange(48);
         awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
                 && index.metricsSnapshot().getSplitInFlightCount() == 0
-                && index.metricsSnapshot().getDrainInFlightCount() == 0,
+                && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                 10_000L);
         assertEquals("stable-30", index.get(30));
 
@@ -149,57 +148,57 @@ class SegmentIndexImplConcurrencyTest {
 
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("segment-index-concurrency-test")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(100)//
-                .withMaxNumberOfKeysInActivePartition(200)//
-                .withMaxNumberOfKeysInPartitionBuffer(220)//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))//
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name("segment-index-concurrency-test"))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(100))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(200))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(220))//
                 // Keep this test focused on concurrent put/get behavior and
                 // avoid background maintenance races while workers are running.
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withMaxNumberOfKeysInSegmentChunk(10)//
-                .withMaxNumberOfKeysInSegment(1000)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
+                .segment(segment -> segment.chunkKeyLimit(10))//
+                .segment(segment -> segment.maxKeys(1000))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .build();
     }
 
     private IndexConfiguration<Integer, String> buildAutonomousSplitConf() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName("segment-index-concurrency-split-remap-test")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(8)//
-                .withMaxNumberOfKeysInActivePartition(32)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(96)//
-                .withMaxNumberOfKeysInIndexBuffer(192)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512)//
-                .withBackgroundMaintenanceAutoEnabled(true)//
-                .withMaxNumberOfKeysInSegmentChunk(4)//
-                .withMaxNumberOfKeysInSegment(128)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfIndexMaintenanceThreads(2)//
-                .withNumberOfRegistryLifecycleThreads(2)//
-                .withIndexBusyTimeoutMillis(30_000)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))//
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name("segment-index-concurrency-split-remap-test"))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(8))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32))//
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96))//
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true))//
+                .segment(segment -> segment.chunkKeyLimit(4))//
+                .segment(segment -> segment.maxKeys(128))//
+                .segment(segment -> segment.cachedSegmentLimit(8))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.indexThreads(2))//
+                .maintenance(maintenance -> maintenance.registryLifecycleThreads(2))//
+                .maintenance(maintenance -> maintenance.busyTimeoutMillis(30_000))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .build();
     }
 
