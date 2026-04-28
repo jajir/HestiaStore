@@ -55,24 +55,23 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     protected IndexConfiguration<Integer, String> buildConfiguration() {
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-get-benchmark")//
-                .withMaxNumberOfKeysInSegmentCache(8)//
-                .withMaxNumberOfKeysInActivePartition(2048)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(4096)//
-                .withMaxNumberOfKeysInIndexBuffer(12_288)//
-                .withMaxNumberOfKeysInSegmentChunk(maxKeysInChunk)//
-                .withMaxNumberOfKeysInSegment(keyCount * 2)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(keyCount * 2)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(Math.max(8192, keyCount / 2))//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(false);
+                .segment(segment -> segment.cacheKeyLimit(8)
+                        .chunkKeyLimit(maxKeysInChunk).maxKeys(keyCount * 2)
+                        .cachedSegmentLimit(3).deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(2048)
+                        .legacyImmutableRunLimit(2)
+                        .maintenanceWriteCacheKeyLimit(4096)
+                        .indexBufferedWriteKeyLimit(12_288)
+                        .segmentSplitKeyThreshold(keyCount * 2))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(Math.max(8192, keyCount / 2))
+                        .hashFunctions(3)
+                        .falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                        .indexThreads(1).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(false));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);
         return builder.build();

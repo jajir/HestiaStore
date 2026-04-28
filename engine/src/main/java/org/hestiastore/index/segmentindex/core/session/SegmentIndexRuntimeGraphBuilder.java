@@ -111,7 +111,7 @@ public final class SegmentIndexRuntimeGraphBuilder<K, V> {
     }
 
     private WalRuntime<K, V> openWalRuntime() {
-        return WalRuntime.open(request.directoryFacade, request.conf.getWal(),
+        return WalRuntime.open(request.directoryFacade, request.conf.wal(),
                 request.keyTypeDescriptor, request.valueTypeDescriptor);
     }
 

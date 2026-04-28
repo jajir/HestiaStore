@@ -107,43 +107,53 @@ class SegmentIndexConcurrencySerializationIT {
         final IndexConfigurationContract defaults = new IndexConfigurationContract() {
         };
         return IndexConfiguration.<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorString())//
-                .withValueTypeDescriptor(
-                        new BlockingTombstoneTypeDescriptorString())//
-                .withName(name)//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegment(
-                        defaults.getMaxNumberOfKeysInSegment())//
-                .withMaxNumberOfSegmentsInCache(
-                        defaults.getMaxNumberOfSegmentsInCache())//
-                .withMaxNumberOfKeysInSegmentCache(
-                        defaults.getMaxNumberOfKeysInSegmentCache())//
-                .withMaxNumberOfKeysInActivePartition(
-                        defaults.getMaxNumberOfKeysInActivePartition())//
-                .withMaxNumberOfKeysInPartitionBuffer(
-                        defaults.getMaxNumberOfKeysInPartitionBuffer())//
-                .withMaxNumberOfKeysInSegmentChunk(
-                        defaults.getMaxNumberOfKeysInSegmentChunk())//
-                .withBloomFilterNumberOfHashFunctions(
-                        defaults.getBloomFilterNumberOfHashFunctions())//
-                .withBloomFilterIndexSizeInBytes(
-                        defaults.getBloomFilterIndexSizeInBytes())//
-                .withBloomFilterProbabilityOfFalsePositive(
-                        defaults.getBloomFilterProbabilityOfFalsePositive())//
-                .withDiskIoBufferSizeInBytes(
-                        defaults.getDiskIoBufferSizeInBytes())//
-                .withNumberOfSegmentMaintenanceThreads(
-                        defaults.getNumberOfSegmentMaintenanceThreads())//
-                .withIndexBusyBackoffMillis(
-                        defaults.getIndexBusyBackoffMillis())//
-                .withIndexBusyTimeoutMillis(
-                        defaults.getIndexBusyTimeoutMillis())//
-                .withBackgroundMaintenanceAutoEnabled(
-                        defaults.isBackgroundMaintenanceAutoEnabled())//
-                .withEncodingFilters(defaults.getEncodingChunkFilters())//
-                .withDecodingFilters(defaults.getDecodingChunkFilters())//
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorString())
+                        .valueTypeDescriptor(
+                                new BlockingTombstoneTypeDescriptorString())
+                        .name(name))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment
+                        .maxKeys(defaults.segment().maxKeys())
+                        .cachedSegmentLimit(
+                                defaults.segment().cachedSegmentLimit())
+                        .cacheKeyLimit(
+                                defaults.segment().cacheKeyLimit())
+                        .chunkKeyLimit(
+                                defaults.segment().chunkKeyLimit()))//
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(
+                                defaults.writePath()
+                                        .segmentWriteCacheKeyLimit())
+                        .maintenanceWriteCacheKeyLimit(defaults
+                                .writePath()
+                                .segmentWriteCacheKeyLimitDuringMaintenance()))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .hashFunctions(
+                                defaults.bloomFilter().hashFunctions())
+                        .indexSizeBytes(
+                                defaults.bloomFilter().indexSizeBytes())
+                        .falsePositiveProbability(defaults
+                                .bloomFilter()
+                                .falsePositiveProbability()))//
+                .io(io -> io.diskBufferSizeBytes(
+                        defaults.io().diskBufferSizeBytes()))//
+                .maintenance(maintenance -> maintenance
+                        .segmentThreads(
+                                defaults.maintenance().segmentThreads())
+                        .busyBackoffMillis(
+                                defaults.maintenance().busyBackoffMillis())
+                        .busyTimeoutMillis(
+                                defaults.maintenance().busyTimeoutMillis())
+                        .backgroundAutoEnabled(
+                                defaults.maintenance()
+                                        .backgroundAutoEnabled()))//
+                .filters(filters -> filters
+                        .encodingFilterSpecs(
+                                defaults.filters().encodingChunkFilterSpecs())
+                        .decodingFilterSpecs(
+                                defaults.filters().decodingChunkFilterSpecs()))//
                 .build();
     }
 

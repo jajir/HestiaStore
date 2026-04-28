@@ -13,13 +13,13 @@ final class InspectExportCommand {
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         final Options options = new Options();
         options.addOption(Option.builder().longOpt("input").hasArg()
-                .desc("Export directory to inspect.").required().build());
+                .desc("Export directory to inspect.").required().get());
         options.addOption(Option.builder().longOpt("verify")
-                .desc("Also verify checksums and record counts.").build());
+                .desc("Also verify checksums and record counts.").get());
         options.addOption(Option.builder().longOpt("json")
-                .desc("Print inspection result as JSON.").build());
+                .desc("Print inspection result as JSON.").get());
         options.addOption(
-                Option.builder("h").longOpt("help").desc("Show help.").build());
+                Option.builder("h").longOpt("help").desc("Show help.").get());
         try {
             if (HelpSupport.isHelpRequested(args)) {
                 printHelp(options, out);

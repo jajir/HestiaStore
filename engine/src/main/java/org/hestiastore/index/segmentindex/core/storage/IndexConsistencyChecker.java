@@ -8,8 +8,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
@@ -30,35 +28,22 @@ import org.slf4j.LoggerFactory;
 public final class IndexConsistencyChecker<K, V> {
     private static final String ERROR_MSG = "Index is broken. "
             + "File 'index.map' containing information about segments is corrupted. ";
-    private static final IndexRetryPolicy DEFAULT_RETRY_POLICY = new IndexRetryPolicy(
-            IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
-            IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentRegistry<K, V> segmentRegistry;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final Predicate<SegmentId> segmentFilter;
-    private final IndexRetryPolicy retryPolicy;
 
     public IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
-                segmentId -> true, DEFAULT_RETRY_POLICY);
+                segmentId -> true);
     }
 
     public IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor,
             final Predicate<SegmentId> segmentFilter) {
-        this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
-                segmentFilter, DEFAULT_RETRY_POLICY);
-    }
-
-    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final Predicate<SegmentId> segmentFilter,
-            final IndexRetryPolicy retryPolicy) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -66,7 +51,6 @@ public final class IndexConsistencyChecker<K, V> {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         this.segmentFilter = Vldtn.requireNonNull(segmentFilter,
                 "segmentFilter");
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
     /**

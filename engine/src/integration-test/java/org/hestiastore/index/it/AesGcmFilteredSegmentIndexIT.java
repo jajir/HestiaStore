@@ -47,16 +47,26 @@ class AesGcmFilteredSegmentIndexIT {
                 .defaultRegistry()
                 .withProvider(new AesGcmChunkFilterProvider(TEST_KEY));
         final IndexConfiguration<String, String> createConf = IndexConfiguration
-                .<String, String>builder().withKeyClass(String.class)
-                .withValueClass(String.class).withName("orders_encrypted")
-                .addEncodingFilter(ChunkFilterCrc32Writing.class)
-                .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
-                .addEncodingFilter(registry.createEncodingSupplier(aesSpec),
-                        aesSpec)
-                .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
-                .addDecodingFilter(registry.createDecodingSupplier(aesSpec),
-                        aesSpec)
-                .addDecodingFilter(ChunkFilterCrc32Validation.class).build();
+                .<String, String>builder()
+                .identity(identity -> identity
+                        .keyClass(String.class)
+                        .valueClass(String.class)
+                        .name("orders_encrypted"))
+                .filters(filters -> filters
+                        .addEncodingFilter(ChunkFilterCrc32Writing.class)
+                        .addEncodingFilter(
+                                ChunkFilterMagicNumberWriting.class)
+                        .addEncodingFilter(
+                                registry.createEncodingSupplier(aesSpec),
+                                aesSpec)
+                        .addDecodingFilter(
+                                ChunkFilterMagicNumberValidation.class)
+                        .addDecodingFilter(
+                                registry.createDecodingSupplier(aesSpec),
+                                aesSpec)
+                        .addDecodingFilter(
+                                ChunkFilterCrc32Validation.class))
+                .build();
 
         final Map<String, String> entries = new LinkedHashMap<>();
         entries.put("alpha", "first value");

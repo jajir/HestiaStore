@@ -37,46 +37,52 @@ class IndexConfigurationManagerTest {
                 storage);
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName("test-index")
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(4)
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorInteger()))
+                .identity(identity -> identity
+                        .valueTypeDescriptor(new TypeDescriptorShortString()))
+                .identity(identity -> identity.name("test-index"))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(4))
                 .build();
 
         final IndexConfiguration<Integer, String> applied = manager
                 .applyDefaults(conf);
 
-        assertEquals(4, applied.getMaxNumberOfKeysInActivePartition());
-        assertEquals(6, applied.getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(4, applied.writePath().segmentWriteCacheKeyLimit());
+        assertEquals(6, applied.writePath()
+                .segmentWriteCacheKeyLimitDuringMaintenance());
     }
 
     private IndexConfiguration<Integer, String> buildStored() {
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName("test-index")
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(6)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfDeltaCacheFiles(
-                        IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES)
-                .withMaxNumberOfKeysInPartitionBeforeSplit(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withEncodingFilters(
-                        List.of(new ChunkFilterDoNothing()))
-                .withDecodingFilters(
-                        List.of(new ChunkFilterDoNothing()))
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity
+                        .keyTypeDescriptor(new TypeDescriptorInteger()))
+                .identity(identity -> identity
+                        .valueTypeDescriptor(new TypeDescriptorShortString()))
+                .identity(identity -> identity.name("test-index"))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.deltaCacheFileLimit(
+                        IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT))
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .filters(filters -> filters.encodingFilters(
+                        List.of(new ChunkFilterDoNothing())))
+                .filters(filters -> filters.decodingFilters(
+                        List.of(new ChunkFilterDoNothing())))
                 .build();
     }
 

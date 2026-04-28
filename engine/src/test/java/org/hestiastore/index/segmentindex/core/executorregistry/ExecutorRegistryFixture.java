@@ -14,18 +14,18 @@ public final class ExecutorRegistryFixture {
     public static ExecutorRegistry from(
             final IndexConfiguration<?, ?> configuration) {
         return ExecutorRegistry.builder()
-                .withIndexName(configuration.getIndexName())
+                .withIndexName(configuration.identity().name())
                 .withContextLoggingEnabled(
                         Boolean.TRUE.equals(
-                                configuration.isContextLoggingEnabled()))
+                                configuration.logging().contextEnabled()))
                 .withIndexMaintenanceThreads(
-                        configuration.getNumberOfIndexMaintenanceThreads())
+                        configuration.maintenance().indexThreads())
                 .withSplitMaintenanceThreads(
-                        configuration.getNumberOfIndexMaintenanceThreads())
+                        configuration.maintenance().indexThreads())
                 .withSegmentMaintenanceThreads(
-                        configuration.getNumberOfSegmentMaintenanceThreads())
+                        configuration.maintenance().segmentThreads())
                 .withRegistryMaintenanceThreads(
-                        configuration.getNumberOfRegistryLifecycleThreads())
+                        configuration.maintenance().registryLifecycleThreads())
                 .build();
     }
 }

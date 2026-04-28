@@ -86,9 +86,9 @@ class IndexDirectoryClosingAdapterTest {
         @Override
         public IndexConfiguration<String, String> getConfiguration() {
             return IndexConfiguration.<String, String>builder()//
-                    .withKeyClass(String.class)//
-                    .withValueClass(String.class)//
-                    .withName("noop-index")//
+                    .identity(identity -> identity.keyClass(String.class))//
+                    .identity(identity -> identity.valueClass(String.class))//
+                    .identity(identity -> identity.name("noop-index"))//
                     .build();
         }
 

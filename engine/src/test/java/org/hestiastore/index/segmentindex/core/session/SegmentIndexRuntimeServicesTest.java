@@ -15,6 +15,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("unchecked")
 class SegmentIndexRuntimeServicesTest {
 
     @Test

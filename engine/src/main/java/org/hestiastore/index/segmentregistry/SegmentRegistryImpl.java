@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentregistry;
 
 import java.util.Optional;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -46,17 +45,16 @@ final class SegmentRegistryImpl<K, V>
     private final BlockingSegmentRegistryAdapter<K, V> blockingFacade;
     private final SegmentRegistry.Materialization<K, V> materialization;
     private final SegmentRegistry.Runtime<K, V> runtime;
-    private final Set<SegmentId> pinnedSegments;
     private final ConcurrentMap<SegmentId, BlockingSegment<K, V>> blockingSegments;
 
     /**
      * Creates a registry using prebuilt dependencies from the builder.
      *
      * @param segmentIdAllocator allocator for new segment ids
-     * @param fileSystem file system facade for segment directories/files
-     * @param cache prebuilt segment cache
-     * @param closeRetryPolicy retry policy for draining cache on close
-     * @param gate registry gate state machine shared by collaborators
+     * @param fileSystem         file system facade for segment directories/files
+     * @param cache              prebuilt segment cache
+     * @param closeRetryPolicy   retry policy for draining cache on close
+     * @param gate               registry gate state machine shared by collaborators
      */
     SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
@@ -65,8 +63,7 @@ final class SegmentRegistryImpl<K, V>
             final SegmentRegistryStateMachine gate,
             final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory,
             final SegmentRuntimeTuner runtimeTuner,
-            final BusyRetryPolicy blockingRetryPolicy,
-            final Set<SegmentId> pinnedSegments) {
+            final BusyRetryPolicy blockingRetryPolicy) {
         this.segmentIdAllocator = Vldtn.requireNonNull(segmentIdAllocator,
                 "segmentIdAllocator");
         this.fileSystem = Vldtn.requireNonNull(fileSystem, "fileSystem");
@@ -82,8 +79,6 @@ final class SegmentRegistryImpl<K, V>
         this.runtimeTuner = Vldtn.requireNonNull(runtimeTuner, "runtimeTuner");
         this.blockingFacade = new BlockingSegmentRegistryAdapter<>(this,
                 this.blockingRetryPolicy);
-        this.pinnedSegments = Vldtn.requireNonNull(pinnedSegments,
-                "pinnedSegments");
         this.blockingSegments = new ConcurrentHashMap<>();
         this.materialization = new SegmentRegistryMaterializationView<>(
                 this.segmentIdAllocator, this.preparedSegmentWriterFactory);
@@ -275,18 +270,6 @@ final class SegmentRegistryImpl<K, V>
             return false;
         }
         return cache.updateLimit(newLimit);
-    }
-
-    private void pinSegment(final SegmentId segmentId) {
-        pinnedSegments.add(
-                Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER));
-    }
-
-    private void unpinSegment(final SegmentId segmentId) {
-        if (segmentId == null) {
-            return;
-        }
-        pinnedSegments.remove(segmentId);
     }
 
     private List<Segment<K, V>> loadedSegmentsSnapshot() {

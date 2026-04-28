@@ -57,7 +57,7 @@ public final class IndexRuntimeControlPlane implements IndexControlPlane {
 
     @Override
     public String indexName() {
-        return conf.getIndexName();
+        return conf.identity().name();
     }
 
     @Override

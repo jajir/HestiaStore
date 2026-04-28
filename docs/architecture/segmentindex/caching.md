@@ -112,26 +112,28 @@ Code:
 ## Configuration Knobs
 
 Index‑level:
-- `IndexConfiguration.getMaxNumberOfSegmentsInCache()` — LRU size for
+- `IndexConfiguration.segment().cachedSegmentLimit()` — LRU size for
   `SegmentDataCache`
 
 Per‑segment (via `SegmentConf`, derived from index configuration):
-- `maxNumberOfKeysInSegmentCache` — target size for a single delta cache
-- `maxNumberOfKeysInActivePartition` — legacy-named compatibility limit used
-  for the segment write-cache threshold
-- `maxNumberOfKeysInPartitionBuffer` — legacy-named compatibility limit used
-  for the per-segment maintenance/write ceiling
-- `maxNumberOfKeysInIndexBuffer` — compatibility index-wide budget exposed in
-  runtime tuning and metrics
-- `maxNumberOfKeysInSegmentChunk` — sparse index sampling cadence (affects read
+- `IndexConfiguration.segment().cacheKeyLimit()` — target size for a single
+  delta cache
+- `IndexConfiguration.writePath().segmentWriteCacheKeyLimit()` — segment
+  write-cache threshold
+- `IndexConfiguration.writePath().maintenanceWriteCacheKeyLimit()` —
+  per-segment maintenance/write ceiling
+- `IndexConfiguration.writePath().indexBufferedWriteKeyLimit()` — index-wide
+  budget exposed in runtime tuning and metrics
+- `IndexConfiguration.segment().chunkKeyLimit()` — sparse index sampling cadence (affects read
   scan window)
 
 Bloom filter sizing:
-- `bloomFilterIndexSizeInBytes` and `bloomFilterNumberOfHashFunctions`
-- `bloomFilterProbabilityOfFalsePositive`
+- `bloomFilter().indexSizeBytes()` and `bloomFilter().hashFunctions()`
+- `bloomFilter().falsePositiveProbability()`
 
 I/O buffering:
-- `diskIoBufferSize` — affects memory used by readers and writers across files
+- `io().diskBufferSizeBytes()` — affects memory used by readers and writers
+  across files
 
 See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 
@@ -154,18 +156,19 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 ## Tuning Guidance
 
 - Throughput-oriented writes: tune the segment write-cache and maintenance
-  limits (`maxNumberOfKeysInActivePartition`,
-  `maxNumberOfKeysInPartitionBuffer`, `maxNumberOfKeysInIndexBuffer`);
+  limits (`writePath().segmentWriteCacheKeyLimit()`,
+  `writePath().maintenanceWriteCacheKeyLimit()`,
+  `writePath().indexBufferedWriteKeyLimit()`);
   monitor memory and segment maintenance latency.
 - Read-heavy workloads touching few segments: increase
-  `maxNumberOfSegmentsInCache` so the working set of segments (Bloom + scarce +
-  delta) stays resident.
+  `segment().cachedSegmentLimit()` so the working set of segments (Bloom +
+  scarce + delta) stays resident.
 - Space-sensitive deployments: reduce Bloom filter size (may increase false
   positives and extra reads) or disable compression filters to trade CPU for
   I/O.
 - Latency-sensitive point lookups: ensure Bloom filter is sized adequately;
   keep segments' working set in the LRU; consider slightly smaller
-  `maxNumberOfKeysInSegmentChunk` to narrow the local scan window.
+  `segment().chunkKeyLimit()` to narrow the local scan window.
 
 ## Code Pointers
 

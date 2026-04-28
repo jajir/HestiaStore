@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -379,7 +380,7 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "buffered-overlay-report-index", false);
         indexes.add(extra);
-        server.addIndex(extra.getConfiguration().getIndexName(), extra);
+        server.addIndex(extra.getConfiguration().identity().name(), extra);
 
         for (int i = 0; i < 6; i++) {
             extra.put(i, "value-" + i);
@@ -391,23 +392,23 @@ class ManagementAgentServerTest {
         assertEquals(200, reportResp.statusCode());
         final JsonNode reportJson = objectMapper.readTree(reportResp.body());
         final JsonNode indexNode = findIndexNode(reportJson,
-                extra.getConfiguration().getIndexName());
+                extra.getConfiguration().identity().name());
 
         assertEquals(snapshot.getTotalBufferedWriteKeys(),
                 indexNode.path("totalBufferedWriteKeys").asLong());
-        assertEquals(snapshot.getPartitionCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount(),
                 indexNode.path("partitionCount").asInt());
-        assertEquals(snapshot.getActivePartitionCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount(),
                 indexNode.path("activePartitionCount").asInt());
-        assertEquals(snapshot.getDrainingPartitionCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount(),
                 indexNode.path("drainingPartitionCount").asInt());
-        assertEquals(snapshot.getImmutableRunCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount(),
                 indexNode.path("immutableRunCount").asInt());
-        assertEquals(snapshot.getPartitionBufferedKeyCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount(),
                 indexNode.path("partitionBufferedKeyCount").asInt());
-        assertEquals(snapshot.getDrainScheduleCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(),
                 indexNode.path("drainScheduleCount").asLong());
-        assertEquals(snapshot.getDrainInFlightCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount(),
                 indexNode.path("drainInFlightCount").asInt());
     }
 
@@ -416,7 +417,7 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "split-report-index", true);
         indexes.add(extra);
-        server.addIndex(extra.getConfiguration().getIndexName(), extra);
+        server.addIndex(extra.getConfiguration().identity().name(), extra);
 
         for (int i = 0; i < 48; i++) {
             extra.put(i, "stable-" + i);
@@ -424,7 +425,7 @@ class ManagementAgentServerTest {
         extra.flushAndWait();
         awaitCondition(() -> extra.metricsSnapshot().getSegmentCount() == 1
                 && extra.metricsSnapshot().getSplitInFlightCount() == 0
-                && extra.metricsSnapshot().getDrainInFlightCount() == 0,
+                && extra.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                 10_000L);
 
         final long revision = extra.controlPlane().configuration()
@@ -441,12 +442,12 @@ class ManagementAgentServerTest {
                     .metricsSnapshot();
             return snapshot.getSegmentCount() > 1
                     && snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getDrainInFlightCount() == 0;
+                    && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0;
         }, 10_000L);
 
         final Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> splitMetricsMatch =
                 awaitIndexNodeWithMatchingSplitMetrics(extra,
-                        extra.getConfiguration().getIndexName(), 10_000L);
+                        extra.getConfiguration().identity().name(), 10_000L);
         final SegmentIndexMetricsSnapshot snapshot = splitMetricsMatch.getKey();
         final JsonNode indexNode = splitMetricsMatch.getValue();
 
@@ -456,11 +457,11 @@ class ManagementAgentServerTest {
                 indexNode.path("splitScheduleCount").asLong());
         assertEquals(snapshot.getSplitInFlightCount(),
                 indexNode.path("splitInFlightCount").asInt());
-        assertEquals(snapshot.getDrainScheduleCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(),
                 indexNode.path("drainScheduleCount").asLong());
-        assertEquals(snapshot.getDrainInFlightCount(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount(),
                 indexNode.path("drainInFlightCount").asInt());
-        assertEquals(snapshot.getDrainLatencyP95Micros(),
+        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros(),
                 indexNode.path("drainLatencyP95Micros").asLong());
     }
 
@@ -468,13 +469,13 @@ class ManagementAgentServerTest {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withContextLoggingEnabled(false) //
-                .withName(name) //
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name(name)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .logging(logging -> logging.contextEnabled(false)) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }
@@ -484,24 +485,23 @@ class ManagementAgentServerTest {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withContextLoggingEnabled(false) //
-                .withBackgroundMaintenanceAutoEnabled(
-                        backgroundMaintenanceAutoEnabled) //
-                .withName(name) //
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name(name)) //
+                .segment(segment -> segment.cacheKeyLimit(8).maxKeys(128)
+                        .chunkKeyLimit(4)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)
+                        .legacyImmutableRunLimit(2)
+                        .maintenanceWriteCacheKeyLimit(96)
+                        .indexBufferedWriteKeyLimit(192)
+                        .segmentSplitKeyThreshold(512)) //
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(1024 * 128).hashFunctions(3)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(
+                        backgroundMaintenanceAutoEnabled)) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }
@@ -513,8 +513,7 @@ class ManagementAgentServerTest {
                 return indexNode;
             }
         }
-        assertNotNull(null, "Missing index report for " + indexName);
-        return null;
+        return fail("Missing index report for " + indexName);
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,
@@ -541,9 +540,9 @@ class ManagementAgentServerTest {
                 && left.getSegmentCount() == right.getSegmentCount()
                 && left.getSplitScheduleCount() == right.getSplitScheduleCount()
                 && left.getSplitInFlightCount() == right.getSplitInFlightCount()
-                && left.getDrainScheduleCount() == right.getDrainScheduleCount()
-                && left.getDrainInFlightCount() == right.getDrainInFlightCount()
-                && left.getDrainLatencyP95Micros() == right
+                && left.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount() == right.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount()
+                && left.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == right.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount()
+                && left.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() == right.getLegacyPartitionCompatibilityMetrics()
                         .getDrainLatencyP95Micros();
     }
 
@@ -592,11 +591,11 @@ class ManagementAgentServerTest {
                         .path("splitScheduleCount").asLong()
                 && snapshot.getSplitInFlightCount() == indexNode
                         .path("splitInFlightCount").asInt()
-                && snapshot.getDrainScheduleCount() == indexNode
+                && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount() == indexNode
                         .path("drainScheduleCount").asLong()
-                && snapshot.getDrainInFlightCount() == indexNode
+                && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == indexNode
                         .path("drainInFlightCount").asInt()
-                && snapshot.getDrainLatencyP95Micros() == indexNode
+                && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() == indexNode
                         .path("drainLatencyP95Micros").asLong();
     }
 

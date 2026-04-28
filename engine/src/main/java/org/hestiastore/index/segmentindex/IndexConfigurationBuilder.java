@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
@@ -62,12 +63,131 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Configures index identity and type metadata.
+     *
+     * @param customizer identity section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> identity(
+            final Consumer<IndexIdentityConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexIdentityConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures segment sizing and cache settings.
+     *
+     * @param customizer segment section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> segment(
+            final Consumer<IndexSegmentConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexSegmentConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures direct-to-segment write path settings.
+     *
+     * @param customizer write-path section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> writePath(
+            final Consumer<IndexWritePathConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexWritePathConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures Bloom filter settings.
+     *
+     * @param customizer Bloom filter section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> bloomFilter(
+            final Consumer<IndexBloomFilterConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexBloomFilterConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures WAL settings.
+     *
+     * @param customizer WAL section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> wal(
+            final Consumer<IndexWalConfigurationBuilder<K, V>> customizer) {
+        final IndexWalConfigurationBuilder<K, V> section =
+                new IndexWalConfigurationBuilder<>();
+        Vldtn.requireNonNull(customizer, "customizer").accept(section);
+        section.applyTo(this);
+        return this;
+    }
+
+    /**
+     * Configures maintenance and retry settings.
+     *
+     * @param customizer maintenance section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> maintenance(
+            final Consumer<IndexMaintenanceConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexMaintenanceConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures I/O settings.
+     *
+     * @param customizer I/O section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> io(
+            final Consumer<IndexIoConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexIoConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures logging settings.
+     *
+     * @param customizer logging section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> logging(
+            final Consumer<IndexLoggingConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexLoggingConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
+     * Configures persisted chunk filter pipelines.
+     *
+     * @param customizer filter section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> filters(
+            final Consumer<IndexFilterConfigurationBuilder<K, V>> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer")
+                .accept(new IndexFilterConfigurationBuilder<>(this));
+        return this;
+    }
+
+    /**
      * Sets the key type descriptor instance used for serialization.
      *
      * @param keyTypeDescriptor type descriptor for keys
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
+    IndexConfigurationBuilder<K, V> setKeyTypeDescriptor(
             final TypeDescriptor<K> keyTypeDescriptor) {
         this.keyTypeDescriptor = Vldtn
                 .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor")
@@ -81,7 +201,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param valueTypeDescriptor type descriptor for values
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
+    IndexConfigurationBuilder<K, V> setValueTypeDescriptor(
             final TypeDescriptor<V> valueTypeDescriptor) {
         this.valueTypeDescriptor = Vldtn
                 .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor")
@@ -95,7 +215,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param keyTypeDescriptor class name for the key type descriptor
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withKeyTypeDescriptor(
+    IndexConfigurationBuilder<K, V> setKeyTypeDescriptor(
             final String keyTypeDescriptor) {
         this.keyTypeDescriptor = keyTypeDescriptor;
         return this;
@@ -107,7 +227,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param valueTypeDescriptor class name for the value type descriptor
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withValueTypeDescriptor(
+    IndexConfigurationBuilder<K, V> setValueTypeDescriptor(
             final String valueTypeDescriptor) {
         this.valueTypeDescriptor = valueTypeDescriptor;
         return this;
@@ -119,7 +239,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param keyClass key class
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withKeyClass(
+    IndexConfigurationBuilder<K, V> setKeyClass(
             final Class<K> keyClass) {
         this.keyClass = keyClass;
         return this;
@@ -131,7 +251,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param valueClass value class
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withValueClass(
+    IndexConfigurationBuilder<K, V> setValueClass(
             final Class<V> valueClass) {
         this.valueClass = valueClass;
         return this;
@@ -143,7 +263,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param indexName name of the index
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withName(final String indexName) {
+    IndexConfigurationBuilder<K, V> setName(final String indexName) {
         this.indexName = indexName;
         return this;
     }
@@ -154,7 +274,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param maxNumberOfKeysInSegmentCache max keys in segment cache
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentCache(
+    IndexConfigurationBuilder<K, V> setSegmentCacheKeyLimit(
             final Integer maxNumberOfKeysInSegmentCache) {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
         return this;
@@ -167,28 +287,10 @@ public class IndexConfigurationBuilder<K, V> {
      * @param segmentWriteCacheKeyLimit max keys in one segment write cache
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withSegmentWriteCacheKeyLimit(
+    IndexConfigurationBuilder<K, V> setSegmentWriteCacheKeyLimit(
             final Integer segmentWriteCacheKeyLimit) {
         this.maxNumberOfKeysInActivePartition = segmentWriteCacheKeyLimit;
         return this;
-    }
-
-    /**
-     * Sets the maximum number of keys accepted into the routed segment write
-     * cache.
-     * <p>
-     * Use {@link #withSegmentWriteCacheKeyLimit(Integer)} for the canonical
-     * name.
-     *
-     * @param maxNumberOfKeysInActivePartition max routed write-cache keys
-     * @return this builder
-     * @deprecated use {@link #withSegmentWriteCacheKeyLimit(Integer)}
-     */
-    @Deprecated
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInActivePartition(
-            final Integer maxNumberOfKeysInActivePartition) {
-        return withSegmentWriteCacheKeyLimit(
-                maxNumberOfKeysInActivePartition);
     }
 
     /**
@@ -197,7 +299,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param maxNumberOfKeysInSegmentChunk max keys per chunk
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegmentChunk(
+    IndexConfigurationBuilder<K, V> setSegmentChunkKeyLimit(
             final Integer maxNumberOfKeysInSegmentChunk) {
         this.maxNumberOfKeysInSegmentChunk = maxNumberOfKeysInSegmentChunk;
         return this;
@@ -209,7 +311,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param maxNumberOfDeltaCacheFiles max delta cache file count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfDeltaCacheFiles(
+    IndexConfigurationBuilder<K, V> setSegmentDeltaCacheFileLimit(
             final Integer maxNumberOfDeltaCacheFiles) {
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
         return this;
@@ -222,7 +324,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param maxNumberOfImmutableRunsPerPartition legacy compatibility limit
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfImmutableRunsPerPartition(
+    IndexConfigurationBuilder<K, V> setLegacyImmutableRunLimit(
             final Integer maxNumberOfImmutableRunsPerPartition) {
         this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
         return this;
@@ -236,28 +338,10 @@ public class IndexConfigurationBuilder<K, V> {
      *        maintenance-time buffered key count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withSegmentWriteCacheKeyLimitDuringMaintenance(
+    IndexConfigurationBuilder<K, V> setSegmentWriteCacheKeyLimitDuringMaintenance(
             final Integer segmentWriteCacheKeyLimitDuringMaintenance) {
         this.maxNumberOfKeysInPartitionBuffer = segmentWriteCacheKeyLimitDuringMaintenance;
         return this;
-    }
-
-    /**
-     * Sets the maximum number of keys buffered inside one routed segment.
-     * <p>
-     * Use {@link #withSegmentWriteCacheKeyLimitDuringMaintenance(Integer)} for
-     * the canonical name.
-     *
-     * @param maxNumberOfKeysInPartitionBuffer per-segment buffered key count
-     * @return this builder
-     * @deprecated use
-     *             {@link #withSegmentWriteCacheKeyLimitDuringMaintenance(Integer)}
-     */
-    @Deprecated
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBuffer(
-            final Integer maxNumberOfKeysInPartitionBuffer) {
-        return withSegmentWriteCacheKeyLimitDuringMaintenance(
-                maxNumberOfKeysInPartitionBuffer);
     }
 
     /**
@@ -266,7 +350,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param maxNumberOfKeysInSegment max keys per segment
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInSegment(
+    IndexConfigurationBuilder<K, V> setSegmentMaxKeys(
             final Integer maxNumberOfKeysInSegment) {
         this.maxNumberOfKeysInSegment = maxNumberOfKeysInSegment;
         return this;
@@ -278,26 +362,10 @@ public class IndexConfigurationBuilder<K, V> {
      * @param indexBufferedWriteKeyLimit global buffered key count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withIndexBufferedWriteKeyLimit(
+    IndexConfigurationBuilder<K, V> setIndexBufferedWriteKeyLimit(
             final Integer indexBufferedWriteKeyLimit) {
         this.maxNumberOfKeysInIndexBuffer = indexBufferedWriteKeyLimit;
         return this;
-    }
-
-    /**
-     * Sets the maximum number of keys buffered across the whole index.
-     * <p>
-     * Use {@link #withIndexBufferedWriteKeyLimit(Integer)} for the canonical
-     * name.
-     *
-     * @param maxNumberOfKeysInIndexBuffer global buffered key count
-     * @return this builder
-     * @deprecated use {@link #withIndexBufferedWriteKeyLimit(Integer)}
-     */
-    @Deprecated
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInIndexBuffer(
-            final Integer maxNumberOfKeysInIndexBuffer) {
-        return withIndexBufferedWriteKeyLimit(maxNumberOfKeysInIndexBuffer);
     }
 
     /**
@@ -307,27 +375,10 @@ public class IndexConfigurationBuilder<K, V> {
      * @param segmentSplitKeyThreshold max keys before split
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withSegmentSplitKeyThreshold(
+    IndexConfigurationBuilder<K, V> setSegmentSplitKeyThreshold(
             final Integer segmentSplitKeyThreshold) {
         this.maxNumberOfKeysInPartitionBeforeSplit = segmentSplitKeyThreshold;
         return this;
-    }
-
-    /**
-     * Sets the threshold at which a routed segment becomes eligible for split.
-     * <p>
-     * Use {@link #withSegmentSplitKeyThreshold(Integer)} for the canonical
-     * name.
-     *
-     * @param maxNumberOfKeysInPartitionBeforeSplit max keys before split
-     * @return this builder
-     * @deprecated use {@link #withSegmentSplitKeyThreshold(Integer)}
-     */
-    @Deprecated
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfKeysInPartitionBeforeSplit(
-            final Integer maxNumberOfKeysInPartitionBeforeSplit) {
-        return withSegmentSplitKeyThreshold(
-                maxNumberOfKeysInPartitionBeforeSplit);
     }
 
     /**
@@ -336,7 +387,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param maxNumberOfSegmentsInCache max segments in cache
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withMaxNumberOfSegmentsInCache(
+    IndexConfigurationBuilder<K, V> setCachedSegmentLimit(
             final Integer maxNumberOfSegmentsInCache) {
         this.maxNumberOfSegmentsInCache = maxNumberOfSegmentsInCache;
         return this;
@@ -348,7 +399,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param bloomFilterNumberOfHashFunctions Bloom filter hash function count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withBloomFilterNumberOfHashFunctions(
+    IndexConfigurationBuilder<K, V> setBloomFilterHashFunctionCount(
             final Integer bloomFilterNumberOfHashFunctions) {
         this.bloomFilterNumberOfHashFunctions = bloomFilterNumberOfHashFunctions;
         return this;
@@ -360,7 +411,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param probabilityOfFalsePositive false-positive probability
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withBloomFilterProbabilityOfFalsePositive(
+    IndexConfigurationBuilder<K, V> setBloomFilterFalsePositiveProbability(
             final Double probabilityOfFalsePositive) {
         this.bloomFilterProbabilityOfFalsePositive = probabilityOfFalsePositive;
         return this;
@@ -372,7 +423,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param bloomFilterIndexSizeInBytes Bloom filter size in bytes
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withBloomFilterIndexSizeInBytes(
+    IndexConfigurationBuilder<K, V> setBloomFilterIndexSizeBytes(
             final Integer bloomFilterIndexSizeInBytes) {
         this.bloomFilterIndexSizeInBytes = bloomFilterIndexSizeInBytes;
         return this;
@@ -384,7 +435,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param diskIoBufferSizeInBytes buffer size in bytes
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withDiskIoBufferSizeInBytes(
+    IndexConfigurationBuilder<K, V> setDiskIoBufferSizeBytes(
             final Integer diskIoBufferSizeInBytes) {
         this.diskIoBufferSizeInBytes = diskIoBufferSizeInBytes;
         return this;
@@ -396,7 +447,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param enabled true to enable context logging
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withContextLoggingEnabled(
+    IndexConfigurationBuilder<K, V> setContextLoggingEnabled(
             final Boolean enabled) {
         this.contextLoggingEnabled = enabled;
         return this;
@@ -409,7 +460,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param wal WAL configuration
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withWal(final Wal wal) {
+    IndexConfigurationBuilder<K, V> setWal(final Wal wal) {
         this.wal = Wal.orEmpty(wal);
         return this;
     }
@@ -420,7 +471,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param numberOfSegmentMaintenanceThreads segment maintenance thread count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withNumberOfSegmentMaintenanceThreads(
+    IndexConfigurationBuilder<K, V> setSegmentMaintenanceThreadCount(
             final Integer numberOfSegmentMaintenanceThreads) {
         this.numberOfSegmentMaintenanceThreads = numberOfSegmentMaintenanceThreads;
         return this;
@@ -432,7 +483,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param numberOfIndexMaintenanceThreads split maintenance thread count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withNumberOfIndexMaintenanceThreads(
+    IndexConfigurationBuilder<K, V> setIndexMaintenanceThreadCount(
             final Integer numberOfIndexMaintenanceThreads) {
         this.numberOfIndexMaintenanceThreads = numberOfIndexMaintenanceThreads;
         return this;
@@ -445,7 +496,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param numberOfRegistryLifecycleThreads registry lifecycle thread count
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withNumberOfRegistryLifecycleThreads(
+    IndexConfigurationBuilder<K, V> setRegistryLifecycleThreadCount(
             final Integer numberOfRegistryLifecycleThreads) {
         this.numberOfRegistryLifecycleThreads = numberOfRegistryLifecycleThreads;
         return this;
@@ -457,7 +508,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param indexBusyBackoffMillis backoff delay in milliseconds
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withIndexBusyBackoffMillis(
+    IndexConfigurationBuilder<K, V> setBusyBackoffMillis(
             final Integer indexBusyBackoffMillis) {
         this.indexBusyBackoffMillis = indexBusyBackoffMillis;
         return this;
@@ -469,7 +520,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param indexBusyTimeoutMillis busy timeout in milliseconds
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withIndexBusyTimeoutMillis(
+    IndexConfigurationBuilder<K, V> setBusyTimeoutMillis(
             final Integer indexBusyTimeoutMillis) {
         this.indexBusyTimeoutMillis = indexBusyTimeoutMillis;
         return this;
@@ -481,7 +532,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param backgroundMaintenanceAutoEnabled true to enable auto maintenance
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withBackgroundMaintenanceAutoEnabled(
+    IndexConfigurationBuilder<K, V> setBackgroundMaintenanceAutoEnabled(
             final Boolean backgroundMaintenanceAutoEnabled) {
         this.backgroundMaintenanceAutoEnabled = backgroundMaintenanceAutoEnabled;
         return this;
@@ -493,7 +544,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filter filter to add
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+    IndexConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter filter) {
         final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
                 "filter");
@@ -507,7 +558,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filterClass filter class to instantiate
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+    IndexConfigurationBuilder<K, V> addEncodingFilter(
             final Class<? extends ChunkFilter> filterClass) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
                 .requireNonNull(filterClass, "filterClass");
@@ -529,7 +580,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param spec persisted filter spec
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+    IndexConfigurationBuilder<K, V> addEncodingFilter(
             final Supplier<? extends ChunkFilter> supplier,
             final ChunkFilterSpec spec) {
         Vldtn.requireNonNull(supplier, "supplier");
@@ -542,7 +593,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param spec persisted filter spec
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addEncodingFilter(
+    IndexConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilterSpec spec) {
         return addEncodingFilterSpec(Vldtn.requireNonNull(spec, "spec"));
     }
@@ -553,7 +604,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param registrations filter registrations to use
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withEncodingFilterRegistrations(
+    IndexConfigurationBuilder<K, V> setEncodingFilterRegistrations(
             final Collection<ChunkFilterRegistration> registrations) {
         Vldtn.requireNonNull(registrations, "registrations");
         encodingChunkFilters.clear();
@@ -570,7 +621,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param specs filter specs to use
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withEncodingFilterSpecs(
+    IndexConfigurationBuilder<K, V> setEncodingFilterSpecs(
             final Collection<ChunkFilterSpec> specs) {
         Vldtn.requireNonNull(specs, "specs");
         encodingChunkFilters.clear();
@@ -586,7 +637,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filterClasses filter classes to instantiate
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withEncodingFilterClasses(
+    IndexConfigurationBuilder<K, V> setEncodingFilterClasses(
             final Collection<Class<? extends ChunkFilter>> filterClasses) {
         Vldtn.requireNonNull(filterClasses, "filterClasses");
         encodingChunkFilters.clear();
@@ -602,7 +653,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filters filters to use
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withEncodingFilters(
+    IndexConfigurationBuilder<K, V> setEncodingFilters(
             final Collection<ChunkFilter> filters) {
         Vldtn.requireNonNull(filters, "filters");
         encodingChunkFilters.clear();
@@ -618,7 +669,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filter filter to add
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+    IndexConfigurationBuilder<K, V> addDecodingFilter(
             final ChunkFilter filter) {
         final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
                 "filter");
@@ -632,7 +683,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filterClass filter class to instantiate
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+    IndexConfigurationBuilder<K, V> addDecodingFilter(
             final Class<? extends ChunkFilter> filterClass) {
         final Class<? extends ChunkFilter> requiredClass = Vldtn
                 .requireNonNull(filterClass, "filterClass");
@@ -654,7 +705,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param spec persisted filter spec
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+    IndexConfigurationBuilder<K, V> addDecodingFilter(
             final Supplier<? extends ChunkFilter> supplier,
             final ChunkFilterSpec spec) {
         Vldtn.requireNonNull(supplier, "supplier");
@@ -667,7 +718,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param spec persisted filter spec
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> addDecodingFilter(
+    IndexConfigurationBuilder<K, V> addDecodingFilter(
             final ChunkFilterSpec spec) {
         return addDecodingFilterSpec(Vldtn.requireNonNull(spec, "spec"));
     }
@@ -678,7 +729,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param registrations filter registrations to use
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withDecodingFilterRegistrations(
+    IndexConfigurationBuilder<K, V> setDecodingFilterRegistrations(
             final Collection<ChunkFilterRegistration> registrations) {
         Vldtn.requireNonNull(registrations, "registrations");
         decodingChunkFilters.clear();
@@ -695,7 +746,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param specs filter specs to use
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withDecodingFilterSpecs(
+    IndexConfigurationBuilder<K, V> setDecodingFilterSpecs(
             final Collection<ChunkFilterSpec> specs) {
         Vldtn.requireNonNull(specs, "specs");
         decodingChunkFilters.clear();
@@ -711,7 +762,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filterClasses filter classes to instantiate
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withDecodingFilterClasses(
+    IndexConfigurationBuilder<K, V> setDecodingFilterClasses(
             final Collection<Class<? extends ChunkFilter>> filterClasses) {
         Vldtn.requireNonNull(filterClasses, "filterClasses");
         decodingChunkFilters.clear();
@@ -727,7 +778,7 @@ public class IndexConfigurationBuilder<K, V> {
      * @param filters filters to use
      * @return this builder
      */
-    public IndexConfigurationBuilder<K, V> withDecodingFilters(
+    IndexConfigurationBuilder<K, V> setDecodingFilters(
             final Collection<ChunkFilter> filters) {
         Vldtn.requireNonNull(filters, "filters");
         decodingChunkFilters.clear();
@@ -763,10 +814,10 @@ public class IndexConfigurationBuilder<K, V> {
                 ? IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED
                 : backgroundMaintenanceAutoEnabled;
         final Integer effectiveMaxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles == null
-                ? IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES
+                ? IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT
                 : maxNumberOfDeltaCacheFiles;
         final Integer effectiveMaxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition == null
-                ? IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION
+                ? IndexConfigurationContract.DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT
                 : maxNumberOfImmutableRunsPerPartition;
         final Integer effectiveMaxNumberOfKeysInSegment = resolveEffectiveMaxNumberOfKeysInSegment();
         final Integer effectiveMaxNumberOfKeysInPartitionBeforeSplit = resolveEffectiveMaxNumberOfKeysInPartitionBeforeSplit(
@@ -865,7 +916,7 @@ public class IndexConfigurationBuilder<K, V> {
             return null;
         }
         final int segmentCount = maxNumberOfSegmentsInCache == null
-                ? IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
+                ? IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT
                 : maxNumberOfSegmentsInCache.intValue();
         return Integer.valueOf(Math.max(effectivePartitionBuffer.intValue(),
                 effectivePartitionBuffer.intValue() * Math.max(1, segmentCount)));

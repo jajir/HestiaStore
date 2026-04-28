@@ -313,13 +313,13 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 view -> String.valueOf(
-                        IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
+                        IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
                 IndexPropertiesSchema::defaultActivePartition);
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
-                view -> String.valueOf(IndexConfigurationContract.DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
+                view -> String.valueOf(IndexConfigurationContract.DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
                 IndexPropertiesSchema::defaultPartitionBuffer);
@@ -329,18 +329,18 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 view -> String.valueOf(
-                        IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK));
+                        IndexConfigurationContract.DEFAULT_SEGMENT_CHUNK_KEY_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 view -> String.valueOf(
-                        IndexConfigurationContract.MAX_NUMBER_OF_DELTA_CACHE_FILES));
+                        IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                 IndexPropertiesSchema::defaultPartitionBeforeSplit);
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 view -> String.valueOf(
-                        IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE));
+                        IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT));
     }
 
     private static void addThreadingDefaults(
@@ -369,11 +369,11 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS));
+                        IndexConfigurationContract.DEFAULT_BLOOM_FILTER_HASH_FUNCTIONS));
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES,
                 view -> String.valueOf(
-                        IndexConfigurationContract.BLOOM_FILTER_INDEX_SIZE_IN_BYTES));
+                        IndexConfigurationContract.DEFAULT_BLOOM_FILTER_INDEX_SIZE_BYTES));
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                 view -> String.valueOf(
@@ -381,7 +381,7 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DISK_IO_BUFFER_SIZE_IN_BYTES));
+                        IndexConfigurationContract.DEFAULT_DISK_IO_BUFFER_SIZE_BYTES));
     }
 
     private static void addChunkFilterDefaults(
@@ -470,7 +470,7 @@ public final class IndexPropertiesSchema {
         final String segments = view.getString(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE);
         final long segmentCount = segments == null || segments.isBlank()
-                ? IndexConfigurationContract.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
+                ? IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT
                 : Long.parseLong(segments);
         return String.valueOf(Math.max(partitionBuffer,
                 partitionBuffer * Math.max(1L, segmentCount)));
@@ -483,7 +483,7 @@ public final class IndexPropertiesSchema {
             return segmentKeyLimit;
         }
         return String.valueOf(
-                IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT);
+                IndexConfigurationContract.DEFAULT_SEGMENT_MAX_KEYS);
     }
 
     private static long resolveSegmentCache(final PropertyView view) {
@@ -492,7 +492,7 @@ public final class IndexPropertiesSchema {
         if (value != null && !value.isBlank()) {
             return Long.parseLong(value);
         }
-        return IndexConfigurationContract.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
+        return IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT;
     }
 
     private static long resolveActivePartition(final PropertyView view) {

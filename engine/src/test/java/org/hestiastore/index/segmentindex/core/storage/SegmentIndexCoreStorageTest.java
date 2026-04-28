@@ -11,6 +11,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("unchecked")
 class SegmentIndexCoreStorageTest {
 
     @Test

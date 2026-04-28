@@ -57,23 +57,23 @@ class SegmentIndexMetricsSnapshotTest {
                 24L, 25L, 26L, 27, List.of(),
                 SegmentIndexState.READY);
 
-        assertEquals(11, snapshot.getMaxNumberOfKeysInActivePartition());
-        assertEquals(12, snapshot.getMaxNumberOfKeysInPartitionBuffer());
-        assertEquals(17, snapshot.getMaxNumberOfImmutableRunsPerPartition());
-        assertEquals(18, snapshot.getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(11, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInActivePartition());
+        assertEquals(12, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(17, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfImmutableRunsPerPartition());
+        assertEquals(18, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInIndexBuffer());
         assertEquals(11, snapshot.getSegmentWriteCacheKeyLimit());
         assertEquals(12, snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance());
         assertEquals(18, snapshot.getIndexBufferedWriteKeyLimit());
-        assertEquals(19, snapshot.getPartitionCount());
-        assertEquals(20, snapshot.getActivePartitionCount());
-        assertEquals(21, snapshot.getDrainingPartitionCount());
-        assertEquals(22, snapshot.getImmutableRunCount());
-        assertEquals(23, snapshot.getPartitionBufferedKeyCount());
-        assertEquals(24L, snapshot.getLocalThrottleCount());
-        assertEquals(25L, snapshot.getGlobalThrottleCount());
-        assertEquals(26L, snapshot.getDrainScheduleCount());
-        assertEquals(27, snapshot.getDrainInFlightCount());
-        assertEquals(0L, snapshot.getDrainLatencyP95Micros());
+        assertEquals(19, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount());
+        assertEquals(20, snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
+        assertEquals(21, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount());
+        assertEquals(22, snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
+        assertEquals(23, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
+        assertEquals(24L, snapshot.getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount());
+        assertEquals(25L, snapshot.getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount());
+        assertEquals(26L, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
+        assertEquals(27, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros());
     }
 
     @Test
@@ -240,23 +240,23 @@ class SegmentIndexMetricsSnapshotTest {
                         .getSegmentWriteCacheKeyLimitDuringMaintenance());
         assertEquals(0,
                 snapshot.getWritePathMetrics().getIndexBufferedWriteKeyLimit());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInActivePartition());
-        assertEquals(0, snapshot.getMaxNumberOfImmutableRunsPerPartition());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInPartitionBuffer());
-        assertEquals(0, snapshot.getMaxNumberOfKeysInIndexBuffer());
-        assertEquals(0, snapshot.getPartitionCount());
-        assertEquals(0, snapshot.getActivePartitionCount());
-        assertEquals(0, snapshot.getDrainingPartitionCount());
-        assertEquals(0, snapshot.getImmutableRunCount());
-        assertEquals(0, snapshot.getPartitionBufferedKeyCount());
-        assertEquals(0L, snapshot.getLocalThrottleCount());
-        assertEquals(0L, snapshot.getGlobalThrottleCount());
-        assertEquals(0L, snapshot.getDrainScheduleCount());
-        assertEquals(0, snapshot.getDrainInFlightCount());
-        assertEquals(0L, snapshot.getDrainLatencyP95Micros());
-        assertEquals(0, snapshot.getSplitBlockedPartitionCount());
-        assertEquals(0L, snapshot.getSplitBlockedDrainScheduleCount());
-        assertEquals(0L, snapshot.getBufferFullWhileSplitBlockedCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInActivePartition());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfImmutableRunsPerPartition());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInPartitionBuffer());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInIndexBuffer());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros());
+        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedDrainScheduleCount());
+        assertEquals(0L, snapshot.getLegacyPartitionCompatibilityMetrics().getBufferFullWhileSplitBlockedCount());
         assertEquals(0L, snapshot.getPutBusyRetryCount());
         assertEquals(0L, snapshot.getPutBusyTimeoutCount());
         assertEquals(0L, snapshot.getPutBusyWaitP95Micros());

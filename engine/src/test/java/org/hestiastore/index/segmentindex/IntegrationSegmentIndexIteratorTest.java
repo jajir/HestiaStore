@@ -54,9 +54,9 @@ class IntegrationSegmentIndexIteratorTest {
     void test_simple_index_building() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
         data.stream().forEach(index::put);
@@ -68,9 +68,9 @@ class IntegrationSegmentIndexIteratorTest {
     void test_null_value() {
         final IndexConfiguration<Integer, NullValue> conf = IndexConfiguration
                 .<Integer, NullValue>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(NullValue.class)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(NullValue.class))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(directory, conf);
         data2.stream().forEach(index::put);
@@ -82,9 +82,9 @@ class IntegrationSegmentIndexIteratorTest {
     void test_string_defaults() {
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         index.put("a", "a");
@@ -206,7 +206,7 @@ class IntegrationSegmentIndexIteratorTest {
             index.flushAndWait();
             awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
                     && index.metricsSnapshot().getSplitInFlightCount() == 0
-                    && index.metricsSnapshot().getDrainInFlightCount() == 0,
+                    && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                     10_000L);
 
             final List<Entry<Integer, String>> expected = IntStream.range(0, 48)
@@ -252,7 +252,7 @@ class IntegrationSegmentIndexIteratorTest {
             index.flushAndWait();
             awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
                     && index.metricsSnapshot().getSplitInFlightCount() == 0
-                    && index.metricsSnapshot().getDrainInFlightCount() == 0,
+                    && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                     10_000L);
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
@@ -277,7 +277,7 @@ class IntegrationSegmentIndexIteratorTest {
                             .metricsSnapshot();
                     return snapshot.getSegmentCount() > 1
                             && snapshot.getSplitInFlightCount() == 0
-                            && snapshot.getDrainInFlightCount() == 0;
+                            && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0;
                 }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
 
                 while (iterator.hasNext()) {
@@ -295,22 +295,22 @@ class IntegrationSegmentIndexIteratorTest {
     private SegmentIndex<Integer, String> makeSegmentIndex() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_INTEGER) //
-                .withValueTypeDescriptor(TD_STRING) //
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInActivePartition(64) //
-                .withMaxNumberOfKeysInPartitionBuffer(128) //
-                .withMaxNumberOfKeysInIndexBuffer(256) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(4) //
-                .withMaxNumberOfKeysInSegmentChunk(1) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withName("test_index")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_INTEGER)) //
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING)) //
+                .segment(segment -> segment.cacheKeyLimit(3)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(4)) //
+                .segment(segment -> segment.chunkKeyLimit(1)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .identity(identity -> identity.name("test_index"))//
                 .build();
         return SegmentIndex.<Integer, String>create(directory, conf);
     }
@@ -318,22 +318,22 @@ class IntegrationSegmentIndexIteratorTest {
     private SegmentIndex<Integer, String> makeAutonomousSplitIndex() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(TD_INTEGER) //
-                .withValueTypeDescriptor(TD_STRING) //
-                .withMaxNumberOfKeysInSegmentCache(8) //
-                .withMaxNumberOfKeysInActivePartition(32) //
-                .withMaxNumberOfImmutableRunsPerPartition(2) //
-                .withMaxNumberOfKeysInPartitionBuffer(96) //
-                .withMaxNumberOfKeysInIndexBuffer(192) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(128) //
-                .withMaxNumberOfKeysInSegmentChunk(4) //
-                .withBloomFilterIndexSizeInBytes(1024 * 128) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(true) //
-                .withName("test_index_autonomous_split")//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_INTEGER)) //
+                .identity(identity -> identity.valueTypeDescriptor(TD_STRING)) //
+                .segment(segment -> segment.cacheKeyLimit(8)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(128)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024 * 128)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true)) //
+                .identity(identity -> identity.name("test_index_autonomous_split"))//
                 .build();
         return SegmentIndex.<Integer, String>create(directory, conf);
     }

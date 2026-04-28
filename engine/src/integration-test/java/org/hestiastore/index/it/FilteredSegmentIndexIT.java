@@ -34,24 +34,26 @@ class FilteredSegmentIndexIT {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<String, String> createConf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index_filtered")//
-                .addEncodingFilter(new ChunkFilterMagicNumberWriting())//
-                .addEncodingFilter(new ChunkFilterCrc32Writing())//
-                .addEncodingFilter(new ChunkFilterSnappyCompress())//
-                .addEncodingFilter(new ChunkFilterXorEncrypt())//
-                .addDecodingFilter(new ChunkFilterXorDecrypt())//
-                .addDecodingFilter(new ChunkFilterSnappyDecompress())//
-                .addDecodingFilter(new ChunkFilterCrc32Validation())//
-                .addDecodingFilter(new ChunkFilterMagicNumberValidation())//
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class)
+                        .name("test_index_filtered"))//
+                .filters(filters -> filters
+                        .addEncodingFilter(new ChunkFilterMagicNumberWriting())
+                        .addEncodingFilter(new ChunkFilterCrc32Writing())
+                        .addEncodingFilter(new ChunkFilterSnappyCompress())
+                        .addEncodingFilter(new ChunkFilterXorEncrypt())
+                        .addDecodingFilter(new ChunkFilterXorDecrypt())
+                        .addDecodingFilter(new ChunkFilterSnappyDecompress())
+                        .addDecodingFilter(new ChunkFilterCrc32Validation())
+                        .addDecodingFilter(
+                                new ChunkFilterMagicNumberValidation()))//
                 .build();
 
         final IndexConfiguration<String, String> openConf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index_filtered")//
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class)
+                        .name("test_index_filtered"))//
                 .build();
 
         final Map<String, String> entries = new LinkedHashMap<>();

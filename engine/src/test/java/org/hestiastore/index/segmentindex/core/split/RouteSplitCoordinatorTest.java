@@ -19,6 +19,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,9 @@ class RouteSplitCoordinatorTest {
 
     @Mock
     private IndexConfiguration<Integer, String> conf;
+
+    @Mock
+    private IndexMaintenanceConfiguration maintenance;
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -60,8 +64,9 @@ class RouteSplitCoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        when(conf.getIndexBusyBackoffMillis()).thenReturn(1);
-        when(conf.getIndexBusyTimeoutMillis()).thenReturn(1);
+        when(conf.maintenance()).thenReturn(maintenance);
+        when(maintenance.busyBackoffMillis()).thenReturn(1);
+        when(maintenance.busyTimeoutMillis()).thenReturn(1);
         coordinator = new RouteSplitCoordinator<>(conf, Integer::compare,
                 segmentRegistry, materializationService);
         splitPlan = new RouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
@@ -77,7 +82,8 @@ class RouteSplitCoordinatorTest {
         when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
                 .thenReturn(Optional.of(parentHandle));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iteratorResult(entries()), iteratorResult(entries()));
+                .thenReturn(iteratorResult(entries()))
+                .thenReturn(iteratorResult(entries()));
         when(materializationService.materializeRouteSplit(
                 eq(parentSegment), eq(2L), any()))
                 .thenReturn(splitPlan);

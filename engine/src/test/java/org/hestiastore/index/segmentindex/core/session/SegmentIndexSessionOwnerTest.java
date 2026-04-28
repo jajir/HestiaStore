@@ -14,10 +14,10 @@ import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinat
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")
 class SegmentIndexSessionOwnerTest {
 
     private IndexStateCoordinator<Integer, String> stateCoordinator;
@@ -57,8 +57,6 @@ class SegmentIndexSessionOwnerTest {
 
     @Test
     void completeStartupRunsOnlyOnce() {
-        final SegmentIndexImpl<Integer, String> index = Mockito
-                .mock(SegmentIndexImpl.class);
         final Runnable hook = mock(Runnable.class);
 
         owner.completeStartup(hook);
@@ -69,8 +67,6 @@ class SegmentIndexSessionOwnerTest {
 
     @Test
     void closeAndFailureDelegateToCollaborators() {
-        final SegmentIndexImpl<Integer, String> index = Mockito
-                .mock(SegmentIndexImpl.class);
         final Throwable failure = new IllegalStateException("boom");
 
         owner.close();

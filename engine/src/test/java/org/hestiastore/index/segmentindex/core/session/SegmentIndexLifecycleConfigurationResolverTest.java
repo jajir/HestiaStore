@@ -32,7 +32,7 @@ class SegmentIndexLifecycleConfigurationResolverTest {
                 resolver.loadConfiguration(true);
 
         assertEquals("lifecycle-configuration-resolver-create",
-                loadedConfiguration.getIndexName());
+                loadedConfiguration.identity().name());
     }
 
     @Test
@@ -61,24 +61,24 @@ class SegmentIndexLifecycleConfigurationResolverTest {
     private static IndexConfiguration<Integer, String> buildConf(
             final String indexName) {
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName(indexName)
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(6)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfKeysInSegment(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))
+                .identity(identity -> identity.name(indexName))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();
     }
 
@@ -88,27 +88,27 @@ class SegmentIndexLifecycleConfigurationResolverTest {
                 .ofProvider("resolver-filter")
                 .withParameter("keyRef", "orders-main");
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName(indexName)
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(6)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfKeysInSegment(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withBackgroundMaintenanceAutoEnabled(false)
-                .withNumberOfSegmentMaintenanceThreads(1)
-                .withNumberOfRegistryLifecycleThreads(1)
-                .addEncodingFilter(ResolverChunkFilter::new, spec)
-                .addDecodingFilter(ResolverChunkFilter::new, spec)
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))
+                .identity(identity -> identity.name(indexName))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
+                .maintenance(maintenance -> maintenance.segmentThreads(1))
+                .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
+                .filters(filters -> filters.addEncodingFilter(ResolverChunkFilter::new, spec))
+                .filters(filters -> filters.addDecodingFilter(ResolverChunkFilter::new, spec))
                 .build();
     }
 

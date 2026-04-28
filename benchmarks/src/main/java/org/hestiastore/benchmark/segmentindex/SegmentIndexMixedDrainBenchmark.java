@@ -102,32 +102,27 @@ public class SegmentIndexMixedDrainBenchmark {
 
     private IndexConfiguration<Integer, String> buildConfiguration() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withName("segment-index-mixed-drain-benchmark")//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(512)//
-                .withMaxNumberOfKeysInActivePartition(64)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(192)//
-                .withMaxNumberOfKeysInIndexBuffer(
-                        isSplitHeavy() ? 16_384 : 4_096)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(
-                        resolveSplitThreshold())//
-                .withMaxNumberOfKeysInSegmentChunk(64)//
-                .withMaxNumberOfKeysInSegment(10_000)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(4096)//
-                .withBloomFilterNumberOfHashFunctions(2)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(2)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(true)//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(KEY_DESCRIPTOR)
+                        .valueTypeDescriptor(VALUE_DESCRIPTOR)
+                        .name("segment-index-mixed-drain-benchmark"))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(512)
+                        .chunkKeyLimit(64).maxKeys(10_000)
+                        .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)
+                        .legacyImmutableRunLimit(2)
+                        .maintenanceWriteCacheKeyLimit(192)
+                        .indexBufferedWriteKeyLimit(
+                                isSplitHeavy() ? 16_384 : 4_096)
+                        .segmentSplitKeyThreshold(resolveSplitThreshold()))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4096)
+                        .hashFunctions(2).falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                        .indexThreads(2).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(true))//
                 .build();
     }
 

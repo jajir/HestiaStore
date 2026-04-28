@@ -19,6 +19,7 @@ import org.hestiastore.index.segmentindex.core.metrics.Stats;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+@SuppressWarnings("unchecked")
 class SegmentIndexRuntimeInputsTest {
 
     @Test

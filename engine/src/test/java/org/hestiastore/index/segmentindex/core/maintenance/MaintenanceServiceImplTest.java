@@ -138,9 +138,9 @@ class MaintenanceServiceImplTest {
                 retryPolicy(), stats, maintenanceExecutor, checkpointAction,
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
-        when(stableSegmentGateway.flush(segmentId)).thenReturn(
-                StableSegmentOperationResult.busy(),
-                StableSegmentOperationResult.ok(segmentHandle));
+        when(stableSegmentGateway.flush(segmentId))
+                .thenReturn(StableSegmentOperationResult.busy())
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.READY);
 
         service.flushSegment(segmentId, true);
@@ -158,9 +158,9 @@ class MaintenanceServiceImplTest {
                 retryPolicy(), stats, maintenanceExecutor, checkpointAction,
                 sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
-        when(stableSegmentGateway.compact(segmentId)).thenReturn(
-                StableSegmentOperationResult.busy(),
-                StableSegmentOperationResult.ok(segmentHandle));
+        when(stableSegmentGateway.compact(segmentId))
+                .thenReturn(StableSegmentOperationResult.busy())
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
         when(runtime.getState()).thenReturn(SegmentState.READY);
 
         service.compactSegment(segmentId, true);

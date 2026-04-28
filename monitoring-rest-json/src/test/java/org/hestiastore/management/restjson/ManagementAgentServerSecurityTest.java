@@ -34,13 +34,13 @@ class ManagementAgentServerSecurityTest {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger()) //
-                .withValueTypeDescriptor(new TypeDescriptorShortString()) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withContextLoggingEnabled(false) //
-                .withName("secure-index") //
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("secure-index")) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .logging(logging -> logging.contextEnabled(false)) //
                 .build();
         index = SegmentIndex.create(directory, conf);
         final ManagementAgentSecurityPolicy policy = new ManagementAgentSecurityPolicy(

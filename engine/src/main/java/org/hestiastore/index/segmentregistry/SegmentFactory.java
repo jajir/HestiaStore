@@ -93,12 +93,12 @@ final class SegmentFactory<K, V>
         final SegmentRuntimeLimits limits = resolveRuntimeLimits();
         final Directory segmentDirectory = openSegmentDirectory(segmentId);
         final boolean backgroundMaintenanceEnabled = Boolean.TRUE
-                .equals(conf.isBackgroundMaintenanceAutoEnabled());
+                .equals(conf.maintenance().backgroundAutoEnabled());
         final SegmentMaintenancePolicy<K, V> stableSegmentMaintenancePolicy = backgroundMaintenanceEnabled
                 ? new SegmentMaintenancePolicyThreshold<>(
                         limits.maxNumberOfKeysInSegmentCache(),
                         limits.maxNumberOfKeysInSegmentWriteCache(),
-                        conf.getMaxNumberOfDeltaCacheFiles())
+                        conf.segment().deltaCacheFileLimit())
                 : SegmentMaintenancePolicy.none();
         final List<Supplier<? extends ChunkFilter>> encodingChunkFilters = resolveEncodingChunkFilterSuppliers();
         final List<Supplier<? extends ChunkFilter>> decodingChunkFilters = resolveDecodingChunkFilterSuppliers();
@@ -108,8 +108,8 @@ final class SegmentFactory<K, V>
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withMaintenanceExecutor(stableSegmentMaintenanceExecutor)//
                 .withLoggingContextIndexName(
-                        Boolean.TRUE.equals(conf.isContextLoggingEnabled())
-                                ? conf.getIndexName()
+                        Boolean.TRUE.equals(conf.logging().contextEnabled())
+                                ? conf.identity().name()
                                 : null)//
                 .withMaintenancePolicy(stableSegmentMaintenancePolicy)//
                 .withMaxNumberOfKeysInSegmentWriteCache(
@@ -119,17 +119,17 @@ final class SegmentFactory<K, V>
                 .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
                         limits.maxNumberOfKeysInSegmentWriteCacheDuringMaintenance())//
                 .withMaxNumberOfKeysInSegmentChunk(
-                        conf.getMaxNumberOfKeysInSegmentChunk())//
+                        conf.segment().chunkKeyLimit())//
                 .withMaxNumberOfDeltaCacheFiles(
-                        conf.getMaxNumberOfDeltaCacheFiles())//
+                        conf.segment().deltaCacheFileLimit())//
                 .withValueTypeDescriptor(valueTypeDescriptor)//
                 .withBloomFilterNumberOfHashFunctions(
-                        conf.getBloomFilterNumberOfHashFunctions())//
+                        conf.bloomFilter().hashFunctions())//
                 .withBloomFilterIndexSizeInBytes(
-                        conf.getBloomFilterIndexSizeInBytes())//
+                        conf.bloomFilter().indexSizeBytes())//
                 .withBloomFilterProbabilityOfFalsePositive(
-                        conf.getBloomFilterProbabilityOfFalsePositive())//
-                .withDiskIoBufferSize(conf.getDiskIoBufferSize())//
+                        conf.bloomFilter().falsePositiveProbability())//
+                .withDiskIoBufferSize(conf.io().diskBufferSizeBytes())//
                 .withEncodingChunkFilterSuppliers(encodingChunkFilters)//
                 .withDecodingChunkFilterSuppliers(decodingChunkFilters);
     }
@@ -182,9 +182,10 @@ final class SegmentFactory<K, V>
 
     private SegmentRuntimeLimits configuredRuntimeLimits() {
         return new SegmentRuntimeLimits(
-                toIntOrZero(conf.getMaxNumberOfKeysInSegmentCache()),
-                toIntOrZero(conf.getMaxNumberOfKeysInActivePartition()),
-                toIntOrZero(conf.getMaxNumberOfKeysInPartitionBuffer()));
+                toIntOrZero(conf.segment().cacheKeyLimit()),
+                toIntOrZero(conf.writePath().segmentWriteCacheKeyLimit()),
+                toIntOrZero(conf.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance()));
     }
 
     private int toIntOrZero(final Integer value) {

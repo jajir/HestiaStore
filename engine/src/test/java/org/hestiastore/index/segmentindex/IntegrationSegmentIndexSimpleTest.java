@@ -299,22 +299,22 @@ class IntegrationSegmentIndexSimpleTest {
     private SegmentIndex<Integer, String> makeIndex(boolean withLog) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tds) //
-                .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER_SIZE)//
-                .withMaxNumberOfKeysInSegmentCache(3) //
-                .withMaxNumberOfKeysInActivePartition(64) //
-                .withMaxNumberOfKeysInPartitionBuffer(128) //
-                .withMaxNumberOfKeysInIndexBuffer(256) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(512) //
-                .withMaxNumberOfKeysInSegment(5) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withContextLoggingEnabled(withLog) //
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tds)) //
+                .io(io -> io.diskBufferSizeBytes(DISK_IO_BUFFER_SIZE))//
+                .segment(segment -> segment.cacheKeyLimit(3)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
+                .segment(segment -> segment.maxKeys(5)) //
+                .segment(segment -> segment.chunkKeyLimit(2)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .logging(logging -> logging.contextEnabled(withLog)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }

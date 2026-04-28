@@ -14,7 +14,7 @@ from a correct baseline, measure, then change one group of settings at a time.
 
 ### Segment sizing
 
-`withMaxNumberOfKeysInSegment()` controls when segments split. Larger segments
+`segment(s -> s.maxKeys(...))` controls when segments split. Larger segments
 reduce split frequency but can increase maintenance cost and read work within a
 segment.
 
@@ -32,17 +32,17 @@ Use smaller values when:
 
 ### Cache sizing
 
-- `withMaxNumberOfSegmentsInCache()` controls index-level segment residency
-- `withMaxNumberOfKeysInSegmentCache()` controls per-segment cached data
+- `segment(s -> s.cachedSegmentLimit(...))` controls index-level segment residency
+- `segment(s -> s.cacheKeyLimit(...))` controls per-segment cached data
 
 Increase cache budgets when cache misses or repeated disk reads dominate.
 Reduce them when memory pressure hurts the rest of the application more than the
 saved I/O helps.
 
-### Sparse index granularity
+### Segment chunk granularity
 
-`withMaxNumberOfKeysInSegmentIndexPage()` changes how coarse or fine the
-segment-level sparse index is.
+`segment(s -> s.chunkKeyLimit(...))` changes how much data is grouped into one
+segment chunk.
 
 - Smaller pages improve seek precision but increase index overhead.
 - Larger pages reduce index overhead but can increase scan work per lookup.
@@ -70,7 +70,7 @@ See [WAL](wal.md) and [WAL Canary Runbook](wal-canary-runbook.md).
 
 - read and write latency percentiles
 - registry cache hit and miss counts
-- partition buffer growth and throttle counts
+- segment write-cache/backlog growth and throttle counts
 - WAL sync failures, pending bytes, and checkpoint lag
 - compaction frequency and recovery time after restart
 

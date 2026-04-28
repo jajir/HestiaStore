@@ -24,11 +24,11 @@ final class VerifyExportCommand {
     int run(final String[] args, final PrintStream out, final PrintStream err) {
         final Options options = new Options();
         options.addOption(Option.builder().longOpt("input").hasArg()
-                .desc("Export directory to verify.").required().build());
+                .desc("Export directory to verify.").required().get());
         options.addOption(Option.builder().longOpt("json")
-                .desc("Print verification result as JSON.").build());
+                .desc("Print verification result as JSON.").get());
         options.addOption(
-                Option.builder("h").longOpt("help").desc("Show help.").build());
+                Option.builder("h").longOpt("help").desc("Show help.").get());
         try {
             if (HelpSupport.isHelpRequested(args)) {
                 printHelp(options, out);

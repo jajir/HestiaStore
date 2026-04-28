@@ -2,10 +2,12 @@ package org.hestiastore.indextools;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.apache.commons.cli.help.HelpFormatter;
+import org.apache.commons.cli.help.TextHelpAppendable;
 
 final class HelpSupport {
 
@@ -29,9 +31,13 @@ final class HelpSupport {
     static void printHelp(final PrintStream out, final String commandSyntax,
             final Options options) {
         final PrintWriter writer = new PrintWriter(out, true);
-        new HelpFormatter().printHelp(writer, HelpFormatter.DEFAULT_WIDTH,
-                commandSyntax, null, options, HelpFormatter.DEFAULT_LEFT_PAD,
-                HelpFormatter.DEFAULT_DESC_PAD, null, true);
+        final TextHelpAppendable appendable = new TextHelpAppendable(writer);
+        try {
+            HelpFormatter.builder().setHelpAppendable(appendable).get()
+                    .printHelp(commandSyntax, null, options, null, true);
+        } catch (final java.io.IOException e) {
+            throw new UncheckedIOException(e);
+        }
         writer.flush();
     }
 

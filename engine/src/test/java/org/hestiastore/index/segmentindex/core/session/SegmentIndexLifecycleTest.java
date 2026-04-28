@@ -71,7 +71,7 @@ class SegmentIndexLifecycleTest {
                 assertOpenedResources(openLifecycle);
         assertEquals(2,
                 openedResources.indexConfiguration()
-                        .getNumberOfRegistryLifecycleThreads());
+                        .maintenance().registryLifecycleThreads());
         openLifecycle.close();
     }
 
@@ -109,7 +109,7 @@ class SegmentIndexLifecycleTest {
         assertEquals(List.of(ChunkFilterSpec.ofProvider("lifecycle-filter")
                 .withParameter("keyRef", "orders-main")),
                 openedResources.indexConfiguration()
-                        .getEncodingChunkFilterSpecs());
+                        .filters().encodingChunkFilterSpecs());
         assertInstanceOf(LifecycleChunkFilter.class,
                 openedResources.runtimeConfiguration().getDecodingChunkFilters()
                         .get(0));
@@ -137,18 +137,18 @@ class SegmentIndexLifecycleTest {
 
         final IndexConfiguration<Integer, String> loaded = assertOpenedResources(
                 openLifecycle).indexConfiguration();
-        assertEquals(original.getEncodingChunkFilterSpecs(),
-                loaded.getEncodingChunkFilterSpecs());
-        assertEquals(original.getDecodingChunkFilterSpecs(),
-                loaded.getDecodingChunkFilterSpecs());
-        assertNotSame(original.getEncodingChunkFilterSpecs(),
-                loaded.getEncodingChunkFilterSpecs());
-        assertNotSame(original.getDecodingChunkFilterSpecs(),
-                loaded.getDecodingChunkFilterSpecs());
-        assertNotSame(original.getEncodingChunkFilterSpecs().get(0),
-                loaded.getEncodingChunkFilterSpecs().get(0));
-        assertNotSame(original.getDecodingChunkFilterSpecs().get(0),
-                loaded.getDecodingChunkFilterSpecs().get(0));
+        assertEquals(original.filters().encodingChunkFilterSpecs(),
+                loaded.filters().encodingChunkFilterSpecs());
+        assertEquals(original.filters().decodingChunkFilterSpecs(),
+                loaded.filters().decodingChunkFilterSpecs());
+        assertNotSame(original.filters().encodingChunkFilterSpecs(),
+                loaded.filters().encodingChunkFilterSpecs());
+        assertNotSame(original.filters().decodingChunkFilterSpecs(),
+                loaded.filters().decodingChunkFilterSpecs());
+        assertNotSame(original.filters().encodingChunkFilterSpecs().get(0),
+                loaded.filters().encodingChunkFilterSpecs().get(0));
+        assertNotSame(original.filters().decodingChunkFilterSpecs().get(0),
+                loaded.filters().decodingChunkFilterSpecs().get(0));
         openLifecycle.close();
     }
 
@@ -189,26 +189,26 @@ class SegmentIndexLifecycleTest {
     private static IndexConfiguration<Integer, String> buildConf(
             final String indexName, final int registryLifecycleThreads) {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorShortString())//
-                .withName(indexName)//
-                .withContextLoggingEnabled(false)//
-                .withMaxNumberOfKeysInSegmentCache(10)//
-                .withMaxNumberOfKeysInActivePartition(5)//
-                .withMaxNumberOfKeysInPartitionBuffer(6)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(100)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(registryLifecycleThreads)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))//
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))//
+                .identity(identity -> identity.name(indexName))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .segment(segment -> segment.cacheKeyLimit(10))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(100))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(1))//
+                .maintenance(maintenance -> maintenance.registryLifecycleThreads(registryLifecycleThreads))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .build();
     }
 
@@ -218,27 +218,27 @@ class SegmentIndexLifecycleTest {
                 .ofProvider("lifecycle-filter")
                 .withParameter("keyRef", "orders-main");
         return IndexConfiguration.<Integer, String>builder()
-                .withKeyClass(Integer.class)
-                .withValueClass(String.class)
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withName(indexName)
-                .withContextLoggingEnabled(false)
-                .withMaxNumberOfKeysInSegmentCache(10)
-                .withMaxNumberOfKeysInActivePartition(5)
-                .withMaxNumberOfKeysInPartitionBuffer(6)
-                .withMaxNumberOfKeysInSegmentChunk(2)
-                .withMaxNumberOfKeysInSegment(100)
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterNumberOfHashFunctions(1)
-                .withBloomFilterIndexSizeInBytes(1024)
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)
-                .withDiskIoBufferSizeInBytes(1024)
-                .withBackgroundMaintenanceAutoEnabled(false)
-                .withNumberOfSegmentMaintenanceThreads(1)
-                .withNumberOfRegistryLifecycleThreads(1)
-                .addEncodingFilter(LifecycleChunkFilter::new, spec)
-                .addDecodingFilter(LifecycleChunkFilter::new, spec)
+                .identity(identity -> identity.keyClass(Integer.class))
+                .identity(identity -> identity.valueClass(String.class))
+                .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
+                .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))
+                .identity(identity -> identity.name(indexName))
+                .logging(logging -> logging.contextEnabled(false))
+                .segment(segment -> segment.cacheKeyLimit(10))
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
+                .segment(segment -> segment.chunkKeyLimit(2))
+                .segment(segment -> segment.maxKeys(100))
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
+                .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
+                .maintenance(maintenance -> maintenance.segmentThreads(1))
+                .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
+                .filters(filters -> filters.addEncodingFilter(LifecycleChunkFilter::new, spec))
+                .filters(filters -> filters.addDecodingFilter(LifecycleChunkFilter::new, spec))
                 .build();
     }
 

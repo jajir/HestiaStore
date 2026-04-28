@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -158,26 +156,26 @@ class SegmentIndexImplPutTest {
                 .withMaxBytesBeforeForcedCheckpoint(1L).build();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi)//
-                .withValueTypeDescriptor(tds)//
-                .withName("wal-retention-single-segment-test")//
-                .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInActivePartition(1)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(10)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withContextLoggingEnabled(false)//
-                .withIndexBusyBackoffMillis(1)//
-                .withIndexBusyTimeoutMillis(200)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withWal(wal)//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi))//
+                .identity(identity -> identity.valueTypeDescriptor(tds))//
+                .identity(identity -> identity.name("wal-retention-single-segment-test"))//
+                .segment(segment -> segment.cacheKeyLimit(4))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(1))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(10))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .maintenance(maintenance -> maintenance.busyBackoffMillis(1))//
+                .maintenance(maintenance -> maintenance.busyTimeoutMillis(200))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .wal(walBuilder -> walBuilder.configuration(wal))//
                 .build();
         if (index != null && !index.wasClosed()) {
             index.close();
@@ -217,25 +215,25 @@ class SegmentIndexImplPutTest {
             final int maxKeysInSegment,
             final int maxNumberOfKeysInActivePartition, final Wal wal) {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi)//
-                .withValueTypeDescriptor(tds)//
-                .withName("test-index")//
-                .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInActivePartition(
-                        maxNumberOfKeysInActivePartition)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(maxKeysInSegment)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withContextLoggingEnabled(false)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withWal(wal)//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi))//
+                .identity(identity -> identity.valueTypeDescriptor(tds))//
+                .identity(identity -> identity.name("test-index"))//
+                .segment(segment -> segment.cacheKeyLimit(4))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(
+                        maxNumberOfKeysInActivePartition))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(maxKeysInSegment))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .wal(walBuilder -> walBuilder.configuration(wal))//
                 .build();
     }
 
@@ -270,7 +268,6 @@ class SegmentIndexImplPutTest {
         throw new AssertionError("Timed out waiting for READY segment.");
     }
 
-    @SuppressWarnings("unchecked")
     private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
             final Object index) {
         return SegmentIndexTestAccess.keyToSegmentMap(index);

@@ -22,9 +22,8 @@ public class SegmentIndexSetIT {
         // Prepare index configuration
         final IndexConfiguration<String, NullValue> conf = IndexConfiguration
                 .<String, NullValue>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(NullValue.class)//
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(NullValue.class).name("test_index")) //
                 .build();
 
         // create new index

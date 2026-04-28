@@ -44,12 +44,11 @@ class DefaultBlockingSegmentTest {
 
     @Test
     void getRetriesBusyStatusUntilSuccessful() {
-        final BlockingSegment<Integer, String> segmentHandle = mock(
-                BlockingSegment.class);
+        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
-        when(segment.get(11)).thenReturn(OperationResult.busy(),
-                OperationResult.ok("value"));
+        when(segment.get(11)).thenReturn(OperationResult.busy())
+                .thenReturn(OperationResult.ok("value"));
 
         assertEquals("value", handle.get(11));
         verify(segmentRegistry, times(2)).loadSegment(SEGMENT_ID);
@@ -58,15 +57,11 @@ class DefaultBlockingSegmentTest {
 
     @Test
     void putRetriesClosedStatusUntilSegmentReloads() {
-        @SuppressWarnings("unchecked")
-        final Segment<Integer, String> reloadedSegment = (Segment<Integer, String>) mock(
-                Segment.class);
-        final BlockingSegment<Integer, String> firstHandle = mock(
-                BlockingSegment.class);
-        final BlockingSegment<Integer, String> secondHandle = mock(
-                BlockingSegment.class);
-        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(firstHandle,
-                secondHandle);
+        final Segment<Integer, String> reloadedSegment = mockSegment();
+        final BlockingSegment<Integer, String> firstHandle = mockBlockingSegment();
+        final BlockingSegment<Integer, String> secondHandle = mockBlockingSegment();
+        when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(firstHandle)
+                .thenReturn(secondHandle);
         when(firstHandle.getSegment()).thenReturn(segment);
         when(secondHandle.getSegment()).thenReturn(reloadedSegment);
         when(segment.put(1, "one")).thenReturn(OperationResult.closed());
@@ -80,8 +75,7 @@ class DefaultBlockingSegmentTest {
 
     @Test
     void compactThrowsOnErrorStatus() {
-        final BlockingSegment<Integer, String> segmentHandle = mock(
-                BlockingSegment.class);
+        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
         when(segment.compact()).thenReturn(OperationResult.error());
@@ -91,13 +85,22 @@ class DefaultBlockingSegmentTest {
 
     @Test
     void updateRuntimeLimitsDelegatesToLoadedSegment() {
-        final BlockingSegment<Integer, String> segmentHandle = mock(
-                BlockingSegment.class);
+        final BlockingSegment<Integer, String> segmentHandle = mockBlockingSegment();
         when(segmentRegistry.loadSegment(SEGMENT_ID)).thenReturn(segmentHandle);
         when(segmentHandle.getSegment()).thenReturn(segment);
 
         handle.getRuntime().updateRuntimeLimits(runtimeLimits);
 
         verify(segment).applyRuntimeLimits(runtimeLimits);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> BlockingSegment<K, V> mockBlockingSegment() {
+        return mock(BlockingSegment.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> Segment<K, V> mockSegment() {
+        return mock(Segment.class);
     }
 }
