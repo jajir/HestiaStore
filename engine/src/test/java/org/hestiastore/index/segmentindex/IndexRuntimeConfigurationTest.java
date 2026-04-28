@@ -28,12 +28,12 @@ class IndexRuntimeConfigurationTest {
                 .withParameter("keyRef", "orders-main");
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration
                 .<Integer, String>builder()
-                .addEncodingFilter(
+                .filters(filters -> filters.addEncodingFilter(
                         () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        spec)
-                .addDecodingFilter(
+                        spec))
+                .filters(filters -> filters.addDecodingFilter(
                         () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        spec)
+                        spec))
                 .build();
         final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
                 .builder().withDefaultProviders()
@@ -88,8 +88,10 @@ class IndexRuntimeConfigurationTest {
     void resolveRuntimeConfigurationWithDefaultRegistryMaterializesBuiltIns() {
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration
                 .<Integer, String>builder()
-                .withEncodingFilterSpecs(List.of(ChunkFilterSpecs.doNothing()))
-                .withDecodingFilterSpecs(List.of(ChunkFilterSpecs.doNothing()))
+                .filters(filters -> filters.encodingFilterSpecs(
+                        List.of(ChunkFilterSpecs.doNothing())))
+                .filters(filters -> filters.decodingFilterSpecs(
+                        List.of(ChunkFilterSpecs.doNothing())))
                 .build();
 
         final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = configuration

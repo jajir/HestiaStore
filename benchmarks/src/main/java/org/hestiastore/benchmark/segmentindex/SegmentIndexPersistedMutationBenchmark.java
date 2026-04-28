@@ -114,26 +114,23 @@ public class SegmentIndexPersistedMutationBenchmark {
         final int maxKeysBeforeSplit = Math.max(65_536, seededKeyCount * 8);
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-persisted-mutation-benchmark")//
-                .withWal(wal)//
-                .withMaxNumberOfKeysInSegmentCache(32)//
-                .withMaxNumberOfKeysInActivePartition(512)//
-                .withMaxNumberOfImmutableRunsPerPartition(2)//
-                .withMaxNumberOfKeysInPartitionBuffer(1024)//
-                .withMaxNumberOfKeysInIndexBuffer(8192)//
-                .withMaxNumberOfKeysInSegmentChunk(128)//
-                .withMaxNumberOfKeysInSegment(maxKeysBeforeSplit)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(maxKeysBeforeSplit)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withMaxNumberOfDeltaCacheFiles(2)//
-                .withBloomFilterIndexSizeInBytes(Math.max(16_384,
-                        seededKeyCount / 2))//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(8 * 1024)//
-                .withNumberOfSegmentMaintenanceThreads(1)//
-                .withNumberOfIndexMaintenanceThreads(1)//
-                .withNumberOfRegistryLifecycleThreads(1)//
-                .withBackgroundMaintenanceAutoEnabled(false);
+                .wal(walBuilder -> walBuilder.configuration(wal))//
+                .segment(segment -> segment.cacheKeyLimit(32)
+                        .chunkKeyLimit(128).maxKeys(maxKeysBeforeSplit)
+                        .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
+                        .legacyImmutableRunLimit(2)
+                        .maintenanceWriteCacheKeyLimit(1024)
+                        .indexBufferedWriteKeyLimit(8192)
+                        .segmentSplitKeyThreshold(maxKeysBeforeSplit))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .indexSizeBytes(Math.max(16_384, seededKeyCount / 2))
+                        .hashFunctions(3)
+                        .falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .maintenance(maintenance -> maintenance.segmentThreads(1)
+                        .indexThreads(1).registryLifecycleThreads(1)
+                        .backgroundAutoEnabled(false));
         SegmentIndexBenchmarkSupport.addIntegrityAndCompressionFilters(builder,
                 snappy);
         return builder.build();

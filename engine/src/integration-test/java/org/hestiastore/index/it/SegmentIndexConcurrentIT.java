@@ -856,49 +856,49 @@ class SegmentIndexConcurrentIT {
     private static IndexConfiguration<Integer, Integer> newConfiguration(
             final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorInteger())//
-                .withName(name)//
-                .withBackgroundMaintenanceAutoEnabled(false)//
-                .withMaxNumberOfKeysInActivePartition(256)//
-                .withMaxNumberOfImmutableRunsPerPartition(4)//
-                .withMaxNumberOfKeysInPartitionBuffer(1_024)//
-                .withMaxNumberOfKeysInIndexBuffer(4_096)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(10_000_000)//
-                .withMaxNumberOfKeysInSegmentCache(30)//
-                .withMaxNumberOfKeysInSegment(20)// small to trigger splits
-                .withMaxNumberOfKeysInSegmentChunk(5)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterNumberOfHashFunctions(1)//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(Integer.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorInteger())
+                        .name(name))//
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(false))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
+                        .legacyImmutableRunLimit(4)
+                        .maintenanceWriteCacheKeyLimit(1_024)
+                        .indexBufferedWriteKeyLimit(4_096)
+                        .segmentSplitKeyThreshold(10_000_000))//
+                .segment(segment -> segment.cacheKeyLimit(30).maxKeys(20)
+                        .chunkKeyLimit(5))// small to trigger splits
+                .bloomFilter(
+                        bloomFilter -> bloomFilter.indexSizeBytes(1024)
+                                .hashFunctions(1))//
                 .build();
     }
 
     private static IndexConfiguration<Integer, Integer> newAutonomousSplitConfiguration(
             final String name, final int cpuThreads) {
         return IndexConfiguration.<Integer, Integer>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(new TypeDescriptorInteger())//
-                .withValueTypeDescriptor(new TypeDescriptorInteger())//
-                .withName(name)//
-                .withBackgroundMaintenanceAutoEnabled(true)//
-                .withMaxNumberOfKeysInActivePartition(512)//
-                .withMaxNumberOfImmutableRunsPerPartition(6)//
-                .withMaxNumberOfKeysInPartitionBuffer(8_192)//
-                .withMaxNumberOfKeysInIndexBuffer(65_536)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(2_000)//
-                .withMaxNumberOfKeysInSegmentCache(256)//
-                .withMaxNumberOfKeysInSegment(16_384)//
-                .withMaxNumberOfKeysInSegmentChunk(32)//
-                .withMaxNumberOfSegmentsInCache(64)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withNumberOfSegmentMaintenanceThreads(2)//
-                .withNumberOfIndexMaintenanceThreads(2)//
-                .withNumberOfRegistryLifecycleThreads(2)//
-                .withIndexBusyTimeoutMillis(120_000)//
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(Integer.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorInteger())
+                        .name(name))//
+                .maintenance(maintenance -> maintenance
+                        .backgroundAutoEnabled(true).segmentThreads(2)
+                        .indexThreads(2).registryLifecycleThreads(2)
+                        .busyTimeoutMillis(120_000))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
+                        .legacyImmutableRunLimit(6)
+                        .maintenanceWriteCacheKeyLimit(8_192)
+                        .indexBufferedWriteKeyLimit(65_536)
+                        .segmentSplitKeyThreshold(2_000))//
+                .segment(segment -> segment.cacheKeyLimit(256)
+                        .maxKeys(16_384).chunkKeyLimit(32)
+                        .cachedSegmentLimit(64))//
+                .bloomFilter(
+                        bloomFilter -> bloomFilter.indexSizeBytes(1024)
+                                .hashFunctions(1))//
                 .build();
     }
 }

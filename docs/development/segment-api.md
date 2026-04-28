@@ -85,9 +85,11 @@ comes from:
 - transient `BUSY` while a route is scheduled for split
 - WAL retention pressure when WAL is enabled
 
-Legacy-named compatibility settings still exist in `IndexConfiguration`, but
-they now tune routed segment write-cache, maintenance backlog, and split
-thresholds rather than a separate partition runtime.
+The Java configuration API uses grouped `writePath(...)` and `segment(...)`
+sections. Historical partition-named properties may still appear in persisted
+metadata and compatibility metrics, but they now map to routed segment
+write-cache, maintenance backlog, and split thresholds rather than a separate
+partition runtime.
 
 ## Parallel Calls
 

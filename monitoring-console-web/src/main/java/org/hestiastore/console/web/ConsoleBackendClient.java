@@ -356,18 +356,22 @@ public class ConsoleBackendClient {
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
+                                    .getLegacyPartitionCompatibilityMetrics()
                                     .getMaxNumberOfKeysInActivePartition())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
+                                    .getLegacyPartitionCompatibilityMetrics()
                                     .getMaxNumberOfImmutableRunsPerPartition())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
+                                    .getLegacyPartitionCompatibilityMetrics()
                                     .getMaxNumberOfKeysInPartitionBuffer())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
+                                    .getLegacyPartitionCompatibilityMetrics()
                                     .getMaxNumberOfKeysInIndexBuffer())
                             .sum(),
                     monitoredIndexes.stream()
@@ -684,7 +688,7 @@ public class ConsoleBackendClient {
                     snapshot.getSplitScheduleCount(), nowNanos);
             final CounterRate drainRate = computeCounterRate(
                     nodeId + ":" + monitoredIndex.indexName() + ":drain",
-                    snapshot.getDrainScheduleCount(), nowNanos);
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(), nowNanos);
             rows.add(new IndexRow(monitoredIndex.indexName(),
                     monitoredIndex.state().name(), monitoredIndex.ready(),
                     snapshot.getGetOperationCount(),
@@ -697,10 +701,10 @@ public class ConsoleBackendClient {
                     snapshot.getRegistryCacheSize(),
                     snapshot.getRegistryCacheLimit(),
                     snapshot.getSegmentCacheKeyLimitPerSegment(),
-                    snapshot.getMaxNumberOfKeysInActivePartition(),
-                    snapshot.getMaxNumberOfImmutableRunsPerPartition(),
-                    snapshot.getMaxNumberOfKeysInPartitionBuffer(),
-                    snapshot.getMaxNumberOfKeysInIndexBuffer(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInActivePartition(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfImmutableRunsPerPartition(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInPartitionBuffer(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInIndexBuffer(),
                     snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                     snapshot.getSegmentMaintenanceCount(),
                     snapshot.getSegmentErrorCount(),
@@ -726,21 +730,21 @@ public class ConsoleBackendClient {
                     snapshot.getFlushRequestCount(),
                     snapshot.getCompactRequestCount(),
                     snapshot.getSplitScheduleCount(),
-                    snapshot.getDrainScheduleCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(),
                     snapshot.getSplitInFlightCount(),
-                    snapshot.getDrainInFlightCount(),
-                    snapshot.getDrainLatencyP95Micros(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros(),
                     snapshot.getMaintenanceQueueSize(),
                     snapshot.getMaintenanceQueueCapacity(),
                     snapshot.getSplitQueueSize(),
                     snapshot.getSplitQueueCapacity(),
-                    snapshot.getPartitionCount(),
-                    snapshot.getActivePartitionCount(),
-                    snapshot.getDrainingPartitionCount(),
-                    snapshot.getImmutableRunCount(),
-                    snapshot.getPartitionBufferedKeyCount(),
-                    snapshot.getLocalThrottleCount(),
-                    snapshot.getGlobalThrottleCount(), throughput.value(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount(),
+                    snapshot.getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount(), throughput.value(),
                     throughput.unit(), compactRate.value(), compactRate.unit(),
                     flushRate.value(), flushRate.unit(), splitRate.value(),
                     splitRate.unit(), drainRate.value(), drainRate.unit(),

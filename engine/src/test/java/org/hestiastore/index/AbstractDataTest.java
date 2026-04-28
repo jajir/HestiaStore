@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.slf4j.Logger;

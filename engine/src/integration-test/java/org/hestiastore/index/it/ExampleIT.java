@@ -17,9 +17,8 @@ public class ExampleIT {
         // Prepare index configuration
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class).name("test_index")) //
                 .build();
 
         // create new index
@@ -40,9 +39,8 @@ public class ExampleIT {
     private void reopen(final Directory directory) {
         IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(String.class)//
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(String.class)
+                        .valueClass(String.class).name("test_index")) //
                 .build();
 
         SegmentIndex<String, String> index = SegmentIndex

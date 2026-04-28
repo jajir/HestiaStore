@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.Comparator;
-
 import java.util.Optional;
 
 import org.hestiastore.index.IndexException;
@@ -26,7 +25,6 @@ import org.slf4j.LoggerFactory;
 final class RouteSplitCoordinator<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final IndexConfiguration<K, V> conf;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final RouteSplitPreparationService<K, V> preparationService;
@@ -44,7 +42,6 @@ final class RouteSplitCoordinator<K, V> {
             final SegmentRegistry<K, V> segmentRegistry,
             final DefaultSegmentMaterializationService<K, V> materializationService,
             final SegmentIndexSplitPolicy<K, V> splitPolicy) {
-        this.conf = Vldtn.requireNonNull(conf, "conf");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
@@ -52,8 +49,8 @@ final class RouteSplitCoordinator<K, V> {
         this.preparationService = new RouteSplitPreparationService<>(
                 Vldtn.requireNonNull(materializationService,
                         "materializationService"),
-                new IndexRetryPolicy(conf.getIndexBusyBackoffMillis(),
-                        conf.getIndexBusyTimeoutMillis()),
+                new IndexRetryPolicy(conf.maintenance().busyBackoffMillis(),
+                        conf.maintenance().busyTimeoutMillis()),
                 logger);
     }
 

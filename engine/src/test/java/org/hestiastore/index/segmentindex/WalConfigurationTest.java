@@ -11,14 +11,15 @@ class WalConfigurationTest {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder().build();
 
-        assertSame(Wal.EMPTY, conf.getWal());
+        assertSame(Wal.EMPTY, conf.wal());
     }
 
     @Test
-    void withWalNullIsNormalizedToWalEmpty() {
+    void walConfigurationNullIsNormalizedToWalEmpty() {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
-                .<Integer, String>builder().withWal(null).build();
+                .<Integer, String>builder()
+                .wal(wal -> wal.configuration(null)).build();
 
-        assertSame(Wal.EMPTY, conf.getWal());
+        assertSame(Wal.EMPTY, conf.wal());
     }
 }

@@ -11,20 +11,19 @@ longer-term replication design work, see
 ## Enable WAL
 
 ```java
-Wal wal = Wal.builder()
-    .withDurabilityMode(WalDurabilityMode.GROUP_SYNC)
-    .build();
-
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders")
-    .withWal(wal)
+    .identity(identity -> identity
+        .name("orders")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .wal(wal -> wal
+        .durability(WalDurabilityMode.GROUP_SYNC))
     .build();
 ```
 
-WAL is disabled by default through `Wal.EMPTY`.
+WAL is disabled by default through `Wal.EMPTY`. Use
+`wal(wal -> wal.disabled())` to explicitly disable it in an override.
 
 ## Choose a durability mode
 

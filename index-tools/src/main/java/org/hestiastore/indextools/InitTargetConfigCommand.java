@@ -15,17 +15,17 @@ final class InitTargetConfigCommand {
         final Options options = new Options();
         options.addOption(Option.builder().longOpt("input").hasArg()
                 .desc("Export directory used as the source for the template.")
-                .required().build());
+                .required().get());
         options.addOption(Option.builder().longOpt("output").hasArg()
                 .desc("Path where the editable target-config.json template will be written.")
-                .required().build());
+                .required().get());
         options.addOption(Option.builder().longOpt("index-name").hasArg()
                 .desc("Optional target index name written into the generated template.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("overwrite")
-                .desc("Overwrite an existing output file.").build());
+                .desc("Overwrite an existing output file.").get());
         options.addOption(
-                Option.builder("h").longOpt("help").desc("Show help.").build());
+                Option.builder("h").longOpt("help").desc("Show help.").get());
         try {
             if (HelpSupport.isHelpRequested(args)) {
                 printHelp(options, out);

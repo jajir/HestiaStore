@@ -122,17 +122,17 @@ class SegmentIndexLifecycle<K, V> {
     private ExecutorRegistry createExecutorRegistry(
             final IndexConfiguration<K, V> indexConfiguration) {
         return ExecutorRegistry.builder()
-                .withIndexName(indexConfiguration.getIndexName())
+                .withIndexName(indexConfiguration.identity().name())
                 .withContextLoggingEnabled(Boolean.TRUE.equals(
-                        indexConfiguration.isContextLoggingEnabled()))
+                        indexConfiguration.logging().contextEnabled()))
                 .withIndexMaintenanceThreads(
-                        indexConfiguration.getNumberOfIndexMaintenanceThreads())
+                        indexConfiguration.maintenance().indexThreads())
                 .withSplitMaintenanceThreads(
-                        indexConfiguration.getNumberOfIndexMaintenanceThreads())
+                        indexConfiguration.maintenance().indexThreads())
                 .withSegmentMaintenanceThreads(indexConfiguration
-                        .getNumberOfSegmentMaintenanceThreads())
+                        .maintenance().segmentThreads())
                 .withRegistryMaintenanceThreads(indexConfiguration
-                        .getNumberOfRegistryLifecycleThreads())
+                        .maintenance().registryLifecycleThreads())
                 .build();
     }
 

@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -12,7 +11,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,23 +65,23 @@ class IndexStateTest {
      */
     private IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi)//
-                .withValueTypeDescriptor(tds)//
-                .withName("index-state-test")//
-                .withMaxNumberOfKeysInSegmentCache(4)//
-                .withMaxNumberOfKeysInActivePartition(2)//
-                .withMaxNumberOfKeysInSegmentChunk(2)//
-                .withMaxNumberOfKeysInSegment(10)//
-                .withMaxNumberOfSegmentsInCache(3)//
-                .withBloomFilterNumberOfHashFunctions(1)//
-                .withBloomFilterIndexSizeInBytes(1024)//
-                .withBloomFilterProbabilityOfFalsePositive(0.01D)//
-                .withDiskIoBufferSizeInBytes(1024)//
-                .withContextLoggingEnabled(false)//
-                .withEncodingFilters(List.of(new ChunkFilterDoNothing()))//
-                .withDecodingFilters(List.of(new ChunkFilterDoNothing()))//
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi))//
+                .identity(identity -> identity.valueTypeDescriptor(tds))//
+                .identity(identity -> identity.name("index-state-test"))//
+                .segment(segment -> segment.cacheKeyLimit(4))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(2))//
+                .segment(segment -> segment.chunkKeyLimit(2))//
+                .segment(segment -> segment.maxKeys(10))//
+                .segment(segment -> segment.cachedSegmentLimit(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(1))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))//
+                .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))//
+                .io(io -> io.diskBufferSizeBytes(1024))//
+                .logging(logging -> logging.contextEnabled(false))//
+                .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))//
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))//
                 .build();
     }
 }

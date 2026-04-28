@@ -29,21 +29,27 @@ class IndexConfigurationTest {
 
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
-                .withEncodingFilters(encoding)
-                .withDecodingFilters(decoding)
+                .filters(filters -> filters.encodingFilters(encoding)
+                        .decodingFilters(decoding))
                 .build();
 
         encoding.add(new ChunkFilterDoNothing());
         decoding.add(new ChunkFilterDoNothing());
 
-        assertEquals(1, config.getEncodingChunkFilters().size());
-        assertEquals(1, config.getDecodingChunkFilters().size());
-        final List<ChunkFilter> configEncoding = config
-                .getEncodingChunkFilters();
-        final List<ChunkFilter> configDecoding = config
-                .getDecodingChunkFilters();
-        final ChunkFilterDoNothing encodingFilterToAdd = new ChunkFilterDoNothing();
-        final ChunkFilterDoNothing decodingFilterToAdd = new ChunkFilterDoNothing();
+        assertEquals(1,
+                config.resolveRuntimeConfiguration()
+                        .getEncodingChunkFilters().size());
+        assertEquals(1,
+                config.resolveRuntimeConfiguration()
+                        .getDecodingChunkFilters().size());
+        final List<ChunkFilterSpec> configEncoding = config
+                .filters().encodingChunkFilterSpecs();
+        final List<ChunkFilterSpec> configDecoding = config
+                .filters().decodingChunkFilterSpecs();
+        final ChunkFilterSpec encodingFilterToAdd = ChunkFilterSpec
+                .ofProvider("encoding-extra");
+        final ChunkFilterSpec decodingFilterToAdd = ChunkFilterSpec
+                .ofProvider("decoding-extra");
         assertThrows(UnsupportedOperationException.class,
                 () -> configEncoding.add(encodingFilterToAdd));
         assertThrows(UnsupportedOperationException.class,
@@ -56,10 +62,10 @@ class IndexConfigurationTest {
                 .<Integer, String>builder()
                 .build();
 
-        assertTrue(config.isBackgroundMaintenanceAutoEnabled());
+        assertTrue(config.maintenance().backgroundAutoEnabled());
         assertEquals(
                 IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
-                config.getNumberOfSegmentMaintenanceThreads());
+                config.maintenance().segmentThreads());
     }
 
     @Test
@@ -69,12 +75,13 @@ class IndexConfigurationTest {
                 .withParameter("keyRef", "orders-main");
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
-                .addEncodingFilter(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        spec)
-                .addDecodingFilter(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        spec)
+                .filters(filters -> filters.addEncodingFilter(
+                        () -> new TrackingChunkFilter(
+                                sequence.incrementAndGet()),
+                        spec).addDecodingFilter(
+                                () -> new TrackingChunkFilter(
+                                        sequence.incrementAndGet()),
+                                spec))
                 .build();
         final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
                 .builder().withDefaultProviders()
@@ -107,8 +114,10 @@ class IndexConfigurationTest {
         final TrackingChunkFilter second = (TrackingChunkFilter) runtimeConfiguration
                 .getEncodingChunkFilters().get(0);
 
-        assertEquals(List.of(spec), config.getEncodingChunkFilterSpecs());
-        assertEquals(List.of(spec), config.getDecodingChunkFilterSpecs());
+        assertEquals(List.of(spec),
+                config.filters().encodingChunkFilterSpecs());
+        assertEquals(List.of(spec),
+                config.filters().decodingChunkFilterSpecs());
         assertEquals(1, runtimeConfiguration
                 .getEncodingChunkFilterRegistrations().size());
         assertEquals(1,

@@ -1,56 +1,34 @@
 package org.hestiastore.index.segmentindex.config;
 
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.IndexBloomFilterConfiguration;
+import org.hestiastore.index.segmentindex.IndexIoConfiguration;
+import org.hestiastore.index.segmentindex.IndexSegmentConfiguration;
 
 /**
- * Define contract, that define index configuration.
- * 
- * @author honza
- *
+ * Default configuration values for Integer keys.
  */
 public class IndexConfigurationDefaultInteger
         implements IndexConfigurationContract {
 
     /** {@inheritDoc} */
     @Override
-    public int getMaxNumberOfKeysInSegmentCache() {
-        return 500_000;
+    public IndexSegmentConfiguration segment() {
+        return new IndexSegmentConfiguration(10_000_000, 1_000, 500_000, 10,
+                DEFAULT_DELTA_CACHE_FILE_LIMIT);
     }
 
     /** {@inheritDoc} */
     @Override
-    public int getMaxNumberOfKeysInSegmentChunk() {
-        return 1_000;
+    public IndexIoConfiguration io() {
+        return new IndexIoConfiguration(1024 * 1024);
     }
 
     /** {@inheritDoc} */
     @Override
-    public int getMaxNumberOfKeysInSegment() {
-        return 10_000_000;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getMaxNumberOfSegmentsInCache() {
-        return 10;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getDiskIoBufferSizeInBytes() {
-        return 1024 * 1024;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getBloomFilterNumberOfHashFunctions() {
-        return 2;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getBloomFilterIndexSizeInBytes() {
-        return 100_000;
+    public IndexBloomFilterConfiguration bloomFilter() {
+        return new IndexBloomFilterConfiguration(2, 100_000,
+                DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_PROBABILITY);
     }
 
 }

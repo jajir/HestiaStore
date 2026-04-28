@@ -2,34 +2,26 @@ package org.hestiastore.index.segmentindex;
 
 import java.util.List;
 
-import org.hestiastore.index.chunkstore.ChunkFilter;
-import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
-import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
-import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
-import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 
 /**
- * Define contract, that define index configuration.
- * 
- * @author honza
- *
+ * Supplies default values for index configuration sections.
  */
 public interface IndexConfigurationContract {
-    int MAX_NUMBER_OF_KEYS_IN_SEGMENT = 10_000_000;
-    int MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT = 10_000_000;
-    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE = 10_000;
-    int MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK = 1_000;
-    int MAX_NUMBER_OF_SEGMENTS_IN_CACHE = 10;
-    int MAX_NUMBER_OF_DELTA_CACHE_FILES = 10;
-    int DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION = 2;
+    int DEFAULT_SEGMENT_MAX_KEYS = 10_000_000;
+    int DEFAULT_SEGMENT_SPLIT_KEY_THRESHOLD = 10_000_000;
+    int DEFAULT_SEGMENT_CACHE_KEY_LIMIT = 10_000;
+    int DEFAULT_SEGMENT_CHUNK_KEY_LIMIT = 1_000;
+    int DEFAULT_CACHED_SEGMENT_LIMIT = 10;
+    int DEFAULT_DELTA_CACHE_FILE_LIMIT = 10;
+    int DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT = 2;
 
-    int BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS = 3;
-    int BLOOM_FILTER_INDEX_SIZE_IN_BYTES = 5_000_000;
-    double BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE = 0.01;
+    int DEFAULT_BLOOM_FILTER_HASH_FUNCTIONS = 3;
+    int DEFAULT_BLOOM_FILTER_INDEX_SIZE_BYTES = 5_000_000;
+    double DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_PROBABILITY = 0.01;
 
-    int DISK_IO_BUFFER_SIZE_IN_BYTES = 1024 * 8;
+    int DEFAULT_DISK_IO_BUFFER_SIZE_BYTES = 1024 * 8;
     int DEFAULT_SEGMENT_MAINTENANCE_THREADS = 10;
     int DEFAULT_INDEX_MAINTENANCE_THREADS = 10;
     int DEFAULT_REGISTRY_LIFECYCLE_THREADS = 3;
@@ -38,257 +30,93 @@ public interface IndexConfigurationContract {
     boolean DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED = true;
 
     /**
-     * Returns the default maximum number of keys in the in-memory segment
-     * cache.
+     * Returns default segment sizing and cache settings.
      *
-     * @return default max keys in segment cache
+     * @return default segment section
      */
-    default int getMaxNumberOfKeysInSegmentCache() {
-        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE;
+    default IndexSegmentConfiguration segment() {
+        return new IndexSegmentConfiguration(DEFAULT_SEGMENT_MAX_KEYS,
+                DEFAULT_SEGMENT_CHUNK_KEY_LIMIT,
+                DEFAULT_SEGMENT_CACHE_KEY_LIMIT, DEFAULT_CACHED_SEGMENT_LIMIT,
+                DEFAULT_DELTA_CACHE_FILE_LIMIT);
     }
 
     /**
-     * Returns the default maximum number of keys per segment chunk.
+     * Returns default direct-to-segment write-path settings.
      *
-     * @return default max keys per chunk
+     * @return default write-path section
      */
-    default int getMaxNumberOfKeysInSegmentChunk() {
-        return MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK;
+    default IndexWritePathConfiguration writePath() {
+        final IndexSegmentConfiguration segment = segment();
+        final int segmentWriteCacheKeyLimit =
+                Math.max(1, segment.cacheKeyLimit().intValue() / 2);
+        final int maintenanceWriteCacheKeyLimit =
+                Math.max(segmentWriteCacheKeyLimit + 1,
+                        (int) Math.ceil(segmentWriteCacheKeyLimit * 1.4));
+        final int indexBufferedWriteKeyLimit = Math.max(
+                maintenanceWriteCacheKeyLimit,
+                maintenanceWriteCacheKeyLimit
+                        * segment.cachedSegmentLimit().intValue());
+        return new IndexWritePathConfiguration(segmentWriteCacheKeyLimit,
+                maintenanceWriteCacheKeyLimit, indexBufferedWriteKeyLimit,
+                DEFAULT_SEGMENT_SPLIT_KEY_THRESHOLD);
     }
 
     /**
-     * Returns the default maximum number of delta cache files allowed for a
-     * segment before maintenance should be triggered.
+     * Returns default runtime-tunable settings.
      *
-     * @return default max delta cache files per segment
+     * @return default runtime tuning section
      */
-    default int getMaxNumberOfDeltaCacheFiles() {
-        return MAX_NUMBER_OF_DELTA_CACHE_FILES;
+    default IndexRuntimeTuningConfiguration runtimeTuning() {
+        final IndexSegmentConfiguration segment = segment();
+        return new IndexRuntimeTuningConfiguration(
+                segment.cachedSegmentLimit(), segment.cacheKeyLimit(),
+                writePath(), DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT);
     }
 
     /**
-     * Returns the default maximum number of keys per segment.
+     * Returns default Bloom filter settings.
      *
-     * @return default max keys per segment
+     * @return default Bloom filter section
      */
-    default int getMaxNumberOfKeysInSegment() {
-        return MAX_NUMBER_OF_KEYS_IN_SEGMENT;
+    default IndexBloomFilterConfiguration bloomFilter() {
+        return new IndexBloomFilterConfiguration(
+                DEFAULT_BLOOM_FILTER_HASH_FUNCTIONS,
+                DEFAULT_BLOOM_FILTER_INDEX_SIZE_BYTES,
+                DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_PROBABILITY);
     }
 
     /**
-     * Returns the default maximum number of keys accepted into one routed
-     * segment write cache in the direct-to-segment runtime.
+     * Returns default disk I/O settings.
      *
-     * @return default segment write-cache key count
+     * @return default I/O section
      */
-    default int getSegmentWriteCacheKeyLimit() {
-        return getMaxNumberOfKeysInSegmentCache() / 2;
+    default IndexIoConfiguration io() {
+        return new IndexIoConfiguration(DEFAULT_DISK_IO_BUFFER_SIZE_BYTES);
     }
 
     /**
-     * Returns the default buffered key limit allowed while segment maintenance
-     * is running.
+     * Returns default maintenance, lifecycle, and retry settings.
      *
-     * @return default maintenance-time buffered key limit
+     * @return default maintenance section
      */
-    default int getSegmentWriteCacheKeyLimitDuringMaintenance() {
-        return Math.max(getSegmentWriteCacheKeyLimit() + 1,
-                (int) Math.ceil(getSegmentWriteCacheKeyLimit() * 1.4));
+    default IndexMaintenanceConfiguration maintenance() {
+        return new IndexMaintenanceConfiguration(
+                DEFAULT_SEGMENT_MAINTENANCE_THREADS,
+                DEFAULT_INDEX_MAINTENANCE_THREADS,
+                DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
+                DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS,
+                DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED);
     }
 
     /**
-     * Returns the default buffered key limit across the whole index.
+     * Returns default logging settings.
      *
-     * @return default total buffered key count
+     * @return default logging section
      */
-    default int getIndexBufferedWriteKeyLimit() {
-        return Math.max(getSegmentWriteCacheKeyLimitDuringMaintenance(),
-                getSegmentWriteCacheKeyLimitDuringMaintenance()
-                        * getMaxNumberOfSegmentsInCache());
-    }
-
-    /**
-     * Returns the default split threshold for a routed segment.
-     *
-     * @return default segment split threshold
-     */
-    default int getSegmentSplitKeyThreshold() {
-        return MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT;
-    }
-
-    /**
-     * Returns a legacy compatibility limit retained from the removed partition
-     * runtime.
-     *
-     * @return default legacy compatibility limit
-     */
-    default int getMaxNumberOfImmutableRunsPerPartition() {
-        return DEFAULT_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION;
-    }
-
-    /**
-     * Returns the default maximum number of keys accepted into the routed
-     * segment write cache.
-     * <p>
-     * Use {@link #getSegmentWriteCacheKeyLimit()} for the canonical name.
-     *
-     * @return default routed write-cache key count
-     * @deprecated use {@link #getSegmentWriteCacheKeyLimit()}
-     */
-    @Deprecated
-    default int getMaxNumberOfKeysInActivePartition() {
-        return getSegmentWriteCacheKeyLimit();
-    }
-
-    /**
-     * Returns the default buffered key limit inside one routed segment.
-     * <p>
-     * Use {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()} for the
-     * canonical name.
-     *
-     * @return default buffered key count per routed segment
-     * @deprecated use
-     *             {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()}
-     */
-    @Deprecated
-    default int getMaxNumberOfKeysInPartitionBuffer() {
-        return getSegmentWriteCacheKeyLimitDuringMaintenance();
-    }
-
-    /**
-     * Returns the default buffered key limit across the whole index.
-     * <p>
-     * Use {@link #getIndexBufferedWriteKeyLimit()} for the canonical name.
-     *
-     * @return default total buffered key count
-     * @deprecated use {@link #getIndexBufferedWriteKeyLimit()}
-     */
-    @Deprecated
-    default int getMaxNumberOfKeysInIndexBuffer() {
-        return getIndexBufferedWriteKeyLimit();
-    }
-
-    /**
-     * Returns the default split threshold for a routed segment.
-     * <p>
-     * Use {@link #getSegmentSplitKeyThreshold()} for the canonical name.
-     *
-     * @return default routed-segment split threshold
-     * @deprecated use {@link #getSegmentSplitKeyThreshold()}
-     */
-    @Deprecated
-    default int getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return getSegmentSplitKeyThreshold();
-    }
-
-    /**
-     * Returns the default maximum number of segments kept in the in-memory
-     * cache.
-     *
-     * @return default max segments in cache
-     */
-    default int getMaxNumberOfSegmentsInCache() {
-        return MAX_NUMBER_OF_SEGMENTS_IN_CACHE;
-    }
-
-    /**
-     * Returns the default disk I/O buffer size in bytes.
-     *
-     * @return default disk I/O buffer size in bytes
-     */
-    default int getDiskIoBufferSizeInBytes() {
-        return DISK_IO_BUFFER_SIZE_IN_BYTES;
-    }
-
-    /**
-     * Returns the default Bloom filter hash function count.
-     *
-     * @return default Bloom filter hash function count
-     */
-    default int getBloomFilterNumberOfHashFunctions() {
-        return BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS;
-    }
-
-    /**
-     * Returns the default Bloom filter index size in bytes.
-     *
-     * @return default Bloom filter size in bytes
-     */
-    default int getBloomFilterIndexSizeInBytes() {
-        return BLOOM_FILTER_INDEX_SIZE_IN_BYTES;
-    }
-
-    /**
-     * Returns the default Bloom filter false-positive probability.
-     *
-     * @return default false-positive probability
-     */
-    default double getBloomFilterProbabilityOfFalsePositive() {
-        return BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE;
-    }
-
-    /**
-     * Returns the default number of segment maintenance threads.
-     *
-     * @return default segment maintenance thread count
-     */
-    default int getNumberOfSegmentMaintenanceThreads() {
-        return DEFAULT_SEGMENT_MAINTENANCE_THREADS;
-    }
-
-    /**
-     * Returns the default number of split maintenance threads.
-     *
-     * @return default split maintenance thread count
-     */
-    default int getNumberOfIndexMaintenanceThreads() {
-        return DEFAULT_INDEX_MAINTENANCE_THREADS;
-    }
-
-    /**
-     * Returns the default number of registry lifecycle threads used for
-     * segment load/unload operations.
-     *
-     * @return default registry lifecycle thread count
-     */
-    default int getNumberOfRegistryLifecycleThreads() {
-        return DEFAULT_REGISTRY_LIFECYCLE_THREADS;
-    }
-
-    /**
-     * Returns the default busy backoff delay in milliseconds.
-     *
-     * @return default busy backoff in milliseconds
-     */
-    default int getIndexBusyBackoffMillis() {
-        return DEFAULT_INDEX_BUSY_BACKOFF_MILLIS;
-    }
-
-    /**
-     * Returns the default busy retry timeout in milliseconds.
-     *
-     * @return default busy retry timeout in milliseconds
-     */
-    default int getIndexBusyTimeoutMillis() {
-        return DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS;
-    }
-
-    /**
-     * Returns whether auto maintenance is enabled by default.
-     *
-     * @return true when auto maintenance is enabled by default
-     */
-    default boolean isBackgroundMaintenanceAutoEnabled() {
-        return DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED;
-    }
-
-    /**
-     * Returns whether MDC-based context logging is enabled by default.
-     *
-     * @return true when context logging is enabled by default
-     */
-    default boolean isContextLoggingEnabled() {
-        return true;
+    default IndexLoggingConfiguration logging() {
+        return new IndexLoggingConfiguration(Boolean.TRUE);
     }
 
     /**
@@ -296,45 +124,25 @@ public interface IndexConfigurationContract {
      *
      * @return default WAL settings
      */
-    default Wal getWal() {
+    default Wal wal() {
         return Wal.EMPTY;
     }
 
     /**
-     * Returns the default encoding chunk filter chain.
+     * Returns default persisted chunk filter pipeline settings.
      *
-     * @return default encoding filters
+     * @return default filter section
      */
-    default List<ChunkFilter> getEncodingChunkFilters() {
-        return List.of(new ChunkFilterCrc32Writing(),
-                new ChunkFilterMagicNumberWriting());
+    default IndexFilterConfiguration filters() {
+        return new IndexFilterConfiguration(defaultEncodingChunkFilterSpecs(),
+                defaultDecodingChunkFilterSpecs());
     }
 
-    /**
-     * Returns the default encoding filter specs.
-     *
-     * @return default encoding filter specs
-     */
-    default List<ChunkFilterSpec> getEncodingChunkFilterSpecs() {
+    private static List<ChunkFilterSpec> defaultEncodingChunkFilterSpecs() {
         return List.of(ChunkFilterSpecs.crc32(), ChunkFilterSpecs.magicNumber());
     }
 
-    /**
-     * Returns the default decoding chunk filter chain.
-     *
-     * @return default decoding filters
-     */
-    default List<ChunkFilter> getDecodingChunkFilters() {
-        return List.of(new ChunkFilterMagicNumberValidation(),
-                new ChunkFilterCrc32Validation());
-    }
-
-    /**
-     * Returns the default decoding filter specs.
-     *
-     * @return default decoding filter specs
-     */
-    default List<ChunkFilterSpec> getDecodingChunkFilterSpecs() {
+    private static List<ChunkFilterSpec> defaultDecodingChunkFilterSpecs() {
         return List.of(ChunkFilterSpecs.magicNumber(),
                 ChunkFilterSpecs.crc32());
     }

@@ -50,7 +50,8 @@ class RouteSplitPreparationServiceTest {
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2,
                 RouteSplitPlan.SplitMode.SPLIT);
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
-                .thenReturn(iteratorResult(entries()), iteratorResult(entries()));
+                .thenReturn(iteratorResult(entries()))
+                .thenReturn(iteratorResult(entries()));
         when(materializationService.materializeRouteSplit(eq(parentSegment),
                 eq(2L), any())).thenReturn(splitPlan);
 

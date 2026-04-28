@@ -36,28 +36,29 @@ final class SegmentIndexBenchmarkSupport {
     static IndexConfigurationBuilder<Integer, String> baseBuilder(
             final String name) {
         return IndexConfiguration.<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(KEY_DESCRIPTOR)//
-                .withValueTypeDescriptor(VALUE_DESCRIPTOR)//
-                .withName(name)//
-                .withContextLoggingEnabled(false);
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(KEY_DESCRIPTOR)
+                        .valueTypeDescriptor(VALUE_DESCRIPTOR).name(name))//
+                .logging(logging -> logging.contextEnabled(false));
     }
 
     static void addIntegrityAndCompressionFilters(
             final IndexConfigurationBuilder<Integer, String> builder,
             final boolean snappy) {
-        builder.addEncodingFilter(new ChunkFilterCrc32Writing())
-                .addEncodingFilter(new ChunkFilterMagicNumberWriting());
-        builder.addDecodingFilter(new ChunkFilterMagicNumberValidation())
-                .addDecodingFilter(new ChunkFilterCrc32Validation());
-        if (snappy) {
-            builder.addEncodingFilter(new ChunkFilterSnappyCompress());
-            builder.withDecodingFilters(List.of(
-                    new ChunkFilterMagicNumberValidation(),
-                    new ChunkFilterSnappyDecompress(),
-                    new ChunkFilterCrc32Validation()));
-        }
+        builder.filters(filters -> {
+            filters.addEncodingFilter(new ChunkFilterCrc32Writing())
+                    .addEncodingFilter(new ChunkFilterMagicNumberWriting());
+            filters.addDecodingFilter(new ChunkFilterMagicNumberValidation())
+                    .addDecodingFilter(new ChunkFilterCrc32Validation());
+            if (snappy) {
+                filters.addEncodingFilter(new ChunkFilterSnappyCompress());
+                filters.decodingFilters(List.of(
+                        new ChunkFilterMagicNumberValidation(),
+                        new ChunkFilterSnappyDecompress(),
+                        new ChunkFilterCrc32Validation()));
+            }
+        });
     }
 
     static String buildFixedWidthValue(final String prefix, final int key,

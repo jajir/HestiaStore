@@ -38,7 +38,7 @@ Key classes:
 
 ## Optional Logging Context
 
-If `IndexConfiguration.isContextLoggingEnabled()` is true, index operations
+If `IndexConfiguration.logging().contextEnabled()` is true, index operations
 populate the `index.name` MDC key so downstream logs can include the index
 identifier. This is purely for log correlation and does not write any
 additional files or provide durability.
@@ -121,7 +121,8 @@ Key classes:
 
 ## Segment Splitting
 
-When a routed segment grows beyond `maxNumberOfKeysInPartitionBeforeSplit`,
+When a routed segment grows beyond
+`writePath().segmentSplitKeyThreshold()`,
 the split coordinator computes a route-first split plan, materializes child
 stable segments from the parent stable snapshot, and atomically updates the
 key-to-segment mapping.
@@ -155,20 +156,19 @@ Key classes:
 
 ## Configuration Knobs Affecting Writes
 
-- `maxNumberOfKeysInActivePartition` — legacy-named compatibility limit now
-  used as the routed segment write-cache threshold
-- `maxNumberOfKeysInPartitionBuffer` — legacy-named compatibility limit used
-  as the per-segment maintenance/write-buffer ceiling
-- `maxNumberOfKeysInIndexBuffer` — index-level compatibility budget exposed in
-  metrics and runtime tuning
-- `maxNumberOfKeysInSegmentCache` — bounds total in-segment cache size before
+- `writePath().segmentWriteCacheKeyLimit()` — routed segment write-cache
+  threshold
+- `writePath().maintenanceWriteCacheKeyLimit()` — per-segment
+  maintenance/write-buffer ceiling
+- `writePath().indexBufferedWriteKeyLimit()` — index-wide buffered-write budget
+  exposed in metrics and runtime tuning
+- `writePath().segmentSplitKeyThreshold()` — split threshold per routed range
+- `segment().cacheKeyLimit()` — bounds total in-segment cache size before
   compaction and split decisions
-- `maxNumberOfKeysInSegmentChunk` — controls sparse index sampling cadence
-- `maxNumberOfKeysInPartitionBeforeSplit` — split threshold per routed range
-- `bloomFilter*` — Bloom filter size/hash tuning
-- `diskIoBufferSize` — I/O buffer sizing for on-disk writers
-- `encoding/decodingChunkFilters` — write/read pipelines (e.g. Snappy, CRC32,
-  magic number)
+- `segment().chunkKeyLimit()` — controls sparse index sampling cadence
+- `bloomFilter()` — Bloom filter size/hash tuning
+- `io().diskBufferSizeBytes()` — I/O buffer sizing for on-disk writers
+- `filters()` — write/read pipelines (e.g. Snappy, CRC32, magic number)
 
 See: `segmentindex/IndexConfiguration` and
 `segmentindex/IndexConfigurationBuilder`.

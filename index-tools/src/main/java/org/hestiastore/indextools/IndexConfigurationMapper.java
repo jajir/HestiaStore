@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.Wal;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
@@ -16,59 +15,66 @@ final class IndexConfigurationMapper {
 
     static IndexConfigurationManifest toManifest(
             final IndexConfiguration<?, ?> configuration) {
+        final var identity = configuration.identity();
+        final var segment = configuration.segment();
+        final var writePath = configuration.writePath();
+        final var tuning = configuration.runtimeTuning();
+        final var maintenance = configuration.maintenance();
+        final var bloomFilter = configuration.bloomFilter();
+        final var filters = configuration.filters();
         final IndexConfigurationManifest manifest = new IndexConfigurationManifest();
-        manifest.setIndexName(configuration.getIndexName());
-        manifest.setKeyClassName(configuration.getKeyClass().getName());
-        manifest.setValueClassName(configuration.getValueClass().getName());
-        manifest.setKeyTypeDescriptor(configuration.getKeyTypeDescriptor());
-        manifest.setValueTypeDescriptor(configuration.getValueTypeDescriptor());
+        manifest.setIndexName(identity.name());
+        manifest.setKeyClassName(identity.keyClass().getName());
+        manifest.setValueClassName(identity.valueClass().getName());
+        manifest.setKeyTypeDescriptor(identity.keyTypeDescriptor());
+        manifest.setValueTypeDescriptor(identity.valueTypeDescriptor());
         manifest.setMaxNumberOfKeysInSegmentCache(
-                configuration.getMaxNumberOfKeysInSegmentCache());
+                segment.cacheKeyLimit());
         manifest.setMaxNumberOfKeysInActivePartition(
-                configuration.getMaxNumberOfKeysInActivePartition());
+                writePath.segmentWriteCacheKeyLimit());
         manifest.setMaxNumberOfKeysInPartitionBuffer(
-                configuration.getMaxNumberOfKeysInPartitionBuffer());
+                writePath.segmentWriteCacheKeyLimitDuringMaintenance());
         manifest.setMaxNumberOfImmutableRunsPerPartition(
-                configuration.getMaxNumberOfImmutableRunsPerPartition());
+                tuning.legacyImmutableRunLimit());
         manifest.setMaxNumberOfKeysInIndexBuffer(
-                configuration.getMaxNumberOfKeysInIndexBuffer());
+                writePath.indexBufferedWriteKeyLimit());
         manifest.setMaxNumberOfKeysInSegmentChunk(
-                configuration.getMaxNumberOfKeysInSegmentChunk());
+                segment.chunkKeyLimit());
         manifest.setMaxNumberOfDeltaCacheFiles(
-                configuration.getMaxNumberOfDeltaCacheFiles());
+                segment.deltaCacheFileLimit());
         manifest.setMaxNumberOfKeysInPartitionBeforeSplit(
-                configuration.getMaxNumberOfKeysInPartitionBeforeSplit());
+                writePath.segmentSplitKeyThreshold());
         manifest.setMaxNumberOfKeysInSegment(
-                configuration.getMaxNumberOfKeysInSegment());
+                segment.maxKeys());
         manifest.setMaxNumberOfSegmentsInCache(
-                configuration.getMaxNumberOfSegmentsInCache());
+                segment.cachedSegmentLimit());
         manifest.setNumberOfSegmentMaintenanceThreads(
-                configuration.getNumberOfSegmentMaintenanceThreads());
+                maintenance.segmentThreads());
         manifest.setNumberOfIndexMaintenanceThreads(
-                configuration.getNumberOfIndexMaintenanceThreads());
+                maintenance.indexThreads());
         manifest.setNumberOfRegistryLifecycleThreads(
-                configuration.getNumberOfRegistryLifecycleThreads());
+                maintenance.registryLifecycleThreads());
         manifest.setIndexBusyBackoffMillis(
-                configuration.getIndexBusyBackoffMillis());
+                maintenance.busyBackoffMillis());
         manifest.setIndexBusyTimeoutMillis(
-                configuration.getIndexBusyTimeoutMillis());
+                maintenance.busyTimeoutMillis());
         manifest.setBackgroundMaintenanceAutoEnabled(
-                configuration.isBackgroundMaintenanceAutoEnabled());
+                maintenance.backgroundAutoEnabled());
         manifest.setBloomFilterNumberOfHashFunctions(
-                configuration.getBloomFilterNumberOfHashFunctions());
+                bloomFilter.hashFunctions());
         manifest.setBloomFilterIndexSizeInBytes(
-                configuration.getBloomFilterIndexSizeInBytes());
+                bloomFilter.indexSizeBytes());
         manifest.setBloomFilterProbabilityOfFalsePositive(
-                configuration.getBloomFilterProbabilityOfFalsePositive());
-        manifest.setDiskIoBufferSize(configuration.getDiskIoBufferSize());
+                bloomFilter.falsePositiveProbability());
+        manifest.setDiskIoBufferSize(configuration.io().diskBufferSizeBytes());
         manifest.setContextLoggingEnabled(
-                configuration.isContextLoggingEnabled());
-        manifest.setWal(toManifest(configuration.getWal()));
+                configuration.logging().contextEnabled());
+        manifest.setWal(toManifest(configuration.wal()));
         manifest.setEncodingChunkFilters(
-                configuration.getEncodingChunkFilterSpecs().stream()
+                filters.encodingChunkFilterSpecs().stream()
                         .map(IndexConfigurationMapper::toManifest).toList());
         manifest.setDecodingChunkFilters(
-                configuration.getDecodingChunkFilterSpecs().stream()
+                filters.decodingChunkFilterSpecs().stream()
                         .map(IndexConfigurationMapper::toManifest).toList());
         return manifest;
     }
@@ -76,59 +82,69 @@ final class IndexConfigurationMapper {
     static IndexConfiguration<?, ?> fromManifest(
             final IndexConfigurationManifest manifest)
             throws ClassNotFoundException {
-        final IndexConfigurationBuilder<Object, Object> builder = IndexConfiguration
-                .<Object, Object>builder();
-        builder.withName(manifest.getIndexName());
-        builder.withKeyClass(loadClass(manifest.getKeyClassName()));
-        builder.withValueClass(loadClass(manifest.getValueClassName()));
-        builder.withKeyTypeDescriptor(manifest.getKeyTypeDescriptor());
-        builder.withValueTypeDescriptor(manifest.getValueTypeDescriptor());
-        builder.withMaxNumberOfKeysInSegmentCache(
-                manifest.getMaxNumberOfKeysInSegmentCache());
-        builder.withMaxNumberOfKeysInActivePartition(
-                manifest.getMaxNumberOfKeysInActivePartition());
-        builder.withMaxNumberOfKeysInPartitionBuffer(
-                manifest.getMaxNumberOfKeysInPartitionBuffer());
-        builder.withMaxNumberOfImmutableRunsPerPartition(
-                manifest.getMaxNumberOfImmutableRunsPerPartition());
-        builder.withMaxNumberOfKeysInIndexBuffer(
-                manifest.getMaxNumberOfKeysInIndexBuffer());
-        builder.withMaxNumberOfKeysInSegmentChunk(
-                manifest.getMaxNumberOfKeysInSegmentChunk());
-        builder.withMaxNumberOfDeltaCacheFiles(
-                manifest.getMaxNumberOfDeltaCacheFiles());
-        builder.withMaxNumberOfKeysInPartitionBeforeSplit(
-                manifest.getMaxNumberOfKeysInPartitionBeforeSplit());
-        builder.withMaxNumberOfKeysInSegment(
-                manifest.getMaxNumberOfKeysInSegment());
-        builder.withMaxNumberOfSegmentsInCache(
-                manifest.getMaxNumberOfSegmentsInCache());
-        builder.withNumberOfSegmentMaintenanceThreads(
-                manifest.getNumberOfSegmentMaintenanceThreads());
-        builder.withNumberOfIndexMaintenanceThreads(
-                manifest.getNumberOfIndexMaintenanceThreads());
-        builder.withNumberOfRegistryLifecycleThreads(
-                manifest.getNumberOfRegistryLifecycleThreads());
-        builder.withIndexBusyBackoffMillis(manifest.getIndexBusyBackoffMillis());
-        builder.withIndexBusyTimeoutMillis(manifest.getIndexBusyTimeoutMillis());
-        builder.withBackgroundMaintenanceAutoEnabled(
-                manifest.getBackgroundMaintenanceAutoEnabled());
-        builder.withBloomFilterNumberOfHashFunctions(
-                manifest.getBloomFilterNumberOfHashFunctions());
-        builder.withBloomFilterIndexSizeInBytes(
-                manifest.getBloomFilterIndexSizeInBytes());
-        builder.withBloomFilterProbabilityOfFalsePositive(
-                manifest.getBloomFilterProbabilityOfFalsePositive());
-        builder.withDiskIoBufferSizeInBytes(manifest.getDiskIoBufferSize());
-        builder.withContextLoggingEnabled(manifest.getContextLoggingEnabled());
-        builder.withWal(fromManifest(manifest.getWal()));
-        builder.withEncodingFilterSpecs(
-                manifest.getEncodingChunkFilters().stream()
-                        .map(IndexConfigurationMapper::fromManifest).toList());
-        builder.withDecodingFilterSpecs(
-                manifest.getDecodingChunkFilters().stream()
-                        .map(IndexConfigurationMapper::fromManifest).toList());
-        return builder.build();
+        final Class<Object> keyClass = loadClass(manifest.getKeyClassName());
+        final Class<Object> valueClass = loadClass(
+                manifest.getValueClassName());
+        return IndexConfiguration.<Object, Object>builder()
+                .identity(identity -> identity.name(manifest.getIndexName())
+                        .keyClass(keyClass)
+                        .valueClass(valueClass)
+                        .keyTypeDescriptor(manifest.getKeyTypeDescriptor())
+                        .valueTypeDescriptor(
+                                manifest.getValueTypeDescriptor()))
+                .segment(segment -> segment
+                        .cacheKeyLimit(
+                                manifest.getMaxNumberOfKeysInSegmentCache())
+                        .chunkKeyLimit(
+                                manifest.getMaxNumberOfKeysInSegmentChunk())
+                        .deltaCacheFileLimit(
+                                manifest.getMaxNumberOfDeltaCacheFiles())
+                        .maxKeys(manifest.getMaxNumberOfKeysInSegment())
+                        .cachedSegmentLimit(
+                                manifest.getMaxNumberOfSegmentsInCache()))
+                .writePath(writePath -> writePath
+                        .segmentWriteCacheKeyLimit(
+                                manifest.getMaxNumberOfKeysInActivePartition())
+                        .maintenanceWriteCacheKeyLimit(
+                                manifest.getMaxNumberOfKeysInPartitionBuffer())
+                        .legacyImmutableRunLimit(manifest
+                                .getMaxNumberOfImmutableRunsPerPartition())
+                        .indexBufferedWriteKeyLimit(
+                                manifest.getMaxNumberOfKeysInIndexBuffer())
+                        .segmentSplitKeyThreshold(manifest
+                                .getMaxNumberOfKeysInPartitionBeforeSplit()))
+                .maintenance(maintenance -> maintenance
+                        .segmentThreads(
+                                manifest.getNumberOfSegmentMaintenanceThreads())
+                        .indexThreads(
+                                manifest.getNumberOfIndexMaintenanceThreads())
+                        .registryLifecycleThreads(manifest
+                                .getNumberOfRegistryLifecycleThreads())
+                        .busyBackoffMillis(manifest.getIndexBusyBackoffMillis())
+                        .busyTimeoutMillis(manifest.getIndexBusyTimeoutMillis())
+                        .backgroundAutoEnabled(
+                                manifest.getBackgroundMaintenanceAutoEnabled()))
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .hashFunctions(
+                                manifest.getBloomFilterNumberOfHashFunctions())
+                        .indexSizeBytes(
+                                manifest.getBloomFilterIndexSizeInBytes())
+                        .falsePositiveProbability(manifest
+                                .getBloomFilterProbabilityOfFalsePositive()))
+                .io(io -> io.diskBufferSizeBytes(manifest.getDiskIoBufferSize()))
+                .logging(logging -> logging
+                        .contextEnabled(manifest.getContextLoggingEnabled()))
+                .wal(wal -> wal.configuration(fromManifest(manifest.getWal())))
+                .filters(filters -> filters
+                        .encodingFilterSpecs(
+                                manifest.getEncodingChunkFilters().stream()
+                                        .map(IndexConfigurationMapper::fromManifest)
+                                        .toList())
+                        .decodingFilterSpecs(
+                                manifest.getDecodingChunkFilters().stream()
+                                        .map(IndexConfigurationMapper::fromManifest)
+                                        .toList()))
+                .build();
     }
 
     private static ChunkFilterSpecManifest toManifest(final ChunkFilterSpec spec) {

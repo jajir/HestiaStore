@@ -52,14 +52,14 @@ described has been removed. The current implementation contract is:
 
 ## Configuration Migration
 
-Legacy partition-named settings still exist in configuration and metrics for
-compatibility:
+Legacy partition-named persisted properties and metrics still exist for
+compatibility, while Java configuration uses grouped section names:
 
-- `maxNumberOfKeysInActivePartition`
-- `maxNumberOfImmutableRunsPerPartition`
-- `maxNumberOfKeysInPartitionBuffer`
-- `maxNumberOfKeysInIndexBuffer`
-- `maxNumberOfKeysInPartitionBeforeSplit`
+- `maxNumberOfKeysInActivePartition` -> `writePath().segmentWriteCacheKeyLimit()`
+- `maxNumberOfImmutableRunsPerPartition` -> `writePath(...).legacyImmutableRunLimit()`
+- `maxNumberOfKeysInPartitionBuffer` -> `writePath().maintenanceWriteCacheKeyLimit()`
+- `maxNumberOfKeysInIndexBuffer` -> `writePath().indexBufferedWriteKeyLimit()`
+- `maxNumberOfKeysInPartitionBeforeSplit` -> `writePath().segmentSplitKeyThreshold()`
 
 They now act as compatibility names for routed write and split limits rather
 than for a dedicated ingest-overlay runtime.

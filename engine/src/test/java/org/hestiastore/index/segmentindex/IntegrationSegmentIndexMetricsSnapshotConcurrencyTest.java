@@ -29,13 +29,13 @@ class IntegrationSegmentIndexMetricsSnapshotConcurrencyTest {
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(keyDescriptor) //
-                .withValueTypeDescriptor(valueDescriptor) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withContextLoggingEnabled(false) //
-                .withName("metrics_concurrency_test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(keyDescriptor)) //
+                .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("metrics_concurrency_test_index")) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,

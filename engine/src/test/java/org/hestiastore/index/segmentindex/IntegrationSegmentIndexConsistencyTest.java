@@ -88,18 +88,18 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
     private SegmentIndex<Integer, Integer> makeIndex() {
         final IndexConfiguration<Integer, Integer> conf = IndexConfiguration
                 .<Integer, Integer>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(Integer.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tdi) //
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withMaxNumberOfKeysInSegmentCache(64) //
-                .withMaxNumberOfKeysInSegment(64) //
-                .withMaxNumberOfKeysInSegmentChunk(16) //
-                .withBloomFilterIndexSizeInBytes(0) //
-                .withBloomFilterNumberOfHashFunctions(4) //
-                .withContextLoggingEnabled(false) //
-                .withName("test_index") //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(Integer.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tdi)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .segment(segment -> segment.cacheKeyLimit(64)) //
+                .segment(segment -> segment.maxKeys(64)) //
+                .segment(segment -> segment.chunkKeyLimit(16)) //
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(0)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
+                .logging(logging -> logging.contextEnabled(false)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
         return SegmentIndex.<Integer, Integer>create(directory, conf);
     }

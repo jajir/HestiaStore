@@ -57,180 +57,180 @@ class SegmentIndexConfigurationStorageTest {
     void saveAndLoadRoundTrip() {
         final IndexConfiguration<String, Long> config = IndexConfiguration
                 .<String, Long>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(Long.class)//
-                .withKeyTypeDescriptor(TD_STRING)//
-                .withValueTypeDescriptor(TD_LONG)//
-                .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
-                .withMaxNumberOfKeysInActivePartition(
-                        MAX_KEYS_IN_ACTIVE_PARTITION)//
-                .withMaxNumberOfKeysInSegmentChunk(256)//
-                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
-                .withMaxNumberOfKeysInSegment(20000)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(
-                        MAX_KEYS_BEFORE_SPLIT)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withNumberOfSegmentMaintenanceThreads(
-                        NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS)//
-                .withNumberOfRegistryLifecycleThreads(
-                        NUMBER_OF_REGISTRY_LIFECYCLE_THREADS)//
-                .withName(INDEX_NAME)//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterIndexSizeInBytes(2048)//
-                .withBloomFilterProbabilityOfFalsePositive(
-                        BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
-                .withDiskIoBufferSizeInBytes(4096)//
-                .withContextLoggingEnabled(true)//
-                .withBackgroundMaintenanceAutoEnabled(true)//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(Long.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_STRING))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_LONG))//
+                .segment(segment -> segment.cacheKeyLimit(MAX_KEYS_IN_SEGMENT_CACHE))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(
+                        MAX_KEYS_IN_ACTIVE_PARTITION))//
+                .segment(segment -> segment.chunkKeyLimit(256))//
+                .segment(segment -> segment.deltaCacheFileLimit(MAX_DELTA_CACHE_FILES))//
+                .segment(segment -> segment.maxKeys(20000))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(
+                        MAX_KEYS_BEFORE_SPLIT))//
+                .segment(segment -> segment.cachedSegmentLimit(8))//
+                .maintenance(maintenance -> maintenance.segmentThreads(
+                        NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS))//
+                .maintenance(maintenance -> maintenance.registryLifecycleThreads(
+                        NUMBER_OF_REGISTRY_LIFECYCLE_THREADS))//
+                .identity(identity -> identity.name(INDEX_NAME))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(2048))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .falsePositiveProbability(
+                                BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE))//
+                .io(io -> io.diskBufferSizeBytes(4096))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true))//
                 .build();
         storage.save(config);
         logConfigurationFile();
 
         final IndexConfiguration<String, Long> ret = storage.load();
-        assertEquals(String.class, ret.getKeyClass());
-        assertEquals(Long.class, ret.getValueClass());
-        assertEquals(TD_STRING, ret.getKeyTypeDescriptor());
-        assertEquals(TD_LONG, ret.getValueTypeDescriptor());
+        assertEquals(String.class, ret.identity().keyClass());
+        assertEquals(Long.class, ret.identity().valueClass());
+        assertEquals(TD_STRING, ret.identity().keyTypeDescriptor());
+        assertEquals(TD_LONG, ret.identity().valueTypeDescriptor());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
-                ret.getMaxNumberOfKeysInSegmentCache());
+                ret.segment().cacheKeyLimit());
         assertEquals((int) MAX_KEYS_IN_ACTIVE_PARTITION,
-                ret.getMaxNumberOfKeysInActivePartition());
+                ret.writePath().segmentWriteCacheKeyLimit());
         assertEquals(MAX_KEYS_IN_SEGMENT_CHUNK,
-                ret.getMaxNumberOfKeysInSegmentChunk());
+                ret.segment().chunkKeyLimit());
         assertEquals(MAX_DELTA_CACHE_FILES,
-                ret.getMaxNumberOfDeltaCacheFiles());
-        assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
+                ret.segment().deltaCacheFileLimit());
+        assertEquals(MAX_KEYS_SEGMENT, ret.segment().maxKeys());
         assertEquals(MAX_KEYS_BEFORE_SPLIT,
-                ret.getMaxNumberOfKeysInPartitionBeforeSplit());
-        assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
+                ret.writePath().segmentSplitKeyThreshold());
+        assertEquals(MAX_SEGMENTS_CACHE, ret.segment().cachedSegmentLimit());
         assertEquals(NUMBER_OF_STABLE_SEGMENT_MAINTENANCE_THREADS,
-                ret.getNumberOfSegmentMaintenanceThreads());
+                ret.maintenance().segmentThreads());
         assertEquals(NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
-                ret.getNumberOfRegistryLifecycleThreads());
-        assertEquals(INDEX_NAME, ret.getIndexName());
+                ret.maintenance().registryLifecycleThreads());
+        assertEquals(INDEX_NAME, ret.identity().name());
         assertEquals(BLOOM_FILTER_HASH,
-                ret.getBloomFilterNumberOfHashFunctions());
+                ret.bloomFilter().hashFunctions());
         assertEquals(BLOOM_FILTER_INDEX_BYTES,
-                ret.getBloomFilterIndexSizeInBytes());
+                ret.bloomFilter().indexSizeBytes());
         assertEquals(BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
-                ret.getBloomFilterProbabilityOfFalsePositive());
-        assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
-        assertTrue(ret.isContextLoggingEnabled());
-        assertTrue(ret.isBackgroundMaintenanceAutoEnabled());
+                ret.bloomFilter().falsePositiveProbability());
+        assertEquals(DISK_IO_BUFFER, ret.io().diskBufferSizeBytes());
+        assertTrue(ret.logging().contextEnabled());
+        assertTrue(ret.maintenance().backgroundAutoEnabled());
     }
 
     @Test
     void saveAndLoadRoundTripWithChunkFilters() {
         final IndexConfiguration<String, Long> config = IndexConfiguration
                 .<String, Long>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(Long.class)//
-                .withKeyTypeDescriptor(TD_STRING)//
-                .withValueTypeDescriptor(TD_LONG)//
-                .withName(INDEX_NAME)//
-                .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
-                .withMaxNumberOfKeysInActivePartition(
-                        MAX_KEYS_IN_ACTIVE_PARTITION)//
-                .withMaxNumberOfKeysInSegmentChunk(MAX_KEYS_IN_SEGMENT_CHUNK)//
-                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
-                .withMaxNumberOfKeysInSegment(MAX_KEYS_SEGMENT)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(
-                        MAX_KEYS_BEFORE_SPLIT)//
-                .withMaxNumberOfSegmentsInCache(MAX_SEGMENTS_CACHE)//
-                .withBloomFilterNumberOfHashFunctions(BLOOM_FILTER_HASH)//
-                .withBloomFilterIndexSizeInBytes(BLOOM_FILTER_INDEX_BYTES)//
-                .withBloomFilterProbabilityOfFalsePositive(
-                        BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE)//
-                .withDiskIoBufferSizeInBytes(DISK_IO_BUFFER)//
-                .withContextLoggingEnabled(true)//
-                .withEncodingFilterClasses(//
-                        List.of(ChunkFilterCrc32Writing.class, //
-                                ChunkFilterMagicNumberWriting.class, //
-                                ChunkFilterSnappyCompress.class//
-                        ))//
-                .withDecodingFilterClasses(//
-                        List.of(ChunkFilterSnappyDecompress.class, //
-                                ChunkFilterMagicNumberValidation.class, //
-                                ChunkFilterCrc32Validation.class//
-                        ))//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(Long.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_STRING))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_LONG))//
+                .identity(identity -> identity.name(INDEX_NAME))//
+                .segment(segment -> segment.cacheKeyLimit(MAX_KEYS_IN_SEGMENT_CACHE))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(
+                        MAX_KEYS_IN_ACTIVE_PARTITION))//
+                .segment(segment -> segment.chunkKeyLimit(MAX_KEYS_IN_SEGMENT_CHUNK))//
+                .segment(segment -> segment.deltaCacheFileLimit(MAX_DELTA_CACHE_FILES))//
+                .segment(segment -> segment.maxKeys(MAX_KEYS_SEGMENT))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(
+                        MAX_KEYS_BEFORE_SPLIT))//
+                .segment(segment -> segment.cachedSegmentLimit(MAX_SEGMENTS_CACHE))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(BLOOM_FILTER_HASH))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(BLOOM_FILTER_INDEX_BYTES))//
+                .bloomFilter(bloomFilter -> bloomFilter
+                        .falsePositiveProbability(
+                                BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE))//
+                .io(io -> io.diskBufferSizeBytes(DISK_IO_BUFFER))//
+                .logging(logging -> logging.contextEnabled(true))//
+                .filters(filters -> filters.encodingFilterClasses(List.of(
+                        ChunkFilterCrc32Writing.class,
+                        ChunkFilterMagicNumberWriting.class,
+                        ChunkFilterSnappyCompress.class)))//
+                .filters(filters -> filters.decodingFilterClasses(List.of(
+                        ChunkFilterSnappyDecompress.class,
+                        ChunkFilterMagicNumberValidation.class,
+                        ChunkFilterCrc32Validation.class)))//
                 .build();
         storage.save(config);
         logConfigurationFile();
 
         final IndexConfiguration<String, Long> loaded = storage.load();
-        assertEquals(3, loaded.getEncodingChunkFilters().size());
+        assertEquals(3, loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                loaded.getEncodingChunkFilters().get(0).getClass());
+                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                loaded.getEncodingChunkFilters().get(1).getClass());
+                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(1).getClass());
         assertEquals(ChunkFilterSnappyCompress.class,
-                loaded.getEncodingChunkFilters().get(2).getClass());
+                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(2).getClass());
 
-        assertEquals(3, loaded.getDecodingChunkFilters().size());
+        assertEquals(3, loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().size());
         assertEquals(ChunkFilterSnappyDecompress.class,
-                loaded.getDecodingChunkFilters().get(0).getClass());
+                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberValidation.class,
-                loaded.getDecodingChunkFilters().get(1).getClass());
+                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(1).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
-                loaded.getDecodingChunkFilters().get(2).getClass());
+                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(2).getClass());
     }
 
     @Test
     void saveAndLoadRoundTripWithDefaultFalsePositiveProbability() {
         final IndexConfiguration<String, Long> config = IndexConfiguration
                 .<String, Long>builder()//
-                .withKeyClass(String.class)//
-                .withValueClass(Long.class)//
-                .withKeyTypeDescriptor(TD_STRING)//
-                .withValueTypeDescriptor(TD_LONG)//
-                .withMaxNumberOfKeysInSegmentCache(MAX_KEYS_IN_SEGMENT_CACHE)//
-                .withMaxNumberOfKeysInActivePartition(
-                        MAX_KEYS_IN_ACTIVE_PARTITION)//
-                .withMaxNumberOfKeysInSegmentChunk(256)//
-                .withMaxNumberOfDeltaCacheFiles(MAX_DELTA_CACHE_FILES)//
-                .withMaxNumberOfKeysInSegment(20000)//
-                .withMaxNumberOfKeysInPartitionBeforeSplit(
-                        MAX_KEYS_BEFORE_SPLIT)//
-                .withMaxNumberOfSegmentsInCache(8)//
-                .withName(INDEX_NAME)//
-                .withBloomFilterNumberOfHashFunctions(3)//
-                .withBloomFilterIndexSizeInBytes(2048)//
-                .withDiskIoBufferSizeInBytes(4096)//
-                .withContextLoggingEnabled(true)//
+                .identity(identity -> identity.keyClass(String.class))//
+                .identity(identity -> identity.valueClass(Long.class))//
+                .identity(identity -> identity.keyTypeDescriptor(TD_STRING))//
+                .identity(identity -> identity.valueTypeDescriptor(TD_LONG))//
+                .segment(segment -> segment.cacheKeyLimit(MAX_KEYS_IN_SEGMENT_CACHE))//
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(
+                        MAX_KEYS_IN_ACTIVE_PARTITION))//
+                .segment(segment -> segment.chunkKeyLimit(256))//
+                .segment(segment -> segment.deltaCacheFileLimit(MAX_DELTA_CACHE_FILES))//
+                .segment(segment -> segment.maxKeys(20000))//
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(
+                        MAX_KEYS_BEFORE_SPLIT))//
+                .segment(segment -> segment.cachedSegmentLimit(8))//
+                .identity(identity -> identity.name(INDEX_NAME))//
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3))//
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(2048))//
+                .io(io -> io.diskBufferSizeBytes(4096))//
+                .logging(logging -> logging.contextEnabled(true))//
                 .build();
         storage.save(config);
         logConfigurationFile();
 
         final IndexConfiguration<String, Long> ret = storage.load();
-        assertEquals(String.class, ret.getKeyClass());
-        assertEquals(Long.class, ret.getValueClass());
-        assertEquals(TD_STRING, ret.getKeyTypeDescriptor());
-        assertEquals(TD_LONG, ret.getValueTypeDescriptor());
+        assertEquals(String.class, ret.identity().keyClass());
+        assertEquals(Long.class, ret.identity().valueClass());
+        assertEquals(TD_STRING, ret.identity().keyTypeDescriptor());
+        assertEquals(TD_LONG, ret.identity().valueTypeDescriptor());
         assertEquals((int) MAX_KEYS_IN_SEGMENT_CACHE,
-                ret.getMaxNumberOfKeysInSegmentCache());
+                ret.segment().cacheKeyLimit());
         assertEquals((int) MAX_KEYS_IN_ACTIVE_PARTITION,
-                ret.getMaxNumberOfKeysInActivePartition());
+                ret.writePath().segmentWriteCacheKeyLimit());
         assertEquals(MAX_KEYS_IN_SEGMENT_CHUNK,
-                ret.getMaxNumberOfKeysInSegmentChunk());
+                ret.segment().chunkKeyLimit());
         assertEquals(MAX_DELTA_CACHE_FILES,
-                ret.getMaxNumberOfDeltaCacheFiles());
-        assertEquals(MAX_KEYS_SEGMENT, ret.getMaxNumberOfKeysInSegment());
+                ret.segment().deltaCacheFileLimit());
+        assertEquals(MAX_KEYS_SEGMENT, ret.segment().maxKeys());
         assertEquals(MAX_KEYS_BEFORE_SPLIT,
-                ret.getMaxNumberOfKeysInPartitionBeforeSplit());
-        assertEquals(MAX_SEGMENTS_CACHE, ret.getMaxNumberOfSegmentsInCache());
-        assertEquals(INDEX_NAME, ret.getIndexName());
+                ret.writePath().segmentSplitKeyThreshold());
+        assertEquals(MAX_SEGMENTS_CACHE, ret.segment().cachedSegmentLimit());
+        assertEquals(INDEX_NAME, ret.identity().name());
         assertEquals(BLOOM_FILTER_HASH,
-                ret.getBloomFilterNumberOfHashFunctions());
+                ret.bloomFilter().hashFunctions());
         assertEquals(BLOOM_FILTER_INDEX_BYTES,
-                ret.getBloomFilterIndexSizeInBytes());
+                ret.bloomFilter().indexSizeBytes());
         /**
          * verify that bloom fileter probability of false positive is set to
          * default
          */
         assertEquals(BloomFilterBuilder.DEFAULT_PROBABILITY_OF_FALSE_POSITIVE,
-                ret.getBloomFilterProbabilityOfFalsePositive());
-        assertEquals(DISK_IO_BUFFER, ret.getDiskIoBufferSize());
-        assertTrue(ret.isContextLoggingEnabled());
+                ret.bloomFilter().falsePositiveProbability());
+        assertEquals(DISK_IO_BUFFER, ret.io().diskBufferSizeBytes());
+        assertTrue(ret.logging().contextEnabled());
     }
 
     @Test

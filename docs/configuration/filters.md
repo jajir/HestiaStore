@@ -18,25 +18,26 @@ resolution, see
 
 ## Builder API
 
-Filters are configured through `IndexConfigurationBuilder`.
+Filters are configured through the grouped
+`IndexConfiguration.builder().filters(...)` section.
 
 Built-in or legacy class-based filters:
 
-- `addEncodingFilter(ChunkFilter)`
-- `addEncodingFilter(Class<? extends ChunkFilter>)`
-- `addDecodingFilter(ChunkFilter)`
-- `addDecodingFilter(Class<? extends ChunkFilter>)`
-- `withEncodingFilters(Collection<ChunkFilter>)`
-- `withDecodingFilters(Collection<ChunkFilter>)`
-- `withEncodingFilterClasses(Collection<Class<? extends ChunkFilter>>)`
-- `withDecodingFilterClasses(Collection<Class<? extends ChunkFilter>>)`
+- `filters(...).addEncodingFilter(ChunkFilter)`
+- `filters(...).addEncodingFilter(Class<? extends ChunkFilter>)`
+- `filters(...).addDecodingFilter(ChunkFilter)`
+- `filters(...).addDecodingFilter(Class<? extends ChunkFilter>)`
+- `filters(...).encodingFilters(Collection<ChunkFilter>)`
+- `filters(...).decodingFilters(Collection<ChunkFilter>)`
+- `filters(...).encodingFilterClasses(Collection<Class<? extends ChunkFilter>>)`
+- `filters(...).decodingFilterClasses(Collection<Class<? extends ChunkFilter>>)`
 
 Provider-backed custom filters:
 
-- `addEncodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
-- `addDecodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
-- `withEncodingFilterRegistrations(Collection<ChunkFilterRegistration>)`
-- `withDecodingFilterRegistrations(Collection<ChunkFilterRegistration>)`
+- `filters(...).addEncodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
+- `filters(...).addDecodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
+- `filters(...).encodingFilterRegistrations(Collection<ChunkFilterRegistration>)`
+- `filters(...).decodingFilterRegistrations(Collection<ChunkFilterRegistration>)`
 
 If you persist custom provider-backed filters, pass the matching
 `ChunkFilterProviderRegistry` when calling:
@@ -80,24 +81,33 @@ Enable Snappy compression with matching decode order:
 ```java
 IndexConfiguration<Integer, String> conf = IndexConfiguration
     .<Integer, String>builder()
-    .withKeyClass(Integer.class)
-    .withValueClass(String.class)
-    .withName("orders")
-    .addEncodingFilter(ChunkFilterCrc32Writing.class)
-    .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
-    .addEncodingFilter(ChunkFilterSnappyCompress.class)
-    .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
-    .addDecodingFilter(ChunkFilterSnappyDecompress.class)
-    .addDecodingFilter(ChunkFilterCrc32Validation.class)
+    .identity(identity -> identity
+        .name("orders")
+        .keyClass(Integer.class)
+        .valueClass(String.class))
+    .filters(filters -> filters
+        .addEncodingFilter(ChunkFilterCrc32Writing.class)
+        .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
+        .addEncodingFilter(ChunkFilterSnappyCompress.class)
+        .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
+        .addDecodingFilter(ChunkFilterSnappyDecompress.class)
+        .addDecodingFilter(ChunkFilterCrc32Validation.class))
     .build();
 ```
 
-Add XOR on top of compression when you only need reversible obfuscation:
+Use XOR when you only need reversible obfuscation:
 
 ```java
-builder
-    .addEncodingFilter(ChunkFilterXorEncrypt.class)
-    .addDecodingFilter(ChunkFilterXorDecrypt.class);
+IndexConfiguration<Integer, String> conf = IndexConfiguration
+    .<Integer, String>builder()
+    .identity(identity -> identity
+        .name("orders")
+        .keyClass(Integer.class)
+        .valueClass(String.class))
+    .filters(filters -> filters
+        .addEncodingFilter(ChunkFilterXorEncrypt.class)
+        .addDecodingFilter(ChunkFilterXorDecrypt.class))
+    .build();
 ```
 
 ## Example: custom provider with Spring context
@@ -167,21 +177,23 @@ ChunkFilterSpec aesSpec = ChunkFilterSpec.ofProvider("aes-gcm")
 
 IndexConfiguration<String, String> conf = IndexConfiguration
     .<String, String>builder()
-    .withKeyClass(String.class)
-    .withValueClass(String.class)
-    .withName("orders")
-    .addEncodingFilter(ChunkFilterCrc32Writing.class)
-    .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
-    .addEncodingFilter(ChunkFilterSnappyCompress.class)
-    .addEncodingFilter(
+    .identity(identity -> identity
+        .name("orders")
+        .keyClass(String.class)
+        .valueClass(String.class))
+    .filters(filters -> filters
+        .addEncodingFilter(ChunkFilterCrc32Writing.class)
+        .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
+        .addEncodingFilter(ChunkFilterSnappyCompress.class)
+        .addEncodingFilter(
             aesGcmChunkFilterProvider.createEncodingSupplier(aesSpec),
             aesSpec)
-    .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
-    .addDecodingFilter(
+        .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
+        .addDecodingFilter(
             aesGcmChunkFilterProvider.createDecodingSupplier(aesSpec),
             aesSpec)
-    .addDecodingFilter(ChunkFilterSnappyDecompress.class)
-    .addDecodingFilter(ChunkFilterCrc32Validation.class)
+        .addDecodingFilter(ChunkFilterSnappyDecompress.class)
+        .addDecodingFilter(ChunkFilterCrc32Validation.class))
     .build();
 
 SegmentIndex<String, String> index = SegmentIndex.create(directory, conf,

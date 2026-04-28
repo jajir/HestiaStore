@@ -25,7 +25,7 @@
   mapping updates, route-topology leases, and per-segment state machines.
 - Segment maintenance IO runs on the segment maintenance executor.
 - The maintenance executor is always created by SegmentRegistry from
-  IndexConfiguration.numberOfSegmentMaintenanceThreads (default 10).
+  `IndexConfiguration.maintenance().segmentThreads()` (default 10).
 - Automatic post-write flush/compact is optional and enabled by default.
 - Segment BUSY is treated as transient and retried internally; callers do not
   see BUSY.
@@ -49,8 +49,9 @@
 ## API Behavior
 - put/get/delete: retry on topology drain, stale route-map versions, registry
   BUSY, and per-segment BUSY using IndexRetryPolicy
-  (indexBusyBackoffMillis + indexBusyTimeoutMillis). A segment CLOSED result
-  restarts routing from a fresh snapshot. Timeouts throw IndexException.
+  (`maintenance().busyBackoffMillis()` +
+  `maintenance().busyTimeoutMillis()`). A segment CLOSED result restarts
+  routing from a fresh snapshot. Timeouts throw IndexException.
 - flush/compact: start maintenance on each segment and return once accepted;
   do not wait for IO completion; BUSY retries follow IndexRetryPolicy.
 - flushAndWait/compactAndWait: wait for each segment to return to `READY`
@@ -175,10 +176,10 @@ Notes:
 - Runtime route version: SegmentTopology.version, reconciled from
   KeyToSegmentMap snapshots.
 - Maintenance executor: SegmentRegistry.getMaintenanceExecutor() backed by
-  IndexConfiguration.numberOfSegmentMaintenanceThreads (default 10).
+  `IndexConfiguration.maintenance().segmentThreads()` (default 10).
 - Index maintenance pool: `index-maintenance-*` from ExecutorRegistry.
 - Split policy scheduler: `split-policy-*` from ExecutorRegistry.
 - Split worker pool: `split-maintenance-*` from ExecutorRegistry.
 - Split isolation: SegmentIteratorIsolation.FULL_ISOLATION.
-- Retry policy: IndexConfiguration.indexBusyBackoffMillis and
-  IndexConfiguration.indexBusyTimeoutMillis.
+- Retry policy: `IndexConfiguration.maintenance().busyBackoffMillis()` and
+  `IndexConfiguration.maintenance().busyTimeoutMillis()`.

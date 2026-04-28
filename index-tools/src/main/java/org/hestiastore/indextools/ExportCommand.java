@@ -37,32 +37,32 @@ final class ExportCommand {
         final Options options = new Options();
         options.addOption(Option.builder().longOpt("source-index").hasArg()
                 .desc("Path to an offline source index directory.").required()
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("output").hasArg()
                 .desc("Output directory for the export bundle.").required()
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("format").hasArg()
                 .desc("Export format: bundle or jsonl. Default: bundle.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("compression").hasArg()
                 .desc("Compression mode: gzip or none. Default: gzip.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("max-part-size").hasArg()
                 .desc("Approximate uncompressed bundle part size. Default: 512MiB.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("from-key").hasArg()
                 .desc("Inclusive lower key bound for a partial export.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("to-key").hasArg()
                 .desc("Inclusive upper key bound for a partial export.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("limit").hasArg()
                 .desc("Maximum number of exported records after range filtering.")
-                .build());
+                .get());
         options.addOption(Option.builder().longOpt("overwrite")
-                .desc("Delete an existing output directory first.").build());
+                .desc("Delete an existing output directory first.").get());
         options.addOption(
-                Option.builder("h").longOpt("help").desc("Show help.").build());
+                Option.builder("h").longOpt("help").desc("Show help.").get());
         try {
             if (HelpSupport.isHelpRequested(args)) {
                 printHelp(options, out);
@@ -284,11 +284,10 @@ final class ExportCommand {
                 ChecksumSupport.sha256(outputDirectory.resolve(fileName)));
     }
 
-    @SuppressWarnings("unchecked")
     private SegmentIndex<Object, Object> openIndex(final Path sourceIndex,
             final ChunkFilterProviderRegistry registry) {
-        return (SegmentIndex<Object, Object>) SegmentIndex.open(
-                new FsNioDirectory(sourceIndex.toFile()), registry);
+        return SegmentIndex.open(new FsNioDirectory(sourceIndex.toFile()),
+                registry);
     }
 
     private void printHelp(final Options options, final PrintStream out) {

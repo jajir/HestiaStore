@@ -23,17 +23,13 @@ public final class SegmentIndexFactory {
     private SegmentIndexFactory() {
     }
 
-    private static ChunkFilterProviderRegistry defaultRegistry() {
-        return ChunkFilterProviderRegistry.defaultRegistry();
-    }
-
     /**
      * Creates a new index using an explicit chunk filter provider registry.
      *
-     * @param <M> key type
-     * @param <N> value type
-     * @param directory target index directory
-     * @param indexConf user configuration overrides
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   target index directory
+     * @param indexConf                   user configuration overrides
      * @param chunkFilterProviderRegistry registry used to resolve persisted
      *                                    chunk filter specs
      * @return opened index instance
@@ -50,10 +46,10 @@ public final class SegmentIndexFactory {
      * Opens an existing index by merging stored and user configuration with an
      * explicit chunk filter provider registry.
      *
-     * @param <M> key type
-     * @param <N> value type
-     * @param directory target index directory
-     * @param indexConf user configuration overrides
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   target index directory
+     * @param indexConf                   user configuration overrides
      * @param chunkFilterProviderRegistry registry used to resolve persisted
      *                                    chunk filter specs
      * @return opened index instance
@@ -70,9 +66,9 @@ public final class SegmentIndexFactory {
      * Opens an existing index using only persisted configuration and an
      * explicit chunk filter provider registry.
      *
-     * @param <M> key type
-     * @param <N> value type
-     * @param directory target index directory
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   target index directory
      * @param chunkFilterProviderRegistry registry used to resolve persisted
      *                                    chunk filter specs
      * @return opened index instance
@@ -88,9 +84,9 @@ public final class SegmentIndexFactory {
     /**
      * Tries to open an index if configuration already exists in the directory.
      *
-     * @param <M> key type
-     * @param <N> value type
-     * @param directory target index directory
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   target index directory
      * @param chunkFilterProviderRegistry registry used to resolve persisted
      *                                    chunk filter specs
      * @return optional opened index

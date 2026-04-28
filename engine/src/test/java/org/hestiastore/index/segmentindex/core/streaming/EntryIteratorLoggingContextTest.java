@@ -11,6 +11,7 @@ import java.util.NoSuchElementException;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.IndexIdentityConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,16 @@ class EntryIteratorLoggingContextTest {
     @Mock
     private IndexConfiguration<String, String> conf;
 
+    @Mock
+    private IndexIdentityConfiguration<String, String> identity;
+
     private CapturingIterator iterator;
     private EntryIteratorLoggingContext<String, String> loggingContext;
 
     @BeforeEach
     void setUp() {
-        when(conf.getIndexName()).thenReturn("idx");
+        when(conf.identity()).thenReturn(identity);
+        when(identity.name()).thenReturn("idx");
         iterator = new CapturingIterator();
         loggingContext = new EntryIteratorLoggingContext<>(iterator, conf);
     }

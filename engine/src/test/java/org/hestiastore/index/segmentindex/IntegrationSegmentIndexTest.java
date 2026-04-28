@@ -131,26 +131,26 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
     private SegmentIndex<Integer, String> makeSegmentIndex(boolean withLog) {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
-                .withKeyClass(Integer.class)//
-                .withValueClass(String.class)//
-                .withKeyTypeDescriptor(tdi) //
-                .withValueTypeDescriptor(tds) //
-                .withMaxNumberOfKeysInSegmentCache(16) //
-                .withMaxNumberOfKeysInActivePartition(128) //
-                .withMaxNumberOfImmutableRunsPerPartition(4) //
-                .withMaxNumberOfKeysInPartitionBuffer(256) //
-                .withMaxNumberOfKeysInIndexBuffer(512) //
-                .withMaxNumberOfKeysInPartitionBeforeSplit(256) //
+                .identity(identity -> identity.keyClass(Integer.class))//
+                .identity(identity -> identity.valueClass(String.class))//
+                .identity(identity -> identity.keyTypeDescriptor(tdi)) //
+                .identity(identity -> identity.valueTypeDescriptor(tds)) //
+                .segment(segment -> segment.cacheKeyLimit(16)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
+                .writePath(writePath -> writePath.legacyImmutableRunLimit(4)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(256)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(512)) //
+                .writePath(writePath -> writePath.segmentSplitKeyThreshold(256)) //
                 // Keep CRUD integrations focused on index semantics, not on
                 // stable-segment split pressure introduced by direct writes.
-                .withMaxNumberOfKeysInSegment(1_024) //
-                .withMaxNumberOfKeysInSegmentChunk(2) //
-                .withMaxNumberOfSegmentsInCache(3)
-                .withBloomFilterIndexSizeInBytes(1000) //
-                .withBloomFilterNumberOfHashFunctions(3) //
-                .withBackgroundMaintenanceAutoEnabled(false) //
-                .withContextLoggingEnabled(withLog) //
-                .withName("test_index") //
+                .segment(segment -> segment.maxKeys(1_024)) //
+                .segment(segment -> segment.chunkKeyLimit(2)) //
+                .segment(segment -> segment.cachedSegmentLimit(3))
+                .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
+                .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(3)) //
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false)) //
+                .logging(logging -> logging.contextEnabled(withLog)) //
+                .identity(identity -> identity.name("test_index")) //
                 .build();
         return SegmentIndex.create(directory, conf);
     }

@@ -83,19 +83,20 @@ Important: If you register using a `TypeDescriptor` instance, its class will be 
 
 ### How to use new Data Type
 
-During SegmentIndex configuration new data type descriptor can by directly used:
+During `SegmentIndex` configuration, pass the descriptor through the grouped
+identity section:
 
 ```java
-IndexConfiguration<Integer, Integer> conf = IndexConfiguration
-    .<Integer, Integer>builder()//
-    .withKeyClass(Integer.class)//
-    .withValueClass(MySuperDataType.class)//
-        ...
-    .withValueTypeDescriptor(new TypeDescriptorMySuperDataType()) //
-        ...
+IndexConfiguration<Integer, MySuperDataType> conf = IndexConfiguration
+    .<Integer, MySuperDataType>builder()
+    .identity(identity -> identity
+        .name("custom-data")
+        .keyClass(Integer.class)
+        .valueClass(MySuperDataType.class)
+        .valueTypeDescriptor(new TypeDescriptorMySuperDataType()))
     .build();
 
-SegmentIndex<Integer, Integer> index = SegmentIndex.<Integer, Integer>create(directory, conf);
+SegmentIndex<Integer, MySuperDataType> index = SegmentIndex.create(directory, conf);
 ```
 
 ## Notes
