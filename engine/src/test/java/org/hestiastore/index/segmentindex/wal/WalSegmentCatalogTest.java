@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +13,7 @@ class WalSegmentCatalogTest {
 
     @Test
     void cleanupDeletesCheckpointedSealedSegments() {
-        final Wal wal = Wal.builder().withSegmentSizeBytes(16L).build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().segmentSizeBytes(16L).build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
                 storage, LoggerFactory.getLogger(WalSegmentCatalogTest.class));
@@ -37,8 +37,8 @@ class WalSegmentCatalogTest {
 
     @Test
     void retentionPressureRequiresMoreThanActiveSegment() {
-        final Wal wal = Wal.builder().withSegmentSizeBytes(64L)
-                .withMaxBytesBeforeForcedCheckpoint(1L).build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().segmentSizeBytes(64L)
+                .maxBytesBeforeForcedCheckpoint(1L).build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
                 storage, LoggerFactory.getLogger(WalSegmentCatalogTest.class));

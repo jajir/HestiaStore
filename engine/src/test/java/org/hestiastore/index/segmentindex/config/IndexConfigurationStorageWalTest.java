@@ -13,7 +13,7 @@ import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
@@ -26,14 +26,14 @@ class IndexConfigurationStorageWalTest {
         final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
         final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
-        final Wal wal = Wal.builder()//
-                .withDurabilityMode(WalDurabilityMode.SYNC)//
-                .withSegmentSizeBytes(2048L)//
-                .withGroupSyncDelayMillis(7)//
-                .withGroupSyncMaxBatchBytes(512)//
-                .withMaxBytesBeforeForcedCheckpoint(4096L)//
-                .withCorruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
-                .withEpochSupport(true)//
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
+                .durability(WalDurabilityMode.SYNC)//
+                .segmentSizeBytes(2048L)//
+                .groupSyncDelayMillis(7)//
+                .groupSyncMaxBatchBytes(512)//
+                .maxBytesBeforeForcedCheckpoint(4096L)//
+                .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
+                .epochSupport(true)//
                 .build();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
@@ -102,7 +102,7 @@ class IndexConfigurationStorageWalTest {
 
         final IndexConfiguration<String, String> loaded = storage.load();
 
-        assertSame(Wal.EMPTY, loaded.wal());
+        assertSame(IndexWalConfiguration.EMPTY, loaded.wal());
         assertFalse(loaded.wal().isEnabled());
     }
 }

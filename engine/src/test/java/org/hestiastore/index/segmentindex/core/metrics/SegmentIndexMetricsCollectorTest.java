@@ -19,7 +19,7 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
@@ -73,7 +73,7 @@ class SegmentIndexMetricsCollectorTest {
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(123L);
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        walRuntime = WalRuntime.open(new MemDirectory(), Wal.EMPTY, null, null);
+        walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 conf, keyToSegmentMap, segmentRegistry,
                 () -> new SplitMetricsSnapshot(4, 3), executorRegistry,

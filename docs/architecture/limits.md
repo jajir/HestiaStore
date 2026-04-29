@@ -4,7 +4,7 @@ This page lists the most important constraints and design trade‑offs so you ca
 
 ## Durability and Recovery
 
-- WAL is optional and disabled by default (`Wal.EMPTY`). With WAL disabled, durability boundaries are explicit `flushAndWait()` and `close()`. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.
+- WAL is optional and disabled by default (`IndexWalConfiguration.EMPTY`). With WAL disabled, durability boundaries are explicit `flushAndWait()` and `close()`. With WAL enabled, writes are appended before apply and startup can replay WAL with safe-tail truncation. See Recovery and Operations/WAL docs.
 - Per‑file atomicity only: Writers use temp files + atomic rename; groups of files (e.g., SST + scarce index + bloom) commit in a safe order but not as a single atomic unit. Readers remain consistent because old files stay in place until each rename. See SegmentFullWriterTx, BloomFilterWriterTx.
 - Filesystem requirement: Crash safety relies on same‑directory atomic `rename`. Use local filesystems; be cautious with network filesystems that may not guarantee strict atomicity.
 - Stale lock files: A crash can leave `.lock` behind, preventing open until removed. See `directory/FsFileLock.java` and IndexState*. Remove the file only when certain no process still uses the directory.

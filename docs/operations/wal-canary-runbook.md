@@ -5,14 +5,14 @@ This runbook defines a safe rollout process for enabling WAL on production index
 Scope:
 
 - WAL is opt-in per index through the grouped `wal(...)` builder section.
-- Default remains disabled (`Wal.EMPTY`).
+- Default remains disabled (`IndexWalConfiguration.EMPTY`).
 - One WAL lives inside each index directory (`<index>/wal`).
 
 ## Goals
 
 - Enable WAL on a small subset of indexes first.
 - Detect durability/performance regressions early.
-- Roll back quickly to `Wal.EMPTY` when risk signals appear.
+- Roll back quickly to `IndexWalConfiguration.EMPTY` when risk signals appear.
 
 ## Preconditions
 
@@ -136,7 +136,7 @@ Use these as initial operational thresholds (tune by workload).
 
 Critical signals (`sync failure`, `corruption`, `unexpected truncation`) are fail-fast.
 
-## Rollback Procedure (to `Wal.EMPTY`)
+## Rollback Procedure (to `IndexWalConfiguration.EMPTY`)
 
 1. Stop traffic to affected canary indexes (or switch to read-only).
 2. Take a filesystem backup/snapshot of affected index directories.

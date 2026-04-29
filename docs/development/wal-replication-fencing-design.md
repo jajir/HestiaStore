@@ -31,7 +31,7 @@ Leader election is assumed to be provided by external cluster coordination.
 ## Locked Assumptions
 
 1. One WAL per index directory (`<index>/wal`).
-2. WAL remains opt-in through `wal(...)`, default `Wal.EMPTY`.
+2. WAL remains opt-in through `wal(...)`, default `IndexWalConfiguration.EMPTY`.
 3. Local durability behavior must remain unchanged when replication is disabled.
 4. WAL v1 record framing/checksum rules stay unchanged; replication metadata uses extension fields.
 

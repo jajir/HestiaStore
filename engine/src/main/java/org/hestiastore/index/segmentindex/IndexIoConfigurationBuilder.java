@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
-
 /**
  * Builder section for disk I/O settings.
  *
@@ -10,10 +8,9 @@ import org.hestiastore.index.Vldtn;
  */
 public final class IndexIoConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private Integer diskBufferSizeBytes;
 
-    IndexIoConfigurationBuilder(final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexIoConfigurationBuilder() {
     }
 
     /**
@@ -24,7 +21,11 @@ public final class IndexIoConfigurationBuilder<K, V> {
      */
     public IndexIoConfigurationBuilder<K, V> diskBufferSizeBytes(
             final Integer value) {
-        builder.setDiskIoBufferSizeBytes(value);
+        this.diskBufferSizeBytes = value;
         return this;
+    }
+
+    IndexIoConfiguration build() {
+        return new IndexIoConfiguration(diskBufferSizeBytes);
     }
 }

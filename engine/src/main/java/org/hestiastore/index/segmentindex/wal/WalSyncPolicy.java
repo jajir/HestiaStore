@@ -9,13 +9,13 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.slf4j.Logger;
 
 final class WalSyncPolicy {
 
-    private final Wal wal;
+    private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalRuntimeMetrics metrics;
     private final Logger logger;
@@ -29,7 +29,7 @@ final class WalSyncPolicy {
     private long pendingSyncBytes = 0L;
     private RuntimeException syncFailure;
 
-    WalSyncPolicy(final Wal wal, final WalStorage storage,
+    WalSyncPolicy(final IndexWalConfiguration wal, final WalStorage storage,
             final WalRuntimeMetrics metrics, final Logger logger,
             final Object monitor,
             final Supplier<List<WalSegmentDescriptor>> segmentsSupplier,

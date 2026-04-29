@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 
@@ -164,7 +164,7 @@ final class IndexConfigurationMapper {
         return spec;
     }
 
-    private static WalManifest toManifest(final Wal wal) {
+    private static WalManifest toManifest(final IndexWalConfiguration wal) {
         final WalManifest manifest = new WalManifest();
         manifest.setEnabled(wal.isEnabled());
         manifest.setDurabilityMode(wal.getDurabilityMode().name());
@@ -178,22 +178,22 @@ final class IndexConfigurationMapper {
         return manifest;
     }
 
-    private static Wal fromManifest(final WalManifest manifest) {
+    private static IndexWalConfiguration fromManifest(final WalManifest manifest) {
         if (manifest == null || !manifest.isEnabled()) {
-            return Wal.EMPTY;
+            return IndexWalConfiguration.EMPTY;
         }
-        return Wal.builder()
-                .withDurabilityMode(
+        return IndexWalConfiguration.builder()
+                .durability(
                         WalDurabilityMode.valueOf(manifest.getDurabilityMode()))
-                .withSegmentSizeBytes(manifest.getSegmentSizeBytes())
-                .withGroupSyncDelayMillis(manifest.getGroupSyncDelayMillis())
-                .withGroupSyncMaxBatchBytes(
+                .segmentSizeBytes(manifest.getSegmentSizeBytes())
+                .groupSyncDelayMillis(manifest.getGroupSyncDelayMillis())
+                .groupSyncMaxBatchBytes(
                         manifest.getGroupSyncMaxBatchBytes())
-                .withMaxBytesBeforeForcedCheckpoint(
+                .maxBytesBeforeForcedCheckpoint(
                         manifest.getMaxBytesBeforeForcedCheckpoint())
-                .withCorruptionPolicy(WalCorruptionPolicy
+                .corruptionPolicy(WalCorruptionPolicy
                         .valueOf(manifest.getCorruptionPolicy()))
-                .withEpochSupport(manifest.isEpochSupport()).build();
+                .epochSupport(manifest.isEpochSupport()).build();
     }
 
     @SuppressWarnings("unchecked")

@@ -136,7 +136,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
                 .segment(segment -> segment.maxKeys(64)) //
                 .identity(identity -> identity.name("metrics_wal_enabled_test_index")) //
-                .wal(wal -> wal.configuration(Wal.builder().build())) //
+                .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build())) //
                 .build();
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,

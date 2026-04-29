@@ -8,7 +8,7 @@ import org.hestiastore.index.Vldtn;
  * Immutable WAL configuration attached to an index configuration.
  */
 @SuppressWarnings("java:S107")
-public final class Wal {
+public final class IndexWalConfiguration {
 
     /**
      * Default segment rotation size in bytes.
@@ -39,16 +39,19 @@ public final class Wal {
     /**
      * Default corruption handling policy.
      */
-    public static final WalCorruptionPolicy DEFAULT_CORRUPTION_POLICY = WalCorruptionPolicy.TRUNCATE_INVALID_TAIL;
+    public static final WalCorruptionPolicy DEFAULT_CORRUPTION_POLICY =
+            WalCorruptionPolicy.TRUNCATE_INVALID_TAIL;
 
     /**
      * Null-object instance meaning WAL is disabled.
      */
-    public static final Wal EMPTY = new Wal(false, DEFAULT_DURABILITY_MODE,
-            DEFAULT_SEGMENT_SIZE_BYTES, DEFAULT_GROUP_SYNC_DELAY_MILLIS,
-            DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES,
-            DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
-            DEFAULT_CORRUPTION_POLICY, false);
+    public static final IndexWalConfiguration EMPTY =
+            new IndexWalConfiguration(false, DEFAULT_DURABILITY_MODE,
+                    DEFAULT_SEGMENT_SIZE_BYTES,
+                    DEFAULT_GROUP_SYNC_DELAY_MILLIS,
+                    DEFAULT_GROUP_SYNC_MAX_BATCH_BYTES,
+                    DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT,
+                    DEFAULT_CORRUPTION_POLICY, false);
 
     private final boolean enabled;
     private final WalDurabilityMode durabilityMode;
@@ -59,7 +62,8 @@ public final class Wal {
     private final WalCorruptionPolicy corruptionPolicy;
     private final boolean epochSupport;
 
-    Wal(final boolean enabled, final WalDurabilityMode durabilityMode,
+    IndexWalConfiguration(final boolean enabled,
+            final WalDurabilityMode durabilityMode,
             final long segmentSizeBytes, final int groupSyncDelayMillis,
             final int groupSyncMaxBatchBytes,
             final long maxBytesBeforeForcedCheckpoint,
@@ -82,8 +86,8 @@ public final class Wal {
      *
      * @return WAL builder
      */
-    public static WalBuilder builder() {
-        return new WalBuilder();
+    public static IndexWalConfigurationBuilder builder() {
+        return new IndexWalConfigurationBuilder();
     }
 
     /**
@@ -173,7 +177,7 @@ public final class Wal {
      * @param wal candidate WAL config
      * @return non-null WAL config
      */
-    public static Wal orEmpty(final Wal wal) {
+    public static IndexWalConfiguration orEmpty(final IndexWalConfiguration wal) {
         return wal == null ? EMPTY : wal;
     }
 
@@ -189,7 +193,7 @@ public final class Wal {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof Wal other)) {
+        if (!(obj instanceof IndexWalConfiguration other)) {
             return false;
         }
         return enabled == other.enabled && segmentSizeBytes == other.segmentSizeBytes
@@ -203,7 +207,8 @@ public final class Wal {
 
     @Override
     public String toString() {
-        return "Wal{enabled=" + enabled + ", durabilityMode=" + durabilityMode
+        return "IndexWalConfiguration{enabled=" + enabled
+                + ", durabilityMode=" + durabilityMode
                 + ", segmentSizeBytes=" + segmentSizeBytes
                 + ", groupSyncDelayMillis=" + groupSyncDelayMillis
                 + ", groupSyncMaxBatchBytes=" + groupSyncMaxBatchBytes
