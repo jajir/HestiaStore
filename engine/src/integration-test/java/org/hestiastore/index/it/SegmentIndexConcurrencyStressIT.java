@@ -377,7 +377,7 @@ class SegmentIndexConcurrencyStressIT {
                         .registryLifecycleThreads(
                                 Math.max(1, Math.min(cpuThreads, 2)))
                         .busyTimeoutMillis(120_000)//
-                        .busyBackoffMillis(100))//
+                        .busyBackoffMillis(5))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
                         .legacyImmutableRunLimit(6)
                         .maintenanceWriteCacheKeyLimit(8_192)
