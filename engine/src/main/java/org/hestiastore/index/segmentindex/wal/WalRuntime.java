@@ -10,7 +10,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +113,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(WalRuntime.class);
 
     private final boolean enabled;
-    private final Wal wal;
+    private final IndexWalConfiguration wal;
     private final Object monitor = new Object();
     private final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
     private final WalStorage storage;
@@ -128,10 +128,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private long checkpointLsn = 0L;
     private boolean closed;
 
-    private WalRuntime(final Wal wal, final WalStorage storage,
+    private WalRuntime(final IndexWalConfiguration wal, final WalStorage storage,
             final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        this.wal = Wal.orEmpty(wal);
+        this.wal = IndexWalConfiguration.orEmpty(wal);
         this.enabled = this.wal.isEnabled();
         this.storage = storage;
         if (!enabled) {
@@ -187,10 +187,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @return runtime instance
      */
     public static <K, V> WalRuntime<K, V> open(final Directory indexDirectory,
-            final Wal wal, final TypeDescriptor<K> keyDescriptor,
+            final IndexWalConfiguration wal, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
         Vldtn.requireNonNull(indexDirectory, "indexDirectory");
-        final Wal resolvedWal = Wal.orEmpty(wal);
+        final IndexWalConfiguration resolvedWal = IndexWalConfiguration.orEmpty(wal);
         if (!resolvedWal.isEnabled()) {
             return new WalRuntime<>(resolvedWal, null, null, null);
         }
@@ -203,10 +203,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         return runtime;
     }
 
-    static <K, V> WalRuntime<K, V> openForTests(final Wal wal,
+    static <K, V> WalRuntime<K, V> openForTests(final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        final WalRuntime<K, V> runtime = new WalRuntime<>(Wal.orEmpty(wal),
+        final WalRuntime<K, V> runtime = new WalRuntime<>(IndexWalConfiguration.orEmpty(wal),
                 Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
                 valueDescriptor);
         if (runtime.enabled) {

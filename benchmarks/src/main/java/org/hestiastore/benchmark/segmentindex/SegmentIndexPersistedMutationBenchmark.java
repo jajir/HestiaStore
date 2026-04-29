@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.hestiastore.index.directory.FsDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -110,7 +110,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     }
 
     private IndexConfiguration<Integer, String> buildConfiguration(
-            final Wal wal) {
+            final IndexWalConfiguration wal) {
         final int maxKeysBeforeSplit = Math.max(65_536, seededKeyCount * 8);
         final var builder = SegmentIndexBenchmarkSupport
                 .baseBuilder("segment-index-persisted-mutation-benchmark")//
@@ -136,17 +136,17 @@ public class SegmentIndexPersistedMutationBenchmark {
         return builder.build();
     }
 
-    private Wal resolveWal() {
+    private IndexWalConfiguration resolveWal() {
         if ("sync".equals(walMode)) {
-            return Wal.builder().withDurabilityMode(WalDurabilityMode.SYNC)
+            return IndexWalConfiguration.builder().durability(WalDurabilityMode.SYNC)
                     .build();
         }
-        return Wal.EMPTY;
+        return IndexWalConfiguration.EMPTY;
     }
 
     private void seedStableBase() {
         try (SegmentIndex<Integer, String> seedingIndex = SegmentIndex.create(
-                new FsDirectory(tempDir), buildConfiguration(Wal.EMPTY))) {
+                new FsDirectory(tempDir), buildConfiguration(IndexWalConfiguration.EMPTY))) {
             seedStableBase(seedingIndex);
         }
     }

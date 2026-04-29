@@ -1,7 +1,7 @@
 # Consistency & Recovery
 
 This page explains HestiaStore's crash-safety model and commit semantics. WAL
-is optional and disabled by default (`Wal.EMPTY`). Without WAL, durability is
+is optional and disabled by default (`IndexWalConfiguration.EMPTY`). Without WAL, durability is
 driven by explicit maintenance completion plus temp-file + atomic-rename commit
 paths. With WAL enabled, writes are appended before apply and startup replays
 WAL records above checkpoint, with invalid-tail truncation or fail-fast based

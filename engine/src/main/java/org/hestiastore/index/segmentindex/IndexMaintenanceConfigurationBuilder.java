@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
-
 /**
  * Builder section for maintenance, lifecycle, and retry settings.
  *
@@ -10,11 +8,14 @@ import org.hestiastore.index.Vldtn;
  */
 public final class IndexMaintenanceConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private Integer segmentThreads;
+    private Integer indexThreads;
+    private Integer registryLifecycleThreads;
+    private Integer busyBackoffMillis;
+    private Integer busyTimeoutMillis;
+    private Boolean backgroundAutoEnabled;
 
-    IndexMaintenanceConfigurationBuilder(
-            final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexMaintenanceConfigurationBuilder() {
     }
 
     /**
@@ -25,7 +26,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      */
     public IndexMaintenanceConfigurationBuilder<K, V> segmentThreads(
             final Integer value) {
-        builder.setSegmentMaintenanceThreadCount(value);
+        this.segmentThreads = value;
         return this;
     }
 
@@ -37,7 +38,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      */
     public IndexMaintenanceConfigurationBuilder<K, V> indexThreads(
             final Integer value) {
-        builder.setIndexMaintenanceThreadCount(value);
+        this.indexThreads = value;
         return this;
     }
 
@@ -49,7 +50,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      */
     public IndexMaintenanceConfigurationBuilder<K, V> registryLifecycleThreads(
             final Integer value) {
-        builder.setRegistryLifecycleThreadCount(value);
+        this.registryLifecycleThreads = value;
         return this;
     }
 
@@ -61,7 +62,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      */
     public IndexMaintenanceConfigurationBuilder<K, V> busyBackoffMillis(
             final Integer value) {
-        builder.setBusyBackoffMillis(value);
+        this.busyBackoffMillis = value;
         return this;
     }
 
@@ -73,7 +74,7 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      */
     public IndexMaintenanceConfigurationBuilder<K, V> busyTimeoutMillis(
             final Integer value) {
-        builder.setBusyTimeoutMillis(value);
+        this.busyTimeoutMillis = value;
         return this;
     }
 
@@ -85,7 +86,32 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
      */
     public IndexMaintenanceConfigurationBuilder<K, V> backgroundAutoEnabled(
             final Boolean value) {
-        builder.setBackgroundMaintenanceAutoEnabled(value);
+        this.backgroundAutoEnabled = value;
         return this;
+    }
+
+    IndexMaintenanceConfiguration build() {
+        final Integer effectiveSegmentThreads = segmentThreads == null
+                ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS
+                : segmentThreads;
+        final Integer effectiveIndexThreads = indexThreads == null
+                ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
+                : indexThreads;
+        final Integer effectiveRegistryLifecycleThreads = registryLifecycleThreads == null
+                ? IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS
+                : registryLifecycleThreads;
+        final Integer effectiveBusyBackoffMillis = busyBackoffMillis == null
+                ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS
+                : busyBackoffMillis;
+        final Integer effectiveBusyTimeoutMillis = busyTimeoutMillis == null
+                ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
+                : busyTimeoutMillis;
+        final Boolean effectiveBackgroundAutoEnabled = backgroundAutoEnabled == null
+                ? IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED
+                : backgroundAutoEnabled;
+        return new IndexMaintenanceConfiguration(effectiveSegmentThreads,
+                effectiveIndexThreads, effectiveRegistryLifecycleThreads,
+                effectiveBusyBackoffMillis, effectiveBusyTimeoutMillis,
+                effectiveBackgroundAutoEnabled);
     }
 }

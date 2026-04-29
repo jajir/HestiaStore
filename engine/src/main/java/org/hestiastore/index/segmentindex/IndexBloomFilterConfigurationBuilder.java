@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
-
 /**
  * Builder section for Bloom filter settings.
  *
@@ -10,11 +8,11 @@ import org.hestiastore.index.Vldtn;
  */
 public final class IndexBloomFilterConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private Integer hashFunctions;
+    private Integer indexSizeBytes;
+    private Double falsePositiveProbability;
 
-    IndexBloomFilterConfigurationBuilder(
-            final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexBloomFilterConfigurationBuilder() {
     }
 
     /**
@@ -25,7 +23,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      */
     public IndexBloomFilterConfigurationBuilder<K, V> hashFunctions(
             final Integer value) {
-        builder.setBloomFilterHashFunctionCount(value);
+        this.hashFunctions = value;
         return this;
     }
 
@@ -37,7 +35,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      */
     public IndexBloomFilterConfigurationBuilder<K, V> indexSizeBytes(
             final Integer value) {
-        builder.setBloomFilterIndexSizeBytes(value);
+        this.indexSizeBytes = value;
         return this;
     }
 
@@ -49,7 +47,7 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      */
     public IndexBloomFilterConfigurationBuilder<K, V> falsePositiveProbability(
             final Double value) {
-        builder.setBloomFilterFalsePositiveProbability(value);
+        this.falsePositiveProbability = value;
         return this;
     }
 
@@ -59,7 +57,12 @@ public final class IndexBloomFilterConfigurationBuilder<K, V> {
      * @return this section builder
      */
     public IndexBloomFilterConfigurationBuilder<K, V> disabled() {
-        builder.setBloomFilterIndexSizeBytes(Integer.valueOf(0));
+        this.indexSizeBytes = Integer.valueOf(0);
         return this;
+    }
+
+    IndexBloomFilterConfiguration build() {
+        return new IndexBloomFilterConfiguration(hashFunctions, indexSizeBytes,
+                falsePositiveProbability);
     }
 }

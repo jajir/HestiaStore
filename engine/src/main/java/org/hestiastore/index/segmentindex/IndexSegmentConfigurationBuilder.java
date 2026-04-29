@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.Vldtn;
-
 /**
  * Builder section for segment sizing and segment cache settings.
  *
@@ -10,11 +8,13 @@ import org.hestiastore.index.Vldtn;
  */
 public final class IndexSegmentConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private Integer maxKeys;
+    private Integer chunkKeyLimit;
+    private Integer cacheKeyLimit;
+    private Integer cachedSegmentLimit;
+    private Integer deltaCacheFileLimit;
 
-    IndexSegmentConfigurationBuilder(
-            final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexSegmentConfigurationBuilder() {
     }
 
     /**
@@ -25,7 +25,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      */
     public IndexSegmentConfigurationBuilder<K, V> maxKeys(
             final Integer value) {
-        builder.setSegmentMaxKeys(value);
+        this.maxKeys = value;
         return this;
     }
 
@@ -37,7 +37,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      */
     public IndexSegmentConfigurationBuilder<K, V> chunkKeyLimit(
             final Integer value) {
-        builder.setSegmentChunkKeyLimit(value);
+        this.chunkKeyLimit = value;
         return this;
     }
 
@@ -49,7 +49,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      */
     public IndexSegmentConfigurationBuilder<K, V> cacheKeyLimit(
             final Integer value) {
-        builder.setSegmentCacheKeyLimit(value);
+        this.cacheKeyLimit = value;
         return this;
     }
 
@@ -61,7 +61,7 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      */
     public IndexSegmentConfigurationBuilder<K, V> cachedSegmentLimit(
             final Integer value) {
-        builder.setCachedSegmentLimit(value);
+        this.cachedSegmentLimit = value;
         return this;
     }
 
@@ -73,7 +73,23 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
      */
     public IndexSegmentConfigurationBuilder<K, V> deltaCacheFileLimit(
             final Integer value) {
-        builder.setSegmentDeltaCacheFileLimit(value);
+        this.deltaCacheFileLimit = value;
         return this;
+    }
+
+    Integer resolveEffectiveMaxKeys(final Integer segmentSplitKeyThreshold) {
+        if (maxKeys != null) {
+            return maxKeys;
+        }
+        return segmentSplitKeyThreshold;
+    }
+
+    IndexSegmentConfiguration build(final Integer effectiveMaxKeys) {
+        final Integer effectiveDeltaCacheFileLimit = deltaCacheFileLimit == null
+                ? IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT
+                : deltaCacheFileLimit;
+        return new IndexSegmentConfiguration(effectiveMaxKeys, chunkKeyLimit,
+                cacheKeyLimit, cachedSegmentLimit,
+                effectiveDeltaCacheFileLimit);
     }
 }

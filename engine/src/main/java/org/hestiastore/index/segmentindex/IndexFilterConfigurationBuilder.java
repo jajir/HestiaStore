@@ -1,12 +1,16 @@
 package org.hestiastore.index.segmentindex;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.chunkstore.ChunkFilterRegistration;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 
 /**
  * Builder section for persisted chunk filter pipelines.
@@ -16,11 +20,10 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpec;
  */
 public final class IndexFilterConfigurationBuilder<K, V> {
 
-    private final IndexConfigurationBuilder<K, V> builder;
+    private final List<ChunkFilterSpec> encodingChunkFilters = new ArrayList<>();
+    private final List<ChunkFilterSpec> decodingChunkFilters = new ArrayList<>();
 
-    IndexFilterConfigurationBuilder(
-            final IndexConfigurationBuilder<K, V> builder) {
-        this.builder = Vldtn.requireNonNull(builder, "builder");
+    IndexFilterConfigurationBuilder() {
     }
 
     /**
@@ -31,7 +34,10 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilter value) {
-        builder.addEncodingFilter(value);
+        final ChunkFilter requiredFilter = Vldtn.requireNonNull(value,
+                "filter");
+        addEncodingFilter(() -> requiredFilter,
+                resolvePersistableInstanceSpec(requiredFilter, true));
         return this;
     }
 
@@ -43,7 +49,10 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> addEncodingFilter(
             final Class<? extends ChunkFilter> value) {
-        builder.addEncodingFilter(value);
+        final Class<? extends ChunkFilter> requiredClass = Vldtn
+                .requireNonNull(value, "filterClass");
+        addEncodingFilter(() -> instantiateFilter(requiredClass),
+                ChunkFilterSpecs.forEncodingFilter(requiredClass));
         return this;
     }
 
@@ -57,7 +66,8 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     public IndexFilterConfigurationBuilder<K, V> addEncodingFilter(
             final Supplier<? extends ChunkFilter> supplier,
             final ChunkFilterSpec spec) {
-        builder.addEncodingFilter(supplier, spec);
+        Vldtn.requireNonNull(supplier, "supplier");
+        addEncodingFilter(spec);
         return this;
     }
 
@@ -69,7 +79,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> addEncodingFilter(
             final ChunkFilterSpec value) {
-        builder.addEncodingFilter(value);
+        addEncodingFilterSpec(Vldtn.requireNonNull(value, "spec"));
         return this;
     }
 
@@ -81,7 +91,12 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> encodingFilterRegistrations(
             final Collection<ChunkFilterRegistration> values) {
-        builder.setEncodingFilterRegistrations(values);
+        Vldtn.requireNonNull(values, "registrations");
+        encodingChunkFilters.clear();
+        for (final ChunkFilterRegistration registration : values) {
+            addEncodingFilterSpec(Vldtn.requireNonNull(registration,
+                    "registration").getSpec());
+        }
         return this;
     }
 
@@ -93,7 +108,11 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> encodingFilterSpecs(
             final Collection<ChunkFilterSpec> values) {
-        builder.setEncodingFilterSpecs(values);
+        Vldtn.requireNonNull(values, "specs");
+        encodingChunkFilters.clear();
+        for (final ChunkFilterSpec spec : values) {
+            addEncodingFilterSpec(spec);
+        }
         return this;
     }
 
@@ -105,7 +124,11 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> encodingFilterClasses(
             final Collection<Class<? extends ChunkFilter>> values) {
-        builder.setEncodingFilterClasses(values);
+        Vldtn.requireNonNull(values, "filterClasses");
+        encodingChunkFilters.clear();
+        for (final Class<? extends ChunkFilter> filterClass : values) {
+            addEncodingFilter(filterClass);
+        }
         return this;
     }
 
@@ -117,7 +140,11 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> encodingFilters(
             final Collection<ChunkFilter> values) {
-        builder.setEncodingFilters(values);
+        Vldtn.requireNonNull(values, "filters");
+        encodingChunkFilters.clear();
+        for (final ChunkFilter filter : values) {
+            addEncodingFilter(filter);
+        }
         return this;
     }
 
@@ -129,7 +156,10 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> addDecodingFilter(
             final ChunkFilter value) {
-        builder.addDecodingFilter(value);
+        final ChunkFilter requiredFilter = Vldtn.requireNonNull(value,
+                "filter");
+        addDecodingFilter(() -> requiredFilter,
+                resolvePersistableInstanceSpec(requiredFilter, false));
         return this;
     }
 
@@ -141,7 +171,10 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> addDecodingFilter(
             final Class<? extends ChunkFilter> value) {
-        builder.addDecodingFilter(value);
+        final Class<? extends ChunkFilter> requiredClass = Vldtn
+                .requireNonNull(value, "filterClass");
+        addDecodingFilter(() -> instantiateFilter(requiredClass),
+                ChunkFilterSpecs.forDecodingFilter(requiredClass));
         return this;
     }
 
@@ -155,7 +188,8 @@ public final class IndexFilterConfigurationBuilder<K, V> {
     public IndexFilterConfigurationBuilder<K, V> addDecodingFilter(
             final Supplier<? extends ChunkFilter> supplier,
             final ChunkFilterSpec spec) {
-        builder.addDecodingFilter(supplier, spec);
+        Vldtn.requireNonNull(supplier, "supplier");
+        addDecodingFilter(spec);
         return this;
     }
 
@@ -167,7 +201,7 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> addDecodingFilter(
             final ChunkFilterSpec value) {
-        builder.addDecodingFilter(value);
+        addDecodingFilterSpec(Vldtn.requireNonNull(value, "spec"));
         return this;
     }
 
@@ -179,7 +213,12 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> decodingFilterRegistrations(
             final Collection<ChunkFilterRegistration> values) {
-        builder.setDecodingFilterRegistrations(values);
+        Vldtn.requireNonNull(values, "registrations");
+        decodingChunkFilters.clear();
+        for (final ChunkFilterRegistration registration : values) {
+            addDecodingFilterSpec(Vldtn.requireNonNull(registration,
+                    "registration").getSpec());
+        }
         return this;
     }
 
@@ -191,7 +230,11 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> decodingFilterSpecs(
             final Collection<ChunkFilterSpec> values) {
-        builder.setDecodingFilterSpecs(values);
+        Vldtn.requireNonNull(values, "specs");
+        decodingChunkFilters.clear();
+        for (final ChunkFilterSpec spec : values) {
+            addDecodingFilterSpec(spec);
+        }
         return this;
     }
 
@@ -203,7 +246,11 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> decodingFilterClasses(
             final Collection<Class<? extends ChunkFilter>> values) {
-        builder.setDecodingFilterClasses(values);
+        Vldtn.requireNonNull(values, "filterClasses");
+        decodingChunkFilters.clear();
+        for (final Class<? extends ChunkFilter> filterClass : values) {
+            addDecodingFilter(filterClass);
+        }
         return this;
     }
 
@@ -215,7 +262,58 @@ public final class IndexFilterConfigurationBuilder<K, V> {
      */
     public IndexFilterConfigurationBuilder<K, V> decodingFilters(
             final Collection<ChunkFilter> values) {
-        builder.setDecodingFilters(values);
+        Vldtn.requireNonNull(values, "filters");
+        decodingChunkFilters.clear();
+        for (final ChunkFilter filter : values) {
+            addDecodingFilter(filter);
+        }
         return this;
+    }
+
+    IndexFilterConfiguration build() {
+        return new IndexFilterConfiguration(encodingChunkFilters,
+                decodingChunkFilters);
+    }
+
+    private void addEncodingFilterSpec(final ChunkFilterSpec spec) {
+        encodingChunkFilters.add(Vldtn.requireNonNull(spec, "spec"));
+    }
+
+    private void addDecodingFilterSpec(final ChunkFilterSpec spec) {
+        decodingChunkFilters.add(Vldtn.requireNonNull(spec, "spec"));
+    }
+
+    private ChunkFilter instantiateFilter(
+            final Class<? extends ChunkFilter> filterClass) {
+        final Class<? extends ChunkFilter> requiredClass = Vldtn
+                .requireNonNull(filterClass, "filterClass");
+        try {
+            return requiredClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalArgumentException(
+                    String.format("Unable to instantiate chunk filter '%s'",
+                            requiredClass.getName()),
+                    ex);
+        }
+    }
+
+    private ChunkFilterSpec resolvePersistableInstanceSpec(
+            final ChunkFilter filter, final boolean encoding) {
+        final ChunkFilter requiredFilter = Vldtn.requireNonNull(filter,
+                "filter");
+        final ChunkFilterSpec spec = encoding
+                ? ChunkFilterSpecs.forEncodingFilter(requiredFilter)
+                : ChunkFilterSpecs.forDecodingFilter(requiredFilter);
+        if (ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS
+                .equals(spec.getProviderId())) {
+            throw new IllegalArgumentException(String.format(
+                    "Custom %s chunk filter instances require explicit persisted metadata. "
+                            + "Use %s(Supplier<? extends ChunkFilter>, ChunkFilterSpec) "
+                            + "or %s(Class<? extends ChunkFilter>) for no-arg filters.",
+                    encoding ? "encoding" : "decoding",
+                    encoding ? "addEncodingFilter" : "addDecodingFilter",
+                    encoding ? "addEncodingFilter" : "addDecodingFilter"));
+        }
+        return spec;
     }
 }

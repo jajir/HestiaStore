@@ -162,7 +162,7 @@ In-memory map that keeps only the latest value per key. Used inside segment
 write-cache and delta-cache implementations. Code: `cache/UniqueCache*.java`.
 
 ## WAL (Write‑Ahead Log)
-Per-index append log in `wal/` that records `PUT`/`DELETE` operations with LSN and checksum before apply. It provides replay, checkpointing, segment rotation, and invalid-tail handling according to policy. Code: `segmentindex/Wal.java`, `segmentindex/wal/WalRuntime.java`, `segmentindex/wal/WalTool.java`.
+Per-index append log in `wal/` that records `PUT`/`DELETE` operations with LSN and checksum before apply. It provides replay, checkpointing, segment rotation, and invalid-tail handling according to policy. Code: `segmentindex/IndexWalConfiguration.java`, `segmentindex/wal/WalRuntime.java`, `segmentindex/wal/WalTool.java`.
 
 ## Write Transaction
 Pattern that enforces open → close → commit, guaranteeing atomic file replacement. Code: `index/GuardedWriteTransaction.java`, `index/WriteTransaction.java`.

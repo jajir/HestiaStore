@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.Wal;
+import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ class WalSyncPolicyTest {
 
     @Test
     void syncModeFlushesPendingBytesImmediately() {
-        final Wal wal = Wal.builder().withDurabilityMode(WalDurabilityMode.SYNC)
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder().durability(WalDurabilityMode.SYNC)
                 .build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
