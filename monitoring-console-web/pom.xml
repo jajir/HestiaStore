@@ -13,7 +13,7 @@
     <name>HestiaStore Monitoring Console Web</name>
 
     <properties>
-        <spring.boot.version>4.0.5</spring.boot.version>
+        <spring.boot.version>4.0.6</spring.boot.version>
         <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <junit.platform.version>1.12.2</junit.platform.version>
     </properties>
