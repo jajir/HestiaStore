@@ -7,11 +7,11 @@ import org.hestiastore.index.segment.SegmentId;
 
 final class DefaultRouteLease implements SegmentTopology.RouteLease {
 
-    private final DefaultSegmentTopology<?> topology;
+    private final SegmentTopologyImpl<?> topology;
     private final SegmentId segmentId;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    DefaultRouteLease(final DefaultSegmentTopology<?> topology,
+    DefaultRouteLease(final SegmentTopologyImpl<?> topology,
             final SegmentId segmentId) {
         this.topology = Vldtn.requireNonNull(topology, "topology");
         this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");

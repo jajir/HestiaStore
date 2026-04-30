@@ -13,13 +13,13 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 
-final class DefaultSegmentTopology<K> implements SegmentTopology<K> {
+final class SegmentTopologyImpl<K> implements SegmentTopology<K> {
 
     private final Object monitor = new Object();
     private final Map<SegmentId, RouteEntry> routes = new HashMap<>();
     private long version;
 
-    DefaultSegmentTopology(final Snapshot<K> snapshot) {
+    SegmentTopologyImpl(final Snapshot<K> snapshot) {
         reconcile(snapshot);
     }
 

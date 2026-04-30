@@ -7,11 +7,11 @@ import org.hestiastore.index.segment.SegmentId;
 
 final class DefaultRouteDrain implements SegmentTopology.RouteDrain {
 
-    private final DefaultSegmentTopology<?> topology;
+    private final SegmentTopologyImpl<?> topology;
     private final SegmentId segmentId;
     private final AtomicBoolean completed = new AtomicBoolean();
 
-    DefaultRouteDrain(final DefaultSegmentTopology<?> topology,
+    DefaultRouteDrain(final SegmentTopologyImpl<?> topology,
             final SegmentId segmentId) {
         this.topology = Vldtn.requireNonNull(topology, "topology");
         this.segmentId = Vldtn.requireNonNull(segmentId, "segmentId");
