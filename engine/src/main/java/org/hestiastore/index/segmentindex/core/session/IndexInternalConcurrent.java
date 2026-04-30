@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -49,9 +50,35 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final IndexConfiguration<K, V> conf,
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
-        this.delegate = new StartedSegmentIndex<>(directoryFacade,
+        this(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
+                runtimeConfiguration, executorRegistry, true);
+    }
+
+    public static <K, V> IndexInternalConcurrent<K, V> createOpening(
+            final Directory directoryFacade,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ExecutorRegistry executorRegistry) {
+        return new IndexInternalConcurrent<>(directoryFacade, keyTypeDescriptor,
+                valueTypeDescriptor, conf, runtimeConfiguration,
+                executorRegistry, false);
+    }
+
+    private IndexInternalConcurrent(final Directory directoryFacade,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final IndexConfiguration<K, V> conf,
+            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ExecutorRegistry executorRegistry,
+            final boolean completeStartup) {
+        this.delegate = new SegmentIndexImpl<>(directoryFacade,
                 keyTypeDescriptor, valueTypeDescriptor, conf,
                 runtimeConfiguration, executorRegistry);
+        if (completeStartup) {
+            completeStartup();
+        }
     }
 
     @Override
@@ -146,18 +173,21 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
         delegate.close();
     }
 
-    private static final class StartedSegmentIndex<K, V>
-            extends SegmentIndexImpl<K, V> {
+    /**
+     * Completes startup after the owning bootstrap factory has registered this
+     * index for failure cleanup.
+     */
+    public void completeStartup() {
+        delegate.completeStartup();
+    }
 
-        StartedSegmentIndex(final Directory directoryFacade,
-                final TypeDescriptor<K> keyTypeDescriptor,
-                final TypeDescriptor<V> valueTypeDescriptor,
-                final IndexConfiguration<K, V> conf,
-                final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
-                final ExecutorRegistry executorRegistry) {
-            super(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
-                    runtimeConfiguration, executorRegistry);
-            completeStartup();
-        }
+    /**
+     * Moves the internal state to ERROR so close can release the opening lock
+     * after startup fails.
+     *
+     * @param failure startup failure
+     */
+    public void abortStartup(final Throwable failure) {
+        delegate.failWithError(Vldtn.requireNonNull(failure, "failure"));
     }
 }

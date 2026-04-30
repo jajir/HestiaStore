@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 
 /**
  * Immutable configuration for the segment-index layer.
@@ -151,26 +151,28 @@ public class IndexConfiguration<K, V> {
 
     /**
      * Resolves this persisted configuration into runtime filter suppliers using
-     * the built-in chunk filter provider registry.
+     * the resolver configured in the filter section, or the default resolver
+     * when none was specified.
      *
      * @return runtime configuration resolved from persisted metadata
      */
     public IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration() {
         return resolveRuntimeConfiguration(
-                ChunkFilterProviderRegistry.defaultRegistry());
+                filters.getChunkFilterProviderResolver());
     }
 
     /**
      * Resolves this persisted configuration into runtime filter suppliers using
-     * the provided chunk filter provider registry.
+     * the provided chunk filter provider resolver.
      *
-     * @param chunkFilterProviderRegistry registry used to resolve persisted
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
      *                                    chunk filter specs
      * @return runtime configuration resolved from persisted metadata
      */
     public IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration(
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return IndexRuntimeConfiguration.resolve(this,
-                chunkFilterProviderRegistry);
+                chunkFilterProviderResolver);
     }
+
 }

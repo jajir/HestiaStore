@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.chunkstore.ChunkFilterRegistration;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSuppliers;
@@ -17,7 +17,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterSuppliers;
  * {@link IndexConfiguration} stores only persisted metadata that can be written
  * to and loaded from index manifest files. This runtime configuration resolves
  * the persisted chunk filter specs against a
- * {@link ChunkFilterProviderRegistry} and keeps the suppliers needed to
+ * {@link ChunkFilterProviderResolver} and keeps the suppliers needed to
  * materialize fresh runtime filter instances.
  * </p>
  *
@@ -48,22 +48,22 @@ public final class IndexRuntimeConfiguration<K, V> {
      * @param <K>                         key type
      * @param <V>                         value type
      * @param configuration               persisted configuration
-     * @param chunkFilterProviderRegistry registry used to resolve filter specs
+     * @param chunkFilterProviderResolver resolver used to resolve filter specs
      * @return resolved runtime configuration
      */
     public static <K, V> IndexRuntimeConfiguration<K, V> resolve(
             final IndexConfiguration<K, V> configuration,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final IndexConfiguration<K, V> requiredConfiguration = Vldtn
                 .requireNonNull(configuration, "configuration");
-        final ChunkFilterProviderRegistry requiredRegistry = Vldtn
-                .requireNonNull(chunkFilterProviderRegistry,
-                        "chunkFilterProviderRegistry");
+        final ChunkFilterProviderResolver requiredResolver = Vldtn
+                .requireNonNull(chunkFilterProviderResolver,
+                        "chunkFilterProviderResolver");
         return new IndexRuntimeConfiguration<>(requiredConfiguration,
                 toEncodingRegistrations(requiredConfiguration,
-                        requiredRegistry),
+                        requiredResolver),
                 toDecodingRegistrations(requiredConfiguration,
-                        requiredRegistry));
+                        requiredResolver));
     }
 
     /**
@@ -153,22 +153,22 @@ public final class IndexRuntimeConfiguration<K, V> {
 
     private static <K, V> List<ChunkFilterRegistration> toEncodingRegistrations(
             final IndexConfiguration<K, V> configuration,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return configuration
                 .filters().encodingChunkFilterSpecs().stream().map(
                         spec -> ChunkFilterRegistration.of(spec,
-                                chunkFilterProviderRegistry
+                                chunkFilterProviderResolver
                                         .createEncodingSupplier(spec)))
                 .toList();
     }
 
     private static <K, V> List<ChunkFilterRegistration> toDecodingRegistrations(
             final IndexConfiguration<K, V> configuration,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return configuration
                 .filters().decodingChunkFilterSpecs().stream().map(
                         spec -> ChunkFilterRegistration.of(spec,
-                                chunkFilterProviderRegistry
+                                chunkFilterProviderResolver
                                         .createDecodingSupplier(spec)))
                 .toList();
     }

@@ -21,7 +21,8 @@ import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -159,22 +160,14 @@ class SegmentFactoryTest {
                 .logging(logging -> logging.contextEnabled(false))
                 .filters(filters -> filters.encodingFilterRegistrations(List.of())
                         .decodingFilterRegistrations(List.of())
-                        .addEncodingFilter(
-                                () -> new TrackingChunkFilter(
-                                        sequence.incrementAndGet()),
-                                ChunkFilterSpec.ofProvider("test")
-                                        .withParameter("keyRef",
-                                                "orders-main"))
-                        .addDecodingFilter(
-                                () -> new TrackingChunkFilter(
-                                        sequence.incrementAndGet()),
-                                ChunkFilterSpec.ofProvider("test")
-                                        .withParameter("keyRef",
-                                                "orders-main")))
+                        .addEncodingFilter(ChunkFilterSpec.ofProvider("test")
+                                .withParameter("keyRef", "orders-main"))
+                        .addDecodingFilter(ChunkFilterSpec.ofProvider("test")
+                                .withParameter("keyRef", "orders-main")))
                 .build();
         final ExecutorService stableSegmentMaintenancePool = Executors
                 .newSingleThreadExecutor();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders()
                 .withProvider(new ChunkFilterProvider() {
                     @Override

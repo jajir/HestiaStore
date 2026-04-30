@@ -14,11 +14,11 @@ final class IndexConfigurationManagementContextLoggingAdapter
         implements IndexConfigurationManagement {
 
     private final IndexConfigurationManagement delegate;
-    private final IndexContextScopeRunner contextScopeRunner;
+    private final IndexMdcScopeRunner contextScopeRunner;
 
     IndexConfigurationManagementContextLoggingAdapter(
             final IndexConfigurationManagement delegate,
-            final IndexContextScopeRunner contextScopeRunner) {
+            final IndexMdcScopeRunner contextScopeRunner) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
                 "contextScopeRunner");

@@ -79,7 +79,7 @@ public final class SegmentAccessServiceBuilder<K, V> {
      * @return segment access service
      */
     public SegmentAccessService<K, V> build() {
-        return new DefaultSegmentAccessService<>(
+        return new SegmentAccessServiceImpl<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(segmentTopology, "segmentTopology"),

@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
-final class DefaultSegmentAccessService<K, V>
+final class SegmentAccessServiceImpl<K, V>
         implements SegmentAccessService<K, V> {
 
     private static final String OPERATION_READ = "acquireForRead";
@@ -24,7 +24,7 @@ final class DefaultSegmentAccessService<K, V>
     private final SegmentTopology<K> segmentTopology;
     private final IndexRetryPolicy retryPolicy;
 
-    DefaultSegmentAccessService(
+    SegmentAccessServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentTopology<K> segmentTopology,
@@ -56,7 +56,7 @@ final class DefaultSegmentAccessService<K, V>
 
     private SegmentAccess<K, V> loadSegmentAccess(final RouteLease lease) {
         try {
-            return new DefaultSegmentAccess<>(lease,
+            return new SegmentAccessImpl<>(lease,
                     segmentRegistry.loadSegment(lease.segmentId()));
         } catch (final RuntimeException e) {
             lease.close();

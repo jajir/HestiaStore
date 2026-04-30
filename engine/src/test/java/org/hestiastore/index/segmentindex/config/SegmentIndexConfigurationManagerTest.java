@@ -793,10 +793,8 @@ class SegmentIndexConfigurationManagerTest {
         final IndexConfiguration<Long, String> config = IndexConfiguration
                 .<Long, String>builder()
                 .filters(filters -> filters
-                        .addEncodingFilter(ChunkFilterDoNothing::new,
-                                requestSpec)
-                        .addDecodingFilter(ChunkFilterDoNothing::new,
-                                requestSpec))
+                        .addEncodingFilter(requestSpec)
+                        .addDecodingFilter(requestSpec))
                 .build();
 
         when(storage.load()).thenReturn(storedConfig);

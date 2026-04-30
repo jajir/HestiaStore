@@ -14,7 +14,8 @@ import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.junit.jupiter.api.Test;
@@ -28,14 +29,10 @@ class IndexRuntimeConfigurationTest {
                 .withParameter("keyRef", "orders-main");
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration
                 .<Integer, String>builder()
-                .filters(filters -> filters.addEncodingFilter(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        spec))
-                .filters(filters -> filters.addDecodingFilter(
-                        () -> new TrackingChunkFilter(sequence.incrementAndGet()),
-                        spec))
+                .filters(filters -> filters.addEncodingFilter(spec))
+                .filters(filters -> filters.addDecodingFilter(spec))
                 .build();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders()
                 .withProvider(new ChunkFilterProvider() {
                     @Override

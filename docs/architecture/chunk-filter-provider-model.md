@@ -21,8 +21,10 @@ builder usage and code examples see
   `providerId` and string parameters.
 - `ChunkFilterProvider` is a runtime factory. It converts a
   `ChunkFilterSpec` into encoding and decoding suppliers.
-- `ChunkFilterProviderRegistry` is an immutable runtime snapshot used during
+- `ChunkFilterProviderResolver` is runtime configuration used during
   `SegmentIndex.create(...)` and `SegmentIndex.open(...)`.
+- `ChunkFilterProviderResolverImpl` is the immutable map-backed default
+  implementation.
 - `ChunkFilterRegistration` is builder/runtime glue only. It couples a
   persisted `ChunkFilterSpec` with a runtime `Supplier<? extends ChunkFilter>`.
 - Metadata never stores suppliers, secrets, Spring beans, or provider class
@@ -49,7 +51,8 @@ Source:
 | `ChunkFilterSpec` | Stable filter descriptor: `providerId` + parameters | Yes |
 | `ChunkFilterRegistration` | Binds `ChunkFilterSpec` to a runtime supplier | No |
 | `ChunkFilterProvider` | Creates encoding and decoding suppliers for one logical filter family | No |
-| `ChunkFilterProviderRegistry` | Immutable lookup of provider id to provider instance | No |
+| `ChunkFilterProviderResolver` | Resolves specs into runtime suppliers | No |
+| `ChunkFilterProviderResolverImpl` | Immutable lookup of provider id to provider instance | No |
 | `ChunkFilterSpecCodec` | Serializes/deserializes filter specs in `manifest.txt` | Yes |
 
 ## Configure and persist
@@ -59,10 +62,10 @@ There are three builder entry points for filter configuration:
 - `addEncodingFilter(ChunkFilter)` and `addDecodingFilter(ChunkFilter)`
 - `addEncodingFilter(Class<? extends ChunkFilter>)` and
   `addDecodingFilter(Class<? extends ChunkFilter>)`
-- `addEncodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)` and
-  `addDecodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
+- `addEncodingFilter(ChunkFilterSpec)` and
+  `addDecodingFilter(ChunkFilterSpec)`
 
-All three forms end as `ChunkFilterRegistration`.
+All three forms end as persisted `ChunkFilterSpec` entries.
 
 Built-in and legacy class-based filters derive their `ChunkFilterSpec`
 automatically through `ChunkFilterSpecs`. Custom providers supply the
@@ -75,13 +78,14 @@ boundary.
 ## Reopen and resolve
 
 On reopen, `IndexConfigurationStorage` reads encoded filter specs from
-`manifest.txt`, then asks `ChunkFilterProviderRegistry` to resolve each spec
-back into an encoding or decoding supplier.
+`manifest.txt`, then the index lifecycle asks `ChunkFilterProviderResolver` to
+resolve each spec back into an encoding or decoding supplier.
 
 Built-in providers are available through
-`ChunkFilterProviderRegistry.defaultRegistry()`. Custom providers must be added
-to the registry passed into `SegmentIndex.create(...)`,
-`SegmentIndex.open(...)`, or `SegmentIndex.tryOpen(...)`.
+`ChunkFilterProviderResolverImpl.defaultResolver()`. Custom providers must be
+added to the resolver configured in `IndexConfiguration.filters(...)` or passed
+into `SegmentIndex.create(...)`, `SegmentIndex.open(...)`, or
+`SegmentIndex.tryOpen(...)`.
 
 This separation is what allows a provider to depend on runtime services such as
 Spring beans, a key resolver, or a KMS client while still keeping persisted
@@ -127,7 +131,7 @@ That means:
 
 ## Built-in providers
 
-The default registry ships with these provider ids:
+The default resolver ships with these provider ids:
 
 - `crc32`
 - `magic-number`
@@ -141,7 +145,7 @@ Each provider id represents one logical encode/decode pair. For example,
 `ChunkFilterSnappyDecompress` on read.
 
 Provider ids outside that list, such as `aes-gcm`, must be supplied by the
-application through an extended `ChunkFilterProviderRegistry`.
+application through an extended `ChunkFilterProviderResolver`.
 
 ## Related docs
 
