@@ -10,42 +10,42 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
-class ChunkFilterProviderRegistryTest {
+class ChunkFilterProviderResolverImplTest {
 
     @Test
-    void defaultRegistryResolvesBuiltInEncodingAndDecodingSuppliers() {
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
-                .defaultRegistry();
+    void defaultResolverResolvesBuiltInEncodingAndDecodingSuppliers() {
+        final ChunkFilterProviderResolver resolver = ChunkFilterProviderResolverImpl
+                .defaultResolver();
         final ChunkFilterSpec magicNumberSpec = ChunkFilterSpecs.magicNumber();
 
         assertInstanceOf(ChunkFilterMagicNumberWriting.class,
-                registry.createEncodingSupplier(magicNumberSpec).get());
+                resolver.createEncodingSupplier(magicNumberSpec).get());
         assertInstanceOf(ChunkFilterMagicNumberValidation.class,
-                registry.createDecodingSupplier(magicNumberSpec).get());
+                resolver.createDecodingSupplier(magicNumberSpec).get());
     }
 
     @Test
     void withProviderReturnsExtendedCopyWithoutMutatingOriginal() {
-        final ChunkFilterProviderRegistry baseRegistry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolverImpl baseResolver = ChunkFilterProviderResolverImpl
                 .builder().build();
         final TrackingProvider provider = new TrackingProvider("custom");
 
-        final ChunkFilterProviderRegistry extendedRegistry = baseRegistry
+        final ChunkFilterProviderResolverImpl extendedResolver = baseResolver
                 .withProvider(provider);
 
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> baseRegistry.getRequired("custom"));
+                () -> baseResolver.getRequired("custom"));
         assertEquals("Unknown chunk filter provider 'custom'",
                 exception.getMessage());
-        assertSame(provider, extendedRegistry.getRequired("custom"));
+        assertSame(provider, extendedResolver.getRequired("custom"));
     }
 
     @Test
     void builderRejectsDuplicateProviderId() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> ChunkFilterProviderRegistry.builder()
+                () -> ChunkFilterProviderResolverImpl.builder()
                         .withProvider(new TrackingProvider("duplicate"))
                         .withProvider(new TrackingProvider("duplicate")));
 
@@ -56,14 +56,14 @@ class ChunkFilterProviderRegistryTest {
     @Test
     void createEncodingAndDecodingSuppliersDelegateToRegisteredProvider() {
         final TrackingProvider provider = new TrackingProvider("tracking");
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver resolver = ChunkFilterProviderResolverImpl
                 .builder().withProvider(provider).build();
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("tracking")
                 .withParameter("keyRef", "orders-main");
 
-        final TrackingChunkFilter encodingFilter = (TrackingChunkFilter) registry
+        final TrackingChunkFilter encodingFilter = (TrackingChunkFilter) resolver
                 .createEncodingSupplier(spec).get();
-        final TrackingChunkFilter decodingFilter = (TrackingChunkFilter) registry
+        final TrackingChunkFilter decodingFilter = (TrackingChunkFilter) resolver
                 .createDecodingSupplier(spec).get();
 
         assertEquals(1, provider.getEncodingCalls());

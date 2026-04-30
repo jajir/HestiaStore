@@ -32,7 +32,7 @@ class IndexRuntimeViewContextLoggingAdapterTest {
 
         final IndexRuntimeViewContextLoggingAdapter adapter =
                 new IndexRuntimeViewContextLoggingAdapter(delegate,
-                        new IndexContextScopeRunner("idx"));
+                        new IndexMdcScopeRunner("idx"));
 
         assertSame(snapshot, adapter.snapshot());
         assertSame("idx", observedMdc.get());

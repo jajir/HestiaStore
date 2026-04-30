@@ -27,7 +27,7 @@ class IndexControlPlaneContextLoggingAdapterTest {
         final IndexRuntimeView runtimeView = mock(IndexRuntimeView.class);
         final IndexConfigurationManagement configurationManagement = mock(
                 IndexConfigurationManagement.class);
-        final IndexContextScopeRunner runner = new IndexContextScopeRunner(
+        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner(
                 "idx");
         final AtomicReference<String> indexNameMdc = new AtomicReference<>();
         final AtomicReference<String> runtimeMdc = new AtomicReference<>();

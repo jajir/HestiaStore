@@ -18,7 +18,7 @@ final class JavaClassChunkFilterProvider implements ChunkFilterProvider {
 
     @Override
     public String getProviderId() {
-        return ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS;
+        return ChunkFilterProviderResolver.PROVIDER_ID_JAVA_CLASS;
     }
 
     @Override
@@ -37,7 +37,7 @@ final class JavaClassChunkFilterProvider implements ChunkFilterProvider {
             final ChunkFilterSpec spec) {
         requireMatchingProvider(spec);
         final String className = spec.getRequiredParameter(
-                ChunkFilterProviderRegistry.PARAM_CLASS_NAME);
+                ChunkFilterProviderResolver.PARAM_CLASS_NAME);
         return () -> instantiateFilter(className);
     }
 
@@ -53,7 +53,7 @@ final class JavaClassChunkFilterProvider implements ChunkFilterProvider {
 
     private ChunkFilter instantiateFilter(final String className) {
         final String requiredClassName = Vldtn.requireNotBlank(className,
-                ChunkFilterProviderRegistry.PARAM_CLASS_NAME);
+                ChunkFilterProviderResolver.PARAM_CLASS_NAME);
         try {
             final Class<?> rawClass = Class.forName(requiredClassName);
             if (!ChunkFilter.class.isAssignableFrom(rawClass)) {

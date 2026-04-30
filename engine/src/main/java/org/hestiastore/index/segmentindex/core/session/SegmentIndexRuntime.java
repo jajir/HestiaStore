@@ -220,4 +220,40 @@ public final class SegmentIndexRuntime<K, V>
         walRuntime.close();
     }
 
+    void closeForFailedStartup(final RuntimeException failure) {
+        RuntimeException cleanupFailure = closeForFailedStartup();
+        if (cleanupFailure != null) {
+            failure.addSuppressed(cleanupFailure);
+        }
+    }
+
+    private RuntimeException closeForFailedStartup() {
+        RuntimeException failure = null;
+        failure = closeResource(this::closeSplitRuntime, failure);
+        failure = closeResource(this::closeSegmentRegistry, failure);
+        failure = closeResource(this::closeWalRuntime, failure);
+        failure = closeResource(this::closeKeyToSegmentMapIfOpen, failure);
+        return failure;
+    }
+
+    private void closeKeyToSegmentMapIfOpen() {
+        if (!storage.keyToSegmentMap().wasClosed()) {
+            storage.keyToSegmentMap().close();
+        }
+    }
+
+    private static RuntimeException closeResource(final Runnable closeAction,
+            final RuntimeException failure) {
+        try {
+            closeAction.run();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            if (failure == null) {
+                return cleanupFailure;
+            }
+            failure.addSuppressed(cleanupFailure);
+            return failure;
+        }
+    }
+
 }

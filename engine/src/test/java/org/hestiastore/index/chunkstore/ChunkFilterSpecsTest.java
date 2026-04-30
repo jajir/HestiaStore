@@ -62,11 +62,11 @@ class ChunkFilterSpecsTest {
         final ChunkFilterSpec spec = ChunkFilterSpecs
                 .javaClass(CustomChunkFilter.class);
 
-        assertEquals(ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS,
+        assertEquals(ChunkFilterProviderResolver.PROVIDER_ID_JAVA_CLASS,
                 spec.getProviderId());
         assertEquals(CustomChunkFilter.class.getName(),
                 spec.getRequiredParameter(
-                        ChunkFilterProviderRegistry.PARAM_CLASS_NAME));
+                        ChunkFilterProviderResolver.PARAM_CLASS_NAME));
     }
 
     private static final class CustomChunkFilter implements ChunkFilter {

@@ -15,7 +15,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -381,7 +382,7 @@ class IndexConfigurationStorageTest {
     @Test
     void saveAndLoadRoundTripWithCustomProviderSpec() {
         final MemDirectory directory = new MemDirectory();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders()
                 .withProvider(new TestChunkFilterProvider())
                 .build();
@@ -415,14 +416,8 @@ class IndexConfigurationStorageTest {
                 .logging(logging -> logging.contextEnabled(false))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
                 .filters(filters -> filters
-                        .addEncodingFilter(
-                                () -> new TestEncodingChunkFilter(
-                                        "orders-main"),
-                                spec)
-                        .addDecodingFilter(
-                                () -> new TestDecodingChunkFilter(
-                                        "orders-main"),
-                                spec))//
+                        .addEncodingFilter(spec)
+                        .addDecodingFilter(spec))//
                 .build();
 
         storage.save(config);
@@ -448,7 +443,7 @@ class IndexConfigurationStorageTest {
     @Test
     void saveAndLoadRoundTripPreservesChunkFilterSpecsByValue() {
         final MemDirectory directory = new MemDirectory();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders()
                 .withProvider(new TestChunkFilterProvider())
                 .build();
@@ -484,14 +479,8 @@ class IndexConfigurationStorageTest {
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))//
                 .filters(filters -> filters
                         .addEncodingFilter(new ChunkFilterDoNothing())
-                        .addEncodingFilter(
-                                () -> new TestEncodingChunkFilter(
-                                        "orders-archive"),
-                                customSpec)
-                        .addDecodingFilter(
-                                () -> new TestDecodingChunkFilter(
-                                        "orders-archive"),
-                                customSpec)
+                        .addEncodingFilter(customSpec)
+                        .addDecodingFilter(customSpec)
                         .addDecodingFilter(new ChunkFilterDoNothing()))//
                 .build();
 

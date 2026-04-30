@@ -1,27 +1,27 @@
 @startuml
-title Reopen with Custom Provider Registry
+title Reopen with Custom Provider Resolver
 skinparam backgroundColor transparent
 skinparam shadowing false
 
 actor "Spring Context" as Spring
 participant "AesGcmChunkFilterProvider" as Provider
-participant "ChunkFilterProviderRegistry" as Registry
-participant "SegmentIndex.open(..., registry)" as Open
+participant "ChunkFilterProviderResolver" as Resolver
+participant "SegmentIndex.open(..., resolver)" as Open
 participant "IndexConfigurationStorage" as Storage
 database "manifest.txt" as Manifest
 participant "Supplier<ChunkFilter>" as Supplier
 participant "ChunkStoreReaderImpl" as Reader
 
 Spring -> Provider : create bean with SecretKeyResolver
-Spring -> Registry : defaultRegistry().withProvider(provider)
+Spring -> Resolver : defaultResolver().withProvider(provider)
 
 Open -> Storage : load()
 Storage -> Manifest : read filter specs
 Manifest --> Storage : p=aes-gcm|keyRef=orders-main
-Storage -> Registry : createDecodingSupplier(spec)
-Registry -> Provider : createDecodingSupplier(spec)
-Provider --> Registry : supplier
-Registry --> Storage : supplier
+Storage -> Resolver : createDecodingSupplier(spec)
+Resolver -> Provider : createDecodingSupplier(spec)
+Provider --> Resolver : supplier
+Resolver --> Storage : supplier
 Storage --> Open : IndexConfiguration\nwith registrations
 
 Open -> Reader : create reader

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
-class IndexContextScopeRunnerTest {
+class IndexMdcScopeRunnerTest {
 
     @AfterEach
     void tearDown() {
@@ -21,14 +21,14 @@ class IndexContextScopeRunnerTest {
     void constructorRejectsBlankIndexName() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexContextScopeRunner(" "));
+                () -> new IndexMdcScopeRunner(" "));
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
 
     @Test
     void runSetsAndRestoresIndexNameInMdc() {
-        final IndexContextScopeRunner runner = new IndexContextScopeRunner(
+        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner(
                 "idx");
         final AtomicReference<String> observed = new AtomicReference<>();
 
@@ -41,7 +41,7 @@ class IndexContextScopeRunnerTest {
 
     @Test
     void supplyClearsTemporaryIndexNameWhenNoPreviousValueExists() {
-        final IndexContextScopeRunner runner = new IndexContextScopeRunner(
+        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner(
                 "idx");
 
         final String value = runner.supply(() -> MDC.get("index.name"));

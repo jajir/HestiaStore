@@ -8,67 +8,52 @@ import java.util.function.Supplier;
 import org.hestiastore.index.Vldtn;
 
 /**
- * Immutable registry of runtime chunk filter providers.
- *
- * <p>
- * The registry is the bridge between persisted {@link ChunkFilterSpec}
- * metadata and runtime {@link ChunkFilter} instances. Metadata stored in index
- * configuration identifies a provider by {@code providerId}; this registry
- * resolves that provider and asks it to create an encoding or decoding
- * supplier.
- * </p>
+ * Immutable map-backed implementation of {@link ChunkFilterProviderResolver}.
  */
-public final class ChunkFilterProviderRegistry {
+public final class ChunkFilterProviderResolverImpl
+        implements ChunkFilterProviderResolver {
 
-    public static final String PROVIDER_ID_CRC32 = "crc32";
-    public static final String PROVIDER_ID_MAGIC_NUMBER = "magic-number";
-    public static final String PROVIDER_ID_SNAPPY = "snappy";
-    public static final String PROVIDER_ID_XOR = "xor";
-    public static final String PROVIDER_ID_DO_NOTHING = "do-nothing";
-    public static final String PROVIDER_ID_JAVA_CLASS = "java-class";
-    public static final String PARAM_CLASS_NAME = "className";
-
-    private static final ChunkFilterProviderRegistry DEFAULT_REGISTRY = ChunkFilterProviderRegistry
+    private static final ChunkFilterProviderResolverImpl DEFAULT_RESOLVER = ChunkFilterProviderResolverImpl
             .builder().withDefaultProviders().build();
 
     private final Map<String, ChunkFilterProvider> providers;
 
-    private ChunkFilterProviderRegistry(
+    private ChunkFilterProviderResolverImpl(
             final Map<String, ChunkFilterProvider> providers) {
         this.providers = Map.copyOf(Vldtn.requireNonNull(providers,
                 "providers"));
     }
 
     /**
-     * Returns immutable registry containing built-in filter providers.
+     * Returns immutable resolver containing built-in filter providers.
      *
-     * @return default built-in registry
+     * @return default built-in resolver
      */
-    public static ChunkFilterProviderRegistry defaultRegistry() {
-        return DEFAULT_REGISTRY;
+    public static ChunkFilterProviderResolverImpl defaultResolver() {
+        return DEFAULT_RESOLVER;
     }
 
     /**
-     * Creates a builder for immutable registries.
+     * Creates a builder for immutable resolvers.
      *
-     * @return new registry builder
+     * @return new resolver builder
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Returns a copy of this registry extended with a single provider.
+     * Returns a copy of this resolver extended with a single provider.
      *
      * @param provider provider to add
-     * @return new registry with the provider added
+     * @return new resolver with the provider added
      */
-    public ChunkFilterProviderRegistry withProvider(
+    public ChunkFilterProviderResolverImpl withProvider(
             final ChunkFilterProvider provider) {
         final LinkedHashMap<String, ChunkFilterProvider> copy = new LinkedHashMap<>(
                 providers);
         putProvider(copy, provider);
-        return new ChunkFilterProviderRegistry(copy);
+        return new ChunkFilterProviderResolverImpl(copy);
     }
 
     /**
@@ -90,12 +75,7 @@ public final class ChunkFilterProviderRegistry {
         return provider;
     }
 
-    /**
-     * Resolves encoding supplier for a spec.
-     *
-     * @param spec persisted filter spec
-     * @return encoding supplier used to create runtime write-path filters
-     */
+    @Override
     public Supplier<? extends ChunkFilter> createEncodingSupplier(
             final ChunkFilterSpec spec) {
         final ChunkFilterSpec requiredSpec = Vldtn.requireNonNull(spec, "spec");
@@ -103,12 +83,7 @@ public final class ChunkFilterProviderRegistry {
                 .createEncodingSupplier(requiredSpec);
     }
 
-    /**
-     * Resolves decoding supplier for a spec.
-     *
-     * @param spec persisted filter spec
-     * @return decoding supplier used to create runtime read-path filters
-     */
+    @Override
     public Supplier<? extends ChunkFilter> createDecodingSupplier(
             final ChunkFilterSpec spec) {
         final ChunkFilterSpec requiredSpec = Vldtn.requireNonNull(spec, "spec");
@@ -117,7 +92,7 @@ public final class ChunkFilterProviderRegistry {
     }
 
     /**
-     * Builder used to assemble immutable provider registries.
+     * Builder used to assemble immutable provider resolvers.
      */
     public static final class Builder {
 
@@ -166,12 +141,12 @@ public final class ChunkFilterProviderRegistry {
         }
 
         /**
-         * Builds immutable registry.
+         * Builds immutable resolver.
          *
-         * @return immutable registry
+         * @return immutable resolver
          */
-        public ChunkFilterProviderRegistry build() {
-            return new ChunkFilterProviderRegistry(providers);
+        public ChunkFilterProviderResolverImpl build() {
+            return new ChunkFilterProviderResolverImpl(providers);
         }
     }
 

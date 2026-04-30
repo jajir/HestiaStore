@@ -23,7 +23,7 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec crc32() {
         return ChunkFilterSpec
-                .ofProvider(ChunkFilterProviderRegistry.PROVIDER_ID_CRC32);
+                .ofProvider(ChunkFilterProviderResolver.PROVIDER_ID_CRC32);
     }
 
     /**
@@ -33,7 +33,7 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec magicNumber() {
         return ChunkFilterSpec.ofProvider(
-                ChunkFilterProviderRegistry.PROVIDER_ID_MAGIC_NUMBER);
+                ChunkFilterProviderResolver.PROVIDER_ID_MAGIC_NUMBER);
     }
 
     /**
@@ -43,7 +43,7 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec snappy() {
         return ChunkFilterSpec
-                .ofProvider(ChunkFilterProviderRegistry.PROVIDER_ID_SNAPPY);
+                .ofProvider(ChunkFilterProviderResolver.PROVIDER_ID_SNAPPY);
     }
 
     /**
@@ -53,7 +53,7 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec xor() {
         return ChunkFilterSpec
-                .ofProvider(ChunkFilterProviderRegistry.PROVIDER_ID_XOR);
+                .ofProvider(ChunkFilterProviderResolver.PROVIDER_ID_XOR);
     }
 
     /**
@@ -63,7 +63,7 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec doNothing() {
         return ChunkFilterSpec.ofProvider(
-                ChunkFilterProviderRegistry.PROVIDER_ID_DO_NOTHING);
+                ChunkFilterProviderResolver.PROVIDER_ID_DO_NOTHING);
     }
 
     /**
@@ -87,8 +87,8 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec javaClass(final String className) {
         return ChunkFilterSpec
-                .ofProvider(ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS)
-                .withParameter(ChunkFilterProviderRegistry.PARAM_CLASS_NAME,
+                .ofProvider(ChunkFilterProviderResolver.PROVIDER_ID_JAVA_CLASS)
+                .withParameter(ChunkFilterProviderResolver.PARAM_CLASS_NAME,
                         Vldtn.requireNotBlank(className, "className"));
     }
 
@@ -122,12 +122,12 @@ public final class ChunkFilterSpecs {
      */
     public static ChunkFilterSpec canonicalize(final ChunkFilterSpec spec) {
         final ChunkFilterSpec requiredSpec = Vldtn.requireNonNull(spec, "spec");
-        if (!ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS
+        if (!ChunkFilterProviderResolver.PROVIDER_ID_JAVA_CLASS
                 .equals(requiredSpec.getProviderId())) {
             return requiredSpec;
         }
         final String className = requiredSpec
-                .getParameter(ChunkFilterProviderRegistry.PARAM_CLASS_NAME);
+                .getParameter(ChunkFilterProviderResolver.PARAM_CLASS_NAME);
         if (className == null || className.isBlank()) {
             return requiredSpec;
         }

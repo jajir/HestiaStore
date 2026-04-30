@@ -12,7 +12,7 @@ This page covers how to configure chunk filter pipelines on
 
 For filter behavior, ordering rationale, and integrity semantics, see
 [Filters & Integrity](../architecture/filters.md). For the persisted
-`ChunkFilterSpec` model, provider registry lifecycle, and runtime supplier
+`ChunkFilterSpec` model, provider resolver lifecycle, and runtime supplier
 resolution, see
 [Chunk Filter Provider Model](../architecture/chunk-filter-provider-model.md).
 
@@ -34,27 +34,29 @@ Built-in or legacy class-based filters:
 
 Provider-backed custom filters:
 
-- `filters(...).addEncodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
-- `filters(...).addDecodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec)`
+- `filters(...).addEncodingFilter(ChunkFilterSpec)`
+- `filters(...).addDecodingFilter(ChunkFilterSpec)`
 - `filters(...).encodingFilterRegistrations(Collection<ChunkFilterRegistration>)`
 - `filters(...).decodingFilterRegistrations(Collection<ChunkFilterRegistration>)`
 
 If you persist custom provider-backed filters, pass the matching
-`ChunkFilterProviderRegistry` when calling:
+`ChunkFilterProviderResolver` either in the filter configuration or when
+calling:
 
-- `SegmentIndex.create(directory, conf, registry)`
-- `SegmentIndex.open(directory, conf, registry)`
-- `SegmentIndex.open(directory, registry)`
-- `SegmentIndex.tryOpen(directory, registry)`
+- `filters(...).chunkFilterProviderResolver(resolver)`
+- `SegmentIndex.create(directory, conf, resolver)`
+- `SegmentIndex.open(directory, conf, resolver)`
+- `SegmentIndex.open(directory, resolver)`
+- `SegmentIndex.tryOpen(directory, resolver)`
 
 ## Which configuration style to choose
 
 - Use `Class<? extends ChunkFilter>` for built-in filters and other no-arg
   filters.
 - Use `ChunkFilter` instances only for shared filters that are safe to reuse.
-- Use `Supplier<? extends ChunkFilter> + ChunkFilterSpec` when the filter needs
-  runtime dependencies, constructor arguments, or fresh instances such as
-  `ChunkFilterAesGcmEncrypt` and `ChunkFilterAesGcmDecrypt`.
+- Use `ChunkFilterSpec` with a matching `ChunkFilterProviderResolver` when the
+  filter needs runtime dependencies, constructor arguments, or fresh instances
+  such as `ChunkFilterAesGcmEncrypt` and `ChunkFilterAesGcmDecrypt`.
 
 ## Defaults
 
@@ -72,7 +74,7 @@ If you do not provide custom filters:
 - Persisted metadata stores `ChunkFilterSpec`, not suppliers or secrets.
 - A custom `providerId` should identify one logical encode/decode pair.
 - Reopening an index with custom filters requires the same provider id to be
-  present in the supplied `ChunkFilterProviderRegistry`.
+  present in the supplied `ChunkFilterProviderResolver`.
 
 ## Example: built-in filters by class
 
@@ -150,21 +152,21 @@ final class AesGcmChunkFilterProvider implements ChunkFilterProvider {
 }
 ```
 
-### Registry bean
+### Resolver bean
 
 ```java
 @Configuration
 class ChunkFilterProviderConfiguration {
 
     @Bean
-    ChunkFilterProviderRegistry chunkFilterProviderRegistry(
+    ChunkFilterProviderResolver chunkFilterProviderResolver(
             final List<ChunkFilterProvider> customProviders) {
-        ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
-                .defaultRegistry();
+        ChunkFilterProviderResolverImpl resolver = ChunkFilterProviderResolverImpl
+                .defaultResolver();
         for (final ChunkFilterProvider provider : customProviders) {
-            registry = registry.withProvider(provider);
+            resolver = resolver.withProvider(provider);
         }
-        return registry;
+        return resolver;
     }
 }
 ```
@@ -182,36 +184,32 @@ IndexConfiguration<String, String> conf = IndexConfiguration
         .keyClass(String.class)
         .valueClass(String.class))
     .filters(filters -> filters
+        .chunkFilterProviderResolver(chunkFilterProviderResolver)
         .addEncodingFilter(ChunkFilterCrc32Writing.class)
         .addEncodingFilter(ChunkFilterMagicNumberWriting.class)
         .addEncodingFilter(ChunkFilterSnappyCompress.class)
-        .addEncodingFilter(
-            aesGcmChunkFilterProvider.createEncodingSupplier(aesSpec),
-            aesSpec)
+        .addEncodingFilter(aesSpec)
         .addDecodingFilter(ChunkFilterMagicNumberValidation.class)
-        .addDecodingFilter(
-            aesGcmChunkFilterProvider.createDecodingSupplier(aesSpec),
-            aesSpec)
+        .addDecodingFilter(aesSpec)
         .addDecodingFilter(ChunkFilterSnappyDecompress.class)
         .addDecodingFilter(ChunkFilterCrc32Validation.class))
     .build();
 
-SegmentIndex<String, String> index = SegmentIndex.create(directory, conf,
-        chunkFilterProviderRegistry);
+SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
 
 SegmentIndex<String, String> reopened = SegmentIndex.open(directory,
-        chunkFilterProviderRegistry);
+        chunkFilterProviderResolver);
 ```
 
 In this example:
 
 - `aesGcmChunkFilterProvider` is the Spring bean shown above
-- `chunkFilterProviderRegistry` is the Spring bean that wraps the built-in
+- `chunkFilterProviderResolver` is the Spring bean that wraps the built-in
   providers and the custom AES provider
 - the same `ChunkFilterSpec` is used for both encoding and decoding because the
   provider id describes one logical encode/decode pair
 - `ChunkFilterAesGcmEncrypt` and `ChunkFilterAesGcmDecrypt` are not part of the
-  default registry because they require an application-managed `SecretKey`
+  default resolver because they require an application-managed `SecretKey`
 
 ## Related docs
 

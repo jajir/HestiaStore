@@ -21,7 +21,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileReader;
@@ -43,8 +44,8 @@ class AesGcmFilteredSegmentIndexIT {
         final Directory directory = new MemDirectory();
         final ChunkFilterSpec aesSpec = ChunkFilterSpec.ofProvider(PROVIDER_ID)
                 .withParameter("keyRef", KEY_REF);
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
-                .defaultRegistry()
+        final ChunkFilterProviderResolver resolver = ChunkFilterProviderResolverImpl
+                .defaultResolver()
                 .withProvider(new AesGcmChunkFilterProvider(TEST_KEY));
         final IndexConfiguration<String, String> createConf = IndexConfiguration
                 .<String, String>builder()
@@ -53,17 +54,14 @@ class AesGcmFilteredSegmentIndexIT {
                         .valueClass(String.class)
                         .name("orders_encrypted"))
                 .filters(filters -> filters
+                        .chunkFilterProviderResolver(resolver)
                         .addEncodingFilter(ChunkFilterCrc32Writing.class)
                         .addEncodingFilter(
                                 ChunkFilterMagicNumberWriting.class)
-                        .addEncodingFilter(
-                                registry.createEncodingSupplier(aesSpec),
-                                aesSpec)
+                        .addEncodingFilter(aesSpec)
                         .addDecodingFilter(
                                 ChunkFilterMagicNumberValidation.class)
-                        .addDecodingFilter(
-                                registry.createDecodingSupplier(aesSpec),
-                                aesSpec)
+                        .addDecodingFilter(aesSpec)
                         .addDecodingFilter(
                                 ChunkFilterCrc32Validation.class))
                 .build();
@@ -74,7 +72,7 @@ class AesGcmFilteredSegmentIndexIT {
         entries.put("gamma", "third value");
 
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
-                createConf, registry)) {
+                createConf)) {
             entries.forEach(index::put);
             index.flush();
             index.compact();
@@ -88,7 +86,7 @@ class AesGcmFilteredSegmentIndexIT {
                 manifest.getProperty("decodingChunkFilters"));
 
         try (SegmentIndex<String, String> index = SegmentIndex.open(directory,
-                registry)) {
+                resolver)) {
             entries.forEach((key, expectedValue) -> assertEquals(expectedValue, index.get(key)));
         }
     }
