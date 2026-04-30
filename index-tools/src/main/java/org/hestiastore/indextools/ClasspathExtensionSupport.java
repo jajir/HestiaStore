@@ -3,15 +3,16 @@ package org.hestiastore.indextools;
 import java.util.ServiceLoader;
 
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 
 final class ClasspathExtensionSupport {
 
     private ClasspathExtensionSupport() {
     }
 
-    static ChunkFilterProviderRegistry chunkFilterProviderRegistry() {
-        final ChunkFilterProviderRegistry.Builder builder = ChunkFilterProviderRegistry
+    static ChunkFilterProviderResolver chunkFilterProviderResolver() {
+        final ChunkFilterProviderResolverImpl.Builder builder = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders();
         final ServiceLoader<ChunkFilterProvider> loader = ServiceLoader
                 .load(ChunkFilterProvider.class);

@@ -8,12 +8,12 @@ import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.control.IndexControlPlane;
 import org.hestiastore.index.control.IndexConfigurationManagement;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexFactory;
+import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -31,8 +31,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      * applied to the provided configuration, then both the configuration and
      * the on-disk structures are persisted.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory for the index
@@ -41,23 +41,22 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        return SegmentIndexFactory.create(directory, indexConf,
-                ChunkFilterProviderRegistry.defaultRegistry());
+        return SegmentIndexFactory.create(directory, indexConf);
     }
 
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return SegmentIndexFactory.create(directory, indexConf,
-                chunkFilterProviderRegistry);
+                chunkFilterProviderResolver);
     }
 
     /**
      * Opens an existing index, merging the provided configuration overrides
      * with the stored configuration on disk.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory that already contains the index
@@ -66,43 +65,41 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
-        return SegmentIndexFactory.open(directory, indexConf,
-                ChunkFilterProviderRegistry.defaultRegistry());
+        return SegmentIndexFactory.open(directory, indexConf);
     }
 
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return SegmentIndexFactory.open(directory, indexConf,
-                chunkFilterProviderRegistry);
+                chunkFilterProviderResolver);
     }
 
     /**
      * Opens an existing index using the configuration stored on disk.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory with an existing index
      * @return index instance backed by the persisted configuration
      */
     static <M, N> SegmentIndex<M, N> open(final Directory directory) {
-        return SegmentIndexFactory.openStored(directory,
-                ChunkFilterProviderRegistry.defaultRegistry());
+        return SegmentIndexFactory.openStored(directory);
     }
 
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return SegmentIndexFactory.openStored(directory,
-                chunkFilterProviderRegistry);
+                chunkFilterProviderResolver);
     }
 
     /**
      * Attempts to open an index when it may or may not exist.
      * <p>
-     * The returned index owns the supplied directory facade and will close it
-     * when the index is closed if it implements {@link CloseableResource}.
+     * The returned index does not own the supplied directory facade. Callers that
+     * pass a closeable directory remain responsible for closing it.
      * </p>
      *
      * @param directory backing directory that may contain an index
@@ -110,15 +107,14 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        return SegmentIndexFactory.tryOpen(directory,
-                ChunkFilterProviderRegistry.defaultRegistry());
+        return SegmentIndexFactory.tryOpen(directory);
     }
 
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return SegmentIndexFactory.tryOpen(directory,
-                chunkFilterProviderRegistry);
+                chunkFilterProviderResolver);
     }
 
     /**

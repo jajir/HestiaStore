@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,21 +13,25 @@ import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexFactoryTest {
 
     @Test
     void tryOpenReturnsEmptyWhenConfigurationDoesNotExist() {
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
-                .defaultRegistry();
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
+                .defaultResolver();
         final Optional<SegmentIndex<Integer, String>> index = SegmentIndexFactory
                 .tryOpen(new MemDirectory(), registry);
 
@@ -35,9 +39,9 @@ class SegmentIndexFactoryTest {
     }
 
     @Test
-    void createAndTryOpenSupportExplicitChunkFilterProviderRegistry() {
+    void createAndTryOpenSupportExplicitChunkFilterProviderResolver() {
         final MemDirectory directory = new MemDirectory();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders()
                 .withProvider(new FactoryChunkFilterProvider()).build();
         final IndexConfiguration<Integer, String> configuration = customConf();
@@ -54,13 +58,29 @@ class SegmentIndexFactoryTest {
     }
 
     @Test
+    void createUsesChunkFilterProviderResolverFromConfiguration() {
+        final MemDirectory directory = new MemDirectory();
+        final ChunkFilterProviderResolver resolver = ChunkFilterProviderResolverImpl
+                .builder().withDefaultProviders()
+                .withProvider(new FactoryChunkFilterProvider()).build();
+        final IndexConfiguration<Integer, String> configuration = customConf(
+                resolver);
+
+        final SegmentIndex<Integer, String> index = SegmentIndexFactory.create(
+                directory, configuration);
+
+        assertFalse(index.wasClosed());
+        index.close();
+    }
+
+    @Test
     void createWrapsRuntimeIndexWithContextLoggingWhenEnabled() {
         final SegmentIndex<Integer, String> index = SegmentIndexFactory.create(
                 new MemDirectory(),
                 buildConf("segment-index-factory-logging-test", true),
-                ChunkFilterProviderRegistry.defaultRegistry());
+                ChunkFilterProviderResolverImpl.defaultResolver());
 
-        assertInstanceOf(IndexDirectoryClosingAdapter.class, index);
+        assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
         assertInstanceOf(IndexContextLoggingAdapter.class, wrappedIndex(index));
 
         index.close();
@@ -71,18 +91,23 @@ class SegmentIndexFactoryTest {
         final SegmentIndex<Integer, String> index = SegmentIndexFactory.create(
                 new MemDirectory(),
                 buildConf("segment-index-factory-plain-test", false),
-                ChunkFilterProviderRegistry.defaultRegistry());
+                ChunkFilterProviderResolverImpl.defaultResolver());
 
-        assertInstanceOf(IndexDirectoryClosingAdapter.class, index);
+        assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
         assertInstanceOf(IndexInternalConcurrent.class, wrappedIndex(index));
 
         index.close();
     }
 
     private static IndexConfiguration<Integer, String> customConf() {
+        return customConf(null);
+    }
+
+    private static IndexConfiguration<Integer, String> customConf(
+            final ChunkFilterProviderResolver resolver) {
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("factory-filter")
                 .withParameter("keyRef", "orders-main");
-        return IndexConfiguration.<Integer, String>builder()
+        final var builder = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))
                 .identity(identity -> identity.valueClass(String.class))
                 .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
@@ -104,9 +129,13 @@ class SegmentIndexFactoryTest {
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilterRegistrations(List.of()))
                 .filters(filters -> filters.decodingFilterRegistrations(List.of()))
-                .filters(filters -> filters.addEncodingFilter(FactoryChunkFilter::new, spec))
-                .filters(filters -> filters.addDecodingFilter(FactoryChunkFilter::new, spec))
-                .build();
+                .filters(filters -> filters.addEncodingFilter(spec))
+                .filters(filters -> filters.addDecodingFilter(spec));
+        if (resolver != null) {
+            builder.filters(filters -> filters
+                    .chunkFilterProviderResolver(resolver));
+        }
+        return builder.build();
     }
 
     private Object wrappedIndex(final SegmentIndex<Integer, String> index) {

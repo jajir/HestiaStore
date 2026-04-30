@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
@@ -538,23 +537,11 @@ class IndexConfigurationBuilderValidationTest {
     }
 
     @Test
-    void test_addEncodingFilter_supplierRejectsNull() {
-        final IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> newBuilder().filters(filters -> filters.addEncodingFilter(
-                        (Supplier<? extends ChunkFilter>) null,
-                        ChunkFilterSpecs.doNothing())));
-
-        assertEquals("Property 'supplier' must not be null.",
-                exception.getMessage());
-    }
-
-    @Test
     void test_addEncodingFilter_specRejectsNull() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> newBuilder().filters(filters -> filters.addEncodingFilter(
-                        ChunkFilterDoNothing::new, null)));
+                () -> newBuilder().filters(filters -> filters
+                        .addEncodingFilter((ChunkFilterSpec) null)));
 
         assertEquals("Property 'spec' must not be null.",
                 exception.getMessage());
@@ -734,23 +721,11 @@ class IndexConfigurationBuilderValidationTest {
     }
 
     @Test
-    void test_addDecodingFilter_supplierRejectsNull() {
-        final IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> newBuilder().filters(filters -> filters.addDecodingFilter(
-                        (Supplier<? extends ChunkFilter>) null,
-                        ChunkFilterSpecs.doNothing())));
-
-        assertEquals("Property 'supplier' must not be null.",
-                exception.getMessage());
-    }
-
-    @Test
     void test_addDecodingFilter_specRejectsNull() {
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> newBuilder().filters(filters -> filters.addDecodingFilter(
-                        ChunkFilterDoNothing::new, null)));
+                () -> newBuilder().filters(filters -> filters
+                        .addDecodingFilter((ChunkFilterSpec) null)));
 
         assertEquals("Property 'spec' must not be null.",
                 exception.getMessage());

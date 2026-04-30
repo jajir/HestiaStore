@@ -15,7 +15,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.FsNioDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -97,14 +97,14 @@ final class ImportCommand {
                 .fromManifest(configurationManifest);
         final DescriptorSupport.DescriptorPair descriptors = DescriptorSupport
                 .fromConfiguration(configuration);
-        final ChunkFilterProviderRegistry registry = ClasspathExtensionSupport
-                .chunkFilterProviderRegistry();
+        final ChunkFilterProviderResolver resolver = ClasspathExtensionSupport
+                .chunkFilterProviderResolver();
         final LogicalFingerprint sourceFingerprint = verifyAfterImport
                 ? new LogicalFingerprint()
                 : null;
         final long importedRecords;
         try (SegmentIndex<Object, Object> index = createIndex(targetIndex,
-                configuration, registry)) {
+                configuration, resolver)) {
             importedRecords = manifest.getFormat() == ExportFormat.BUNDLE
                     ? importBundle(inputDirectory, manifest, descriptors, index,
                             sourceFingerprint)
@@ -251,10 +251,10 @@ final class ImportCommand {
     @SuppressWarnings("unchecked")
     private SegmentIndex<Object, Object> createIndex(final Path targetIndex,
             final IndexConfiguration<?, ?> configuration,
-            final ChunkFilterProviderRegistry registry) {
+            final ChunkFilterProviderResolver resolver) {
         return (SegmentIndex<Object, Object>) SegmentIndex.create(
                 new FsNioDirectory(targetIndex.toFile()),
-                (IndexConfiguration<Object, Object>) configuration, registry);
+                (IndexConfiguration<Object, Object>) configuration, resolver);
     }
 
     @SuppressWarnings("unchecked")

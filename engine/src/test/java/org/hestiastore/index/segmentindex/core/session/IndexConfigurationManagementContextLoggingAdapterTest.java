@@ -56,7 +56,7 @@ class IndexConfigurationManagementContextLoggingAdapterTest {
 
         final IndexConfigurationManagementContextLoggingAdapter adapter =
                 new IndexConfigurationManagementContextLoggingAdapter(delegate,
-                        new IndexContextScopeRunner("idx"));
+                        new IndexMdcScopeRunner("idx"));
 
         assertSame(actual, adapter.getConfigurationActual());
         assertSame(original, adapter.getConfigurationOriginal());

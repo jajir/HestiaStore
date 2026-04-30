@@ -12,10 +12,10 @@ final class IndexControlPlaneContextLoggingAdapter
         implements IndexControlPlane {
 
     private final IndexControlPlane delegate;
-    private final IndexContextScopeRunner contextScopeRunner;
+    private final IndexMdcScopeRunner contextScopeRunner;
 
     IndexControlPlaneContextLoggingAdapter(final IndexControlPlane delegate,
-            final IndexContextScopeRunner contextScopeRunner) {
+            final IndexMdcScopeRunner contextScopeRunner) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
                 "contextScopeRunner");

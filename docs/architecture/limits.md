@@ -47,7 +47,7 @@ Attempts to change these raise a validation error in `IndexConfigurationManager`
   obfuscation only; do not use it as a security control. For authenticated
   chunk encryption, wire `ChunkFilterAesGcmEncrypt` and
   `ChunkFilterAesGcmDecrypt` through a provider-backed
-  `ChunkFilterProviderRegistry`, or use an encrypted volume. See
+  `ChunkFilterProviderResolver`, or use an encrypted volume. See
   `chunkstore/ChunkFilterXor*` and `chunkstore/ChunkFilterAesGcm*`.
 - No authentication/authorization: HestiaStore is an embedded library and relies on your process/container isolation.
 

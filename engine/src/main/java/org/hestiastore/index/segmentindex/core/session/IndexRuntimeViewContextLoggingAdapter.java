@@ -10,10 +10,10 @@ import org.hestiastore.index.control.model.IndexRuntimeSnapshot;
 final class IndexRuntimeViewContextLoggingAdapter implements IndexRuntimeView {
 
     private final IndexRuntimeView delegate;
-    private final IndexContextScopeRunner contextScopeRunner;
+    private final IndexMdcScopeRunner contextScopeRunner;
 
     IndexRuntimeViewContextLoggingAdapter(final IndexRuntimeView delegate,
-            final IndexContextScopeRunner contextScopeRunner) {
+            final IndexMdcScopeRunner contextScopeRunner) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
                 "contextScopeRunner");

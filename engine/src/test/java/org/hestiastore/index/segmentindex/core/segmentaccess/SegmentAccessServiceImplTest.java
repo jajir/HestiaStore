@@ -31,7 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultSegmentAccessServiceTest {
+class SegmentAccessServiceImplTest {
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -53,7 +53,7 @@ class DefaultSegmentAccessServiceTest {
                         new TypeDescriptorInteger()));
         segmentTopology = SegmentTopology.<Integer>builder()
                 .snapshot(keyToSegmentMap.snapshot()).build();
-        service = new DefaultSegmentAccessService<>(keyToSegmentMap,
+        service = new SegmentAccessServiceImpl<>(keyToSegmentMap,
                 segmentRegistry, segmentTopology, retryPolicy);
     }
 
@@ -118,7 +118,7 @@ class DefaultSegmentAccessServiceTest {
         when(result.lease()).thenReturn(lease);
         when(lease.segmentId()).thenReturn(SegmentId.of(0));
         final SegmentAccessService<Integer, String> accessService =
-                new DefaultSegmentAccessService<>(keyToSegmentMap,
+                new SegmentAccessServiceImpl<>(keyToSegmentMap,
                         segmentRegistry, topology, retryPolicy);
         final IllegalStateException failure = new IllegalStateException(
                 "failed");
@@ -137,7 +137,7 @@ class DefaultSegmentAccessServiceTest {
         final SegmentTopology<Integer> topology = mockTopologyStaleThenAcquired(
                 snapshot);
         final SegmentAccessService<Integer, String> accessService =
-                new DefaultSegmentAccessService<>(keyToSegmentMap,
+                new SegmentAccessServiceImpl<>(keyToSegmentMap,
                         segmentRegistry, topology, retryPolicy);
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);

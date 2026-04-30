@@ -248,6 +248,8 @@ public class IndexConfigurationManager<K, V> {
             final IndexConfiguration<K, V> indexConf) {
         final IndexConfiguration<K, V> storedConf = confStorage.load();
         final IndexConfigurationBuilder<K, V> builder = makeBuilder(storedConf);
+        builder.filters(filters -> filters.chunkFilterProviderResolver(
+                indexConf.filters().getChunkFilterProviderResolver()));
         validateThatFixedPropertiesAreNotOverridden(storedConf, indexConf);
         boolean dirty = false;
         dirty |= applyBasicOverrides(builder, storedConf, indexConf);
@@ -773,6 +775,8 @@ public class IndexConfigurationManager<K, V> {
                         .falsePositiveProbability(conf.bloomFilter()
                                 .falsePositiveProbability()))
                 .filters(filters -> filters
+                        .chunkFilterProviderResolver(conf.filters()
+                                .getChunkFilterProviderResolver())
                         .encodingFilterSpecs(
                                 conf.filters().encodingChunkFilterSpecs())
                         .decodingFilterSpecs(

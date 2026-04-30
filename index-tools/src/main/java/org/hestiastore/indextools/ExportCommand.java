@@ -21,7 +21,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.FsNioDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
@@ -118,8 +118,8 @@ final class ExportCommand {
                     "Source index directory does not exist: " + sourceIndex);
         }
         PathSupport.prepareOutputDirectory(outputDirectory, overwrite);
-        final ChunkFilterProviderRegistry registry = ClasspathExtensionSupport
-                .chunkFilterProviderRegistry();
+        final ChunkFilterProviderResolver resolver = ClasspathExtensionSupport
+                .chunkFilterProviderResolver();
         final ExportBundleManifest manifest = new ExportBundleManifest();
         manifest.setFormatVersion(1);
         manifest.setToolVersion(ClasspathExtensionSupport.toolVersion());
@@ -131,7 +131,7 @@ final class ExportCommand {
         manifest.setConfigFileName(ManifestSupport.CONFIG_FILE_NAME);
 
         try (SegmentIndex<Object, Object> index = openIndex(sourceIndex,
-                registry)) {
+                resolver)) {
             final IndexConfiguration<?, ?> configuration = index
                     .getConfiguration();
             final IndexConfigurationManifest sourceConfiguration = IndexConfigurationMapper
@@ -285,9 +285,9 @@ final class ExportCommand {
     }
 
     private SegmentIndex<Object, Object> openIndex(final Path sourceIndex,
-            final ChunkFilterProviderRegistry registry) {
+            final ChunkFilterProviderResolver resolver) {
         return SegmentIndex.open(new FsNioDirectory(sourceIndex.toFile()),
-                registry);
+                resolver);
     }
 
     private void printHelp(final Options options, final PrintStream out) {

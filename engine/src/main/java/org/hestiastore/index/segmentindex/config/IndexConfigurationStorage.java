@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.config;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.properties.PropertyStore;
@@ -82,21 +82,21 @@ public class IndexConfigurationStorage<K, V> {
      * Creates a configuration storage wrapper.
      *
      * <p>
-     * The chunk filter provider registry parameter is retained for source and
+     * The chunk filter provider resolver parameter is retained for source and
      * binary compatibility with earlier runtime-coupled storage code. Storage
      * now persists only {@code ChunkFilterSpec} metadata and no longer resolves
      * runtime suppliers while loading.
      * </p>
      *
      * @param directoryFacade backing directory
-     * @param chunkFilterProviderRegistry ignored runtime registry retained for
+     * @param chunkFilterProviderResolver ignored runtime resolver retained for
      *                                    compatibility
      */
     public IndexConfigurationStorage(final Directory directoryFacade,
-            final ChunkFilterProviderRegistry chunkFilterProviderRegistry) {
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         this(directoryFacade);
-        Vldtn.requireNonNull(chunkFilterProviderRegistry,
-                "chunkFilterProviderRegistry");
+        Vldtn.requireNonNull(chunkFilterProviderResolver,
+                "chunkFilterProviderResolver");
     }
 
     public IndexConfiguration<K, V> load() {

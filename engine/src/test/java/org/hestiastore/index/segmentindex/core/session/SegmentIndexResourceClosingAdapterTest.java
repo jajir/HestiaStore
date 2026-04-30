@@ -3,35 +3,32 @@ package org.hestiastore.index.segmentindex.core.session;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.withSettings;
 
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.junit.jupiter.api.Test;
 
-class IndexDirectoryClosingAdapterTest {
+class SegmentIndexResourceClosingAdapterTest {
 
     @Test
-    void close_closes_delegate_and_async_directory() {
-        final Directory asyncDirectory = (Directory) mock(Directory.class,
-                withSettings().extraInterfaces(CloseableResource.class));
+    void closeClosesDelegateAndExecutorRegistry() {
         final NoopSegmentIndex delegate = new NoopSegmentIndex();
+        final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
 
-        try (IndexDirectoryClosingAdapter<String, String> adapter = new IndexDirectoryClosingAdapter<>(
-                delegate, asyncDirectory)) {
+        try (SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
+                delegate, executorRegistry)) {
             // close triggered by try-with-resources
         }
 
         assertTrue(delegate.wasClosed(), "Delegate index should be closed");
-        verify((CloseableResource) asyncDirectory).close();
+        verify(executorRegistry).close();
     }
 
     private static final class NoopSegmentIndex extends AbstractCloseableResource

@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
-public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
+public class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -59,6 +59,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
         IndexStateCoordinator<K, V> initializedStateCoordinator = null;
+        SegmentIndexRuntime<K, V> initializedRuntime = null;
         try {
             final IndexConfiguration<K, V> validatedConfiguration = Vldtn
                     .requireNonNull(conf, "conf");
@@ -82,6 +83,7 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                     valueTypeDescriptor, validatedConfiguration,
                     runtimeConfiguration, executorRegistry, stats,
                     createdStateCoordinator);
+            initializedRuntime = runtime;
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator =
                     createConsistencyCoordinator(runtime);
             final SegmentIndexFacades<K, V> facades = SegmentIndexFacades
@@ -107,6 +109,9 @@ public abstract class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         } catch (final RuntimeException e) {
             if (initializedStateCoordinator != null) {
                 initializedStateCoordinator.failWithError(e);
+            }
+            if (initializedRuntime != null) {
+                initializedRuntime.closeForFailedStartup(e);
             }
             throw e;
         }

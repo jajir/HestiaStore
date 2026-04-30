@@ -1005,45 +1005,6 @@ public final class SegmentIndexMetricsSnapshot {
         return writePathMetrics.getIndexBufferedWriteKeyLimit();
     }
 
-    /**
-     * @deprecated use {@link #getSegmentWriteCacheKeyLimit()} or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getMaxNumberOfKeysInActivePartition() {
-        return legacyPartitionCompatibilityMetrics
-                .getMaxNumberOfKeysInActivePartition();
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getMaxNumberOfImmutableRunsPerPartition() {
-        return legacyPartitionCompatibilityMetrics
-                .getMaxNumberOfImmutableRunsPerPartition();
-    }
-
-    /**
-     * @deprecated use {@link #getSegmentWriteCacheKeyLimitDuringMaintenance()}
-     *             or {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getMaxNumberOfKeysInPartitionBuffer() {
-        return legacyPartitionCompatibilityMetrics
-                .getMaxNumberOfKeysInPartitionBuffer();
-    }
-
-    /**
-     * @deprecated use {@link #getIndexBufferedWriteKeyLimit()} or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getMaxNumberOfKeysInIndexBuffer() {
-        return legacyPartitionCompatibilityMetrics
-                .getMaxNumberOfKeysInIndexBuffer();
-    }
-
     public int getSegmentCount() {
         return segmentCount;
     }
@@ -1160,94 +1121,6 @@ public final class SegmentIndexMetricsSnapshot {
         return stableSegmentMaintenanceCallerRunsCount;
     }
 
-    /**
-     * @deprecated use segment/split/maintenance metrics or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getPartitionCount() {
-        return legacyPartitionCompatibilityMetrics.getPartitionCount();
-    }
-
-    /**
-     * @deprecated use segment/split/maintenance metrics or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getActivePartitionCount() {
-        return legacyPartitionCompatibilityMetrics.getActivePartitionCount();
-    }
-
-    /**
-     * @deprecated use segment/split/maintenance metrics or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getDrainingPartitionCount() {
-        return legacyPartitionCompatibilityMetrics
-                .getDrainingPartitionCount();
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getImmutableRunCount() {
-        return legacyPartitionCompatibilityMetrics.getImmutableRunCount();
-    }
-
-    /**
-     * @deprecated use {@link #getTotalBufferedWriteKeys()} or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getPartitionBufferedKeyCount() {
-        return legacyPartitionCompatibilityMetrics.getPartitionBufferedKeyCount();
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public long getLocalThrottleCount() {
-        return legacyPartitionCompatibilityMetrics.getLocalThrottleCount();
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public long getGlobalThrottleCount() {
-        return legacyPartitionCompatibilityMetrics.getGlobalThrottleCount();
-    }
-
-    /**
-     * @deprecated use split/maintenance metrics or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public long getDrainScheduleCount() {
-        return legacyPartitionCompatibilityMetrics.getDrainScheduleCount();
-    }
-
-    /**
-     * @deprecated use split/maintenance metrics or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getDrainInFlightCount() {
-        return legacyPartitionCompatibilityMetrics.getDrainInFlightCount();
-    }
-
-    /**
-     * @deprecated use write-path/split/maintenance metrics or
-     *             {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public long getDrainLatencyP95Micros() {
-        return legacyPartitionCompatibilityMetrics.getDrainLatencyP95Micros();
-    }
-
     public long getSplitTaskStartDelayP95Micros() {
         return splitTaskStartDelayP95Micros;
     }
@@ -1262,33 +1135,6 @@ public final class SegmentIndexMetricsSnapshot {
 
     public long getDrainTaskRunLatencyP95Micros() {
         return drainTaskRunLatencyP95Micros;
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public int getSplitBlockedPartitionCount() {
-        return legacyPartitionCompatibilityMetrics
-                .getSplitBlockedPartitionCount();
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public long getSplitBlockedDrainScheduleCount() {
-        return legacyPartitionCompatibilityMetrics
-                .getSplitBlockedDrainScheduleCount();
-    }
-
-    /**
-     * @deprecated use {@link #getLegacyPartitionCompatibilityMetrics()}
-     */
-    @Deprecated
-    public long getBufferFullWhileSplitBlockedCount() {
-        return legacyPartitionCompatibilityMetrics
-                .getBufferFullWhileSplitBlockedCount();
     }
 
     public long getPutBusyRetryCount() {
