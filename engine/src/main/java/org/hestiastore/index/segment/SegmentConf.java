@@ -85,56 +85,6 @@ public class SegmentConf {
     }
 
     /**
-     * Creates a configuration with explicit values for all fields.
-     *
-     * @param maxNumberOfKeysInSegmentWriteCache max write-cache size
-     * @param maxNumberOfKeysInSegmentWriteCacheDuringMaintenance write-cache size
-     *        allowed during maintenance
-     * @param maxNumberOfKeysInSegmentCache max segment cache size
-     * @param maxNumberOfKeysInChunk max number of keys in a chunk
-     * @param maxNumberOfDeltaCacheFiles max delta cache file count
-     * @param bloomFilterNumberOfHashFunctions Bloom filter hash count or
-     *        {@link #UNSET_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS}
-     * @param bloomFilterIndexSizeInBytes Bloom filter index size in bytes or
-     *        {@link #UNSET_BLOOM_FILTER_INDEX_SIZE_IN_BYTES}
-     * @param bloomFilterProbabilityOfFalsePositive Bloom filter false positive
-     *        probability or {@link #UNSET_BLOOM_FILTER_PROBABILITY}
-     * @param diskIoBufferSize disk I/O buffer size in bytes
-     * @param encodingChunkFilters chunk filters applied during encoding
-     * @param decodingChunkFilters chunk filters applied during decoding
-     * @deprecated use {@link #builder()} for clearer named configuration
-     */
-    @Deprecated(since = "0.0.7")
-    public SegmentConf(final int maxNumberOfKeysInSegmentWriteCache,
-            final int maxNumberOfKeysInSegmentWriteCacheDuringMaintenance,
-            final int maxNumberOfKeysInSegmentCache,
-            final int maxNumberOfKeysInChunk,
-            final int maxNumberOfDeltaCacheFiles,
-            final int bloomFilterNumberOfHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
-            final double bloomFilterProbabilityOfFalsePositive,
-            final int diskIoBufferSize,
-            final List<ChunkFilter> encodingChunkFilters,
-            final List<ChunkFilter> decodingChunkFilters) {
-        this(SegmentConf.builder()
-                .withMaxNumberOfKeysInSegmentWriteCache(
-                        maxNumberOfKeysInSegmentWriteCache)
-                .withMaxNumberOfKeysInSegmentWriteCacheDuringMaintenance(
-                        maxNumberOfKeysInSegmentWriteCacheDuringMaintenance)
-                .withMaxNumberOfKeysInSegmentCache(maxNumberOfKeysInSegmentCache)
-                .withMaxNumberOfKeysInChunk(maxNumberOfKeysInChunk)
-                .withMaxNumberOfDeltaCacheFiles(maxNumberOfDeltaCacheFiles)
-                .withBloomFilterNumberOfHashFunctions(
-                        bloomFilterNumberOfHashFunctions)
-                .withBloomFilterIndexSizeInBytes(bloomFilterIndexSizeInBytes)
-                .withBloomFilterProbabilityOfFalsePositive(
-                        bloomFilterProbabilityOfFalsePositive)
-                .withDiskIoBufferSize(diskIoBufferSize)
-                .withEncodingChunkFilters(encodingChunkFilters)
-                .withDecodingChunkFilters(decodingChunkFilters));
-    }
-
-    /**
      * Creates a copy of an existing configuration.
      *
      * @param segmentConf source configuration

@@ -15,7 +15,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterRegistration;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
@@ -277,7 +277,7 @@ class SegmentIndexConfigurationBuilderTest {
                         .build());
         assertEquals(
                 "Custom encoding chunk filter instances require explicit persisted metadata. "
-                        + "Use addEncodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec) "
+                        + "Use addEncodingFilter(ChunkFilterSpec) "
                         + "or addEncodingFilter(Class<? extends ChunkFilter>) for no-arg filters.",
                 exception.getMessage());
     }
@@ -364,24 +364,21 @@ class SegmentIndexConfigurationBuilderTest {
                         .build());
         assertEquals(
                 "Custom decoding chunk filter instances require explicit persisted metadata. "
-                        + "Use addDecodingFilter(Supplier<? extends ChunkFilter>, ChunkFilterSpec) "
+                        + "Use addDecodingFilter(ChunkFilterSpec) "
                         + "or addDecodingFilter(Class<? extends ChunkFilter>) for no-arg filters.",
                 exception.getMessage());
     }
 
     @Test
-    void addEncodingFilterWithSupplierAndSpecMaterializesFreshInstances() {
+    void addEncodingFilterWithSpecMaterializesFreshInstancesFromRegistry() {
         final AtomicInteger sequence = new AtomicInteger();
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("custom")
                 .withParameter("keyRef", "orders-main");
         final IndexConfiguration<Integer, String> config = newBuilder()
-                .filters(filters -> filters.addEncodingFilter(
-                        () -> new TrackingChunkFilter(
-                                sequence.incrementAndGet()),
-                        spec))
+                .filters(filters -> filters.addEncodingFilter(spec))
                 .build();
         final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = config
-                .resolveRuntimeConfiguration(ChunkFilterProviderRegistry
+                .resolveRuntimeConfiguration(ChunkFilterProviderResolverImpl
                         .builder().withDefaultProviders()
                         .withProvider(new ChunkFilterProvider() {
                             @Override

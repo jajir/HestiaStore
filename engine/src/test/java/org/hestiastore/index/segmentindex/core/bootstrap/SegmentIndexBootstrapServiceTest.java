@@ -1,57 +1,56 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.core.bootstrap;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
-class SegmentIndexLifecycleOpenFlowTest {
+class SegmentIndexBootstrapServiceTest {
 
     @Test
-    void startCreatedLifecycleReturnsOpenedLifecycle() {
-        final SegmentIndexLifecycle<Integer, String> lifecycle =
-                SegmentIndexLifecycleOpenFlow.startCreatedLifecycle(
-                        new MemDirectory(), buildConf("open-flow-create"),
-                        ChunkFilterProviderRegistry.defaultRegistry());
+    void createStartsBootstrapTransaction() {
+        final MemDirectory directory = new MemDirectory();
+        final SegmentIndex<Integer, String> index =
+                new SegmentIndexBootstrapService(directory).create(
+                        buildConf("bootstrap-service-create", 1));
 
         try {
-            assertTrue(lifecycle.isOpened());
+            assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
         } finally {
-            lifecycle.close();
+            index.close();
         }
     }
 
     @Test
-    void startOpenedLifecycleReturnsOpenedLifecycleForExistingIndex() {
+    void openStartsBootstrapTransaction() {
         final MemDirectory directory = new MemDirectory();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
-                .defaultRegistry();
-        final SegmentIndexLifecycle<Integer, String> createdLifecycle =
-                SegmentIndexLifecycleOpenFlow.startCreatedLifecycle(directory,
-                        buildConf("open-flow-open"), registry);
-        createdLifecycle.close();
+        new SegmentIndexBootstrapService(directory)
+                .create(buildConf("bootstrap-service-open", 1))
+                .close();
 
-        final SegmentIndexLifecycle<Integer, String> openedLifecycle =
-                SegmentIndexLifecycleOpenFlow.startOpenedLifecycle(directory,
-                        buildConf("open-flow-open"), registry);
+        final SegmentIndex<Integer, String> index =
+                new SegmentIndexBootstrapService(directory).open(
+                        buildConf("bootstrap-service-open", 2));
+
         try {
-            assertTrue(openedLifecycle.isOpened());
+            assertEquals(2, index.getConfiguration()
+                    .maintenance().registryLifecycleThreads());
         } finally {
-            openedLifecycle.close();
+            index.close();
         }
-        assertFalse(createdLifecycle.isOpened());
     }
 
     private static IndexConfiguration<Integer, String> buildConf(
-            final String indexName) {
+            final String indexName, final int registryLifecycleThreads) {
         return IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))
                 .identity(identity -> identity.valueClass(String.class))
@@ -69,8 +68,9 @@ class SegmentIndexLifecycleOpenFlowTest {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1024))
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.01D))
                 .io(io -> io.diskBufferSizeBytes(1024))
+                .maintenance(maintenance -> maintenance.backgroundAutoEnabled(false))
                 .maintenance(maintenance -> maintenance.segmentThreads(1))
-                .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
+                .maintenance(maintenance -> maintenance.registryLifecycleThreads(registryLifecycleThreads))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
                 .build();

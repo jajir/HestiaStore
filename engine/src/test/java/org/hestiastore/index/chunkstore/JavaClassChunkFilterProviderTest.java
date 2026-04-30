@@ -27,7 +27,7 @@ class JavaClassChunkFilterProviderTest {
     @Test
     void rejectsMismatchedProviderId() {
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("custom")
-                .withParameter(ChunkFilterProviderRegistry.PARAM_CLASS_NAME,
+                .withParameter(ChunkFilterProviderResolver.PARAM_CLASS_NAME,
                         ReflectiveChunkFilter.class.getName());
 
         final IllegalArgumentException exception = assertThrows(
@@ -42,7 +42,7 @@ class JavaClassChunkFilterProviderTest {
     @Test
     void rejectsSpecWithoutClassNameParameter() {
         final ChunkFilterSpec spec = ChunkFilterSpec
-                .ofProvider(ChunkFilterProviderRegistry.PROVIDER_ID_JAVA_CLASS);
+                .ofProvider(ChunkFilterProviderResolver.PROVIDER_ID_JAVA_CLASS);
 
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,

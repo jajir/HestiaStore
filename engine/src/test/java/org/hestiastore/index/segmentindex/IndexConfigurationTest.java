@@ -14,7 +14,8 @@ import org.hestiastore.index.chunkstore.ChunkData;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterProvider;
-import org.hestiastore.index.chunkstore.ChunkFilterProviderRegistry;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.junit.jupiter.api.Test;
 
@@ -75,15 +76,10 @@ class IndexConfigurationTest {
                 .withParameter("keyRef", "orders-main");
         final IndexConfiguration<Integer, String> config = IndexConfiguration
                 .<Integer, String>builder()
-                .filters(filters -> filters.addEncodingFilter(
-                        () -> new TrackingChunkFilter(
-                                sequence.incrementAndGet()),
-                        spec).addDecodingFilter(
-                                () -> new TrackingChunkFilter(
-                                        sequence.incrementAndGet()),
-                                spec))
+                .filters(filters -> filters.addEncodingFilter(spec)
+                        .addDecodingFilter(spec))
                 .build();
-        final ChunkFilterProviderRegistry registry = ChunkFilterProviderRegistry
+        final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .builder().withDefaultProviders()
                 .withProvider(new ChunkFilterProvider() {
                     @Override
@@ -131,6 +127,54 @@ class IndexConfigurationTest {
         assertThrows(UnsupportedOperationException.class,
                 () -> runtimeConfiguration.getEncodingChunkFilterSuppliers().add(
                         ChunkFilterDoNothing::new));
+    }
+
+    @Test
+    void resolveRuntimeConfigurationUsesFilterSectionResolverByDefault() {
+        final AtomicInteger sequence = new AtomicInteger();
+        final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("custom")
+                .withParameter("keyRef", "orders-main");
+        final ChunkFilterProviderResolver resolver = ChunkFilterProviderResolverImpl
+                .builder().withDefaultProviders()
+                .withProvider(new ChunkFilterProvider() {
+                    @Override
+                    public String getProviderId() {
+                        return "custom";
+                    }
+
+                    @Override
+                    public Supplier<? extends ChunkFilter> createEncodingSupplier(
+                            final ChunkFilterSpec runtimeSpec) {
+                        return () -> new TrackingChunkFilter(
+                                sequence.incrementAndGet());
+                    }
+
+                    @Override
+                    public Supplier<? extends ChunkFilter> createDecodingSupplier(
+                            final ChunkFilterSpec runtimeSpec) {
+                        return () -> new TrackingChunkFilter(
+                                sequence.incrementAndGet());
+                    }
+                })
+                .build();
+        final IndexConfiguration<Integer, String> config = IndexConfiguration
+                .<Integer, String>builder()
+                .filters(filters -> filters.chunkFilterProviderResolver(resolver)
+                        .addEncodingFilter(spec)
+                        .addDecodingFilter(spec))
+                .build();
+
+        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = config
+                .resolveRuntimeConfiguration();
+
+        assertEquals(resolver,
+                config.filters().getChunkFilterProviderResolver());
+        assertEquals(1,
+                ((TrackingChunkFilter) runtimeConfiguration
+                        .getEncodingChunkFilters().get(0)).getId());
+        assertEquals(2,
+                ((TrackingChunkFilter) runtimeConfiguration
+                        .getDecodingChunkFilters().get(0)).getId());
     }
 
     private static final class TrackingChunkFilter implements ChunkFilter {

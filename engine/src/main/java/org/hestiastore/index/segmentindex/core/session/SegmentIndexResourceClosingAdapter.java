@@ -3,39 +3,32 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
-import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 
 /**
- * Wraps a {@link SegmentIndex} and ensures the internally created directory
- * adapter gets closed alongside the index.
+ * Wraps a {@link SegmentIndex} and ensures lifecycle close hooks run alongside
+ * the index.
  */
-final class IndexDirectoryClosingAdapter<K, V>
+public final class SegmentIndexResourceClosingAdapter<K, V>
         extends AbstractCloseableResource implements SegmentIndex<K, V> {
 
     private final SegmentIndex<K, V> delegate;
-    private final Directory directory;
-    private final CloseableResource onClose;
+    private final ExecutorRegistry executorRegistry;
 
-    IndexDirectoryClosingAdapter(final SegmentIndex<K, V> index,
-            final Directory directory) {
-        this(index, directory, null);
-    }
-
-    IndexDirectoryClosingAdapter(final SegmentIndex<K, V> index,
-            final Directory directory, final CloseableResource onClose) {
+    public SegmentIndexResourceClosingAdapter(final SegmentIndex<K, V> index,
+            final ExecutorRegistry executorRegistry) {
         this.delegate = Vldtn.requireNonNull(index, "index");
-        this.directory = Vldtn.requireNonNull(directory, "directory");
-        this.onClose = onClose;
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
     }
 
     @Override
@@ -131,8 +124,7 @@ final class IndexDirectoryClosingAdapter<K, V>
         final CloseFailureAccumulator closeFailures =
                 new CloseFailureAccumulator();
         closeFailures.close(delegate);
-        closeFailures.closeIfResource(directory);
-        closeFailures.close(onClose);
+        closeFailures.close(executorRegistry);
         closeFailures.rethrowIfPresent();
     }
 

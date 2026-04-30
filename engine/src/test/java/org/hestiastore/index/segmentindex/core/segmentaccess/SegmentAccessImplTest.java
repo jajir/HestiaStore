@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultSegmentAccessTest {
+class SegmentAccessImplTest {
 
     @Mock
     private RouteLease routeLease;
@@ -23,11 +23,11 @@ class DefaultSegmentAccessTest {
     @Mock
     private BlockingSegment<Integer, String> segment;
 
-    private DefaultSegmentAccess<Integer, String> access;
+    private SegmentAccessImpl<Integer, String> access;
 
     @BeforeEach
     void setUp() {
-        access = new DefaultSegmentAccess<>(routeLease, segment);
+        access = new SegmentAccessImpl<>(routeLease, segment);
     }
 
     @Test
