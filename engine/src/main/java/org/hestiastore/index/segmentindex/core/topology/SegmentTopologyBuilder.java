@@ -32,7 +32,7 @@ public final class SegmentTopologyBuilder<K> {
      * @return segment topology
      */
     public SegmentTopology<K> build() {
-        return new DefaultSegmentTopology<>(
+        return new SegmentTopologyImpl<>(
                 Vldtn.requireNonNull(snapshot, "snapshot"));
     }
 }
