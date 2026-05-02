@@ -38,7 +38,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class SegmentFactoryTest {
@@ -190,7 +190,7 @@ class SegmentFactoryTest {
                     }
                 })
                 .build();
-        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = conf
+        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = conf
                 .resolveRuntimeConfiguration(registry);
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 new MemDirectory(), new TypeDescriptorInteger(),

@@ -44,7 +44,7 @@ class IntegrationSegmentIndexConcurrencyTest {
         try {
             runParallelPuts(index, executor, scenario.keyCount());
 
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
 
             final List<Entry<Integer, String>> expected = expectedEntries(
                     scenario.keyCount());
@@ -86,7 +86,7 @@ class IntegrationSegmentIndexConcurrencyTest {
             writerTask.get(5, TimeUnit.SECONDS);
             executor.shutdownNow();
 
-            index.flush();
+            index.maintenance().flush();
             assertEquals("v-9", index.get(1));
         } finally {
             index.close();
@@ -120,8 +120,8 @@ class IntegrationSegmentIndexConcurrencyTest {
             final var maint = executor.submit(() -> {
                 start.await();
                 for (int i = 0; i < 5; i++) {
-                    index.flushAndWait();
-                    index.compactAndWait();
+                    index.maintenance().flushAndWait();
+                    index.maintenance().compactAndWait();
                 }
                 return null;
             });
@@ -132,8 +132,8 @@ class IntegrationSegmentIndexConcurrencyTest {
             maint.get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             executor.shutdownNow();
 
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
             awaitIdle(index);
             verifySegmentIndexDataWithDiagnostics(index, expectedEntries(40));
         } finally {
@@ -261,7 +261,7 @@ class IntegrationSegmentIndexConcurrencyTest {
         final long deadline = System.nanoTime()
                 + TimeUnit.SECONDS.toNanos(10L);
         while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             if (snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount() == 0
                     && snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount() == 0
                     && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0

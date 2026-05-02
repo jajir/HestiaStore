@@ -5,7 +5,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 
 final class ExecutorRegistryImpl extends AbstractCloseableResource
         implements ExecutorRegistry {
@@ -54,7 +54,6 @@ final class ExecutorRegistryImpl extends AbstractCloseableResource
 
     @Override
     public IndexExecutorRuntimeAccess runtimeSnapshot() {
-        ensureOpen();
         return runtimeMonitor.runtimeSnapshot();
     }
 

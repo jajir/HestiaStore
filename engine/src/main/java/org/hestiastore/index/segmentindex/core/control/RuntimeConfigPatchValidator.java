@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchValidation;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
-import org.hestiastore.index.control.model.ValidationIssue;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.ValidationIssue;
 
 /**
  * Validates runtime configuration patches and normalizes accepted values.

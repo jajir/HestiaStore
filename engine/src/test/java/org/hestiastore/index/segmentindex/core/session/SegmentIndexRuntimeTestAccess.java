@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import java.util.function.Supplier;
 
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
@@ -55,8 +55,8 @@ public final class SegmentIndexRuntimeTestAccess {
         return runtime.metricsSnapshotSupplier();
     }
 
-    public static <K, V> IndexControlPlane controlPlane(
+    public static <K, V> RuntimeConfiguration runtimeConfiguration(
             final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.controlPlane();
+        return runtime.runtimeConfiguration();
     }
 }

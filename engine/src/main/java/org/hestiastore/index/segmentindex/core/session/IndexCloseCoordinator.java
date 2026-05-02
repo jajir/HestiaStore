@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.slf4j.Logger;
 

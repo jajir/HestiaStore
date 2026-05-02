@@ -12,7 +12,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 
 /**
  * Builder for {@link SegmentRegistry} instances.
@@ -29,7 +29,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private IndexConfiguration<K, V> conf;
-    private IndexRuntimeConfiguration<K, V> runtimeConfiguration;
+    private ResolvedIndexConfiguration<K, V> runtimeConfiguration;
     private ExecutorService segmentMaintenanceExecutor;
     private ExecutorService registryMaintenanceExecutor;
     private SegmentIdAllocator segmentIdAllocator;
@@ -96,7 +96,7 @@ public final class SegmentRegistryBuilder<K, V> {
      * @return this builder
      */
     public SegmentRegistryBuilder<K, V> withRuntimeConfiguration(
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration) {
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration) {
         this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration,
                 "runtimeConfiguration");
         return this;
@@ -163,7 +163,7 @@ public final class SegmentRegistryBuilder<K, V> {
         final ExecutorService resolvedRegistryMaintenanceExecutor = Vldtn
                 .requireNonNull(registryMaintenanceExecutor,
                         "registryMaintenanceExecutor");
-        final IndexRuntimeConfiguration<K, V> resolvedRuntimeConfiguration = runtimeConfiguration == null
+        final ResolvedIndexConfiguration<K, V> resolvedRuntimeConfiguration = runtimeConfiguration == null
                 ? resolvedConf.resolveRuntimeConfiguration()
                 : runtimeConfiguration;
         final int maxSegments = Vldtn

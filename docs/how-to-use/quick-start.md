@@ -84,9 +84,9 @@ index.getStream(window).forEach(entry -> System.out.println(entry));
 - `compact()` rewrites fragmented data into a cleaner layout.
 
 ```java
-index.flush();
-index.checkAndRepairConsistency();
-index.compact();
+index.maintenance().flush();
+index.maintenance().checkAndRepairConsistency();
+index.maintenance().compact();
 ```
 
 ## Practical limits to know early

@@ -5,14 +5,14 @@ import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.config.DataTypeDescriptorRegistry;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 
@@ -73,7 +73,7 @@ final class SegmentIndexBootstrapTransaction<K, V> {
     private SegmentIndex<K, V> openSession(final boolean createIndex) {
         final IndexConfiguration<K, V> configuration =
                 loadConfiguration(createIndex);
-        final IndexRuntimeConfiguration<K, V> runtimeConfiguration =
+        final ResolvedIndexConfiguration<K, V> runtimeConfiguration =
                 resolveRuntimeConfiguration(configuration);
         final ExecutorRegistry executorRegistry =
                 executorRegistryFactory.create(configuration);
@@ -111,7 +111,7 @@ final class SegmentIndexBootstrapTransaction<K, V> {
                 new IndexConfigurationStorage<>(directory));
     }
 
-    private IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration(
+    private ResolvedIndexConfiguration<K, V> resolveRuntimeConfiguration(
             final IndexConfiguration<K, V> configuration) {
         return configuration.resolveRuntimeConfiguration(
                 resolveProviderResolver(configuration));
@@ -146,7 +146,7 @@ final class SegmentIndexBootstrapTransaction<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> configuration,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
         return IndexInternalConcurrent.createOpening(
                 directoryFacade,
@@ -159,7 +159,7 @@ final class SegmentIndexBootstrapTransaction<K, V> {
 
     private SegmentIndex<K, V> createManagedIndex(
             final IndexConfiguration<K, V> configuration,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
         if (!Boolean.TRUE.equals(configuration.logging().contextEnabled())) {
             return createStartedIndex(configuration, runtimeConfiguration,
@@ -175,7 +175,7 @@ final class SegmentIndexBootstrapTransaction<K, V> {
 
     private IndexInternalConcurrent<K, V> createStartedIndex(
             final IndexConfiguration<K, V> configuration,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
         IndexInternalConcurrent<K, V> index = null;
         try {

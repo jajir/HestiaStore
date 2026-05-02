@@ -74,8 +74,8 @@ class AesGcmFilteredSegmentIndexIT {
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 createConf)) {
             entries.forEach(index::put);
-            index.flush();
-            index.compact();
+            index.maintenance().flush();
+            index.maintenance().compact();
         }
 
         final Properties manifest = readRequiredProperties(directory,

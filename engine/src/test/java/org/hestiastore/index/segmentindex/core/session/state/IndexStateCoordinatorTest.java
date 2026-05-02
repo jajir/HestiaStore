@@ -48,7 +48,7 @@ class IndexStateCoordinatorTest {
 
         SegmentIndexTestAccess.stateCoordinator(index).failWithError(failure);
 
-        assertEquals(SegmentIndexState.ERROR, index.getState());
+        assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
         final IllegalStateException ex = assertThrows(
                 IllegalStateException.class, () -> index.get(1));
         assertSame(failure, ex.getCause());
@@ -58,7 +58,7 @@ class IndexStateCoordinatorTest {
     void setSegmentIndexStateUpdatesExposedState() {
         SegmentIndexTestAccess.stateCoordinator(index).beginClose();
 
-        assertEquals(SegmentIndexState.CLOSING, index.getState());
+        assertEquals(SegmentIndexState.CLOSING, index.runtimeMonitoring().snapshot().getState());
 
         SegmentIndexTestAccess.stateCoordinator(index)
                 .completeCloseStateTransition();
@@ -71,7 +71,7 @@ class IndexStateCoordinatorTest {
         SegmentIndexTestAccess.stateCoordinator(index)
                 .completeCloseStateTransition();
 
-        assertEquals(SegmentIndexState.CLOSED, index.getState());
+        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
         assertTrue(index.getIndexState() instanceof IndexStateClosed);
     }
 
@@ -83,7 +83,7 @@ class IndexStateCoordinatorTest {
         SegmentIndexTestAccess.stateCoordinator(index)
                 .completeCloseStateTransition();
 
-        assertEquals(SegmentIndexState.ERROR, index.getState());
+        assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
         assertTrue(index.getIndexState() instanceof IndexStateError);
     }
 
@@ -107,7 +107,7 @@ class IndexStateCoordinatorTest {
                 .completeCloseStateTransition();
 
         assertSame(closedState, index.getIndexState());
-        assertEquals(SegmentIndexState.CLOSED, index.getState());
+        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

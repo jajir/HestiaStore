@@ -28,7 +28,7 @@ Source: [system-overview.plantuml](images/system-overview.plantuml)
 - **Segment** is the stable storage shard. A segment combines a main SST, a
   sparse index, a Bloom filter, and delta cache files to balance write cost and
   lookup latency.
-- **Monitoring adapters** consume `SegmentIndex.metricsSnapshot()` and runtime
+- **Monitoring adapters** consume `SegmentIndex.runtimeMonitoring().snapshot().getMetrics()` and runtime
   management APIs. They observe the engine, but they do not read or rewrite
   segment files directly.
 

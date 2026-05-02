@@ -59,7 +59,7 @@ public class SegmentIndexLifecycleBenchmark {
         try (SegmentIndex<Integer, String> created = SegmentIndex
                 .create(new FsDirectory(baselineDir), conf)) {
             populateIndex(created);
-            created.flushAndWait();
+            created.maintenance().flushAndWait();
         }
     }
 
@@ -76,7 +76,7 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openExisting() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            return workingCopy.index.metricsSnapshot().getSegmentCount();
+            return workingCopy.index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount();
         }
     }
 
@@ -84,8 +84,8 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openAndCheckAndRepairConsistency() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            workingCopy.index.checkAndRepairConsistency();
-            return workingCopy.index.metricsSnapshot().getSegmentCount();
+            workingCopy.index.maintenance().checkAndRepairConsistency();
+            return workingCopy.index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount();
         }
     }
 
@@ -93,8 +93,8 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openAndCompact() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            workingCopy.index.compactAndWait();
-            return workingCopy.index.metricsSnapshot().getSegmentCount();
+            workingCopy.index.maintenance().compactAndWait();
+            return workingCopy.index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount();
         }
     }
 
@@ -153,14 +153,14 @@ public class SegmentIndexLifecycleBenchmark {
             created.put(Integer.valueOf(key), buildValue(key));
             pending++;
             if (pending >= 256) {
-                created.flushAndWait();
+                created.maintenance().flushAndWait();
                 pending = 0;
             }
         }
         if (pending > 0) {
-            created.flushAndWait();
+            created.maintenance().flushAndWait();
         }
-        created.compactAndWait();
+        created.maintenance().compactAndWait();
     }
 
     private String buildValue(final int key) {

@@ -27,7 +27,7 @@ import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationStorageTest {
@@ -423,7 +423,7 @@ class IndexConfigurationStorageTest {
         storage.save(config);
 
         final IndexConfiguration<String, String> loaded = storage.load();
-        final IndexRuntimeConfiguration<String, String> runtimeConfiguration = loaded
+        final ResolvedIndexConfiguration<String, String> runtimeConfiguration = loaded
                 .resolveRuntimeConfiguration(registry);
 
         assertEquals(List.of(spec), loaded.filters().encodingChunkFilterSpecs());

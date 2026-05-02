@@ -8,11 +8,12 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexResourceClosingAdapterTest {
@@ -50,54 +51,29 @@ class SegmentIndexResourceClosingAdapterTest {
         }
 
         @Override
-        public void compact() {
-            // no-op
-        }
-
-        @Override
-        public void flush() {
-            // no-op
-        }
-
-        @Override
-        public void compactAndWait() {
-            // no-op
-        }
-
-        @Override
-        public void flushAndWait() {
-            // no-op
-        }
-
-        @Override
         public Stream<Entry<String, String>> getStream(
                 final SegmentWindow segmentWindows) {
             return Stream.empty();
         }
 
         @Override
-        public void checkAndRepairConsistency() {
-            // no-op
-        }
-
-        @Override
-        public IndexConfiguration<String, String> getConfiguration() {
-            return IndexConfiguration.<String, String>builder()//
-                    .identity(identity -> identity.keyClass(String.class))//
-                    .identity(identity -> identity.valueClass(String.class))//
-                    .identity(identity -> identity.name("noop-index"))//
-                    .build();
-        }
-
-        @Override
-        public SegmentIndexState getState() {
-            return wasClosed() ? SegmentIndexState.CLOSED
-                    : SegmentIndexState.READY;
-        }
-
-        @Override
         protected void doClose() {
             // no-op
+        }
+
+        @Override
+        public IndexRuntimeMonitoring runtimeMonitoring() {
+            return mock(IndexRuntimeMonitoring.class);
+        }
+
+        @Override
+        public RuntimeConfiguration runtimeConfiguration() {
+            return mock(RuntimeConfiguration.class);
+        }
+
+        @Override
+        public SegmentIndexMaintenance maintenance() {
+            return mock(SegmentIndexMaintenance.class);
         }
     }
 }

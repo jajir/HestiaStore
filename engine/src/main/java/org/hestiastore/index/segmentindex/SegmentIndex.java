@@ -1,19 +1,18 @@
 package org.hestiastore.index.segmentindex;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
-import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.control.IndexConfigurationManagement;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 
 /**
  * High-level contract for the segment-index layer that sits above individual
@@ -152,38 +151,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void delete(K key);
 
     /**
-     * Starts a compaction pass over in-memory and on-disk data structures. This
-     * is the explicit index-level entry point for compaction; automatic split
-     * logic does not invoke compaction.
-     *
-     * The call returns after compaction is accepted by each segment.
-     */
-    void compact();
-
-    /**
-     * Starts flushing in-memory data to disk. The call returns after flush is
-     * accepted by each segment.
-     */
-    void flush();
-
-    /**
-     * Starts a compaction pass and waits until all segment maintenance
-     * operations complete. Do not call from a segment maintenance executor
-     * thread.
-     *
-     * This is the explicit index-level entry point for compaction; automatic
-     * split logic does not invoke compaction.
-     */
-    void compactAndWait();
-
-    /**
-     * Starts flushing in-memory data to disk and waits until all segment
-     * maintenance operations complete. Do not call from a segment maintenance
-     * executor thread.
-     */
-    void flushAndWait();
-
-    /**
      * Went through all records. In fact read all index data. Doesn't use
      * indexes and caches in segments.
      * 
@@ -244,56 +211,6 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     }
 
     /**
-     * Checks the internal consistency of all index segments and associated data
-     * descriptions.
-     * <p>
-     * This method traverses all segments and verifies that the index structure,
-     * segment data, and metadata are valid and consistent. If correctable
-     * inconsistencies are found, this method attempts to repair them
-     * automatically. If an uncorrectable problem is detected, the method throws
-     * an exception or signals failure, depending on the implementation.
-     * <p>
-     * <b>Typical consistency checks include:</b>
-     * <ul>
-     * <li>Validating segment structure and integrity</li>
-     * <li>Checking for corrupt or missing metadata</li>
-     * <li>Verifying key/value data descriptions are correct and complete</li>
-     * <li>Ensuring no orphaned or unreachable segments</li>
-     * </ul>
-     * <p>
-     * <b>Behavior:</b>
-     * <ul>
-     * <li>If all issues are correctable, the method repairs them and returns
-     * normally.</li>
-     * <li>If uncorrectable inconsistencies are found, the method throws an
-     * {@code IndexException} or fails with an error.</li>
-     * </ul>
-     * <p>
-     * <b>Implementation note:</b> Callers should invoke this method
-     * periodically or after unexpected shutdowns to maintain data integrity.
-     *
-     * @throws IndexException if an uncorrectable inconsistency is detected.
-     */
-    void checkAndRepairConsistency();
-
-    /**
-     * Returns the configuration this index was opened with (merged with
-     * defaults where appropriate).
-     *
-     * @return effective configuration
-     */
-    IndexConfiguration<K, V> getConfiguration();
-
-    /**
-     * Returns the current lifecycle state of this index instance.
-     * Typical transitions are `OPENING -> READY -> CLOSING -> CLOSED`, with
-     * `ERROR` as a terminal failure state.
-     *
-     * @return index state
-     */
-    SegmentIndexState getState();
-
-    /**
      * Closes the index and releases owned resources.
      * Other threads may observe {@link SegmentIndexState#CLOSING} while close
      * is waiting for in-flight maintenance and durability boundaries to
@@ -303,39 +220,24 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     void close();
 
     /**
-     * Returns an immutable snapshot of index-level operation counters and
-     * lifecycle state.
+     * Returns runtime monitoring view for this index.
      *
-     * Implementations should override this method to expose non-zero counters.
-     * The default keeps backward compatibility for custom implementations that
-     * have not yet added metrics support.
-     *
-     * @return metrics snapshot
+     * @return runtime monitoring view
      */
-    default SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0,
-                0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, List.of(),
-                getState());
-    }
+    IndexRuntimeMonitoring runtimeMonitoring();
 
     /**
-     * Returns runtime monitoring/tuning control-plane entry point.
-     *
-     * @return index control plane
-     */
-    default IndexControlPlane controlPlane() {
-        throw new UnsupportedOperationException(
-                "controlPlane() is not supported by this implementation.");
-    }
-
-    /**
-     * Returns runtime configuration management API.
+     * Returns runtime configuration API.
      *
      * @return runtime configuration API
      */
-    default IndexConfigurationManagement configurationManagement() {
-        return controlPlane().configuration();
-    }
+    RuntimeConfiguration runtimeConfiguration();
+
+    /**
+     * Returns operational maintenance API.
+     *
+     * @return maintenance API
+     */
+    SegmentIndexMaintenance maintenance();
 
 }

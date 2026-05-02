@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 
 /**
  * Owns executor lifecycle for SegmentIndex subsystems.

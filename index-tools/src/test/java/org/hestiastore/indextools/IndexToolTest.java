@@ -329,8 +329,8 @@ class IndexToolTest {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(
                 new FsNioDirectory(indexPath.toFile()), configuration)) {
             entries.forEach(index::put);
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
         }
     }
 
@@ -344,8 +344,8 @@ class IndexToolTest {
         try (SegmentIndex<String, String> index = SegmentIndex.create(
                 new FsNioDirectory(indexPath.toFile()), configuration)) {
             entries.forEach(index::put);
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
         }
     }
 

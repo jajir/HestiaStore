@@ -7,7 +7,8 @@ import static org.mockito.Mockito.mock;
 
 import java.util.function.Supplier;
 
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
@@ -27,7 +28,8 @@ class SegmentIndexRuntimeServicesTest {
                         mock(MaintenanceService.class),
                         mock(SegmentRuntimeLimitApplier.class),
                         mock(Supplier.class),
-                        mock(IndexControlPlane.class)));
+                        mock(IndexRuntimeMonitoring.class),
+                        mock(RuntimeConfiguration.class)));
 
         assertEquals("Property 'walCoordinator' must not be null.",
                 ex.getMessage());
@@ -42,7 +44,8 @@ class SegmentIndexRuntimeServicesTest {
         final MaintenanceService maintenance = mock(MaintenanceService.class);
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
                 mock(Supplier.class);
-        final IndexControlPlane controlPlane = mock(IndexControlPlane.class);
+        final IndexRuntimeMonitoring runtimeMonitoring = mock(IndexRuntimeMonitoring.class);
+        final RuntimeConfiguration runtimeConfiguration = mock(RuntimeConfiguration.class);
         final SegmentRuntimeLimitApplier<Integer, String> runtimeLimitApplier =
                 mock(SegmentRuntimeLimitApplier.class);
 
@@ -50,13 +53,14 @@ class SegmentIndexRuntimeServicesTest {
                 new SegmentIndexRuntimeServices<>(walCoordinator,
                         operationAccess, maintenance,
                         runtimeLimitApplier, metricsSnapshotSupplier,
-                        controlPlane);
+                        runtimeMonitoring, runtimeConfiguration);
 
         assertSame(walCoordinator, state.walCoordinator());
         assertSame(operationAccess, state.operationAccess());
         assertSame(maintenance, state.maintenance());
         assertSame(metricsSnapshotSupplier, state.metricsSnapshotSupplier());
-        assertSame(controlPlane, state.controlPlane());
+        assertSame(runtimeMonitoring, state.runtimeMonitoring());
+        assertSame(runtimeConfiguration, state.runtimeConfiguration());
         assertSame(runtimeLimitApplier, state.runtimeLimitApplier());
     }
 }

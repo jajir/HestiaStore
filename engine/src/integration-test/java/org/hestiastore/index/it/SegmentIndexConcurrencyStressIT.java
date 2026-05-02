@@ -132,9 +132,9 @@ class SegmentIndexConcurrencyStressIT {
                             } else if (op < 95) {
                                 index.delete(key);
                             } else if (op < 99) {
-                                index.flush();
+                                index.maintenance().flush();
                             } else {
-                                index.compact();
+                                index.maintenance().compact();
                             }
                         } catch (final IndexException exception) {
                             if (!isTransientLifecycleFailure(exception)) {
@@ -164,7 +164,7 @@ class SegmentIndexConcurrencyStressIT {
                     try {
                         final SegmentIndex<Integer, Integer> current = indexRef
                                 .get();
-                        current.flushAndWait();
+                        current.maintenance().flushAndWait();
                         current.close();
                         indexRef.set(openWithRetry(directory, conf));
                     } finally {
@@ -184,8 +184,8 @@ class SegmentIndexConcurrencyStressIT {
             try {
                 final SegmentIndex<Integer, Integer> current = indexRef.get();
                 if (!current.wasClosed()) {
-                    current.flushAndWait();
-                    current.compactAndWait();
+                    current.maintenance().flushAndWait();
+                    current.maintenance().compactAndWait();
                     checkAndRepairConsistencyWithRetry(current,
                             RETRY_TIMEOUT_MILLIS);
                     current.close();
@@ -223,7 +223,7 @@ class SegmentIndexConcurrencyStressIT {
             for (int key = 0; key < hotKeyRange; key++) {
                 index.put(key, -key);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             observeSplitEvidence(indexRef.get(), splitObserved);
         } finally {
             lifecycleLock.writeLock().unlock();
@@ -256,9 +256,9 @@ class SegmentIndexConcurrencyStressIT {
                             } else if (op < 98) {
                                 index.delete(key);
                             } else if (op < 99) {
-                                index.flush();
+                                index.maintenance().flush();
                             } else {
-                                index.compact();
+                                index.maintenance().compact();
                             }
                             observeSplitEvidence(index, splitObserved);
                         } catch (final IndexException exception) {
@@ -289,7 +289,7 @@ class SegmentIndexConcurrencyStressIT {
                     try {
                         final SegmentIndex<Integer, Integer> current = indexRef
                                 .get();
-                        current.flushAndWait();
+                        current.maintenance().flushAndWait();
                         observeSplitEvidence(current, splitObserved);
                         current.close();
                         indexRef.set(openWithRetry(directory, conf));
@@ -309,8 +309,8 @@ class SegmentIndexConcurrencyStressIT {
             try {
                 final SegmentIndex<Integer, Integer> current = indexRef.get();
                 if (!current.wasClosed()) {
-                    current.flushAndWait();
-                    current.compactAndWait();
+                    current.maintenance().flushAndWait();
+                    current.maintenance().compactAndWait();
                     checkAndRepairConsistencyWithRetry(current,
                             RETRY_TIMEOUT_MILLIS);
                     observeSplitEvidence(current, splitObserved);
@@ -406,7 +406,7 @@ class SegmentIndexConcurrencyStressIT {
         if (splitObserved.get()) {
             return;
         }
-        final var snapshot = index.metricsSnapshot();
+        final var snapshot = index.runtimeMonitoring().snapshot().getMetrics();
         if (snapshot.getSplitScheduleCount() > 0
                 || snapshot.getSplitInFlightCount() > 0
                 || snapshot.getSegmentCount() > 1) {
@@ -465,7 +465,7 @@ class SegmentIndexConcurrencyStressIT {
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
             try {
-                index.checkAndRepairConsistency();
+                index.maintenance().checkAndRepairConsistency();
                 return;
             } catch (final RuntimeException exception) {
                 if (!isTransientLifecycleFailure(exception)
