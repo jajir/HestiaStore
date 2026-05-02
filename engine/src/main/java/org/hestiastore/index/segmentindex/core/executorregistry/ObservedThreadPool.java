@@ -5,7 +5,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
 
 /**
  * Observed thread-pool wrapper that exposes executor metrics snapshots.

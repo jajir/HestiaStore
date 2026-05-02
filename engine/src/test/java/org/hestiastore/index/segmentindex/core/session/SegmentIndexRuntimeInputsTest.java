@@ -12,10 +12,10 @@ import java.util.function.Supplier;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
@@ -31,8 +31,8 @@ class SegmentIndexRuntimeInputsTest {
                 TypeDescriptor.class);
         final IndexConfiguration<Integer, String> conf = mock(
                 IndexConfiguration.class);
-        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
-                mock(IndexRuntimeConfiguration.class);
+        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration =
+                mock(ResolvedIndexConfiguration.class);
         final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
         final Stats stats = new Stats();
         final AtomicLong compactRequestHighWaterMark = new AtomicLong();
@@ -62,8 +62,8 @@ class SegmentIndexRuntimeInputsTest {
                 TypeDescriptor.class);
         final IndexConfiguration<Integer, String> conf = mock(
                 IndexConfiguration.class);
-        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration =
-                mock(IndexRuntimeConfiguration.class);
+        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration =
+                mock(ResolvedIndexConfiguration.class);
         final ExecutorRegistry executorRegistry = mock(
                 ExecutorRegistry.class);
         final Stats stats = new Stats();

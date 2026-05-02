@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex.core.executorregistry;
 
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
 
 /**
  * Immutable executor metrics snapshot owned by infrastructure monitoring.

@@ -50,7 +50,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
         index = SegmentIndex.<String, Integer>create(directory, conf);
 
         writeEntries(index, indexFile);
-        index.compactAndWait();
+        index.maintenance().compactAndWait();
     }
 
     @Test
@@ -115,7 +115,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
         assertTrue(true);
         index.delete("b");
         index.put("g", 13);
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         // verify data consistency after flush
         verifyIndexSearch(index, Arrays.asList(//

@@ -54,9 +54,10 @@ class IndexStateTest {
         assertThrows(IllegalStateException.class, () -> index.put(2, "two"));
         assertThrows(IllegalStateException.class, () -> index.get(1));
         assertThrows(IllegalStateException.class, () -> index.delete(1));
-        assertThrows(IllegalStateException.class, index::compact);
         assertThrows(IllegalStateException.class,
-                index::checkAndRepairConsistency);
+                () -> index.maintenance().compact());
+        assertThrows(IllegalStateException.class,
+                () -> index.maintenance().checkAndRepairConsistency());
     }
 
     /**

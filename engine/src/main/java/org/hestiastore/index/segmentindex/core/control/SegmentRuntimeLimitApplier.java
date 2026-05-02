@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.control;
 
 import java.util.Map;
 
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;

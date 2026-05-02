@@ -56,7 +56,7 @@ class SegmentIndexImplRetryTest {
     @Test
     void getRetriesOnBusyThenOk() {
         index.put(1, "one");
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(
                 index);
@@ -90,7 +90,7 @@ class SegmentIndexImplRetryTest {
         index.put(2, "two");
         final Thread drainThread = new Thread(() -> {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50L));
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         });
         drainThread.start();
         try {

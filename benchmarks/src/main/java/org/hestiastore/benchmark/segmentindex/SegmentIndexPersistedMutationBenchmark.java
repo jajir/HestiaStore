@@ -76,7 +76,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     @TearDown(Level.Iteration)
     public void flushAfterIteration() {
         if (index != null && pendingMutationCount > 0) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             pendingMutationCount = 0;
         }
     }
@@ -158,14 +158,14 @@ public class SegmentIndexPersistedMutationBenchmark {
                     buildValue("seed-", key, 's'));
             pending++;
             if (pending >= flushBatchSize) {
-                seedingIndex.flushAndWait();
+                seedingIndex.maintenance().flushAndWait();
                 pending = 0;
             }
         }
         if (pending > 0) {
-            seedingIndex.flushAndWait();
+            seedingIndex.maintenance().flushAndWait();
         }
-        seedingIndex.compactAndWait();
+        seedingIndex.maintenance().compactAndWait();
     }
 
     private int advanceDeleteCursor(final int currentKey) {
@@ -178,7 +178,7 @@ public class SegmentIndexPersistedMutationBenchmark {
     private void flushIfNeeded() {
         pendingMutationCount++;
         if (pendingMutationCount >= flushBatchSize) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             pendingMutationCount = 0;
         }
     }

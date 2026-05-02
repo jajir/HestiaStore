@@ -5,14 +5,13 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 
 /**
  * Wraps a {@link SegmentIndex} and ensures lifecycle close hooks run alongside
@@ -52,26 +51,6 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
     }
 
     @Override
-    public void compact() {
-        delegate.compact();
-    }
-
-    @Override
-    public void compactAndWait() {
-        delegate.compactAndWait();
-    }
-
-    @Override
-    public void flush() {
-        delegate.flush();
-    }
-
-    @Override
-    public void flushAndWait() {
-        delegate.flushAndWait();
-    }
-
-    @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
         return delegate.getStream(segmentWindows);
     }
@@ -94,28 +73,18 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
     }
 
     @Override
-    public void checkAndRepairConsistency() {
-        delegate.checkAndRepairConsistency();
+    public RuntimeConfiguration runtimeConfiguration() {
+        return delegate.runtimeConfiguration();
     }
 
     @Override
-    public IndexConfiguration<K, V> getConfiguration() {
-        return delegate.getConfiguration();
+    public IndexRuntimeMonitoring runtimeMonitoring() {
+        return delegate.runtimeMonitoring();
     }
 
     @Override
-    public SegmentIndexState getState() {
-        return delegate.getState();
-    }
-
-    @Override
-    public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return delegate.metricsSnapshot();
-    }
-
-    @Override
-    public IndexControlPlane controlPlane() {
-        return delegate.controlPlane();
+    public SegmentIndexMaintenance maintenance() {
+        return delegate.maintenance();
     }
 
     /** {@inheritDoc} */

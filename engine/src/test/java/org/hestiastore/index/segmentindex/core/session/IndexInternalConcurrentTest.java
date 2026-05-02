@@ -144,7 +144,7 @@ class IndexInternalConcurrentTest {
         index.put(1, "one");
         index.put(2, "two");
         index.put(3, "three");
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final List<Entry<Integer, String>> expected = List.of(
                 Entry.of(1, "one"), Entry.of(2, "two"),
@@ -155,7 +155,7 @@ class IndexInternalConcurrentTest {
             final var consumed = new java.util.ArrayList<Entry<Integer, String>>();
             assertTrue(iterator.hasNext());
             consumed.add(iterator.next());
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             consumed.addAll(consumeAll(iterator));
 
             assertTrue(consumed.size() > 0);
@@ -168,7 +168,7 @@ class IndexInternalConcurrentTest {
         index.put(1, "one");
         index.put(2, "two");
         index.put(3, "three");
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final List<Entry<Integer, String>> expected = List.of(
                 Entry.of(1, "one"), Entry.of(2, "two"),
@@ -179,7 +179,7 @@ class IndexInternalConcurrentTest {
             final var consumed = new java.util.ArrayList<Entry<Integer, String>>();
             assertTrue(iterator.hasNext());
             consumed.add(iterator.next());
-            index.compactAndWait();
+            index.maintenance().compactAndWait();
             consumed.addAll(consumeAll(iterator));
 
             assertTrue(consumed.size() > 0);

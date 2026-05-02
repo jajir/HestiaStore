@@ -6,18 +6,18 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 
 /**
  * Direct, caller-thread implementation of {@link SegmentIndex}.
@@ -48,7 +48,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
         this(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
                 runtimeConfiguration, executorRegistry, true);
@@ -59,7 +59,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
         return new IndexInternalConcurrent<>(directoryFacade, keyTypeDescriptor,
                 valueTypeDescriptor, conf, runtimeConfiguration,
@@ -70,7 +70,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry,
             final boolean completeStartup) {
         this.delegate = new SegmentIndexImpl<>(directoryFacade,
@@ -97,26 +97,6 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public void compact() {
-        delegate.compact();
-    }
-
-    @Override
-    public void flush() {
-        delegate.flush();
-    }
-
-    @Override
-    public void compactAndWait() {
-        delegate.compactAndWait();
-    }
-
-    @Override
-    public void flushAndWait() {
-        delegate.flushAndWait();
-    }
-
-    @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
         return delegate.getStream(segmentWindows);
     }
@@ -127,33 +107,23 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
         return delegate.getStream(segmentWindow, isolation);
     }
 
-    @Override
-    public void checkAndRepairConsistency() {
-        delegate.checkAndRepairConsistency();
-    }
-
-    @Override
-    public IndexConfiguration<K, V> getConfiguration() {
-        return delegate.getConfiguration();
-    }
-
-    @Override
-    public SegmentIndexState getState() {
-        return delegate.getState();
-    }
-
     public IndexState<K, V> getIndexState() {
         return delegate.getIndexState();
     }
 
     @Override
-    public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return delegate.metricsSnapshot();
+    public RuntimeConfiguration runtimeConfiguration() {
+        return delegate.runtimeConfiguration();
     }
 
     @Override
-    public IndexControlPlane controlPlane() {
-        return delegate.controlPlane();
+    public IndexRuntimeMonitoring runtimeMonitoring() {
+        return delegate.runtimeMonitoring();
+    }
+
+    @Override
+    public SegmentIndexMaintenance maintenance() {
+        return delegate.maintenance();
     }
 
     @Override

@@ -3,7 +3,8 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
@@ -22,7 +23,8 @@ final class SegmentIndexRuntimeServices<K, V> {
     private final SegmentIndexOperationAccess<K, V> operationAccess;
     private final MaintenanceService maintenance;
     private final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier;
-    private final IndexControlPlane controlPlane;
+    private final IndexRuntimeMonitoring runtimeMonitoring;
+    private final RuntimeConfiguration runtimeConfiguration;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
 
     SegmentIndexRuntimeServices(
@@ -31,7 +33,8 @@ final class SegmentIndexRuntimeServices<K, V> {
             final MaintenanceService maintenance,
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier,
             final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier,
-            final IndexControlPlane controlPlane) {
+            final IndexRuntimeMonitoring runtimeMonitoring,
+            final RuntimeConfiguration runtimeConfiguration) {
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
         this.operationAccess = Vldtn.requireNonNull(
@@ -41,7 +44,9 @@ final class SegmentIndexRuntimeServices<K, V> {
                 "runtimeLimitApplier");
         this.metricsSnapshotSupplier = Vldtn.requireNonNull(
                 metricsSnapshotSupplier, "metricsSnapshotSupplier");
-        this.controlPlane = Vldtn.requireNonNull(controlPlane, "controlPlane");
+        this.runtimeMonitoring = Vldtn.requireNonNull(runtimeMonitoring,
+                "runtimeMonitoring");
+        this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration, "runtimeConfiguration");
     }
 
     IndexWalCoordinator<K, V> walCoordinator() {
@@ -60,8 +65,12 @@ final class SegmentIndexRuntimeServices<K, V> {
         return metricsSnapshotSupplier;
     }
 
-    IndexControlPlane controlPlane() {
-        return controlPlane;
+    IndexRuntimeMonitoring runtimeMonitoring() {
+        return runtimeMonitoring;
+    }
+
+    RuntimeConfiguration runtimeConfiguration() {
+        return runtimeConfiguration;
     }
 
     SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier() {

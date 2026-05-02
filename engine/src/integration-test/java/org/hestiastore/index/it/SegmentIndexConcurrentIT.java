@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -98,7 +98,7 @@ class SegmentIndexConcurrentIT {
                 "Writer threads did not finish in time");
         executor.shutdownNow();
 
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -163,7 +163,7 @@ class SegmentIndexConcurrentIT {
 
         final int finalValue = 42_4242;
         index.put(key, finalValue);
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
         assertEquals(finalValue, index.get(key));
         index.close();
 
@@ -199,9 +199,9 @@ class SegmentIndexConcurrentIT {
                 int iteration = 0;
                 while (!stop.get()) {
                     try {
-                        index.flush();
+                        index.maintenance().flush();
                         if ((iteration++ % 3) == 0) {
-                            index.compact();
+                            index.maintenance().compact();
                         }
                     } catch (final IndexException ex) {
                         if (!isTransientIndexFailure(ex)) {
@@ -281,7 +281,7 @@ class SegmentIndexConcurrentIT {
 
         // Ensure any values that are still buffered in the write cache are
         // persisted before validating the full stream view.
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final Map<Integer, Integer> actual = index.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
@@ -391,7 +391,7 @@ class SegmentIndexConcurrentIT {
         writers.shutdownNow();
         readers.shutdownNow();
 
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
         index.getStream().forEach(entry -> assertEquals(entry.getKey(),
                 decodeKey(entry.getValue())));
         index.close();
@@ -495,8 +495,8 @@ class SegmentIndexConcurrentIT {
                     coldWriteCount.get(),
                     "Expected all cold-range writes to complete");
 
-            assertTrue(index.metricsSnapshot().getSegmentCount() > 1
-                    || index.metricsSnapshot().getSplitScheduleCount() > 0,
+            assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1
+                    || index.runtimeMonitoring().snapshot().getMetrics().getSplitScheduleCount() > 0,
                     "Expected autonomous split scheduling under hot-range load");
             awaitSplitPublished(index, 30_000L);
             setSplitThreshold(index, 10_000_000);
@@ -580,8 +580,8 @@ class SegmentIndexConcurrentIT {
                                     + entry.getKey());
                 }
 
-                assertTrue(index.metricsSnapshot().getSegmentCount() > 1
-                        || index.metricsSnapshot().getSplitScheduleCount() > 0,
+                assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1
+                        || index.runtimeMonitoring().snapshot().getMetrics().getSplitScheduleCount() > 0,
                         "Expected split evidence to survive close/reopen rotation");
 
                 final int additionalColdKey = 3_000_000 + rotation;
@@ -610,7 +610,7 @@ class SegmentIndexConcurrentIT {
                         "Unexpected final reopened value for cold key "
                                 + entry.getKey());
             }
-            assertTrue(index.metricsSnapshot().getSegmentCount() > 1,
+            assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1,
                     "Expected persisted child routes after rotation reopens");
         } finally {
             if (index != null && !index.wasClosed()) {
@@ -670,7 +670,7 @@ class SegmentIndexConcurrentIT {
                 "Worker threads did not finish in time");
         executor.shutdownNow();
 
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final Map<Integer, Integer> expected = new java.util.HashMap<>();
         for (final Map<Integer, Integer> local : expectedByThread) {
@@ -687,7 +687,7 @@ class SegmentIndexConcurrentIT {
         // Make sure buffered entries are flushed before collecting the stream
         // (getStream does not emit brand-new keys that exist only in the write
         // cache).
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final Map<Integer, Integer> actual = index.getStream()
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
@@ -729,7 +729,7 @@ class SegmentIndexConcurrentIT {
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
             try {
-                index.checkAndRepairConsistency();
+                index.maintenance().checkAndRepairConsistency();
                 return;
             } catch (final NoSuchElementException exception) {
                 final String message = exception.getMessage();
@@ -750,7 +750,7 @@ class SegmentIndexConcurrentIT {
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (true) {
             try {
-                index.flushAndWait();
+                index.maintenance().flushAndWait();
                 return;
             } catch (final IndexException exception) {
                 if (!isTransientIndexFailure(exception)
@@ -764,10 +764,9 @@ class SegmentIndexConcurrentIT {
 
     private static void setSplitThreshold(
             final SegmentIndex<Integer, Integer> index, final int threshold) {
-        final long revision = index.controlPlane().configuration()
-                .getConfigurationActual().getRevision();
-        final RuntimePatchResult patchResult = index.controlPlane()
-                .configuration()
+        final long revision = index.runtimeConfiguration()
+                .getCurrent().getRevision();
+        final RuntimePatchResult patchResult = index.runtimeConfiguration()
                 .apply(new RuntimeConfigPatch(Map.of(
                         RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                         Integer.valueOf(threshold)), false,
@@ -795,7 +794,7 @@ class SegmentIndexConcurrentIT {
     private static void awaitSplitIdle(final SegmentIndex<Integer, Integer> index,
             final long timeoutMillis) {
         awaitCondition(() -> {
-            final var snapshot = index.metricsSnapshot();
+            final var snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             return snapshot.getSplitInFlightCount() == 0
                     && snapshot.getSplitQueueSize() == 0
                     && snapshot.getSplitMaintenanceActiveThreadCount() == 0;
@@ -816,8 +815,8 @@ class SegmentIndexConcurrentIT {
     private static void awaitSplitEvidence(
             final SegmentIndex<Integer, Integer> index,
             final long timeoutMillis) {
-        awaitCondition(() -> index.metricsSnapshot().getSegmentCount() > 1
-                || index.metricsSnapshot().getSplitScheduleCount() > 0,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1
+                || index.runtimeMonitoring().snapshot().getMetrics().getSplitScheduleCount() > 0,
                 timeoutMillis);
     }
 
@@ -825,7 +824,7 @@ class SegmentIndexConcurrentIT {
             final SegmentIndex<Integer, Integer> index,
             final long timeoutMillis) {
         awaitCondition(() -> {
-            final var snapshot = index.metricsSnapshot();
+            final var snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             return snapshot.getSegmentCount() > 1
                     && snapshot.getSplitInFlightCount() == 0;
         }, timeoutMillis);

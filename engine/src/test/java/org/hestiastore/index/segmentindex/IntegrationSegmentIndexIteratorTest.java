@@ -16,9 +16,9 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -60,7 +60,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .build();
         final SegmentIndex<Integer, String> index = SegmentIndex.create(directory, conf);
         data.stream().forEach(index::put);
-        index.compact();
+        index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
 
@@ -74,7 +74,7 @@ class IntegrationSegmentIndexIteratorTest {
                 .build();
         final SegmentIndex<Integer, NullValue> index = SegmentIndex.create(directory, conf);
         data2.stream().forEach(index::put);
-        index.compact();
+        index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
 
@@ -89,7 +89,7 @@ class IntegrationSegmentIndexIteratorTest {
         final SegmentIndex<String, String> index = SegmentIndex.create(directory, conf);
         index.put("a", "a");
         index.put("b", "b");
-        index.compact();
+        index.maintenance().compact();
         assertTrue(true); // Just to ensure no exceptions are thrown
     }
     // TEST nkey class non existing conf
@@ -99,7 +99,7 @@ class IntegrationSegmentIndexIteratorTest {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
 
         data.stream().forEach(index1::put);
-        index1.compactAndWait();
+        index1.maintenance().compactAndWait();
         logger.debug("verify that after that point no segment "
                 + "is loaded into memory.");
         index1.getStream(SegmentWindow.unbounded()).forEach(entry -> {
@@ -117,8 +117,8 @@ class IntegrationSegmentIndexIteratorTest {
             index.put(2, "stable-2");
             index.put(3, "stable-3");
             index.put(4, "stable-4");
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
 
             index.delete(1);
             index.put(2, "overlay-2");
@@ -147,8 +147,8 @@ class IntegrationSegmentIndexIteratorTest {
         try (SegmentIndex<Integer, String> index = makeSegmentIndex()) {
             index.put(1, "stable-1");
             index.put(2, "stable-2");
-            index.flushAndWait();
-            index.compactAndWait();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
             index.put(3, "overlay-before-open");
 
             final List<Entry<Integer, String>> snapshotView;
@@ -203,10 +203,10 @@ class IntegrationSegmentIndexIteratorTest {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "stable-" + i);
             }
-            index.flushAndWait();
-            awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
-                    && index.metricsSnapshot().getSplitInFlightCount() == 0
-                    && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+            index.maintenance().flushAndWait();
+            awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
+                    && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
+                    && index.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                     10_000L);
 
             final List<Entry<Integer, String>> expected = IntStream.range(0, 48)
@@ -214,10 +214,9 @@ class IntegrationSegmentIndexIteratorTest {
 
             try (var preSplitStream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
-                final long revision = index.controlPlane().configuration()
-                        .getConfigurationActual().getRevision();
-                final RuntimePatchResult patchResult = index.controlPlane()
-                        .configuration()
+                final long revision = index.runtimeConfiguration()
+                        .getCurrent().getRevision();
+                final RuntimePatchResult patchResult = index.runtimeConfiguration()
                         .apply(new RuntimeConfigPatch(Map.of(
                                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                                 Integer.valueOf(16)), false,
@@ -225,12 +224,11 @@ class IntegrationSegmentIndexIteratorTest {
                 assertTrue(patchResult.isApplied());
 
                 assertEquals(expected, preSplitStream.toList());
-                assertEquals(1, index.metricsSnapshot().getSegmentCount());
+                assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
             }
 
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
+                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 return snapshot.getSegmentCount() > 1
                         && snapshot.getSplitInFlightCount() == 0;
             }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
@@ -239,7 +237,7 @@ class IntegrationSegmentIndexIteratorTest {
             assertEquals("stable-18", index.get(18));
             assertEquals("stable-44", index.get(44));
             assertFullIsolationSnapshot(index, expected);
-            assertTrue(index.metricsSnapshot().getSegmentCount() > 1);
+            assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1);
         }
     }
 
@@ -249,10 +247,10 @@ class IntegrationSegmentIndexIteratorTest {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "stable-" + i);
             }
-            index.flushAndWait();
-            awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
-                    && index.metricsSnapshot().getSplitInFlightCount() == 0
-                    && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+            index.maintenance().flushAndWait();
+            awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
+                    && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
+                    && index.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                     10_000L);
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
@@ -262,10 +260,9 @@ class IntegrationSegmentIndexIteratorTest {
                 assertTrue(iterator.hasNext());
                 consumed.add(iterator.next());
 
-                final long revision = index.controlPlane().configuration()
-                        .getConfigurationActual().getRevision();
-                final RuntimePatchResult patchResult = index.controlPlane()
-                        .configuration()
+                final long revision = index.runtimeConfiguration()
+                        .getCurrent().getRevision();
+                final RuntimePatchResult patchResult = index.runtimeConfiguration()
                         .apply(new RuntimeConfigPatch(Map.of(
                                 RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                                 Integer.valueOf(16)), false,
@@ -273,8 +270,7 @@ class IntegrationSegmentIndexIteratorTest {
                 assertTrue(patchResult.isApplied());
 
                 awaitCondition(() -> {
-                    final SegmentIndexMetricsSnapshot snapshot = index
-                            .metricsSnapshot();
+                    final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                     return snapshot.getSegmentCount() > 1
                             && snapshot.getSplitInFlightCount() == 0
                             && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0;

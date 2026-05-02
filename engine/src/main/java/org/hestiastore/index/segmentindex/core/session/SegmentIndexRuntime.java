@@ -7,21 +7,22 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
@@ -45,7 +46,7 @@ public final class SegmentIndexRuntime<K, V>
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry, final Stats stats,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
@@ -132,6 +133,10 @@ public final class SegmentIndexRuntime<K, V>
         return services.metricsSnapshotSupplier().get();
     }
 
+    public IndexRuntimeMonitoring runtimeMonitoring() {
+        return services.runtimeMonitoring();
+    }
+
     @Override
     public void put(final K key, final V value) {
         services.operationAccess().put(key, value);
@@ -147,8 +152,8 @@ public final class SegmentIndexRuntime<K, V>
         services.operationAccess().delete(key);
     }
 
-    public IndexControlPlane controlPlane() {
-        return services.controlPlane();
+    public RuntimeConfiguration runtimeConfiguration() {
+        return services.runtimeConfiguration();
     }
 
     void applyRuntimeEffectiveLimits(

@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 
 /**
  * Produces runtime snapshots from observed thread pools without owning the

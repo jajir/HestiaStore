@@ -12,20 +12,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.control.IndexConfigurationManagement;
-import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.control.IndexRuntimeView;
-import org.hestiastore.index.control.model.ConfigurationSnapshot;
-import org.hestiastore.index.control.model.IndexRuntimeSnapshot;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexIdentityConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,13 +46,18 @@ class IndexContextLoggingAdapterTest {
     @Mock
     private SegmentIndex<String, String> delegate;
 
+    @Mock
+    private SegmentIndexMaintenance maintenance;
+
     private IndexContextLoggingAdapter<String, String> adapter;
 
     @BeforeEach
     void setUp() {
         when(conf.identity()).thenReturn(identity);
         when(identity.name()).thenReturn("idx");
-        when(delegate.controlPlane()).thenReturn(mock(IndexControlPlane.class));
+        when(delegate.runtimeConfiguration()).thenReturn(mock(RuntimeConfiguration.class));
+        when(delegate.runtimeMonitoring()).thenReturn(mock(IndexRuntimeMonitoring.class));
+        when(delegate.maintenance()).thenReturn(maintenance);
         adapter = new IndexContextLoggingAdapter<>(conf, delegate);
     }
 
@@ -115,63 +119,55 @@ class IndexContextLoggingAdapterTest {
     }
 
     @Test
-    void wrapsControlPlaneNestedApisWithMdc() {
-        final IndexControlPlane delegateControlPlane = mock(
-                IndexControlPlane.class);
-        final IndexRuntimeView delegateRuntime = mock(IndexRuntimeView.class);
-        final IndexConfigurationManagement delegateConfiguration = mock(
-                IndexConfigurationManagement.class);
+    void wrapsRuntimeConfigurationAndRuntimeMonitoringApisWithMdc() {
+        final RuntimeConfiguration delegateRuntimeConfiguration = mock(
+                RuntimeConfiguration.class);
+        final IndexRuntimeMonitoring delegateRuntime = mock(IndexRuntimeMonitoring.class);
+        final SegmentIndexMaintenance delegateMaintenance = mock(
+                SegmentIndexMaintenance.class);
         final RuntimeConfigPatch patch = mock(RuntimeConfigPatch.class);
 
-        final AtomicReference<String> mdcAtIndexName = new AtomicReference<>();
         final AtomicReference<String> mdcAtRuntimeSnapshot = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetActual = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetOriginal = new AtomicReference<>();
         final AtomicReference<String> mdcAtValidate = new AtomicReference<>();
         final AtomicReference<String> mdcAtApply = new AtomicReference<>();
 
-        when(delegate.controlPlane()).thenReturn(delegateControlPlane);
-        when(delegateControlPlane.indexName()).thenAnswer(invocation -> {
-            mdcAtIndexName.set(MDC.get("index.name"));
-            return "idx";
-        });
-        when(delegateControlPlane.runtime()).thenReturn(delegateRuntime);
+        when(delegate.runtimeConfiguration()).thenReturn(delegateRuntimeConfiguration);
+        when(delegate.runtimeMonitoring()).thenReturn(delegateRuntime);
+        when(delegate.maintenance()).thenReturn(delegateMaintenance);
         when(delegateRuntime.snapshot()).thenAnswer(invocation -> {
             mdcAtRuntimeSnapshot.set(MDC.get("index.name"));
             return mock(IndexRuntimeSnapshot.class);
         });
-        when(delegateControlPlane.configuration())
-                .thenReturn(delegateConfiguration);
-        when(delegateConfiguration.getConfigurationActual())
+        when(delegateRuntimeConfiguration.getCurrent())
                 .thenAnswer(invocation -> {
                     mdcAtGetActual.set(MDC.get("index.name"));
                     return mock(ConfigurationSnapshot.class);
                 });
-        when(delegateConfiguration.getConfigurationOriginal())
+        when(delegateRuntimeConfiguration.getOriginal())
                 .thenAnswer(invocation -> {
                     mdcAtGetOriginal.set(MDC.get("index.name"));
                     return mock(ConfigurationSnapshot.class);
                 });
-        when(delegateConfiguration.validate(patch)).thenAnswer(invocation -> {
+        when(delegateRuntimeConfiguration.validate(patch)).thenAnswer(invocation -> {
             mdcAtValidate.set(MDC.get("index.name"));
             return mock(RuntimePatchValidation.class);
         });
-        when(delegateConfiguration.apply(patch)).thenAnswer(invocation -> {
+        when(delegateRuntimeConfiguration.apply(patch)).thenAnswer(invocation -> {
             mdcAtApply.set(MDC.get("index.name"));
             return mock(RuntimePatchResult.class);
         });
         adapter = new IndexContextLoggingAdapter<>(conf, delegate);
 
-        final IndexControlPlane wrappedControlPlane = adapter.controlPlane();
-        assertSame(wrappedControlPlane, adapter.controlPlane());
-        wrappedControlPlane.indexName();
-        wrappedControlPlane.runtime().snapshot();
-        wrappedControlPlane.configuration().getConfigurationActual();
-        wrappedControlPlane.configuration().getConfigurationOriginal();
-        wrappedControlPlane.configuration().validate(patch);
-        wrappedControlPlane.configuration().apply(patch);
+        final RuntimeConfiguration wrappedRuntimeConfiguration = adapter.runtimeConfiguration();
+        assertSame(wrappedRuntimeConfiguration, adapter.runtimeConfiguration());
+        adapter.runtimeMonitoring().snapshot();
+        wrappedRuntimeConfiguration.getCurrent();
+        wrappedRuntimeConfiguration.getOriginal();
+        wrappedRuntimeConfiguration.validate(patch);
+        wrappedRuntimeConfiguration.apply(patch);
 
-        assertEquals("idx", mdcAtIndexName.get());
         assertEquals("idx", mdcAtRuntimeSnapshot.get());
         assertEquals("idx", mdcAtGetActual.get());
         assertEquals("idx", mdcAtGetOriginal.get());
@@ -187,9 +183,6 @@ class IndexContextLoggingAdapterTest {
         final AtomicReference<String> mdcAtFlush = new AtomicReference<>();
         final AtomicReference<String> mdcAtFlushAndWait = new AtomicReference<>();
         final AtomicReference<String> mdcAtCheck = new AtomicReference<>();
-        final AtomicReference<String> mdcAtGetConfiguration = new AtomicReference<>();
-        final AtomicReference<String> mdcAtGetState = new AtomicReference<>();
-        final AtomicReference<String> mdcAtMetricsSnapshot = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetStream = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetStreamIsolation = new AtomicReference<>();
         final AtomicReference<String> mdcAtPutEntry = new AtomicReference<>();
@@ -201,35 +194,23 @@ class IndexContextLoggingAdapterTest {
         doAnswer(invocation -> {
             mdcAtCompact.set(MDC.get("index.name"));
             return null;
-        }).when(delegate).compact();
+        }).when(maintenance).compact();
         doAnswer(invocation -> {
             mdcAtCompactAndWait.set(MDC.get("index.name"));
             return null;
-        }).when(delegate).compactAndWait();
+        }).when(maintenance).compactAndWait();
         doAnswer(invocation -> {
             mdcAtFlush.set(MDC.get("index.name"));
             return null;
-        }).when(delegate).flush();
+        }).when(maintenance).flush();
         doAnswer(invocation -> {
             mdcAtFlushAndWait.set(MDC.get("index.name"));
             return null;
-        }).when(delegate).flushAndWait();
+        }).when(maintenance).flushAndWait();
         doAnswer(invocation -> {
             mdcAtCheck.set(MDC.get("index.name"));
             return null;
-        }).when(delegate).checkAndRepairConsistency();
-        when(delegate.getConfiguration()).thenAnswer(invocation -> {
-            mdcAtGetConfiguration.set(MDC.get("index.name"));
-            return conf;
-        });
-        when(delegate.getState()).thenAnswer(invocation -> {
-            mdcAtGetState.set(MDC.get("index.name"));
-            return SegmentIndexState.READY;
-        });
-        when(delegate.metricsSnapshot()).thenAnswer(invocation -> {
-            mdcAtMetricsSnapshot.set(MDC.get("index.name"));
-            return null;
-        });
+        }).when(maintenance).checkAndRepairConsistency();
         when(delegate.getStream(window)).thenAnswer(invocation -> {
             mdcAtGetStream.set(MDC.get("index.name"));
             return Stream.empty();
@@ -254,21 +235,15 @@ class IndexContextLoggingAdapterTest {
                 });
 
         MDC.put("index.name", "outer");
-        adapter.compact();
+        adapter.maintenance().compact();
         assertEquals("outer", MDC.get("index.name"));
-        adapter.compactAndWait();
+        adapter.maintenance().compactAndWait();
         assertEquals("outer", MDC.get("index.name"));
-        adapter.flush();
+        adapter.maintenance().flush();
         assertEquals("outer", MDC.get("index.name"));
-        adapter.flushAndWait();
+        adapter.maintenance().flushAndWait();
         assertEquals("outer", MDC.get("index.name"));
-        adapter.checkAndRepairConsistency();
-        assertEquals("outer", MDC.get("index.name"));
-        adapter.getConfiguration();
-        assertEquals("outer", MDC.get("index.name"));
-        adapter.getState();
-        assertEquals("outer", MDC.get("index.name"));
-        adapter.metricsSnapshot();
+        adapter.maintenance().checkAndRepairConsistency();
         assertEquals("outer", MDC.get("index.name"));
         adapter.put(entry);
         assertEquals("outer", MDC.get("index.name"));
@@ -288,8 +263,7 @@ class IndexContextLoggingAdapterTest {
         }
 
         assertDelegatedMdcValues(mdcAtCompact, mdcAtCompactAndWait, mdcAtFlush,
-                mdcAtFlushAndWait, mdcAtCheck, mdcAtGetConfiguration, mdcAtGetState,
-                mdcAtMetricsSnapshot, mdcAtPutEntry, mdcAtGetStream,
+                mdcAtFlushAndWait, mdcAtCheck, mdcAtPutEntry, mdcAtGetStream,
                 mdcAtGetStreamIsolation, mdcAtGetStreamDefault,
                 mdcAtGetStreamDefaultIsolation);
     }

@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.model.ConfigurationSnapshot;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 
 /**

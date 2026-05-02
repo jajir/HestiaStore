@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

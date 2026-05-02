@@ -35,15 +35,15 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.monitoring.MonitoredIndexProvider;
-import org.hestiastore.index.control.model.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
 import org.hestiastore.index.segmentindex.LegacyPartitionCompatibilityMetrics;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimePatchValidation;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.monitoring.json.api.ActionRequest;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
@@ -334,12 +334,12 @@ public final class ManagementAgentServer
 
     private void handleFlush(final HttpExchange exchange) throws IOException {
         handleMutatingAction(exchange, ActionType.FLUSH,
-                registered -> registered.index().flushAndWait());
+                registered -> registered.index().maintenance().flushAndWait());
     }
 
     private void handleCompact(final HttpExchange exchange) throws IOException {
         handleMutatingAction(exchange, ActionType.COMPACT,
-                registered -> registered.index().compactAndWait());
+                registered -> registered.index().maintenance().compactAndWait());
     }
 
     private void handleConfig(final HttpExchange exchange) throws IOException {
@@ -592,8 +592,8 @@ public final class ManagementAgentServer
             final String endpoint, final String body,
             final ConfigPatchRequest request, final RegisteredIndex target,
             final RuntimeConfigPatch runtimePatch) throws IOException {
-        final RuntimePatchResult result = target.index().controlPlane()
-                .configuration().apply(runtimePatch);
+        final RuntimePatchResult result = target.index().runtimeConfiguration()
+                .apply(runtimePatch);
         if (!result.validation().valid()) {
             final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
                     formatValidationIssues(result.validation()), "",
@@ -802,7 +802,8 @@ public final class ManagementAgentServer
                         indexName);
                 return true;
             }
-            final SegmentIndexState state = index.getState();
+            final SegmentIndexState state = index.runtimeMonitoring().snapshot()
+                    .getState();
             if (state == SegmentIndexState.CLOSED) {
                 logger.info("Removing CLOSED index from reporting: {}",
                         indexName);
@@ -932,9 +933,9 @@ public final class ManagementAgentServer
     private ConfigViewResponse toConfigViewResponse(
             final RegisteredIndex monitored) {
         final ConfigurationSnapshot currentConfig = monitored.index()
-                .controlPlane().configuration().getConfigurationActual();
+                .runtimeConfiguration().getCurrent();
         final ConfigurationSnapshot originalConfig = monitored.index()
-                .controlPlane().configuration().getConfigurationOriginal();
+                .runtimeConfiguration().getOriginal();
         return new ConfigViewResponse(monitored.indexName(),
                 toApiConfigMap(originalConfig.values()),
                 toApiConfigMap(currentConfig.values()),
@@ -1306,12 +1307,12 @@ public final class ManagementAgentServer
 
         @Override
         public SegmentIndexState state() {
-            return index.getState();
+            return index.runtimeMonitoring().snapshot().getState();
         }
 
         @Override
         public SegmentIndexMetricsSnapshot metricsSnapshot() {
-            return index.metricsSnapshot();
+            return index.runtimeMonitoring().snapshot().getMetrics();
         }
     }
 

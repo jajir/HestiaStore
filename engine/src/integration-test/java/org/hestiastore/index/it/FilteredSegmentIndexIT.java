@@ -63,8 +63,8 @@ class FilteredSegmentIndexIT {
 
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory, createConf)) {
             entries.forEach(index::put);
-            index.flush();
-            index.compact();
+            index.maintenance().flush();
+            index.maintenance().compact();
             LOGGER.info("Created index with configuration: {}", createConf);
             logPropertiesFile(directory, "Created index properties file");
         }

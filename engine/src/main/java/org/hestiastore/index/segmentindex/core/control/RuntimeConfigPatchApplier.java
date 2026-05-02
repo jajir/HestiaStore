@@ -4,11 +4,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.model.ConfigurationSnapshot;
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimePatchValidation;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 
 /**
  * Applies validated runtime patches and triggers side effects for changed
