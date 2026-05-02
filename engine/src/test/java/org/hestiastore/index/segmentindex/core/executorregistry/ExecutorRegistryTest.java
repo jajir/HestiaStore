@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 import org.junit.jupiter.api.Test;
 
 class ExecutorRegistryTest {

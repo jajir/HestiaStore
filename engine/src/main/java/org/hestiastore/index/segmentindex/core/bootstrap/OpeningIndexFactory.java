@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 
@@ -26,6 +26,6 @@ interface OpeningIndexFactory<K, V> {
             TypeDescriptor<K> keyTypeDescriptor,
             TypeDescriptor<V> valueTypeDescriptor,
             IndexConfiguration<K, V> configuration,
-            IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             ExecutorRegistry executorRegistry);
 }

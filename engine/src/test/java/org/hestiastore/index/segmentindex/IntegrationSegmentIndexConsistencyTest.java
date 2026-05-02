@@ -43,7 +43,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
         try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
             for (int i = 0; i < 20; i++) {
                 writeEntries(index, makeList(i));
-                index.flush();
+                index.maintenance().flush();
                 verifyIndexData(index, makeList(i),
                         SegmentIteratorIsolation.FULL_ISOLATION);
             }
@@ -78,7 +78,7 @@ class IntegrationSegmentIndexConsistencyTest extends AbstractSegmentIndexTest {
     void test_search_for_missing_key_bigger_than_last_existing_one() {
         try (final SegmentIndex<Integer, Integer> index = makeIndex()) {
             writeEntries(index, makeList(888));
-            index.flush();
+            index.maintenance().flush();
             for (int i = 0; i < NUMBER_OF_TEST_ENTRIES; i++) {
                 assertNull(index.get(i * 2 + 1));
             }

@@ -98,7 +98,7 @@ Segment-specific internals referenced here are centralized in
 
 - Bloom stats: `BloomFilter.getStatistics()` reports avoided disk accesses and false‑positive rate. Code: `bloomfilter/BloomFilterStats`.
 - Operation counters: `segmentindex/Stats` exposes get/put/delete counts (logged on close in `SegmentIndexImpl#doClose`).
-- Consistency: after unexpected shutdown, run `SegmentIndex.checkAndRepairConsistency()`; optionally `compact()` to reclaim locality.
+- Consistency: after unexpected shutdown, run `SegmentIndex.maintenance().checkAndRepairConsistency()`; optionally `maintenance().compact()` to reclaim locality.
 
 ## Code Pointers
 

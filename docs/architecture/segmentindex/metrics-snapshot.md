@@ -1,6 +1,6 @@
 # Metrics Snapshot
 
-`SegmentIndex.metricsSnapshot()` exposes a stable, read-only metrics contract
+`SegmentIndex.runtimeMonitoring().snapshot().getMetrics()` exposes a stable, read-only metrics contract
 for index-level telemetry.
 
 ## Current fields

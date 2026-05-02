@@ -14,7 +14,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.mockito.Mockito;
 import org.junit.jupiter.api.AfterEach;
@@ -73,7 +73,7 @@ class SegmentIndexRuntimeTest {
         assertNotNull(SegmentIndexRuntimeTestAccess.operationAccess(runtime));
         assertNotNull(
                 SegmentIndexRuntimeTestAccess.metricsSnapshotSupplier(runtime));
-        assertNotNull(SegmentIndexRuntimeTestAccess.controlPlane(runtime));
+        assertNotNull(SegmentIndexRuntimeTestAccess.runtimeConfiguration(runtime));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

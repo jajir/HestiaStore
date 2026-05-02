@@ -36,7 +36,7 @@ sha256sum -c "wal-tools-${VERSION}.zip.sha256"
 unzip -o "wal-tools-${VERSION}.zip" -d "$WAL_TOOLS_DIR"
 ```
 
-3. Monitoring is collecting `SegmentIndex.metricsSnapshot()` WAL fields.
+3. Monitoring is collecting `SegmentIndex.runtimeMonitoring().snapshot().getMetrics()` WAL fields.
 4. Target indexes for canary are chosen (low business criticality first).
 
 ## Canary Plan
@@ -153,12 +153,12 @@ IndexConfiguration<String, String> rollbackConf = IndexConfiguration
     .build();
 
 try (SegmentIndex<String, String> index = SegmentIndex.open(directory, rollbackConf)) {
-    index.flushAndWait();
+    index.maintenance().flushAndWait();
 }
 ```
 
 4. Run integrity checks:
-   - `index.checkAndRepairConsistency()`
+   - `index.maintenance().checkAndRepairConsistency()`
    - point-read spot checks on business keys
 5. Keep `wal/` files for incident forensics until postmortem is complete.
 6. Resume traffic only after checks pass.

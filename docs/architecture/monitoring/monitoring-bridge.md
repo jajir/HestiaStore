@@ -10,7 +10,7 @@ artifact has no runtime dependency on Micrometer or Prometheus.
 - `monitoring-rest-json-api`
   Shared REST/JSON DTO contracts for monitoring and management.
 - `monitoring-micrometer`
-  Micrometer binder over `SegmentIndex.metricsSnapshot()`.
+  Micrometer binder over `SegmentIndex.runtimeMonitoring().snapshot().getMetrics()`.
 - `monitoring-prometheus`
   Prometheus helper based on Micrometer Prometheus registry.
 - `monitoring-rest-json`
@@ -21,7 +21,7 @@ artifact has no runtime dependency on Micrometer or Prometheus.
 ## How runtime data is produced
 
 At runtime, each logical index exposes counters and state via
-`SegmentIndex.metricsSnapshot()`.
+`SegmentIndex.runtimeMonitoring().snapshot().getMetrics()`.
 
 The snapshot includes:
 

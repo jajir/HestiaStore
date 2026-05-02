@@ -303,7 +303,7 @@ Some names preserve older partition terminology for compatibility.
 | `wal.corruptionPolicy` | `wal().corruptionPolicy()` |
 | `wal.epochSupport` | `wal().epochSupport()` |
 
-Runtime-safe changes can be applied through the control plane with the typed
+Runtime-safe changes can be applied through the runtime configuration with the typed
 runtime tuning wrapper:
 
 ```java
@@ -317,7 +317,7 @@ RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
         .indexBufferedWriteKeyLimit(720_000))
     .build();
 
-index.configurationManagement().applyRuntimeTuning(patch);
+index.runtimeConfiguration().applyRuntimeTuning(patch);
 ```
 
 ## Custom data types

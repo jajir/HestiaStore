@@ -27,6 +27,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 
 final class ExportCommand {
 
@@ -132,8 +133,8 @@ final class ExportCommand {
 
         try (SegmentIndex<Object, Object> index = openIndex(sourceIndex,
                 resolver)) {
-            final IndexConfiguration<?, ?> configuration = index
-                    .getConfiguration();
+            final IndexConfiguration<?, ?> configuration = loadConfiguration(
+                    sourceIndex);
             final IndexConfigurationManifest sourceConfiguration = IndexConfigurationMapper
                     .toManifest(configuration);
             manifest.setSourceConfiguration(sourceConfiguration);
@@ -288,6 +289,11 @@ final class ExportCommand {
             final ChunkFilterProviderResolver resolver) {
         return SegmentIndex.open(new FsNioDirectory(sourceIndex.toFile()),
                 resolver);
+    }
+
+    private IndexConfiguration<?, ?> loadConfiguration(final Path sourceIndex) {
+        return new IndexConfigurationStorage<>(
+                new FsNioDirectory(sourceIndex.toFile())).load();
     }
 
     private void printHelp(final Options options, final PrintStream out) {

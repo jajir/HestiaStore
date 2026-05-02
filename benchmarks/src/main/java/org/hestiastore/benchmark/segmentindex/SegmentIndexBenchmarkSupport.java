@@ -76,12 +76,12 @@ final class SegmentIndexBenchmarkSupport {
             index.put(Integer.valueOf(key), valueBuilder.apply(key));
             pending++;
             if (pending >= flushBatchSize) {
-                index.flushAndWait();
+                index.maintenance().flushAndWait();
                 pending = 0;
             }
         }
         if (pending > 0) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
     }
 

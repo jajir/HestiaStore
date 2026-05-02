@@ -15,7 +15,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,12 +58,12 @@ class SegmentIndexImplTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         try (DoubleStartupIndex doubleStartupIndex = new DoubleStartupIndex(
                 new MemDirectory(), conf, ExecutorRegistryFixture.from(conf))) {
-            assertEquals(SegmentIndexState.READY, doubleStartupIndex.getState());
+            assertEquals(SegmentIndexState.READY, doubleStartupIndex.runtimeMonitoring().snapshot().getState());
             assertEquals(0, doubleStartupIndex.getStartupConsistencyChecks());
 
             doubleStartupIndex.completeStartupAgainForTest();
 
-            assertEquals(SegmentIndexState.READY, doubleStartupIndex.getState());
+            assertEquals(SegmentIndexState.READY, doubleStartupIndex.runtimeMonitoring().snapshot().getState());
             assertEquals(0, doubleStartupIndex.getStartupConsistencyChecks());
         }
     }
@@ -118,7 +118,7 @@ class SegmentIndexImplTest {
             return startupConsistencyChecks.get();
         }
 
-        private static IndexRuntimeConfiguration<Integer, String> runtimeConfiguration(
+        private static ResolvedIndexConfiguration<Integer, String> runtimeConfiguration(
                 final IndexConfiguration<Integer, String> conf) {
             return conf.resolveRuntimeConfiguration();
         }

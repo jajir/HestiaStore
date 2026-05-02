@@ -25,6 +25,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
@@ -90,7 +91,8 @@ class SegmentIndexBootstrapTransactionTest {
 
         try {
             assertEquals(2,
-                    index.getConfiguration()
+                    new IndexConfigurationStorage<Integer, String>(directory)
+                            .load()
                             .maintenance().registryLifecycleThreads());
         } finally {
             index.close();
@@ -117,7 +119,8 @@ class SegmentIndexBootstrapTransactionTest {
 
         try {
             final IndexConfiguration<Integer, String> loaded =
-                    index.getConfiguration();
+                    new IndexConfigurationStorage<Integer, String>(directory)
+                            .load();
             assertEquals(original.filters().encodingChunkFilterSpecs(),
                     loaded.filters().encodingChunkFilterSpecs());
             assertEquals(original.filters().decodingChunkFilterSpecs(),

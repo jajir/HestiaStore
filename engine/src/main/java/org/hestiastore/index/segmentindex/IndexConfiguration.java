@@ -156,7 +156,7 @@ public class IndexConfiguration<K, V> {
      *
      * @return runtime configuration resolved from persisted metadata
      */
-    public IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration() {
+    public ResolvedIndexConfiguration<K, V> resolveRuntimeConfiguration() {
         return resolveRuntimeConfiguration(
                 filters.getChunkFilterProviderResolver());
     }
@@ -169,9 +169,9 @@ public class IndexConfiguration<K, V> {
      *                                    chunk filter specs
      * @return runtime configuration resolved from persisted metadata
      */
-    public IndexRuntimeConfiguration<K, V> resolveRuntimeConfiguration(
+    public ResolvedIndexConfiguration<K, V> resolveRuntimeConfiguration(
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return IndexRuntimeConfiguration.resolve(this,
+        return ResolvedIndexConfiguration.resolve(this,
                 chunkFilterProviderResolver);
     }
 

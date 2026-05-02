@@ -36,13 +36,13 @@ public final class PrometheusSegmentIndexSource implements MonitoredIndex {
     /** {@inheritDoc} */
     @Override
     public SegmentIndexState state() {
-        return index.getState();
+        return index.runtimeMonitoring().snapshot().getState();
     }
 
     /** {@inheritDoc} */
     @Override
     public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return index.metricsSnapshot();
+        return index.runtimeMonitoring().snapshot().getMetrics();
     }
 
     private static String normalize(final String value, final String name) {

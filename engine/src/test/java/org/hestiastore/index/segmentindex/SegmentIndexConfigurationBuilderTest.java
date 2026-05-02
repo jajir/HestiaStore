@@ -377,7 +377,7 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.addEncodingFilter(spec))
                 .build();
-        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = config
+        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = config
                 .resolveRuntimeConfiguration(ChunkFilterProviderResolverImpl
                         .builder().withDefaultProviders()
                         .withProvider(new ChunkFilterProvider() {

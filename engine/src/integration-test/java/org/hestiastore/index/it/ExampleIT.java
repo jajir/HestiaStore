@@ -56,11 +56,11 @@ public class ExampleIT {
             System.out.println("Entry: " + entry);
         });
 
-        index.flush();
+        index.maintenance().flush();
 
-        index.checkAndRepairConsistency();
+        index.maintenance().checkAndRepairConsistency();
 
-        index.compact();
+        index.maintenance().compact();
     }
 
 }

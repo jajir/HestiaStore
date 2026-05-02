@@ -65,7 +65,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("overlay-44", reopened.get(44));
             assertEquals("overlay-49", reopened.get(49));
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.metricsSnapshot().getSegmentCount());
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
         }
     }
 
@@ -80,7 +80,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
             seedStableSegment(index);
-            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+            assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
             applyOverlayMutations(index);
 
             crashSnapshot = copyDirectoryWithoutLocks(directory);
@@ -109,7 +109,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("overlay-44", reopened.get(44));
             assertEquals("overlay-49", reopened.get(49));
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.metricsSnapshot().getSegmentCount(),
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().getMetrics().getSegmentCount(),
                     "Interrupted split artifacts must not publish child routes.");
         }
 
@@ -122,14 +122,14 @@ class IntegrationSegmentIndexWalRecoveryTest {
     void flushAndWaitKeepsCrashReopenSnapshotConsistentForBufferedWrites() {
         assertCrashReopenAfterMaintenanceBoundary(
                 "wal-flush-split-boundary-it",
-                SegmentIndex::flushAndWait);
+                index -> index.maintenance().flushAndWait());
     }
 
     @Test
     void compactAndWaitKeepsCrashReopenSnapshotConsistentForBufferedWrites() {
         assertCrashReopenAfterMaintenanceBoundary(
                 "wal-compact-split-boundary-it",
-                SegmentIndex::compactAndWait);
+                index -> index.maintenance().compactAndWait());
     }
 
     @Test
@@ -148,7 +148,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (SegmentIndex<Integer, String> reopened = SegmentIndex
                 .open(directory)) {
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.metricsSnapshot().getSegmentCount());
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
         }
     }
 
@@ -166,7 +166,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 conf)) {
             index.put("k1", "v1");
             index.put("k2", "v2");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
         appendGarbageWalTail(directory);
 
@@ -192,7 +192,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (SegmentIndex<String, String> index = SegmentIndex.create(directory,
                 conf)) {
             index.put("k1", "v1");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
         appendGarbageWalTail(directory);
 
@@ -217,7 +217,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             for (int i = 0; i < 40; i++) {
                 index.put("k-" + i, "v-" + i);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
         appendGarbageWalTail(directory);
         final Map<String, byte[]> expectedSnapshot = walSegmentSnapshot(directory);
@@ -333,7 +333,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             expected.put(key, value);
         }
         if ((cycle & 1) == 0) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
     }
 
@@ -353,7 +353,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 expected.put(key, value);
             }
             if (random.nextInt(11) == 0) {
-                index.flushAndWait();
+                index.maintenance().flushAndWait();
             }
         }
     }
@@ -396,8 +396,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
 
             maintenanceAction.accept(index);
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
+                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 return snapshot.getSplitInFlightCount() == 0
                         && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
                         && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
@@ -462,10 +461,10 @@ class IntegrationSegmentIndexWalRecoveryTest {
         for (int i = 0; i < 48; i++) {
             index.put(i, "stable-" + i);
         }
-        index.flushAndWait();
-        awaitCondition(() -> index.metricsSnapshot().getSegmentCount() == 1
-                && index.metricsSnapshot().getSplitInFlightCount() == 0
-                && index.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+        index.maintenance().flushAndWait();
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
+                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
+                && index.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                 10_000L);
     }
 
@@ -556,9 +555,8 @@ class IntegrationSegmentIndexWalRecoveryTest {
             try (SegmentIndex<String, String> index = SegmentIndex
                     .create(directory, conf)) {
                 index.put("k1", "v1");
-                index.flushAndWait();
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
+                index.maintenance().flushAndWait();
+                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 assertFalse(snapshot.isWalEnabled());
                 assertEquals(0L, snapshot.getWalAppendCount());
                 assertEquals(0L, snapshot.getWalSyncCount());
@@ -591,7 +589,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             for (int i = 0; i < 300; i++) {
                 index.put("bp-" + i, "value-" + i);
             }
-            final SegmentIndexMetricsSnapshot snapshot = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             assertTrue(snapshot.isWalEnabled());
             assertTrue(snapshot.getWalAppendCount() >= 300L);
             assertTrue(snapshot.getWalCheckpointLsn() > 0L,

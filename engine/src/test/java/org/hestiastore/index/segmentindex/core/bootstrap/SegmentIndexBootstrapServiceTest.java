@@ -11,6 +11,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -42,8 +43,9 @@ class SegmentIndexBootstrapServiceTest {
                         buildConf("bootstrap-service-open", 2));
 
         try {
-            assertEquals(2, index.getConfiguration()
-                    .maintenance().registryLifecycleThreads());
+            assertEquals(2,
+                    new IndexConfigurationStorage<Integer, String>(directory)
+                            .load().maintenance().registryLifecycleThreads());
         } finally {
             index.close();
         }

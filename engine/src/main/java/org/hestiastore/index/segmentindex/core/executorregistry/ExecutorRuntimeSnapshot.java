@@ -1,8 +1,8 @@
 package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorRuntimeAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 
 /**
  * Immutable executor runtime snapshot owned by infrastructure monitoring.

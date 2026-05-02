@@ -8,7 +8,7 @@ For rollout and rollback procedures, see
 
 ## Metrics Source
 
-Use `SegmentIndex.metricsSnapshot()` as the canonical in-process source.
+Use `SegmentIndex.runtimeMonitoring().snapshot().getMetrics()` as the canonical in-process source.
 Export these values into your monitoring stack (Micrometer/Prometheus, etc.)
 at a fixed scrape interval.
 

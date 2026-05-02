@@ -69,7 +69,7 @@ class SegmentIndexAsyncMaintenanceTest {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentIdForKey(1);
@@ -84,7 +84,8 @@ class SegmentIndexAsyncMaintenanceTest {
                     started, stateRef, true);
             replaceSegment(registry, segmentId, mockedSegment);
 
-            final Future<?> flushTask = executor.submit(index::flushAndWait);
+            final Future<?> flushTask = executor
+                    .submit(() -> index.maintenance().flushAndWait());
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(flushTask.isDone());
             assertNotNull(stateRef.get());
@@ -102,7 +103,7 @@ class SegmentIndexAsyncMaintenanceTest {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentIdForKey(1);
@@ -117,7 +118,8 @@ class SegmentIndexAsyncMaintenanceTest {
                     started, stateRef, false);
             replaceSegment(registry, segmentId, mockedSegment);
 
-            final Future<?> compactTask = executor.submit(index::compactAndWait);
+            final Future<?> compactTask = executor
+                    .submit(() -> index.maintenance().compactAndWait());
             assertTrue(started.await(1, TimeUnit.SECONDS));
             assertFalse(compactTask.isDone());
             assertNotNull(stateRef.get());
@@ -133,13 +135,13 @@ class SegmentIndexAsyncMaintenanceTest {
     @Test
     void closeStopsAutonomousSplitPolicyLoop() {
         index.put(1, "one");
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         index.close();
-        awaitCondition(() -> index.getState() == SegmentIndexState.CLOSED,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().getState() == SegmentIndexState.CLOSED,
                 750L);
 
-        assertEquals(SegmentIndexState.CLOSED, index.getState());
+        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
     }
 
     @Test
@@ -148,7 +150,7 @@ class SegmentIndexAsyncMaintenanceTest {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             index.put(1, "one");
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
 
             final SegmentId segmentId = readKeyToSegmentMap(index)
                     .findSegmentIdForKey(1);
@@ -169,10 +171,10 @@ class SegmentIndexAsyncMaintenanceTest {
                 assertTrue(started.await(1, TimeUnit.SECONDS));
 
                 awaitCondition(
-                        () -> index.getState() == SegmentIndexState.CLOSING,
+                        () -> index.runtimeMonitoring().snapshot().getState() == SegmentIndexState.CLOSING,
                         5_000L);
                 assertFalse(closeTask.isDone());
-                assertEquals(SegmentIndexState.CLOSING, index.metricsSnapshot()
+                assertEquals(SegmentIndexState.CLOSING, index.runtimeMonitoring().snapshot().getMetrics()
                         .getState());
                 assertEquals(SegmentState.MAINTENANCE_RUNNING,
                         stateRef.get());
@@ -186,7 +188,7 @@ class SegmentIndexAsyncMaintenanceTest {
                 }
             }
 
-            assertEquals(SegmentIndexState.CLOSED, index.getState());
+            assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
         } finally {
             executor.shutdownNow();
         }

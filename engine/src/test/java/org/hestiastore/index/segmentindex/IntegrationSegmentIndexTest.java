@@ -49,7 +49,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
          */
 
         verifyIndexSearch(index, testData);
-        index.compactAndWait();
+        index.maintenance().compactAndWait();
 
         verifyIndexData(index, testData);
         verifyIndexSearch(index, testData);
@@ -65,7 +65,7 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             index.put(i, "kachna");
             index.delete(i);
         }
-        index.compactAndWait();
+        index.maintenance().compactAndWait();
         verifyIndexData(index, new ArrayList<>());
     }
 
@@ -117,14 +117,14 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
             index.put(i, "kachna");
             assertEquals("kachna", index.get(i));
         }
-        index.compactAndWait();
+        index.maintenance().compactAndWait();
         assertEquals(iterations,
                 index.getStream(SegmentWindow.unbounded()).count());
         for (int i = 0; i < iterations; i++) {
             index.delete(i);
             assertNull(index.get(i));
         }
-        index.compactAndWait();
+        index.maintenance().compactAndWait();
         verifyIndexData(index, List.of());
     }
 

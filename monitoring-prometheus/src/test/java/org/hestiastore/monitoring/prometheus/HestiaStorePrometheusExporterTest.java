@@ -3,6 +3,7 @@ package org.hestiastore.monitoring.prometheus;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -11,6 +12,8 @@ import java.util.regex.Pattern;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -21,9 +24,15 @@ class HestiaStorePrometheusExporterTest {
     void scrape_containsExpectedMetricNames() {
         final SegmentIndex<Integer, String> index = Mockito.mock(
                 SegmentIndex.class);
-        Mockito.when(index.metricsSnapshot())
-                .thenReturn(snapshot(7L, 11L, 13L, SegmentIndexState.READY));
-        Mockito.when(index.getState()).thenReturn(SegmentIndexState.READY);
+        final IndexRuntimeMonitoring runtimeMonitoring = Mockito.mock(
+                IndexRuntimeMonitoring.class);
+        final SegmentIndexMetricsSnapshot metricsSnapshot = snapshot(7L, 11L,
+                13L, SegmentIndexState.READY);
+        Mockito.when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
+        Mockito.when(runtimeMonitoring.snapshot())
+                .thenReturn(new IndexRuntimeSnapshot("orders",
+                        SegmentIndexState.READY, metricsSnapshot,
+                        Instant.now()));
 
         final String scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
@@ -47,11 +56,16 @@ class HestiaStorePrometheusExporterTest {
     void scrape_exportsExactSplitDrainAndBacklogValuesAndRefreshes() {
         final SegmentIndex<Integer, String> index = Mockito.mock(
                 SegmentIndex.class);
+        final IndexRuntimeMonitoring runtimeMonitoring = Mockito.mock(
+                IndexRuntimeMonitoring.class);
         final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
                 snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 2, 11, 29, 3,
                         2, 1, 4, 17, 19L, 23L, 31L, 5, 43L, 37L, 2));
-        Mockito.when(index.metricsSnapshot()).thenAnswer(inv -> snapshotRef.get());
-        Mockito.when(index.getState()).thenAnswer(inv -> snapshotRef.get().getState());
+        Mockito.when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
+        Mockito.when(runtimeMonitoring.snapshot()).thenAnswer(
+                inv -> new IndexRuntimeSnapshot("orders",
+                        snapshotRef.get().getState(), snapshotRef.get(),
+                        Instant.now()));
 
         String scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));

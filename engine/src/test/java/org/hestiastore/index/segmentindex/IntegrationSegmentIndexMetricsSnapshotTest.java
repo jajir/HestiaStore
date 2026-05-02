@@ -10,9 +10,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -51,8 +51,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertNull(index.get(101));
             index.delete(2);
 
-            final SegmentIndexMetricsSnapshot snapshot = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             assertOperationCounts(snapshot, 2L, 4L, 1L);
             assertDirectWriteBufferMetrics(snapshot);
             assertRegistryAndBloomMetrics(snapshot);
@@ -84,8 +83,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
             index.put(1, "a");
-            final SegmentIndexMetricsSnapshot snapshot = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
 
             assertTrue(snapshot.getMaintenanceQueueCapacity() > 0);
             assertTrue(snapshot.getSplitQueueCapacity() > 0);
@@ -144,10 +142,9 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             index.put(1, "a");
             index.put(2, "b");
             index.delete(1);
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
 
-            final SegmentIndexMetricsSnapshot snapshot = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             assertTrue(snapshot.isWalEnabled());
             assertTrue(snapshot.getWalAppendCount() >= 3L);
             assertTrue(snapshot.getWalAppendBytes() > 0L);
@@ -204,8 +201,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             }
 
             awaitIdle(index);
-            final SegmentIndexMetricsSnapshot beforeRotation = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot beforeRotation = index.runtimeMonitoring().snapshot().getMetrics();
             assertEquals(0L, beforeRotation.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
 
             for (int i = 128; i < 256; i++) {
@@ -213,8 +209,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             }
             awaitIdle(index);
 
-            final SegmentIndexMetricsSnapshot afterRotation = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot afterRotation = index.runtimeMonitoring().snapshot().getMetrics();
             assertEquals(0L, afterRotation.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
             assertTrue(afterRotation.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
         }
@@ -253,11 +248,11 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             for (int i = 0; i < 64; i++) {
                 index.put(i, "v-" + i);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             assertEquals("v-0", index.get(0));
 
-            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
-            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot before = index.runtimeMonitoring().snapshot().getMetrics();
+            final SegmentIndexMetricsSnapshot after = index.runtimeMonitoring().snapshot().getMetrics();
 
             assertEquals(before.getRegistryCacheLoadCount(),
                     after.getRegistryCacheLoadCount());
@@ -296,14 +291,13 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "v-" + i);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             awaitIdle(index);
-            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+            assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
 
-            final long revision = index.controlPlane().configuration()
-                    .getConfigurationActual().getRevision();
-            final RuntimePatchResult patchResult = index.controlPlane()
-                    .configuration()
+            final long revision = index.runtimeConfiguration()
+                    .getCurrent().getRevision();
+            final RuntimePatchResult patchResult = index.runtimeConfiguration()
                     .apply(new RuntimeConfigPatch(Map.of(
                             RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                             Integer.valueOf(16)), false,
@@ -311,8 +305,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
             assertTrue(patchResult.isApplied());
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
+                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 return snapshot.getSegmentCount() > 1
                         && snapshot.getSplitInFlightCount() == 0;
             }, 10_000L);
@@ -356,9 +349,9 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             for (int i = 0; i < 48; i++) {
                 index.put(i, "v-" + i);
             }
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
             awaitIdle(index);
-            assertEquals(1, index.metricsSnapshot().getSegmentCount());
+            assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
 
             if (previousValue == null) {
                 System.clearProperty(propertyName);
@@ -367,8 +360,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             }
 
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index
-                        .metricsSnapshot();
+                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 return snapshot.getSegmentCount() > 1
                         && snapshot.getSplitInFlightCount() == 0
                         && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
@@ -391,14 +383,14 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     void flushAndWaitClearsBufferedWriteMetrics() {
         assertMaintenanceBoundaryClearsBufferedWriteMetrics(
                 "metrics_flush_split_boundary_test",
-                SegmentIndex::flushAndWait);
+                index -> index.maintenance().flushAndWait());
     }
 
     @Test
     void compactAndWaitClearsBufferedWriteMetrics() {
         assertMaintenanceBoundaryClearsBufferedWriteMetrics(
                 "metrics_compact_split_boundary_test",
-                SegmentIndex::compactAndWait);
+                index -> index.maintenance().compactAndWait());
     }
 
     private static void assertMaintenanceBoundaryClearsBufferedWriteMetrics(
@@ -435,7 +427,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             index.put(49, "buffered-49");
             index.delete(18);
 
-            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot before = index.runtimeMonitoring().snapshot().getMetrics();
             assertTrue(before.getTotalBufferedWriteKeys() > 0L);
             assertEquals(0, before.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
             assertEquals(0, before.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
@@ -443,7 +435,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             maintenanceAction.accept(index);
             awaitIdle(index);
 
-            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot after = index.runtimeMonitoring().snapshot().getMetrics();
             assertEquals(0L, after.getTotalBufferedWriteKeys());
             assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
             assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
@@ -461,8 +453,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
     private static void awaitIdle(final SegmentIndex<Integer, String> index) {
         awaitCondition(() -> {
-            final SegmentIndexMetricsSnapshot snapshot = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             return snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
                     && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
                     && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount() == 0

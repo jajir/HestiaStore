@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
 import org.junit.jupiter.api.Test;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -20,11 +23,15 @@ class HestiaStoreMicrometerBinderTest {
     @Test
     void bindTo_exposesDynamicCountersAndStateGauge() {
         final SegmentIndex<Integer, String> index = mock(SegmentIndex.class);
+        final IndexRuntimeMonitoring runtimeMonitoring = mock(
+                IndexRuntimeMonitoring.class);
         final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
                 snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 2, 11, 29, 3,
                         2, 1, 4, 17, 19L, 23L, 31L, 5, 43L, 37L, 2, 50));
-        when(index.metricsSnapshot()).thenAnswer(inv -> snapshotRef.get());
-        when(index.getState()).thenAnswer(inv -> snapshotRef.get().getState());
+        when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
+        when(runtimeMonitoring.snapshot()).thenAnswer(inv -> new IndexRuntimeSnapshot(
+                "orders", snapshotRef.get().getState(), snapshotRef.get(),
+                Instant.now()));
 
         final SimpleMeterRegistry registry = new SimpleMeterRegistry();
         new HestiaStoreMicrometerBinder(

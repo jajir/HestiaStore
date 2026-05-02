@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.hestiastore.index.segmentindex.core.metrics.IndexExecutorMetricsAccess;
+import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
 import org.junit.jupiter.api.Test;
 
 class ObservedThreadPoolTest {
