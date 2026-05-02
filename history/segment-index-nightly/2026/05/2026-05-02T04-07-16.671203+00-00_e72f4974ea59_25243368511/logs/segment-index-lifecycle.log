@@ -1,0 +1,110 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency
+# Parameters: (keyCount = 16384, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 0.00% complete, ETA 00:00:12
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+277.103 ms/op
+Iteration   1: 243.996 ms/op
+Iteration   2: 242.462 ms/op
+Iteration   3: 244.847 ms/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency":
+  243.768 ±(99.9%) 22.050 ms/op [Average]
+  (min, avg, max) = (242.462, 243.768, 244.847), stdev = 1.209
+  CI (99.9%): [221.718, 265.819] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCompact
+# Parameters: (keyCount = 16384, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 33.33% complete, ETA 00:00:24
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+290.727 ms/op
+Iteration   1: 266.389 ms/op
+Iteration   2: 267.222 ms/op
+Iteration   3: 263.518 ms/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openAndCompact":
+  265.710 ±(99.9%) 35.452 ms/op [Average]
+  (min, avg, max) = (263.518, 265.710, 267.222), stdev = 1.943
+  CI (99.9%): [230.257, 301.162] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.10, OpenJDK 64-Bit Server VM, 21.0.10+7-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openExisting
+# Parameters: (keyCount = 16384, snappy = true, valueLength = 64, walMode = sync)
+
+# Run progress: 66.67% complete, ETA 00:00:12
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+260.437 ms/op
+Iteration   1: 238.752 ms/op
+Iteration   2: 237.805 ms/op
+Iteration   3: 237.600 ms/op
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexLifecycleBenchmark.openExisting":
+  238.052 ±(99.9%) 11.213 ms/op [Average]
+  (min, avg, max) = (237.600, 238.052, 238.752), stdev = 0.615
+  CI (99.9%): [226.839, 249.265] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:35
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                        (keyCount)  (snappy)  (valueLength)  (walMode)  Mode  Cnt    Score    Error  Units
+SegmentIndexLifecycleBenchmark.openAndCheckAndRepairConsistency       16384      true             64       sync  avgt    3  243.768 ± 22.050  ms/op
+SegmentIndexLifecycleBenchmark.openAndCompact                         16384      true             64       sync  avgt    3  265.710 ± 35.452  ms/op
+SegmentIndexLifecycleBenchmark.openExisting                           16384      true             64       sync  avgt    3  238.052 ± 11.213  ms/op
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-lifecycle.json
