@@ -33,8 +33,9 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                         "Missing contract defaults for Integer"));
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory, sparseConfiguration)) {
-            final IndexConfiguration<Integer, String> actual = index
-                    .getConfiguration();
+            final IndexConfiguration<Integer, String> actual =
+                    new IndexConfigurationStorage<Integer, String>(directory)
+                            .load();
 
             assertEquals(defaults.segment().cacheKeyLimit(),
                     actual.segment().cacheKeyLimit(),

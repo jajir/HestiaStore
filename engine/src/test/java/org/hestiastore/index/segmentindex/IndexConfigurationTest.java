@@ -102,7 +102,7 @@ class IndexConfigurationTest {
                     }
                 })
                 .build();
-        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = config
+        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = config
                 .resolveRuntimeConfiguration(registry);
 
         final TrackingChunkFilter first = (TrackingChunkFilter) runtimeConfiguration
@@ -164,7 +164,7 @@ class IndexConfigurationTest {
                         .addDecodingFilter(spec))
                 .build();
 
-        final IndexRuntimeConfiguration<Integer, String> runtimeConfiguration = config
+        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = config
                 .resolveRuntimeConfiguration();
 
         assertEquals(resolver,

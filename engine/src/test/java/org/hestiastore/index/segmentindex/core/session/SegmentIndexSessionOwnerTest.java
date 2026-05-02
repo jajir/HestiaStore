@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
@@ -41,16 +41,16 @@ class SegmentIndexSessionOwnerTest {
         final IndexState<Integer, String> indexState = mock(IndexState.class);
         final SegmentIndexMetricsSnapshot metricsSnapshot =
                 mock(SegmentIndexMetricsSnapshot.class);
-        final IndexControlPlane controlPlane = mock(IndexControlPlane.class);
+        final RuntimeConfiguration runtimeConfiguration = mock(RuntimeConfiguration.class);
         when(stateCoordinator.getIndexState()).thenReturn(indexState);
         when(stateCoordinator.getState()).thenReturn(SegmentIndexState.READY);
         when(runtime.metricsSnapshot()).thenReturn(metricsSnapshot);
-        when(runtime.controlPlane()).thenReturn(controlPlane);
+        when(runtime.runtimeConfiguration()).thenReturn(runtimeConfiguration);
 
         assertSame(indexState, owner.getIndexState());
         assertSame(SegmentIndexState.READY, owner.getState());
         assertSame(metricsSnapshot, owner.metricsSnapshot());
-        assertSame(controlPlane, owner.controlPlane());
+        assertSame(runtimeConfiguration, owner.runtimeConfiguration());
         assertSame(stateCoordinator, owner.stateCoordinator());
         assertSame(runtime, owner.runtime());
     }

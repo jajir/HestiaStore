@@ -6,7 +6,7 @@ control.
 ## High-level runtime flow
 
 Runtime monitoring data comes from the Segment API surface on
-`SegmentIndex.metricsSnapshot()`. The management agent reads snapshots for
+`SegmentIndex.runtimeMonitoring().snapshot().getMetrics()`. The management agent reads snapshots for
 `/api/v1/report`, and runtime-safe config overrides are applied in-memory only
 for the running process. Monitoring and management APIs do not directly access
 index files.

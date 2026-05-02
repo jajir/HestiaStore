@@ -59,8 +59,7 @@ class IntegrationSegmentIndexMetricsSnapshotConcurrencyTest {
                 executor.shutdownNow();
             }
 
-            final SegmentIndexMetricsSnapshot snapshot = index
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
             assertEquals(expectedGetCount, snapshot.getGetOperationCount());
             assertEquals(0L, snapshot.getPutOperationCount());
             assertEquals(0L, snapshot.getDeleteOperationCount());

@@ -86,7 +86,7 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
 
     @Override
     protected void afterCreate(final SegmentIndex<Integer, String> created) {
-        created.compactAndWait();
+        created.maintenance().compactAndWait();
     }
 
     @Override

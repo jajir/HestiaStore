@@ -96,7 +96,7 @@ public class SegmentIndexMixedDrainBenchmark {
         for (int key = 0; key < initialStableKeyCount; key++) {
             index.put(Integer.valueOf(key), buildValue(key));
         }
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
         writeSequence.set(initialStableKeyCount);
     }
 

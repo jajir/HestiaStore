@@ -110,9 +110,9 @@ final class ImportCommand {
                             sourceFingerprint)
                     : importJsonl(inputDirectory, manifest, descriptors, index,
                             sourceFingerprint);
-            index.flushAndWait();
-            index.compactAndWait();
-            index.checkAndRepairConsistency();
+            index.maintenance().flushAndWait();
+            index.maintenance().compactAndWait();
+            index.maintenance().checkAndRepairConsistency();
         }
         out.printf("Imported %d records into %s.%n", importedRecords,
                 targetIndex);
@@ -206,7 +206,7 @@ final class ImportCommand {
     private void flushIfNeeded(final long imported,
             final SegmentIndex<Object, Object> index) {
         if (imported % FLUSH_INTERVAL == 0L) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
     }
 

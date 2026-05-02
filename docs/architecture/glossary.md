@@ -19,7 +19,7 @@ growth so ingest memory stays predictable under load. Some settings still keep
 historical `partition` names for compatibility. Code:
 `segmentindex/IndexWritePathConfiguration.java`,
 `segmentindex/IndexRuntimeTuningConfiguration.java`,
-`control/model/RuntimeSettingKey.java`,
+`segmentindex/runtimeconfiguration/RuntimeSettingKey.java`,
 `segment/SegmentRuntimeLimits.java`.
 
 ## Chunk
@@ -44,7 +44,7 @@ delta files and compaction rewrites stable segment files. Compatibility metrics
 still keep some legacy `drain*` names.
 
 ## Durability
-Persistence guarantee for acknowledged writes. With WAL enabled, durability mode controls acknowledgement timing (`ASYNC`, `GROUP_SYNC`, `SYNC`); with WAL disabled, explicit maintenance completion (`flushAndWait()`/close) is the durability boundary. Code: `segmentindex/WalDurabilityMode.java`, `segmentindex/core/SegmentIndexImpl#flushAndWait()`, `index/GuardedWriteTransaction.java`.
+Persistence guarantee for acknowledged writes. With WAL enabled, durability mode controls acknowledgement timing (`ASYNC`, `GROUP_SYNC`, `SYNC`); with WAL disabled, explicit maintenance completion (`maintenance().flushAndWait()`/close) is the durability boundary. Code: `segmentindex/WalDurabilityMode.java`, `segmentindex/maintenance/SegmentIndexMaintenance#flushAndWait()`, `index/GuardedWriteTransaction.java`.
 
 ## Entry
 Immutable key/value pair used across iterators and writers. Code: `index/Entry.java`.
@@ -57,7 +57,7 @@ Pluggable transformations applied to chunk payloads on write and inverted on rea
 
 ## Flush
 Schedules or awaits per-segment persistence of write-cache snapshots and then
-flushes `index.map`. `flushAndWait()` also waits for split settlement and WAL
+flushes `index.map`. `maintenance().flushAndWait()` also waits for split settlement and WAL
 checkpoint when WAL is enabled. Code:
 `segmentindex/core/maintenance/MaintenanceService.java`,
 `segmentindex/core/maintenance/MaintenanceServiceImpl.java`,

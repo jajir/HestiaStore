@@ -104,7 +104,7 @@
 [x] 81.6 Move durability and storage integrity into `core.storage` (Risk: HIGH)
 [x] 81.7 Dissolve `core.runtime` into session, routing, storage, and maintenance (Risk: HIGH)
 [x] 81.8 Dissolve `core.infrastructure` into owning domains (Risk: MEDIUM)
-[x] 81.9 Replace `core.observability` with `core.metrics` (Risk: MEDIUM)
+[x] 81.9 Replace `core.observability` with `segmentindex.metrics` (Risk: MEDIUM)
 [x] 81.10 Remove `core.internal` and `core.facade` as final package names (Risk: MEDIUM)
 [x] 81.11 Collapse leftover assembly and access vocabulary after package moves (Risk: HIGH)
 [x] 81.12 Finish when `segmentindex.core` reads as domain boundaries, not framework plumbing (Risk: MEDIUM)

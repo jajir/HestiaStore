@@ -23,7 +23,8 @@ on policy.
 ## Where Writes Become Durable
 
 - Segment-local write cache -> disk:
-  `SegmentIndex.flush()` schedules per-segment maintenance. `flushAndWait()`
+  `SegmentIndex.maintenance().flush()` schedules per-segment maintenance.
+  `maintenance().flushAndWait()`
   and `close()` wait until the final mapped stable segments are flushed.
 - Segment compaction:
   when a segment compacts, the new main SST, sparse index, and Bloom filter
@@ -88,7 +89,7 @@ Code: `properties/PropertyStoreImpl` and `SegmentPropertiesManager`.
 
 ## Consistency Check and Repair
 
-- Run `SegmentIndex.checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
+- Run `SegmentIndex.maintenance().checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
 
 Key classes: `segmentindex/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
 

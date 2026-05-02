@@ -17,7 +17,7 @@ import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.SegmentMaintenancePolicyThreshold;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRuntimeConfiguration;
+import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 
 /**
  * Builds segment instances and writer transactions with shared configuration.
@@ -33,7 +33,7 @@ final class SegmentFactory<K, V>
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
-    private final IndexRuntimeConfiguration<K, V> runtimeConfiguration;
+    private final ResolvedIndexConfiguration<K, V> runtimeConfiguration;
     private final ExecutorService stableSegmentMaintenanceExecutor;
     private volatile SegmentRuntimeLimits runtimeLimits;
 
@@ -52,7 +52,7 @@ final class SegmentFactory<K, V>
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final IndexRuntimeConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorService segmentMaintenanceExecutor) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");

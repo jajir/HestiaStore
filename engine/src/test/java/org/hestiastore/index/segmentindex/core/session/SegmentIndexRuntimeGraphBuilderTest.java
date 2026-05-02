@@ -21,7 +21,7 @@ import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.mockito.Mockito;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -73,7 +73,7 @@ class SegmentIndexRuntimeGraphBuilderTest {
                 SegmentIndexRuntimeTestAccess.runtimeTuningState(runtime));
         assertNotNull(SegmentIndexRuntimeTestAccess.walCoordinator(runtime));
         assertNotNull(SegmentIndexRuntimeTestAccess.operationAccess(runtime));
-        assertNotNull(SegmentIndexRuntimeTestAccess.controlPlane(runtime));
+        assertNotNull(SegmentIndexRuntimeTestAccess.runtimeConfiguration(runtime));
     }
 
     @Test

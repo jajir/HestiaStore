@@ -73,7 +73,7 @@ class SegmentIndexImplPutTest {
         index.put(3, "c");
         index.put(4, "d");
         index.put(5, "e");
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final KeyToSegmentMap<Integer> cache = readKeyToSegmentMap(
                 index);
@@ -105,7 +105,7 @@ class SegmentIndexImplPutTest {
             final RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> index.put(1, "one"));
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {
             clearWalSyncFailure(index);
@@ -121,9 +121,9 @@ class SegmentIndexImplPutTest {
 
         try {
             final RuntimeException exception = assertThrows(RuntimeException.class,
-                    () -> index.flushAndWait());
+                    () -> index.maintenance().flushAndWait());
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {
             clearWalSyncFailure(index);
@@ -141,7 +141,7 @@ class SegmentIndexImplPutTest {
             final RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> index.delete(1));
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.getState());
+            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {
             clearWalSyncFailure(index);
@@ -189,7 +189,7 @@ class SegmentIndexImplPutTest {
         index.put(2, "two");
         assertEquals("one", index.get(1));
         assertEquals("two", index.get(2));
-        assertEquals(SegmentIndexState.READY, index.getState());
+        assertEquals(SegmentIndexState.READY, index.runtimeMonitoring().snapshot().getState());
     }
 
     private void resetIndex(final int maxKeysInSegment,

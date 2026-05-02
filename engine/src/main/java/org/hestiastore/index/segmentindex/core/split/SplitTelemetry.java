@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 
 /**
  * Records split telemetry without exposing metrics implementation details to

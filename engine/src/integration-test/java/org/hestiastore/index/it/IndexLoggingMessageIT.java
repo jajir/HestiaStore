@@ -122,7 +122,7 @@ class IndexLoggingMessageIT {
             final IndexConfiguration<Integer, String> configuration) {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(
                 directory, configuration)) {
-            index.flushAndWait();
+            index.maintenance().flushAndWait();
         }
     }
 

@@ -86,15 +86,15 @@ public class SegmentIndexMultiSegmentGetBenchmark
     @Override
     protected void afterCreate(final SegmentIndex<Integer, String> created) {
         SegmentIndexBenchmarkSupport.awaitCondition(
-                () -> created.metricsSnapshot().getSegmentCount() > 1, 15_000L,
+                () -> created.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1, 15_000L,
                 "Expected persisted multi-segment benchmark layout.");
-        created.flushAndWait();
+        created.maintenance().flushAndWait();
     }
 
     @Override
     protected void configureReadState(
             final SegmentIndex<Integer, String> openedIndex) {
-        if (openedIndex.metricsSnapshot().getSegmentCount() <= 1) {
+        if (openedIndex.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() <= 1) {
             throw new IllegalStateException(
                     "Expected reopened multi-segment benchmark layout.");
         }

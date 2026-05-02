@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.operations;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccess;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;

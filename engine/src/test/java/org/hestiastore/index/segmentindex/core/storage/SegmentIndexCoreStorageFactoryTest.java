@@ -15,7 +15,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.metrics.Stats;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeGraphBuilder;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeInputs;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;

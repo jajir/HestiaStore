@@ -4,12 +4,14 @@ import java.util.function.Supplier;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
-import org.hestiastore.index.segmentindex.core.control.IndexRuntimeControlPlane;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.core.control.RuntimeConfigurationImpl;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
 import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.metrics.MetricService;
+import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
@@ -57,11 +59,14 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                 createRuntimeLimitApplier();
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
                 createMetricsSnapshotSupplier(validatedWalRuntime);
-        final IndexControlPlane controlPlane = createControlPlane(
-                metricsSnapshotSupplier, runtimeLimitApplier);
+        final IndexRuntimeMonitoring runtimeMonitoring = createRuntimeMonitoring(
+                metricsSnapshotSupplier);
+        final RuntimeConfiguration runtimeConfiguration = createRuntimeConfiguration(
+                runtimeLimitApplier);
         return new SegmentIndexRuntimeServices<>(walCoordinator,
                 operationAccess, maintenance,
-                runtimeLimitApplier, metricsSnapshotSupplier, controlPlane);
+                runtimeLimitApplier, metricsSnapshotSupplier,
+                runtimeMonitoring, runtimeConfiguration);
     }
 
     private IndexWalCoordinator<K, V> createWalCoordinator(
@@ -108,7 +113,8 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
 
     private Supplier<SegmentIndexMetricsSnapshot> createMetricsSnapshotSupplier(
             final WalRuntime<K, V> walRuntime) {
-        final MetricService metricService = MetricService.<K, V>builder()
+        final RuntimeMetricsCollector runtimeMetricsCollector =
+                RuntimeMetricsCollector.<K, V>builder()
                 .withConf(request.conf)
                 .withKeyToSegmentMap(coreStorage.keyToSegmentMap())
                 .withSegmentRegistry(coreStorage.segmentRegistry())
@@ -126,17 +132,20 @@ final class SegmentIndexRuntimeServicesFactory<K, V> {
                 .withLastAppliedWalLsn(request.lastAppliedWalLsn)
                 .withStateSupplier(request.stateSupplier)
                 .build();
-        return metricService::metricsSnapshot;
+        return runtimeMetricsCollector::metricsSnapshot;
     }
 
-    private IndexControlPlane createControlPlane(
-            final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier,
-            final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier) {
-        return new IndexRuntimeControlPlane(request.conf,
-                coreStorage.runtimeTuningState(),
+    private IndexRuntimeMonitoring createRuntimeMonitoring(
+            final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier) {
+        return new IndexRuntimeMonitoringImpl(request.conf,
                 request.stateSupplier,
                 Vldtn.requireNonNull(metricsSnapshotSupplier,
-                        "metricsSnapshotSupplier"),
+                        "metricsSnapshotSupplier"));
+    }
+
+    private RuntimeConfiguration createRuntimeConfiguration(
+            final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier) {
+        return new RuntimeConfigurationImpl(coreStorage.runtimeTuningState(),
                 Vldtn.requireNonNull(runtimeLimitApplier,
                         "runtimeLimitApplier")::apply,
                 topologyRuntime::requestFullSplitScan);

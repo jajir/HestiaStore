@@ -5,13 +5,17 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.control.IndexControlPlane;
+import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigurationContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceContextLoggingAdapter;
 
 /**
  * Adapter that wraps a {@link SegmentIndex} and ensures that the
@@ -25,7 +29,9 @@ public final class IndexContextLoggingAdapter<K, V>
         extends AbstractCloseableResource implements SegmentIndex<K, V> {
     private final SegmentIndex<K, V> delegate;
     private final IndexMdcScopeRunner contextScopeRunner;
-    private final IndexControlPlane controlPlane;
+    private final RuntimeConfiguration runtimeConfiguration;
+    private final IndexRuntimeMonitoring runtimeMonitoring;
+    private final SegmentIndexMaintenance maintenance;
 
     public IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
             final SegmentIndex<K, V> index) {
@@ -34,8 +40,12 @@ public final class IndexContextLoggingAdapter<K, V>
                 .requireNonNull(indexConf, "indexConfiguration");
         this.contextScopeRunner = new IndexMdcScopeRunner(
                 configuration.identity().name());
-        this.controlPlane = new IndexControlPlaneContextLoggingAdapter(
-                delegate.controlPlane(), contextScopeRunner);
+        this.runtimeConfiguration = new RuntimeConfigurationContextLoggingAdapter(
+                delegate.runtimeConfiguration(), contextScopeRunner);
+        this.runtimeMonitoring = new IndexRuntimeMonitoringContextLoggingAdapter(
+                delegate.runtimeMonitoring(), contextScopeRunner);
+        this.maintenance = new SegmentIndexMaintenanceContextLoggingAdapter(
+                delegate.maintenance(), contextScopeRunner);
     }
 
     @Override
@@ -56,26 +66,6 @@ public final class IndexContextLoggingAdapter<K, V>
     @Override
     public void delete(final K key) {
         contextScopeRunner.run(() -> delegate.delete(key));
-    }
-
-    @Override
-    public void compact() {
-        contextScopeRunner.run(delegate::compact);
-    }
-
-    @Override
-    public void compactAndWait() {
-        contextScopeRunner.run(delegate::compactAndWait);
-    }
-
-    @Override
-    public void flush() {
-        contextScopeRunner.run(delegate::flush);
-    }
-
-    @Override
-    public void flushAndWait() {
-        contextScopeRunner.run(delegate::flushAndWait);
     }
 
     @Override
@@ -102,28 +92,18 @@ public final class IndexContextLoggingAdapter<K, V>
     }
 
     @Override
-    public void checkAndRepairConsistency() {
-        contextScopeRunner.run(delegate::checkAndRepairConsistency);
+    public RuntimeConfiguration runtimeConfiguration() {
+        return runtimeConfiguration;
     }
 
     @Override
-    public IndexConfiguration<K, V> getConfiguration() {
-        return contextScopeRunner.supply(delegate::getConfiguration);
+    public IndexRuntimeMonitoring runtimeMonitoring() {
+        return runtimeMonitoring;
     }
 
     @Override
-    public SegmentIndexState getState() {
-        return contextScopeRunner.supply(delegate::getState);
-    }
-
-    @Override
-    public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return contextScopeRunner.supply(delegate::metricsSnapshot);
-    }
-
-    @Override
-    public IndexControlPlane controlPlane() {
-        return controlPlane;
+    public SegmentIndexMaintenance maintenance() {
+        return maintenance;
     }
 
     @Override

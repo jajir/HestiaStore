@@ -57,7 +57,7 @@ class IntegrationSegmentIndexSimpleTest {
 
         testData.stream().forEach(index1::put);
 
-        index1.compactAndWait();
+        index1.maintenance().compactAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = testData.stream()) {
             stream.forEach(entry -> {
@@ -65,7 +65,7 @@ class IntegrationSegmentIndexSimpleTest {
                 assertEquals(entry.getValue(), value);
             });
         }
-        index1.compactAndWait();
+        index1.maintenance().compactAndWait();
 
         index1.close();
 
@@ -114,7 +114,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_merging_values_from_cache_and_segment() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
 
         try (final Stream<Entry<Integer, String>> stream = index1
                 .getStream(SegmentWindow.unbounded())) {
@@ -134,7 +134,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_repeated_read() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
 
         final List<Entry<Integer, String>> list1 = index1
                 .getStream(SegmentWindow.unbounded()).toList();
@@ -184,7 +184,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_reopen_after_flush_and_split_materialization() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
         index1.close();
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
@@ -199,7 +199,7 @@ class IntegrationSegmentIndexSimpleTest {
     void test_reopen_cleans_orphan_segment_directory() {
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         testData.stream().forEach(index1::put);
-        index1.flushAndWait();
+        index1.maintenance().flushAndWait();
         index1.close();
 
         final SegmentId orphanSegmentId = SegmentId.of(999);
@@ -220,13 +220,13 @@ class IntegrationSegmentIndexSimpleTest {
     void test_consistency_check_cleans_orphan_segment_directory() {
         final SegmentIndex<Integer, String> index = makeSegmentIndex();
         testData.stream().forEach(index::put);
-        index.flushAndWait();
+        index.maintenance().flushAndWait();
 
         final SegmentId orphanSegmentId = SegmentId.of(998);
         directory.openSubDirectory(orphanSegmentId.getName()).touch("junk");
         assertTrue(directory.isFileExists(orphanSegmentId.getName()));
 
-        index.checkAndRepairConsistency();
+        index.maintenance().checkAndRepairConsistency();
 
         assertFalse(directory.isFileExists(orphanSegmentId.getName()));
         verifyDataIndex(index, testData);
@@ -252,13 +252,13 @@ class IntegrationSegmentIndexSimpleTest {
 
         final SegmentIndex<Integer, String> index1 = makeSegmentIndex();
         data.stream().forEach(index1::put);
-        index1.flush();
+        index1.maintenance().flush();
         verifyDataIndex(index1, data);
         index1.close();
 
         final SegmentIndex<Integer, String> index2 = makeSegmentIndex();
         updatedData.stream().forEach(index2::put);
-        index2.flushAndWait();
+        index2.maintenance().flushAndWait();
         verifyDataIndex(index2, updatedData);
         index2.close();
     }

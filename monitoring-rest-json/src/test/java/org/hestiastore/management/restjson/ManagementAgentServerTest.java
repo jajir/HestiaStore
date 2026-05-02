@@ -22,9 +22,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.control.model.RuntimeConfigPatch;
-import org.hestiastore.index.control.model.RuntimePatchResult;
-import org.hestiastore.index.control.model.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -32,6 +32,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
 import org.hestiastore.monitoring.json.api.ActionType;
@@ -380,19 +381,19 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "buffered-overlay-report-index", false);
         indexes.add(extra);
-        server.addIndex(extra.getConfiguration().identity().name(), extra);
+        server.addIndex(extra.runtimeMonitoring().snapshot().getIndexName(), extra);
 
         for (int i = 0; i < 6; i++) {
             extra.put(i, "value-" + i);
         }
-        final SegmentIndexMetricsSnapshot snapshot = extra.metricsSnapshot();
+        final SegmentIndexMetricsSnapshot snapshot = extra.runtimeMonitoring().snapshot().getMetrics();
 
         final HttpResponse<String> reportResp = send("GET",
                 ManagementApiPaths.REPORT, null);
         assertEquals(200, reportResp.statusCode());
         final JsonNode reportJson = objectMapper.readTree(reportResp.body());
         final JsonNode indexNode = findIndexNode(reportJson,
-                extra.getConfiguration().identity().name());
+                extra.runtimeMonitoring().snapshot().getIndexName());
 
         assertEquals(snapshot.getTotalBufferedWriteKeys(),
                 indexNode.path("totalBufferedWriteKeys").asLong());
@@ -417,29 +418,27 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "split-report-index", true);
         indexes.add(extra);
-        server.addIndex(extra.getConfiguration().identity().name(), extra);
+        server.addIndex(extra.runtimeMonitoring().snapshot().getIndexName(), extra);
 
         for (int i = 0; i < 48; i++) {
             extra.put(i, "stable-" + i);
         }
-        extra.flushAndWait();
-        awaitCondition(() -> extra.metricsSnapshot().getSegmentCount() == 1
-                && extra.metricsSnapshot().getSplitInFlightCount() == 0
-                && extra.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+        extra.maintenance().flushAndWait();
+        awaitCondition(() -> extra.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
+                && extra.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
+                && extra.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
                 10_000L);
 
-        final long revision = extra.controlPlane().configuration()
-                .getConfigurationActual().getRevision();
-        final RuntimePatchResult patchResult = extra.controlPlane()
-                .configuration()
+        final long revision = extra.runtimeConfiguration()
+                .getCurrent().getRevision();
+        final RuntimePatchResult patchResult = extra.runtimeConfiguration()
                 .apply(new RuntimeConfigPatch(Map.of(
                         RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
                         Integer.valueOf(16)), false, Long.valueOf(revision)));
         assertTrue(patchResult.isApplied());
 
         awaitCondition(() -> {
-            final SegmentIndexMetricsSnapshot snapshot = extra
-                    .metricsSnapshot();
+            final SegmentIndexMetricsSnapshot snapshot = extra.runtimeMonitoring().snapshot().getMetrics();
             return snapshot.getSegmentCount() > 1
                     && snapshot.getSplitInFlightCount() == 0
                     && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0;
@@ -447,7 +446,7 @@ class ManagementAgentServerTest {
 
         final Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> splitMetricsMatch =
                 awaitIndexNodeWithMatchingSplitMetrics(extra,
-                        extra.getConfiguration().identity().name(), 10_000L);
+                        extra.runtimeMonitoring().snapshot().getIndexName(), 10_000L);
         final SegmentIndexMetricsSnapshot snapshot = splitMetricsMatch.getKey();
         final JsonNode indexNode = splitMetricsMatch.getValue();
 
@@ -555,13 +554,13 @@ class ManagementAgentServerTest {
         SegmentIndexMetricsSnapshot lastSnapshot = null;
         JsonNode lastIndexNode = null;
         while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot before = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot before = index.runtimeMonitoring().snapshot().getMetrics();
             final HttpResponse<String> reportResp = send("GET",
                     ManagementApiPaths.REPORT, null);
             assertEquals(200, reportResp.statusCode());
             final JsonNode reportJson = objectMapper.readTree(reportResp.body());
             final JsonNode indexNode = findIndexNode(reportJson, indexName);
-            final SegmentIndexMetricsSnapshot after = index.metricsSnapshot();
+            final SegmentIndexMetricsSnapshot after = index.runtimeMonitoring().snapshot().getMetrics();
             if (sameSplitMetrics(before, after)
                     && splitMetricsMatch(indexNode, after)) {
                 return Map.entry(after, indexNode);
@@ -605,6 +604,29 @@ class ManagementAgentServerTest {
             final String actionMethodName,
             final AtomicInteger invocationCount,
             final RuntimeException failure) {
+        final SegmentIndexMaintenance maintenance = instrumentMaintenance(
+                delegate.maintenance(), actionMethodName, invocationCount,
+                failure);
+        final InvocationHandler handler = (proxy, method, args) -> {
+            if ("maintenance".equals(method.getName())) {
+                return maintenance;
+            }
+            try {
+                return method.invoke(delegate, args);
+            } catch (final InvocationTargetException e) {
+                throw e.getCause();
+            }
+        };
+        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
+                SegmentIndex.class.getClassLoader(),
+                new Class<?>[] { SegmentIndex.class }, handler);
+    }
+
+    private SegmentIndexMaintenance instrumentMaintenance(
+            final SegmentIndexMaintenance delegate,
+            final String actionMethodName,
+            final AtomicInteger invocationCount,
+            final RuntimeException failure) {
         final InvocationHandler handler = (proxy, method, args) -> {
             if (actionMethodName.equals(method.getName())) {
                 invocationCount.incrementAndGet();
@@ -618,9 +640,9 @@ class ManagementAgentServerTest {
                 throw e.getCause();
             }
         };
-        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
-                SegmentIndex.class.getClassLoader(),
-                new Class<?>[] { SegmentIndex.class }, handler);
+        return (SegmentIndexMaintenance) Proxy.newProxyInstance(
+                SegmentIndexMaintenance.class.getClassLoader(),
+                new Class<?>[] { SegmentIndexMaintenance.class }, handler);
     }
 
     private HttpResponse<String> send(final String method, final String path,
