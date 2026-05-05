@@ -4,6 +4,7 @@ import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +21,9 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -204,12 +208,11 @@ class IndexInternalConcurrentTest {
 
         private RecordingIndex(final EntryIterator<Integer, String> iterator,
                 final IndexConfiguration<Integer, String> conf) {
-            super(new MemDirectory(),
-                    new TypeDescriptorInteger(), new TypeDescriptorShortString(),
-                    conf, conf.resolveRuntimeConfiguration(),
-                    ExecutorRegistryFixture.from(conf));
+            super(new TypeDescriptorInteger(), mockPointOperationFacade(),
+                    mockReadFacade(), mock(MaintenanceService.class),
+                    mockTrackedRunner(), mock(SegmentIndexMaintenance.class),
+                    mockSessionOwner());
             this.iterator = iterator;
-            completeStartup();
         }
 
         @Override
@@ -223,6 +226,7 @@ class IndexInternalConcurrentTest {
         SegmentIteratorIsolation getLastIsolation() {
             return lastIsolation;
         }
+
     }
 
     private static final class CountingIterator<K, V>
@@ -259,5 +263,27 @@ class IndexInternalConcurrentTest {
         protected void doClose() {
             closeCalls.incrementAndGet();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentIndexPointOperationFacade<Integer, String>
+            mockPointOperationFacade() {
+        return mock(SegmentIndexPointOperationFacade.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentIndexReadFacade<Integer, String> mockReadFacade() {
+        return mock(SegmentIndexReadFacade.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentIndexTrackedOperationRunner<Integer, String>
+            mockTrackedRunner() {
+        return mock(SegmentIndexTrackedOperationRunner.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentIndexSessionOwner<Integer, String> mockSessionOwner() {
+        return mock(SegmentIndexSessionOwner.class);
     }
 }

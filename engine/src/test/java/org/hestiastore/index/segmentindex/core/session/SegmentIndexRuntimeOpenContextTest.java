@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 @SuppressWarnings("unchecked")
-class SegmentIndexRuntimeInputsTest {
+class SegmentIndexRuntimeOpenContextTest {
 
     @Test
     void constructorRejectsNullLogger() {
@@ -43,7 +43,7 @@ class SegmentIndexRuntimeInputsTest {
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentIndexRuntimeInputs<>(null, directory,
+                () -> new SegmentIndexRuntimeOpenContext<>(null, directory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
                         runtimeConfiguration, executorRegistry, stats,
                         compactRequestHighWaterMark,
@@ -73,8 +73,8 @@ class SegmentIndexRuntimeInputsTest {
         final Supplier<SegmentIndexState> stateSupplier = stateSupplier();
         final Consumer<RuntimeException> failureHandler = failureHandler();
 
-        final SegmentIndexRuntimeInputs<Integer, String> request =
-                new SegmentIndexRuntimeInputs<>(logger, directory,
+        final SegmentIndexRuntimeOpenContext<Integer, String> request =
+                new SegmentIndexRuntimeOpenContext<>(logger, directory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
                         runtimeConfiguration, executorRegistry, stats,
                         compactRequestHighWaterMark,

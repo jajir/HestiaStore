@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Comparator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,7 +43,6 @@ class SplitServiceBuilderTest {
                     .<String, String>builder()
                     .conf(conf)
                     .runtimeTuningState(mock(RuntimeTuningState.class))
-                    .keyComparator(mockComparator())
                     .keyToSegmentMap(mock(KeyToSegmentMap.class))
                     .segmentTopology(mock(SegmentTopology.class))
                     .segmentRegistry(segmentRegistry)
@@ -72,7 +70,6 @@ class SplitServiceBuilderTest {
             final SplitServiceBuilder<String, String> builder = SplitService
                     .<String, String>builder()
                     .runtimeTuningState(mock(RuntimeTuningState.class))
-                    .keyComparator(mockComparator())
                     .keyToSegmentMap(mock(KeyToSegmentMap.class))
                     .segmentRegistry(mock(SegmentRegistry.class))
                     .directoryFacade(mock(Directory.class))
@@ -92,10 +89,6 @@ class SplitServiceBuilderTest {
         } finally {
             scheduler.shutdownNow();
         }
-    }
-
-    private Comparator<String> mockComparator() {
-        return mock(Comparator.class);
     }
 
     private Executor directExecutor() {

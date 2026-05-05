@@ -31,6 +31,8 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
@@ -88,17 +90,10 @@ class SplitServiceImplTest {
         when(splitExecutionCoordinator.splitInFlightCount()).thenReturn(0);
         final AtomicReference<SegmentIndexState> state = new AtomicReference<>(
                 SegmentIndexState.CLOSING);
-        final SplitPolicyState policyState =
-                new SplitPolicyState();
+        final SplitPolicyState policyState = new SplitPolicyState();
         policyState.markFullScanRequested();
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        state::get,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()), policyState);
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), state::get, policyState);
 
         runtime.awaitQuiescence();
 
@@ -112,21 +107,27 @@ class SplitServiceImplTest {
         final RuntimeTuningState tuningState = mock(RuntimeTuningState.class);
         final KeyToSegmentMap<String> map = mockKeyToSegmentMap();
         final SegmentRegistry<String, String> registry = mockSegmentRegistry();
-        final SplitExecutionCoordinator<String, String> executionCoordinator =
-                mockSplitExecutionCoordinator();
         final ScheduledExecutorService scheduler = mock(
                 ScheduledExecutorService.class);
-        final Supplier<SegmentIndexState> stateSupplier =
-                () -> SegmentIndexState.READY;
-        final SplitFailureReporter failureReporter = SplitFailureReporter.noOp();
-        final SplitTelemetry telemetry = SplitTelemetry.noOp();
-        final SplitPolicyState policyState = new SplitPolicyState();
+        final Supplier<SegmentIndexState> stateSupplier = () -> SegmentIndexState.READY;
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SplitServiceImpl<>(null, tuningState, map, registry,
-                        executionCoordinator, directExecutor(), scheduler,
-                        stateSupplier, failureReporter, telemetry, policyState));
+                () -> SplitService.<String, String>builder()
+                        .conf(null)
+                        .runtimeTuningState(tuningState)
+                        .keyToSegmentMap(map)
+                        .segmentTopology(mockSegmentTopology())
+                        .segmentRegistry(registry)
+                        .directoryFacade(mock(Directory.class))
+                        .splitExecutor(directExecutor())
+                        .workerExecutor(directExecutor())
+                        .splitPolicyScheduler(scheduler)
+                        .stateSupplier(stateSupplier)
+                        .failureHandler(failure -> {
+                        })
+                        .stats(new Stats())
+                        .build());
 
         assertEquals("Property 'conf' must not be null.", ex.getMessage());
     }
@@ -136,18 +137,11 @@ class SplitServiceImplTest {
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
-        final SplitPolicyState policyState =
-                new SplitPolicyState();
+                .thenReturn(mockScheduledFuture());
+        final SplitPolicyState policyState = new SplitPolicyState();
         final Executor workerExecutor = mock(Executor.class);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        workerExecutor, splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()), policyState);
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                workerExecutor, () -> SegmentIndexState.READY, policyState);
 
         runtime.requestFullSplitScan();
 
@@ -166,18 +160,11 @@ class SplitServiceImplTest {
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(0);
-        final SplitPolicyState policyState =
-                new SplitPolicyState();
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()), policyState);
+        final SplitPolicyState policyState = new SplitPolicyState();
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY, policyState);
 
         runtime.hintSplitCandidate(SegmentId.of(1));
         runtime.requestFullSplitScan();
@@ -190,15 +177,14 @@ class SplitServiceImplTest {
     @Test
     void hintAndFullSplitScanDeduplicateSegmentBeforeWorkerRuns() {
         final SegmentId segmentId = SegmentId.of(13);
-        final BlockingSegment.Runtime segmentRuntime =
-                mock(BlockingSegment.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime = mock(BlockingSegment.Runtime.class);
         final List<Runnable> scheduledWorkers = new ArrayList<>();
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(conf.maintenance().indexThreads()).thenReturn(1);
         when(conf.maintenance().busyBackoffMillis()).thenReturn(1);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId)).thenReturn(List.of(segmentId));
@@ -206,15 +192,9 @@ class SplitServiceImplTest {
                 .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        scheduledWorkers::add, splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                scheduledWorkers::add, () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtime.hintSplitCandidate(segmentId);
         runtime.requestFullSplitScan();
@@ -232,17 +212,11 @@ class SplitServiceImplTest {
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(0);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtime.hintSplitCandidate(SegmentId.of(7));
 
@@ -254,12 +228,11 @@ class SplitServiceImplTest {
     @Test
     void requestFullSplitScan_schedulesEligibleMappedSegments() {
         final SegmentId segmentId = SegmentId.of(3);
-        final BlockingSegment.Runtime segmentRuntime =
-                mock(BlockingSegment.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime = mock(BlockingSegment.Runtime.class);
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
@@ -269,15 +242,9 @@ class SplitServiceImplTest {
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
         when(splitExecutionCoordinator.scheduleEligibleSplit(segmentHandle, 10,
                 11L)).thenReturn(true);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtime.requestFullSplitScan();
 
@@ -292,21 +259,15 @@ class SplitServiceImplTest {
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
                 .thenReturn(Optional.empty());
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtime.requestFullSplitScan();
 
@@ -323,22 +284,16 @@ class SplitServiceImplTest {
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
                 .thenReturn(Optional.of(segmentHandle));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getNumberOfKeysInCache()).thenReturn(9L);
-        final SplitServiceImpl<String, String> runtimeUnderTest =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtimeUnderTest = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtimeUnderTest.requestFullSplitScan();
 
@@ -352,15 +307,9 @@ class SplitServiceImplTest {
     void closeIsIdempotent() {
         when(conf.maintenance().busyTimeoutMillis()).thenReturn(25);
         when(splitExecutionCoordinator.splitInFlightCount()).thenReturn(0);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtime.close();
         runtime.close();
@@ -373,15 +322,9 @@ class SplitServiceImplTest {
         final SegmentId segmentId = SegmentId.of(4);
         when(conf.maintenance().busyTimeoutMillis()).thenReturn(25);
         when(splitExecutionCoordinator.splitInFlightCount()).thenReturn(0);
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        directExecutor(), splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                directExecutor(), () -> SegmentIndexState.READY,
+                new SplitPolicyState());
 
         runtime.close();
 
@@ -392,8 +335,7 @@ class SplitServiceImplTest {
     @Test
     void awaitQuiescenceWaitsForRunningPolicyWorker() throws Exception {
         final SegmentId segmentId = SegmentId.of(21);
-        final BlockingSegment.Runtime segmentRuntime =
-                mock(BlockingSegment.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime = mock(BlockingSegment.Runtime.class);
         final CountDownLatch splitEntered = new CountDownLatch(1);
         final CountDownLatch releaseSplit = new CountDownLatch(1);
         final CountDownLatch quiescenceReturned = new CountDownLatch(1);
@@ -406,7 +348,7 @@ class SplitServiceImplTest {
         when(conf.maintenance().indexThreads()).thenReturn(1);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
@@ -416,21 +358,15 @@ class SplitServiceImplTest {
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
         when(splitExecutionCoordinator.scheduleEligibleSplit(segmentHandle, 10,
                 11L))
-                        .thenAnswer(invocation -> {
-                            splitEntered.countDown();
-                            assertTrue(releaseSplit.await(1,
-                                    TimeUnit.SECONDS));
-                            return true;
-                        });
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        workerExecutor, splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+                .thenAnswer(invocation -> {
+                    splitEntered.countDown();
+                    assertTrue(releaseSplit.await(1,
+                            TimeUnit.SECONDS));
+                    return true;
+                });
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                workerExecutor, () -> SegmentIndexState.READY,
+                new SplitPolicyState());
         try {
             runtime.hintSplitCandidate(segmentId);
             assertTrue(splitEntered.await(1, TimeUnit.SECONDS));
@@ -457,8 +393,7 @@ class SplitServiceImplTest {
     @Test
     void closeWaitsForRunningPolicyWorkerToDrain() throws Exception {
         final SegmentId segmentId = SegmentId.of(22);
-        final BlockingSegment.Runtime segmentRuntime =
-                mock(BlockingSegment.Runtime.class);
+        final BlockingSegment.Runtime segmentRuntime = mock(BlockingSegment.Runtime.class);
         final CountDownLatch splitEntered = new CountDownLatch(1);
         final CountDownLatch releaseSplit = new CountDownLatch(1);
         final CountDownLatch closeReturned = new CountDownLatch(1);
@@ -471,7 +406,7 @@ class SplitServiceImplTest {
         when(conf.maintenance().indexThreads()).thenReturn(1);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
-                        .thenReturn(mockScheduledFuture());
+                .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
@@ -481,21 +416,15 @@ class SplitServiceImplTest {
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
         when(splitExecutionCoordinator.scheduleEligibleSplit(segmentHandle, 10,
                 11L))
-                        .thenAnswer(invocation -> {
-                            splitEntered.countDown();
-                            assertTrue(releaseSplit.await(1,
-                                    TimeUnit.SECONDS));
-                            return true;
-                        });
-        final SplitServiceImpl<String, String> runtime =
-                new SplitServiceImpl<>(
-                        conf, runtimeTuningState, synchronizedKeyToSegmentMap,
-                        segmentRegistry, splitExecutionCoordinator,
-                        workerExecutor, splitPolicyScheduler,
-                        () -> SegmentIndexState.READY,
-                        SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()),
-                        new SplitPolicyState());
+                .thenAnswer(invocation -> {
+                    splitEntered.countDown();
+                    assertTrue(releaseSplit.await(1,
+                            TimeUnit.SECONDS));
+                    return true;
+                });
+        final SplitServiceImpl<String, String> runtime = newRuntime(
+                workerExecutor, () -> SegmentIndexState.READY,
+                new SplitPolicyState());
         try {
             runtime.hintSplitCandidate(segmentId);
             assertTrue(splitEntered.await(1, TimeUnit.SECONDS));
@@ -521,6 +450,23 @@ class SplitServiceImplTest {
         return Runnable::run;
     }
 
+    private SplitServiceImpl<String, String> newRuntime(
+            final Executor workerExecutor,
+            final Supplier<SegmentIndexState> stateSupplier,
+            final SplitPolicyState policyState) {
+        final ManagedSplitRuntimeState managedState = new ManagedSplitRuntimeState();
+        managedState.markRunning();
+        return new SplitServiceImpl<>(splitExecutionCoordinator,
+                new SplitPolicyCoordinator<>(conf, runtimeTuningState,
+                        synchronizedKeyToSegmentMap, segmentRegistry,
+                        splitExecutionCoordinator, workerExecutor,
+                        splitPolicyScheduler, stateSupplier,
+                        SplitFailureReporter.noOp(),
+                        SplitTelemetry.from(new Stats()), policyState,
+                        new SplitCandidateRegistry()),
+                managedState);
+    }
+
     @SuppressWarnings("unchecked")
     private static <V> ScheduledFuture<V> mockScheduledFuture() {
         return mock(ScheduledFuture.class);
@@ -537,7 +483,8 @@ class SplitServiceImplTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SplitExecutionCoordinator<K, V> mockSplitExecutionCoordinator() {
-        return mock(SplitExecutionCoordinator.class);
+    private static <K> SegmentTopology<K> mockSegmentTopology() {
+        return mock(SegmentTopology.class);
     }
+
 }

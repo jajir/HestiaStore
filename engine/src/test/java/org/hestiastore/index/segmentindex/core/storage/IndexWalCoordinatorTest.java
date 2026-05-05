@@ -52,11 +52,7 @@ class IndexWalCoordinatorTest {
         drainCalls = new AtomicInteger(0);
         flushCalls = new AtomicInteger(0);
         handledFailure = new AtomicReference<>();
-        coordinator = new IndexWalCoordinator<>(logger, buildConf(), walRuntime,
-                new IndexRetryPolicy(1, 10),
-                drainCalls::incrementAndGet, flushCalls::incrementAndGet,
-                () -> SegmentIndexState.READY, handledFailure::set,
-                lastAppliedWalLsn);
+        coordinator = newCoordinator(() -> SegmentIndexState.READY);
     }
 
     @Test
@@ -107,11 +103,7 @@ class IndexWalCoordinatorTest {
     @Test
     void checkpoint_ignoresSyncFailureWhenIndexAlreadyClosed() {
         final IndexException failure = new IndexException("sync failure");
-        coordinator = new IndexWalCoordinator<>(logger, buildConf(), walRuntime,
-                new IndexRetryPolicy(1, 10),
-                drainCalls::incrementAndGet, flushCalls::incrementAndGet,
-                () -> SegmentIndexState.CLOSED, handledFailure::set,
-                lastAppliedWalLsn);
+        coordinator = newCoordinator(() -> SegmentIndexState.CLOSED);
         when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.hasSyncFailure()).thenReturn(true);
         doThrow(failure).when(walRuntime).onCheckpoint(0L);
@@ -132,6 +124,14 @@ class IndexWalCoordinatorTest {
 
         assertEquals(9L, lastAppliedWalLsn.get());
         verify(walRuntime, times(3)).isEnabled();
+    }
+
+    private IndexWalCoordinator<Integer, String> newCoordinator(
+            final java.util.function.Supplier<SegmentIndexState> stateSupplier) {
+        return IndexWalCoordinator.create(logger, buildConf(), walRuntime,
+                new IndexRetryPolicy(1, 10), drainCalls::incrementAndGet,
+                flushCalls::incrementAndGet, stateSupplier, handledFailure::set,
+                lastAppliedWalLsn);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

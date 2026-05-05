@@ -26,8 +26,8 @@ import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.slf4j.Logger;
 
@@ -37,10 +37,10 @@ import org.slf4j.Logger;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexRuntime<K, V>
+final class SegmentIndexRuntime<K, V>
         implements SegmentIndexDataAccess<K, V> {
 
-    public static <K, V> SegmentIndexRuntime<K, V> create(
+    static <K, V> SegmentIndexRuntime<K, V> create(
             final Logger logger,
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
@@ -50,8 +50,8 @@ public final class SegmentIndexRuntime<K, V>
             final ExecutorRegistry executorRegistry, final Stats stats,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
-        return new SegmentIndexRuntimeGraphBuilder<>(
-                new SegmentIndexRuntimeInputs<>(logger,
+        return new SegmentIndexRuntimeFactory<>(
+                new SegmentIndexRuntimeOpenContext<>(logger,
                         directoryFacade, keyTypeDescriptor,
                         valueTypeDescriptor, conf, runtimeConfiguration,
                         executorRegistry, stats,
@@ -59,7 +59,7 @@ public final class SegmentIndexRuntime<K, V>
                         new java.util.concurrent.atomic.AtomicLong(),
                         new java.util.concurrent.atomic.AtomicLong(),
                         stateSupplier, failureHandler))
-                                .build();
+                                .open();
     }
 
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -69,35 +69,29 @@ public final class SegmentIndexRuntime<K, V>
     private final WalRuntime<K, V> walRuntime;
 
     SegmentIndexRuntime(final TypeDescriptor<K> keyTypeDescriptor,
-            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final SegmentIndexRuntimeStorage<K, V> storage,
             final SegmentTopologyRuntime<K, V> topologyRuntime,
             final WalRuntime<K, V> walRuntime,
             final SegmentIndexRuntimeServices<K, V> services) {
-        final SegmentIndexCoreStorage<K, V> validatedCoreStorage = Vldtn
-                .requireNonNull(coreStorage, "coreStorage");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
                 "keyTypeDescriptor");
-        this.storage = new SegmentIndexRuntimeStorage<>(
-                validatedCoreStorage.runtimeTuningState(),
-                validatedCoreStorage.keyToSegmentMap(),
-                validatedCoreStorage.segmentRegistry(),
-                validatedCoreStorage.retryPolicy());
+        this.storage = Vldtn.requireNonNull(storage, "storage");
         this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
                 "topologyRuntime");
         this.services = Vldtn.requireNonNull(services, "services");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
     }
 
-    public void recoverFromWal() {
+    void recoverFromWal() {
         services.walCoordinator().recover(
                 services.operationAccess()::replayWalRecord);
     }
 
-    public void cleanupOrphanedSegmentDirectories() {
+    void cleanupOrphanedSegmentDirectories() {
         topologyRuntime.cleanupOrphanedSegmentDirectories();
     }
 
-    public boolean hasSegmentLockFile(final SegmentId segmentId) {
+    boolean hasSegmentLockFile(final SegmentId segmentId) {
         return topologyRuntime.hasSegmentLockFile(segmentId);
     }
 
@@ -111,6 +105,10 @@ public final class SegmentIndexRuntime<K, V>
 
     WalRuntime<K, V> walRuntime() {
         return walRuntime;
+    }
+
+    SegmentTopologyRuntime<K, V> topologyRuntime() {
+        return topologyRuntime;
     }
 
     IndexWalCoordinator<K, V> walCoordinator() {
@@ -129,11 +127,11 @@ public final class SegmentIndexRuntime<K, V>
         return services.runtimeLimitApplier();
     }
 
-    public SegmentIndexMetricsSnapshot metricsSnapshot() {
+    SegmentIndexMetricsSnapshot metricsSnapshot() {
         return services.metricsSnapshotSupplier().get();
     }
 
-    public IndexRuntimeMonitoring runtimeMonitoring() {
+    IndexRuntimeMonitoring runtimeMonitoring() {
         return services.runtimeMonitoring();
     }
 
@@ -152,7 +150,7 @@ public final class SegmentIndexRuntime<K, V>
         services.operationAccess().delete(key);
     }
 
-    public RuntimeConfiguration runtimeConfiguration() {
+    RuntimeConfiguration runtimeConfiguration() {
         return services.runtimeConfiguration();
     }
 
@@ -161,30 +159,30 @@ public final class SegmentIndexRuntime<K, V>
         services.runtimeLimitApplier().apply(effective);
     }
 
-    public void invalidateSegmentIterators() {
+    void invalidateSegmentIterators() {
         topologyRuntime.invalidateSegmentIterators();
     }
 
-    public void requestFullSplitScan() {
+    void requestFullSplitScan() {
         topologyRuntime.requestFullSplitScan();
     }
 
-    public void validateUniqueSegmentIds() {
+    void validateUniqueSegmentIds() {
         storage.keyToSegmentMap().validateUniqueSegmentIds();
     }
 
-    public void checkAndRepairConsistency(
+    void checkAndRepairConsistency(
             final Predicate<SegmentId> segmentFilter) {
         new IndexConsistencyChecker<>(storage.keyToSegmentMap(),
                 storage.segmentRegistry(), keyTypeDescriptor, segmentFilter)
                         .checkAndRepairConsistency();
     }
 
-    public void closeSplitRuntime() {
+    void closeSplitRuntime() {
         topologyRuntime.closeSplitRuntime();
     }
 
-    public void closeSegmentRegistry() {
+    void closeSegmentRegistry() {
         storage.segmentRegistry().close();
     }
 
@@ -205,23 +203,23 @@ public final class SegmentIndexRuntime<K, V>
         return services.maintenance();
     }
 
-    public void compact() {
+    void compact() {
         services.maintenance().compact();
     }
 
-    public void compactAndWait() {
+    void compactAndWait() {
         services.maintenance().compactAndWait();
     }
 
-    public void flush() {
+    void flush() {
         services.maintenance().flush();
     }
 
-    public void flushAndWait() {
+    void flushAndWait() {
         services.maintenance().flushAndWait();
     }
 
-    public void closeWalRuntime() {
+    void closeWalRuntime() {
         walRuntime.close();
     }
 

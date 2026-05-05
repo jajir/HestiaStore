@@ -22,7 +22,6 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
@@ -30,9 +29,9 @@ import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinat
 import org.hestiastore.index.segmentindex.core.session.state.IndexStateOpening;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.sorteddatafile.EntryComparator;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Base implementation of the segment index that manages routed segment
@@ -41,88 +40,155 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
-public class SegmentIndexImpl<K, V> extends AbstractCloseableResource
+class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         implements IndexInternal<K, V> {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    protected final TypeDescriptor<K> keyTypeDescriptor;
+    private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;
     private final SegmentIndexReadFacade<K, V> readFacade;
-    private final MaintenanceService maintenance;
     private final SegmentIndexMaintenance maintenanceApi;
-    private final SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private final SegmentIndexSessionOwner<K, V> sessionOwner;
 
-    protected SegmentIndexImpl(final Directory directoryFacade,
+    @SuppressWarnings("java:S107")
+    SegmentIndexImpl(final TypeDescriptor<K> keyTypeDescriptor,
+            final SegmentIndexPointOperationFacade<K, V> pointOperationFacade,
+            final SegmentIndexReadFacade<K, V> readFacade,
+            final MaintenanceService maintenance,
+            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
+            final SegmentIndexMaintenance maintenanceApi,
+            final SegmentIndexSessionOwner<K, V> sessionOwner) {
+        this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
+                "keyTypeDescriptor");
+        this.pointOperationFacade = Vldtn.requireNonNull(pointOperationFacade,
+                "pointOperationFacade");
+        this.readFacade = Vldtn.requireNonNull(readFacade, "readFacade");
+        Vldtn.requireNonNull(maintenance, "maintenance");
+        Vldtn.requireNonNull(trackedRunner, "trackedRunner");
+        this.maintenanceApi = Vldtn.requireNonNull(maintenanceApi,
+                "maintenanceApi");
+        this.sessionOwner = Vldtn.requireNonNull(sessionOwner, "sessionOwner");
+    }
+
+    @SuppressWarnings("java:S107")
+    static <K, V> SegmentIndexImpl<K, V> open(final Logger logger,
+            final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
-        IndexStateCoordinator<K, V> initializedStateCoordinator = null;
-        SegmentIndexRuntime<K, V> initializedRuntime = null;
+        final Logger validatedLogger = Vldtn.requireNonNull(logger, "logger");
+        final Directory validatedDirectory = Vldtn.requireNonNull(
+                directoryFacade, "directoryFacade");
+        final TypeDescriptor<K> validatedKeyTypeDescriptor = Vldtn
+                .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
+        final TypeDescriptor<V> validatedValueTypeDescriptor = Vldtn
+                .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
+        final IndexConfiguration<K, V> validatedConf = Vldtn
+                .requireNonNull(conf, "conf");
+        final ResolvedIndexConfiguration<K, V> validatedRuntimeConfiguration =
+                Vldtn.requireNonNull(runtimeConfiguration,
+                        "runtimeConfiguration");
+        final ExecutorRegistry validatedExecutorRegistry = Vldtn
+                .requireNonNull(executorRegistry, "executorRegistry");
+        IndexStateCoordinator<K, V> stateCoordinator = null;
+        SegmentIndexRuntime<K, V> runtime = null;
         try {
-            final IndexConfiguration<K, V> validatedConfiguration = Vldtn
-                    .requireNonNull(conf, "conf");
-            final TypeDescriptor<K> validatedKeyTypeDescriptor = Vldtn
-                    .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
-            final IndexStateOpening<K, V> openingState = new IndexStateOpening<>(
-                    directoryFacade);
-            final IndexStateCoordinator<K, V> createdStateCoordinator =
-                    new IndexStateCoordinator<>(openingState,
-                            SegmentIndexState.OPENING);
-            initializedStateCoordinator = createdStateCoordinator;
+            final IndexStateOpening<K, V> openingState =
+                    new IndexStateOpening<>(validatedDirectory);
+            stateCoordinator = new IndexStateCoordinator<>(openingState,
+                    SegmentIndexState.OPENING);
             final Stats stats = new Stats();
             final IndexOperationTrackingAccess operationTracker =
                     IndexOperationTrackingAccess.create();
-            final SegmentIndexTrackedOperationRunner<K, V> createdTrackedRunner =
+            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner =
                     new SegmentIndexTrackedOperationRunner<>(
-                            createdStateCoordinator::getIndexState,
+                            stateCoordinator::getIndexState,
                             operationTracker);
-            final SegmentIndexRuntime<K, V> runtime = createRuntime(logger,
-                    directoryFacade, validatedKeyTypeDescriptor,
-                    valueTypeDescriptor, validatedConfiguration,
-                    runtimeConfiguration, executorRegistry, stats,
-                    createdStateCoordinator);
-            initializedRuntime = runtime;
+            runtime = SegmentIndexRuntime.create(validatedLogger,
+                    validatedDirectory, validatedKeyTypeDescriptor,
+                    validatedValueTypeDescriptor, validatedConf,
+                    validatedRuntimeConfiguration, validatedExecutorRegistry,
+                    stats, stateCoordinator::getState,
+                    stateCoordinator::failWithError);
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator =
-                    createConsistencyCoordinator(runtime);
+                    newConsistencyCoordinator(runtime);
             final SegmentIndexFacades<K, V> facades = SegmentIndexFacades
-                    .create(validatedConfiguration, createdTrackedRunner,
-                            runtime);
-            this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
-                    "keyTypeDescriptor");
-            this.pointOperationFacade = facades.pointOperationFacade();
-            this.readFacade = facades.readFacade();
-            this.maintenance = runtime.maintenance();
-            this.trackedRunner = createdTrackedRunner;
-            this.maintenanceApi = new SegmentIndexMaintenanceImpl(
-                    () -> runTrackedMaintenanceOperation(maintenance::compact),
-                    () -> runTrackedMaintenanceOperation(
-                            maintenance::compactAndWait),
-                    () -> runTrackedMaintenanceOperation(maintenance::flush),
-                    () -> runTrackedMaintenanceOperation(
-                            maintenance::flushAndWait),
-                    () -> runTrackedMaintenanceOperation(
-                            consistencyCoordinator::checkAndRepairConsistency));
-            this.sessionOwner = new SegmentIndexSessionOwner<>(
-                    createdStateCoordinator, runtime,
-                    createCloseCoordinator(logger, validatedConfiguration,
-                            createdStateCoordinator, operationTracker, stats,
-                            runtime),
-                    createStartupCoordinator(logger, validatedConfiguration,
-                            openingState.wasStaleLockRecovered(), runtime,
-                            createdStateCoordinator,
-                            consistencyCoordinator));
-        } catch (final RuntimeException e) {
-            if (initializedStateCoordinator != null) {
-                initializedStateCoordinator.failWithError(e);
+                    .create(validatedConf, trackedRunner, runtime);
+            final SegmentIndexSessionOwner<K, V> sessionOwner = newSessionOwner(
+                    validatedLogger, validatedConf, stateCoordinator, runtime,
+                    operationTracker, stats, openingState,
+                    consistencyCoordinator);
+            final SegmentIndexMaintenance maintenanceApi = newMaintenanceApi(
+                    sessionOwner, trackedRunner, runtime.maintenance(),
+                    consistencyCoordinator);
+            return new SegmentIndexImpl<>(validatedKeyTypeDescriptor,
+                    facades.pointOperationFacade(), facades.readFacade(),
+                    runtime.maintenance(), trackedRunner, maintenanceApi,
+                    sessionOwner);
+        } catch (final RuntimeException failure) {
+            if (stateCoordinator != null) {
+                stateCoordinator.failWithError(failure);
             }
-            if (initializedRuntime != null) {
-                initializedRuntime.closeForFailedStartup(e);
+            if (runtime != null) {
+                runtime.closeForFailedStartup(failure);
             }
-            throw e;
+            throw failure;
         }
+    }
+
+    private static <K, V> IndexConsistencyCoordinator<K, V> newConsistencyCoordinator(
+            final SegmentIndexRuntime<K, V> runtime) {
+        final SegmentIndexRuntime<K, V> validatedRuntime = Vldtn
+                .requireNonNull(runtime, "runtime");
+        return new IndexConsistencyCoordinator<>(
+                validatedRuntime::validateUniqueSegmentIds,
+                validatedRuntime::checkAndRepairConsistency,
+                validatedRuntime::cleanupOrphanedSegmentDirectories,
+                validatedRuntime::requestFullSplitScan,
+                validatedRuntime::hasSegmentLockFile);
+    }
+
+    private static <K, V> SegmentIndexMaintenance newMaintenanceApi(
+            final SegmentIndexSessionOwner<K, V> sessionOwner,
+            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
+            final MaintenanceService maintenance,
+            final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
+        return new SegmentIndexMaintenanceImpl(
+                () -> runTrackedMaintenanceOperation(sessionOwner, trackedRunner,
+                        maintenance::compact),
+                () -> runTrackedMaintenanceOperation(sessionOwner, trackedRunner,
+                        maintenance::compactAndWait),
+                () -> runTrackedMaintenanceOperation(sessionOwner, trackedRunner,
+                        maintenance::flush),
+                () -> runTrackedMaintenanceOperation(sessionOwner, trackedRunner,
+                        maintenance::flushAndWait),
+                () -> runTrackedMaintenanceOperation(sessionOwner, trackedRunner,
+                        consistencyCoordinator::checkAndRepairConsistency));
+    }
+
+    private static <K, V> void runTrackedMaintenanceOperation(
+            final SegmentIndexSessionOwner<K, V> sessionOwner,
+            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
+            final Runnable action) {
+        sessionOwner.runMaintenanceOperation(
+                () -> trackedRunner.runTrackedVoid(action));
+    }
+
+    private static <K, V> SegmentIndexSessionOwner<K, V> newSessionOwner(
+            final Logger logger, final IndexConfiguration<K, V> conf,
+            final IndexStateCoordinator<K, V> stateCoordinator,
+            final SegmentIndexRuntime<K, V> runtime,
+            final IndexOperationTrackingAccess operationTracker,
+            final Stats stats, final IndexStateOpening<K, V> openingState,
+            final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
+        return new SegmentIndexSessionOwner<>(stateCoordinator, runtime,
+                new IndexCloseCoordinator<>(logger, conf.identity().name(),
+                        stateCoordinator, operationTracker, stats, runtime),
+                new SegmentIndexStartupCoordinator<>(logger,
+                        conf.identity().name(),
+                        openingState.wasStaleLockRecovered(), runtime,
+                        stateCoordinator, consistencyCoordinator));
     }
 
     /** {@inheritDoc} */
@@ -251,11 +317,11 @@ public class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         sessionOwner.close();
     }
 
-    public final IndexState<K, V> getIndexState() {
+    final IndexState<K, V> getIndexState() {
         return sessionOwner.getIndexState();
     }
 
-    protected final void failWithError(final Throwable failure) {
+    final void failWithError(final Throwable failure) {
         sessionOwner.failWithError(failure);
     }
 
@@ -263,23 +329,19 @@ public class SegmentIndexImpl<K, V> extends AbstractCloseableResource
      * Startup-only extension point invoked immediately before the first
      * consistency repair that runs after stale lock recovery.
      */
-    protected void onStartupConsistencyCheck() {
+    void onStartupConsistencyCheck() {
     }
 
-    protected final void completeStartup() {
+    final void completeStartup() {
         sessionOwner.completeStartup(this::onStartupConsistencyCheck);
     }
 
-    protected void ensureOperational() {
+    void ensureOperational() {
         sessionOwner.ensureOperational();
     }
 
-    protected void runMaintenanceOperation(final Runnable action) {
+    void runMaintenanceOperation(final Runnable action) {
         sessionOwner.runMaintenanceOperation(action);
-    }
-
-    private void runTrackedMaintenanceOperation(final Runnable action) {
-        runMaintenanceOperation(() -> trackedRunner.runTrackedVoid(action));
     }
 
     @Override
@@ -287,7 +349,7 @@ public class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return maintenanceApi;
     }
 
-    protected final IndexStateCoordinator<K, V> stateCoordinator() {
+    final IndexStateCoordinator<K, V> stateCoordinator() {
         return sessionOwner.stateCoordinator();
     }
 
@@ -305,59 +367,6 @@ public class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     @Override
     public IndexRuntimeMonitoring runtimeMonitoring() {
         return sessionOwner.runtimeMonitoring();
-    }
-
-    private static <K, V> SegmentIndexRuntime<K, V> createRuntime(
-            final Logger logger, final Directory directoryFacade,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
-            final ExecutorRegistry executorRegistry, final Stats stats,
-            final IndexStateCoordinator<K, V> stateCoordinator) {
-        return SegmentIndexRuntime.create(logger, directoryFacade,
-                keyTypeDescriptor, valueTypeDescriptor, conf,
-                runtimeConfiguration, executorRegistry,
-                Vldtn.requireNonNull(stats, "stats"),
-                stateCoordinator::getState, stateCoordinator::failWithError);
-    }
-
-    private static <K, V> IndexConsistencyCoordinator<K, V> createConsistencyCoordinator(
-            final SegmentIndexRuntime<K, V> runtime) {
-        final SegmentIndexRuntime<K, V> validatedRuntime = Vldtn
-                .requireNonNull(runtime, "runtime");
-        return new IndexConsistencyCoordinator<>(
-                validatedRuntime::validateUniqueSegmentIds,
-                validatedRuntime::checkAndRepairConsistency,
-                validatedRuntime::cleanupOrphanedSegmentDirectories,
-                validatedRuntime::requestFullSplitScan,
-                validatedRuntime::hasSegmentLockFile);
-    }
-
-    private static <K, V> IndexCloseCoordinator<K, V> createCloseCoordinator(
-            final Logger logger, final IndexConfiguration<K, V> conf,
-            final IndexStateCoordinator<K, V> stateCoordinator,
-            final IndexOperationTrackingAccess operationTracker,
-            final Stats stats, final SegmentIndexRuntime<K, V> runtime) {
-        return new IndexCloseCoordinator<>(logger, conf.identity().name(),
-                stateCoordinator,
-                Vldtn.requireNonNull(operationTracker, "operationTracker"),
-                Vldtn.requireNonNull(stats, "stats"),
-                Vldtn.requireNonNull(runtime, "runtime"));
-    }
-
-    private static <K, V> SegmentIndexStartupCoordinator<K, V> createStartupCoordinator(
-            final Logger logger, final IndexConfiguration<K, V> conf,
-            final boolean staleLockRecovered,
-            final SegmentIndexRuntime<K, V> runtime,
-            final IndexStateCoordinator<K, V> stateCoordinator,
-            final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
-        return new SegmentIndexStartupCoordinator<>(logger,
-                conf.identity().name(), staleLockRecovered,
-                Vldtn.requireNonNull(runtime, "runtime"),
-                stateCoordinator,
-                Vldtn.requireNonNull(consistencyCoordinator,
-                        "consistencyCoordinator"));
     }
 
 }

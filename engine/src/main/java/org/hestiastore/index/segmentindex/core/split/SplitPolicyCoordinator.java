@@ -54,7 +54,8 @@ final class SplitPolicyCoordinator<K, V> {
             final Supplier<SegmentIndexState> stateSupplier,
             final SplitFailureReporter failureReporter,
             final SplitTelemetry telemetry,
-            final SplitPolicyState policyState) {
+            final SplitPolicyState policyState,
+            final SplitCandidateRegistry candidateRegistry) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
@@ -67,7 +68,8 @@ final class SplitPolicyCoordinator<K, V> {
         this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
                 "stateSupplier");
         this.policyState = Vldtn.requireNonNull(policyState, "policyState");
-        this.candidateRegistry = new SplitCandidateRegistry();
+        this.candidateRegistry = Vldtn.requireNonNull(candidateRegistry,
+                "candidateRegistry");
         this.workerExecutor = Vldtn.requireNonNull(workerExecutor,
                 "workerExecutor");
         this.splitPolicyScheduler = Vldtn.requireNonNull(splitPolicyScheduler,

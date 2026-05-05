@@ -7,15 +7,14 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
 import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigurationContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigurationContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 
 /**
  * Adapter that wraps a {@link SegmentIndex} and ensures that the
@@ -33,19 +32,19 @@ public final class IndexContextLoggingAdapter<K, V>
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenance;
 
-    public IndexContextLoggingAdapter(final IndexConfiguration<K, V> indexConf,
-            final SegmentIndex<K, V> index) {
-        this.delegate = Vldtn.requireNonNull(index, "index");
-        final IndexConfiguration<K, V> configuration = Vldtn
-                .requireNonNull(indexConf, "indexConfiguration");
-        this.contextScopeRunner = new IndexMdcScopeRunner(
-                configuration.identity().name());
-        this.runtimeConfiguration = new RuntimeConfigurationContextLoggingAdapter(
-                delegate.runtimeConfiguration(), contextScopeRunner);
-        this.runtimeMonitoring = new IndexRuntimeMonitoringContextLoggingAdapter(
-                delegate.runtimeMonitoring(), contextScopeRunner);
+    public IndexContextLoggingAdapter(final SegmentIndex<K, V> delegate,
+            final IndexMdcScopeRunner contextScopeRunner) {
+        this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+        this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
+                "contextScopeRunner");
+        this.runtimeConfiguration =
+                new RuntimeConfigurationContextLoggingAdapter(
+                        delegate.runtimeConfiguration(), this.contextScopeRunner);
+        this.runtimeMonitoring =
+                new IndexRuntimeMonitoringContextLoggingAdapter(
+                        delegate.runtimeMonitoring(), this.contextScopeRunner);
         this.maintenance = new SegmentIndexMaintenanceContextLoggingAdapter(
-                delegate.maintenance(), contextScopeRunner);
+                delegate.maintenance(), this.contextScopeRunner);
     }
 
     @Override

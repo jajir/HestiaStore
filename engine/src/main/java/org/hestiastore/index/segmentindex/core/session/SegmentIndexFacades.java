@@ -6,8 +6,8 @@ import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIterat
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 
 /**
- * Assembles data facades as one cohesive boundary so outer core composition
- * does not need to know facade-internal wiring details.
+ * Groups data facades as one cohesive boundary so outer core composition does
+ * not need to know facade-internal wiring details.
  *
  * @param <K> key type
  * @param <V> value type

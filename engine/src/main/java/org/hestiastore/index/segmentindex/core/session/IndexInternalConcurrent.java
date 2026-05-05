@@ -18,6 +18,7 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.slf4j.LoggerFactory;
 
 /**
  * Direct, caller-thread implementation of {@link SegmentIndex}.
@@ -50,8 +51,8 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final IndexConfiguration<K, V> conf,
             final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
-        this(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
-                runtimeConfiguration, executorRegistry, true);
+        this(newDelegate(directoryFacade, keyTypeDescriptor, valueTypeDescriptor,
+                conf, runtimeConfiguration, executorRegistry), true);
     }
 
     public static <K, V> IndexInternalConcurrent<K, V> createOpening(
@@ -61,24 +62,32 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final IndexConfiguration<K, V> conf,
             final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
             final ExecutorRegistry executorRegistry) {
-        return new IndexInternalConcurrent<>(directoryFacade, keyTypeDescriptor,
-                valueTypeDescriptor, conf, runtimeConfiguration,
-                executorRegistry, false);
+        return new IndexInternalConcurrent<>(
+                newDelegate(directoryFacade, keyTypeDescriptor,
+                        valueTypeDescriptor, conf, runtimeConfiguration,
+                        executorRegistry),
+                false);
     }
 
-    private IndexInternalConcurrent(final Directory directoryFacade,
+    private IndexInternalConcurrent(final SegmentIndexImpl<K, V> delegate,
+            final boolean completeStartup) {
+        this.delegate = Vldtn.requireNonNull(delegate, "delegate");
+        if (completeStartup) {
+            completeStartup();
+        }
+    }
+
+    private static <K, V> SegmentIndexImpl<K, V> newDelegate(
+            final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
-            final ExecutorRegistry executorRegistry,
-            final boolean completeStartup) {
-        this.delegate = new SegmentIndexImpl<>(directoryFacade,
-                keyTypeDescriptor, valueTypeDescriptor, conf,
-                runtimeConfiguration, executorRegistry);
-        if (completeStartup) {
-            completeStartup();
-        }
+            final ExecutorRegistry executorRegistry) {
+        return SegmentIndexImpl.open(LoggerFactory.getLogger(
+                SegmentIndexImpl.class), directoryFacade, keyTypeDescriptor,
+                valueTypeDescriptor, conf, runtimeConfiguration,
+                executorRegistry);
     }
 
     @Override

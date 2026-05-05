@@ -23,9 +23,12 @@
 [ ] M40 Review `segmentindex` package for test and Javadoc coverage (Risk: LOW)
 [ ] M41 Audit `segmentregistry` package for unused or test-only code (Risk: LOW)
 [ ] M42 Review `segmentregistry` package for test and Javadoc coverage (Risk: LOW)
+[ ] M43 Avoid pattern-name abstractions unless they own lifecycle, resource opening, or rollback-sensitive cleanup (Risk: LOW)
 
 ## Done (Archive)
 
+[x] 97. Clarify `core.session` responsibility boundaries by moving topology runtime composition to `core.topology`, giving core storage its own open spec and observer types, and preserving lifecycle behavior.
+[x] 98. Simplify SegmentIndex initialization after the broad assembly refactor by keeping explicit opening points for bootstrap, session startup, and runtime resources while removing pattern-only assembler/request/components layers.
 [x] 89. Rework split routing around a runtime `SegmentTopology` so route handoff, draining, and split publish are owned by topology code while `SegmentRegistry` remains responsible only for physical segment instances and `KeyToSegmentMap` remains responsible only for persisted routing.
 [x] 90. Define the `SegmentTopology` contract with route states such as `ACTIVE`, `DRAINING`, and `RETIRED`, plus `RouteLease` acquisition/release semantics and deterministic drain behavior for in-flight routed operations.
 [x] 91. Add topology bootstrap from the versioned `KeyToSegmentMap` snapshot so startup builds runtime route entries without changing `SegmentRegistry`, `BlockingSegment`, or `Segment` contracts.
