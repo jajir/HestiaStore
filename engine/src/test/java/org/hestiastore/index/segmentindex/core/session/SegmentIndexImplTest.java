@@ -1,21 +1,17 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,15 +52,20 @@ class SegmentIndexImplTest {
     @Test
     void constructorCompletesStartupOnlyOnce() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        try (DoubleStartupIndex doubleStartupIndex = new DoubleStartupIndex(
-                new MemDirectory(), conf, ExecutorRegistryFixture.from(conf))) {
-            assertEquals(SegmentIndexState.READY, doubleStartupIndex.runtimeMonitoring().snapshot().getState());
-            assertEquals(0, doubleStartupIndex.getStartupConsistencyChecks());
+        try (IndexInternalConcurrent<Integer, String> openingIndex =
+                IndexInternalConcurrent.createOpening(new MemDirectory(),
+                        new TypeDescriptorInteger(),
+                        new TypeDescriptorShortString(), conf,
+                        conf.resolveRuntimeConfiguration(),
+                        ExecutorRegistryFixture.from(conf))) {
+            assertEquals(SegmentIndexState.OPENING,
+                    openingIndex.runtimeMonitoring().snapshot().getState());
 
-            doubleStartupIndex.completeStartupAgainForTest();
+            openingIndex.completeStartup();
+            openingIndex.completeStartup();
 
-            assertEquals(SegmentIndexState.READY, doubleStartupIndex.runtimeMonitoring().snapshot().getState());
-            assertEquals(0, doubleStartupIndex.getStartupConsistencyChecks());
+            assertEquals(SegmentIndexState.READY,
+                    openingIndex.runtimeMonitoring().snapshot().getState());
         }
     }
 
@@ -91,36 +92,4 @@ class SegmentIndexImplTest {
                 .build();
     }
 
-    private static final class DoubleStartupIndex
-            extends SegmentIndexImpl<Integer, String> {
-
-        private final AtomicInteger startupConsistencyChecks = new AtomicInteger();
-
-        private DoubleStartupIndex(final Directory directoryFacade,
-                final IndexConfiguration<Integer, String> conf,
-                final ExecutorRegistry executorRegistry) {
-            super(directoryFacade, new TypeDescriptorInteger(),
-                    new TypeDescriptorShortString(), conf,
-                    runtimeConfiguration(conf), executorRegistry);
-            completeStartup();
-        }
-
-        @Override
-        protected void onStartupConsistencyCheck() {
-            startupConsistencyChecks.incrementAndGet();
-        }
-
-        private void completeStartupAgainForTest() {
-            completeStartup();
-        }
-
-        private int getStartupConsistencyChecks() {
-            return startupConsistencyChecks.get();
-        }
-
-        private static ResolvedIndexConfiguration<Integer, String> runtimeConfiguration(
-                final IndexConfiguration<Integer, String> conf) {
-            return conf.resolveRuntimeConfiguration();
-        }
-    }
 }

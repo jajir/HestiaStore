@@ -20,6 +20,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class RouteSplitCoordinatorTest {
@@ -64,11 +66,14 @@ class RouteSplitCoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        when(conf.maintenance()).thenReturn(maintenance);
         when(maintenance.busyBackoffMillis()).thenReturn(1);
         when(maintenance.busyTimeoutMillis()).thenReturn(1);
-        coordinator = new RouteSplitCoordinator<>(conf, Integer::compare,
-                segmentRegistry, materializationService);
+        coordinator = new RouteSplitCoordinator<>(segmentRegistry,
+                new SegmentIndexSplitPolicyThreshold<>(),
+                new RouteSplitPreparationService<>(materializationService,
+                        new IndexRetryPolicy(maintenance.busyBackoffMillis(),
+                                maintenance.busyTimeoutMillis()),
+                        LoggerFactory.getLogger(RouteSplitCoordinator.class)));
         splitPlan = new RouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
                 UPPER_SEGMENT_ID, 2, RouteSplitPlan.SplitMode.SPLIT);
     }

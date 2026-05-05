@@ -19,7 +19,6 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexImpl;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexTestAccess;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -104,10 +103,9 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
         if (isolation == SegmentIteratorIsolation.FAIL_FAST) {
             return toList(index.getStream(SegmentWindow.unbounded()));
         }
-        final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
-        @SuppressWarnings("unchecked")
-        final EntryIterator<M, N> iterator = (EntryIterator<M, N>) impl
-                .openSegmentIterator(SegmentWindow.unbounded(), isolation);
+        final EntryIterator<M, N> iterator = SegmentIndexTestAccess
+                .openSegmentIterator(index, SegmentWindow.unbounded(),
+                        isolation);
         try {
             final List<Entry<M, N>> out = new ArrayList<>();
             while (iterator.hasNext()) {
@@ -167,8 +165,7 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
     }
 
     private static Object readSegmentRegistry(final SegmentIndex<?, ?> index) {
-        final SegmentIndexImpl<?, ?> impl = unwrapSegmentIndex(index);
-        return SegmentIndexTestAccess.segmentRegistry(impl);
+        return SegmentIndexTestAccess.segmentRegistry(index);
     }
 
     @SuppressWarnings("unchecked")
@@ -204,23 +201,6 @@ public abstract class AbstractSegmentIndexTest extends AbstractDataTest {
             throw new IllegalStateException(
                     "Unable to read segments cache for test", ex);
         }
-    }
-
-    private static SegmentIndexImpl<?, ?> unwrapSegmentIndex(
-            final SegmentIndex<?, ?> index) {
-        Object current = index;
-        while (!(current instanceof SegmentIndexImpl<?, ?>)) {
-            try {
-                final Field field = current.getClass().getDeclaredField(
-                        "delegate");
-                field.setAccessible(true);
-                current = field.get(current);
-            } catch (final ReflectiveOperationException ex) {
-                throw new IllegalStateException(
-                        "Unable to unwrap index for test", ex);
-            }
-        }
-        return (SegmentIndexImpl<?, ?>) current;
     }
 
 }

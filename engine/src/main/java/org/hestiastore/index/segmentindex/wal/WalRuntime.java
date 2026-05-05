@@ -4,6 +4,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.IndexException;
@@ -32,6 +33,9 @@ import org.slf4j.LoggerFactory;
  * @param <V> value type
  */
 public final class WalRuntime<K, V> implements AutoCloseable {
+
+    private static final Logger logger = LoggerFactory
+            .getLogger(WalRuntime.class);
 
     /**
      * WAL operation kind.
@@ -110,15 +114,11 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         void accept(ReplayRecord<K, V> replayRecord);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(WalRuntime.class);
-
     private final boolean enabled;
-    private final IndexWalConfiguration wal;
-    private final Object monitor = new Object();
-    private final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
-    private final WalStorage storage;
+    private final Object monitor;
+    private final WalRuntimeMetrics metrics;
+    private final AtomicBoolean closed;
     private final WalMetadataCatalog metadataCatalog;
-    private final WalRecordCodec<K, V> recordCodec;
     private final WalSegmentCatalog segmentCatalog;
     private final WalSyncPolicy syncPolicy;
     private final WalWriter<K, V> writer;
@@ -126,53 +126,25 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private final ScheduledExecutorService groupSyncExecutor;
 
     private long checkpointLsn = 0L;
-    private boolean closed;
 
-    private WalRuntime(final IndexWalConfiguration wal, final WalStorage storage,
-            final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor) {
-        this.wal = IndexWalConfiguration.orEmpty(wal);
-        this.enabled = this.wal.isEnabled();
-        this.storage = storage;
-        if (!enabled) {
-            this.metadataCatalog = null;
-            this.recordCodec = null;
-            this.segmentCatalog = null;
-            this.syncPolicy = null;
-            this.writer = null;
-            this.recoveryManager = null;
-            this.groupSyncExecutor = null;
-            return;
-        }
-        this.metadataCatalog = new WalMetadataCatalog(
-                Vldtn.requireNonNull(storage, "storage"), logger);
-        this.recordCodec = new WalRecordCodec<>(
-                keyDescriptor == null ? null : keyDescriptor.getTypeEncoder(),
-                keyDescriptor == null ? null : keyDescriptor.getTypeDecoder(),
-                valueDescriptor == null ? null
-                        : valueDescriptor.getTypeEncoder(),
-                valueDescriptor == null ? null
-                        : valueDescriptor.getTypeDecoder());
-        this.segmentCatalog = new WalSegmentCatalog(this.wal, this.storage,
-                this.metadataCatalog, logger);
-        this.syncPolicy = new WalSyncPolicy(this.wal, this.storage, metrics,
-                logger, monitor, segmentCatalog::segments, this::isClosed);
-        this.writer = new WalWriter<>(this.wal, this.storage, this.recordCodec,
-                this.segmentCatalog, metrics, this.syncPolicy);
-        this.recoveryManager = new WalRecoveryManager<>(this.wal, this.storage,
-                this.metadataCatalog, this.recordCodec, this.segmentCatalog,
-                this.metrics, logger);
-        if (this.wal.getDurabilityMode() == WalDurabilityMode.GROUP_SYNC
-                && this.wal.getGroupSyncDelayMillis() > 0) {
-            this.groupSyncExecutor = Executors.newSingleThreadScheduledExecutor(
-                    new NamedDaemonThreadFactory("hestiastore-wal-group-sync"));
-            this.groupSyncExecutor.scheduleWithFixedDelay(
-                    syncPolicy::syncGroupPendingSafely,
-                    this.wal.getGroupSyncDelayMillis(),
-                    this.wal.getGroupSyncDelayMillis(), TimeUnit.MILLISECONDS);
-        } else {
-            this.groupSyncExecutor = null;
-        }
+    @SuppressWarnings("java:S107")
+    private WalRuntime(final IndexWalConfiguration wal, final Object monitor,
+            final WalRuntimeMetrics metrics, final AtomicBoolean closed,
+            final WalMetadataCatalog metadataCatalog,
+            final WalSegmentCatalog segmentCatalog,
+            final WalSyncPolicy syncPolicy, final WalWriter<K, V> writer,
+            final WalRecoveryManager<K, V> recoveryManager,
+            final ScheduledExecutorService groupSyncExecutor) {
+        this.enabled = Vldtn.requireNonNull(wal, "wal").isEnabled();
+        this.monitor = Vldtn.requireNonNull(monitor, "monitor");
+        this.metrics = Vldtn.requireNonNull(metrics, "metrics");
+        this.closed = Vldtn.requireNonNull(closed, "closed");
+        this.metadataCatalog = metadataCatalog;
+        this.segmentCatalog = segmentCatalog;
+        this.syncPolicy = syncPolicy;
+        this.writer = writer;
+        this.recoveryManager = recoveryManager;
+        this.groupSyncExecutor = groupSyncExecutor;
     }
 
     /**
@@ -192,12 +164,12 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         Vldtn.requireNonNull(indexDirectory, "indexDirectory");
         final IndexWalConfiguration resolvedWal = IndexWalConfiguration.orEmpty(wal);
         if (!resolvedWal.isEnabled()) {
-            return new WalRuntime<>(resolvedWal, null, null, null);
+            return disabled(resolvedWal);
         }
         final Directory walDirectory = indexDirectory
                 .openSubDirectory(WalMetadataCatalog.WAL_DIRECTORY);
         final WalStorage storage = WalStorageFactory.create(walDirectory);
-        final WalRuntime<K, V> runtime = new WalRuntime<>(resolvedWal, storage,
+        final WalRuntime<K, V> runtime = create(resolvedWal, storage,
                 keyDescriptor, valueDescriptor);
         runtime.metadataCatalog.ensureFormatMarker();
         return runtime;
@@ -206,13 +178,69 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     static <K, V> WalRuntime<K, V> openForTests(final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        final WalRuntime<K, V> runtime = new WalRuntime<>(IndexWalConfiguration.orEmpty(wal),
+        final WalRuntime<K, V> runtime = create(IndexWalConfiguration.orEmpty(wal),
                 Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
                 valueDescriptor);
         if (runtime.enabled) {
             runtime.metadataCatalog.ensureFormatMarker();
         }
         return runtime;
+    }
+
+    private static <K, V> WalRuntime<K, V> disabled(
+            final IndexWalConfiguration wal) {
+        return new WalRuntime<>(wal, new Object(), new WalRuntimeMetrics(),
+                new AtomicBoolean(), null, null, null, null, null, null);
+    }
+
+    private static <K, V> WalRuntime<K, V> create(
+            final IndexWalConfiguration wal, final WalStorage storage,
+            final TypeDescriptor<K> keyDescriptor,
+            final TypeDescriptor<V> valueDescriptor) {
+        if (!wal.isEnabled()) {
+            return disabled(wal);
+        }
+        final Object monitor = new Object();
+        final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
+        final AtomicBoolean closed = new AtomicBoolean();
+        final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
+                storage, logger);
+        final WalRecordCodec<K, V> recordCodec = new WalRecordCodec<>(
+                keyDescriptor == null ? null : keyDescriptor.getTypeEncoder(),
+                keyDescriptor == null ? null : keyDescriptor.getTypeDecoder(),
+                valueDescriptor == null ? null
+                        : valueDescriptor.getTypeEncoder(),
+                valueDescriptor == null ? null
+                        : valueDescriptor.getTypeDecoder());
+        final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
+                storage, metadataCatalog, logger);
+        final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
+                metrics, logger, monitor, segmentCatalog::segments,
+                closed::get);
+        final WalWriter<K, V> writer = new WalWriter<>(wal, storage,
+                recordCodec, segmentCatalog, metrics, syncPolicy);
+        final WalRecoveryManager<K, V> recoveryManager =
+                new WalRecoveryManager<>(wal, storage, metadataCatalog,
+                        recordCodec, segmentCatalog, metrics, logger);
+        return new WalRuntime<>(wal, monitor, metrics, closed, metadataCatalog,
+                segmentCatalog, syncPolicy, writer, recoveryManager,
+                newGroupSyncExecutor(wal, syncPolicy));
+    }
+
+    private static ScheduledExecutorService newGroupSyncExecutor(
+            final IndexWalConfiguration wal, final WalSyncPolicy syncPolicy) {
+        if (wal.getDurabilityMode() != WalDurabilityMode.GROUP_SYNC
+                || wal.getGroupSyncDelayMillis() <= 0) {
+            return null;
+        }
+        final ScheduledExecutorService executor =
+                Executors.newSingleThreadScheduledExecutor(
+                        new NamedDaemonThreadFactory(
+                                "hestiastore-wal-group-sync"));
+        executor.scheduleWithFixedDelay(syncPolicy::syncGroupPendingSafely,
+                wal.getGroupSyncDelayMillis(), wal.getGroupSyncDelayMillis(),
+                TimeUnit.MILLISECONDS);
+        return executor;
     }
 
     public boolean isEnabled() {
@@ -340,10 +368,10 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             return;
         }
         synchronized (monitor) {
-            if (closed) {
+            if (closed.get()) {
                 return;
             }
-            closed = true;
+            closed.set(true);
             monitor.notifyAll();
         }
         if (groupSyncExecutor != null) {
@@ -366,13 +394,9 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     private void ensureOpen() {
-        if (closed) {
+        if (closed.get()) {
             throw new IndexException("WAL runtime is already closed.");
         }
-    }
-
-    private boolean isClosed() {
-        return closed;
     }
 
     static int computeCrc32(final byte[] data, final int offset,
@@ -414,4 +438,5 @@ public final class WalRuntime<K, V> implements AutoCloseable {
             return thread;
         }
     }
+
 }

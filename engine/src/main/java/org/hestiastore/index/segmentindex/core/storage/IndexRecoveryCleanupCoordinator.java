@@ -17,12 +17,14 @@ public final class IndexRecoveryCleanupCoordinator<K, V> {
     private final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector;
     private final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover;
 
-    public IndexRecoveryCleanupCoordinator(final Logger logger,
+    public static <K, V> IndexRecoveryCleanupCoordinator<K, V> create(
+            final Logger logger,
             final Directory directoryFacade,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final IndexRetryPolicy retryPolicy) {
-        this(new RecoverySegmentDirectoryInspector<>(
+        return new IndexRecoveryCleanupCoordinator<>(
+                new RecoverySegmentDirectoryInspector<>(
                 Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap")),
                 new OrphanedSegmentDirectoryRemover<>(

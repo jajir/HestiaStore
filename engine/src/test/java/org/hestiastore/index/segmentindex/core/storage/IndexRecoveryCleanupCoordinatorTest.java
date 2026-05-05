@@ -42,7 +42,7 @@ class IndexRecoveryCleanupCoordinatorTest {
                 new TypeDescriptorInteger());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
-        coordinator = new IndexRecoveryCleanupCoordinator<>(
+        coordinator = IndexRecoveryCleanupCoordinator.create(
                 LoggerFactory.getLogger(
                         IndexRecoveryCleanupCoordinatorTest.class),
                 directory, synchronizedKeyToSegmentMap, segmentRegistry,

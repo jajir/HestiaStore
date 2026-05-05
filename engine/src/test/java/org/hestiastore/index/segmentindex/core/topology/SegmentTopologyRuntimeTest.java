@@ -1,22 +1,18 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.core.topology;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeTestAccess;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,23 +24,28 @@ class SegmentTopologyRuntimeTest {
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
     private ExecutorRegistry executorRegistry;
-    private SegmentIndexCoreStorage<Integer, String> coreStorage;
+    private Object runtime;
 
     @BeforeEach
     void setUp() {
-        executorRegistry = ExecutorRegistryFixture.from(buildConf());
-        coreStorage = new SegmentIndexCoreStorageFactory<>(newRequest(),
-                new SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<>() {
-                }).create();
+        final IndexConfiguration<Integer, String> conf = buildConf();
+        executorRegistry = ExecutorRegistryFixture.from(conf);
+        runtime = SegmentIndexRuntimeTestAccess.openRuntime(
+                LoggerFactory.getLogger(getClass()), new MemDirectory(), tdi,
+                tds, conf, executorRegistry);
     }
 
     @AfterEach
     void tearDown() {
         RuntimeException failure = null;
-        if (coreStorage != null) {
-            failure = closeIgnoringFailure(coreStorage.segmentRegistry()::close,
+        if (runtime != null) {
+            failure = closeIgnoringFailure(
+                    () -> SegmentIndexRuntimeTestAccess.closeRuntime(runtime,
+                            "segment-topology-runtime-test"),
                     failure);
-            failure = closeIgnoringFailure(coreStorage.keyToSegmentMap()::close,
+            failure = closeIgnoringFailure(
+                    () -> SegmentIndexRuntimeTestAccess.keyToSegmentMap(runtime)
+                            .close(),
                     failure);
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
@@ -58,24 +59,13 @@ class SegmentTopologyRuntimeTest {
     @Test
     void createBuildsUnifiedSplitManagementBoundary() {
         final SegmentTopologyRuntime<Integer, String> topologyRuntime =
-                new SegmentTopologyRuntime<>(newRequest(), coreStorage);
+                SegmentIndexRuntimeTestAccess.topologyRuntime(runtime);
 
         assertNotNull(topologyRuntime.splitService());
         assertNotNull(topologyRuntime.segmentAccessService());
         assertDoesNotThrow(topologyRuntime::requestFullSplitScan);
         assertDoesNotThrow(
                 topologyRuntime::cleanupOrphanedSegmentDirectories);
-    }
-
-    private SegmentIndexRuntimeInputs<Integer, String> newRequest() {
-        final IndexConfiguration<Integer, String> conf = buildConf();
-        return new SegmentIndexRuntimeInputs<>(
-                LoggerFactory.getLogger(getClass()), new MemDirectory(), tdi,
-                tds, conf, conf.resolveRuntimeConfiguration(),
-                executorRegistry, new Stats(), new AtomicLong(),
-                new AtomicLong(), new AtomicLong(),
-                () -> SegmentIndexState.READY, failure -> {
-                });
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

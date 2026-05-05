@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
  * Core storage collaborators opened before split and maintenance services are
- * assembled.
+ * created.
  *
  * @param <K> key type
  * @param <V> value type

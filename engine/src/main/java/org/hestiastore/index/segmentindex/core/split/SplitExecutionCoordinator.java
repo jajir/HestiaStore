@@ -50,17 +50,25 @@ interface SplitExecutionCoordinator<K, V> {
             final SplitTelemetry telemetry) {
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");
+        Vldtn.requireNonNull(keyComparator, "keyComparator");
         final DefaultSegmentMaterializationService<K, V> materializationService = new DefaultSegmentMaterializationService<>(
                 Vldtn.requireNonNull(directoryFacade,
                         "directoryFacade"),
                 validatedSegmentRegistry.materialization());
+        final RouteSplitPreparationService<K, V> preparationService =
+                new RouteSplitPreparationService<>(materializationService,
+                        new org.hestiastore.index.segmentindex.IndexRetryPolicy(
+                                conf.maintenance().busyBackoffMillis(),
+                                conf.maintenance().busyTimeoutMillis()),
+                        org.slf4j.LoggerFactory.getLogger(
+                                RouteSplitCoordinator.class));
         return new SplitExecutionCoordinatorImpl<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
                 new RouteSplitCoordinator<>(
-                        Vldtn.requireNonNull(conf, "conf"),
-                        Vldtn.requireNonNull(keyComparator, "keyComparator"),
-                        validatedSegmentRegistry, materializationService),
+                        validatedSegmentRegistry,
+                        new SegmentIndexSplitPolicyThreshold<>(),
+                        preparationService),
                 new RouteSplitPublishCoordinator<>(
                         keyToSegmentMap, validatedSegmentRegistry,
                         materializationService),

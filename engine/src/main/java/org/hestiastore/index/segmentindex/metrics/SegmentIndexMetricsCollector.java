@@ -53,7 +53,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                 "snapshotFactory");
     }
 
-    public static <K, V> SegmentIndexMetricsCollector<K, V> create(
+    static <K, V> SegmentIndexMetricsCollector<K, V> create(
             final IndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
@@ -84,7 +84,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                         lastAppliedWalLsn, stateSupplier));
     }
 
-    public SegmentIndexMetricsSnapshot metricsSnapshot() {
+    SegmentIndexMetricsSnapshot metricsSnapshot() {
         final StableSegmentRuntimeMetrics stableSegmentRuntime =
                 stableSegmentRuntimeCollector.collect();
         final IndexExecutorRuntimeAccess executorSnapshot =
