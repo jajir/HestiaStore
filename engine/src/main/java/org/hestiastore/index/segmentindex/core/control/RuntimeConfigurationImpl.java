@@ -21,17 +21,15 @@ public final class RuntimeConfigurationImpl
     private final RuntimeConfigPatchApplier patchApplier;
     private final RuntimeTuningState runtimeTuningState;
 
-    public RuntimeConfigurationImpl(
-            final RuntimeTuningState runtimeTuningState,
+    public RuntimeConfigurationImpl(final RuntimeTuningState runtimeTuningState,
             final Consumer<Map<RuntimeSettingKey, Integer>> effectiveLimitsApplier,
             final Runnable splitThresholdChangedListener) {
-        final RuntimeTuningState validatedRuntimeTuningState = Vldtn
-                .requireNonNull(runtimeTuningState, "runtimeTuningState");
-        this.runtimeTuningState = validatedRuntimeTuningState;
+        this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
+                "runtimeTuningState");
         this.patchValidator = new RuntimeConfigPatchValidator(
-                validatedRuntimeTuningState);
-        this.patchApplier = new RuntimeConfigPatchApplier(this.patchValidator,
-                validatedRuntimeTuningState,
+                this.runtimeTuningState);
+        this.patchApplier = new RuntimeConfigPatchApplier(patchValidator,
+                this.runtimeTuningState,
                 Vldtn.requireNonNull(effectiveLimitsApplier,
                         "effectiveLimitsApplier"),
                 Vldtn.requireNonNull(splitThresholdChangedListener,

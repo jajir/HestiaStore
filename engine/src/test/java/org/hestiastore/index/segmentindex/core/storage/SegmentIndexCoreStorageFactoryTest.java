@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
@@ -12,18 +11,13 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeGraphBuilder;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeInputs;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class SegmentIndexCoreStorageFactoryTest {
 
@@ -61,11 +55,11 @@ class SegmentIndexCoreStorageFactoryTest {
                 new AtomicReference<>();
         final AtomicReference<SegmentRegistry<Integer, String>> segmentRegistryRef =
                 new AtomicReference<>();
-        final SegmentIndexRuntimeInputs<Integer, String> request =
+        final SegmentIndexCoreStorageOpenSpec<Integer, String> request =
                 newRequest();
         final SegmentIndexCoreStorageFactory<Integer, String> factory =
                 new SegmentIndexCoreStorageFactory<>(request,
-                        new SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<>() {
+                        new SegmentIndexCoreStorageOpenObserver<>() {
                             @Override
                             public void onKeyToSegmentMapCreated(
                                     final KeyToSegmentMap<Integer> keyToSegmentMap) {
@@ -87,15 +81,10 @@ class SegmentIndexCoreStorageFactoryTest {
         assertNotNull(coreStorage.retryPolicy());
     }
 
-    private SegmentIndexRuntimeInputs<Integer, String> newRequest() {
+    private SegmentIndexCoreStorageOpenSpec<Integer, String> newRequest() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        return new SegmentIndexRuntimeInputs<>(
-                LoggerFactory.getLogger(getClass()), new MemDirectory(), tdi,
-                tds, conf, conf.resolveRuntimeConfiguration(),
-                executorRegistry, new Stats(), new AtomicLong(),
-                new AtomicLong(), new AtomicLong(),
-                () -> SegmentIndexState.READY, failure -> {
-                });
+        return new SegmentIndexCoreStorageOpenSpec<>(new MemDirectory(), tdi,
+                tds, conf, conf.resolveRuntimeConfiguration(), executorRegistry);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

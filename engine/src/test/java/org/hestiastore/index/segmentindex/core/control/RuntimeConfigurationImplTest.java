@@ -35,8 +35,8 @@ class RuntimeConfigurationImplTest {
         appliedLimits = new AtomicReference<>();
         splitThresholdRescanCount = new AtomicInteger(0);
         runtimeConfiguration = new RuntimeConfigurationImpl(
-                RuntimeTuningState.fromConfiguration(conf),
-                appliedLimits::set, splitThresholdRescanCount::incrementAndGet);
+                RuntimeTuningState.fromConfiguration(conf), appliedLimits::set,
+                splitThresholdRescanCount::incrementAndGet);
     }
 
     @Test

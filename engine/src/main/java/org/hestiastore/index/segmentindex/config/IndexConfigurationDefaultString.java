@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentindex.IndexSegmentConfiguration;
 /**
  * Default configuration values for String keys.
  */
-public class IndexConfigurationDefaultString
+final class IndexConfigurationDefaultString
         implements IndexConfigurationContract {
 
     /** {@inheritDoc} */

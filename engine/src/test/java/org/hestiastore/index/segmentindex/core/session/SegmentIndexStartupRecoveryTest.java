@@ -1,8 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -16,7 +15,16 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
+import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
+import org.hestiastore.index.segmentindex.core.session.state.IndexStateOpening;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 class SegmentIndexStartupRecoveryTest {
 
@@ -72,10 +80,10 @@ class SegmentIndexStartupRecoveryTest {
 
         private TrackingIndex(final Directory directoryFacade,
                 final IndexConfiguration<Integer, String> conf) {
-            super(directoryFacade, new TypeDescriptorInteger(),
-                    new TypeDescriptorShortString(), conf,
-                    conf.resolveRuntimeConfiguration(),
-                    ExecutorRegistryFixture.from(conf));
+            super(new TypeDescriptorInteger(), mockPointOperationFacade(),
+                    mockReadFacade(), mock(MaintenanceService.class),
+                    mockTrackedRunner(), mock(SegmentIndexMaintenance.class),
+                    newSessionOwner(directoryFacade, conf));
             completeStartup();
         }
 
@@ -109,6 +117,56 @@ class SegmentIndexStartupRecoveryTest {
                     .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                     .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
                     .build();
+        }
+
+        private static SegmentIndexSessionOwner<Integer, String> newSessionOwner(
+                final Directory directoryFacade,
+                final IndexConfiguration<Integer, String> conf) {
+            final IndexStateOpening<Integer, String> openingState =
+                    new IndexStateOpening<>(directoryFacade);
+            final IndexStateCoordinator<Integer, String> stateCoordinator =
+                    new IndexStateCoordinator<>(openingState,
+                            SegmentIndexState.OPENING);
+            final SegmentIndexRuntime<Integer, String> runtime = mockRuntime();
+            final IndexConsistencyCoordinator<Integer, String> consistencyCoordinator =
+                    new IndexConsistencyCoordinator<>(() -> {
+                    }, segmentFilter -> {
+                    }, () -> {
+                    }, () -> {
+                    }, segmentId -> false);
+            return new SegmentIndexSessionOwner<>(stateCoordinator, runtime,
+                    new IndexCloseCoordinator<>(
+                            LoggerFactory.getLogger(TrackingIndex.class),
+                            conf.identity().name(), stateCoordinator,
+                            IndexOperationTrackingAccess.create(), new Stats(),
+                            runtime),
+                    new SegmentIndexStartupCoordinator<>(
+                            LoggerFactory.getLogger(TrackingIndex.class),
+                            conf.identity().name(),
+                            openingState.wasStaleLockRecovered(), runtime,
+                            stateCoordinator, consistencyCoordinator));
+        }
+
+        @SuppressWarnings("unchecked")
+        private static SegmentIndexPointOperationFacade<Integer, String>
+                mockPointOperationFacade() {
+            return mock(SegmentIndexPointOperationFacade.class);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static SegmentIndexReadFacade<Integer, String> mockReadFacade() {
+            return mock(SegmentIndexReadFacade.class);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static SegmentIndexTrackedOperationRunner<Integer, String>
+                mockTrackedRunner() {
+            return mock(SegmentIndexTrackedOperationRunner.class);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static SegmentIndexRuntime<Integer, String> mockRuntime() {
+            return mock(SegmentIndexRuntime.class);
         }
     }
 }

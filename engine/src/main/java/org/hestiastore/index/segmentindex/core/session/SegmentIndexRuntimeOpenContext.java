@@ -15,28 +15,28 @@ import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.slf4j.Logger;
 
 /**
- * Validated runtime assembly input bundle.
+ * Validated context for opening the runtime graph.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexRuntimeInputs<K, V> {
+final class SegmentIndexRuntimeOpenContext<K, V> {
 
-    public final Logger logger;
-    public final Directory directoryFacade;
-    public final TypeDescriptor<K> keyTypeDescriptor;
-    public final TypeDescriptor<V> valueTypeDescriptor;
-    public final IndexConfiguration<K, V> conf;
-    public final ResolvedIndexConfiguration<K, V> runtimeConfiguration;
-    public final ExecutorRegistry executorRegistry;
-    public final Stats stats;
-    public final AtomicLong compactRequestHighWaterMark;
-    public final AtomicLong flushRequestHighWaterMark;
-    public final AtomicLong lastAppliedWalLsn;
-    public final Supplier<SegmentIndexState> stateSupplier;
-    public final Consumer<RuntimeException> failureHandler;
+    final Logger logger;
+    final Directory directoryFacade;
+    final TypeDescriptor<K> keyTypeDescriptor;
+    final TypeDescriptor<V> valueTypeDescriptor;
+    final IndexConfiguration<K, V> conf;
+    final ResolvedIndexConfiguration<K, V> runtimeConfiguration;
+    final ExecutorRegistry executorRegistry;
+    final Stats stats;
+    final AtomicLong compactRequestHighWaterMark;
+    final AtomicLong flushRequestHighWaterMark;
+    final AtomicLong lastAppliedWalLsn;
+    final Supplier<SegmentIndexState> stateSupplier;
+    final Consumer<RuntimeException> failureHandler;
 
-    public SegmentIndexRuntimeInputs(
+    SegmentIndexRuntimeOpenContext(
             final Logger logger,
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,

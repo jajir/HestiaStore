@@ -38,14 +38,14 @@ class SegmentIndexRuntimeTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         executorRegistry = ExecutorRegistryFixture.from(conf);
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
-        runtime = new SegmentIndexRuntimeGraphBuilder<>(
-                new SegmentIndexRuntimeInputs<>(
+        runtime = new SegmentIndexRuntimeFactory<>(
+                new SegmentIndexRuntimeOpenContext<>(
                         logger, new MemDirectory(), tdi, tds, conf,
                         conf.resolveRuntimeConfiguration(), executorRegistry,
                         new Stats(), new AtomicLong(), new AtomicLong(),
                         new AtomicLong(),
                         () -> SegmentIndexState.READY, failureRef::set))
-                                .build();
+                                .open();
     }
 
     @AfterEach

@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
 import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
@@ -20,8 +21,6 @@ import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatc
 import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
 import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexIdentityConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
@@ -34,14 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("unchecked")
 class IndexContextLoggingAdapterTest {
-
-    @Mock
-    private IndexConfiguration<String, String> conf;
-
-    @Mock
-    private IndexIdentityConfiguration<String, String> identity;
 
     @Mock
     private SegmentIndex<String, String> delegate;
@@ -53,12 +45,10 @@ class IndexContextLoggingAdapterTest {
 
     @BeforeEach
     void setUp() {
-        when(conf.identity()).thenReturn(identity);
-        when(identity.name()).thenReturn("idx");
         when(delegate.runtimeConfiguration()).thenReturn(mock(RuntimeConfiguration.class));
         when(delegate.runtimeMonitoring()).thenReturn(mock(IndexRuntimeMonitoring.class));
         when(delegate.maintenance()).thenReturn(maintenance);
-        adapter = new IndexContextLoggingAdapter<>(conf, delegate);
+        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
     }
 
     @AfterEach
@@ -71,15 +61,10 @@ class IndexContextLoggingAdapterTest {
 
     @Test
     void constructorRejectsBlankIndexName() {
-        final IndexConfiguration<String, String> blankConf = mock(
-                IndexConfiguration.class);
-        final IndexIdentityConfiguration<String, String> blankIdentity = mock(
-                IndexIdentityConfiguration.class);
-        when(blankConf.identity()).thenReturn(blankIdentity);
-        when(blankIdentity.name()).thenReturn("  ");
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexContextLoggingAdapter<>(blankConf, delegate));
+                () -> new IndexContextLoggingAdapter<>(delegate,
+                        new IndexMdcScopeRunner("  ")));
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
@@ -158,7 +143,7 @@ class IndexContextLoggingAdapterTest {
             mdcAtApply.set(MDC.get("index.name"));
             return mock(RuntimePatchResult.class);
         });
-        adapter = new IndexContextLoggingAdapter<>(conf, delegate);
+        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
 
         final RuntimeConfiguration wrappedRuntimeConfiguration = adapter.runtimeConfiguration();
         assertSame(wrappedRuntimeConfiguration, adapter.runtimeConfiguration());
