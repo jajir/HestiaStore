@@ -19,34 +19,32 @@ import org.slf4j.Logger;
 @SuppressWarnings("java:S107")
 public final class IndexWalCoordinator<K, V> {
 
-    private final Logger logger;
-    private final IndexConfiguration<K, V> conf;
     private final WalRuntime<K, V> walRuntime;
-    private final IndexRetryPolicy retryPolicy;
-    private final Runnable prepareDurableStateAction;
-    private final Runnable flushDurableStateAction;
-    private final AtomicLong lastAppliedWalLsn;
     private final WalReplayProgressTracker<K, V> walReplayProgressTracker;
     private final WalCheckpointExecutor<K, V> walCheckpointExecutor;
     private final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator;
     private final WalFailureTransitionHandler walFailureTransitionHandler;
 
-    /**
-     * Creates a coordinator for WAL replay, append, checkpoint, and failure
-     * handling concerns.
-     *
-     * @param logger runtime logger
-     * @param conf index configuration
-     * @param walRuntime WAL runtime
-     * @param retryPolicy retry policy used under retention pressure
-     * @param prepareDurableStateAction callback run before checkpointing
-     * @param flushDurableStateAction callback run to flush durable state
-     * @param stateSupplier runtime state supplier
-     * @param failureHandler runtime failure handler
-     * @param lastAppliedWalLsn mutable last-applied LSN holder
-     */
-    public IndexWalCoordinator(final Logger logger,
-            final IndexConfiguration<K, V> conf,
+    @SuppressWarnings("java:S107")
+    private IndexWalCoordinator(final WalRuntime<K, V> walRuntime,
+            final WalReplayProgressTracker<K, V> walReplayProgressTracker,
+            final WalCheckpointExecutor<K, V> walCheckpointExecutor,
+            final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator,
+            final WalFailureTransitionHandler walFailureTransitionHandler) {
+        this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
+        this.walReplayProgressTracker = Vldtn.requireNonNull(
+                walReplayProgressTracker, "walReplayProgressTracker");
+        this.retentionPressureCoordinator = Vldtn.requireNonNull(
+                retentionPressureCoordinator, "retentionPressureCoordinator");
+        this.walFailureTransitionHandler = Vldtn.requireNonNull(
+                walFailureTransitionHandler, "walFailureTransitionHandler");
+        this.walCheckpointExecutor = Vldtn.requireNonNull(
+                walCheckpointExecutor, "walCheckpointExecutor");
+    }
+
+    @SuppressWarnings("java:S107")
+    public static <K, V> IndexWalCoordinator<K, V> create(
+            final Logger logger, final IndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
             final Runnable prepareDurableStateAction,
@@ -54,29 +52,32 @@ public final class IndexWalCoordinator<K, V> {
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler,
             final AtomicLong lastAppliedWalLsn) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
-        this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-        this.prepareDurableStateAction = Vldtn.requireNonNull(
-                prepareDurableStateAction, "prepareDurableStateAction");
-        this.flushDurableStateAction = Vldtn.requireNonNull(
-                flushDurableStateAction, "flushDurableStateAction");
-        this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
-                "lastAppliedWalLsn");
-        this.walReplayProgressTracker = new WalReplayProgressTracker<>(
-                this.walRuntime, this.lastAppliedWalLsn);
-        this.retentionPressureCoordinator = new WalRetentionPressureCoordinator<>(
-                this.logger, this.conf, this.walRuntime, this.retryPolicy,
-                this.prepareDurableStateAction, this.flushDurableStateAction,
-                this::checkpointInternal);
-        this.walFailureTransitionHandler = new WalFailureTransitionHandler(
-                this.logger, this.walRuntime,
-                Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
-                Vldtn.requireNonNull(failureHandler, "failureHandler"));
-        this.walCheckpointExecutor = new WalCheckpointExecutor<>(this.logger,
-                this.walRuntime, this.lastAppliedWalLsn,
-                this.walFailureTransitionHandler);
+        final WalReplayProgressTracker<K, V> replayProgressTracker =
+                new WalReplayProgressTracker<>(
+                        Vldtn.requireNonNull(walRuntime, "walRuntime"),
+                        Vldtn.requireNonNull(lastAppliedWalLsn,
+                                "lastAppliedWalLsn"));
+        final WalFailureTransitionHandler failureTransitionHandler =
+                new WalFailureTransitionHandler(
+                        Vldtn.requireNonNull(logger, "logger"), walRuntime,
+                        Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
+                        Vldtn.requireNonNull(failureHandler,
+                                "failureHandler"));
+        final WalCheckpointExecutor<K, V> checkpointExecutor =
+                new WalCheckpointExecutor<>(logger, walRuntime,
+                        lastAppliedWalLsn, failureTransitionHandler);
+        final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator =
+                new WalRetentionPressureCoordinator<>(logger,
+                        Vldtn.requireNonNull(conf, "conf"), walRuntime,
+                        Vldtn.requireNonNull(retryPolicy, "retryPolicy"),
+                        Vldtn.requireNonNull(prepareDurableStateAction,
+                                "prepareDurableStateAction"),
+                        Vldtn.requireNonNull(flushDurableStateAction,
+                                "flushDurableStateAction"),
+                        checkpointExecutor::checkpointInternal);
+        return new IndexWalCoordinator<>(walRuntime, replayProgressTracker,
+                checkpointExecutor, retentionPressureCoordinator,
+                failureTransitionHandler);
     }
 
     /**
@@ -130,10 +131,6 @@ public final class IndexWalCoordinator<K, V> {
 
     private boolean isWalEnabled() {
         return walRuntime.isEnabled();
-    }
-
-    private void checkpointInternal() {
-        walCheckpointExecutor.checkpointInternal();
     }
 
     private long appendWalEntry(final LongSupplier appendAction) {

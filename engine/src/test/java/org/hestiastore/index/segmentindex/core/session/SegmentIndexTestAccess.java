@@ -2,6 +2,9 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import java.lang.reflect.Field;
 
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.session.state.SegmentIndexStateCoordinator;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -33,6 +36,15 @@ public final class SegmentIndexTestAccess {
     public static SegmentIndexStateCoordinator stateCoordinator(final Object index) {
         return new SegmentIndexStateCoordinator(unwrap(index)
                 .stateCoordinator());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> EntryIterator<K, V> openSegmentIterator(
+            final Object index,
+            final SegmentWindow segmentWindow,
+            final SegmentIteratorIsolation isolation) {
+        return (EntryIterator<K, V>) unwrap(index).openSegmentIterator(
+                segmentWindow, isolation);
     }
 
     private static SegmentIndexImpl<?, ?> unwrap(final Object index) {

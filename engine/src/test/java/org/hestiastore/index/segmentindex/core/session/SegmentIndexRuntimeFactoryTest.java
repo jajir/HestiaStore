@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
-class SegmentIndexRuntimeGraphBuilderTest {
+class SegmentIndexRuntimeFactoryTest {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
@@ -47,7 +47,7 @@ class SegmentIndexRuntimeGraphBuilderTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        runtime = newBuilder(conf, failureRef::set, null).build();
+        runtime = newBuilder(conf, failureRef::set, null).open();
     }
 
     @AfterEach
@@ -81,9 +81,9 @@ class SegmentIndexRuntimeGraphBuilderTest {
         final AtomicReference<KeyToSegmentMap<Integer>> keyToSegmentMapRef = new AtomicReference<>();
         final AtomicReference<WalRuntime<Integer, String>> walRuntimeRef = new AtomicReference<>();
         final RuntimeException failure = new IllegalStateException("boom");
-        final SegmentIndexRuntimeGraphBuilder<Integer, String> builder = newBuilder(
+        final SegmentIndexRuntimeFactory<Integer, String> builder = newBuilder(
                 buildWalEnabledConf(), ignored -> {
-                }, new SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<>() {
+                }, new SegmentIndexRuntimeFactory.ResourceCreationObserver<>() {
                     @Override
                     public void onKeyToSegmentMapCreated(
                             final KeyToSegmentMap<Integer> keyToSegmentMap) {
@@ -99,7 +99,7 @@ class SegmentIndexRuntimeGraphBuilderTest {
                 });
 
         final RuntimeException thrown = assertThrows(RuntimeException.class,
-                builder::build);
+                builder::open);
 
         assertSame(failure, thrown);
         assertTrue(keyToSegmentMapRef.get().wasClosed());
@@ -111,21 +111,21 @@ class SegmentIndexRuntimeGraphBuilderTest {
         assertTrue(walClosedFailure.getMessage().contains("already closed"));
     }
 
-    private SegmentIndexRuntimeGraphBuilder<Integer, String> newBuilder(
+    private SegmentIndexRuntimeFactory<Integer, String> newBuilder(
             final IndexConfiguration<Integer, String> conf,
             final Consumer<RuntimeException> failureHandler,
-            final SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<Integer, String> resourceCreationObserver) {
-        final SegmentIndexRuntimeInputs<Integer, String> request =
-                new SegmentIndexRuntimeInputs<>(logger,
+            final SegmentIndexRuntimeFactory.ResourceCreationObserver<Integer, String> resourceCreationObserver) {
+        final SegmentIndexRuntimeOpenContext<Integer, String> request =
+                new SegmentIndexRuntimeOpenContext<>(logger,
                         new MemDirectory(), tdi, tds, conf,
                         conf.resolveRuntimeConfiguration(), executorRegistry,
                         new Stats(), new AtomicLong(), new AtomicLong(),
                         new AtomicLong(), () -> SegmentIndexState.READY,
                         failureHandler);
         if (resourceCreationObserver == null) {
-            return new SegmentIndexRuntimeGraphBuilder<>(request);
+            return new SegmentIndexRuntimeFactory<>(request);
         }
-        return new SegmentIndexRuntimeGraphBuilder<>(request,
+        return new SegmentIndexRuntimeFactory<>(request,
                 resourceCreationObserver);
     }
 

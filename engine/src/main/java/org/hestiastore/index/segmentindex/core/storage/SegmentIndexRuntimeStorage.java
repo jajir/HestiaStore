@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
  * Holds long-lived storage collaborators opened before split/runtime services
- * are assembled.
+ * are created.
  *
  * @param <K> key type
  * @param <V> value type

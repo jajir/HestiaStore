@@ -11,8 +11,8 @@ import org.hestiastore.index.segmentindex.config.DataTypeDescriptorRegistry;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
 import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 
@@ -167,10 +167,11 @@ final class SegmentIndexBootstrapTransaction<K, V> {
         }
         final IndexMdcScopeRunner contextScopeRunner =
                 new IndexMdcScopeRunner(configuration.identity().name());
-        return contextScopeRunner.supply(() -> new IndexContextLoggingAdapter<>(
-                configuration,
-                createStartedIndex(configuration, runtimeConfiguration,
-                        executorRegistry)));
+        return contextScopeRunner.supply(
+                () -> new IndexContextLoggingAdapter<>(
+                        createStartedIndex(configuration, runtimeConfiguration,
+                                executorRegistry),
+                        contextScopeRunner));
     }
 
     private IndexInternalConcurrent<K, V> createStartedIndex(

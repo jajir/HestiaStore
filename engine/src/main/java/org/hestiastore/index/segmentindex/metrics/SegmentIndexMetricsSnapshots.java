@@ -18,7 +18,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * <p>
  * Prefer {@link RuntimeMetricsCollector#builder()} for new code.
  */
-public final class SegmentIndexMetricsSnapshots {
+final class SegmentIndexMetricsSnapshots {
 
     private SegmentIndexMetricsSnapshots() {
     }
@@ -43,7 +43,7 @@ public final class SegmentIndexMetricsSnapshots {
      * @param <V> value type
      * @return supplier producing immutable metrics snapshots
      */
-    public static <K, V> Supplier<SegmentIndexMetricsSnapshot> create(
+    static <K, V> Supplier<SegmentIndexMetricsSnapshot> create(
             final IndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,

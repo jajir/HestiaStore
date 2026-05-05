@@ -1,4 +1,4 @@
-@startuml
+@startuml implementation layers
 skinparam componentStyle rectangle
 skinparam shadowing false
 skinparam defaultTextAlignment center
@@ -6,11 +6,21 @@ top to bottom direction
 
 component "Public API\n\nSegmentIndex\nIndexConfiguration" as API
 
-component "Session and lifecycle\ncore.session\n\nIndexInternalConcurrent\nIndexContextLoggingAdapter\nSegmentIndexImpl\nSegmentIndexTrackedOperationRunner" as SESSION
+component "Session and lifecycle\ncore.session\n\nIndexInternalConcurrent\nIndexContextLoggingAdapter\nSegmentIndexImpl.open(...)\nSegmentIndexTrackedOperationRunner" as SESSION
+
+component "Lifecycle and lock state\ncore.session.state\n\nIndexStateCoordinator\nIndexCloseCoordinator\nSegmentIndexStartupCoordinator" as SESSION_STATE
 
 component "Operation facades\n\nSegmentIndexPointOperationFacade\nSegmentIndexReadFacade\nMaintenanceService" as FACADES
 
-component "Runtime composition\ncore.session\n\nSegmentIndexRuntime\nSegmentTopologyRuntime\nSegmentIndexRuntimeServices" as RUNTIME
+component "Runtime opening\ncore.session\n\nSegmentIndexRuntime\nSegmentIndexRuntimeFactory\nSegmentIndexRuntimeOpenContext\nSegmentIndexRuntimeServices" as RUNTIME
+
+component "Topology runtime\ncore.topology\n\nSegmentTopologyRuntime\nSegmentTopology\nSplitService" as TOPOLOGY_RUNTIME
+
+component "Core storage runtime\ncore.storage\n\nSegmentIndexCoreStorageFactory\nSegmentIndexCoreStorageOpenSpec\nIndexWalCoordinator\nSegmentIndexCoreStorage" as CORE_STORAGE
+
+component "Split runtime\ncore.split\n\nSplitServiceBuilder\nSplitServiceImpl\nSplitPolicyCoordinator" as SPLIT_RUNTIME
+
+component "WAL runtime\nwal\n\nWalRuntime.open(...)\nWalRuntime" as WAL_RUNTIME
 
 component "Point operation orchestration\ncore.operations\n\nIndexOperationCoordinator\nSegmentIndexOperationAccess" as OPERATIONS
 
@@ -25,8 +35,13 @@ component "Segment engine\norg.hestiastore.index.segment\n\nSegment\nSegmentImpl
 database "Segment files\n\nmain data\ndelta cache\nsparse index\nBloom filter" as FILES
 
 API --> SESSION : public calls
+SESSION --> SESSION_STATE : lifecycle and lock ownership
 SESSION --> FACADES : point, read, maintenance entry points
 FACADES --> RUNTIME : tracked access to runtime services
+RUNTIME --> CORE_STORAGE : open route map and registry
+RUNTIME --> TOPOLOGY_RUNTIME : create topology services
+TOPOLOGY_RUNTIME --> SPLIT_RUNTIME : own split runtime
+RUNTIME --> WAL_RUNTIME : open WAL runtime
 RUNTIME --> OPERATIONS : point put/get/delete
 OPERATIONS --> ACCESS : route key and load segment
 ACCESS --> REGISTRY : loaded segment handle
@@ -34,7 +49,7 @@ REGISTRY --> SEGMENT : retry-aware segment calls
 SEGMENT --> FILES : persisted structures
 
 ACCESS --> ROUTE : route snapshot and lease
-RUNTIME --> ROUTE : split and topology coordination
+TOPOLOGY_RUNTIME --> ROUTE : split and topology coordination
 
 note right of ACCESS
 This is where routed SegmentIndex

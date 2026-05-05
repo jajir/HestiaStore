@@ -4,60 +4,58 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeGraphBuilder;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeInputs;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
- * Opens the core storage collaborators needed before split and runtime service
- * assembly can proceed.
+ * Opens the core storage collaborators needed before split and runtime services
+ * can proceed.
  *
  * @param <K> key type
  * @param <V> value type
  */
 public final class SegmentIndexCoreStorageFactory<K, V> {
 
-    private final SegmentIndexRuntimeInputs<K, V> request;
-    private final SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<K, V> resourceCreationObserver;
+    private final SegmentIndexCoreStorageOpenSpec<K, V> openSpec;
+    private final SegmentIndexCoreStorageOpenObserver<K, V> openObserver;
 
     public SegmentIndexCoreStorageFactory(
-            final SegmentIndexRuntimeInputs<K, V> request,
-            final SegmentIndexRuntimeGraphBuilder.ResourceCreationObserver<K, V> resourceCreationObserver) {
-        this.request = Vldtn.requireNonNull(request, "request");
-        this.resourceCreationObserver = Vldtn.requireNonNull(
-                resourceCreationObserver, "resourceCreationObserver");
+            final SegmentIndexCoreStorageOpenSpec<K, V> openSpec,
+            final SegmentIndexCoreStorageOpenObserver<K, V> openObserver) {
+        this.openSpec = Vldtn.requireNonNull(openSpec, "openSpec");
+        this.openObserver = Vldtn.requireNonNull(openObserver,
+                "openObserver");
     }
 
     public SegmentIndexCoreStorage<K, V> create() {
         final RuntimeTuningState runtimeTuningState = RuntimeTuningState
-                .fromConfiguration(request.conf);
+                .fromConfiguration(openSpec.conf());
         final KeyToSegmentMapImpl<K> keyToSegmentMapDelegate = new KeyToSegmentMapImpl<>(
-                request.directoryFacade, request.keyTypeDescriptor);
+                openSpec.directoryFacade(), openSpec.keyTypeDescriptor());
         final KeyToSegmentMap<K> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMapDelegate);
-        resourceCreationObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
+        openObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
         final SegmentRegistry<K, V> segmentRegistry = newSegmentRegistry();
-        resourceCreationObserver.onSegmentRegistryCreated(segmentRegistry);
+        openObserver.onSegmentRegistryCreated(segmentRegistry);
         return new SegmentIndexCoreStorage<>(runtimeTuningState, keyToSegmentMap,
                 segmentRegistry,
-                newRetryPolicy(request.conf));
+                newRetryPolicy(openSpec.conf()));
     }
 
     private SegmentRegistry<K, V> newSegmentRegistry() {
         return SegmentRegistry.<K, V>builder()
-                .withDirectoryFacade(request.directoryFacade)
-                .withKeyTypeDescriptor(request.keyTypeDescriptor)
-                .withValueTypeDescriptor(request.valueTypeDescriptor)
-                .withConfiguration(request.conf)
-                .withRuntimeConfiguration(request.runtimeConfiguration)
+                .withDirectoryFacade(openSpec.directoryFacade())
+                .withKeyTypeDescriptor(openSpec.keyTypeDescriptor())
+                .withValueTypeDescriptor(openSpec.valueTypeDescriptor())
+                .withConfiguration(openSpec.conf())
+                .withRuntimeConfiguration(openSpec.runtimeConfiguration())
                 .withSegmentMaintenanceExecutor(
-                        request.executorRegistry
+                        openSpec.executorRegistry()
                                 .getStableSegmentMaintenanceExecutor())
                 .withRegistryMaintenanceExecutor(
-                        request.executorRegistry.getRegistryMaintenanceExecutor())
+                        openSpec.executorRegistry().getRegistryMaintenanceExecutor())
                 .build();
     }
 

@@ -1,13 +1,10 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import java.util.Comparator;
 import java.util.Optional;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
@@ -29,29 +26,14 @@ final class RouteSplitCoordinator<K, V> {
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final RouteSplitPreparationService<K, V> preparationService;
 
-    RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
-            final Comparator<K> keyComparator,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final DefaultSegmentMaterializationService<K, V> materializationService) {
-        this(conf, keyComparator, segmentRegistry, materializationService,
-                new SegmentIndexSplitPolicyThreshold<>());
-    }
-
-    RouteSplitCoordinator(final IndexConfiguration<K, V> conf,
-            final Comparator<K> keyComparator,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final DefaultSegmentMaterializationService<K, V> materializationService,
-            final SegmentIndexSplitPolicy<K, V> splitPolicy) {
+    RouteSplitCoordinator(final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentIndexSplitPolicy<K, V> splitPolicy,
+            final RouteSplitPreparationService<K, V> preparationService) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
-        Vldtn.requireNonNull(keyComparator, "keyComparator");
-        this.preparationService = new RouteSplitPreparationService<>(
-                Vldtn.requireNonNull(materializationService,
-                        "materializationService"),
-                new IndexRetryPolicy(conf.maintenance().busyBackoffMillis(),
-                        conf.maintenance().busyTimeoutMillis()),
-                logger);
+        this.preparationService = Vldtn.requireNonNull(preparationService,
+                "preparationService");
     }
 
     RouteSplitPlan<K> tryPrepareSplit(
