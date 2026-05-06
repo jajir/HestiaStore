@@ -7,9 +7,19 @@ import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.config.IndexConfigurationManager;
-import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationManager;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 
+/**
+ * Internal bootstrap facade used by {@link SegmentIndexFactory} to create or
+ * open segment indexes for one target directory.
+ * <p>
+ * The service keeps the public factory thin while centralizing validation,
+ * persisted configuration loading, optional open semantics, and construction of
+ * the bootstrap operation that wires runtime resources for the returned
+ * index.
+ * </p>
+ */
 final class SegmentIndexBootstrapService {
 
     private final Directory directory;
@@ -20,25 +30,25 @@ final class SegmentIndexBootstrapService {
 
     <K, V> SegmentIndex<K, V> create(
             final IndexConfiguration<K, V> userProvidedConfiguration) {
-        return transaction(userProvidedConfiguration, null).create();
+        return operation(userProvidedConfiguration, null).create();
     }
 
     <K, V> SegmentIndex<K, V> create(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return transaction(userProvidedConfiguration,
+        return operation(userProvidedConfiguration,
                 chunkFilterProviderResolver).create();
     }
 
     <K, V> SegmentIndex<K, V> open(
             final IndexConfiguration<K, V> userProvidedConfiguration) {
-        return transaction(userProvidedConfiguration, null).open();
+        return operation(userProvidedConfiguration, null).open();
     }
 
     <K, V> SegmentIndex<K, V> open(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return transaction(userProvidedConfiguration,
+        return operation(userProvidedConfiguration,
                 chunkFilterProviderResolver).open();
     }
 
@@ -79,10 +89,10 @@ final class SegmentIndexBootstrapService {
                 new IndexConfigurationStorage<>(directory));
     }
 
-    private <K, V> SegmentIndexBootstrapTransaction<K, V> transaction(
+    private <K, V> SegmentIndexBootstrapOperation<K, V> operation(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return new SegmentIndexBootstrapTransaction<>(
+        return SegmentIndexBootstrapOperation.create(
                 directory, Vldtn.requireNonNull(userProvidedConfiguration,
                         "userProvidedConfiguration"),
                 chunkFilterProviderResolver);

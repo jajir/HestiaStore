@@ -17,7 +17,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
@@ -93,7 +93,6 @@ class SegmentIndexMetricsSnapshotFactoryTest {
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(4))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(7))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(8))

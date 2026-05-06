@@ -11,14 +11,14 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexBootstrapServiceTest {
 
     @Test
-    void createStartsBootstrapTransaction() {
+    void createStartsBootstrapOperation() {
         final MemDirectory directory = new MemDirectory();
         final SegmentIndex<Integer, String> index =
                 new SegmentIndexBootstrapService(directory).create(
@@ -32,7 +32,7 @@ class SegmentIndexBootstrapServiceTest {
     }
 
     @Test
-    void openStartsBootstrapTransaction() {
+    void openStartsBootstrapOperation() {
         final MemDirectory directory = new MemDirectory();
         new SegmentIndexBootstrapService(directory)
                 .create(buildConf("bootstrap-service-open", 1))

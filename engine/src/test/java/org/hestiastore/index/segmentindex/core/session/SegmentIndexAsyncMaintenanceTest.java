@@ -196,7 +196,7 @@ class SegmentIndexAsyncMaintenanceTest {
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        return new IndexInternalConcurrent<>(
+        return IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 tdi, tds, conf, conf.resolveRuntimeConfiguration(),
                 ExecutorRegistryFixture.from(conf));

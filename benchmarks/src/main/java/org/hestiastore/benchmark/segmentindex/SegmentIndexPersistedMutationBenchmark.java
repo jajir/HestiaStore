@@ -119,7 +119,6 @@ public class SegmentIndexPersistedMutationBenchmark {
                         .chunkKeyLimit(128).maxKeys(maxKeysBeforeSplit)
                         .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(1024)
                         .indexBufferedWriteKeyLimit(8192)
                         .segmentSplitKeyThreshold(maxKeysBeforeSplit))//

@@ -112,7 +112,6 @@ public class SegmentIndexMixedDrainBenchmark {
                         .chunkKeyLimit(64).maxKeys(10_000)
                         .cachedSegmentLimit(8).deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(192)
                         .indexBufferedWriteKeyLimit(
                                 isSplitHeavy() ? 16_384 : 4_096)

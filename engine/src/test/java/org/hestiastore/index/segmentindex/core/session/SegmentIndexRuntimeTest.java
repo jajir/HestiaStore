@@ -73,7 +73,7 @@ class SegmentIndexRuntimeTest {
         assertNotNull(SegmentIndexRuntimeTestAccess.operationAccess(runtime));
         assertNotNull(
                 SegmentIndexRuntimeTestAccess.metricsSnapshotSupplier(runtime));
-        assertNotNull(SegmentIndexRuntimeTestAccess.runtimeConfiguration(runtime));
+        assertNotNull(SegmentIndexRuntimeTestAccess.runtimeTuning(runtime));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

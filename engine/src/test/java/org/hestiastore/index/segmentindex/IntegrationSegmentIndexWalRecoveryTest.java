@@ -397,10 +397,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             maintenanceAction.accept(index);
             awaitCondition(() -> {
                 final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-                return snapshot.getSplitInFlightCount() == 0
-                        && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
-                        && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
-                        && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount() == 0;
+                return snapshot.getSplitInFlightCount() == 0;
             }, 10_000L);
             assertIntegerIndexSnapshot(index, expected);
 
@@ -427,7 +424,6 @@ class IntegrationSegmentIndexWalRecoveryTest {
                 .wal(wal -> wal.configuration(IndexWalConfiguration.builder().build()))//
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
@@ -463,8 +459,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         }
         index.maintenance().flushAndWait();
         awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
-                && index.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
                 10_000L);
     }
 

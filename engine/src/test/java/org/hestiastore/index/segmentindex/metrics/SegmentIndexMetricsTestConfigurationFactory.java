@@ -22,7 +22,6 @@ final class SegmentIndexMetricsTestConfigurationFactory {
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(4))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(7))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(8))

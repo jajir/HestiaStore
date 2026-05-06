@@ -24,7 +24,7 @@ class SegmentIndexImplTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = new IndexInternalConcurrent<>(
+        index = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
@@ -50,7 +50,7 @@ class SegmentIndexImplTest {
     }
 
     @Test
-    void constructorCompletesStartupOnlyOnce() {
+    void openingFactoryDefersStartupCompletion() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         try (IndexInternalConcurrent<Integer, String> openingIndex =
                 IndexInternalConcurrent.createOpening(new MemDirectory(),

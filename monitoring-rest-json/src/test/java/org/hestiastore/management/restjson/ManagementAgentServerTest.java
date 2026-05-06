@@ -22,9 +22,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -110,16 +110,15 @@ class ManagementAgentServerTest {
         assertTrue(report.indexes().stream()
                 .allMatch(idx -> idx.segmentRuntimeSnapshots() != null));
         assertTrue(report.indexes().stream()
-                .allMatch(idx -> idx.partitionCount() >= 0));
+                .allMatch(idx -> idx.segmentCount() >= 0));
         for (final JsonNode indexNode : reportJson.path("indexes")) {
-            assertTrue(indexNode.has("maxNumberOfKeysInActivePartition"));
-            assertTrue(indexNode.has("maxNumberOfImmutableRunsPerPartition"));
-            assertTrue(indexNode.has("maxNumberOfKeysInPartitionBuffer"));
-            assertTrue(indexNode.has("maxNumberOfKeysInIndexBuffer"));
-            assertTrue(!indexNode.has("maxNumberOfKeysInSegmentWriteCache"));
-            assertTrue(!indexNode.has(
-                    "maxNumberOfKeysInSegmentWriteCacheDuringMaintenance"));
-            assertTrue(indexNode.has("drainLatencyP95Micros"));
+            assertTrue(indexNode.has("segmentWriteCacheKeyLimit"));
+            assertTrue(indexNode
+                    .has("segmentWriteCacheKeyLimitDuringMaintenance"));
+            assertTrue(indexNode.has("indexBufferedWriteKeyLimit"));
+            assertTrue(!indexNode.has("maxNumberOfKeysInActivePartition"));
+            assertTrue(!indexNode.has("maxNumberOfImmutableRunsPerPartition"));
+            assertTrue(!indexNode.has("drainLatencyP95Micros"));
         }
     }
 
@@ -276,11 +275,11 @@ class ManagementAgentServerTest {
         assertTrue(
                 payload.supportedKeys().contains("maxNumberOfSegmentsInCache"));
         assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfKeysInActivePartition"));
+                .contains("segmentWriteCacheKeyLimit"));
         assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfKeysInPartitionBuffer"));
+                .contains("segmentWriteCacheKeyLimitDuringMaintenance"));
         assertTrue(payload.supportedKeys()
-                .contains("maxNumberOfKeysInPartitionBeforeSplit"));
+                .contains("segmentSplitKeyThreshold"));
         assertFalse(payload.supportedKeys()
                 .contains("backgroundMaintenanceAutoEnabled"));
         assertFalse(payload.original().containsKey("diskIoBufferSize"));
@@ -397,20 +396,13 @@ class ManagementAgentServerTest {
 
         assertEquals(snapshot.getTotalBufferedWriteKeys(),
                 indexNode.path("totalBufferedWriteKeys").asLong());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount(),
-                indexNode.path("partitionCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount(),
-                indexNode.path("activePartitionCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount(),
-                indexNode.path("drainingPartitionCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount(),
-                indexNode.path("immutableRunCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount(),
-                indexNode.path("partitionBufferedKeyCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(),
-                indexNode.path("drainScheduleCount").asLong());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount(),
-                indexNode.path("drainInFlightCount").asInt());
+        assertEquals(snapshot.getSegmentWriteCacheKeyLimit(),
+                indexNode.path("segmentWriteCacheKeyLimit").asInt());
+        assertEquals(snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance(),
+                indexNode.path("segmentWriteCacheKeyLimitDuringMaintenance")
+                        .asInt());
+        assertEquals(snapshot.getIndexBufferedWriteKeyLimit(),
+                indexNode.path("indexBufferedWriteKeyLimit").asInt());
     }
 
     @Test
@@ -425,23 +417,21 @@ class ManagementAgentServerTest {
         }
         extra.maintenance().flushAndWait();
         awaitCondition(() -> extra.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                && extra.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
-                && extra.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+                && extra.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
                 10_000L);
 
-        final long revision = extra.runtimeConfiguration()
+        final long revision = extra.runtimeTuning()
                 .getCurrent().getRevision();
-        final RuntimePatchResult patchResult = extra.runtimeConfiguration()
+        final RuntimePatchResult patchResult = extra.runtimeTuning()
                 .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                         Integer.valueOf(16)), false, Long.valueOf(revision)));
         assertTrue(patchResult.isApplied());
 
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = extra.runtimeMonitoring().snapshot().getMetrics();
             return snapshot.getSegmentCount() > 1
-                    && snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0;
+                    && snapshot.getSplitInFlightCount() == 0;
         }, 10_000L);
 
         final Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> splitMetricsMatch =
@@ -456,12 +446,6 @@ class ManagementAgentServerTest {
                 indexNode.path("splitScheduleCount").asLong());
         assertEquals(snapshot.getSplitInFlightCount(),
                 indexNode.path("splitInFlightCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(),
-                indexNode.path("drainScheduleCount").asLong());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount(),
-                indexNode.path("drainInFlightCount").asInt());
-        assertEquals(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros(),
-                indexNode.path("drainLatencyP95Micros").asLong());
     }
 
     private SegmentIndex<Integer, String> createIndex(final String name) {
@@ -492,7 +476,6 @@ class ManagementAgentServerTest {
                 .segment(segment -> segment.cacheKeyLimit(8).maxKeys(128)
                         .chunkKeyLimit(4)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(96)
                         .indexBufferedWriteKeyLimit(192)
                         .segmentSplitKeyThreshold(512)) //
@@ -538,11 +521,7 @@ class ManagementAgentServerTest {
         return left != null && right != null
                 && left.getSegmentCount() == right.getSegmentCount()
                 && left.getSplitScheduleCount() == right.getSplitScheduleCount()
-                && left.getSplitInFlightCount() == right.getSplitInFlightCount()
-                && left.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount() == right.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount()
-                && left.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == right.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount()
-                && left.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() == right.getLegacyPartitionCompatibilityMetrics()
-                        .getDrainLatencyP95Micros();
+                && left.getSplitInFlightCount() == right.getSplitInFlightCount();
     }
 
     private Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> awaitIndexNodeWithMatchingSplitMetrics(
@@ -589,13 +568,7 @@ class ManagementAgentServerTest {
                 && snapshot.getSplitScheduleCount() == indexNode
                         .path("splitScheduleCount").asLong()
                 && snapshot.getSplitInFlightCount() == indexNode
-                        .path("splitInFlightCount").asInt()
-                && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount() == indexNode
-                        .path("drainScheduleCount").asLong()
-                && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == indexNode
-                        .path("drainInFlightCount").asInt()
-                && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() == indexNode
-                        .path("drainLatencyP95Micros").asLong();
+                        .path("splitInFlightCount").asInt();
     }
 
     @SuppressWarnings("unchecked")

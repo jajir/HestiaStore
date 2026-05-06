@@ -10,14 +10,17 @@ import org.hestiastore.index.Vldtn;
  */
 public final class IndexWritePathConfigurationBuilder<K, V> {
 
-    private static final String PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER =
-            "maxNumberOfKeysInPartitionBuffer";
+    private static final String PROPERTY_INDEX_BUFFERED_WRITE_KEY_LIMIT =
+            "indexBufferedWriteKeyLimit";
+    private static final String PROPERTY_SEGMENT_WRITE_CACHE_KEY_LIMIT =
+            "segmentWriteCacheKeyLimit";
+    private static final String PROPERTY_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE =
+            "segmentWriteCacheKeyLimitDuringMaintenance";
 
     private Integer segmentWriteCacheKeyLimit;
     private Integer maintenanceWriteCacheKeyLimit;
     private Integer indexBufferedWriteKeyLimit;
     private Integer segmentSplitKeyThreshold;
-    private Integer legacyImmutableRunLimit;
 
     IndexWritePathConfigurationBuilder() {
     }
@@ -70,27 +73,8 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
         return this;
     }
 
-    /**
-     * Sets the compatibility limit used when loading older manifests.
-     *
-     * @param value immutable run limit
-     * @return this section builder
-     */
-    public IndexWritePathConfigurationBuilder<K, V> legacyImmutableRunLimit(
-            final Integer value) {
-        this.legacyImmutableRunLimit = value;
-        return this;
-    }
-
     Integer segmentSplitKeyThreshold() {
         return segmentSplitKeyThreshold;
-    }
-
-    Integer legacyImmutableRunLimit() {
-        if (legacyImmutableRunLimit != null) {
-            return legacyImmutableRunLimit;
-        }
-        return IndexConfigurationContract.DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT;
     }
 
     IndexWritePathConfiguration build(final Integer segmentMaxKeys,
@@ -123,13 +107,13 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
         if (segmentWriteCacheKeyLimit == null) {
             return Vldtn.requireGreaterThanZero(
                     maintenanceWriteCacheKeyLimit,
-                    PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER);
+                    PROPERTY_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE);
         }
         if (maintenanceWriteCacheKeyLimit <= segmentWriteCacheKeyLimit) {
             throw new IllegalArgumentException(String.format(
                     "Property '%s' must be greater than '%s'",
-                    PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                    "maxNumberOfKeysInActivePartition"));
+                    PROPERTY_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
+                    PROPERTY_SEGMENT_WRITE_CACHE_KEY_LIMIT));
         }
         return maintenanceWriteCacheKeyLimit;
     }
@@ -144,8 +128,8 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
                                     .intValue()) {
                 throw new IllegalArgumentException(String.format(
                         "Property '%s' must be greater than or equal to '%s'",
-                        "maxNumberOfKeysInIndexBuffer",
-                        PROPERTY_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
+                        PROPERTY_INDEX_BUFFERED_WRITE_KEY_LIMIT,
+                        PROPERTY_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
             }
             return indexBufferedWriteKeyLimit;
         }

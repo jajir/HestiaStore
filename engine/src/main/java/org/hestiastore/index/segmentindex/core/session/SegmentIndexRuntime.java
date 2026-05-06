@@ -7,9 +7,9 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
@@ -19,7 +19,7 @@ import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.metrics.Stats;
@@ -150,8 +150,8 @@ final class SegmentIndexRuntime<K, V>
         services.operationAccess().delete(key);
     }
 
-    RuntimeConfiguration runtimeConfiguration() {
-        return services.runtimeConfiguration();
+    RuntimeConfiguration runtimeTuning() {
+        return services.runtimeTuning();
     }
 
     void applyRuntimeEffectiveLimits(

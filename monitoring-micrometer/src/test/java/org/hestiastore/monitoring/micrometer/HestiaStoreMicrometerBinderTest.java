@@ -26,8 +26,8 @@ class HestiaStoreMicrometerBinderTest {
         final IndexRuntimeMonitoring runtimeMonitoring = mock(
                 IndexRuntimeMonitoring.class);
         final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
-                snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 2, 11, 29, 3,
-                        2, 1, 4, 17, 19L, 23L, 31L, 5, 43L, 37L, 2, 50));
+                snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 29,
+                        37L, 2, 50));
         when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
         when(runtimeMonitoring.snapshot()).thenAnswer(inv -> new IndexRuntimeSnapshot(
                 "orders", snapshotRef.get().getState(), snapshotRef.get(),
@@ -38,37 +38,28 @@ class HestiaStoreMicrometerBinderTest {
                 new MicrometerSegmentIndexSource("orders", index))
                         .bindTo(registry);
 
-        assertMetrics(registry, 1D, 2D, 3D, 7D, 2D, 11D, 29D, 3D, 2D, 1D, 4D,
-                17D, 19D, 23D, 31D, 5D, 43D, 37D, 2D, 1D, 50);
+        assertMetrics(registry, 1D, 2D, 3D, 7D, 11D, 29D, 37D, 2D, 1D, 50);
 
-        snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 3,
-                15, 41, 4, 1, 0, 2, 5, 29L, 31L, 37L, 0, 0L, 41L, 0, 70));
+        snapshotRef.set(snapshot(5L, 8L, 13L, SegmentIndexState.CLOSED, 9, 13,
+                15, 41L, 0, 70));
 
-        assertMetrics(registry, 5D, 8D, 13D, 9D, 3D, 15D, 41D, 4D, 1D, 0D, 2D,
-                5D, 29D, 31D, 37D, 0D, 0D, 41D, 0D, 0D, 70);
+        assertMetrics(registry, 5D, 8D, 13D, 9D, 13D, 15D, 41D, 0D, 0D, 70);
     }
 
     private SegmentIndexMetricsSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
-            final SegmentIndexState state,
-            final int activePartitionLimit,
-            final int immutableRunLimit,
-            final int partitionBufferLimit, final int indexBufferLimit,
-            final int partitionCount, final int activePartitionCount,
-            final int drainingPartitionCount, final int immutableRunCount,
-            final int partitionBufferedKeyCount,
-            final long localThrottleCount,
-            final long globalThrottleCount,
-            final long drainScheduleCount, final int drainInFlightCount,
-            final long drainLatencyP95Micros,
+            final SegmentIndexState state, final int segmentWriteCacheKeyLimit,
+            final int segmentWriteCacheKeyLimitDuringMaintenance,
+            final int indexBufferedWriteKeyLimit,
             final long splitScheduleCount, final int splitInFlightCount,
             final int executorBase) {
         return new SegmentIndexMetricsSnapshot(
                 getCount, putCount, deleteCount,
                 0L, 0L, 0L, 0L,
                 0, 0,
-                0, activePartitionLimit, partitionBufferLimit,
-                0, 0, 0, 0, 0, 0,
+                0, segmentWriteCacheKeyLimit,
+                segmentWriteCacheKeyLimitDuringMaintenance,
+                indexBufferedWriteKeyLimit, 0, 0, 0, 0, 0, 0,
                 0L, 0L, 0L, 0L,
                 0L, 0L, splitScheduleCount,
                 splitInFlightCount, executorBase, executorBase + 1,
@@ -83,68 +74,32 @@ class HestiaStoreMicrometerBinderTest {
                 0L, 0L, 0L, 0L,
                 false, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                immutableRunLimit, indexBufferLimit, partitionCount,
-                activePartitionCount, drainingPartitionCount,
-                immutableRunCount, partitionBufferedKeyCount,
-                localThrottleCount, globalThrottleCount, drainScheduleCount,
-                drainInFlightCount, drainLatencyP95Micros, executorBase + 15L,
+                executorBase + 15L,
                 executorBase + 16L, executorBase + 17L, executorBase + 18L,
                 executorBase + 19, executorBase + 20L, executorBase + 21L,
                 executorBase + 22L, executorBase + 23L, executorBase + 24L,
-                executorBase + 25L, executorBase + 26L, executorBase + 27L,
-                executorBase + 28L,
-                List.of(), state);
+                executorBase + 25L, List.of(), state);
     }
 
     private static void assertMetrics(final SimpleMeterRegistry registry,
             final double getCount, final double putCount,
-            final double deleteCount, final double activePartitionLimit,
-            final double immutableRunLimit,
-            final double partitionBufferLimit, final double indexBufferLimit,
-            final double partitionCount, final double activePartitionCount,
-            final double drainingPartitionCount,
-            final double immutableRunCount,
-            final double partitionBufferedKeyCount,
-            final double localThrottleCount,
-            final double globalThrottleCount,
-            final double drainScheduleCount, final double drainInFlightCount,
-            final double drainLatencyP95Micros,
+            final double deleteCount,
+            final double segmentWriteCacheKeyLimit,
+            final double segmentWriteCacheKeyLimitDuringMaintenance,
+            final double indexBufferedWriteKeyLimit,
             final double splitScheduleCount, final double splitInFlightCount,
             final double indexUp, final int executorBase) {
         assertFunctionCounter(registry, "hestiastore_ops_get_total", getCount);
         assertFunctionCounter(registry, "hestiastore_ops_put_total", putCount);
         assertFunctionCounter(registry, "hestiastore_ops_delete_total",
                 deleteCount);
-        assertGauge(registry, "hestiastore_partition_active_limit",
-                activePartitionLimit);
-        assertGauge(registry, "hestiastore_partition_immutable_run_limit",
-                immutableRunLimit);
-        assertGauge(registry, "hestiastore_partition_buffer_limit",
-                partitionBufferLimit);
-        assertGauge(registry, "hestiastore_index_buffer_limit",
-                indexBufferLimit);
-        assertGauge(registry, "hestiastore_partition_count", partitionCount);
-        assertGauge(registry, "hestiastore_partition_active_count",
-                activePartitionCount);
-        assertGauge(registry, "hestiastore_partition_draining_count",
-                drainingPartitionCount);
-        assertGauge(registry, "hestiastore_partition_immutable_run_count",
-                immutableRunCount);
-        assertGauge(registry, "hestiastore_partition_buffered_key_count",
-                partitionBufferedKeyCount);
-        assertFunctionCounter(registry,
-                "hestiastore_partition_throttle_local_total",
-                localThrottleCount);
-        assertFunctionCounter(registry,
-                "hestiastore_partition_throttle_global_total",
-                globalThrottleCount);
-        assertFunctionCounter(registry,
-                "hestiastore_partition_drain_schedule_total",
-                drainScheduleCount);
-        assertGauge(registry, "hestiastore_partition_drain_in_flight",
-                drainInFlightCount);
-        assertGauge(registry, "hestiastore_partition_drain_latency_p95_micros",
-                drainLatencyP95Micros);
+        assertGauge(registry, "hestiastore_segment_write_cache_key_limit",
+                segmentWriteCacheKeyLimit);
+        assertGauge(registry,
+                "hestiastore_segment_write_cache_key_limit_during_maintenance",
+                segmentWriteCacheKeyLimitDuringMaintenance);
+        assertGauge(registry, "hestiastore_index_buffered_write_key_limit",
+                indexBufferedWriteKeyLimit);
         assertGauge(registry, "hestiastore_split_task_start_delay_p95_micros",
                 executorBase + 15D);
         assertGauge(registry, "hestiastore_split_task_run_latency_p95_micros",
@@ -153,30 +108,22 @@ class HestiaStoreMicrometerBinderTest {
                 executorBase + 17D);
         assertGauge(registry, "hestiastore_drain_task_run_latency_p95_micros",
                 executorBase + 18D);
-        assertGauge(registry, "hestiastore_split_blocked_partition_count",
-                executorBase + 19D);
-        assertFunctionCounter(registry,
-                "hestiastore_split_blocked_drain_schedule_total",
-                executorBase + 20D);
-        assertFunctionCounter(registry,
-                "hestiastore_buffer_full_while_split_blocked_total",
-                executorBase + 21D);
         assertFunctionCounter(registry, "hestiastore_put_busy_retry_total",
-                executorBase + 22D);
+                executorBase + 19D);
         assertFunctionCounter(registry, "hestiastore_put_busy_timeout_total",
-                executorBase + 23D);
+                executorBase + 20D);
         assertGauge(registry, "hestiastore_put_busy_wait_p95_micros",
-                executorBase + 24D);
+                executorBase + 21D);
         assertGauge(registry,
                 "hestiastore_flush_accepted_to_ready_p95_micros",
-                executorBase + 25D);
+                executorBase + 22D);
         assertGauge(registry,
                 "hestiastore_compact_accepted_to_ready_p95_micros",
-                executorBase + 26D);
+                executorBase + 23D);
         assertFunctionCounter(registry, "hestiastore_flush_busy_retry_total",
-                executorBase + 27D);
+                executorBase + 24D);
         assertFunctionCounter(registry,
-                "hestiastore_compact_busy_retry_total", executorBase + 28D);
+                "hestiastore_compact_busy_retry_total", executorBase + 25D);
         assertFunctionCounter(registry, "hestiastore_split_schedule_total",
                 splitScheduleCount);
         assertGauge(registry, "hestiastore_split_in_flight", splitInFlightCount);

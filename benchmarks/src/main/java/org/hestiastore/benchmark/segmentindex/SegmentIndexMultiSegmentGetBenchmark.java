@@ -59,7 +59,6 @@ public class SegmentIndexMultiSegmentGetBenchmark
                         .cachedSegmentLimit(maxSegmentsInCache)
                         .deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(512)
                         .indexBufferedWriteKeyLimit(8_192)
                         .segmentSplitKeyThreshold(maxKeysInSegment))//

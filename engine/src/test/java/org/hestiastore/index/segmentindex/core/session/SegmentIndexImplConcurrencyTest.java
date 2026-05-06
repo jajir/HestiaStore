@@ -17,9 +17,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
@@ -36,7 +36,7 @@ class SegmentIndexImplConcurrencyTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = new IndexInternalConcurrent<>(
+        index = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
@@ -108,8 +108,7 @@ class SegmentIndexImplConcurrencyTest {
         recreateIndex(buildAutonomousSplitConf());
         seedStableRange(48);
         awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0
-                && index.runtimeMonitoring().snapshot().getMetrics().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0,
+                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
                 10_000L);
         assertEquals("stable-30", index.get(30));
 
@@ -181,7 +180,6 @@ class SegmentIndexImplConcurrencyTest {
                 .logging(logging -> logging.contextEnabled(false))//
                 .segment(segment -> segment.cacheKeyLimit(8))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32))//
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2))//
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96))//
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192))//
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512))//
@@ -205,7 +203,7 @@ class SegmentIndexImplConcurrencyTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
-        index = new IndexInternalConcurrent<>(
+        index = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(),
@@ -221,11 +219,11 @@ class SegmentIndexImplConcurrencyTest {
     }
 
     private void setSplitThreshold(final int threshold) {
-        final long revision = index.runtimeConfiguration()
+        final long revision = index.runtimeTuning()
                 .getCurrent().getRevision();
-        final RuntimePatchResult patchResult = index.runtimeConfiguration()
+        final RuntimePatchResult patchResult = index.runtimeTuning()
                 .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                         Integer.valueOf(threshold)), false,
                         Long.valueOf(revision)));
         assertTrue(patchResult.isApplied());

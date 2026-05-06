@@ -19,7 +19,7 @@ growth so ingest memory stays predictable under load. Some settings still keep
 historical `partition` names for compatibility. Code:
 `segmentindex/IndexWritePathConfiguration.java`,
 `segmentindex/IndexRuntimeTuningConfiguration.java`,
-`segmentindex/runtimeconfiguration/RuntimeSettingKey.java`,
+`segmentindex/tuning/RuntimeSettingKey.java`,
 `segment/SegmentRuntimeLimits.java`.
 
 ## Chunk
