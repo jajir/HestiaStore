@@ -27,7 +27,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.config.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 
 final class ExportCommand {
 

@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.storage;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
@@ -50,7 +50,7 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
                 .withKeyTypeDescriptor(openSpec.keyTypeDescriptor())
                 .withValueTypeDescriptor(openSpec.valueTypeDescriptor())
                 .withConfiguration(openSpec.conf())
-                .withRuntimeConfiguration(openSpec.runtimeConfiguration())
+                .withRuntimeConfiguration(openSpec.resolvedConfiguration())
                 .withSegmentMaintenanceExecutor(
                         openSpec.executorRegistry()
                                 .getStableSegmentMaintenanceExecutor())

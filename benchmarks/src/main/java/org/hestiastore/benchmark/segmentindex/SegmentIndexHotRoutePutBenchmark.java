@@ -88,7 +88,6 @@ public class SegmentIndexHotRoutePutBenchmark {
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(
                                 ROUTED_WRITE_CACHE_CAPACITY)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(2048)
                         .indexBufferedWriteKeyLimit(8192)
                         .segmentSplitKeyThreshold(1_000_000))//

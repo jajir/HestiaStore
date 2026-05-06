@@ -356,23 +356,15 @@ public class ConsoleBackendClient {
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
-                                    .getLegacyPartitionCompatibilityMetrics()
-                                    .getMaxNumberOfKeysInActivePartition())
+                                    .getSegmentWriteCacheKeyLimit())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
-                                    .getLegacyPartitionCompatibilityMetrics()
-                                    .getMaxNumberOfImmutableRunsPerPartition())
+                                    .getSegmentWriteCacheKeyLimitDuringMaintenance())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(i -> i.metricsSnapshot()
-                                    .getLegacyPartitionCompatibilityMetrics()
-                                    .getMaxNumberOfKeysInPartitionBuffer())
-                            .sum(),
-                    monitoredIndexes.stream()
-                            .mapToInt(i -> i.metricsSnapshot()
-                                    .getLegacyPartitionCompatibilityMetrics()
-                                    .getMaxNumberOfKeysInIndexBuffer())
+                                    .getIndexBufferedWriteKeyLimit())
                             .sum(),
                     monitoredIndexes.stream()
                             .mapToInt(
@@ -530,7 +522,7 @@ public class ConsoleBackendClient {
         return new NodeRow(node.nodeId(), node.nodeName(), "", "UNAVAILABLE",
                 false, false, node.baseUrl(),
                 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0,
                 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                 0D, "/s", 0D, "/s", 0D, "/s",
@@ -686,9 +678,6 @@ public class ConsoleBackendClient {
             final CounterRate splitRate = computeCounterRate(
                     nodeId + ":" + monitoredIndex.indexName() + ":split",
                     snapshot.getSplitScheduleCount(), nowNanos);
-            final CounterRate drainRate = computeCounterRate(
-                    nodeId + ":" + monitoredIndex.indexName() + ":drain",
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(), nowNanos);
             rows.add(new IndexRow(monitoredIndex.indexName(),
                     monitoredIndex.state().name(), monitoredIndex.ready(),
                     snapshot.getGetOperationCount(),
@@ -701,10 +690,9 @@ public class ConsoleBackendClient {
                     snapshot.getRegistryCacheSize(),
                     snapshot.getRegistryCacheLimit(),
                     snapshot.getSegmentCacheKeyLimitPerSegment(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInActivePartition(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfImmutableRunsPerPartition(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInPartitionBuffer(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInIndexBuffer(),
+                    snapshot.getSegmentWriteCacheKeyLimit(),
+                    snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance(),
+                    snapshot.getIndexBufferedWriteKeyLimit(),
                     snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                     snapshot.getSegmentMaintenanceCount(),
                     snapshot.getSegmentErrorCount(),
@@ -730,25 +718,15 @@ public class ConsoleBackendClient {
                     snapshot.getFlushRequestCount(),
                     snapshot.getCompactRequestCount(),
                     snapshot.getSplitScheduleCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount(),
                     snapshot.getSplitInFlightCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros(),
                     snapshot.getMaintenanceQueueSize(),
                     snapshot.getMaintenanceQueueCapacity(),
                     snapshot.getSplitQueueSize(),
                     snapshot.getSplitQueueCapacity(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount(),
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount(), throughput.value(),
+                    throughput.value(),
                     throughput.unit(), compactRate.value(), compactRate.unit(),
                     flushRate.value(), flushRate.unit(), splitRate.value(),
-                    splitRate.unit(), drainRate.value(), drainRate.unit(),
-                    capturedAt,
+                    splitRate.unit(), capturedAt,
                     toSegmentRows(snapshot.getSegmentRuntimeSnapshots())));
         }
         rows.sort(Comparator.comparing(IndexRow::indexName));
@@ -791,10 +769,13 @@ public class ConsoleBackendClient {
                 nonNegativeInt(indexNode.path("registryCacheLimit").asInt(0)),
                 nonNegativeInt(indexNode.path("segmentCacheKeyLimitPerSegment")
                         .asInt(0)),
-                readNonNegativeIntWithFallback(indexNode,
-                        "maxNumberOfKeysInActivePartition", null),
-                readNonNegativeIntWithFallback(indexNode,
-                        "maxNumberOfKeysInPartitionBuffer", null),
+                nonNegativeInt(indexNode.path("segmentWriteCacheKeyLimit")
+                        .asInt(0)),
+                nonNegativeInt(indexNode
+                        .path("segmentWriteCacheKeyLimitDuringMaintenance")
+                        .asInt(0)),
+                nonNegativeInt(indexNode.path("indexBufferedWriteKeyLimit")
+                        .asInt(0)),
                 nonNegativeInt(indexNode.path("segmentCount").asInt(0)),
                 nonNegativeInt(indexNode.path("segmentReadyCount").asInt(0)),
                 nonNegativeInt(indexNode.path("segmentMaintenanceCount")
@@ -881,30 +862,6 @@ public class ConsoleBackendClient {
                         .asLong(0L)),
                 false, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L, 0L,
                 0L, 0L, 0L,
-                readNonNegativeIntWithFallback(indexNode,
-                        "maxNumberOfImmutableRunsPerPartition", null),
-                readNonNegativeIntWithFallback(indexNode,
-                        "maxNumberOfKeysInIndexBuffer", null),
-                readNonNegativeIntWithFallback(indexNode, "partitionCount",
-                        null),
-                readNonNegativeIntWithFallback(indexNode,
-                        "activePartitionCount", null),
-                readNonNegativeIntWithFallback(indexNode,
-                        "drainingPartitionCount", null),
-                readNonNegativeIntWithFallback(indexNode, "immutableRunCount",
-                        null),
-                readNonNegativeIntWithFallback(indexNode,
-                        "partitionBufferedKeyCount", null),
-                nonNegativeLong(
-                        indexNode.path("localThrottleCount").asLong(0L)),
-                nonNegativeLong(
-                        indexNode.path("globalThrottleCount").asLong(0L)),
-                nonNegativeLong(
-                        indexNode.path("drainScheduleCount").asLong(0L)),
-                readNonNegativeIntWithFallback(indexNode, "drainInFlightCount",
-                        null),
-                nonNegativeLong(
-                        indexNode.path("drainLatencyP95Micros").asLong(0L)),
                 nonNegativeLong(indexNode.path("splitTaskStartDelayP95Micros")
                         .asLong(0L)),
                 nonNegativeLong(indexNode.path("splitTaskRunLatencyP95Micros")
@@ -913,12 +870,6 @@ public class ConsoleBackendClient {
                         .asLong(0L)),
                 nonNegativeLong(indexNode.path("drainTaskRunLatencyP95Micros")
                         .asLong(0L)),
-                readNonNegativeIntWithFallback(indexNode,
-                        "splitBlockedPartitionCount", null),
-                nonNegativeLong(indexNode
-                        .path("splitBlockedDrainScheduleCount").asLong(0L)),
-                nonNegativeLong(indexNode
-                        .path("bufferFullWhileSplitBlockedCount").asLong(0L)),
                 nonNegativeLong(
                         indexNode.path("putBusyRetryCount").asLong(0L)),
                 nonNegativeLong(
@@ -936,18 +887,6 @@ public class ConsoleBackendClient {
                 parseSegmentRuntimeSnapshots(
                         indexNode.path("segmentRuntimeSnapshots")),
                 parseState(indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)));
-    }
-
-    private int readNonNegativeIntWithFallback(final JsonNode node,
-            final String primaryField, final String legacyField) {
-        final JsonNode primary = node.path(primaryField);
-        if (!primary.isMissingNode()) {
-            return nonNegativeInt(primary.asInt(0));
-        }
-        if (legacyField == null) {
-            return 0;
-        }
-        return nonNegativeInt(node.path(legacyField).asInt(0));
     }
 
     private List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> parseSegmentRuntimeSnapshots(
@@ -1122,10 +1061,9 @@ public class ConsoleBackendClient {
             long getOps, long putOps, long deleteOps, long cacheHitCount,
             long cacheMissCount, long cacheLoadCount, long cacheEvictionCount,
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
-            int maxNumberOfKeysInActivePartition,
-            int maxNumberOfImmutableRunsPerPartition,
-            int maxNumberOfKeysInPartitionBuffer,
-            int maxNumberOfKeysInIndexBuffer,
+            int segmentWriteCacheKeyLimit,
+            int segmentWriteCacheKeyLimitDuringMaintenance,
+            int indexBufferedWriteKeyLimit,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
@@ -1545,10 +1483,9 @@ public class ConsoleBackendClient {
             long getOps, long putOps, long deleteOps, long cacheHitCount,
             long cacheMissCount, long cacheLoadCount, long cacheEvictionCount,
             int cacheSize, int cacheLimit, int segmentCacheKeyLimitPerSegment,
-            int maxNumberOfKeysInActivePartition,
-            int maxNumberOfImmutableRunsPerPartition,
-            int maxNumberOfKeysInPartitionBuffer,
-            int maxNumberOfKeysInIndexBuffer,
+            int segmentWriteCacheKeyLimit,
+            int segmentWriteCacheKeyLimitDuringMaintenance,
+            int indexBufferedWriteKeyLimit,
             int segmentCount, int segmentReadyCount,
             int segmentMaintenanceCount, int segmentErrorCount,
             int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
@@ -1562,47 +1499,15 @@ public class ConsoleBackendClient {
             long bloomFilterRequestCount, long bloomFilterRefusedCount,
             long bloomFilterPositiveCount, long bloomFilterFalsePositiveCount,
             long flushRequestCount, long compactRequestCount,
-            long splitScheduleCount, long drainScheduleCount,
-            int splitInFlightCount, int drainInFlightCount,
-            long drainLatencyP95Micros,
+            long splitScheduleCount,
+            int splitInFlightCount,
             int maintenanceQueueSize, int maintenanceQueueCapacity,
-            int splitQueueSize, int splitQueueCapacity, int partitionCount,
-            int activePartitionCount, int drainingPartitionCount,
-            int immutableRunCount, int partitionBufferedKeyCount,
-            long localThrottleCount, long globalThrottleCount,
+            int splitQueueSize, int splitQueueCapacity,
             double currentThroughputValue, String currentThroughputUnit,
             double compactRateValue, String compactRateUnit,
             double flushRateValue, String flushRateUnit, double splitRateValue,
-            String splitRateUnit, double drainRateValue,
-            String drainRateUnit, String capturedAt,
+            String splitRateUnit, String capturedAt,
             List<SegmentRow> segmentRuntimeSnapshots) {
-
-        /**
-         * Canonical write-path limit for one routed segment write cache.
-         *
-         * @return segment write-cache key limit
-         */
-        public int segmentWriteCacheKeyLimit() {
-            return maxNumberOfKeysInActivePartition;
-        }
-
-        /**
-         * Canonical write-path limit used while segment maintenance is running.
-         *
-         * @return maintenance-time buffered key limit
-         */
-        public int segmentWriteCacheKeyLimitDuringMaintenance() {
-            return maxNumberOfKeysInPartitionBuffer;
-        }
-
-        /**
-         * Canonical buffered key limit across the whole index.
-         *
-         * @return index-wide buffered key limit
-         */
-        public int indexBufferedWriteKeyLimit() {
-            return maxNumberOfKeysInIndexBuffer;
-        }
 
         /**
          * Total operations count.
@@ -1711,15 +1616,6 @@ public class ConsoleBackendClient {
          */
         public String splitRateDisplay() {
             return format4Significant(splitRateValue) + " " + splitRateUnit;
-        }
-
-        /**
-         * Current drain schedules rate display.
-         *
-         * @return drain rate with auto-selected unit
-         */
-        public String drainRateDisplay() {
-            return format4Significant(drainRateValue) + " " + drainRateUnit;
         }
 
         /**

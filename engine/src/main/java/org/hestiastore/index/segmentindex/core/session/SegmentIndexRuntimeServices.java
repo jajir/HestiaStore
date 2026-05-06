@@ -3,10 +3,10 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
@@ -69,7 +69,7 @@ final class SegmentIndexRuntimeServices<K, V> {
         return runtimeMonitoring;
     }
 
-    RuntimeConfiguration runtimeConfiguration() {
+    RuntimeConfiguration runtimeTuning() {
         return runtimeConfiguration;
     }
 

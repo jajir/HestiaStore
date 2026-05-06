@@ -181,7 +181,7 @@ class SegmentIndexImplPutTest {
             index.close();
         }
         directory = new MemDirectory();
-        index = new IndexInternalConcurrent<>(directory, tdi, tds, conf,
+        index = IndexInternalConcurrent.createStarted(directory, tdi, tds, conf,
                 conf.resolveRuntimeConfiguration(),
                 ExecutorRegistryFixture.from(conf));
 
@@ -193,27 +193,27 @@ class SegmentIndexImplPutTest {
     }
 
     private void resetIndex(final int maxKeysInSegment,
-            final int maxNumberOfKeysInActivePartition) {
-        resetIndex(maxKeysInSegment, maxNumberOfKeysInActivePartition,
+            final int segmentWriteCacheKeyLimit) {
+        resetIndex(maxKeysInSegment, segmentWriteCacheKeyLimit,
                 IndexWalConfiguration.EMPTY);
     }
 
     private void resetIndex(final int maxKeysInSegment,
-            final int maxNumberOfKeysInActivePartition, final IndexWalConfiguration wal) {
+            final int segmentWriteCacheKeyLimit, final IndexWalConfiguration wal) {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
         directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf(
-                maxKeysInSegment, maxNumberOfKeysInActivePartition, wal);
-        index = new IndexInternalConcurrent<>(directory, tdi, tds, conf,
+                maxKeysInSegment, segmentWriteCacheKeyLimit, wal);
+        index = IndexInternalConcurrent.createStarted(directory, tdi, tds, conf,
                 conf.resolveRuntimeConfiguration(),
                 ExecutorRegistryFixture.from(conf));
     }
 
     private IndexConfiguration<Integer, String> buildConf(
             final int maxKeysInSegment,
-            final int maxNumberOfKeysInActivePartition, final IndexWalConfiguration wal) {
+            final int segmentWriteCacheKeyLimit, final IndexWalConfiguration wal) {
         return IndexConfiguration.<Integer, String>builder()//
                 .identity(identity -> identity.keyClass(Integer.class))//
                 .identity(identity -> identity.valueClass(String.class))//
@@ -222,7 +222,7 @@ class SegmentIndexImplPutTest {
                 .identity(identity -> identity.name("test-index"))//
                 .segment(segment -> segment.cacheKeyLimit(4))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(
-                        maxNumberOfKeysInActivePartition))//
+                        segmentWriteCacheKeyLimit))//
                 .segment(segment -> segment.chunkKeyLimit(2))//
                 .segment(segment -> segment.maxKeys(maxKeysInSegment))//
                 .segment(segment -> segment.cachedSegmentLimit(3))//

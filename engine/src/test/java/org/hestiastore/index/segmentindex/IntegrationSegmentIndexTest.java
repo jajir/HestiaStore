@@ -137,7 +137,6 @@ class IntegrationSegmentIndexTest extends AbstractSegmentIndexTest {
                 .identity(identity -> identity.valueTypeDescriptor(tds)) //
                 .segment(segment -> segment.cacheKeyLimit(16)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(4)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(256)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(512)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(256)) //

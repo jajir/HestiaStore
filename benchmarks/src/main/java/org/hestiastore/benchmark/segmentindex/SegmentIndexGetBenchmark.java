@@ -60,7 +60,6 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                         .cachedSegmentLimit(3).deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(2048)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(4096)
                         .indexBufferedWriteKeyLimit(12_288)
                         .segmentSplitKeyThreshold(keyCount * 2))//

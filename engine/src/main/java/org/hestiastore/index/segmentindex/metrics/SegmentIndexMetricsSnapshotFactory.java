@@ -4,11 +4,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
@@ -64,9 +64,10 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 cacheStats.limit(), effectiveValue(
                         RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE),
                 effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION),
+                        RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT),
                 effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER),
+                        RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE),
+                effectiveValue(RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT),
                 stableSegmentRuntime.getTotalMappedStableSegmentCount(),
                 stableSegmentRuntime.getReadyStableSegmentCount(),
                 stableSegmentRuntime
@@ -129,19 +130,11 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 lastAppliedWalLsn.get(), walStats.syncTotalNanos(),
                 walStats.syncMaxNanos(), walStats.syncBatchBytesTotal(),
                 walStats.syncBatchBytesMax(),
-                effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION),
-                effectiveValue(RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER),
-                0, 0, 0, 0, 0, 0L, 0L, 0L, 0,
-                stats.getDrainLatencyP95Micros(),
                 stats.getSplitTaskStartDelayP95Micros(),
                 stats.getSplitTaskRunLatencyP95Micros(),
                 stats.getDrainTaskStartDelayP95Micros(),
                 stats.getDrainTaskRunLatencyP95Micros(),
-                splitSnapshot.splitBlockedCount(), 0L, 0L,
-                0L,
-                0L,
-                0L,
+                0L, 0L, 0L,
                 stats.getFlushAcceptedToReadyP95Micros(),
                 stats.getCompactAcceptedToReadyP95Micros(),
                 stats.getFlushBusyRetryCount(),

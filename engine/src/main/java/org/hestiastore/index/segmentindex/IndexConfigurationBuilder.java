@@ -166,8 +166,7 @@ public class IndexConfigurationBuilder<K, V> {
                 new IndexRuntimeTuningConfiguration(
                         segmentConfiguration.cachedSegmentLimit(),
                         segmentConfiguration.cacheKeyLimit(),
-                        writePathConfiguration,
-                        writePath.legacyImmutableRunLimit());
+                        writePathConfiguration);
         return new IndexConfiguration<>(identityConfiguration,
                 segmentConfiguration, runtimeTuningConfiguration,
                 bloomFilter.build(), maintenance.build(), io.build(),

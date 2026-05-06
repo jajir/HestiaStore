@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
@@ -88,7 +88,6 @@ class RuntimeMetricsCollectorBuilderTest {
         assertEquals(1L, snapshot.getGetOperationCount());
         assertEquals(2L, snapshot.getRegistryCacheHitCount());
         assertEquals(2, snapshot.getSplitInFlightCount());
-        assertEquals(1, snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount());
         assertEquals(42L, snapshot.getWalAppliedLsn());
         assertEquals(SegmentIndexState.READY, snapshot.getState());
     }
