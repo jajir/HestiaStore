@@ -144,7 +144,6 @@ class IndexWalCoordinatorTest {
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(7))
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(9))
                 .segment(segment -> segment.chunkKeyLimit(2))

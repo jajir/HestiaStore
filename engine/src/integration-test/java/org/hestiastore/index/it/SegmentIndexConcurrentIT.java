@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
@@ -764,11 +764,11 @@ class SegmentIndexConcurrentIT {
 
     private static void setSplitThreshold(
             final SegmentIndex<Integer, Integer> index, final int threshold) {
-        final long revision = index.runtimeConfiguration()
+        final long revision = index.runtimeTuning()
                 .getCurrent().getRevision();
-        final RuntimePatchResult patchResult = index.runtimeConfiguration()
+        final RuntimePatchResult patchResult = index.runtimeTuning()
                 .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                        RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                         Integer.valueOf(threshold)), false,
                         Long.valueOf(revision)));
         assertTrue(patchResult.isApplied());
@@ -863,7 +863,6 @@ class SegmentIndexConcurrentIT {
                 .maintenance(maintenance -> maintenance
                         .backgroundAutoEnabled(false))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
-                        .legacyImmutableRunLimit(4)
                         .maintenanceWriteCacheKeyLimit(1_024)
                         .indexBufferedWriteKeyLimit(4_096)
                         .segmentSplitKeyThreshold(10_000_000))//
@@ -888,7 +887,6 @@ class SegmentIndexConcurrentIT {
                         .indexThreads(2).registryLifecycleThreads(2)
                         .busyTimeoutMillis(120_000))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
-                        .legacyImmutableRunLimit(6)
                         .maintenanceWriteCacheKeyLimit(8_192)
                         .indexBufferedWriteKeyLimit(65_536)
                         .segmentSplitKeyThreshold(2_000))//

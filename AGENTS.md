@@ -47,6 +47,7 @@
 - Benchmark sources under `benchmarks/src/...` are especially prone to stale imports after refactors, so do a final unused-import pass there before updating a PR.
 - Try to avoid creating class instances in constructors.
 - Prefer centralizing object creation in builder classes when practical.
+- Follow `docs/development/code-quality-charter.md` for static factory method names such as `of(...)`, `fromXxx(...)`, and `createXxx(...)`.
 - Do not use Java records.
 - Keep one constructor per class when possible.
 - Use `Vldtn` as the primary validation helper.

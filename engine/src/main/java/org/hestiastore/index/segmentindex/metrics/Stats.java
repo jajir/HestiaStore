@@ -55,10 +55,6 @@ public final class Stats {
         latencies.recordWriteLatencyNanos(nanos);
     }
 
-    public void recordDrainLatencyNanos(final long nanos) {
-        latencies.recordDrainLatencyNanos(nanos);
-    }
-
     public void recordSplitTaskStartDelayNanos(final long nanos) {
         latencies.recordSplitTaskStartDelayNanos(nanos);
     }
@@ -133,10 +129,6 @@ public final class Stats {
 
     public long getWriteLatencyP99Micros() {
         return latencies.getWriteLatencyP99Micros();
-    }
-
-    public long getDrainLatencyP95Micros() {
-        return latencies.getDrainLatencyP95Micros();
     }
 
     public long getSplitTaskStartDelayP95Micros() {

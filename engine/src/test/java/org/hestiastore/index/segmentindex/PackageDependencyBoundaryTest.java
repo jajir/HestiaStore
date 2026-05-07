@@ -21,6 +21,14 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.topology..";
     private static final String SEGMENT_INDEX_CORE_SESSION_PACKAGES =
             "org.hestiastore.index.segmentindex.core.session..";
+    private static final String REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES =
+            "org.hestiastore.index.segmentindex.config..";
+    private static final String REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES =
+            "org.hestiastore.index.segmentindex.runtimeconfiguration..";
+    private static final String REMOVED_SEGMENT_INDEX_CORE_CONTROL_PACKAGES =
+            "org.hestiastore.index.segmentindex.core.control..";
+    private static final String SEGMENT_INDEX_PUBLIC_API_PACKAGE =
+            "org.hestiastore.index.segmentindex";
 
     @ArchTest
     static final ArchRule only_segment_index_packages_depend_on_segment_registry = noClasses()//
@@ -46,4 +54,17 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .resideInAnyPackage(SEGMENT_INDEX_CORE_SESSION_PACKAGES);
+
+    @ArchTest
+    static final ArchRule removed_segment_index_packages_are_not_used_by_internal_code = noClasses()//
+            .that()//
+            .resideOutsideOfPackages(REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES,
+                    REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES,
+                    REMOVED_SEGMENT_INDEX_CORE_CONTROL_PACKAGES,
+                    SEGMENT_INDEX_PUBLIC_API_PACKAGE)//
+            .should()//
+            .dependOnClassesThat()//
+            .resideInAnyPackage(REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES,
+                    REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES,
+                    REMOVED_SEGMENT_INDEX_CORE_CONTROL_PACKAGES);
 }

@@ -10,7 +10,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -359,8 +359,8 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
     /** {@inheritDoc} */
     @Override
-    public RuntimeConfiguration runtimeConfiguration() {
-        return sessionOwner.runtimeConfiguration();
+    public RuntimeConfiguration runtimeTuning() {
+        return sessionOwner.runtimeTuning();
     }
 
     /** {@inheritDoc} */

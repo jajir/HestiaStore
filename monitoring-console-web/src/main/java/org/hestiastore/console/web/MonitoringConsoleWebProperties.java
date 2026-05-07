@@ -42,6 +42,14 @@ public record MonitoringConsoleWebProperties(String backendBaseUrl,
         }
     }
 
+    /**
+     * @deprecated compatibility-only; planned for cleanup
+     */
+    @Deprecated(forRemoval = true)
+    public String backendBaseUrl() {
+        return backendBaseUrl;
+    }
+
     private static String normalizeOptional(final String value) {
         if (value == null || value.trim().isEmpty()) {
             return "";

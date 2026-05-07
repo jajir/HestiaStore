@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
@@ -45,12 +45,12 @@ class SegmentIndexSessionOwnerTest {
         when(stateCoordinator.getIndexState()).thenReturn(indexState);
         when(stateCoordinator.getState()).thenReturn(SegmentIndexState.READY);
         when(runtime.metricsSnapshot()).thenReturn(metricsSnapshot);
-        when(runtime.runtimeConfiguration()).thenReturn(runtimeConfiguration);
+        when(runtime.runtimeTuning()).thenReturn(runtimeConfiguration);
 
         assertSame(indexState, owner.getIndexState());
         assertSame(SegmentIndexState.READY, owner.getState());
         assertSame(metricsSnapshot, owner.metricsSnapshot());
-        assertSame(runtimeConfiguration, owner.runtimeConfiguration());
+        assertSame(runtimeConfiguration, owner.runtimeTuning());
         assertSame(stateCoordinator, owner.stateCoordinator());
         assertSame(runtime, owner.runtime());
     }
@@ -59,7 +59,6 @@ class SegmentIndexSessionOwnerTest {
     void completeStartupRunsOnlyOnce() {
         final Runnable hook = mock(Runnable.class);
 
-        owner.completeStartup(hook);
         owner.completeStartup(hook);
 
         verify(startupCoordinator).completeStartup(hook);

@@ -18,7 +18,6 @@ final class IndexConfigurationMapper {
         final var identity = configuration.identity();
         final var segment = configuration.segment();
         final var writePath = configuration.writePath();
-        final var tuning = configuration.runtimeTuning();
         final var maintenance = configuration.maintenance();
         final var bloomFilter = configuration.bloomFilter();
         final var filters = configuration.filters();
@@ -30,19 +29,17 @@ final class IndexConfigurationMapper {
         manifest.setValueTypeDescriptor(identity.valueTypeDescriptor());
         manifest.setMaxNumberOfKeysInSegmentCache(
                 segment.cacheKeyLimit());
-        manifest.setMaxNumberOfKeysInActivePartition(
+        manifest.setSegmentWriteCacheKeyLimit(
                 writePath.segmentWriteCacheKeyLimit());
-        manifest.setMaxNumberOfKeysInPartitionBuffer(
+        manifest.setSegmentWriteCacheKeyLimitDuringMaintenance(
                 writePath.segmentWriteCacheKeyLimitDuringMaintenance());
-        manifest.setMaxNumberOfImmutableRunsPerPartition(
-                tuning.legacyImmutableRunLimit());
-        manifest.setMaxNumberOfKeysInIndexBuffer(
+        manifest.setIndexBufferedWriteKeyLimit(
                 writePath.indexBufferedWriteKeyLimit());
         manifest.setMaxNumberOfKeysInSegmentChunk(
                 segment.chunkKeyLimit());
         manifest.setMaxNumberOfDeltaCacheFiles(
                 segment.deltaCacheFileLimit());
-        manifest.setMaxNumberOfKeysInPartitionBeforeSplit(
+        manifest.setSegmentSplitKeyThreshold(
                 writePath.segmentSplitKeyThreshold());
         manifest.setMaxNumberOfKeysInSegment(
                 segment.maxKeys());
@@ -104,15 +101,14 @@ final class IndexConfigurationMapper {
                                 manifest.getMaxNumberOfSegmentsInCache()))
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(
-                                manifest.getMaxNumberOfKeysInActivePartition())
+                                manifest.getSegmentWriteCacheKeyLimit())
                         .maintenanceWriteCacheKeyLimit(
-                                manifest.getMaxNumberOfKeysInPartitionBuffer())
-                        .legacyImmutableRunLimit(manifest
-                                .getMaxNumberOfImmutableRunsPerPartition())
+                                manifest
+                                        .getSegmentWriteCacheKeyLimitDuringMaintenance())
                         .indexBufferedWriteKeyLimit(
-                                manifest.getMaxNumberOfKeysInIndexBuffer())
+                                manifest.getIndexBufferedWriteKeyLimit())
                         .segmentSplitKeyThreshold(manifest
-                                .getMaxNumberOfKeysInPartitionBeforeSplit()))
+                                .getSegmentSplitKeyThreshold()))
                 .maintenance(maintenance -> maintenance
                         .segmentThreads(
                                 manifest.getNumberOfSegmentMaintenanceThreads())

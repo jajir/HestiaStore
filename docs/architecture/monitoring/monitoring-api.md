@@ -3,26 +3,15 @@
 Management contracts are versioned under `/api/v1` and defined in the
 `monitoring-rest-json-api` module (`org.hestiastore.monitoring.json.api.*`).
 
-This page describes the stable `v1` management contract.
+The current runtime model is direct-to-segment. The REST contract uses the same
+canonical write-path names as Java configuration and runtime tuning.
 
-The current runtime model is direct-to-segment. Inside the engine, canonical
-configuration and metrics now use write-path terminology such as
-`segmentWriteCacheKeyLimit` and `indexBufferedWriteKeyLimit`. The `v1` REST
-contract remains partition-shaped for backward compatibility and should be read
-as a compatibility surface, not as the primary domain model.
-
-## Versioning policy
+## Versioning Policy
 
 - Current version: `v1`.
 - Path prefix: `/api/v1`.
-- Backward compatibility:
-  - Existing field names and endpoint paths stay stable within `v1`.
-  - New optional fields may be added.
-  - Unknown fields must be ignored by clients.
-- Deprecation:
-  - Endpoints/fields are first marked as deprecated in docs and changelog.
-  - Removal requires introducing a newer API version path (for example
-    `/api/v2`).
+- Unknown fields must be ignored by clients.
+- API-breaking changes require a newer API version path.
 
 ## Endpoints
 
@@ -32,54 +21,22 @@ as a compatibility surface, not as the primary domain model.
 - `GET /api/v1/config?indexName=<required>`
 - `PATCH /api/v1/config?indexName=<required>`
 
-## Runtime-overridable keys
-
-`v1` keeps the historical key names below for compatibility:
+## Runtime-Overridable Keys
 
 - `maxNumberOfSegmentsInCache`
 - `maxNumberOfKeysInSegmentCache`
-- `maxNumberOfKeysInActivePartition`
-- `maxNumberOfImmutableRunsPerPartition`
-- `maxNumberOfKeysInPartitionBuffer`
-- `maxNumberOfKeysInIndexBuffer`
-- `maxNumberOfKeysInPartitionBeforeSplit`
-
-Canonical terminology map:
-
-- `maxNumberOfKeysInActivePartition` -> `segmentWriteCacheKeyLimit`
-- `maxNumberOfKeysInPartitionBuffer` ->
-  `segmentWriteCacheKeyLimitDuringMaintenance`
-- `maxNumberOfKeysInIndexBuffer` -> `indexBufferedWriteKeyLimit`
-- `maxNumberOfKeysInPartitionBeforeSplit` -> `segmentSplitKeyThreshold`
-- `maxNumberOfImmutableRunsPerPartition` -> legacy compatibility limit only
+- `segmentWriteCacheKeyLimit`
+- `segmentWriteCacheKeyLimitDuringMaintenance`
+- `indexBufferedWriteKeyLimit`
+- `segmentSplitKeyThreshold`
 
 These overrides are runtime-only:
 
 - applied in-memory for the running JVM
-- not persisted to index metadata (`manifest.txt` / configuration property
-  store)
+- not persisted to index metadata
 - reset on process restart
 
-Compatibility note:
-
-- report and config responses emit only the `v1` compatibility names listed
-  above
-- `supportedKeys` and config views therefore also remain `v1` compatibility
-  names
-- clients should not infer a live partition-overlay runtime from those field
-  names
-
-Lifecycle note:
-
-- `state` is one of `OPENING`, `READY`, `CLOSING`, `CLOSED`, or `ERROR`.
-- `ready` is `true` only when `state == "READY"`.
-- `CLOSING` means shutdown is in progress and final maintenance/persistence
-  work has not finished yet.
-
-## Example payloads
-
-The JSON examples below intentionally keep the legacy `v1` field names because
-they show the wire contract, not the canonical in-process model.
+## Example Payloads
 
 `GET /api/v1/report` response:
 
@@ -108,10 +65,9 @@ they show the wire contract, not the canonical in-process model.
       "registryCacheSize": 96,
       "registryCacheLimit": 128,
       "segmentCacheKeyLimitPerSegment": 260000,
-      "maxNumberOfKeysInActivePartition": 120000,
-      "maxNumberOfImmutableRunsPerPartition": 2,
-      "maxNumberOfKeysInPartitionBuffer": 180000,
-      "maxNumberOfKeysInIndexBuffer": 720000,
+      "segmentWriteCacheKeyLimit": 120000,
+      "segmentWriteCacheKeyLimitDuringMaintenance": 180000,
+      "indexBufferedWriteKeyLimit": 720000,
       "segmentCount": 24,
       "segmentReadyCount": 24,
       "segmentMaintenanceCount": 0,
@@ -130,16 +86,6 @@ they show the wire contract, not the canonical in-process model.
       "maintenanceQueueCapacity": 1024,
       "splitQueueSize": 0,
       "splitQueueCapacity": 256,
-      "partitionCount": 24,
-      "activePartitionCount": 3,
-      "drainingPartitionCount": 1,
-      "immutableRunCount": 2,
-      "partitionBufferedKeyCount": 8700,
-      "localThrottleCount": 0,
-      "globalThrottleCount": 0,
-      "drainScheduleCount": 9,
-      "drainInFlightCount": 0,
-      "drainLatencyP95Micros": 420,
       "readLatencyP50Micros": 78,
       "readLatencyP95Micros": 240,
       "readLatencyP99Micros": 710,
@@ -161,43 +107,31 @@ they show the wire contract, not the canonical in-process model.
 
 `GET /api/v1/config?indexName=orders` response:
 
-- `original` and `current` contain only the runtime-tuning subset used by
-  `PATCH /api/v1/config`.
-- within `v1`, that runtime-tuning view is still serialized with legacy
-  partition-shaped key names for compatibility.
-- Read-only or non-runtime properties are intentionally omitted from this
-  endpoint even if they exist in the persisted index manifest.
-- `supportedKeys` is the exact writable subset for `PATCH /api/v1/config` and
-  matches the key domain of `original/current`.
-
 ```json
 {
   "indexName": "orders",
   "original": {
     "maxNumberOfSegmentsInCache": 128,
     "maxNumberOfKeysInSegmentCache": 200000,
-    "maxNumberOfKeysInActivePartition": 100000,
-    "maxNumberOfImmutableRunsPerPartition": 2,
-    "maxNumberOfKeysInPartitionBuffer": 140000,
-    "maxNumberOfKeysInIndexBuffer": 560000,
-    "maxNumberOfKeysInPartitionBeforeSplit": 500000
+    "segmentWriteCacheKeyLimit": 100000,
+    "segmentWriteCacheKeyLimitDuringMaintenance": 140000,
+    "indexBufferedWriteKeyLimit": 560000,
+    "segmentSplitKeyThreshold": 500000
   },
   "current": {
     "maxNumberOfSegmentsInCache": 256,
     "maxNumberOfKeysInSegmentCache": 260000,
-    "maxNumberOfKeysInActivePartition": 120000,
-    "maxNumberOfImmutableRunsPerPartition": 2,
-    "maxNumberOfKeysInPartitionBuffer": 180000,
-    "maxNumberOfKeysInIndexBuffer": 720000,
-    "maxNumberOfKeysInPartitionBeforeSplit": 500000
+    "segmentWriteCacheKeyLimit": 120000,
+    "segmentWriteCacheKeyLimitDuringMaintenance": 180000,
+    "indexBufferedWriteKeyLimit": 720000,
+    "segmentSplitKeyThreshold": 500000
   },
   "supportedKeys": [
     "maxNumberOfKeysInSegmentCache",
-    "maxNumberOfKeysInActivePartition",
-    "maxNumberOfImmutableRunsPerPartition",
-    "maxNumberOfKeysInPartitionBuffer",
-    "maxNumberOfKeysInIndexBuffer",
-    "maxNumberOfKeysInPartitionBeforeSplit",
+    "segmentWriteCacheKeyLimit",
+    "segmentWriteCacheKeyLimitDuringMaintenance",
+    "indexBufferedWriteKeyLimit",
+    "segmentSplitKeyThreshold",
     "maxNumberOfSegmentsInCache"
   ],
   "revision": 12,
@@ -212,51 +146,26 @@ they show the wire contract, not the canonical in-process model.
   "values": {
     "maxNumberOfSegmentsInCache": "256",
     "maxNumberOfKeysInSegmentCache": "260000",
-    "maxNumberOfKeysInActivePartition": "120000",
-    "maxNumberOfImmutableRunsPerPartition": "2",
-    "maxNumberOfKeysInPartitionBuffer": "180000",
-    "maxNumberOfKeysInIndexBuffer": "720000",
-    "maxNumberOfKeysInPartitionBeforeSplit": "500000"
+    "segmentWriteCacheKeyLimit": "120000",
+    "segmentWriteCacheKeyLimitDuringMaintenance": "180000",
+    "indexBufferedWriteKeyLimit": "720000",
+    "segmentSplitKeyThreshold": "500000"
   },
   "dryRun": false
 }
 ```
 
-`PATCH /api/v1/config?indexName=orders` response:
+`PATCH /api/v1/config?indexName=orders` returns `204 No Content` on success.
 
-- `204 No Content` on success.
-
-## Validation rules
+## Validation Rules
 
 - `indexName` query parameter is required for config read/update.
-- `GET /config` exposes only runtime-tunable keys; persisted read-only settings
-  are out of scope for this endpoint.
-- PATCH accepts only keys listed in `supportedKeys` returned by `GET /config`.
+- `GET /config` exposes only runtime-tunable keys.
+- PATCH accepts only keys listed in `supportedKeys`.
 - `maxNumberOfSegmentsInCache >= 3`
 - `maxNumberOfKeysInSegmentCache >= 1`
-- `maxNumberOfKeysInActivePartition >= 1`
-- `maxNumberOfImmutableRunsPerPartition >= 1`
-- `maxNumberOfKeysInPartitionBuffer > maxNumberOfKeysInActivePartition`
-- `maxNumberOfKeysInIndexBuffer >= maxNumberOfKeysInPartitionBuffer`
-- `maxNumberOfKeysInPartitionBeforeSplit >= maxNumberOfKeysInPartitionBuffer`
+- `segmentWriteCacheKeyLimit >= 1`
+- `segmentWriteCacheKeyLimitDuringMaintenance > segmentWriteCacheKeyLimit`
+- `indexBufferedWriteKeyLimit >= segmentWriteCacheKeyLimitDuringMaintenance`
+- `segmentSplitKeyThreshold >= segmentWriteCacheKeyLimitDuringMaintenance`
 - Unknown key error code: `CONFIG_KEY_NOT_SUPPORTED`
-
-Canonical interpretation:
-
-- `maxNumberOfKeysInPartitionBuffer > maxNumberOfKeysInActivePartition`
-  means maintenance-time write-cache buffering must stay above the steady-state
-  segment write-cache limit
-- `maxNumberOfKeysInIndexBuffer >= maxNumberOfKeysInPartitionBuffer`
-  means the index-wide buffered write budget must cover at least one
-  maintenance-time segment budget
-
-## Error response
-
-```json
-{
-  "code": "INVALID_STATE",
-  "message": "Operation is not allowed.",
-  "requestId": "req-20260220-001",
-  "capturedAt": "2026-02-20T18:00:02Z"
-}
-```

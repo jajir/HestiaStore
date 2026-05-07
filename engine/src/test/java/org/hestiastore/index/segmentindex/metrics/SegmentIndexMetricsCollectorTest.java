@@ -20,7 +20,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -130,7 +130,6 @@ class SegmentIndexMetricsCollectorTest {
         assertEquals(5L, firstSnapshot.getCompactRequestCount());
         assertEquals(7L, firstSnapshot.getFlushRequestCount());
         assertEquals(0L, firstSnapshot.getPutBusyRetryCount());
-        assertEquals(3, firstSnapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount());
         assertEquals(123L, firstSnapshot.getWalAppliedLsn());
         assertFalse(firstSnapshot.isWalEnabled());
         assertEquals(SegmentIndexState.READY, firstSnapshot.getState());
@@ -170,7 +169,6 @@ class SegmentIndexMetricsCollectorTest {
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(4))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(6))
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(7))
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(8))

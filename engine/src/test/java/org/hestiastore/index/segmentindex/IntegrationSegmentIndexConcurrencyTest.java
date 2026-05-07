@@ -152,7 +152,6 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .identity(identity -> identity.valueTypeDescriptor(tds)) //
                 .segment(segment -> segment.cacheKeyLimit(3)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(activePartitionSize)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(4)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(64)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(128)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10_000_000)) //
@@ -171,11 +170,11 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private SegmentIndex<Integer, String> newIndex(final Directory directory,
             final ParallelPutsScenario scenario) {
-        final int activePartitionSize = scenario.maxNumberOfKeysInActivePartition();
-        final int partitionBufferSize = Math.max(activePartitionSize + 1,
+        final int segmentWriteCacheKeyLimit = scenario.segmentWriteCacheKeyLimit();
+        final int maintenanceWriteCacheKeyLimit = Math.max(segmentWriteCacheKeyLimit + 1,
                 scenario.keyCount());
-        final int indexBufferSize = Math.max(partitionBufferSize,
-                partitionBufferSize * 2);
+        final int indexBufferedWriteKeyLimit = Math.max(maintenanceWriteCacheKeyLimit,
+                maintenanceWriteCacheKeyLimit * 2);
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder()//
                 .identity(identity -> identity.keyClass(Integer.class))//
@@ -184,10 +183,9 @@ class IntegrationSegmentIndexConcurrencyTest {
                 .identity(identity -> identity.valueTypeDescriptor(tds)) //
                 .segment(segment -> segment.cacheKeyLimit(
                         scenario.maxNumberOfKeysInSegmentCache())) //
-                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(activePartitionSize)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(4)) //
-                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(partitionBufferSize)) //
-                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(indexBufferSize)) //
+                .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(segmentWriteCacheKeyLimit)) //
+                .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(maintenanceWriteCacheKeyLimit)) //
+                .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(indexBufferedWriteKeyLimit)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(10_000_000)) //
                 .segment(segment -> segment.chunkKeyLimit(
                         scenario.maxNumberOfKeysInSegmentChunk())) //
@@ -262,12 +260,7 @@ class IntegrationSegmentIndexConcurrencyTest {
                 + TimeUnit.SECONDS.toNanos(10L);
         while (System.nanoTime() < deadline) {
             final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            if (snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount() == 0
-                    && snapshot.getSplitInFlightCount() == 0) {
+            if (snapshot.getSplitInFlightCount() == 0) {
                 return;
             }
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));
@@ -294,7 +287,7 @@ class IntegrationSegmentIndexConcurrencyTest {
 
     private record ParallelPutsScenario(String name, int keyCount,
             int maxNumberOfKeysInSegmentCache,
-            int maxNumberOfKeysInActivePartition,
+            int segmentWriteCacheKeyLimit,
             int maxNumberOfKeysInSegmentChunk, int maxNumberOfKeysInSegment,
             int maxNumberOfSegmentsInCache,
             int cpuThreads, int writerThreads) {

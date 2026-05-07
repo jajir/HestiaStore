@@ -7,10 +7,10 @@ import static org.mockito.Mockito.mock;
 
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
@@ -60,7 +60,7 @@ class SegmentIndexRuntimeServicesTest {
         assertSame(maintenance, state.maintenance());
         assertSame(metricsSnapshotSupplier, state.metricsSnapshotSupplier());
         assertSame(runtimeMonitoring, state.runtimeMonitoring());
-        assertSame(runtimeConfiguration, state.runtimeConfiguration());
+        assertSame(runtimeConfiguration, state.runtimeTuning());
         assertSame(runtimeLimitApplier, state.runtimeLimitApplier());
     }
 }

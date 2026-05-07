@@ -350,7 +350,6 @@ class SegmentIndexConcurrencyStressIT {
                         .registryLifecycleThreads(
                                 Math.max(1, Math.min(cpuThreads, 2))))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
-                        .legacyImmutableRunLimit(4)
                         .maintenanceWriteCacheKeyLimit(1_024)
                         .indexBufferedWriteKeyLimit(4_096)
                         .segmentSplitKeyThreshold(10_000_000))//
@@ -379,7 +378,6 @@ class SegmentIndexConcurrencyStressIT {
                         .busyTimeoutMillis(120_000)//
                         .busyBackoffMillis(5))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(512)
-                        .legacyImmutableRunLimit(6)
                         .maintenanceWriteCacheKeyLimit(8_192)
                         .indexBufferedWriteKeyLimit(65_536)
                         .segmentSplitKeyThreshold(2_000))//

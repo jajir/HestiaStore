@@ -142,7 +142,6 @@ public final class MonitoringConsoleWebDemoMain {
                         .deltaCacheFileLimit(DEMO_MAX_DELTA_CACHE_FILES))
                 .writePath(writePath -> writePath
                         .segmentWriteCacheKeyLimit(DEMO_ACTIVE_PARTITION_KEYS)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(
                                 DEMO_PARTITION_BUFFER_KEYS)
                         .indexBufferedWriteKeyLimit(

@@ -10,9 +10,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -107,10 +107,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertTrue(snapshot.getSplitTaskRunLatencyP95Micros() >= 0L);
             assertTrue(snapshot.getDrainTaskStartDelayP95Micros() >= 0L);
             assertTrue(snapshot.getDrainTaskRunLatencyP95Micros() >= 0L);
-            assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount() >= 0);
-            assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getSplitBlockedDrainScheduleCount() >= 0L);
-            assertTrue(
-                    snapshot.getLegacyPartitionCompatibilityMetrics().getBufferFullWhileSplitBlockedCount() >= 0L);
             assertTrue(snapshot.getPutBusyRetryCount() >= 0L);
             assertTrue(snapshot.getPutBusyTimeoutCount() >= 0L);
             assertTrue(snapshot.getPutBusyWaitP95Micros() >= 0L);
@@ -169,7 +165,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     }
 
     @Test
-    void drainScheduleCount_stays_zero_without_partition_overlay_writes() {
+    void writePathMetricsTrackDirectSegmentWrites() {
         final Directory directory = new MemDirectory();
         final TypeDescriptorInteger keyDescriptor = new TypeDescriptorInteger();
         final TypeDescriptorShortString valueDescriptor = new TypeDescriptorShortString();
@@ -181,7 +177,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
                 .segment(segment -> segment.cacheKeyLimit(5)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(8)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(16)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(64)) //
                 .segment(segment -> segment.maxKeys(512)) //
@@ -202,7 +197,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
             awaitIdle(index);
             final SegmentIndexMetricsSnapshot beforeRotation = index.runtimeMonitoring().snapshot().getMetrics();
-            assertEquals(0L, beforeRotation.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
+            assertEquals(0, beforeRotation.getSplitInFlightCount());
 
             for (int i = 128; i < 256; i++) {
                 index.put(i, "next-" + i);
@@ -210,8 +205,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             awaitIdle(index);
 
             final SegmentIndexMetricsSnapshot afterRotation = index.runtimeMonitoring().snapshot().getMetrics();
-            assertEquals(0L, afterRotation.getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount());
-            assertTrue(afterRotation.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
+            assertEquals(0, afterRotation.getSplitInFlightCount());
         }
     }
 
@@ -228,7 +222,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
                 .segment(segment -> segment.cacheKeyLimit(5)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(128)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(192)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(256)) //
                 .writePath(writePath -> writePath.segmentSplitKeyThreshold(512)) //
@@ -274,7 +267,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .segment(segment -> segment.maxKeys(128)) //
@@ -295,11 +287,11 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             awaitIdle(index);
             assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
 
-            final long revision = index.runtimeConfiguration()
+            final long revision = index.runtimeTuning()
                     .getCurrent().getRevision();
-            final RuntimePatchResult patchResult = index.runtimeConfiguration()
+            final RuntimePatchResult patchResult = index.runtimeTuning()
                     .apply(new RuntimeConfigPatch(Map.of(
-                            RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
+                            RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                             Integer.valueOf(16)), false,
                             Long.valueOf(revision)));
 
@@ -329,7 +321,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(32)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .segment(segment -> segment.maxKeys(16)) //
@@ -362,9 +353,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             awaitCondition(() -> {
                 final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 return snapshot.getSegmentCount() > 1
-                        && snapshot.getSplitInFlightCount() == 0
-                        && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
-                        && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0;
+                        && snapshot.getSplitInFlightCount() == 0;
             }, 10_000L);
 
             for (int i = 0; i < 48; i++) {
@@ -407,7 +396,6 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
                 .identity(identity -> identity.valueTypeDescriptor(valueDescriptor)) //
                 .segment(segment -> segment.cacheKeyLimit(8)) //
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(64)) //
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(2)) //
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(96)) //
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(192)) //
                 .segment(segment -> segment.maxKeys(128)) //
@@ -429,20 +417,13 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
 
             final SegmentIndexMetricsSnapshot before = index.runtimeMonitoring().snapshot().getMetrics();
             assertTrue(before.getTotalBufferedWriteKeys() > 0L);
-            assertEquals(0, before.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
-            assertEquals(0, before.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
 
             maintenanceAction.accept(index);
             awaitIdle(index);
 
             final SegmentIndexMetricsSnapshot after = index.runtimeMonitoring().snapshot().getMetrics();
             assertEquals(0L, after.getTotalBufferedWriteKeys());
-            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
-            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
-            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount());
-            assertEquals(0, after.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount());
             assertEquals(0, after.getSplitInFlightCount());
-            assertTrue(after.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
 
             assertEquals("buffered-5", index.get(5));
             assertNull(index.get(18));
@@ -454,10 +435,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     private static void awaitIdle(final SegmentIndex<Integer, String> index) {
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            return snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount() == 0
-                    && snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount() == 0
-                    && snapshot.getSplitInFlightCount() == 0;
+            return snapshot.getSplitInFlightCount() == 0;
         }, 10_000L);
     }
 
@@ -488,15 +466,7 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
     private static void assertDirectWriteBufferMetrics(
             final SegmentIndexMetricsSnapshot snapshot) {
         assertTrue(snapshot.getTotalBufferedWriteKeys() >= 2L);
-        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionCount());
-        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getActivePartitionCount());
-        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount());
-        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getImmutableRunCount());
-        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount());
-        assertEquals(0, snapshot.getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount());
-        assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount() >= 0L);
-        assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount() >= 0L);
-        assertTrue(snapshot.getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros() >= 0L);
+        assertEquals(0, snapshot.getSplitInFlightCount());
     }
 
     private static void assertRegistryAndBloomMetrics(

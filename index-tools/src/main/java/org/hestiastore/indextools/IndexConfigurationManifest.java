@@ -11,13 +11,12 @@ class IndexConfigurationManifest {
     private String keyTypeDescriptor;
     private String valueTypeDescriptor;
     private Integer maxNumberOfKeysInSegmentCache;
-    private Integer maxNumberOfKeysInActivePartition;
-    private Integer maxNumberOfKeysInPartitionBuffer;
-    private Integer maxNumberOfImmutableRunsPerPartition;
-    private Integer maxNumberOfKeysInIndexBuffer;
+    private Integer segmentWriteCacheKeyLimit;
+    private Integer segmentWriteCacheKeyLimitDuringMaintenance;
+    private Integer indexBufferedWriteKeyLimit;
     private Integer maxNumberOfKeysInSegmentChunk;
     private Integer maxNumberOfDeltaCacheFiles;
-    private Integer maxNumberOfKeysInPartitionBeforeSplit;
+    private Integer segmentSplitKeyThreshold;
     private Integer maxNumberOfKeysInSegment;
     private Integer maxNumberOfSegmentsInCache;
     private Integer numberOfSegmentMaintenanceThreads;
@@ -84,40 +83,32 @@ class IndexConfigurationManifest {
         this.maxNumberOfKeysInSegmentCache = maxNumberOfKeysInSegmentCache;
     }
 
-    public Integer getMaxNumberOfKeysInActivePartition() {
-        return maxNumberOfKeysInActivePartition;
+    public Integer getSegmentWriteCacheKeyLimit() {
+        return segmentWriteCacheKeyLimit;
     }
 
-    public void setMaxNumberOfKeysInActivePartition(
-            final Integer maxNumberOfKeysInActivePartition) {
-        this.maxNumberOfKeysInActivePartition = maxNumberOfKeysInActivePartition;
+    public void setSegmentWriteCacheKeyLimit(
+            final Integer segmentWriteCacheKeyLimit) {
+        this.segmentWriteCacheKeyLimit = segmentWriteCacheKeyLimit;
     }
 
-    public Integer getMaxNumberOfKeysInPartitionBuffer() {
-        return maxNumberOfKeysInPartitionBuffer;
+    public Integer getSegmentWriteCacheKeyLimitDuringMaintenance() {
+        return segmentWriteCacheKeyLimitDuringMaintenance;
     }
 
-    public void setMaxNumberOfKeysInPartitionBuffer(
-            final Integer maxNumberOfKeysInPartitionBuffer) {
-        this.maxNumberOfKeysInPartitionBuffer = maxNumberOfKeysInPartitionBuffer;
+    public void setSegmentWriteCacheKeyLimitDuringMaintenance(
+            final Integer segmentWriteCacheKeyLimitDuringMaintenance) {
+        this.segmentWriteCacheKeyLimitDuringMaintenance =
+                segmentWriteCacheKeyLimitDuringMaintenance;
     }
 
-    public Integer getMaxNumberOfImmutableRunsPerPartition() {
-        return maxNumberOfImmutableRunsPerPartition;
+    public Integer getIndexBufferedWriteKeyLimit() {
+        return indexBufferedWriteKeyLimit;
     }
 
-    public void setMaxNumberOfImmutableRunsPerPartition(
-            final Integer maxNumberOfImmutableRunsPerPartition) {
-        this.maxNumberOfImmutableRunsPerPartition = maxNumberOfImmutableRunsPerPartition;
-    }
-
-    public Integer getMaxNumberOfKeysInIndexBuffer() {
-        return maxNumberOfKeysInIndexBuffer;
-    }
-
-    public void setMaxNumberOfKeysInIndexBuffer(
-            final Integer maxNumberOfKeysInIndexBuffer) {
-        this.maxNumberOfKeysInIndexBuffer = maxNumberOfKeysInIndexBuffer;
+    public void setIndexBufferedWriteKeyLimit(
+            final Integer indexBufferedWriteKeyLimit) {
+        this.indexBufferedWriteKeyLimit = indexBufferedWriteKeyLimit;
     }
 
     public Integer getMaxNumberOfKeysInSegmentChunk() {
@@ -138,13 +129,13 @@ class IndexConfigurationManifest {
         this.maxNumberOfDeltaCacheFiles = maxNumberOfDeltaCacheFiles;
     }
 
-    public Integer getMaxNumberOfKeysInPartitionBeforeSplit() {
-        return maxNumberOfKeysInPartitionBeforeSplit;
+    public Integer getSegmentSplitKeyThreshold() {
+        return segmentSplitKeyThreshold;
     }
 
-    public void setMaxNumberOfKeysInPartitionBeforeSplit(
-            final Integer maxNumberOfKeysInPartitionBeforeSplit) {
-        this.maxNumberOfKeysInPartitionBeforeSplit = maxNumberOfKeysInPartitionBeforeSplit;
+    public void setSegmentSplitKeyThreshold(
+            final Integer segmentSplitKeyThreshold) {
+        this.segmentSplitKeyThreshold = segmentSplitKeyThreshold;
     }
 
     public Integer getMaxNumberOfKeysInSegment() {

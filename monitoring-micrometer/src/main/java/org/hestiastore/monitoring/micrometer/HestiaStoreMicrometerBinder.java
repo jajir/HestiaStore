@@ -91,106 +91,25 @@ public final class HestiaStoreMicrometerBinder implements MeterBinder {
                 .description("Configured segment registry cache size limit")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_ACTIVE_LIMIT,
+        Gauge.builder(HestiaStoreMetricNames.SEGMENT_WRITE_CACHE_KEY_LIMIT,
                 monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInActivePartition())
-                .description(
-                        "Configured legacy-named routed write-cache key limit")
+                i -> i.metricsSnapshot().getSegmentWriteCacheKeyLimit())
+                .description("Configured segment write-cache key limit")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_IMMUTABLE_RUN_LIMIT,
+        Gauge.builder(
+                HestiaStoreMetricNames.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                 monitoredIndex,
                 i -> i.metricsSnapshot()
-                        .getLegacyPartitionCompatibilityMetrics()
-                        .getMaxNumberOfImmutableRunsPerPartition())
+                        .getSegmentWriteCacheKeyLimitDuringMaintenance())
                 .description(
-                        "Configured legacy compatibility limit retained from the removed partition runtime")
+                        "Configured maintenance-time segment write-cache key limit")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_BUFFER_LIMIT,
+        Gauge.builder(HestiaStoreMetricNames.INDEX_BUFFERED_WRITE_KEY_LIMIT,
                 monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInPartitionBuffer())
-                .description(
-                        "Configured legacy-named per-segment buffered-write limit")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.INDEX_BUFFER_LIMIT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getMaxNumberOfKeysInIndexBuffer())
-                .description(
-                        "Configured legacy-named index-wide buffered-write limit")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_COUNT, monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getPartitionCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_ACTIVE_COUNT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getActivePartitionCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_DRAINING_COUNT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainingPartitionCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_IMMUTABLE_RUN_COUNT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getImmutableRunCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_BUFFERED_KEY_COUNT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getPartitionBufferedKeyCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        FunctionCounter.builder(
-                HestiaStoreMetricNames.PARTITION_THROTTLE_LOCAL_TOTAL,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getLocalThrottleCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        FunctionCounter.builder(
-                HestiaStoreMetricNames.PARTITION_THROTTLE_GLOBAL_TOTAL,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getGlobalThrottleCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        FunctionCounter.builder(
-                HestiaStoreMetricNames.PARTITION_DRAIN_SCHEDULE_TOTAL,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainScheduleCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_DRAIN_IN_FLIGHT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainInFlightCount())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.PARTITION_DRAIN_LATENCY_P95_MICROS,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getDrainLatencyP95Micros())
-                .description(
-                        "Compatibility field retained from the removed partition runtime")
+                i -> i.metricsSnapshot().getIndexBufferedWriteKeyLimit())
+                .description("Configured index-wide buffered write key limit")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
         Gauge.builder(HestiaStoreMetricNames.SPLIT_TASK_START_DELAY_P95_MICROS,
@@ -215,28 +134,6 @@ public final class HestiaStoreMicrometerBinder implements MeterBinder {
                 monitoredIndex,
                 i -> i.metricsSnapshot().getDrainTaskRunLatencyP95Micros())
                 .description("Observed P95 drain task run latency in microseconds")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        Gauge.builder(HestiaStoreMetricNames.SPLIT_BLOCKED_PARTITION_COUNT,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getSplitBlockedPartitionCount())
-                .description("Current number of partitions with split-blocked drain scheduling")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        FunctionCounter.builder(
-                HestiaStoreMetricNames.SPLIT_BLOCKED_DRAIN_SCHEDULE_TOTAL,
-                monitoredIndex,
-                i -> i.metricsSnapshot().getLegacyPartitionCompatibilityMetrics().getSplitBlockedDrainScheduleCount())
-                .description("Total number of drain schedule attempts blocked by active splits")
-                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
-
-        FunctionCounter.builder(
-                HestiaStoreMetricNames.BUFFER_FULL_WHILE_SPLIT_BLOCKED_TOTAL,
-                monitoredIndex, i -> i.metricsSnapshot()
-                        .getLegacyPartitionCompatibilityMetrics()
-                        .getBufferFullWhileSplitBlockedCount())
-                .description(
-                        "Total number of BUSY writes observed while split blocked drain scheduling")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
         FunctionCounter.builder(HestiaStoreMetricNames.PUT_BUSY_RETRY_TOTAL,
