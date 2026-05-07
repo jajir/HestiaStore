@@ -6,14 +6,14 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigurationContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigurationContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 
 /**
@@ -39,7 +39,7 @@ public final class IndexContextLoggingAdapter<K, V>
                 "contextScopeRunner");
         this.runtimeConfiguration =
                 new RuntimeConfigurationContextLoggingAdapter(
-                        delegate.runtimeConfiguration(), this.contextScopeRunner);
+                        delegate.runtimeTuning(), this.contextScopeRunner);
         this.runtimeMonitoring =
                 new IndexRuntimeMonitoringContextLoggingAdapter(
                         delegate.runtimeMonitoring(), this.contextScopeRunner);
@@ -91,7 +91,7 @@ public final class IndexContextLoggingAdapter<K, V>
     }
 
     @Override
-    public RuntimeConfiguration runtimeConfiguration() {
+    public RuntimeConfiguration runtimeTuning() {
         return runtimeConfiguration;
     }
 

@@ -27,7 +27,7 @@ class SegmentIndexStateTest {
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         index = SegmentIndex.create(new MemDirectory(), conf);
-        errorIndex = new IndexInternalConcurrent<>(
+        errorIndex = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 conf, conf.resolveRuntimeConfiguration(),

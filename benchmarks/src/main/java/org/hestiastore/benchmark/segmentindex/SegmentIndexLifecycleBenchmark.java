@@ -122,7 +122,6 @@ public class SegmentIndexLifecycleBenchmark {
                         .chunkKeyLimit(64).maxKeys(512)
                         .cachedSegmentLimit(4).deltaCacheFileLimit(2))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(256)
-                        .legacyImmutableRunLimit(2)
                         .maintenanceWriteCacheKeyLimit(512)
                         .indexBufferedWriteKeyLimit(4096)
                         .segmentSplitKeyThreshold(maxKeysBeforeSplit))//

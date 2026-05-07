@@ -55,11 +55,10 @@ described has been removed. The current implementation contract is:
 Legacy partition-named persisted properties and metrics still exist for
 compatibility, while Java configuration uses grouped section names:
 
-- `maxNumberOfKeysInActivePartition` -> `writePath().segmentWriteCacheKeyLimit()`
-- `maxNumberOfImmutableRunsPerPartition` -> `writePath(...).legacyImmutableRunLimit()`
-- `maxNumberOfKeysInPartitionBuffer` -> `writePath().maintenanceWriteCacheKeyLimit()`
-- `maxNumberOfKeysInIndexBuffer` -> `writePath().indexBufferedWriteKeyLimit()`
-- `maxNumberOfKeysInPartitionBeforeSplit` -> `writePath().segmentSplitKeyThreshold()`
+- `segmentWriteCacheKeyLimit` -> `writePath().segmentWriteCacheKeyLimit()`
+- `segmentWriteCacheKeyLimitDuringMaintenance` -> `writePath().maintenanceWriteCacheKeyLimit()`
+- `indexBufferedWriteKeyLimit` -> `writePath().indexBufferedWriteKeyLimit()`
+- `segmentSplitKeyThreshold` -> `writePath().segmentSplitKeyThreshold()`
 
 They now act as compatibility names for routed write and split limits rather
 than for a dedicated ingest-overlay runtime.

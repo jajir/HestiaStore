@@ -28,7 +28,7 @@ class IndexStateTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = new IndexInternalConcurrent<>(
+        index = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 tdi, tds, conf, conf.resolveRuntimeConfiguration(),
                 ExecutorRegistryFixture.from(conf));

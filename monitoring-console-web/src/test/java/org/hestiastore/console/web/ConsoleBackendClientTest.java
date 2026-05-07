@@ -96,10 +96,9 @@ class ConsoleBackendClientTest {
                       "registryCacheSize": 18,
                       "registryCacheLimit": 19,
                       "segmentCacheKeyLimitPerSegment": 20,
-                      "maxNumberOfKeysInActivePartition": 7,
-                      "maxNumberOfImmutableRunsPerPartition": 2,
-                      "maxNumberOfKeysInPartitionBuffer": 11,
-                      "maxNumberOfKeysInIndexBuffer": 29,
+                      "segmentWriteCacheKeyLimit": 7,
+                      "segmentWriteCacheKeyLimitDuringMaintenance": 11,
+                      "indexBufferedWriteKeyLimit": 29,
                       "segmentCount": 3,
                       "segmentReadyCount": 2,
                       "segmentMaintenanceCount": 1,
@@ -118,16 +117,6 @@ class ConsoleBackendClientTest {
                       "maintenanceQueueCapacity": 28,
                       "splitQueueSize": 29,
                       "splitQueueCapacity": 30,
-                      "partitionCount": 3,
-                      "activePartitionCount": 2,
-                      "drainingPartitionCount": 1,
-                      "immutableRunCount": 4,
-                      "partitionBufferedKeyCount": 17,
-                      "localThrottleCount": 19,
-                      "globalThrottleCount": 23,
-                      "drainScheduleCount": 31,
-                      "drainInFlightCount": 5,
-                      "drainLatencyP95Micros": 43,
                       "readLatencyP50Micros": 31,
                       "readLatencyP95Micros": 32,
                       "readLatencyP99Micros": 33,
@@ -179,20 +168,12 @@ class ConsoleBackendClientTest {
         assertEquals("orders", row.indexName());
         assertEquals("READY", row.state());
         assertTrue(row.ready());
-        assertEquals(7, row.maxNumberOfKeysInActivePartition());
-        assertEquals(2, row.maxNumberOfImmutableRunsPerPartition());
-        assertEquals(11, row.maxNumberOfKeysInPartitionBuffer());
-        assertEquals(29, row.maxNumberOfKeysInIndexBuffer());
-        assertEquals(3, row.partitionCount());
-        assertEquals(2, row.activePartitionCount());
-        assertEquals(1, row.drainingPartitionCount());
-        assertEquals(4, row.immutableRunCount());
-        assertEquals(17, row.partitionBufferedKeyCount());
-        assertEquals(19L, row.localThrottleCount());
-        assertEquals(23L, row.globalThrottleCount());
-        assertEquals(31L, row.drainScheduleCount());
-        assertEquals(5, row.drainInFlightCount());
-        assertEquals(43L, row.drainLatencyP95Micros());
+        assertEquals(7, row.segmentWriteCacheKeyLimit());
+        assertEquals(11, row.segmentWriteCacheKeyLimitDuringMaintenance());
+        assertEquals(29, row.indexBufferedWriteKeyLimit());
+        assertEquals(3, row.segmentCount());
+        assertEquals(2, row.segmentReadyCount());
+        assertEquals(1, row.segmentMaintenanceCount());
         assertEquals(37L, row.splitScheduleCount());
         assertEquals(2, row.splitInFlightCount());
         assertEquals(1, row.segmentRuntimeSnapshots().size());

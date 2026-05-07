@@ -299,7 +299,7 @@ class IndexConfigurationBuilderValidationTest {
                         .maintenanceWriteCacheKeyLimit(0)));
 
         assertEquals(
-                "Property 'maxNumberOfKeysInPartitionBuffer' must be greater than 0",
+                "Property 'segmentWriteCacheKeyLimitDuringMaintenance' must be greater than 0",
                 exception.getMessage());
     }
 
@@ -311,8 +311,8 @@ class IndexConfigurationBuilderValidationTest {
                         .maintenanceWriteCacheKeyLimit(10)));
 
         assertEquals(
-                "Property 'maxNumberOfKeysInPartitionBuffer' must be greater "
-                        + "than 'maxNumberOfKeysInActivePartition'",
+                "Property 'segmentWriteCacheKeyLimitDuringMaintenance' must be greater "
+                        + "than 'segmentWriteCacheKeyLimit'",
                 exception.getMessage());
     }
 
@@ -345,8 +345,8 @@ class IndexConfigurationBuilderValidationTest {
                         .indexBufferedWriteKeyLimit(14)));
 
         assertEquals(
-                "Property 'maxNumberOfKeysInIndexBuffer' must be greater than "
-                        + "or equal to 'maxNumberOfKeysInPartitionBuffer'",
+                "Property 'indexBufferedWriteKeyLimit' must be greater than "
+                        + "or equal to 'segmentWriteCacheKeyLimitDuringMaintenance'",
                 exception.getMessage());
     }
 
@@ -368,16 +368,6 @@ class IndexConfigurationBuilderValidationTest {
 
         assertEquals("segmentSplitKeyThreshold must be >= 1",
                 exception.getMessage());
-    }
-
-    @Test
-    void test_legacyImmutableRunLimit_setsValue() {
-        final IndexConfiguration<Integer, String> config = newBuilder()
-                .writePath(writePath -> writePath
-                        .legacyImmutableRunLimit(4))
-                .build();
-
-        assertEquals(4, config.runtimeTuning().legacyImmutableRunLimit());
     }
 
     @Test

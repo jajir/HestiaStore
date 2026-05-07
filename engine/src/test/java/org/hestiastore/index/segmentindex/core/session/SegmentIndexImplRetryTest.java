@@ -109,7 +109,7 @@ class SegmentIndexImplRetryTest {
 
     private IndexInternalConcurrent<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        return new IndexInternalConcurrent<>(
+        return IndexInternalConcurrent.createStarted(
                 new MemDirectory(), tdi, tds,
                 conf, conf.resolveRuntimeConfiguration(),
                 ExecutorRegistryFixture.from(conf));
@@ -123,7 +123,6 @@ class SegmentIndexImplRetryTest {
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(1))
-                .writePath(writePath -> writePath.legacyImmutableRunLimit(1))
                 .writePath(writePath -> writePath.maintenanceWriteCacheKeyLimit(2))
                 .writePath(writePath -> writePath.indexBufferedWriteKeyLimit(2))
                 .segment(segment -> segment.chunkKeyLimit(2))

@@ -3,9 +3,8 @@
 Use `IndexConfiguration` to define storage behavior, memory limits, type
 handling, and selected runtime features for a `SegmentIndex`.
 
-Persisted metadata and monitoring fields may still contain historical
-`partition` names for compatibility. Java configuration code uses grouped
-sections and canonical write-path names.
+Persisted metadata, runtime tuning, and monitoring fields use canonical
+write-path names.
 
 ## Start with the minimum configuration
 
@@ -45,8 +44,7 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
         .segmentWriteCacheKeyLimit(512)
         .maintenanceWriteCacheKeyLimit(8_192)
         .indexBufferedWriteKeyLimit(65_536)
-        .segmentSplitKeyThreshold(2_000)
-        .legacyImmutableRunLimit(2))
+        .segmentSplitKeyThreshold(2_000))
     .bloomFilter(bloom -> bloom
         .indexSizeBytes(1024)
         .hashFunctions(1))
@@ -130,8 +128,6 @@ become eligible for split maintenance.
   write budget.
 - `writePath(...).segmentSplitKeyThreshold()` sets the routed segment split
   eligibility threshold.
-- `writePath(...).legacyImmutableRunLimit()` stores the legacy immutable-run
-  limit retained for compatibility, runtime tuning, and metrics.
 
 ### Maintenance and busy-state waiting
 
@@ -238,7 +234,6 @@ the implementation supports runtime-safe reopening.
 | `writePath().maintenanceWriteCacheKeyLimit()` | Per-segment maintenance backlog limit | Yes |
 | `writePath().indexBufferedWriteKeyLimit()` | Index-wide buffered-write budget | No on open; use runtime tuning where supported |
 | `writePath().segmentSplitKeyThreshold()` | Routed segment split eligibility threshold | No on open |
-| `writePath(...).legacyImmutableRunLimit()` / `runtimeTuning().legacyImmutableRunLimit()` | Legacy compatibility value reserved for runtime tuning and metrics | No on open |
 | `maintenance().segmentThreads()` | Segment maintenance thread count | Yes |
 | `maintenance().indexThreads()` | Index maintenance thread count | Yes |
 | `maintenance().registryLifecycleThreads()` | Registry lifecycle thread count | Yes |
@@ -254,10 +249,7 @@ the implementation supports runtime-safe reopening.
 | `filters().decodingChunkFilterSpecs()` | Decoding filter pipeline | No |
 | `wal()` | Write-ahead log configuration | No |
 
-Persisted manifests and monitoring payloads may still use historical property
-names such as `maxNumberOfKeysInActivePartition`. Treat those names as
-compatibility serialization details; Java configuration code should use the
-grouped API above.
+Persisted manifests use the same canonical write-path names as the grouped API.
 
 ## Persisted manifest property names
 
@@ -273,14 +265,13 @@ Some names preserve older partition terminology for compatibility.
 | `indexName` | `identity().name()` |
 | `contextLoggingEnabled` | `logging().contextEnabled()` |
 | `maxNumberOfKeysInSegmentCache` | `segment().cacheKeyLimit()` |
-| `maxNumberOfKeysInActivePartition` | `writePath().segmentWriteCacheKeyLimit()` |
-| `maxNumberOfImmutableRunsPerPartition` | `writePath().legacyImmutableRunLimit()` |
-| `maxNumberOfKeysInPartitionBuffer` | `writePath().maintenanceWriteCacheKeyLimit()` |
-| `maxNumberOfKeysInIndexBuffer` | `writePath().indexBufferedWriteKeyLimit()` |
+| `segmentWriteCacheKeyLimit` | `writePath().segmentWriteCacheKeyLimit()` |
+| `segmentWriteCacheKeyLimitDuringMaintenance` | `writePath().maintenanceWriteCacheKeyLimit()` |
+| `indexBufferedWriteKeyLimit` | `writePath().indexBufferedWriteKeyLimit()` |
 | `maxNumberOfKeysInSegmentChunk` | `segment().chunkKeyLimit()` |
 | `maxNumberOfDeltaCacheFiles` | `segment().deltaCacheFileLimit()` |
 | `maxNumberOfKeysInSegment` | `segment().maxKeys()` |
-| `maxNumberOfKeysInPartitionBeforeSplit` | `writePath().segmentSplitKeyThreshold()` |
+| `segmentSplitKeyThreshold` | `writePath().segmentSplitKeyThreshold()` |
 | `maxNumberOfSegmentsInCache` | `segment().cachedSegmentLimit()` |
 | `numberOfSegmentMaintenanceThreads` | `maintenance().segmentThreads()` |
 | `numberOfIndexMaintenanceThreads` | `maintenance().indexThreads()` |
@@ -317,7 +308,7 @@ RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
         .indexBufferedWriteKeyLimit(720_000))
     .build();
 
-index.runtimeConfiguration().applyRuntimeTuning(patch);
+index.runtimeTuning().applyRuntimeTuning(patch);
 ```
 
 ## Custom data types

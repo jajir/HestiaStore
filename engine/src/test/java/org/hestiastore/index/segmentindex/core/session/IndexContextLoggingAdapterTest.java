@@ -13,13 +13,13 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchValidation;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -45,7 +45,7 @@ class IndexContextLoggingAdapterTest {
 
     @BeforeEach
     void setUp() {
-        when(delegate.runtimeConfiguration()).thenReturn(mock(RuntimeConfiguration.class));
+        when(delegate.runtimeTuning()).thenReturn(mock(RuntimeConfiguration.class));
         when(delegate.runtimeMonitoring()).thenReturn(mock(IndexRuntimeMonitoring.class));
         when(delegate.maintenance()).thenReturn(maintenance);
         adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
@@ -118,7 +118,7 @@ class IndexContextLoggingAdapterTest {
         final AtomicReference<String> mdcAtValidate = new AtomicReference<>();
         final AtomicReference<String> mdcAtApply = new AtomicReference<>();
 
-        when(delegate.runtimeConfiguration()).thenReturn(delegateRuntimeConfiguration);
+        when(delegate.runtimeTuning()).thenReturn(delegateRuntimeConfiguration);
         when(delegate.runtimeMonitoring()).thenReturn(delegateRuntime);
         when(delegate.maintenance()).thenReturn(delegateMaintenance);
         when(delegateRuntime.snapshot()).thenAnswer(invocation -> {
@@ -145,8 +145,8 @@ class IndexContextLoggingAdapterTest {
         });
         adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
 
-        final RuntimeConfiguration wrappedRuntimeConfiguration = adapter.runtimeConfiguration();
-        assertSame(wrappedRuntimeConfiguration, adapter.runtimeConfiguration());
+        final RuntimeConfiguration wrappedRuntimeConfiguration = adapter.runtimeTuning();
+        assertSame(wrappedRuntimeConfiguration, adapter.runtimeTuning());
         adapter.runtimeMonitoring().snapshot();
         wrappedRuntimeConfiguration.getCurrent();
         wrappedRuntimeConfiguration.getOriginal();

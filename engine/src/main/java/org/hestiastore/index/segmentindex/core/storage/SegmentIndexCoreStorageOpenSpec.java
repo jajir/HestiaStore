@@ -19,7 +19,7 @@ public final class SegmentIndexCoreStorageOpenSpec<K, V> {
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final IndexConfiguration<K, V> conf;
-    private final ResolvedIndexConfiguration<K, V> runtimeConfiguration;
+    private final ResolvedIndexConfiguration<K, V> resolvedConfiguration;
     private final ExecutorRegistry executorRegistry;
 
     public SegmentIndexCoreStorageOpenSpec(
@@ -27,7 +27,7 @@ public final class SegmentIndexCoreStorageOpenSpec<K, V> {
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final ResolvedIndexConfiguration<K, V> resolvedConfiguration,
             final ExecutorRegistry executorRegistry) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -36,8 +36,8 @@ public final class SegmentIndexCoreStorageOpenSpec<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration,
-                "runtimeConfiguration");
+        this.resolvedConfiguration = Vldtn.requireNonNull(resolvedConfiguration,
+                "resolvedConfiguration");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
     }
@@ -58,8 +58,8 @@ public final class SegmentIndexCoreStorageOpenSpec<K, V> {
         return conf;
     }
 
-    public ResolvedIndexConfiguration<K, V> runtimeConfiguration() {
-        return runtimeConfiguration;
+    public ResolvedIndexConfiguration<K, V> resolvedConfiguration() {
+        return resolvedConfiguration;
     }
 
     public ExecutorRegistry executorRegistry() {

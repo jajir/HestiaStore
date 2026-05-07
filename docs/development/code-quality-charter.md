@@ -46,6 +46,20 @@ This charter applies to both human-written changes and agent-assisted changes.
 - Introduce narrow interfaces when a dependency must be substituted in tests or
   split into smaller responsibilities.
 
+### Static Factory Method Names
+
+Use static factory method names to describe how the instance is obtained.
+
+- Use `of(...)` when the object is assembled directly from simple values and no
+  conversion or lifecycle behavior is involved.
+- Use `fromXxx(...)` when the object is converted from another representation,
+  such as a DTO, serialized form, configuration view, snapshot, or external
+  type.
+- Use `createXxx(...)` when the factory performs non-trivial assembly, when no
+  better domain-specific name exists, or when the method should make an
+  important lifecycle or state distinction explicit, for example
+  `createStarted(...)` or `createOpening(...)`.
+
 ### Stateful and Concurrent Code
 
 - Keep state transitions explicit and named.

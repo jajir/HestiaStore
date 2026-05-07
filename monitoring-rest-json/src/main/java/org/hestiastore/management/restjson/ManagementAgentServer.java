@@ -35,15 +35,14 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.monitoring.MonitoredIndexProvider;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.ConfigurationSnapshot;
-import org.hestiastore.index.segmentindex.LegacyPartitionCompatibilityMetrics;
+import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimePatchValidation;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.monitoring.json.api.ActionRequest;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
@@ -89,16 +88,14 @@ public final class ManagementAgentServer
                     "maxNumberOfSegmentsInCache",
                     RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                     "maxNumberOfKeysInSegmentCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION,
-                    "maxNumberOfKeysInActivePartition",
-                    RuntimeSettingKey.MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION,
-                    "maxNumberOfImmutableRunsPerPartition",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER,
-                    "maxNumberOfKeysInPartitionBuffer",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER,
-                    "maxNumberOfKeysInIndexBuffer",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_PARTITION_BEFORE_SPLIT,
-                    "maxNumberOfKeysInPartitionBeforeSplit");
+                    RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
+                    "segmentWriteCacheKeyLimit",
+                    RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
+                    "segmentWriteCacheKeyLimitDuringMaintenance",
+                    RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
+                    "indexBufferedWriteKeyLimit",
+                    RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
+                    "segmentSplitKeyThreshold");
     private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = buildRuntimeKeyByApiName();
     private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_KEY
             .values().stream().sorted().toList();
@@ -592,7 +589,7 @@ public final class ManagementAgentServer
             final String endpoint, final String body,
             final ConfigPatchRequest request, final RegisteredIndex target,
             final RuntimeConfigPatch runtimePatch) throws IOException {
-        final RuntimePatchResult result = target.index().runtimeConfiguration()
+        final RuntimePatchResult result = target.index().runtimeTuning()
                 .apply(runtimePatch);
         if (!result.validation().valid()) {
             final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
@@ -847,8 +844,6 @@ public final class ManagementAgentServer
         final SegmentIndexMetricsSnapshot snapshot = monitored
                 .metricsSnapshot();
         final SegmentIndexState state = monitored.state();
-        final LegacyPartitionCompatibilityMetrics legacyMetrics = snapshot
-                .getLegacyPartitionCompatibilityMetrics();
         return new IndexReportResponse(monitored.indexName(), state.name(),
                 state == SegmentIndexState.READY,
                 snapshot.getGetOperationCount(),
@@ -861,10 +856,9 @@ public final class ManagementAgentServer
                 snapshot.getRegistryCacheSize(),
                 snapshot.getRegistryCacheLimit(),
                 snapshot.getSegmentCacheKeyLimitPerSegment(),
-                legacyMetrics.getMaxNumberOfKeysInActivePartition(),
-                legacyMetrics.getMaxNumberOfImmutableRunsPerPartition(),
-                legacyMetrics.getMaxNumberOfKeysInPartitionBuffer(),
-                legacyMetrics.getMaxNumberOfKeysInIndexBuffer(),
+                snapshot.getSegmentWriteCacheKeyLimit(),
+                snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance(),
+                snapshot.getIndexBufferedWriteKeyLimit(),
                 snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
                 snapshot.getSegmentMaintenanceCount(),
                 snapshot.getSegmentErrorCount(),
@@ -880,16 +874,6 @@ public final class ManagementAgentServer
                 snapshot.getMaintenanceQueueSize(),
                 snapshot.getMaintenanceQueueCapacity(),
                 snapshot.getSplitQueueSize(), snapshot.getSplitQueueCapacity(),
-                legacyMetrics.getPartitionCount(),
-                legacyMetrics.getActivePartitionCount(),
-                legacyMetrics.getDrainingPartitionCount(),
-                legacyMetrics.getImmutableRunCount(),
-                legacyMetrics.getPartitionBufferedKeyCount(),
-                legacyMetrics.getLocalThrottleCount(),
-                legacyMetrics.getGlobalThrottleCount(),
-                legacyMetrics.getDrainScheduleCount(),
-                legacyMetrics.getDrainInFlightCount(),
-                legacyMetrics.getDrainLatencyP95Micros(),
                 snapshot.getReadLatencyP50Micros(),
                 snapshot.getReadLatencyP95Micros(),
                 snapshot.getReadLatencyP99Micros(),
@@ -933,9 +917,9 @@ public final class ManagementAgentServer
     private ConfigViewResponse toConfigViewResponse(
             final RegisteredIndex monitored) {
         final ConfigurationSnapshot currentConfig = monitored.index()
-                .runtimeConfiguration().getCurrent();
+                .runtimeTuning().getCurrent();
         final ConfigurationSnapshot originalConfig = monitored.index()
-                .runtimeConfiguration().getOriginal();
+                .runtimeTuning().getOriginal();
         return new ConfigViewResponse(monitored.indexName(),
                 toApiConfigMap(originalConfig.values()),
                 toApiConfigMap(currentConfig.values()),

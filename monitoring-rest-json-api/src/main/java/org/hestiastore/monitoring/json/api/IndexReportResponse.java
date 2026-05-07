@@ -13,10 +13,9 @@ public record IndexReportResponse(String indexName, String state,
         long registryCacheMissCount, long registryCacheLoadCount,
         long registryCacheEvictionCount, int registryCacheSize,
         int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
-        int maxNumberOfKeysInActivePartition,
-        int maxNumberOfImmutableRunsPerPartition,
-        int maxNumberOfKeysInPartitionBuffer,
-        int maxNumberOfKeysInIndexBuffer,
+        int segmentWriteCacheKeyLimit,
+        int segmentWriteCacheKeyLimitDuringMaintenance,
+        int indexBufferedWriteKeyLimit,
         int segmentCount, int segmentReadyCount,
         int segmentMaintenanceCount, int segmentErrorCount,
         int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
@@ -24,12 +23,7 @@ public record IndexReportResponse(String indexName, String state,
         long totalDeltaCacheFiles, long compactRequestCount,
         long flushRequestCount, long splitScheduleCount, int splitInFlightCount,
         int maintenanceQueueSize, int maintenanceQueueCapacity,
-        int splitQueueSize, int splitQueueCapacity, int partitionCount,
-        int activePartitionCount, int drainingPartitionCount,
-        int immutableRunCount, int partitionBufferedKeyCount,
-        long localThrottleCount, long globalThrottleCount,
-        long drainScheduleCount, int drainInFlightCount,
-        long drainLatencyP95Micros,
+        int splitQueueSize, int splitQueueCapacity,
         long readLatencyP50Micros, long readLatencyP95Micros,
         long readLatencyP99Micros, long writeLatencyP50Micros,
         long writeLatencyP95Micros, long writeLatencyP99Micros,
@@ -58,14 +52,12 @@ public record IndexReportResponse(String indexName, String state,
         requireNotNegative(registryCacheLimit, "registryCacheLimit");
         requireNotNegative(segmentCacheKeyLimitPerSegment,
                 "segmentCacheKeyLimitPerSegment");
-        requireNotNegative(maxNumberOfKeysInActivePartition,
-                "maxNumberOfKeysInActivePartition");
-        requireNotNegative(maxNumberOfImmutableRunsPerPartition,
-                "maxNumberOfImmutableRunsPerPartition");
-        requireNotNegative(maxNumberOfKeysInPartitionBuffer,
-                "maxNumberOfKeysInPartitionBuffer");
-        requireNotNegative(maxNumberOfKeysInIndexBuffer,
-                "maxNumberOfKeysInIndexBuffer");
+        requireNotNegative(segmentWriteCacheKeyLimit,
+                "segmentWriteCacheKeyLimit");
+        requireNotNegative(segmentWriteCacheKeyLimitDuringMaintenance,
+                "segmentWriteCacheKeyLimitDuringMaintenance");
+        requireNotNegative(indexBufferedWriteKeyLimit,
+                "indexBufferedWriteKeyLimit");
         requireNotNegative(segmentCount, "segmentCount");
         requireNotNegative(segmentReadyCount, "segmentReadyCount");
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
@@ -85,18 +77,6 @@ public record IndexReportResponse(String indexName, String state,
                 "maintenanceQueueCapacity");
         requireNotNegative(splitQueueSize, "splitQueueSize");
         requireNotNegative(splitQueueCapacity, "splitQueueCapacity");
-        requireNotNegative(partitionCount, "partitionCount");
-        requireNotNegative(activePartitionCount, "activePartitionCount");
-        requireNotNegative(drainingPartitionCount,
-                "drainingPartitionCount");
-        requireNotNegative(immutableRunCount, "immutableRunCount");
-        requireNotNegative(partitionBufferedKeyCount,
-                "partitionBufferedKeyCount");
-        requireNotNegative(localThrottleCount, "localThrottleCount");
-        requireNotNegative(globalThrottleCount, "globalThrottleCount");
-        requireNotNegative(drainScheduleCount, "drainScheduleCount");
-        requireNotNegative(drainInFlightCount, "drainInFlightCount");
-        requireNotNegative(drainLatencyP95Micros, "drainLatencyP95Micros");
         requireNotNegative(readLatencyP50Micros, "readLatencyP50Micros");
         requireNotNegative(readLatencyP95Micros, "readLatencyP95Micros");
         requireNotNegative(readLatencyP99Micros, "readLatencyP99Micros");
@@ -120,66 +100,6 @@ public record IndexReportResponse(String indexName, String state,
         segmentRuntimeSnapshots = List.copyOf(
                 Objects.requireNonNull(segmentRuntimeSnapshots,
                         "segmentRuntimeSnapshots"));
-    }
-
-    /**
-     * Backward-compatible constructor without per-segment section.
-     */
-    public IndexReportResponse(final String indexName, final String state,
-            final boolean ready, final long getOperationCount,
-            final long putOperationCount, final long deleteOperationCount,
-            final long registryCacheHitCount, final long registryCacheMissCount,
-            final long registryCacheLoadCount,
-            final long registryCacheEvictionCount, final int registryCacheSize,
-            final int registryCacheLimit,
-            final int segmentCacheKeyLimitPerSegment,
-            final int maxNumberOfKeysInActivePartition,
-            final int maxNumberOfImmutableRunsPerPartition,
-            final int maxNumberOfKeysInPartitionBuffer,
-            final int maxNumberOfKeysInIndexBuffer,
-            final int segmentCount, final int segmentReadyCount,
-            final int segmentMaintenanceCount, final int segmentErrorCount,
-            final int segmentClosedCount, final int segmentBusyCount,
-            final long totalSegmentKeys, final long totalSegmentCacheKeys,
-            final long totalBufferedWriteKeys, final long totalDeltaCacheFiles,
-            final long compactRequestCount, final long flushRequestCount,
-            final long splitScheduleCount, final int splitInFlightCount,
-            final int maintenanceQueueSize, final int maintenanceQueueCapacity,
-            final int splitQueueSize, final int splitQueueCapacity,
-            final long readLatencyP50Micros, final long readLatencyP95Micros,
-            final long readLatencyP99Micros, final long writeLatencyP50Micros,
-            final long writeLatencyP95Micros, final long writeLatencyP99Micros,
-            final int bloomFilterHashFunctions,
-            final int bloomFilterIndexSizeInBytes,
-            final double bloomFilterProbabilityOfFalsePositive,
-            final long bloomFilterRequestCount,
-            final long bloomFilterRefusedCount,
-            final long bloomFilterPositiveCount,
-            final long bloomFilterFalsePositiveCount) {
-        this(indexName, state, ready, getOperationCount, putOperationCount,
-                deleteOperationCount, registryCacheHitCount,
-                registryCacheMissCount, registryCacheLoadCount,
-                registryCacheEvictionCount, registryCacheSize,
-                registryCacheLimit, segmentCacheKeyLimitPerSegment,
-                maxNumberOfKeysInActivePartition,
-                maxNumberOfImmutableRunsPerPartition,
-                maxNumberOfKeysInPartitionBuffer,
-                maxNumberOfKeysInIndexBuffer,
-                segmentCount, segmentReadyCount, segmentMaintenanceCount,
-                segmentErrorCount, segmentClosedCount, segmentBusyCount,
-                totalSegmentKeys, totalSegmentCacheKeys, totalBufferedWriteKeys,
-                totalDeltaCacheFiles, compactRequestCount, flushRequestCount,
-                splitScheduleCount, splitInFlightCount, maintenanceQueueSize,
-                maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
-                0, 0, 0, 0, 0, 0L, 0L, 0L, 0,
-                0L,
-                readLatencyP50Micros, readLatencyP95Micros, readLatencyP99Micros,
-                writeLatencyP50Micros, writeLatencyP95Micros,
-                writeLatencyP99Micros, bloomFilterHashFunctions,
-                bloomFilterIndexSizeInBytes,
-                bloomFilterProbabilityOfFalsePositive, bloomFilterRequestCount,
-                bloomFilterRefusedCount, bloomFilterPositiveCount,
-                bloomFilterFalsePositiveCount, List.of());
     }
 
     private static String normalize(final String value, final String name) {

@@ -32,8 +32,12 @@ class RuntimeMetricsCollectorImplTest {
 
     private static SegmentIndexMetricsSnapshot emptySnapshot() {
         return new SegmentIndexMetricsSnapshot(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0,
-                0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L,
-                0L, List.of(), SegmentIndexState.READY);
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0, 0, 0, 0, 0, 0, 0L, 0L, 0, 0L, 0L, 0, 0, 0, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L, 0L, 0, 0, 0D, 0L, 0L, 0L, 0L, false,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L, 0L, 0L,
+                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                List.<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot>of(),
+                SegmentIndexState.READY);
     }
 }

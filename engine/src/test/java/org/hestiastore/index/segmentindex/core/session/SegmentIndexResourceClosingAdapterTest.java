@@ -12,7 +12,7 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +67,7 @@ class SegmentIndexResourceClosingAdapterTest {
         }
 
         @Override
-        public RuntimeConfiguration runtimeConfiguration() {
+        public RuntimeConfiguration runtimeTuning() {
             return mock(RuntimeConfiguration.class);
         }
 

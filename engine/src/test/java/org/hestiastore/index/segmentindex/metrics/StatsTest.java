@@ -80,7 +80,6 @@ class StatsTest {
         stats.recordCompactBusyRetry();
         stats.recordReadLatencyNanos(2_000L);
         stats.recordWriteLatencyNanos(3_000L);
-        stats.recordDrainLatencyNanos(4_000L);
         stats.recordSplitTaskStartDelayNanos(6_000L);
         stats.recordSplitTaskRunLatencyNanos(7_000L);
         stats.recordDrainTaskStartDelayNanos(8_000L);
@@ -92,7 +91,6 @@ class StatsTest {
         assertEquals(1L, stats.getCompactBusyRetryCount());
         assertTrue(stats.getReadLatencyP50Micros() >= 2L);
         assertTrue(stats.getWriteLatencyP95Micros() >= 3L);
-        assertTrue(stats.getDrainLatencyP95Micros() >= 4L);
         assertTrue(stats.getSplitTaskStartDelayP95Micros() >= 6L);
         assertTrue(stats.getSplitTaskRunLatencyP95Micros() >= 7L);
         assertTrue(stats.getDrainTaskStartDelayP95Micros() >= 8L);

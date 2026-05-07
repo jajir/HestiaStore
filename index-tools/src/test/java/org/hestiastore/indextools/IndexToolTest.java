@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -285,40 +284,6 @@ class IndexToolTest {
         assertEquals("bundle", verify.get("format"));
     }
 
-    @Test
-    void compatibilityBundleFixtureVerifiesAndImports() throws Exception {
-        final Path fixture = fixturePath("/compatibility/v1/bundle-export");
-        final Path importedIndex = tempDir.resolve("bundle-fixture-imported");
-
-        assertSuccess(run("verify-export", "--input", fixture.toString()));
-        assertSuccess(run("import", "--input", fixture.toString(),
-                "--target-index", importedIndex.toString(),
-                "--verify-after-import"));
-
-        try (SegmentIndex<Integer, String> index = SegmentIndex.open(
-                new FsNioDirectory(importedIndex.toFile()))) {
-            assertEquals("one", index.get(1));
-            assertEquals("two", index.get(2));
-        }
-    }
-
-    @Test
-    void compatibilityJsonlFixtureVerifiesAndImports() throws Exception {
-        final Path fixture = fixturePath("/compatibility/v1/jsonl-export");
-        final Path importedIndex = tempDir.resolve("jsonl-fixture-imported");
-
-        assertSuccess(run("verify-export", "--input", fixture.toString()));
-        assertSuccess(run("import", "--input", fixture.toString(),
-                "--target-index", importedIndex.toString(),
-                "--verify-after-import"));
-
-        try (SegmentIndex<Integer, String> index = SegmentIndex.open(
-                new FsNioDirectory(importedIndex.toFile()))) {
-            assertEquals("one", index.get(1));
-            assertEquals("two", index.get(2));
-        }
-    }
-
     private void createStringIndex(final Path indexPath,
             final List<Entry<Integer, String>> entries) {
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration
@@ -347,16 +312,6 @@ class IndexToolTest {
             index.maintenance().flushAndWait();
             index.maintenance().compactAndWait();
         }
-    }
-
-    private Path fixturePath(final String resourcePath)
-            throws URISyntaxException {
-        final java.net.URL resource = IndexToolTest.class
-                .getResource(resourcePath);
-        if (resource == null) {
-            fail("Missing fixture resource: " + resourcePath);
-        }
-        return Path.of(resource.toURI());
     }
 
     private CommandResult run(final String... args) {

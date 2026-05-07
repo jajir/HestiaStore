@@ -6,7 +6,7 @@ import java.util.Base64;
 import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.config.DataTypeDescriptorRegistry;
+import org.hestiastore.index.segmentindex.configuration.types.DataTypeDescriptorRegistry;
 
 final class DescriptorSupport {
 

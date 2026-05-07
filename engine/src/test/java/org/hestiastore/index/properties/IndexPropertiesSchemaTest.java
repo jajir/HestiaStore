@@ -37,7 +37,7 @@ class IndexPropertiesSchemaTest {
         IndexPropertiesSchema.SEGMENT_SCHEMA.ensure(store);
 
         final PropertyView view = store.snapshot();
-        assertEquals(IndexPropertiesSchema.CURRENT_SCHEMA_VERSION,
+        assertEquals(IndexPropertiesSchema.CURRENT_SEGMENT_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
         assertEquals(0L, view.getLong(
                 IndexPropertiesSchema.SegmentKeys.NUMBER_OF_KEYS_IN_DELTA_CACHE));
@@ -84,28 +84,26 @@ class IndexPropertiesSchemaTest {
         IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
 
         final PropertyView view = store.snapshot();
-        assertEquals(IndexPropertiesSchema.CURRENT_SCHEMA_VERSION,
+        assertEquals(
+                IndexPropertiesSchema.CURRENT_INDEX_CONFIGURATION_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
         assertEquals(
                 IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
-        final int expectedActivePartition = IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT
+        final int expectedSegmentWriteCacheKeyLimit = IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT
                 / 2;
-        final int expectedPartitionBuffer = Math.max(
-                expectedActivePartition * 2, expectedActivePartition + 1);
-        assertEquals(expectedActivePartition, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_ACTIVE_PARTITION));
-        assertEquals(
-                IndexConfigurationContract.DEFAULT_LEGACY_IMMUTABLE_RUN_LIMIT,
-                view.getInt(
-                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_IMMUTABLE_RUNS_PER_PARTITION));
-        assertEquals(expectedPartitionBuffer, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_PARTITION_BUFFER));
-        assertEquals(expectedPartitionBuffer
+        final int expectedMaintenanceLimit = Math.max(
+                expectedSegmentWriteCacheKeyLimit * 2,
+                expectedSegmentWriteCacheKeyLimit + 1);
+        assertEquals(expectedSegmentWriteCacheKeyLimit, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT));
+        assertEquals(expectedMaintenanceLimit, view.getInt(
+                IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
+        assertEquals(expectedMaintenanceLimit
                 * IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT,
                 view.getInt(
-                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_INDEX_BUFFER));
+                        IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT));
         assertEquals(IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
@@ -137,7 +135,7 @@ class IndexPropertiesSchemaTest {
     }
 
     @Test
-    void indexConfigurationSchemaMigratesLegacyMaintenanceKeysIntoNewNames() {
+    void indexConfigurationSchemaRejectsLegacyMaintenanceKeys() {
         final PropertyStore store = PropertyStoreImpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -163,17 +161,16 @@ class IndexPropertiesSchemaTest {
             writer.setString("segmentIndexMaintenanceThreads", "6");
         }
 
-        IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
-
-        final PropertyView view = store.snapshot();
-        assertEquals(6, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS));
-        assertEquals("false", view.getString(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA
+                        .ensure(store));
+        assertTrue(error.getMessage().contains(
+                "Unsupported legacy properties for 'index-configuration'"));
     }
 
     @Test
-    void indexConfigurationSchemaMigratesPreviousPublicSegmentMaintenanceKey() {
+    void indexConfigurationSchemaRejectsSchemaVersionOne() {
         final PropertyStore store = PropertyStoreImpl.fromDirectory(
                 asyncDirectory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -194,14 +191,15 @@ class IndexPropertiesSchemaTest {
                     "test-value-descriptor");
             writer.setString(
                     IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
-                    "previous-public-maintenance-schema-test");
-            writer.setString("numberOfStableSegmentMaintenanceThreads", "6");
+                    "schema-version-one-test");
+            writer.setInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY, 1);
         }
 
-        IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA.ensure(store);
-
-        final PropertyView view = store.snapshot();
-        assertEquals(6, view.getInt(
-                IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS));
+        final IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> IndexPropertiesSchema.INDEX_CONFIGURATION_SCHEMA
+                        .ensure(store));
+        assertTrue(error.getMessage().contains(
+                "Unsupported schema version 1 for 'index-configuration'; expected 2"));
     }
 }

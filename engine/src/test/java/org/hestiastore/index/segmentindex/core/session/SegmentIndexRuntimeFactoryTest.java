@@ -73,7 +73,7 @@ class SegmentIndexRuntimeFactoryTest {
                 SegmentIndexRuntimeTestAccess.runtimeTuningState(runtime));
         assertNotNull(SegmentIndexRuntimeTestAccess.walCoordinator(runtime));
         assertNotNull(SegmentIndexRuntimeTestAccess.operationAccess(runtime));
-        assertNotNull(SegmentIndexRuntimeTestAccess.runtimeConfiguration(runtime));
+        assertNotNull(SegmentIndexRuntimeTestAccess.runtimeTuning(runtime));
     }
 
     @Test

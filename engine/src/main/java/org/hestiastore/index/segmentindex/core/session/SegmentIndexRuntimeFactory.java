@@ -5,8 +5,8 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.core.control.RuntimeConfigurationImpl;
-import org.hestiastore.index.segmentindex.core.control.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningServiceImpl;
+import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
@@ -25,7 +25,7 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -267,7 +267,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                 new IndexRuntimeMonitoringImpl(openContext.conf,
                         openContext.stateSupplier, metricsSnapshotSupplier);
         final RuntimeConfiguration runtimeConfiguration =
-                new RuntimeConfigurationImpl(coreStorage.runtimeTuningState(),
+                new RuntimeTuningServiceImpl(coreStorage.runtimeTuningState(),
                         runtimeLimitApplier::apply,
                         topologyRuntime::requestFullSplitScan);
         return new SegmentIndexRuntimeServices<>(walCoordinator,

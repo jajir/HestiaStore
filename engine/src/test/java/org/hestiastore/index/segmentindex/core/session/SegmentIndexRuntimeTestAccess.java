@@ -8,9 +8,9 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.runtimeconfiguration.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.core.control.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
@@ -94,9 +94,9 @@ public final class SegmentIndexRuntimeTestAccess {
         return runtime.metricsSnapshotSupplier();
     }
 
-    public static <K, V> RuntimeConfiguration runtimeConfiguration(
+    public static <K, V> RuntimeConfiguration runtimeTuning(
             final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.runtimeConfiguration();
+        return runtime.runtimeTuning();
     }
 
     public static <K, V> void closeRuntime(final SegmentIndexRuntime<K, V> runtime,

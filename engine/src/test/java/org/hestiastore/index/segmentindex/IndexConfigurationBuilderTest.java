@@ -159,7 +159,7 @@ class IndexConfigurationBuilderTest {
                 IllegalArgumentException.class, builder::build);
 
         assertEquals(
-                "Property 'maxNumberOfKeysInPartitionBuffer' must be greater than 'maxNumberOfKeysInActivePartition'",
+                "Property 'segmentWriteCacheKeyLimitDuringMaintenance' must be greater than 'segmentWriteCacheKeyLimit'",
                 ex.getMessage());
     }
 }

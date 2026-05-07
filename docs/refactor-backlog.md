@@ -66,12 +66,10 @@
       direct-to-segment write-path vocabulary via `IndexWritePathConfiguration`
       instead of making legacy partition naming the source of truth.
     - End-game achieved: canonical runtime metrics now expose a dedicated
-      `SegmentIndexWritePathMetrics` model while legacy
-      `partition`/`drain`-named metrics are isolated behind a compatibility
-      view.
-    - End-game achieved: legacy accessors remain available only as deprecated
-      compatibility shims and the REST/JSON bridge reads them from the
-      compatibility boundary instead of the main runtime model.
+      `SegmentIndexWritePathMetrics` model.
+    - End-game achieved: legacy runtime configuration and partition/drain
+      compatibility surfaces were removed from the SegmentIndex API and
+      monitoring payloads.
 
 [x] 82 Collapse split scheduling into a dedicated planner package (Risk: HIGH)
     - End-game achieved: `org.hestiastore.index.segmentindex.core.splitplanner`

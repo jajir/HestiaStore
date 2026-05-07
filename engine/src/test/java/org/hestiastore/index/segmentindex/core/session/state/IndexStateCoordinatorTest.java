@@ -29,7 +29,7 @@ class IndexStateCoordinatorTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = new IndexInternalConcurrent<>(new MemDirectory(), tdi, tds,
+        index = IndexInternalConcurrent.createStarted(new MemDirectory(), tdi, tds,
                 conf, conf.resolveRuntimeConfiguration(),
                 ExecutorRegistryFixture.from(conf));
     }

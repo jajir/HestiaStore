@@ -2,10 +2,12 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,7 +37,7 @@ class IndexInternalConcurrentTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = new IndexInternalConcurrent<>(
+        index = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(),
                 conf, conf.resolveRuntimeConfiguration(),
@@ -47,6 +49,16 @@ class IndexInternalConcurrentTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
+    }
+
+    @Test
+    void exposesOnlyDelegateConstructor() {
+        final Constructor<?>[] constructors =
+                IndexInternalConcurrent.class.getConstructors();
+
+        assertEquals(1, constructors.length);
+        assertArrayEquals(new Class<?>[] { SegmentIndexImpl.class },
+                constructors[0].getParameterTypes());
     }
 
     @Test
