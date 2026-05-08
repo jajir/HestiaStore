@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -50,7 +50,6 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
                 .withKeyTypeDescriptor(openSpec.keyTypeDescriptor())
                 .withValueTypeDescriptor(openSpec.valueTypeDescriptor())
                 .withConfiguration(openSpec.conf())
-                .withRuntimeConfiguration(openSpec.resolvedConfiguration())
                 .withSegmentMaintenanceExecutor(
                         openSpec.executorRegistry()
                                 .getStableSegmentMaintenanceExecutor())
@@ -60,7 +59,7 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
     }
 
     private IndexRetryPolicy newRetryPolicy(
-            final IndexConfiguration<K, V> conf) {
+            final EffectiveIndexConfiguration<K, V> conf) {
         return new IndexRetryPolicy(conf.maintenance().busyBackoffMillis(),
                 conf.maintenance().busyTimeoutMillis());
     }

@@ -37,7 +37,7 @@ class IntegrationIteratorTest extends AbstractSegmentIndexTest {
                 .identity(identity -> identity.valueTypeDescriptor(tdi)) //
                 .segment(segment -> segment.cacheKeyLimit(100)) //
                 .segment(segment -> segment.maxKeys(4)) //
-                .segment(segment -> segment.chunkKeyLimit(1000)) //
+                .segment(segment -> segment.chunkKeyLimit(4)) //
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(1000)) //
                 .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4)) //
                 // Keep iterator CRUD tests focused on direct write semantics,

@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 
@@ -26,10 +26,10 @@ final class SegmentIndexFacades<K, V> {
     }
 
     static <K, V> SegmentIndexFacades<K, V> create(
-            final IndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
             final SegmentIndexDataAccess<K, V> dataAccess) {
-        final IndexConfiguration<K, V> validatedConfiguration = Vldtn
+        final EffectiveIndexConfiguration<K, V> validatedConfiguration = Vldtn
                 .requireNonNull(conf, "conf");
         final SegmentIndexTrackedOperationRunner<K, V> validatedTrackedRunner =
                 Vldtn.requireNonNull(trackedRunner, "trackedRunner");

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
@@ -46,7 +48,7 @@ class SegmentIndexFacadesTest {
         when(dataAccess.get(1)).thenReturn("one");
 
         final SegmentIndexFacades<Integer, String> composition =
-                SegmentIndexFacades.create(conf, trackedRunner,
+                SegmentIndexFacades.create(effective(conf), trackedRunner,
                         dataAccess);
 
         assertEquals("one", composition.pointOperationFacade().get(1));
@@ -57,7 +59,7 @@ class SegmentIndexFacadesTest {
     @Test
     void assembleBuildsReadFacade() {
         final SegmentIndexFacades<Integer, String> composition =
-                SegmentIndexFacades.create(conf, trackedRunner,
+                SegmentIndexFacades.create(effective(conf), trackedRunner,
                         dataAccess);
 
         assertNotNull(composition.readFacade());

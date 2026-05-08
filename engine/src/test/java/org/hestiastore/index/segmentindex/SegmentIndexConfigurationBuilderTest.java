@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -21,6 +23,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorLong;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexConfigurationBuilderTest {
@@ -201,11 +205,11 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.addEncodingFilter(filter)).build();
         assertEquals(1,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().size());
+                effective(config)
+                        .filters().encodingChunkFilters().size());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(0).getClass());
         assertEquals(List.of(ChunkFilterSpecs.doNothing()),
                 config.filters().encodingChunkFilterSpecs());
     }
@@ -217,11 +221,11 @@ class SegmentIndexConfigurationBuilderTest {
                         .addEncodingFilter(ChunkFilterCrc32Writing.class))
                 .build();
         assertEquals(1,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().size());
+                effective(config)
+                        .filters().encodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -234,14 +238,14 @@ class SegmentIndexConfigurationBuilderTest {
                                         ChunkFilterMagicNumberWriting.class)))
                 .build();
         assertEquals(2,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().size());
+                effective(config)
+                        .filters().encodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(1).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(1).getClass());
     }
 
     @Test
@@ -253,14 +257,14 @@ class SegmentIndexConfigurationBuilderTest {
                         List.of(first, second)))
                 .build();
         assertEquals(2,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().size());
+                effective(config)
+                        .filters().encodingChunkFilters().size());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(1).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(1).getClass());
         assertEquals(
                 List.of(ChunkFilterSpecs.doNothing(),
                         ChunkFilterSpecs.doNothing()),
@@ -288,11 +292,11 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.addDecodingFilter(filter)).build();
         assertEquals(1,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().size());
+                effective(config)
+                        .filters().decodingChunkFilters().size());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().decodingChunkFilters().get(0).getClass());
         assertEquals(List.of(ChunkFilterSpecs.doNothing()),
                 config.filters().decodingChunkFilterSpecs());
     }
@@ -304,11 +308,11 @@ class SegmentIndexConfigurationBuilderTest {
                         .addDecodingFilter(ChunkFilterCrc32Writing.class))
                 .build();
         assertEquals(1,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().size());
+                effective(config)
+                        .filters().decodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().decodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -321,14 +325,14 @@ class SegmentIndexConfigurationBuilderTest {
                                         ChunkFilterMagicNumberWriting.class)))
                 .build();
         assertEquals(2,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().size());
+                effective(config)
+                        .filters().decodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().decodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(1).getClass());
+                effective(config)
+                        .filters().decodingChunkFilters().get(1).getClass());
     }
 
     @Test
@@ -340,14 +344,14 @@ class SegmentIndexConfigurationBuilderTest {
                         List.of(first, second)))
                 .build();
         assertEquals(2,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().size());
+                effective(config)
+                        .filters().decodingChunkFilters().size());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().decodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(1).getClass());
+                effective(config)
+                        .filters().decodingChunkFilters().get(1).getClass());
         assertEquals(
                 List.of(ChunkFilterSpecs.doNothing(),
                         ChunkFilterSpecs.doNothing()),
@@ -377,8 +381,7 @@ class SegmentIndexConfigurationBuilderTest {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.addEncodingFilter(spec))
                 .build();
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = config
-                .resolveRuntimeConfiguration(ChunkFilterProviderResolverImpl
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(config, ChunkFilterProviderResolverImpl
                         .builder().withDefaultProviders()
                         .withProvider(new ChunkFilterProvider() {
                             @Override
@@ -403,9 +406,9 @@ class SegmentIndexConfigurationBuilderTest {
                         .build());
 
         final TrackingChunkFilter first = (TrackingChunkFilter) runtimeConfiguration
-                .getEncodingChunkFilters().get(0);
+                .filters().encodingChunkFilters().get(0);
         final TrackingChunkFilter second = (TrackingChunkFilter) runtimeConfiguration
-                .getEncodingChunkFilters().get(0);
+                .filters().encodingChunkFilters().get(0);
 
         assertEquals(List.of(spec),
                 config.filters().encodingChunkFilterSpecs());
@@ -428,8 +431,8 @@ class SegmentIndexConfigurationBuilderTest {
         assertEquals(List.of(registration.getSpec()),
                 config.filters().encodingChunkFilterSpecs());
         assertEquals(ChunkFilterDoNothing.class,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(0).getClass());
+                effective(config)
+                        .filters().encodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -441,8 +444,8 @@ class SegmentIndexConfigurationBuilderTest {
 
         final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters());
+                () -> effective(config)
+                        .filters().encodingChunkFilters());
 
         assertEquals(String.format("Unable to instantiate chunk filter class '%s'",
                 NoDefaultConstructorFilter.class.getName()),
@@ -450,7 +453,12 @@ class SegmentIndexConfigurationBuilderTest {
     }
 
     private IndexConfigurationBuilder<Integer, String> newBuilder() {
-        return IndexConfiguration.<Integer, String>builder();
+        return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("segment-index-configuration-builder-test"));
     }
 
     private static class NoOpFilter implements ChunkFilter {

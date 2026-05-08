@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.tuning;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,7 +23,7 @@ class RuntimeTuningPatchValidatorTest {
     @BeforeEach
     void setUp() {
         validator = new RuntimeTuningPatchValidator(
-                RuntimeTuningState.fromConfiguration(buildConf()));
+                RuntimeTuningState.fromConfiguration(effective(buildConf())));
     }
 
     @Test

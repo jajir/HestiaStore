@@ -10,9 +10,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
  * Builder for {@link SegmentRegistry} instances.
@@ -28,8 +26,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private Directory directoryFacade;
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
-    private IndexConfiguration<K, V> conf;
-    private ResolvedIndexConfiguration<K, V> runtimeConfiguration;
+    private EffectiveIndexConfiguration<K, V> conf;
     private ExecutorService segmentMaintenanceExecutor;
     private ExecutorService registryMaintenanceExecutor;
     private SegmentIdAllocator segmentIdAllocator;
@@ -83,22 +80,8 @@ public final class SegmentRegistryBuilder<K, V> {
      * @return this builder
      */
     public SegmentRegistryBuilder<K, V> withConfiguration(
-            final IndexConfiguration<K, V> conf) {
+            final EffectiveIndexConfiguration<K, V> conf) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        return this;
-    }
-
-    /**
-     * Sets the resolved runtime configuration used to materialize fresh chunk
-     * filter pipelines for loaded segments.
-     *
-     * @param runtimeConfiguration resolved runtime configuration
-     * @return this builder
-     */
-    public SegmentRegistryBuilder<K, V> withRuntimeConfiguration(
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration) {
-        this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration,
-                "runtimeConfiguration");
         return this;
     }
 
@@ -155,33 +138,27 @@ public final class SegmentRegistryBuilder<K, V> {
                 keyTypeDescriptor, "keyTypeDescriptor");
         final TypeDescriptor<V> resolvedValueDescriptor = Vldtn.requireNonNull(
                 valueTypeDescriptor, "valueTypeDescriptor");
-        final IndexConfiguration<K, V> resolvedConf = Vldtn.requireNonNull(conf,
-                "conf");
+        final EffectiveIndexConfiguration<K, V> resolvedConf = Vldtn
+                .requireNonNull(conf, "conf");
         final ExecutorService resolvedSegmentMaintenanceExecutor = Vldtn
                 .requireNonNull(segmentMaintenanceExecutor,
                         "segmentMaintenanceExecutor");
         final ExecutorService resolvedRegistryMaintenanceExecutor = Vldtn
                 .requireNonNull(registryMaintenanceExecutor,
                         "registryMaintenanceExecutor");
-        final ResolvedIndexConfiguration<K, V> resolvedRuntimeConfiguration = runtimeConfiguration == null
-                ? resolvedConf.resolveRuntimeConfiguration()
-                : runtimeConfiguration;
         final int maxSegments = Vldtn
                 .requireNonNull(resolvedConf.segment().cachedSegmentLimit(),
                         "maxNumberOfSegmentsInCache")
                 .intValue();
         final int maxNumberOfSegmentsInCache = Vldtn.requireGreaterThanZero(
                 maxSegments, "maxNumberOfSegmentsInCache");
-        final int busyBackoffMillis = sanitizeRetryConf(
-                resolvedConf.maintenance().busyBackoffMillis(),
-                IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS);
-        final int busyTimeoutMillis = sanitizeRetryConf(
-                resolvedConf.maintenance().busyTimeoutMillis(),
-                IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
+        final int busyBackoffMillis = resolvedConf.maintenance()
+                .busyBackoffMillis();
+        final int busyTimeoutMillis = resolvedConf.maintenance()
+                .busyTimeoutMillis();
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
                 resolvedValueDescriptor, resolvedConf,
-                resolvedRuntimeConfiguration,
                 resolvedSegmentMaintenanceExecutor);
         final SegmentIdAllocator resolvedAllocator = segmentIdAllocator == null
                 ? new DirectorySegmentIdAllocator(resolvedDirectory)

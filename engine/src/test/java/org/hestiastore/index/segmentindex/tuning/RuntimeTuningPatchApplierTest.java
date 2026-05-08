@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.tuning;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,7 +28,7 @@ class RuntimeTuningPatchApplierTest {
     @BeforeEach
     void setUp() {
         final RuntimeTuningState runtimeTuningState = RuntimeTuningState
-                .fromConfiguration(buildConf());
+                .fromConfiguration(effective(buildConf()));
         appliedLimits = new AtomicReference<>();
         splitThresholdRescanCount = new AtomicInteger(0);
         applier = new RuntimeTuningPatchApplier(

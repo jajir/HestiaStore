@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
@@ -40,7 +40,7 @@ class RuntimeMetricsCollectorBuilderTest {
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
 
-    private IndexConfiguration<Integer, String> conf;
+    private EffectiveIndexConfiguration<Integer, String> conf;
     private RuntimeTuningState runtimeTuningState;
     private Stats stats;
     private AtomicLong compactRequestHighWaterMark;

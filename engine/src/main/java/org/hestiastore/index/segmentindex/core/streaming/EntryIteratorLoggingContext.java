@@ -7,7 +7,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.slf4j.MDC;
 
 /**
@@ -26,9 +26,9 @@ final class EntryIteratorLoggingContext<K, V> extends AbstractCloseableResource
     private final String indexName;
 
     EntryIteratorLoggingContext(final EntryIterator<K, V> entryIterator,
-            final IndexConfiguration<K, V> indexConf) {
+            final EffectiveIndexConfiguration<K, V> indexConf) {
         this.entryIterator = Vldtn.requireNonNull(entryIterator, "entryIterator");
-        final IndexConfiguration<K, V> configuration = Vldtn
+        final EffectiveIndexConfiguration<K, V> configuration = Vldtn
                 .requireNonNull(indexConf, "indexConf");
         this.indexName = Vldtn.requireNotBlank(configuration.identity().name(),
                 "indexName");

@@ -73,25 +73,10 @@ public final class IndexWritePathConfigurationBuilder<K, V> {
         return this;
     }
 
-    Integer segmentSplitKeyThreshold() {
-        return segmentSplitKeyThreshold;
-    }
-
-    IndexWritePathConfiguration build(final Integer segmentMaxKeys,
-            final Integer cachedSegmentLimit) {
-        final Integer effectiveSegmentSplitKeyThreshold = segmentSplitKeyThreshold == null
-                ? segmentMaxKeys
-                : segmentSplitKeyThreshold;
-        final Integer effectiveMaintenanceWriteCacheKeyLimit =
-                resolveEffectiveMaintenanceWriteCacheKeyLimit();
-        final Integer effectiveIndexBufferedWriteKeyLimit =
-                resolveEffectiveIndexBufferedWriteKeyLimit(
-                        effectiveMaintenanceWriteCacheKeyLimit,
-                        cachedSegmentLimit);
+    IndexWritePathConfiguration build() {
         return new IndexWritePathConfiguration(segmentWriteCacheKeyLimit,
-                effectiveMaintenanceWriteCacheKeyLimit,
-                effectiveIndexBufferedWriteKeyLimit,
-                effectiveSegmentSplitKeyThreshold);
+                maintenanceWriteCacheKeyLimit, indexBufferedWriteKeyLimit,
+                segmentSplitKeyThreshold);
     }
 
     private Integer resolveEffectiveMaintenanceWriteCacheKeyLimit() {

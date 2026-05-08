@@ -10,8 +10,8 @@ import java.util.NoSuchElementException;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexIdentityConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexIdentityConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,10 +24,10 @@ import org.slf4j.MDC;
 class EntryIteratorLoggingContextTest {
 
     @Mock
-    private IndexConfiguration<String, String> conf;
+    private EffectiveIndexConfiguration<String, String> conf;
 
     @Mock
-    private IndexIdentityConfiguration<String, String> identity;
+    private EffectiveIndexIdentityConfiguration<String, String> identity;
 
     private CapturingIterator iterator;
     private EntryIteratorLoggingContext<String, String> loggingContext;

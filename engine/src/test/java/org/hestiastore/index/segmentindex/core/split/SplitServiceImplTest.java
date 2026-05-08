@@ -27,16 +27,16 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,10 +50,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SplitServiceImplTest {
 
     @Mock
-    private IndexConfiguration<String, String> conf;
+    private EffectiveIndexConfiguration<String, String> conf;
 
     @Mock
-    private IndexMaintenanceConfiguration maintenance;
+    private EffectiveIndexMaintenanceConfiguration maintenance;
 
     @Mock
     private RuntimeTuningState runtimeTuningState;
@@ -79,6 +79,8 @@ class SplitServiceImplTest {
     void setUp() {
         lenient().when(conf.maintenance()).thenReturn(maintenance);
         lenient().when(maintenance.busyTimeoutMillis()).thenReturn(50);
+        lenient().when(maintenance.busyBackoffMillis()).thenReturn(1);
+        lenient().when(maintenance.indexThreads()).thenReturn(1);
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
     }

@@ -4,13 +4,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -54,7 +54,7 @@ final class SegmentIndexMetricsCollector<K, V> {
     }
 
     static <K, V> SegmentIndexMetricsCollector<K, V> create(
-            final IndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
@@ -100,7 +100,7 @@ final class SegmentIndexMetricsCollector<K, V> {
     }
 
     private static <K, V> SegmentIndexMetricsSnapshotFactory<K, V> newSnapshotFactory(
-            final IndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,

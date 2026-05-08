@@ -4,12 +4,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -22,7 +22,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
  */
 final class SegmentIndexMetricsSnapshotFactory<K, V> {
 
-    private final IndexConfiguration<K, V> conf;
+    private final EffectiveIndexConfiguration<K, V> conf;
     private final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
     private final RuntimeTuningState runtimeTuningState;
     private final WalRuntime<K, V> walRuntime;
@@ -30,7 +30,8 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
     private final AtomicLong lastAppliedWalLsn;
     private final Supplier<SegmentIndexState> stateSupplier;
 
-    SegmentIndexMetricsSnapshotFactory(final IndexConfiguration<K, V> conf,
+    SegmentIndexMetricsSnapshotFactory(
+            final EffectiveIndexConfiguration<K, V> conf,
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,

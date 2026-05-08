@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.persistence;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -16,6 +18,8 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationStorageWalTest {
@@ -57,8 +61,9 @@ class IndexConfigurationStorageWalTest {
                 .wal(walBuilder -> walBuilder.configuration(wal))//
                 .build();
 
-        storage.save(conf);
-        final IndexConfiguration<String, String> loaded = storage.load();
+        storage.save(effective(conf));
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
 
         assertTrue(loaded.wal().isEnabled());
         assertEquals(WalDurabilityMode.SYNC,
@@ -100,9 +105,10 @@ class IndexConfigurationStorageWalTest {
         final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
 
-        final IndexConfiguration<String, String> loaded = storage.load();
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
 
-        assertSame(IndexWalConfiguration.EMPTY, loaded.wal());
+        assertSame(EffectiveIndexWalConfiguration.EMPTY, loaded.wal());
         assertFalse(loaded.wal().isEnabled());
     }
 }

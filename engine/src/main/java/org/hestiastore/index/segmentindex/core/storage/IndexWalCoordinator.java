@@ -6,7 +6,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -44,7 +44,7 @@ public final class IndexWalCoordinator<K, V> {
 
     @SuppressWarnings("java:S107")
     public static <K, V> IndexWalCoordinator<K, V> create(
-            final Logger logger, final IndexConfiguration<K, V> conf,
+            final Logger logger, final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
             final Runnable prepareDurableStateAction,

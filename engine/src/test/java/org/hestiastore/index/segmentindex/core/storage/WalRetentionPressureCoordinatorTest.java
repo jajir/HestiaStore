@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +37,7 @@ class WalRetentionPressureCoordinatorTest {
         final AtomicInteger flushCalls = new AtomicInteger();
         final AtomicInteger checkpointCalls = new AtomicInteger();
         final WalRetentionPressureCoordinator<Integer, String> coordinator =
-                new WalRetentionPressureCoordinator<>(logger, buildConf(),
+                new WalRetentionPressureCoordinator<>(logger, effective(buildConf()),
                         walRuntime, new IndexRetryPolicy(1, 10),
                         prepareCalls::incrementAndGet,
                         flushCalls::incrementAndGet,

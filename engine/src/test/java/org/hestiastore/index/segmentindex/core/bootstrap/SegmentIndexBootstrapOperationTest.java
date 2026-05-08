@@ -103,8 +103,9 @@ class SegmentIndexBootstrapOperationTest {
                         .open();
 
         try {
-            final IndexConfiguration<Integer, String> loaded =
-                    new IndexConfigurationStorage<Integer, String>(directory)
+            final var loaded =
+                    new IndexConfigurationStorage<Integer, String>(directory,
+                            resolver)
                             .load();
             assertEquals(original.filters().encodingChunkFilterSpecs(),
                     loaded.filters().encodingChunkFilterSpecs());
