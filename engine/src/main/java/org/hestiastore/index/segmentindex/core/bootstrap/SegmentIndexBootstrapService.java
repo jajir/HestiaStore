@@ -53,18 +53,19 @@ final class SegmentIndexBootstrapService {
     }
 
     <K, V> SegmentIndex<K, V> openStored() {
-        return open(this.<K, V>loadExistingConfiguration());
+        return open(emptyConfiguration());
     }
 
     <K, V> SegmentIndex<K, V> openStored(
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return open(this.<K, V>loadExistingConfiguration(),
-                chunkFilterProviderResolver);
+        return open(emptyConfiguration(), chunkFilterProviderResolver);
     }
 
     <K, V> Optional<SegmentIndex<K, V>> tryOpen() {
-        return this.<K, V>tryLoadConfiguration()
-                .map(configuration -> open(configuration));
+        if (this.<K, V>configurationManager().tryToLoad().isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(openStored());
     }
 
     <K, V> Optional<SegmentIndex<K, V>> tryOpen(
@@ -72,21 +73,27 @@ final class SegmentIndexBootstrapService {
         final ChunkFilterProviderResolver validatedResolver = Vldtn
                 .requireNonNull(chunkFilterProviderResolver,
                         "chunkFilterProviderResolver");
-        return this.<K, V>tryLoadConfiguration()
-                .map(configuration -> open(configuration, validatedResolver));
-    }
-
-    private <K, V> IndexConfiguration<K, V> loadExistingConfiguration() {
-        return this.<K, V>configurationManager().loadExisting();
-    }
-
-    private <K, V> Optional<IndexConfiguration<K, V>> tryLoadConfiguration() {
-        return this.<K, V>configurationManager().tryToLoad();
+        if (this.<K, V>configurationManager(validatedResolver)
+                .tryToLoad().isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(openStored(validatedResolver));
     }
 
     private <K, V> IndexConfigurationManager<K, V> configurationManager() {
         return new IndexConfigurationManager<>(
                 new IndexConfigurationStorage<>(directory));
+    }
+
+    private <K, V> IndexConfigurationManager<K, V> configurationManager(
+            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
+        return new IndexConfigurationManager<>(
+                new IndexConfigurationStorage<>(directory,
+                        chunkFilterProviderResolver));
+    }
+
+    private <K, V> IndexConfiguration<K, V> emptyConfiguration() {
+        return IndexConfiguration.<K, V>builder().build();
     }
 
     private <K, V> SegmentIndexBootstrapOperation<K, V> operation(

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.mockito.Mockito.mock;
 
 import java.util.function.Supplier;
@@ -38,9 +40,9 @@ public final class SegmentIndexRuntimeTestAccess {
             final IndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
         return SegmentIndexRuntime.create(logger, directoryFacade,
-                keyTypeDescriptor, valueTypeDescriptor, conf,
-                conf.resolveRuntimeConfiguration(), executorRegistry,
-                new Stats(), () -> SegmentIndexState.READY, failure -> {
+                keyTypeDescriptor, valueTypeDescriptor, effective(conf),
+                executorRegistry, new Stats(), () -> SegmentIndexState.READY,
+                failure -> {
                 });
     }
 

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.metrics;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -75,9 +77,9 @@ class SegmentIndexMetricsCollectorTest {
         executorRegistry = ExecutorRegistryFixture.from(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
-                conf, keyToSegmentMap, segmentRegistry,
+                effective(conf), keyToSegmentMap, segmentRegistry,
                 () -> new SplitMetricsSnapshot(4, 3), executorRegistry,
-                RuntimeTuningState.fromConfiguration(conf), walRuntime, stats,
+                RuntimeTuningState.fromConfiguration(effective(conf)), walRuntime, stats,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn, () -> SegmentIndexState.READY);
     }

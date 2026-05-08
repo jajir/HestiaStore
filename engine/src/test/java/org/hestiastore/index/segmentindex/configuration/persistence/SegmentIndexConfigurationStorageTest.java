@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.persistence;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,6 +22,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,10 +87,10 @@ class SegmentIndexConfigurationStorageTest {
                 .logging(logging -> logging.contextEnabled(true))//
                 .maintenance(maintenance -> maintenance.backgroundAutoEnabled(true))//
                 .build();
-        storage.save(config);
+        storage.save(effective(config));
         logConfigurationFile();
 
-        final IndexConfiguration<String, Long> ret = storage.load();
+        final EffectiveIndexConfiguration<String, Long> ret = storage.load();
         assertEquals(String.class, ret.identity().keyClass());
         assertEquals(Long.class, ret.identity().valueClass());
         assertEquals(TD_STRING, ret.identity().keyTypeDescriptor());
@@ -154,25 +157,26 @@ class SegmentIndexConfigurationStorageTest {
                         ChunkFilterMagicNumberValidation.class,
                         ChunkFilterCrc32Validation.class)))//
                 .build();
-        storage.save(config);
+        storage.save(effective(config));
         logConfigurationFile();
 
-        final IndexConfiguration<String, Long> loaded = storage.load();
-        assertEquals(3, loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().size());
+        final EffectiveIndexConfiguration<String, Long> loaded = storage
+                .load();
+        assertEquals(3, loaded.filters().encodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(0).getClass());
+                loaded.filters().encodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(1).getClass());
+                loaded.filters().encodingChunkFilters().get(1).getClass());
         assertEquals(ChunkFilterSnappyCompress.class,
-                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(2).getClass());
+                loaded.filters().encodingChunkFilters().get(2).getClass());
 
-        assertEquals(3, loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().size());
+        assertEquals(3, loaded.filters().decodingChunkFilters().size());
         assertEquals(ChunkFilterSnappyDecompress.class,
-                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(0).getClass());
+                loaded.filters().decodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberValidation.class,
-                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(1).getClass());
+                loaded.filters().decodingChunkFilters().get(1).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
-                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(2).getClass());
+                loaded.filters().decodingChunkFilters().get(2).getClass());
     }
 
     @Test
@@ -198,10 +202,10 @@ class SegmentIndexConfigurationStorageTest {
                 .io(io -> io.diskBufferSizeBytes(4096))//
                 .logging(logging -> logging.contextEnabled(true))//
                 .build();
-        storage.save(config);
+        storage.save(effective(config));
         logConfigurationFile();
 
-        final IndexConfiguration<String, Long> ret = storage.load();
+        final EffectiveIndexConfiguration<String, Long> ret = storage.load();
         assertEquals(String.class, ret.identity().keyClass());
         assertEquals(Long.class, ret.identity().valueClass());
         assertEquals(TD_STRING, ret.identity().keyTypeDescriptor());

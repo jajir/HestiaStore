@@ -77,19 +77,8 @@ public final class IndexSegmentConfigurationBuilder<K, V> {
         return this;
     }
 
-    Integer resolveEffectiveMaxKeys(final Integer segmentSplitKeyThreshold) {
-        if (maxKeys != null) {
-            return maxKeys;
-        }
-        return segmentSplitKeyThreshold;
-    }
-
-    IndexSegmentConfiguration build(final Integer effectiveMaxKeys) {
-        final Integer effectiveDeltaCacheFileLimit = deltaCacheFileLimit == null
-                ? IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT
-                : deltaCacheFileLimit;
-        return new IndexSegmentConfiguration(effectiveMaxKeys, chunkKeyLimit,
-                cacheKeyLimit, cachedSegmentLimit,
-                effectiveDeltaCacheFileLimit);
+    IndexSegmentConfiguration build() {
+        return new IndexSegmentConfiguration(maxKeys, chunkKeyLimit,
+                cacheKeyLimit, cachedSegmentLimit, deltaCacheFileLimit);
     }
 }

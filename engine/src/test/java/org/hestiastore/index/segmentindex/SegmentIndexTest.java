@@ -10,6 +10,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningPatch;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexTest {
@@ -62,6 +64,45 @@ class SegmentIndexTest {
             opened.put(2, "two");
             assertEquals("two", opened.get(2));
         }
+    }
+
+    @Test
+    void runtimeTuningIsDurableOnlyAfterPersistCurrent() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> created = SegmentIndex.create(
+                directory, buildConf("runtime-tuning-durable", 1))) {
+            applySegmentCacheKeyLimit(created, 30);
+            assertEquals(Integer.valueOf(30), created.runtimeTuning()
+                    .getCurrentRuntimeTuning().segmentCacheKeyLimit());
+        }
+
+        try (SegmentIndex<Integer, String> opened = SegmentIndex
+                .open(directory)) {
+            assertEquals(Integer.valueOf(10), opened.runtimeTuning()
+                    .getCurrentRuntimeTuning().segmentCacheKeyLimit());
+            applySegmentCacheKeyLimit(opened, 40);
+            assertEquals(Integer.valueOf(40), opened.runtimeTuning()
+                    .persistCurrentRuntimeTuning().segmentCacheKeyLimit());
+        }
+
+        try (SegmentIndex<Integer, String> opened = SegmentIndex
+                .open(directory)) {
+            assertEquals(Integer.valueOf(40), opened.runtimeTuning()
+                    .getCurrentRuntimeTuning().segmentCacheKeyLimit());
+            assertEquals(Integer.valueOf(40), opened.runtimeTuning()
+                    .getOriginalRuntimeTuning().segmentCacheKeyLimit());
+            assertEquals(0L, opened.runtimeTuning().getCurrent().revision());
+        }
+    }
+
+    private void applySegmentCacheKeyLimit(
+            final SegmentIndex<Integer, String> index, final int value) {
+        final long revision = index.runtimeTuning().getCurrent().revision();
+        final RuntimePatchResult patchResult = index.runtimeTuning()
+                .applyRuntimeTuning(RuntimeTuningPatch.builder()
+                        .expectedRevision(revision)
+                        .segmentCacheKeyLimit(value).build());
+        assertTrue(patchResult.isApplied());
     }
 
     private IndexConfiguration<Integer, String> buildConf(final String indexName,

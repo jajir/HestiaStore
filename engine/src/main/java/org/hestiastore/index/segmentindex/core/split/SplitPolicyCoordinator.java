@@ -11,7 +11,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -31,7 +31,7 @@ final class SplitPolicyCoordinator<K, V> {
     private static final long AUTONOMOUS_SCHEDULER_INTERVAL_MILLIS = 250L;
     private static final long SETTLE_POLL_INTERVAL_MILLIS = 10L;
 
-    private final IndexConfiguration<K, V> conf;
+    private final EffectiveIndexConfiguration<K, V> conf;
     private final RuntimeTuningState runtimeTuningState;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
@@ -44,7 +44,7 @@ final class SplitPolicyCoordinator<K, V> {
     private final SplitFailureReporter failureReporter;
     private final SplitTelemetry telemetry;
 
-    SplitPolicyCoordinator(final IndexConfiguration<K, V> conf,
+    SplitPolicyCoordinator(final EffectiveIndexConfiguration<K, V> conf,
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
@@ -241,7 +241,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private boolean isPolicyEnabled() {
-        return Boolean.TRUE.equals(conf.maintenance().backgroundAutoEnabled())
+        return conf.maintenance().backgroundAutoEnabled()
                 && !isClosedOrClosingState();
     }
 
@@ -367,19 +367,11 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private int workerParallelism() {
-        final Integer configured = conf.maintenance().indexThreads();
-        if (configured == null || configured < 1) {
-            return 1;
-        }
-        return configured;
+        return conf.maintenance().indexThreads();
     }
 
     private long workerKeepAliveMillis() {
-        final Integer configured = conf.maintenance().busyBackoffMillis();
-        if (configured == null || configured < 1) {
-            return 1L;
-        }
-        return configured.longValue();
+        return conf.maintenance().busyBackoffMillis();
     }
 
     private boolean isEnabled(final int threshold) {

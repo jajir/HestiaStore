@@ -11,8 +11,7 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.metrics.Stats;
@@ -29,10 +28,8 @@ class SegmentIndexRuntimeOpenContextTest {
                 TypeDescriptor.class);
         final TypeDescriptor<String> valueTypeDescriptor = mock(
                 TypeDescriptor.class);
-        final IndexConfiguration<Integer, String> conf = mock(
-                IndexConfiguration.class);
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration =
-                mock(ResolvedIndexConfiguration.class);
+        final EffectiveIndexConfiguration<Integer, String> conf = mock(
+                EffectiveIndexConfiguration.class);
         final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
         final Stats stats = new Stats();
         final AtomicLong compactRequestHighWaterMark = new AtomicLong();
@@ -45,8 +42,7 @@ class SegmentIndexRuntimeOpenContextTest {
                 IllegalArgumentException.class,
                 () -> new SegmentIndexRuntimeOpenContext<>(null, directory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
-                        runtimeConfiguration, executorRegistry, stats,
-                        compactRequestHighWaterMark,
+                        executorRegistry, stats, compactRequestHighWaterMark,
                         flushRequestHighWaterMark, lastAppliedWalLsn,
                         stateSupplier, failureHandler));
         assertEquals("Property 'logger' must not be null.", ex.getMessage());
@@ -60,10 +56,8 @@ class SegmentIndexRuntimeOpenContextTest {
                 TypeDescriptor.class);
         final TypeDescriptor<String> valueTypeDescriptor = mock(
                 TypeDescriptor.class);
-        final IndexConfiguration<Integer, String> conf = mock(
-                IndexConfiguration.class);
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration =
-                mock(ResolvedIndexConfiguration.class);
+        final EffectiveIndexConfiguration<Integer, String> conf = mock(
+                EffectiveIndexConfiguration.class);
         final ExecutorRegistry executorRegistry = mock(
                 ExecutorRegistry.class);
         final Stats stats = new Stats();
@@ -76,8 +70,7 @@ class SegmentIndexRuntimeOpenContextTest {
         final SegmentIndexRuntimeOpenContext<Integer, String> request =
                 new SegmentIndexRuntimeOpenContext<>(logger, directory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
-                        runtimeConfiguration, executorRegistry, stats,
-                        compactRequestHighWaterMark,
+                        executorRegistry, stats, compactRequestHighWaterMark,
                         flushRequestHighWaterMark, lastAppliedWalLsn,
                         stateSupplier, failureHandler);
 
@@ -92,7 +85,6 @@ class SegmentIndexRuntimeOpenContextTest {
         assertSame(keyTypeDescriptor, request.keyTypeDescriptor);
         assertSame(valueTypeDescriptor, request.valueTypeDescriptor);
         assertSame(conf, request.conf);
-        assertSame(runtimeConfiguration, request.runtimeConfiguration);
         assertSame(executorRegistry, request.executorRegistry);
         assertSame(stateSupplier, request.stateSupplier);
         assertSame(failureHandler, request.failureHandler);

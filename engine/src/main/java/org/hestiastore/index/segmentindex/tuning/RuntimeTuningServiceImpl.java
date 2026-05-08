@@ -14,12 +14,24 @@ public final class RuntimeTuningServiceImpl
     private final RuntimeTuningPatchValidator patchValidator;
     private final RuntimeTuningPatchApplier patchApplier;
     private final RuntimeTuningState runtimeTuningState;
+    private final Consumer<ConfigurationSnapshot> snapshotPersister;
 
     public RuntimeTuningServiceImpl(final RuntimeTuningState runtimeTuningState,
             final Consumer<Map<RuntimeSettingKey, Integer>> effectiveLimitsApplier,
             final Runnable splitThresholdChangedListener) {
+        this(runtimeTuningState, effectiveLimitsApplier,
+                splitThresholdChangedListener,
+                RuntimeTuningServiceImpl::unsupportedPersistence);
+    }
+
+    public RuntimeTuningServiceImpl(final RuntimeTuningState runtimeTuningState,
+            final Consumer<Map<RuntimeSettingKey, Integer>> effectiveLimitsApplier,
+            final Runnable splitThresholdChangedListener,
+            final Consumer<ConfigurationSnapshot> snapshotPersister) {
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
+        this.snapshotPersister = Vldtn.requireNonNull(snapshotPersister,
+                "snapshotPersister");
         this.patchValidator = new RuntimeTuningPatchValidator(
                 this.runtimeTuningState);
         this.patchApplier = new RuntimeTuningPatchApplier(patchValidator,
@@ -48,6 +60,20 @@ public final class RuntimeTuningServiceImpl
     @Override
     public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
         return patchApplier.apply(patch);
+    }
+
+    @Override
+    public ConfigurationSnapshot persistCurrent() {
+        final ConfigurationSnapshot snapshot =
+                runtimeTuningState.snapshotCurrent();
+        snapshotPersister.accept(snapshot);
+        return snapshot;
+    }
+
+    private static void unsupportedPersistence(
+            final ConfigurationSnapshot snapshot) {
+        throw new UnsupportedOperationException(
+                "Runtime tuning persistence is not available for this service.");
     }
 
 }

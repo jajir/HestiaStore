@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
@@ -213,7 +215,7 @@ class SegmentRegistryImplTest {
                 .<Integer, String>builder().withDirectoryFacade(directoryFacade)
                 .withKeyTypeDescriptor(KEY_DESCRIPTOR)
                 .withValueTypeDescriptor(VALUE_DESCRIPTOR)
-                .withConfiguration(conf)
+                .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(registryMaintenancePool)
                 .build();

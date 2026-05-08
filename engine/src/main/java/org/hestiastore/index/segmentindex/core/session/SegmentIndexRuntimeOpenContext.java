@@ -7,8 +7,7 @@ import java.util.function.Supplier;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.metrics.Stats;
@@ -26,8 +25,7 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
     final Directory directoryFacade;
     final TypeDescriptor<K> keyTypeDescriptor;
     final TypeDescriptor<V> valueTypeDescriptor;
-    final IndexConfiguration<K, V> conf;
-    final ResolvedIndexConfiguration<K, V> runtimeConfiguration;
+    final EffectiveIndexConfiguration<K, V> conf;
     final ExecutorRegistry executorRegistry;
     final Stats stats;
     final AtomicLong compactRequestHighWaterMark;
@@ -41,8 +39,7 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry,
             final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
@@ -58,8 +55,6 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration,
-                "runtimeConfiguration");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
         this.stats = Vldtn.requireNonNull(stats, "stats");

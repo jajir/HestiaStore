@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -37,7 +39,7 @@ class SegmentManagerTest {
                         directory)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
-                .withConfiguration(conf)
+                .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
@@ -73,7 +75,7 @@ class SegmentManagerTest {
                         directory)
                 .withKeyTypeDescriptor(keyTypeDescriptor)
                 .withValueTypeDescriptor(valueTypeDescriptor)
-                .withConfiguration(conf)
+                .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(
                         Executors.newSingleThreadExecutor())
@@ -84,6 +86,11 @@ class SegmentManagerTest {
 
     private static IndexConfiguration<Integer, String> testConfiguration() {
         return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("segment-manager-test"))
                 .segment(segment -> segment.cachedSegmentLimit(3)
                         .cacheKeyLimit(4).chunkKeyLimit(1)
                         .deltaCacheFileLimit(3))

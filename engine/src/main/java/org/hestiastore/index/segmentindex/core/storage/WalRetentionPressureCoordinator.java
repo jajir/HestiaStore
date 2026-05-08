@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ final class WalRetentionPressureCoordinator<K, V> {
             .toNanos(5L);
 
     private final Logger logger;
-    private final IndexConfiguration<K, V> conf;
+    private final EffectiveIndexConfiguration<K, V> conf;
     private final WalRuntime<K, V> walRuntime;
     private final IndexRetryPolicy retryPolicy;
     private final Runnable prepareDurableStateAction;
@@ -35,7 +35,7 @@ final class WalRetentionPressureCoordinator<K, V> {
             false);
 
     WalRetentionPressureCoordinator(final Logger logger,
-            final IndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
             final Runnable prepareDurableStateAction,
