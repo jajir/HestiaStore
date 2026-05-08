@@ -36,6 +36,13 @@ public interface RuntimeConfiguration {
     RuntimePatchResult apply(RuntimeConfigPatch patch);
 
     /**
+     * Persists the current runtime configuration snapshot.
+     *
+     * @return persisted configuration snapshot
+     */
+    ConfigurationSnapshot persistCurrent();
+
+    /**
      * Returns current runtime tuning snapshot as a typed view.
      *
      * @return typed current runtime tuning snapshot
@@ -51,6 +58,15 @@ public interface RuntimeConfiguration {
      */
     default RuntimeTuningSnapshot getOriginalRuntimeTuning() {
         return RuntimeTuningSnapshot.from(getOriginal());
+    }
+
+    /**
+     * Persists current runtime tuning and returns it as a typed view.
+     *
+     * @return typed persisted runtime tuning snapshot
+     */
+    default RuntimeTuningSnapshot persistCurrentRuntimeTuning() {
+        return RuntimeTuningSnapshot.from(persistCurrent());
     }
 
     /**

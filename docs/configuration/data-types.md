@@ -28,7 +28,7 @@ HestiaStore allows advanced users to define custom `TypeDescriptor` implementati
 To create a new data type:
 
 1. Implement the `TypeDescriptor<T>` interface. It groups encoder/decoder/reader/writer/comparator contracts for your type.
-2. Optionallly register it using `org.hestiastore.index.segmentindex.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
+2. Optionallly register it using `org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry.addTypeDescriptor(Class, descriptor)`.
 
 ### TypeEncoder Contract (0.0.6+)
 

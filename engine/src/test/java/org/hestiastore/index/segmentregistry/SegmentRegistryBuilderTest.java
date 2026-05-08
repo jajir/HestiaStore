@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -19,6 +21,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,7 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentRegistryBuilderTest {
 
     @Mock
-    private IndexConfiguration<Integer, String> conf;
+    private EffectiveIndexConfiguration<Integer, String> conf;
 
     @Test
     void builderRejectsNullDirectory() {
@@ -94,7 +97,7 @@ class SegmentRegistryBuilderTest {
                     .withDirectoryFacade(asyncDirectory)
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
-                    .withConfiguration(conf)
+                    .withConfiguration(effective(conf))
                     .withSegmentMaintenanceExecutor(
                             stableSegmentMaintenanceExecutor)
                     .withRegistryMaintenanceExecutor(
@@ -149,7 +152,7 @@ class SegmentRegistryBuilderTest {
                     .withDirectoryFacade(directory)
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
-                    .withConfiguration(newConfiguration())
+                    .withConfiguration(effective(newConfiguration()))
                     .withSegmentMaintenanceExecutor(
                             stableSegmentMaintenanceExecutor)
                     .withRegistryMaintenanceExecutor(
@@ -180,7 +183,7 @@ class SegmentRegistryBuilderTest {
                     .withDirectoryFacade(directory)
                     .withKeyTypeDescriptor(new TypeDescriptorInteger())
                     .withValueTypeDescriptor(new TypeDescriptorShortString())
-                    .withConfiguration(newConfiguration())
+                    .withConfiguration(effective(newConfiguration()))
                     .withSegmentMaintenanceExecutor(
                             stableSegmentMaintenanceExecutor)
                     .withRegistryMaintenanceExecutor(

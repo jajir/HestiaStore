@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.persistence;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -28,7 +30,7 @@ import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationStorageTest {
@@ -49,10 +51,11 @@ class IndexConfigurationStorageTest {
 
         assertFalse(storage.exists());
 
-        storage.save(buildConf());
+        storage.save(effective(buildConf()));
 
         assertTrue(storage.exists());
-        final IndexConfiguration<String, String> loaded = storage.load();
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
         assertEquals("index-config-storage-test", loaded.identity().name());
         assertEquals(2, loaded.writePath().segmentWriteCacheKeyLimit());
         assertEquals(3, loaded.writePath().segmentWriteCacheKeyLimitDuringMaintenance());
@@ -103,8 +106,9 @@ class IndexConfigurationStorageTest {
                                         List.of(ChunkFilterSpecs.doNothing())))
                         .build();
 
-        storage.save(configuration);
-        final IndexConfiguration<String, String> loaded = storage.load();
+        storage.save(effective(configuration));
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
 
         assertEquals("grouped-storage", loaded.identity().name());
         assertEquals(Integer.valueOf(100), loaded.segment().maxKeys());
@@ -307,7 +311,7 @@ class IndexConfigurationStorageTest {
         final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
 
-        storage.save(buildConf());
+        storage.save(effective(buildConf()));
 
         final PropertyStore store = PropertyStoreImpl.fromDirectory(directory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -332,7 +336,7 @@ class IndexConfigurationStorageTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
-        storage.save(buildConf());
+        storage.save(effective(buildConf()));
 
         final PropertyStore store = PropertyStoreImpl.fromDirectory(directory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -347,16 +351,17 @@ class IndexConfigurationStorageTest {
                     ChunkFilterMagicNumberValidation.class.getName());
         }
 
-        final IndexConfiguration<String, String> loaded = storage.load();
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
 
         assertEquals(List.of(ChunkFilterSpecs.magicNumber()),
                 loaded.filters().encodingChunkFilterSpecs());
         assertEquals(List.of(ChunkFilterSpecs.magicNumber()),
                 loaded.filters().decodingChunkFilterSpecs());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(0).getClass());
+                loaded.filters().encodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberValidation.class,
-                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(0).getClass());
+                loaded.filters().decodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -364,7 +369,7 @@ class IndexConfigurationStorageTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
                 directory);
-        storage.save(buildConf());
+        storage.save(effective(buildConf()));
 
         final PropertyStore store = PropertyStoreImpl.fromDirectory(directory,
                 IndexPropertiesSchema.IndexConfigurationKeys.CONFIGURATION_FILENAME,
@@ -379,7 +384,8 @@ class IndexConfigurationStorageTest {
                     LegacyCustomChunkFilter.class.getName());
         }
 
-        final IndexConfiguration<String, String> loaded = storage.load();
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
 
         assertEquals(List.of(
                 ChunkFilterSpecs.javaClass(LegacyCustomChunkFilter.class.getName())),
@@ -388,9 +394,9 @@ class IndexConfigurationStorageTest {
                 ChunkFilterSpecs.javaClass(LegacyCustomChunkFilter.class.getName())),
                 loaded.filters().decodingChunkFilterSpecs());
         assertEquals(LegacyCustomChunkFilter.class,
-                loaded.resolveRuntimeConfiguration().getEncodingChunkFilters().get(0).getClass());
+                loaded.filters().encodingChunkFilters().get(0).getClass());
         assertEquals(LegacyCustomChunkFilter.class,
-                loaded.resolveRuntimeConfiguration().getDecodingChunkFilters().get(0).getClass());
+                loaded.filters().decodingChunkFilters().get(0).getClass());
     }
 
     @Test
@@ -433,21 +439,22 @@ class IndexConfigurationStorageTest {
                         .addDecodingFilter(spec))//
                 .build();
 
-        storage.save(config);
+        storage.save(effective(config, registry));
 
-        final IndexConfiguration<String, String> loaded = storage.load();
-        final ResolvedIndexConfiguration<String, String> runtimeConfiguration = loaded
-                .resolveRuntimeConfiguration(registry);
+        final EffectiveIndexConfiguration<String, String> runtimeConfiguration =
+                storage.load();
 
-        assertEquals(List.of(spec), loaded.filters().encodingChunkFilterSpecs());
-        assertEquals(List.of(spec), loaded.filters().decodingChunkFilterSpecs());
+        assertEquals(List.of(spec),
+                runtimeConfiguration.filters().encodingChunkFilterSpecs());
+        assertEquals(List.of(spec),
+                runtimeConfiguration.filters().decodingChunkFilterSpecs());
 
         final TestEncodingChunkFilter encodingFilter = assertInstanceOf(
                 TestEncodingChunkFilter.class,
-                runtimeConfiguration.getEncodingChunkFilters().get(0));
+                runtimeConfiguration.filters().encodingChunkFilters().get(0));
         final TestDecodingChunkFilter decodingFilter = assertInstanceOf(
                 TestDecodingChunkFilter.class,
-                runtimeConfiguration.getDecodingChunkFilters().get(0));
+                runtimeConfiguration.filters().decodingChunkFilters().get(0));
 
         assertEquals("orders-main", encodingFilter.getKeyRef());
         assertEquals("orders-main", decodingFilter.getKeyRef());
@@ -496,9 +503,10 @@ class IndexConfigurationStorageTest {
                         .addDecodingFilter(new ChunkFilterDoNothing()))//
                 .build();
 
-        storage.save(config);
+        storage.save(effective(config, registry));
 
-        final IndexConfiguration<String, String> loaded = storage.load();
+        final EffectiveIndexConfiguration<String, String> loaded = storage
+                .load();
 
         assertEquals(config.filters().encodingChunkFilterSpecs(),
                 loaded.filters().encodingChunkFilterSpecs());

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.metrics;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -49,9 +51,9 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         stats.recordPutRequest();
         executorRegistry = ExecutorRegistryFixture.from(conf);
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
-                new SegmentIndexMetricsSnapshotFactory<>(conf,
+                new SegmentIndexMetricsSnapshotFactory<>(effective(conf),
                         () -> new SplitMetricsSnapshot(3, 2),
-                        RuntimeTuningState.fromConfiguration(conf),
+                        RuntimeTuningState.fromConfiguration(effective(conf)),
                         openDisabledWalRuntime(), stats, new AtomicLong(17L),
                         () -> SegmentIndexState.READY);
         final StableSegmentRuntimeMetrics stableSegmentRuntime =

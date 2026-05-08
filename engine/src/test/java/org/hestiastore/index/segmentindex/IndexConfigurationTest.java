@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,6 +19,10 @@ import org.hestiastore.index.chunkstore.ChunkFilterProvider;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationTest {
@@ -28,8 +34,7 @@ class IndexConfigurationTest {
         final List<ChunkFilter> decoding = new ArrayList<>();
         decoding.add(new ChunkFilterDoNothing());
 
-        final IndexConfiguration<Integer, String> config = IndexConfiguration
-                .<Integer, String>builder()
+        final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.encodingFilters(encoding)
                         .decodingFilters(decoding))
                 .build();
@@ -38,11 +43,11 @@ class IndexConfigurationTest {
         decoding.add(new ChunkFilterDoNothing());
 
         assertEquals(1,
-                config.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().size());
+                effective(config)
+                        .filters().encodingChunkFilters().size());
         assertEquals(1,
-                config.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().size());
+                effective(config)
+                        .filters().decodingChunkFilters().size());
         final List<ChunkFilterSpec> configEncoding = config
                 .filters().encodingChunkFilterSpecs();
         final List<ChunkFilterSpec> configDecoding = config
@@ -59,23 +64,24 @@ class IndexConfigurationTest {
 
     @Test
     void backgroundMaintenanceAutoEnabledDefaultsToTrue() {
-        final IndexConfiguration<Integer, String> config = IndexConfiguration
-                .<Integer, String>builder()
+        final IndexConfiguration<Integer, String> config = newBuilder()
                 .build();
 
-        assertTrue(config.maintenance().backgroundAutoEnabled());
+        assertEquals(null, config.maintenance().backgroundAutoEnabled());
         assertEquals(
                 IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
-                config.maintenance().segmentThreads());
+                EffectiveIndexConfigurationResolver.resolveForCreate(config)
+                        .maintenance().segmentThreads());
+        assertTrue(EffectiveIndexConfigurationResolver.resolveForCreate(config)
+                .maintenance().backgroundAutoEnabled());
     }
 
     @Test
-    void resolveRuntimeConfigurationCreatesFreshFiltersForCustomProviders() {
+    void effectiveConfigurationCreatesFreshFiltersForCustomProviders() {
         final AtomicInteger sequence = new AtomicInteger();
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("custom")
                 .withParameter("keyRef", "orders-main");
-        final IndexConfiguration<Integer, String> config = IndexConfiguration
-                .<Integer, String>builder()
+        final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.addEncodingFilter(spec)
                         .addDecodingFilter(spec))
                 .build();
@@ -102,35 +108,34 @@ class IndexConfigurationTest {
                     }
                 })
                 .build();
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = config
-                .resolveRuntimeConfiguration(registry);
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(config, registry);
 
         final TrackingChunkFilter first = (TrackingChunkFilter) runtimeConfiguration
-                .getEncodingChunkFilters().get(0);
+                .filters().encodingChunkFilters().get(0);
         final TrackingChunkFilter second = (TrackingChunkFilter) runtimeConfiguration
-                .getEncodingChunkFilters().get(0);
+                .filters().encodingChunkFilters().get(0);
 
         assertEquals(List.of(spec),
                 config.filters().encodingChunkFilterSpecs());
         assertEquals(List.of(spec),
                 config.filters().decodingChunkFilterSpecs());
         assertEquals(1, runtimeConfiguration
-                .getEncodingChunkFilterRegistrations().size());
+                .filters().encodingChunkFilterRegistrations().size());
         assertEquals(1,
-                runtimeConfiguration.getEncodingChunkFilterSuppliers().size());
+                runtimeConfiguration.filters().encodingChunkFilterSuppliers().size());
         assertEquals(1, first.getId());
         assertEquals(2, second.getId());
         assertNotSame(first, second);
         assertThrows(UnsupportedOperationException.class,
-                () -> runtimeConfiguration.getEncodingChunkFilterRegistrations()
+                () -> runtimeConfiguration.filters().encodingChunkFilterRegistrations()
                         .add(null));
         assertThrows(UnsupportedOperationException.class,
-                () -> runtimeConfiguration.getEncodingChunkFilterSuppliers().add(
+                () -> runtimeConfiguration.filters().encodingChunkFilterSuppliers().add(
                         ChunkFilterDoNothing::new));
     }
 
     @Test
-    void resolveRuntimeConfigurationUsesFilterSectionResolverByDefault() {
+    void effectiveConfigurationUsesFilterSectionResolverByDefault() {
         final AtomicInteger sequence = new AtomicInteger();
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("custom")
                 .withParameter("keyRef", "orders-main");
@@ -157,24 +162,22 @@ class IndexConfigurationTest {
                     }
                 })
                 .build();
-        final IndexConfiguration<Integer, String> config = IndexConfiguration
-                .<Integer, String>builder()
+        final IndexConfiguration<Integer, String> config = newBuilder()
                 .filters(filters -> filters.chunkFilterProviderResolver(resolver)
                         .addEncodingFilter(spec)
                         .addDecodingFilter(spec))
                 .build();
 
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = config
-                .resolveRuntimeConfiguration();
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(config);
 
         assertEquals(resolver,
                 config.filters().getChunkFilterProviderResolver());
         assertEquals(1,
                 ((TrackingChunkFilter) runtimeConfiguration
-                        .getEncodingChunkFilters().get(0)).getId());
+                        .filters().encodingChunkFilters().get(0)).getId());
         assertEquals(2,
                 ((TrackingChunkFilter) runtimeConfiguration
-                        .getDecodingChunkFilters().get(0)).getId());
+                        .filters().decodingChunkFilters().get(0)).getId());
     }
 
     private static final class TrackingChunkFilter implements ChunkFilter {
@@ -193,5 +196,14 @@ class IndexConfigurationTest {
         public ChunkData apply(final ChunkData input) {
             return input;
         }
+    }
+
+    private static IndexConfigurationBuilder<Integer, String> newBuilder() {
+        return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("index-configuration-test"));
     }
 }

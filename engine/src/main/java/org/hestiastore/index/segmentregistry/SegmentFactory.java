@@ -16,8 +16,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentMaintenancePolicy;
 import org.hestiastore.index.segment.SegmentMaintenancePolicyThreshold;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
  * Builds segment instances and writer transactions with shared configuration.
@@ -32,8 +31,7 @@ final class SegmentFactory<K, V>
     private final Directory directoryFacade;
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final TypeDescriptor<V> valueTypeDescriptor;
-    private final IndexConfiguration<K, V> conf;
-    private final ResolvedIndexConfiguration<K, V> runtimeConfiguration;
+    private final EffectiveIndexConfiguration<K, V> conf;
     private final ExecutorService stableSegmentMaintenanceExecutor;
     private volatile SegmentRuntimeLimits runtimeLimits;
 
@@ -43,16 +41,14 @@ final class SegmentFactory<K, V>
      * @param directoryFacade            base directory for segment storage
      * @param keyTypeDescriptor          key type descriptor
      * @param valueTypeDescriptor        value type descriptor
-     * @param conf                       persisted index configuration
-     * @param runtimeConfiguration       resolved runtime configuration
+     * @param conf                       runtime index configuration
      * @param segmentMaintenanceExecutor executor for stable segment
      *                                   maintenance tasks
      */
     SegmentFactory(final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorService segmentMaintenanceExecutor) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
@@ -61,8 +57,6 @@ final class SegmentFactory<K, V>
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.runtimeConfiguration = Vldtn.requireNonNull(runtimeConfiguration,
-                "runtimeConfiguration");
         this.stableSegmentMaintenanceExecutor = Vldtn
                 .requireNonNull(segmentMaintenanceExecutor,
                         "segmentMaintenanceExecutor");
@@ -92,8 +86,8 @@ final class SegmentFactory<K, V>
         Vldtn.requireNonNull(segmentId, "segmentId");
         final SegmentRuntimeLimits limits = resolveRuntimeLimits();
         final Directory segmentDirectory = openSegmentDirectory(segmentId);
-        final boolean backgroundMaintenanceEnabled = Boolean.TRUE
-                .equals(conf.maintenance().backgroundAutoEnabled());
+        final boolean backgroundMaintenanceEnabled =
+                conf.maintenance().backgroundAutoEnabled();
         final SegmentMaintenancePolicy<K, V> stableSegmentMaintenancePolicy = backgroundMaintenanceEnabled
                 ? new SegmentMaintenancePolicyThreshold<>(
                         limits.maxNumberOfKeysInSegmentCache(),
@@ -108,7 +102,7 @@ final class SegmentFactory<K, V>
                 .withKeyTypeDescriptor(keyTypeDescriptor)//
                 .withMaintenanceExecutor(stableSegmentMaintenanceExecutor)//
                 .withLoggingContextIndexName(
-                        Boolean.TRUE.equals(conf.logging().contextEnabled())
+                        conf.logging().contextEnabled()
                                 ? conf.identity().name()
                                 : null)//
                 .withMaintenancePolicy(stableSegmentMaintenancePolicy)//
@@ -182,24 +176,17 @@ final class SegmentFactory<K, V>
 
     private SegmentRuntimeLimits configuredRuntimeLimits() {
         return new SegmentRuntimeLimits(
-                toIntOrZero(conf.segment().cacheKeyLimit()),
-                toIntOrZero(conf.writePath().segmentWriteCacheKeyLimit()),
-                toIntOrZero(conf.writePath()
-                        .segmentWriteCacheKeyLimitDuringMaintenance()));
-    }
-
-    private int toIntOrZero(final Integer value) {
-        if (value == null) {
-            return 0;
-        }
-        return value.intValue();
+                conf.segment().cacheKeyLimit(),
+                conf.writePath().segmentWriteCacheKeyLimit(),
+                conf.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance());
     }
 
     private List<Supplier<? extends ChunkFilter>> resolveEncodingChunkFilterSuppliers() {
-        return runtimeConfiguration.getEncodingChunkFilterSuppliers();
+        return conf.filters().encodingChunkFilterSuppliers();
     }
 
     private List<Supplier<? extends ChunkFilter>> resolveDecodingChunkFilterSuppliers() {
-        return runtimeConfiguration.getDecodingChunkFilterSuppliers();
+        return conf.filters().decodingChunkFilterSuppliers();
     }
 }

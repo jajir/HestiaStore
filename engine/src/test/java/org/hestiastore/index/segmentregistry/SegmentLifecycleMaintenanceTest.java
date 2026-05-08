@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -133,8 +135,8 @@ class SegmentLifecycleMaintenanceTest {
         private final IndexConfiguration<Integer, String> conf = newConfiguration();
 
         private final SegmentFactory<Integer, String> segmentFactory = new SegmentFactory<>(
-                asyncDirectory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR, conf,
-                conf.resolveRuntimeConfiguration(),
+                asyncDirectory, KEY_DESCRIPTOR, VALUE_DESCRIPTOR,
+                effective(conf),
                 stableSegmentMaintenanceExecutor);
         private final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);

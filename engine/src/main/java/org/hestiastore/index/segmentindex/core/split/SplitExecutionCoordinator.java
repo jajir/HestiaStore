@@ -5,7 +5,7 @@ import java.util.concurrent.Executor;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
@@ -39,7 +39,7 @@ interface SplitExecutionCoordinator<K, V> {
      * @return split-execution coordinator
      */
     static <K, V> SplitExecutionCoordinator<K, V> create(
-            final IndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final Comparator<K> keyComparator,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,

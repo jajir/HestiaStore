@@ -7,10 +7,11 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationRegistry;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationRegistry;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexConfigurationDefaultsUsageTest {
@@ -34,7 +35,7 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                         "Missing contract defaults for Integer"));
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory, sparseConfiguration)) {
-            final IndexConfiguration<Integer, String> actual =
+            final EffectiveIndexConfiguration<Integer, String> actual =
                     new IndexConfigurationStorage<Integer, String>(directory)
                             .load();
 
@@ -75,11 +76,11 @@ class SegmentIndexConfigurationDefaultsUsageTest {
 
             assertIterableEquals(
                     defaults.filters().encodingChunkFilterSpecs(),
-                    actual.resolveRuntimeConfiguration().getEncodingChunkFilterSpecs(),
+                    actual.filters().encodingChunkFilterSpecs(),
                     "Encoding filters must come from contract defaults");
             assertIterableEquals(
                     defaults.filters().decodingChunkFilterSpecs(),
-                    actual.resolveRuntimeConfiguration().getDecodingChunkFilterSpecs(),
+                    actual.filters().decodingChunkFilterSpecs(),
                     "Decoding filters must come from contract defaults");
         }
     }

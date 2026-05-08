@@ -11,13 +11,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -29,10 +29,10 @@ class SplitServiceBuilderTest {
         final ScheduledExecutorService scheduler = Executors
                 .newSingleThreadScheduledExecutor();
         try {
-            final IndexConfiguration<String, String> conf = mock(
-                    IndexConfiguration.class);
-            final IndexMaintenanceConfiguration maintenance = mock(
-                    IndexMaintenanceConfiguration.class);
+            final EffectiveIndexConfiguration<String, String> conf = mock(
+                    EffectiveIndexConfiguration.class);
+            final EffectiveIndexMaintenanceConfiguration maintenance = mock(
+                    EffectiveIndexMaintenanceConfiguration.class);
             final SegmentRegistry<String, String> segmentRegistry = mock(SegmentRegistry.class);
             when(conf.maintenance()).thenReturn(maintenance);
             when(maintenance.busyBackoffMillis()).thenReturn(1);

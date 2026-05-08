@@ -16,8 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
@@ -74,8 +73,7 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
         final Logger validatedLogger = Vldtn.requireNonNull(logger, "logger");
         final Directory validatedDirectory = Vldtn.requireNonNull(
@@ -84,11 +82,8 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
                 .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
         final TypeDescriptor<V> validatedValueTypeDescriptor = Vldtn
                 .requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
-        final IndexConfiguration<K, V> validatedConf = Vldtn
+        final EffectiveIndexConfiguration<K, V> validatedConf = Vldtn
                 .requireNonNull(conf, "conf");
-        final ResolvedIndexConfiguration<K, V> validatedRuntimeConfiguration =
-                Vldtn.requireNonNull(runtimeConfiguration,
-                        "runtimeConfiguration");
         final ExecutorRegistry validatedExecutorRegistry = Vldtn
                 .requireNonNull(executorRegistry, "executorRegistry");
         IndexStateCoordinator<K, V> stateCoordinator = null;
@@ -108,8 +103,7 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             runtime = SegmentIndexRuntime.create(validatedLogger,
                     validatedDirectory, validatedKeyTypeDescriptor,
                     validatedValueTypeDescriptor, validatedConf,
-                    validatedRuntimeConfiguration, validatedExecutorRegistry,
-                    stats, stateCoordinator::getState,
+                    validatedExecutorRegistry, stats, stateCoordinator::getState,
                     stateCoordinator::failWithError);
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator =
                     newConsistencyCoordinator(runtime);
@@ -176,7 +170,7 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private static <K, V> SegmentIndexSessionOwner<K, V> newSessionOwner(
-            final Logger logger, final IndexConfiguration<K, V> conf,
+            final Logger logger, final EffectiveIndexConfiguration<K, V> conf,
             final IndexStateCoordinator<K, V> stateCoordinator,
             final SegmentIndexRuntime<K, V> runtime,
             final IndexOperationTrackingAccess operationTracker,

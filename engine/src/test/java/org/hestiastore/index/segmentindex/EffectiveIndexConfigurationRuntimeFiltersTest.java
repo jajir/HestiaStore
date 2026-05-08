@@ -1,9 +1,10 @@
 package org.hestiastore.index.segmentindex;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
@@ -18,17 +19,19 @@ import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
+import org.hestiastore.index.datatype.TypeDescriptorInteger;
+import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
-class ResolvedIndexConfigurationTest {
+class EffectiveIndexConfigurationRuntimeFiltersTest {
 
     @Test
-    void resolveRuntimeConfigurationUsesProvidedRegistryAndKeepsSpecs() {
+    void effectiveConfigurationUsesProvidedRegistryAndKeepsSpecs() {
         final AtomicInteger sequence = new AtomicInteger();
         final ChunkFilterSpec spec = ChunkFilterSpec.ofProvider("custom")
                 .withParameter("keyRef", "orders-main");
-        final IndexConfiguration<Integer, String> configuration = IndexConfiguration
-                .<Integer, String>builder()
+        final IndexConfiguration<Integer, String> configuration = newBuilder()
                 .filters(filters -> filters.addEncodingFilter(spec))
                 .filters(filters -> filters.addDecodingFilter(spec))
                 .build();
@@ -56,49 +59,45 @@ class ResolvedIndexConfigurationTest {
                 })
                 .build();
 
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = configuration
-                .resolveRuntimeConfiguration(registry);
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(configuration, registry);
         final TrackingChunkFilter first = assertInstanceOf(
                 TrackingChunkFilter.class,
-                runtimeConfiguration.getEncodingChunkFilters().get(0));
+                runtimeConfiguration.filters().encodingChunkFilters().get(0));
         final TrackingChunkFilter second = assertInstanceOf(
                 TrackingChunkFilter.class,
-                runtimeConfiguration.getEncodingChunkFilters().get(0));
+                runtimeConfiguration.filters().encodingChunkFilters().get(0));
 
-        assertSame(configuration, runtimeConfiguration.getConfiguration());
         assertEquals(List.of(spec),
-                runtimeConfiguration.getEncodingChunkFilterSpecs());
+                runtimeConfiguration.filters().encodingChunkFilterSpecs());
         assertEquals(List.of(spec),
-                runtimeConfiguration.getDecodingChunkFilterSpecs());
+                runtimeConfiguration.filters().decodingChunkFilterSpecs());
         assertEquals(1,
-                runtimeConfiguration.getEncodingChunkFilterRegistrations()
+                runtimeConfiguration.filters().encodingChunkFilterRegistrations()
                         .size());
         assertEquals(1, first.getId());
         assertEquals(2, second.getId());
         assertNotSame(first, second);
         assertThrows(UnsupportedOperationException.class,
-                () -> runtimeConfiguration.getEncodingChunkFilterSuppliers()
+                () -> runtimeConfiguration.filters().encodingChunkFilterSuppliers()
                         .add(ChunkFilterDoNothing::new));
     }
 
     @Test
-    void resolveRuntimeConfigurationWithDefaultRegistryMaterializesBuiltIns() {
-        final IndexConfiguration<Integer, String> configuration = IndexConfiguration
-                .<Integer, String>builder()
+    void effectiveConfigurationWithDefaultRegistryMaterializesBuiltIns() {
+        final IndexConfiguration<Integer, String> configuration = newBuilder()
                 .filters(filters -> filters.encodingFilterSpecs(
                         List.of(ChunkFilterSpecs.doNothing())))
                 .filters(filters -> filters.decodingFilterSpecs(
                         List.of(ChunkFilterSpecs.doNothing())))
                 .build();
 
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = configuration
-                .resolveRuntimeConfiguration();
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(configuration);
 
         assertEquals(ChunkFilterDoNothing.class,
-                runtimeConfiguration.getEncodingChunkFilters().get(0)
+                runtimeConfiguration.filters().encodingChunkFilters().get(0)
                         .getClass());
         assertEquals(ChunkFilterDoNothing.class,
-                runtimeConfiguration.getDecodingChunkFilters().get(0)
+                runtimeConfiguration.filters().decodingChunkFilters().get(0)
                         .getClass());
     }
 
@@ -118,5 +117,14 @@ class ResolvedIndexConfigurationTest {
         public ChunkData apply(final ChunkData input) {
             return input;
         }
+    }
+
+    private static IndexConfigurationBuilder<Integer, String> newBuilder() {
+        return IndexConfiguration.<Integer, String>builder()
+                .identity(identity -> identity.keyClass(Integer.class)
+                        .valueClass(String.class)
+                        .keyTypeDescriptor(new TypeDescriptorInteger())
+                        .valueTypeDescriptor(new TypeDescriptorShortString())
+                        .name("effective-index-configuration-runtime-filters-test"));
     }
 }

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
@@ -40,10 +42,9 @@ class SegmentIndexRuntimeTest {
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         runtime = new SegmentIndexRuntimeFactory<>(
                 new SegmentIndexRuntimeOpenContext<>(
-                        logger, new MemDirectory(), tdi, tds, conf,
-                        conf.resolveRuntimeConfiguration(), executorRegistry,
-                        new Stats(), new AtomicLong(), new AtomicLong(),
-                        new AtomicLong(),
+                        logger, new MemDirectory(), tdi, tds, effective(conf),
+                        executorRegistry, new Stats(), new AtomicLong(),
+                        new AtomicLong(), new AtomicLong(),
                         () -> SegmentIndexState.READY, failureRef::set))
                                 .open();
     }

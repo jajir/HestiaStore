@@ -39,4 +39,9 @@ public final class RuntimeConfigurationContextLoggingAdapter
     public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
         return contextScopeRunner.supply(() -> delegate.apply(patch));
     }
+
+    @Override
+    public ConfigurationSnapshot persistCurrent() {
+        return contextScopeRunner.supply(delegate::persistCurrent);
+    }
 }

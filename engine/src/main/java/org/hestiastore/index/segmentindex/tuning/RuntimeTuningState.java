@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
  * Holds runtime-tunable index settings and exposes immutable snapshots.
@@ -26,7 +26,7 @@ public final class RuntimeTuningState {
     }
 
     public static <K, V> RuntimeTuningState fromConfiguration(
-            final IndexConfiguration<K, V> configuration) {
+            final EffectiveIndexConfiguration<K, V> configuration) {
         final var tuning = configuration.runtimeTuning();
         final var writePath = tuning.writePath();
         final EnumMap<RuntimeSettingKey, Integer> baselineValues = new EnumMap<>(

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,8 +29,7 @@ class SegmentIndexImplTest {
         index = IndexInternalConcurrent.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(),
-                conf, conf.resolveRuntimeConfiguration(),
+                new TypeDescriptorShortString(), effective(conf),
                 ExecutorRegistryFixture.from(conf));
     }
 
@@ -55,8 +56,7 @@ class SegmentIndexImplTest {
         try (IndexInternalConcurrent<Integer, String> openingIndex =
                 IndexInternalConcurrent.createOpening(new MemDirectory(),
                         new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), conf,
-                        conf.resolveRuntimeConfiguration(),
+                        new TypeDescriptorShortString(), effective(conf),
                         ExecutorRegistryFixture.from(conf))) {
             assertEquals(SegmentIndexState.OPENING,
                     openingIndex.runtimeMonitoring().snapshot().getState());

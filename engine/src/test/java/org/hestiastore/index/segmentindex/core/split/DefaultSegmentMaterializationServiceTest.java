@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -178,8 +180,7 @@ class DefaultSegmentMaterializationServiceTest {
                 .withDirectoryFacade(directory)
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
                 .withValueTypeDescriptor(new TypeDescriptorShortString())
-                .withConfiguration(conf)
-                .withRuntimeConfiguration(conf.resolveRuntimeConfiguration())
+                .withConfiguration(effective(conf))
                 .withSegmentMaintenanceExecutor(stableSegmentMaintenancePool)
                 .withRegistryMaintenanceExecutor(registryMaintenancePool)
                 .build();

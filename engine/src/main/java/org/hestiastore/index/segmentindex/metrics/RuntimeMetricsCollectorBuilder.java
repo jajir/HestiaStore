@@ -4,12 +4,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -21,7 +21,7 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  */
 public final class RuntimeMetricsCollectorBuilder<K, V> {
 
-    private IndexConfiguration<K, V> conf;
+    private EffectiveIndexConfiguration<K, V> conf;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
     private Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
@@ -38,7 +38,7 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
     }
 
     public RuntimeMetricsCollectorBuilder<K, V> withConf(
-            final IndexConfiguration<K, V> conf) {
+            final EffectiveIndexConfiguration<K, V> conf) {
         this.conf = conf;
         return this;
     }

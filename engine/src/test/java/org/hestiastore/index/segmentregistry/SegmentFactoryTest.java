@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,7 +40,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segment.SegmentTestHelper;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class SegmentFactoryTest {
@@ -51,8 +53,7 @@ class SegmentFactoryTest {
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
-                conf.resolveRuntimeConfiguration(),
+                new TypeDescriptorShortString(), effective(conf),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(1);
         final SegmentBuildResult<Segment<Integer, String>> buildResult = factory
@@ -76,8 +77,7 @@ class SegmentFactoryTest {
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
-                conf.resolveRuntimeConfiguration(),
+                new TypeDescriptorShortString(), effective(conf),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(7);
         final String lockFileName = new SegmentDirectoryLayout(segmentId)
@@ -106,8 +106,7 @@ class SegmentFactoryTest {
                 .newSingleThreadExecutor();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 directory, new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
-                conf.resolveRuntimeConfiguration(),
+                new TypeDescriptorShortString(), effective(conf),
                 stableSegmentMaintenancePool);
         final SegmentId segmentId = SegmentId.of(9);
 
@@ -190,11 +189,10 @@ class SegmentFactoryTest {
                     }
                 })
                 .build();
-        final ResolvedIndexConfiguration<Integer, String> runtimeConfiguration = conf
-                .resolveRuntimeConfiguration(registry);
+        final EffectiveIndexConfiguration<Integer, String> runtimeConfiguration = effective(conf, registry);
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 new MemDirectory(), new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf, runtimeConfiguration,
+                new TypeDescriptorShortString(), runtimeConfiguration,
                 stableSegmentMaintenancePool);
 
         try {
@@ -222,8 +220,7 @@ class SegmentFactoryTest {
         final IndexConfiguration<Integer, String> conf = newConfiguration();
         final SegmentFactory<Integer, String> factory = new SegmentFactory<>(
                 new MemDirectory(), new TypeDescriptorInteger(),
-                new TypeDescriptorShortString(), conf,
-                conf.resolveRuntimeConfiguration(),
+                new TypeDescriptorShortString(), effective(conf),
                 stableSegmentMaintenancePool);
         try {
             final IllegalArgumentException exception = assertThrows(

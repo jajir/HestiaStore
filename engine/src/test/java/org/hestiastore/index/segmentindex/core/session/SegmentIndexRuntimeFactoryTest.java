@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -117,11 +119,10 @@ class SegmentIndexRuntimeFactoryTest {
             final SegmentIndexRuntimeFactory.ResourceCreationObserver<Integer, String> resourceCreationObserver) {
         final SegmentIndexRuntimeOpenContext<Integer, String> request =
                 new SegmentIndexRuntimeOpenContext<>(logger,
-                        new MemDirectory(), tdi, tds, conf,
-                        conf.resolveRuntimeConfiguration(), executorRegistry,
-                        new Stats(), new AtomicLong(), new AtomicLong(),
-                        new AtomicLong(), () -> SegmentIndexState.READY,
-                        failureHandler);
+                        new MemDirectory(), tdi, tds, effective(conf),
+                        executorRegistry, new Stats(), new AtomicLong(),
+                        new AtomicLong(), new AtomicLong(),
+                        () -> SegmentIndexState.READY, failureHandler);
         if (resourceCreationObserver == null) {
             return new SegmentIndexRuntimeFactory<>(request);
         }

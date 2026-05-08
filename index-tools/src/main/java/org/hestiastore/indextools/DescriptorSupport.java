@@ -5,8 +5,9 @@ import java.util.Base64;
 
 import org.hestiastore.index.datatype.EncodedBytes;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.types.DataTypeDescriptorRegistry;
+import org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry;
 
 final class DescriptorSupport {
 
@@ -16,14 +17,26 @@ final class DescriptorSupport {
     static DescriptorPair fromConfiguration(
             final IndexConfiguration<?, ?> configuration) {
         final var identity = configuration.identity();
-        return new DescriptorPair(identity.keyClass(),
-                identity.valueClass(),
-                identity.keyTypeDescriptor(),
-                identity.valueTypeDescriptor(),
+        return fromIdentity(identity.keyClass(), identity.valueClass(),
+                identity.keyTypeDescriptor(), identity.valueTypeDescriptor());
+    }
+
+    static DescriptorPair fromConfiguration(
+            final EffectiveIndexConfiguration<?, ?> configuration) {
+        final var identity = configuration.identity();
+        return fromIdentity(identity.keyClass(), identity.valueClass(),
+                identity.keyTypeDescriptor(), identity.valueTypeDescriptor());
+    }
+
+    private static DescriptorPair fromIdentity(final Class<?> keyClass,
+            final Class<?> valueClass, final String keyTypeDescriptor,
+            final String valueTypeDescriptor) {
+        return new DescriptorPair(keyClass, valueClass, keyTypeDescriptor,
+                valueTypeDescriptor,
                 castDescriptor(DataTypeDescriptorRegistry
-                        .makeInstance(identity.keyTypeDescriptor())),
+                        .makeInstance(keyTypeDescriptor)),
                 castDescriptor(DataTypeDescriptorRegistry
-                        .makeInstance(identity.valueTypeDescriptor())));
+                        .makeInstance(valueTypeDescriptor)));
     }
 
     private static TypeDescriptor<Object> castDescriptor(
