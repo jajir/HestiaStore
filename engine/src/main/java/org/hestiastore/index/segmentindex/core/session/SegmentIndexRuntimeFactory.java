@@ -5,8 +5,7 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningServiceImpl;
-import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
@@ -25,9 +24,12 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
+import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
+import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.tuning.RuntimeTuningServiceImpl;
+import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -129,7 +131,6 @@ final class SegmentIndexRuntimeFactory<K, V> {
         return new SegmentIndexCoreStorageOpenSpec<>(
                 openContext.directoryFacade, openContext.keyTypeDescriptor,
                 openContext.valueTypeDescriptor, openContext.conf,
-                openContext.runtimeConfiguration,
                 openContext.executorRegistry);
     }
 
@@ -269,11 +270,17 @@ final class SegmentIndexRuntimeFactory<K, V> {
         final RuntimeConfiguration runtimeConfiguration =
                 new RuntimeTuningServiceImpl(coreStorage.runtimeTuningState(),
                         runtimeLimitApplier::apply,
-                        topologyRuntime::requestFullSplitScan);
+                        topologyRuntime::requestFullSplitScan,
+                        this::persistRuntimeTuning);
         return new SegmentIndexRuntimeServices<>(walCoordinator,
                 createOperationAccess(topologyRuntime, walCoordinator),
                 maintenance, runtimeLimitApplier, metricsSnapshotSupplier,
                 runtimeMonitoring, runtimeConfiguration);
+    }
+
+    private void persistRuntimeTuning(final ConfigurationSnapshot snapshot) {
+        new IndexConfigurationStorage<K, V>(openContext.directoryFacade)
+                .save(openContext.conf.withRuntimeTuning(snapshot));
     }
 
     private MaintenanceService createMaintenance(
@@ -331,8 +338,8 @@ final class SegmentIndexRuntimeFactory<K, V> {
 
     private WalRuntime<K, V> openWalRuntime() {
         return WalRuntime.open(openContext.directoryFacade,
-                openContext.conf.wal(), openContext.keyTypeDescriptor,
-                openContext.valueTypeDescriptor);
+                openContext.conf.wal().toIndexWalConfiguration(),
+                openContext.keyTypeDescriptor, openContext.valueTypeDescriptor);
     }
 
     private void notifyWalRuntimeCreated(final WalRuntime<K, V> walRuntime) {

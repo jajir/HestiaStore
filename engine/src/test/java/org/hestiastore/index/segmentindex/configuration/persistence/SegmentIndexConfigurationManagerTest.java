@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.persistence;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -10,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterCrc32Validation;
@@ -17,6 +20,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterCrc32Writing;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberValidation;
 import org.hestiastore.index.chunkstore.ChunkFilterMagicNumberWriting;
+import org.hestiastore.index.chunkstore.ChunkFilterProvider;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.chunkstore.ChunkFilterProviderResolverImpl;
 import org.hestiastore.index.chunkstore.ChunkFilterRegistration;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
@@ -25,6 +31,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,9 +85,10 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
-        assertEquals("Key class wasn't specified", ex.getMessage());
+        assertEquals("Property 'keyClass' must not be null.",
+                ex.getMessage());
     }
 
     @Test
@@ -91,9 +99,10 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
-        assertEquals("Value class wasn't specified", ex.getMessage());
+        assertEquals("Property 'valueClass' must not be null.",
+                ex.getMessage());
     }
 
     @Test
@@ -105,7 +114,7 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
         assertEquals("Property 'indexName' must not be null.",
                 ex.getMessage());
@@ -121,7 +130,7 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
@@ -137,11 +146,8 @@ class SegmentIndexConfigurationManagerTest {
                 .identity(identity -> identity.name("test_index"))//
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'keyTypeDescriptor' must not be null.",
-                ex.getMessage());
+        assertEquals(TypeDescriptorLong.class.getName(),
+                effective(config).identity().keyTypeDescriptor());
     }
 
     @Test
@@ -156,7 +162,7 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
         assertEquals("Property 'keyTypeDescriptor' must not be blank.",
                 ex.getMessage());
@@ -174,7 +180,7 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
         assertEquals("Property 'valueTypeDescriptor' must not be blank.",
                 ex.getMessage());
@@ -191,11 +197,7 @@ class SegmentIndexConfigurationManagerTest {
                 .identity(identity -> identity.valueTypeDescriptor(TD_STRING))//
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'isContextLoggingEnabled' must not be null.",
-                ex.getMessage());
+        assertNotNull(effective(config));
     }
 
     @Test
@@ -210,11 +212,7 @@ class SegmentIndexConfigurationManagerTest {
                 .logging(logging -> logging.contextEnabled(true))//
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Property 'MaxNumberOfKeysInSegment' must not be null.",
-                ex.getMessage());
+        assertTrue(effective(config).segment().maxKeys() > 0);
     }
 
     @Test
@@ -231,9 +229,9 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
-        assertEquals("Max number of keys in segment must be at least 4.",
+        assertEquals("MaxNumberOfKeysInSegment must be greater or equal to 4",
                 ex.getMessage());
     }
 
@@ -250,10 +248,7 @@ class SegmentIndexConfigurationManagerTest {
                 .segment(segment -> segment.maxKeys(4))//
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-        assertEquals("Property 'MaxNumberOfSegmentsInCache' must not be null.",
-                ex.getMessage());
+        assertTrue(effective(config).segment().cachedSegmentLimit() > 0);
     }
 
     @Test
@@ -270,10 +265,7 @@ class SegmentIndexConfigurationManagerTest {
                 .segment(segment -> segment.cachedSegmentLimit(1))//
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-        assertEquals("Max number of segments in " + "cache must be at least 3.",
-                ex.getMessage());
+        assertEquals(1, effective(config).segment().cachedSegmentLimit());
     }
 
     @Test
@@ -299,11 +291,10 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
         assertEquals(
-                "Parameter 'diskIoBufferSize' with value '1000' "
-                        + "can't be divided by 1024 without reminder",
+                "Propety 'ioBufferSize' must be divisible by 1024 (e.g., 1024, 2048, 4096). Got: '1000'",
                 ex.getMessage());
     }
 
@@ -329,11 +320,9 @@ class SegmentIndexConfigurationManagerTest {
                 .build();
 
         final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
+                () -> manager.save(effective(config)));
 
-        assertEquals(
-                "Parameter 'diskIoBufferSize' with value '0' "
-                        + "can't be smaller or equal to zero.",
+        assertEquals("Property 'ioBufferSize' must be greater than 0",
                 ex.getMessage());
     }
 
@@ -346,11 +335,8 @@ class SegmentIndexConfigurationManagerTest {
                         List.of(ChunkFilterMagicNumberValidation.class)))
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Encoding chunk filters must not be empty.",
-                ex.getMessage());
+        assertFalse(effective(config).filters().encodingChunkFilterSpecs()
+                .isEmpty());
     }
 
     @Test
@@ -362,37 +348,28 @@ class SegmentIndexConfigurationManagerTest {
                         .decodingFilters(List.<ChunkFilter>of()))
                 .build();
 
-        final Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> manager.save(config));
-
-        assertEquals("Decoding chunk filters must not be empty.",
-                ex.getMessage());
+        assertFalse(effective(config).filters().decodingChunkFilterSpecs()
+                .isEmpty());
     }
 
     @Test
     void test_applyDefaults_adds_default_filters() {
         final IndexConfiguration<Long, String> config = baseBuilder().build();
 
-        final IndexConfiguration<Long, String> withDefaults = manager
+        final EffectiveIndexConfiguration<Long, String> withDefaults = manager
                 .applyDefaults(config);
 
-        assertEquals(2, withDefaults.resolveRuntimeConfiguration()
-                .getEncodingChunkFilters().size());
+        assertEquals(2, withDefaults.filters().encodingChunkFilters().size());
         assertEquals(ChunkFilterCrc32Writing.class,
-                withDefaults.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(0).getClass());
+                withDefaults.filters().encodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterMagicNumberWriting.class,
-                withDefaults.resolveRuntimeConfiguration()
-                        .getEncodingChunkFilters().get(1).getClass());
+                withDefaults.filters().encodingChunkFilters().get(1).getClass());
 
-        assertEquals(2, withDefaults.resolveRuntimeConfiguration()
-                .getDecodingChunkFilters().size());
+        assertEquals(2, withDefaults.filters().decodingChunkFilters().size());
         assertEquals(ChunkFilterMagicNumberValidation.class,
-                withDefaults.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(0).getClass());
+                withDefaults.filters().decodingChunkFilters().get(0).getClass());
         assertEquals(ChunkFilterCrc32Validation.class,
-                withDefaults.resolveRuntimeConfiguration()
-                        .getDecodingChunkFilters().get(1).getClass());
+                withDefaults.filters().decodingChunkFilters().get(1).getClass());
         assertEquals(
                 IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 withDefaults.maintenance().registryLifecycleThreads(),
@@ -408,7 +385,7 @@ class SegmentIndexConfigurationManagerTest {
                 .identity(identity -> identity.name("defaults-fill-type-descriptors"))//
                 .build();
 
-        final IndexConfiguration<Long, String> withDefaults = manager
+        final EffectiveIndexConfiguration<Long, String> withDefaults = manager
                 .applyDefaults(config);
 
         assertEquals(TypeDescriptorLong.class.getName(),
@@ -419,15 +396,18 @@ class SegmentIndexConfigurationManagerTest {
 
     @Test
     void test_save() {
-        manager.save(CONFIG);
+        final EffectiveIndexConfiguration<Long, String> effectiveConfig =
+                effective(CONFIG);
 
-        verify(storage, Mockito.times(1)).save(CONFIG);
+        manager.save(effectiveConfig);
+
+        verify(storage, Mockito.times(1)).save(effectiveConfig);
     }
 
     @Test
     void test_mergeWithStored_used_stored_values() {
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
+        when(storage.load()).thenReturn(effective(CONFIG));
+        final EffectiveIndexConfiguration<Long, String> ret = manager
                 .mergeWithStored(CONFIG);
         // verify that unchanged object is not saved
         verify(storage, Mockito.times(0)).save(any());
@@ -455,8 +435,8 @@ class SegmentIndexConfigurationManagerTest {
                 .identity(identity -> identity.name("pandemonium"))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
+        when(storage.load()).thenReturn(effective(CONFIG));
+        final EffectiveIndexConfiguration<Long, String> ret = manager
                 .mergeWithStored(config);
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
@@ -471,8 +451,8 @@ class SegmentIndexConfigurationManagerTest {
                 .segment(segment -> segment.cacheKeyLimit(8))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
+        when(storage.load()).thenReturn(effective(CONFIG));
+        final EffectiveIndexConfiguration<Long, String> ret = manager
                 .mergeWithStored(config);
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
@@ -487,8 +467,8 @@ class SegmentIndexConfigurationManagerTest {
                 .io(io -> io.diskBufferSizeBytes(1024 * 77))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
+        when(storage.load()).thenReturn(effective(CONFIG));
+        final EffectiveIndexConfiguration<Long, String> ret = manager
                 .mergeWithStored(config);
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
@@ -503,8 +483,8 @@ class SegmentIndexConfigurationManagerTest {
                 .logging(logging -> logging.contextEnabled(true))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
+        when(storage.load()).thenReturn(effective(CONFIG));
+        final EffectiveIndexConfiguration<Long, String> ret = manager
                 .mergeWithStored(config);
         verify(storage, Mockito.times(1)).save(any());
         assertNotNull(ret);
@@ -518,10 +498,10 @@ class SegmentIndexConfigurationManagerTest {
                 .<Long, String>builder()//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
-        final IndexConfiguration<Long, String> ret = manager
+        when(storage.load()).thenReturn(effective(CONFIG));
+        final EffectiveIndexConfiguration<Long, String> ret = manager
                 .mergeWithStored(config);
-        verify(storage, Mockito.times(1)).save(any());
+        verify(storage, Mockito.times(0)).save(any());
         assertNotNull(ret);
 
         assertEquals(IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
@@ -534,7 +514,7 @@ class SegmentIndexConfigurationManagerTest {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
                 .identity(identity -> identity.keyClass((Class) Double.class)) //
                 .build();
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
@@ -550,7 +530,7 @@ class SegmentIndexConfigurationManagerTest {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
                 .identity(identity -> identity.valueClass((Class) Double.class)) //
                 .build();
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
@@ -566,7 +546,7 @@ class SegmentIndexConfigurationManagerTest {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
                 .identity(identity -> identity.keyTypeDescriptor("kachana")) //
                 .build();
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
@@ -581,7 +561,7 @@ class SegmentIndexConfigurationManagerTest {
         final IndexConfiguration cfg = IndexConfiguration.builder()//
                 .identity(identity -> identity.valueTypeDescriptor("kachna")) //
                 .build();
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(cfg));
 
@@ -597,7 +577,7 @@ class SegmentIndexConfigurationManagerTest {
                 .segment(segment -> segment.maxKeys(9864))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
@@ -614,7 +594,7 @@ class SegmentIndexConfigurationManagerTest {
                 .bloomFilter(bloomFilter -> bloomFilter.indexSizeBytes(4620))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
@@ -631,7 +611,7 @@ class SegmentIndexConfigurationManagerTest {
                 .bloomFilter(bloomFilter -> bloomFilter.hashFunctions(4620))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
@@ -648,13 +628,13 @@ class SegmentIndexConfigurationManagerTest {
                 .bloomFilter(bloomFilter -> bloomFilter.falsePositiveProbability(0.5))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
         assertEquals(
                 "Value of 'BloomFilterProbabilityOfFalsePositive' is already "
-                        + "set to 'null' and can't be changed to '0.5'",
+                        + "set to '0.01' and can't be changed to '0.5'",
                 e.getMessage());
     }
 
@@ -665,7 +645,7 @@ class SegmentIndexConfigurationManagerTest {
                 .segment(segment -> segment.chunkKeyLimit(4620))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
@@ -683,7 +663,7 @@ class SegmentIndexConfigurationManagerTest {
                         List.of(new ChunkFilterCrc32Writing())))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
@@ -703,7 +683,7 @@ class SegmentIndexConfigurationManagerTest {
                         List.of(new ChunkFilterMagicNumberValidation())))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> manager.mergeWithStored(config));
 
@@ -729,7 +709,7 @@ class SegmentIndexConfigurationManagerTest {
                                 new ChunkFilterMagicNumberWriting())))//
                 .build();
 
-        when(storage.load()).thenReturn(CONFIG);
+        when(storage.load()).thenReturn(effective(CONFIG));
         manager.mergeWithStored(config);
     }
 
@@ -761,9 +741,9 @@ class SegmentIndexConfigurationManagerTest {
                         ChunkFilterCrc32Validation.class)))
                 .build();
 
-        when(storage.load()).thenReturn(storedConfig);
+        when(storage.load()).thenReturn(effective(storedConfig));
 
-        final IndexConfiguration<Long, String> merged = manager
+        final EffectiveIndexConfiguration<Long, String> merged = manager
                 .mergeWithStored(config);
 
         assertNotNull(merged);
@@ -796,10 +776,12 @@ class SegmentIndexConfigurationManagerTest {
                         .addEncodingFilter(requestSpec)
                         .addDecodingFilter(requestSpec))
                 .build();
+        final ChunkFilterProviderResolver resolver = customFilterResolver();
+        when(storage.chunkFilterProviderResolver()).thenReturn(resolver);
 
-        when(storage.load()).thenReturn(storedConfig);
+        when(storage.load()).thenReturn(effective(storedConfig, resolver));
 
-        final IndexConfiguration<Long, String> merged = manager
+        final EffectiveIndexConfiguration<Long, String> merged = manager
                 .mergeWithStored(config);
 
         assertNotNull(merged);
@@ -812,6 +794,8 @@ class SegmentIndexConfigurationManagerTest {
 
     @BeforeEach
     void setup() {
+        Mockito.lenient().when(storage.chunkFilterProviderResolver())
+                .thenReturn(ChunkFilterProviderResolverImpl.defaultResolver());
         manager = new IndexConfigurationManager<>(storage);
     }
 
@@ -839,6 +823,28 @@ class SegmentIndexConfigurationManagerTest {
                         CONFIG.filters().encodingChunkFilterSpecs()))//
                 .filters(filters -> filters.decodingFilterSpecs(
                         CONFIG.filters().decodingChunkFilterSpecs()));
+    }
+
+    private ChunkFilterProviderResolver customFilterResolver() {
+        return ChunkFilterProviderResolverImpl.builder().withDefaultProviders()
+                .withProvider(new ChunkFilterProvider() {
+                    @Override
+                    public String getProviderId() {
+                        return "custom";
+                    }
+
+                    @Override
+                    public Supplier<? extends ChunkFilter> createEncodingSupplier(
+                            final ChunkFilterSpec spec) {
+                        return ChunkFilterDoNothing::new;
+                    }
+
+                    @Override
+                    public Supplier<? extends ChunkFilter> createDecodingSupplier(
+                            final ChunkFilterSpec spec) {
+                        return ChunkFilterDoNothing::new;
+                    }
+                }).build();
     }
 
 }

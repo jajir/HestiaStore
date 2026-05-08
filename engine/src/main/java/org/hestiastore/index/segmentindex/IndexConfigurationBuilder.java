@@ -154,14 +154,10 @@ public class IndexConfigurationBuilder<K, V> {
     public IndexConfiguration<K, V> build() {
         final IndexIdentityConfiguration<K, V> identityConfiguration =
                 identity.build();
-        final Integer effectiveSegmentMaxKeys =
-                segment.resolveEffectiveMaxKeys(
-                        writePath.segmentSplitKeyThreshold());
         final IndexSegmentConfiguration segmentConfiguration =
-                segment.build(effectiveSegmentMaxKeys);
+                segment.build();
         final IndexWritePathConfiguration writePathConfiguration =
-                writePath.build(segmentConfiguration.maxKeys(),
-                        segmentConfiguration.cachedSegmentLimit());
+                writePath.build();
         final IndexRuntimeTuningConfiguration runtimeTuningConfiguration =
                 new IndexRuntimeTuningConfiguration(
                         segmentConfiguration.cachedSegmentLimit(),
@@ -175,7 +171,7 @@ public class IndexConfigurationBuilder<K, V> {
 
     private IndexWalConfiguration buildWal() {
         if (!walConfigured) {
-            return IndexWalConfiguration.EMPTY;
+            return null;
         }
         return wal.build();
     }

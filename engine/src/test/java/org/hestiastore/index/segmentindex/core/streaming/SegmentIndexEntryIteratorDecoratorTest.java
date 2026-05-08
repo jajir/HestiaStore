@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.streaming;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
@@ -21,7 +23,8 @@ class SegmentIndexEntryIteratorDecoratorTest {
         final EntryIterator<Integer, String> iterator =
                 new NoopEntryIterator();
         final SegmentIndexEntryIteratorDecorator<Integer, String> decorator =
-                new SegmentIndexEntryIteratorDecorator<>(buildConf(false));
+                new SegmentIndexEntryIteratorDecorator<>(
+                        effective(buildConf(false)));
 
         assertSame(iterator, decorator.decorate(iterator));
     }
@@ -31,7 +34,8 @@ class SegmentIndexEntryIteratorDecoratorTest {
         final EntryIterator<Integer, String> iterator =
                 new NoopEntryIterator();
         final SegmentIndexEntryIteratorDecorator<Integer, String> decorator =
-                new SegmentIndexEntryIteratorDecorator<>(buildConf(true));
+                new SegmentIndexEntryIteratorDecorator<>(
+                        effective(buildConf(true)));
 
         assertInstanceOf(EntryIteratorLoggingContext.class,
                 decorator.decorate(iterator));

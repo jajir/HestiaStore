@@ -11,8 +11,7 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
@@ -52,7 +51,6 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
      * @param keyTypeDescriptor    key type descriptor
      * @param valueTypeDescriptor  value type descriptor
      * @param conf                 configuration for the index
-     * @param runtimeConfiguration resolved runtime configuration
      * @param executorRegistry     shared executor registry
      * @return ready index
      */
@@ -61,12 +59,11 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
         final IndexInternalConcurrent<K, V> index = createOpening(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
-                runtimeConfiguration, executorRegistry);
+                executorRegistry);
         index.completeStartup();
         return index;
     }
@@ -79,7 +76,6 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
      * @param keyTypeDescriptor    key type descriptor
      * @param valueTypeDescriptor  value type descriptor
      * @param conf                 configuration for the index
-     * @param runtimeConfiguration resolved runtime configuration
      * @param executorRegistry     shared executor registry
      * @return index waiting for startup completion
      */
@@ -88,25 +84,22 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
         return new IndexInternalConcurrent<>(newDelegate(
                 directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
-                runtimeConfiguration, executorRegistry));
+                executorRegistry));
     }
 
     private static <K, V> SegmentIndexImpl<K, V> newDelegate(
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
         return SegmentIndexImpl.open(LoggerFactory.getLogger(
                 SegmentIndexImpl.class), directoryFacade, keyTypeDescriptor,
-                valueTypeDescriptor, conf, runtimeConfiguration,
-                executorRegistry);
+                valueTypeDescriptor, conf, executorRegistry);
     }
 
     @Override

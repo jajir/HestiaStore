@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -122,9 +123,8 @@ class IndexConfigurationBuilderTest {
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(10))
                 .build();
 
-        assertEquals(14,
-                config.writePath()
-                        .segmentWriteCacheKeyLimitDuringMaintenance());
+        assertNull(config.writePath()
+                .segmentWriteCacheKeyLimitDuringMaintenance());
     }
 
     @Test
@@ -159,7 +159,7 @@ class IndexConfigurationBuilderTest {
                 IllegalArgumentException.class, builder::build);
 
         assertEquals(
-                "Property 'segmentWriteCacheKeyLimitDuringMaintenance' must be greater than 'segmentWriteCacheKeyLimit'",
+                "segmentWriteCacheKeyLimitDuringMaintenance must be greater than segmentWriteCacheKeyLimit",
                 ex.getMessage());
     }
 }

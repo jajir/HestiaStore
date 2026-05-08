@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.streaming;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
  * Applies optional cross-cutting decoration to iterators opened through the
@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
  */
 public final class SegmentIndexEntryIteratorDecorator<K, V> {
 
-    private final IndexConfiguration<K, V> conf;
+    private final EffectiveIndexConfiguration<K, V> conf;
 
     /**
      * Creates an iterator decorator bound to one index configuration.
@@ -21,7 +21,7 @@ public final class SegmentIndexEntryIteratorDecorator<K, V> {
      * @param conf index configuration controlling optional context logging
      */
     public SegmentIndexEntryIteratorDecorator(
-            final IndexConfiguration<K, V> conf) {
+            final EffectiveIndexConfiguration<K, V> conf) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
     }
 
@@ -41,7 +41,6 @@ public final class SegmentIndexEntryIteratorDecorator<K, V> {
     }
 
     private boolean isContextLoggingEnabled() {
-        final Boolean enabled = conf.logging().contextEnabled();
-        return enabled != null && enabled;
+        return conf.logging().contextEnabled();
     }
 }

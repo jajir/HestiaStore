@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -128,7 +130,7 @@ class IndexWalCoordinatorTest {
 
     private IndexWalCoordinator<Integer, String> newCoordinator(
             final java.util.function.Supplier<SegmentIndexState> stateSupplier) {
-        return IndexWalCoordinator.create(logger, buildConf(), walRuntime,
+        return IndexWalCoordinator.create(logger, effective(buildConf()), walRuntime,
                 new IndexRetryPolicy(1, 10), drainCalls::incrementAndGet,
                 flushCalls::incrementAndGet, stateSupplier, handledFailure::set,
                 lastAppliedWalLsn);

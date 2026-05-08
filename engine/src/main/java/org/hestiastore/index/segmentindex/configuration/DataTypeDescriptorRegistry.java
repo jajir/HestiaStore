@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.configuration.types;
+package org.hestiastore.index.segmentindex.configuration;
 
 import java.util.HashMap;
 import java.util.Map;

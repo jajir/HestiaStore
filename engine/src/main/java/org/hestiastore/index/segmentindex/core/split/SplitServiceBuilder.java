@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class SplitServiceBuilder<K, V> {
 
-    private IndexConfiguration<K, V> conf;
+    private EffectiveIndexConfiguration<K, V> conf;
     private RuntimeTuningState runtimeTuningState;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentTopology<K> segmentTopology;
@@ -42,7 +42,7 @@ public final class SplitServiceBuilder<K, V> {
     }
 
     public SplitServiceBuilder<K, V> conf(
-            final IndexConfiguration<K, V> conf) {
+            final EffectiveIndexConfiguration<K, V> conf) {
         this.conf = conf;
         return this;
     }
@@ -117,7 +117,7 @@ public final class SplitServiceBuilder<K, V> {
                 .from(Vldtn.requireNonNull(failureHandler, "failureHandler"));
         final SplitTelemetry telemetry = SplitTelemetry.from(
                 Vldtn.requireNonNull(stats, "stats"));
-        final IndexConfiguration<K, V> validatedConf = Vldtn
+        final EffectiveIndexConfiguration<K, V> validatedConf = Vldtn
                 .requireNonNull(conf, "conf");
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");

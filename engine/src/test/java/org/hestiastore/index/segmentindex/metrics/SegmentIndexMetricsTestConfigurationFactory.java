@@ -5,6 +5,8 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 
 final class SegmentIndexMetricsTestConfigurationFactory {
@@ -12,8 +14,10 @@ final class SegmentIndexMetricsTestConfigurationFactory {
     private SegmentIndexMetricsTestConfigurationFactory() {
     }
 
-    static IndexConfiguration<Integer, String> build(final String name) {
-        return IndexConfiguration.<Integer, String>builder()
+    static EffectiveIndexConfiguration<Integer, String> build(
+            final String name) {
+        return EffectiveIndexConfigurationResolver.resolveForCreate(
+                IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))
                 .identity(identity -> identity.valueClass(String.class))
                 .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
@@ -38,6 +42,6 @@ final class SegmentIndexMetricsTestConfigurationFactory {
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(1))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
-                .build();
+                .build());
     }
 }

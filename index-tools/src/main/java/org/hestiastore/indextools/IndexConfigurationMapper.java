@@ -3,6 +3,9 @@ package org.hestiastore.indextools;
 import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
@@ -15,6 +18,12 @@ final class IndexConfigurationMapper {
 
     static IndexConfigurationManifest toManifest(
             final IndexConfiguration<?, ?> configuration) {
+        return toManifest(EffectiveIndexConfigurationResolver
+                .resolveForCreate(configuration));
+    }
+
+    static IndexConfigurationManifest toManifest(
+            final EffectiveIndexConfiguration<?, ?> configuration) {
         final var identity = configuration.identity();
         final var segment = configuration.segment();
         final var writePath = configuration.writePath();
@@ -160,7 +169,7 @@ final class IndexConfigurationMapper {
         return spec;
     }
 
-    private static WalManifest toManifest(final IndexWalConfiguration wal) {
+    private static WalManifest toManifest(final EffectiveIndexWalConfiguration wal) {
         final WalManifest manifest = new WalManifest();
         manifest.setEnabled(wal.isEnabled());
         manifest.setDurabilityMode(wal.getDurabilityMode().name());

@@ -14,8 +14,7 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.ResolvedIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -45,16 +44,14 @@ final class SegmentIndexRuntime<K, V>
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
-            final IndexConfiguration<K, V> conf,
-            final ResolvedIndexConfiguration<K, V> runtimeConfiguration,
+            final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry, final Stats stats,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
         return new SegmentIndexRuntimeFactory<>(
                 new SegmentIndexRuntimeOpenContext<>(logger,
                         directoryFacade, keyTypeDescriptor,
-                        valueTypeDescriptor, conf, runtimeConfiguration,
-                        executorRegistry, stats,
+                        valueTypeDescriptor, conf, executorRegistry, stats,
                         new java.util.concurrent.atomic.AtomicLong(),
                         new java.util.concurrent.atomic.AtomicLong(),
                         new java.util.concurrent.atomic.AtomicLong(),

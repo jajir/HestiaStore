@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.session.state;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,8 +31,7 @@ class IndexStateCoordinatorTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalConcurrent.createStarted(new MemDirectory(), tdi, tds,
-                conf, conf.resolveRuntimeConfiguration(),
+        index = IndexInternalConcurrent.createStarted(new MemDirectory(), tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));
     }
 

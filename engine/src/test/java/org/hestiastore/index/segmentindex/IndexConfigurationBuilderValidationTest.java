@@ -255,9 +255,9 @@ class IndexConfigurationBuilderValidationTest {
                 .build();
 
         assertEquals(10, config.writePath().segmentWriteCacheKeyLimit());
-        assertEquals(14, config.writePath()
+        assertNull(config.writePath()
                 .segmentWriteCacheKeyLimitDuringMaintenance());
-        assertEquals(140, config.writePath().indexBufferedWriteKeyLimit());
+        assertNull(config.writePath().indexBufferedWriteKeyLimit());
     }
 
     @Test
@@ -299,7 +299,7 @@ class IndexConfigurationBuilderValidationTest {
                         .maintenanceWriteCacheKeyLimit(0)));
 
         assertEquals(
-                "Property 'segmentWriteCacheKeyLimitDuringMaintenance' must be greater than 0",
+                "segmentWriteCacheKeyLimitDuringMaintenance must be >= 1",
                 exception.getMessage());
     }
 
@@ -311,8 +311,8 @@ class IndexConfigurationBuilderValidationTest {
                         .maintenanceWriteCacheKeyLimit(10)));
 
         assertEquals(
-                "Property 'segmentWriteCacheKeyLimitDuringMaintenance' must be greater "
-                        + "than 'segmentWriteCacheKeyLimit'",
+                "segmentWriteCacheKeyLimitDuringMaintenance must be greater "
+                        + "than segmentWriteCacheKeyLimit",
                 exception.getMessage());
     }
 
@@ -345,8 +345,8 @@ class IndexConfigurationBuilderValidationTest {
                         .indexBufferedWriteKeyLimit(14)));
 
         assertEquals(
-                "Property 'indexBufferedWriteKeyLimit' must be greater than "
-                        + "or equal to 'segmentWriteCacheKeyLimitDuringMaintenance'",
+                "indexBufferedWriteKeyLimit must be greater than "
+                        + "or equal to segmentWriteCacheKeyLimitDuringMaintenance",
                 exception.getMessage());
     }
 

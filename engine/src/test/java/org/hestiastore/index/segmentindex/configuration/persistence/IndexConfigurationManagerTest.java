@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.persistence;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -11,13 +13,15 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationManagerTest {
 
     @Test
     void mergeWithStored_noOverridesDoesNotSave() {
-        final IndexConfiguration<Integer, String> stored = buildStored();
+        final EffectiveIndexConfiguration<Integer, String> stored = effective(
+                buildStored());
         final TestStorage<Integer, String> storage = new TestStorage<>(stored);
         final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
                 storage);
@@ -48,7 +52,7 @@ class IndexConfigurationManagerTest {
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(4))
                 .build();
 
-        final IndexConfiguration<Integer, String> applied = manager
+        final EffectiveIndexConfiguration<Integer, String> applied = manager
                 .applyDefaults(conf);
 
         assertEquals(4, applied.writePath().segmentWriteCacheKeyLimit());
@@ -89,21 +93,22 @@ class IndexConfigurationManagerTest {
     private static final class TestStorage<K, V>
             extends IndexConfigurationStorage<K, V> {
 
-        private IndexConfiguration<K, V> stored;
-        private IndexConfiguration<K, V> saved;
+        private EffectiveIndexConfiguration<K, V> stored;
+        private EffectiveIndexConfiguration<K, V> saved;
 
-        private TestStorage(final IndexConfiguration<K, V> stored) {
+        private TestStorage(final EffectiveIndexConfiguration<K, V> stored) {
             super(new MemDirectory());
             this.stored = stored;
         }
 
         @Override
-        public IndexConfiguration<K, V> load() {
+        public EffectiveIndexConfiguration<K, V> load() {
             return stored;
         }
 
         @Override
-        public void save(final IndexConfiguration<K, V> indexConfiguration) {
+        public void save(
+                final EffectiveIndexConfiguration<K, V> indexConfiguration) {
             saved = indexConfiguration;
         }
 
@@ -112,7 +117,7 @@ class IndexConfigurationManagerTest {
             return stored != null;
         }
 
-        private IndexConfiguration<K, V> getSaved() {
+        private EffectiveIndexConfiguration<K, V> getSaved() {
             return saved;
         }
     }

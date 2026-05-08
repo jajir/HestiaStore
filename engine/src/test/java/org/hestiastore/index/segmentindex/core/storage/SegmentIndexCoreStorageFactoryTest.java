@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
@@ -84,7 +86,7 @@ class SegmentIndexCoreStorageFactoryTest {
     private SegmentIndexCoreStorageOpenSpec<Integer, String> newRequest() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         return new SegmentIndexCoreStorageOpenSpec<>(new MemDirectory(), tdi,
-                tds, conf, conf.resolveRuntimeConfiguration(), executorRegistry);
+                tds, effective(conf), executorRegistry);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

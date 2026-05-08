@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,7 @@ class WalConfigurationTest {
         final IndexConfiguration<Integer, String> conf = IndexConfiguration
                 .<Integer, String>builder().build();
 
-        assertSame(IndexWalConfiguration.EMPTY, conf.wal());
+        assertNull(conf.wal());
     }
 
     @Test

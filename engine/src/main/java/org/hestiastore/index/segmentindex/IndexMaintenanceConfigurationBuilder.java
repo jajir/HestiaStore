@@ -91,27 +91,8 @@ public final class IndexMaintenanceConfigurationBuilder<K, V> {
     }
 
     IndexMaintenanceConfiguration build() {
-        final Integer effectiveSegmentThreads = segmentThreads == null
-                ? IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS
-                : segmentThreads;
-        final Integer effectiveIndexThreads = indexThreads == null
-                ? IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS
-                : indexThreads;
-        final Integer effectiveRegistryLifecycleThreads = registryLifecycleThreads == null
-                ? IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS
-                : registryLifecycleThreads;
-        final Integer effectiveBusyBackoffMillis = busyBackoffMillis == null
-                ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS
-                : busyBackoffMillis;
-        final Integer effectiveBusyTimeoutMillis = busyTimeoutMillis == null
-                ? IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS
-                : busyTimeoutMillis;
-        final Boolean effectiveBackgroundAutoEnabled = backgroundAutoEnabled == null
-                ? IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED
-                : backgroundAutoEnabled;
-        return new IndexMaintenanceConfiguration(effectiveSegmentThreads,
-                effectiveIndexThreads, effectiveRegistryLifecycleThreads,
-                effectiveBusyBackoffMillis, effectiveBusyTimeoutMillis,
-                effectiveBackgroundAutoEnabled);
+        return new IndexMaintenanceConfiguration(segmentThreads, indexThreads,
+                registryLifecycleThreads, busyBackoffMillis, busyTimeoutMillis,
+                backgroundAutoEnabled);
     }
 }

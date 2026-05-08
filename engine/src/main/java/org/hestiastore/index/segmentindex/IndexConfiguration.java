@@ -1,14 +1,16 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
- * Immutable configuration for the segment-index layer.
+ * User-provided configuration request for the segment-index layer.
  * <p>
- * Encapsulates key/value types, index name, segment sizing and caching limits,
- * Bloom filter parameters, disk I/O buffer size, logging switches, and the
- * chunk encoding/decoding filter pipeline metadata. Instances are created via
- * the fluent {@link IndexConfigurationBuilder}.
+ * Encapsulates requested key/value types, index name, segment sizing and
+ * caching limits, Bloom filter parameters, disk I/O buffer size, logging
+ * switches, and the chunk encoding/decoding filter pipeline metadata.
+ * Nullable section values mean that the caller did not provide an override.
+ * Runtime code should use {@link EffectiveIndexConfiguration} after defaults
+ * or stored values have been applied.
  *
  * @param <K> key type
  * @param <V> value type
@@ -54,7 +56,7 @@ public class IndexConfiguration<K, V> {
         this.maintenance = maintenance;
         this.io = io;
         this.logging = logging;
-        this.wal = IndexWalConfiguration.orEmpty(wal);
+        this.wal = wal;
         this.filters = filters;
     }
 
@@ -122,9 +124,9 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns WAL settings.
+     * Returns requested WAL settings.
      *
-     * @return non-null WAL settings
+     * @return WAL settings, or {@code null} when not provided
      */
     public IndexWalConfiguration wal() {
         return wal;
@@ -140,39 +142,13 @@ public class IndexConfiguration<K, V> {
     }
 
     /**
-     * Returns grouped runtime-tunable settings derived from this
+     * Returns grouped runtime-tunable settings requested by this
      * configuration.
      *
      * @return immutable runtime tuning settings view
      */
     public IndexRuntimeTuningConfiguration runtimeTuning() {
         return runtimeTuning;
-    }
-
-    /**
-     * Resolves this persisted configuration into runtime filter suppliers using
-     * the resolver configured in the filter section, or the default resolver
-     * when none was specified.
-     *
-     * @return runtime configuration resolved from persisted metadata
-     */
-    public ResolvedIndexConfiguration<K, V> resolveRuntimeConfiguration() {
-        return resolveRuntimeConfiguration(
-                filters.getChunkFilterProviderResolver());
-    }
-
-    /**
-     * Resolves this persisted configuration into runtime filter suppliers using
-     * the provided chunk filter provider resolver.
-     *
-     * @param chunkFilterProviderResolver resolver used to resolve persisted
-     *                                    chunk filter specs
-     * @return runtime configuration resolved from persisted metadata
-     */
-    public ResolvedIndexConfiguration<K, V> resolveRuntimeConfiguration(
-            final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return ResolvedIndexConfiguration.resolve(this,
-                chunkFilterProviderResolver);
     }
 
 }
