@@ -6,14 +6,14 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigurationContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 
 /**
@@ -28,7 +28,7 @@ public final class IndexContextLoggingAdapter<K, V>
         extends AbstractCloseableResource implements SegmentIndex<K, V> {
     private final SegmentIndex<K, V> delegate;
     private final IndexMdcScopeRunner contextScopeRunner;
-    private final RuntimeConfiguration runtimeConfiguration;
+    private final RuntimeTuning runtimeConfiguration;
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenance;
 
@@ -38,7 +38,7 @@ public final class IndexContextLoggingAdapter<K, V>
         this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
                 "contextScopeRunner");
         this.runtimeConfiguration =
-                new RuntimeConfigurationContextLoggingAdapter(
+                new RuntimeTuningContextLoggingAdapter(
                         delegate.runtimeTuning(), this.contextScopeRunner);
         this.runtimeMonitoring =
                 new IndexRuntimeMonitoringContextLoggingAdapter(
@@ -91,7 +91,7 @@ public final class IndexContextLoggingAdapter<K, V>
     }
 
     @Override
-    public RuntimeConfiguration runtimeTuning() {
+    public RuntimeTuning runtimeTuning() {
         return runtimeConfiguration;
     }
 

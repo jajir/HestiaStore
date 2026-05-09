@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,9 +18,8 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
@@ -220,13 +218,14 @@ class SegmentIndexImplConcurrencyTest {
 
     private void setSplitThreshold(final int threshold) {
         final long revision = index.runtimeTuning()
-                .getCurrent().getRevision();
-        final RuntimePatchResult patchResult = index.runtimeTuning()
-                .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
-                        Integer.valueOf(threshold)), false,
-                        Long.valueOf(revision)));
-        assertTrue(patchResult.isApplied());
+                .current().revision();
+        final RuntimeTuningResult patchResult = index.runtimeTuning()
+                .apply(RuntimeTuningPatch.builder()
+                        .expectedRevision(revision)
+                        .writePath(writePath -> writePath
+                                .segmentSplitKeyThreshold(threshold))
+                        .build());
+        assertTrue(patchResult.applied());
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,

@@ -13,13 +13,13 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchValidation;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
@@ -45,7 +45,7 @@ class IndexContextLoggingAdapterTest {
 
     @BeforeEach
     void setUp() {
-        when(delegate.runtimeTuning()).thenReturn(mock(RuntimeConfiguration.class));
+        when(delegate.runtimeTuning()).thenReturn(mock(RuntimeTuning.class));
         when(delegate.runtimeMonitoring()).thenReturn(mock(IndexRuntimeMonitoring.class));
         when(delegate.maintenance()).thenReturn(maintenance);
         adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
@@ -104,13 +104,13 @@ class IndexContextLoggingAdapterTest {
     }
 
     @Test
-    void wrapsRuntimeConfigurationAndRuntimeMonitoringApisWithMdc() {
-        final RuntimeConfiguration delegateRuntimeConfiguration = mock(
-                RuntimeConfiguration.class);
+    void wrapsRuntimeTuningAndRuntimeMonitoringApisWithMdc() {
+        final RuntimeTuning delegateRuntimeTuning = mock(
+                RuntimeTuning.class);
         final IndexRuntimeMonitoring delegateRuntime = mock(IndexRuntimeMonitoring.class);
         final SegmentIndexMaintenance delegateMaintenance = mock(
                 SegmentIndexMaintenance.class);
-        final RuntimeConfigPatch patch = mock(RuntimeConfigPatch.class);
+        final RuntimeTuningPatch patch = mock(RuntimeTuningPatch.class);
 
         final AtomicReference<String> mdcAtRuntimeSnapshot = new AtomicReference<>();
         final AtomicReference<String> mdcAtGetActual = new AtomicReference<>();
@@ -118,40 +118,40 @@ class IndexContextLoggingAdapterTest {
         final AtomicReference<String> mdcAtValidate = new AtomicReference<>();
         final AtomicReference<String> mdcAtApply = new AtomicReference<>();
 
-        when(delegate.runtimeTuning()).thenReturn(delegateRuntimeConfiguration);
+        when(delegate.runtimeTuning()).thenReturn(delegateRuntimeTuning);
         when(delegate.runtimeMonitoring()).thenReturn(delegateRuntime);
         when(delegate.maintenance()).thenReturn(delegateMaintenance);
         when(delegateRuntime.snapshot()).thenAnswer(invocation -> {
             mdcAtRuntimeSnapshot.set(MDC.get("index.name"));
             return mock(IndexRuntimeSnapshot.class);
         });
-        when(delegateRuntimeConfiguration.getCurrent())
+        when(delegateRuntimeTuning.current())
                 .thenAnswer(invocation -> {
                     mdcAtGetActual.set(MDC.get("index.name"));
-                    return mock(ConfigurationSnapshot.class);
+                    return mock(RuntimeTuningSnapshot.class);
                 });
-        when(delegateRuntimeConfiguration.getOriginal())
+        when(delegateRuntimeTuning.original())
                 .thenAnswer(invocation -> {
                     mdcAtGetOriginal.set(MDC.get("index.name"));
-                    return mock(ConfigurationSnapshot.class);
+                    return mock(RuntimeTuningSnapshot.class);
                 });
-        when(delegateRuntimeConfiguration.validate(patch)).thenAnswer(invocation -> {
+        when(delegateRuntimeTuning.validate(patch)).thenAnswer(invocation -> {
             mdcAtValidate.set(MDC.get("index.name"));
-            return mock(RuntimePatchValidation.class);
+            return mock(RuntimeTuningValidation.class);
         });
-        when(delegateRuntimeConfiguration.apply(patch)).thenAnswer(invocation -> {
+        when(delegateRuntimeTuning.apply(patch)).thenAnswer(invocation -> {
             mdcAtApply.set(MDC.get("index.name"));
-            return mock(RuntimePatchResult.class);
+            return mock(RuntimeTuningResult.class);
         });
         adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
 
-        final RuntimeConfiguration wrappedRuntimeConfiguration = adapter.runtimeTuning();
-        assertSame(wrappedRuntimeConfiguration, adapter.runtimeTuning());
+        final RuntimeTuning wrappedRuntimeTuning = adapter.runtimeTuning();
+        assertSame(wrappedRuntimeTuning, adapter.runtimeTuning());
         adapter.runtimeMonitoring().snapshot();
-        wrappedRuntimeConfiguration.getCurrent();
-        wrappedRuntimeConfiguration.getOriginal();
-        wrappedRuntimeConfiguration.validate(patch);
-        wrappedRuntimeConfiguration.apply(patch);
+        wrappedRuntimeTuning.current();
+        wrappedRuntimeTuning.original();
+        wrappedRuntimeTuning.validate(patch);
+        wrappedRuntimeTuning.apply(patch);
 
         assertEquals("idx", mdcAtRuntimeSnapshot.get());
         assertEquals("idx", mdcAtGetActual.get());

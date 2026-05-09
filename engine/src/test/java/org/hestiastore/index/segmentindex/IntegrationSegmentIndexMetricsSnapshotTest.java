@@ -4,15 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -288,14 +286,15 @@ class IntegrationSegmentIndexMetricsSnapshotTest {
             assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
 
             final long revision = index.runtimeTuning()
-                    .getCurrent().getRevision();
-            final RuntimePatchResult patchResult = index.runtimeTuning()
-                    .apply(new RuntimeConfigPatch(Map.of(
-                            RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
-                            Integer.valueOf(16)), false,
-                            Long.valueOf(revision)));
+                    .current().revision();
+            final RuntimeTuningResult patchResult = index.runtimeTuning()
+                    .apply(RuntimeTuningPatch.builder()
+                            .expectedRevision(revision)
+                            .writePath(writePath -> writePath
+                                    .segmentSplitKeyThreshold(16))
+                            .build());
 
-            assertTrue(patchResult.isApplied());
+            assertTrue(patchResult.applied());
             awaitCondition(() -> {
                 final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
                 return snapshot.getSegmentCount() > 1

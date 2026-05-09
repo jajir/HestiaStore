@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.tuning;
+package org.hestiastore.index.segmentindex.configuration.tuning;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
-class RuntimeConfigurationContextLoggingAdapterTest {
+class RuntimeTuningContextLoggingAdapterTest {
 
     @AfterEach
     void tearDown() {
@@ -23,24 +23,24 @@ class RuntimeConfigurationContextLoggingAdapterTest {
 
     @Test
     void configurationMethodsRunWithIndexContext() {
-        final RuntimeConfiguration delegate = mock(
-                RuntimeConfiguration.class);
-        final RuntimeConfigPatch patch = mock(RuntimeConfigPatch.class);
-        final ConfigurationSnapshot actual = mock(ConfigurationSnapshot.class);
-        final ConfigurationSnapshot original = mock(ConfigurationSnapshot.class);
-        final RuntimePatchValidation validation = mock(
-                RuntimePatchValidation.class);
-        final RuntimePatchResult result = mock(RuntimePatchResult.class);
+        final RuntimeTuning delegate = mock(
+                RuntimeTuning.class);
+        final RuntimeTuningPatch patch = mock(RuntimeTuningPatch.class);
+        final RuntimeTuningSnapshot actual = mock(RuntimeTuningSnapshot.class);
+        final RuntimeTuningSnapshot original = mock(RuntimeTuningSnapshot.class);
+        final RuntimeTuningValidation validation = mock(
+                RuntimeTuningValidation.class);
+        final RuntimeTuningResult result = mock(RuntimeTuningResult.class);
         final AtomicReference<String> actualMdc = new AtomicReference<>();
         final AtomicReference<String> originalMdc = new AtomicReference<>();
         final AtomicReference<String> validateMdc = new AtomicReference<>();
         final AtomicReference<String> applyMdc = new AtomicReference<>();
 
-        when(delegate.getCurrent()).thenAnswer(invocation -> {
+        when(delegate.current()).thenAnswer(invocation -> {
             actualMdc.set(MDC.get("index.name"));
             return actual;
         });
-        when(delegate.getOriginal()).thenAnswer(invocation -> {
+        when(delegate.original()).thenAnswer(invocation -> {
             originalMdc.set(MDC.get("index.name"));
             return original;
         });
@@ -53,12 +53,12 @@ class RuntimeConfigurationContextLoggingAdapterTest {
             return result;
         });
 
-        final RuntimeConfigurationContextLoggingAdapter adapter =
-                new RuntimeConfigurationContextLoggingAdapter(delegate,
+        final RuntimeTuningContextLoggingAdapter adapter =
+                new RuntimeTuningContextLoggingAdapter(delegate,
                         new IndexMdcScopeRunner("idx"));
 
-        assertSame(actual, adapter.getCurrent());
-        assertSame(original, adapter.getOriginal());
+        assertSame(actual, adapter.current());
+        assertSame(original, adapter.original());
         assertSame(validation, adapter.validate(patch));
         assertSame(result, adapter.apply(patch));
         assertSame("idx", actualMdc.get());

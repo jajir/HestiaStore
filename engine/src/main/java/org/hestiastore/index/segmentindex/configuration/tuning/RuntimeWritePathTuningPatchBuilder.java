@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.tuning;
+package org.hestiastore.index.segmentindex.configuration.tuning;
 
 import java.util.EnumMap;
 
@@ -9,38 +9,39 @@ import org.hestiastore.index.Vldtn;
  */
 public final class RuntimeWritePathTuningPatchBuilder {
 
-    private final EnumMap<RuntimeSettingKey, Integer> values;
+    private final EnumMap<RuntimeSettingKey, RuntimeTuningValue> values;
 
     RuntimeWritePathTuningPatchBuilder(
-            final EnumMap<RuntimeSettingKey, Integer> values) {
+            final EnumMap<RuntimeSettingKey, RuntimeTuningValue> values) {
         this.values = Vldtn.requireNonNull(values, "values");
     }
 
     public RuntimeWritePathTuningPatchBuilder segmentWriteCacheKeyLimit(
-            final Integer value) {
+            final int value) {
         values.put(RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
-                value);
+                RuntimeTuningValue.ofInt(value));
         return this;
     }
 
-    public RuntimeWritePathTuningPatchBuilder maintenanceWriteCacheKeyLimit(
-            final Integer value) {
+    public RuntimeWritePathTuningPatchBuilder segmentWriteCacheKeyLimitDuringMaintenance(
+            final int value) {
         values.put(RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
-                value);
+                RuntimeTuningValue.ofInt(value));
         return this;
     }
 
     public RuntimeWritePathTuningPatchBuilder indexBufferedWriteKeyLimit(
-            final Integer value) {
-        values.put(RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT, value);
+            final int value) {
+        values.put(RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
+                RuntimeTuningValue.ofInt(value));
         return this;
     }
 
     public RuntimeWritePathTuningPatchBuilder segmentSplitKeyThreshold(
-            final Integer value) {
+            final int value) {
         values.put(
                 RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
-                value);
+                RuntimeTuningValue.ofInt(value));
         return this;
     }
 }

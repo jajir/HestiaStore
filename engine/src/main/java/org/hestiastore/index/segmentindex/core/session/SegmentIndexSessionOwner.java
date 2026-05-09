@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -80,7 +80,7 @@ final class SegmentIndexSessionOwner<K, V> {
         return runtime.runtimeMonitoring();
     }
 
-    RuntimeConfiguration runtimeTuning() {
+    RuntimeTuning runtimeTuning() {
         return runtime.runtimeTuning();
     }
 

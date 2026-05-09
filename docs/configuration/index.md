@@ -294,21 +294,22 @@ Some names preserve older partition terminology for compatibility.
 | `wal.corruptionPolicy` | `wal().corruptionPolicy()` |
 | `wal.epochSupport` | `wal().epochSupport()` |
 
-Runtime-safe changes can be applied through the runtime configuration with the typed
+Runtime-safe changes can be applied through the runtime tuning API with the typed
 runtime tuning wrapper:
 
 ```java
 RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
-    .expectedRevision(snapshot.getRevision())
-    .maxSegmentsInCache(128)
-    .segmentCacheKeyLimit(260_000)
+    .expectedRevision(index.runtimeTuning().current().revision())
+    .segment(segment -> segment
+        .cachedSegmentLimit(128)
+        .cacheKeyLimit(260_000))
     .writePath(writePath -> writePath
         .segmentWriteCacheKeyLimit(120_000)
-        .maintenanceWriteCacheKeyLimit(180_000)
+        .segmentWriteCacheKeyLimitDuringMaintenance(180_000)
         .indexBufferedWriteKeyLimit(720_000))
     .build();
 
-index.runtimeTuning().applyRuntimeTuning(patch);
+index.runtimeTuning().apply(patch);
 ```
 
 ## Custom data types

@@ -8,8 +8,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -62,13 +61,12 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 stats.getDeleteCount(), cacheStats.hitCount(),
                 cacheStats.missCount(), cacheStats.loadCount(),
                 cacheStats.evictionCount(), cacheStats.size(),
-                cacheStats.limit(), effectiveValue(
-                        RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE),
-                effectiveValue(
-                        RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT),
-                effectiveValue(
-                        RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE),
-                effectiveValue(RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT),
+                cacheStats.limit(),
+                runtimeTuningState.cacheKeyLimit(),
+                runtimeTuningState.segmentWriteCacheKeyLimit(),
+                runtimeTuningState
+                        .segmentWriteCacheKeyLimitDuringMaintenance(),
+                runtimeTuningState.indexBufferedWriteKeyLimit(),
                 stableSegmentRuntime.getTotalMappedStableSegmentCount(),
                 stableSegmentRuntime.getReadyStableSegmentCount(),
                 stableSegmentRuntime
@@ -142,10 +140,6 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 stats.getCompactBusyRetryCount(),
                 stableSegmentRuntime.getStableSegmentMetricsSnapshots(),
                 stateSupplier.get());
-    }
-
-    private int effectiveValue(final RuntimeSettingKey key) {
-        return runtimeTuningState.effectiveValue(key);
     }
 
     private static IndexExecutorMetricsAccess indexMaintenanceSnapshot(

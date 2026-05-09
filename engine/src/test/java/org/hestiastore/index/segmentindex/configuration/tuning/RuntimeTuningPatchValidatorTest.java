@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.tuning;
+package org.hestiastore.index.segmentindex.configuration.tuning;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import java.util.Map;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -28,47 +27,43 @@ class RuntimeTuningPatchValidatorTest {
 
     @Test
     void validateRejectsNullPatch() {
-        final RuntimePatchValidation validation = validator.validate(null);
+        final RuntimeTuningValidation validation = validator.validate(null);
 
-        assertFalse(validation.isValid());
-        assertEquals(1, validation.getIssues().size());
+        assertFalse(validation.valid());
+        assertEquals(1, validation.issues().size());
         assertEquals("patch must not be null",
-                validation.getIssues().get(0).message());
+                validation.issues().get(0).message());
     }
 
     @Test
     void validateRejectsTooSmallSegmentCacheValue() {
-        final RuntimePatchValidation validation = validator
-                .validate(new RuntimeConfigPatch(
-                        Map.of(
-                                RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                                Integer.valueOf(2)),
-                        false, null));
+        final RuntimeTuningValidation validation = validator
+                .validate(RuntimeTuningPatch.builder()
+                        .segment(segment -> segment.cachedSegmentLimit(2))
+                        .build());
 
-        assertFalse(validation.isValid());
-        assertEquals(
-                RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                validation.getIssues().get(0).key());
+        assertFalse(validation.valid());
+        assertEquals(RuntimeTuningField.SEGMENT_CACHED_SEGMENT_LIMIT,
+                validation.issues().get(0).field());
     }
 
     @Test
     void validateNormalizesAcceptedValues() {
-        final RuntimePatchValidation validation = validator
-                .validate(new RuntimeConfigPatch(
-                        Map.of(
-                                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
-                                Integer.valueOf(4),
-                                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
-                                Integer.valueOf(6),
-                                RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
-                                Integer.valueOf(8)),
-                        false, null));
+        final RuntimeTuningValidation validation = validator
+                .validate(RuntimeTuningPatch.builder()
+                        .writePath(writePath -> writePath
+                                .segmentWriteCacheKeyLimit(4)
+                                .segmentWriteCacheKeyLimitDuringMaintenance(6)
+                                .indexBufferedWriteKeyLimit(8))
+                        .build());
 
-        assertTrue(validation.isValid());
-        assertEquals(Integer.valueOf(4), validation.getNormalizedValues().get(
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT));
-        assertEquals(Integer.valueOf(6), validation.getNormalizedValues().get(
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
+        assertTrue(validation.valid());
+        assertEquals(RuntimeTuningValue.ofInt(4),
+                validation.normalizedValues().get(
+                        RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT));
+        assertEquals(RuntimeTuningValue.ofInt(6),
+                validation.normalizedValues().get(
+                        RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {
