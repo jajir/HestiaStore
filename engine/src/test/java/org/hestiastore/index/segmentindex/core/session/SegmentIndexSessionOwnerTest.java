@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.session.state.IndexState;
@@ -41,7 +41,7 @@ class SegmentIndexSessionOwnerTest {
         final IndexState<Integer, String> indexState = mock(IndexState.class);
         final SegmentIndexMetricsSnapshot metricsSnapshot =
                 mock(SegmentIndexMetricsSnapshot.class);
-        final RuntimeConfiguration runtimeConfiguration = mock(RuntimeConfiguration.class);
+        final RuntimeTuning runtimeConfiguration = mock(RuntimeTuning.class);
         when(stateCoordinator.getIndexState()).thenReturn(indexState);
         when(stateCoordinator.getState()).thenReturn(SegmentIndexState.READY);
         when(runtime.metricsSnapshot()).thenReturn(metricsSnapshot);

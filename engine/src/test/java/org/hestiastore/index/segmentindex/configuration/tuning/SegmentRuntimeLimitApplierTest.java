@@ -1,11 +1,11 @@
-package org.hestiastore.index.segmentindex.tuning;
+package org.hestiastore.index.segmentindex.configuration.tuning;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -52,15 +52,10 @@ class SegmentRuntimeLimitApplierTest {
         when(secondSegment.getRuntime()).thenReturn(secondRuntime);
         when(segmentRuntime.loadedSegmentsSnapshot())
                 .thenReturn(List.of(firstSegment, secondSegment));
-        final Map<RuntimeSettingKey, Integer> effective = Map.of(
-                RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
-                Integer.valueOf(3),
-                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
-                Integer.valueOf(10),
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
-                Integer.valueOf(5),
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
-                Integer.valueOf(7));
+        final RuntimeTuningSnapshot effective = new RuntimeTuningSnapshot(
+                "segment-runtime-limit-applier-test", 0L, Instant.now(),
+                new RuntimeSegmentTuningSnapshot(10, 3),
+                new RuntimeWritePathTuningSnapshot(5, 7, 9, 50));
 
         applier.apply(effective);
 

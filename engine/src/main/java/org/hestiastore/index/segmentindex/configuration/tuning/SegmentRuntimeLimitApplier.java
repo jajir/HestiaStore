@@ -1,6 +1,4 @@
-package org.hestiastore.index.segmentindex.tuning;
-
-import java.util.Map;
+package org.hestiastore.index.segmentindex.configuration.tuning;
 
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -25,20 +23,14 @@ public final class SegmentRuntimeLimitApplier<K, V> {
         this.segmentRuntime = segmentRuntime;
     }
 
-    public void apply(final Map<RuntimeSettingKey, Integer> effective) {
-        final int maxSegmentsInCache = effective
-                .get(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE)
-                .intValue();
+    public void apply(final RuntimeTuningSnapshot effective) {
+        final int maxSegmentsInCache = effective.segment().cachedSegmentLimit();
         segmentRegistry.updateCacheLimit(maxSegmentsInCache);
-        final int maxSegmentCache = effective
-                .get(RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE)
-                .intValue();
-        final int maxSegmentWriteCache = effective.get(
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT)
-                .intValue();
-        final int maxMaintenanceWriteCache = effective.get(
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
-                .intValue();
+        final int maxSegmentCache = effective.segment().cacheKeyLimit();
+        final int maxSegmentWriteCache = effective.writePath()
+                .segmentWriteCacheKeyLimit();
+        final int maxMaintenanceWriteCache = effective.writePath()
+                .segmentWriteCacheKeyLimitDuringMaintenance();
         final SegmentRuntimeLimits limits = new SegmentRuntimeLimits(
                 maxSegmentCache, maxSegmentWriteCache,
                 maxMaintenanceWriteCache);

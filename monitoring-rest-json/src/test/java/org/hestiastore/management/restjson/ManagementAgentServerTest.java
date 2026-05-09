@@ -22,9 +22,8 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
@@ -312,6 +311,20 @@ class ManagementAgentServerTest {
     }
 
     @Test
+    void configPatchValidationUsesRuntimeFieldPath() throws Exception {
+        final HttpResponse<String> response = send("PATCH",
+                ManagementApiPaths.CONFIG + "?indexName=" + INDEX_1,
+                "{\"values\":{\"maxNumberOfSegmentsInCache\":\"2\"},\"dryRun\":true}");
+
+        assertEquals(400, response.statusCode());
+        final ErrorResponse payload = objectMapper.readValue(response.body(),
+                ErrorResponse.class);
+        assertEquals("INVALID_REQUEST", payload.code());
+        assertTrue(payload.message()
+                .contains("segment.cachedSegmentLimit: value must be >= 3"));
+    }
+
+    @Test
     void actionRejectsOversizedBody() throws Exception {
         final String oversized = "x".repeat(1_100_000);
         final HttpResponse<String> response = send("POST",
@@ -380,7 +393,8 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "buffered-overlay-report-index", false);
         indexes.add(extra);
-        server.addIndex(extra.runtimeMonitoring().snapshot().getIndexName(), extra);
+        server.addIndex(extra.runtimeMonitoring().snapshot().getIndexName(),
+                extra);
 
         for (int i = 0; i < 6; i++) {
             extra.put(i, "value-" + i);
@@ -410,7 +424,8 @@ class ManagementAgentServerTest {
         final SegmentIndex<Integer, String> extra = createPartitionedIndex(
                 "split-report-index", true);
         indexes.add(extra);
-        server.addIndex(extra.runtimeMonitoring().snapshot().getIndexName(), extra);
+        server.addIndex(extra.runtimeMonitoring().snapshot().getIndexName(),
+                extra);
 
         for (int i = 0; i < 48; i++) {
             extra.put(i, "stable-" + i);
@@ -420,13 +435,14 @@ class ManagementAgentServerTest {
                 && extra.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
                 10_000L);
 
-        final long revision = extra.runtimeTuning()
-                .getCurrent().getRevision();
-        final RuntimePatchResult patchResult = extra.runtimeTuning()
-                .apply(new RuntimeConfigPatch(Map.of(
-                        RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
-                        Integer.valueOf(16)), false, Long.valueOf(revision)));
-        assertTrue(patchResult.isApplied());
+        final long revision = extra.runtimeTuning().current().revision();
+        final RuntimeTuningResult patchResult = extra.runtimeTuning()
+                .apply(RuntimeTuningPatch.builder()
+                        .expectedRevision(revision)
+                        .writePath(writePath -> writePath
+                                .segmentSplitKeyThreshold(16))
+                        .build());
+        assertTrue(patchResult.applied());
 
         awaitCondition(() -> {
             final SegmentIndexMetricsSnapshot snapshot = extra.runtimeMonitoring().snapshot().getMetrics();
@@ -436,7 +452,8 @@ class ManagementAgentServerTest {
 
         final Map.Entry<SegmentIndexMetricsSnapshot, JsonNode> splitMetricsMatch =
                 awaitIndexNodeWithMatchingSplitMetrics(extra,
-                        extra.runtimeMonitoring().snapshot().getIndexName(), 10_000L);
+                        extra.runtimeMonitoring().snapshot().getIndexName(),
+                        10_000L);
         final SegmentIndexMetricsSnapshot snapshot = splitMetricsMatch.getKey();
         final JsonNode indexNode = splitMetricsMatch.getValue();
 

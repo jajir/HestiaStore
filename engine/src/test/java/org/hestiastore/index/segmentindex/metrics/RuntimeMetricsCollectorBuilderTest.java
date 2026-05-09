@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;

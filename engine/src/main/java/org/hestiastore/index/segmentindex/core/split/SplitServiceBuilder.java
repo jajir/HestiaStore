@@ -10,7 +10,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;

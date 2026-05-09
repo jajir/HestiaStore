@@ -7,7 +7,7 @@ import org.hestiastore.index.CloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
@@ -231,7 +231,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      *
      * @return runtime tuning API
      */
-    RuntimeConfiguration runtimeTuning();
+    RuntimeTuning runtimeTuning();
 
     /**
      * Returns operational maintenance API.

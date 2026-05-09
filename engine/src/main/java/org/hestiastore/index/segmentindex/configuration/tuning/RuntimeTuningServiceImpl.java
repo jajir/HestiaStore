@@ -1,6 +1,5 @@
-package org.hestiastore.index.segmentindex.tuning;
+package org.hestiastore.index.segmentindex.configuration.tuning;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 import org.hestiastore.index.Vldtn;
@@ -9,15 +8,15 @@ import org.hestiastore.index.Vldtn;
  * Implements runtime patching over one index instance.
  */
 public final class RuntimeTuningServiceImpl
-        implements RuntimeConfiguration {
+        implements RuntimeTuning {
 
     private final RuntimeTuningPatchValidator patchValidator;
     private final RuntimeTuningPatchApplier patchApplier;
     private final RuntimeTuningState runtimeTuningState;
-    private final Consumer<ConfigurationSnapshot> snapshotPersister;
+    private final Consumer<RuntimeTuningSnapshot> snapshotPersister;
 
     public RuntimeTuningServiceImpl(final RuntimeTuningState runtimeTuningState,
-            final Consumer<Map<RuntimeSettingKey, Integer>> effectiveLimitsApplier,
+            final Consumer<RuntimeTuningSnapshot> effectiveLimitsApplier,
             final Runnable splitThresholdChangedListener) {
         this(runtimeTuningState, effectiveLimitsApplier,
                 splitThresholdChangedListener,
@@ -25,9 +24,9 @@ public final class RuntimeTuningServiceImpl
     }
 
     public RuntimeTuningServiceImpl(final RuntimeTuningState runtimeTuningState,
-            final Consumer<Map<RuntimeSettingKey, Integer>> effectiveLimitsApplier,
+            final Consumer<RuntimeTuningSnapshot> effectiveLimitsApplier,
             final Runnable splitThresholdChangedListener,
-            final Consumer<ConfigurationSnapshot> snapshotPersister) {
+            final Consumer<RuntimeTuningSnapshot> snapshotPersister) {
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.snapshotPersister = Vldtn.requireNonNull(snapshotPersister,
@@ -43,35 +42,35 @@ public final class RuntimeTuningServiceImpl
     }
 
     @Override
-    public ConfigurationSnapshot getCurrent() {
+    public RuntimeTuningSnapshot current() {
         return runtimeTuningState.snapshotCurrent();
     }
 
     @Override
-    public ConfigurationSnapshot getOriginal() {
+    public RuntimeTuningSnapshot original() {
         return runtimeTuningState.snapshotOriginal();
     }
 
     @Override
-    public RuntimePatchValidation validate(final RuntimeConfigPatch patch) {
+    public RuntimeTuningValidation validate(final RuntimeTuningPatch patch) {
         return patchValidator.validate(patch);
     }
 
     @Override
-    public RuntimePatchResult apply(final RuntimeConfigPatch patch) {
+    public RuntimeTuningResult apply(final RuntimeTuningPatch patch) {
         return patchApplier.apply(patch);
     }
 
     @Override
-    public ConfigurationSnapshot persistCurrent() {
-        final ConfigurationSnapshot snapshot =
+    public RuntimeTuningSnapshot persistCurrent() {
+        final RuntimeTuningSnapshot snapshot =
                 runtimeTuningState.snapshotCurrent();
         snapshotPersister.accept(snapshot);
         return snapshot;
     }
 
     private static void unsupportedPersistence(
-            final ConfigurationSnapshot snapshot) {
+            final RuntimeTuningSnapshot snapshot) {
         throw new UnsupportedOperationException(
                 "Runtime tuning persistence is not available for this service.");
     }

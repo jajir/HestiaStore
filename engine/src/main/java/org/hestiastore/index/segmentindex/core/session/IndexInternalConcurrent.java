@@ -6,7 +6,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -133,7 +133,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
     }
 
     @Override
-    public RuntimeConfiguration runtimeTuning() {
+    public RuntimeTuning runtimeTuning() {
         return delegate.runtimeTuning();
     }
 
