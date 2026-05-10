@@ -6,7 +6,7 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
@@ -15,7 +15,6 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.slf4j.LoggerFactory;
 
@@ -128,12 +127,8 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
         return delegate.getStream(segmentWindow, isolation);
     }
 
-    public IndexState<K, V> getIndexState() {
-        return delegate.getIndexState();
-    }
-
     @Override
-    public RuntimeConfiguration runtimeTuning() {
+    public RuntimeTuning runtimeTuning() {
         return delegate.runtimeTuning();
     }
 
@@ -173,12 +168,12 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
     }
 
     /**
-     * Moves the internal state to ERROR so close can release the opening lock
-     * after startup fails.
+     * Marks this not-yet-returned index for failed-startup cleanup.
      *
      * @param failure startup failure
      */
     public void abortStartup(final Throwable failure) {
-        delegate.failWithError(Vldtn.requireNonNull(failure, "failure"));
+        delegate.prepareFailedStartupCleanup(Vldtn.requireNonNull(failure,
+                "failure"));
     }
 }

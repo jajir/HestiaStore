@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.session.state.SegmentIndexStateCoordinator;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
@@ -33,9 +33,8 @@ public final class SegmentIndexTestAccess {
                 .runtime());
     }
 
-    public static SegmentIndexStateCoordinator stateCoordinator(final Object index) {
-        return new SegmentIndexStateCoordinator(unwrap(index)
-                .stateCoordinator());
+    public static SegmentIndexStateMachine stateMachine(final Object index) {
+        return unwrap(index).stateMachine();
     }
 
     @SuppressWarnings("unchecked")

@@ -21,10 +21,10 @@ import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.mockito.Mockito;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("unchecked")
 class SegmentIndexRuntimeFactoryTest {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -55,11 +54,13 @@ class SegmentIndexRuntimeFactoryTest {
     @AfterEach
     void tearDown() {
         if (runtime != null) {
+            final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
+            stateMachine.markReady();
             new IndexCloseCoordinator<>(logger,
                     "runtime-graph-builder-test",
-                    Mockito.mock(IndexStateCoordinator.class),
+                    stateMachine,
                     Mockito.mock(IndexOperationTrackingAccess.class), new Stats(),
-                    runtime).close();
+                    runtime, new IndexDirectoryLock(new MemDirectory())).close();
             SegmentIndexRuntimeTestAccess.keyToSegmentMap(runtime).close();
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
@@ -117,12 +118,11 @@ class SegmentIndexRuntimeFactoryTest {
             final IndexConfiguration<Integer, String> conf,
             final Consumer<RuntimeException> failureHandler,
             final SegmentIndexRuntimeFactory.ResourceCreationObserver<Integer, String> resourceCreationObserver) {
-        final SegmentIndexRuntimeOpenContext<Integer, String> request =
-                new SegmentIndexRuntimeOpenContext<>(logger,
-                        new MemDirectory(), tdi, tds, effective(conf),
-                        executorRegistry, new Stats(), new AtomicLong(),
-                        new AtomicLong(), new AtomicLong(),
-                        () -> SegmentIndexState.READY, failureHandler);
+        final SegmentIndexRuntimeOpenContext<Integer, String> request = new SegmentIndexRuntimeOpenContext<>(logger,
+                new MemDirectory(), tdi, tds, effective(conf),
+                executorRegistry, new Stats(), new AtomicLong(),
+                new AtomicLong(), new AtomicLong(),
+                () -> SegmentIndexState.READY, failureHandler);
         if (resourceCreationObserver == null) {
             return new SegmentIndexRuntimeFactory<>(request);
         }

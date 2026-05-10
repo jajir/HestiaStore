@@ -203,11 +203,4 @@ public final class SegmentRegistryBuilder<K, V> {
                 && (closing || segment.getNumberOfKeysInWriteCache() == 0);
     }
 
-    private static int sanitizeRetryConf(final Integer configured,
-            final int fallback) {
-        if (configured == null || configured.intValue() < 1) {
-            return fallback;
-        }
-        return configured.intValue();
-    }
 }

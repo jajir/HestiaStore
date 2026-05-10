@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -16,9 +15,8 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.NullValue;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -214,13 +212,14 @@ class IntegrationSegmentIndexIteratorTest {
             try (var preSplitStream = index.getStream(SegmentWindow.unbounded(),
                     SegmentIteratorIsolation.FULL_ISOLATION)) {
                 final long revision = index.runtimeTuning()
-                        .getCurrent().getRevision();
-                final RuntimePatchResult patchResult = index.runtimeTuning()
-                        .apply(new RuntimeConfigPatch(Map.of(
-                                RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
-                                Integer.valueOf(16)), false,
-                                Long.valueOf(revision)));
-                assertTrue(patchResult.isApplied());
+                        .current().revision();
+                final RuntimeTuningResult patchResult = index.runtimeTuning()
+                        .apply(RuntimeTuningPatch.builder()
+                                .expectedRevision(revision)
+                                .writePath(writePath -> writePath
+                                        .segmentSplitKeyThreshold(16))
+                                .build());
+                assertTrue(patchResult.applied());
 
                 assertEquals(expected, preSplitStream.toList());
                 assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
@@ -259,13 +258,14 @@ class IntegrationSegmentIndexIteratorTest {
                 consumed.add(iterator.next());
 
                 final long revision = index.runtimeTuning()
-                        .getCurrent().getRevision();
-                final RuntimePatchResult patchResult = index.runtimeTuning()
-                        .apply(new RuntimeConfigPatch(Map.of(
-                                RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
-                                Integer.valueOf(16)), false,
-                                Long.valueOf(revision)));
-                assertTrue(patchResult.isApplied());
+                        .current().revision();
+                final RuntimeTuningResult patchResult = index.runtimeTuning()
+                        .apply(RuntimeTuningPatch.builder()
+                                .expectedRevision(revision)
+                                .writePath(writePath -> writePath
+                                        .segmentSplitKeyThreshold(16))
+                                .build());
+                assertTrue(patchResult.applied());
 
                 awaitCondition(() -> {
                     final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();

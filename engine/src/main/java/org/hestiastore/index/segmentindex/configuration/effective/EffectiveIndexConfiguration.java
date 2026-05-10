@@ -1,10 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.effective;
 
-import java.util.Map;
-
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
 
 /**
  * Fully resolved, validated index configuration used for persistence and
@@ -100,34 +97,24 @@ public final class EffectiveIndexConfiguration<K, V> {
     }
 
     public EffectiveIndexConfiguration<K, V> withRuntimeTuning(
-            final ConfigurationSnapshot snapshot) {
-        final Map<RuntimeSettingKey, Integer> values = Vldtn
-                .requireNonNull(snapshot, "snapshot").getValues();
+            final RuntimeTuningSnapshot snapshot) {
+        final RuntimeTuningSnapshot tuning = Vldtn.requireNonNull(snapshot,
+                "snapshot");
         final EffectiveIndexWritePathConfiguration writePath =
                 new EffectiveIndexWritePathConfiguration(
-                        value(values,
-                                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT),
-                        value(values,
-                                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE),
-                        value(values,
-                                RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT),
-                        value(values,
-                                RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD));
+                        tuning.writePath().segmentWriteCacheKeyLimit(),
+                        tuning.writePath()
+                                .segmentWriteCacheKeyLimitDuringMaintenance(),
+                        tuning.writePath().indexBufferedWriteKeyLimit(),
+                        tuning.writePath().segmentSplitKeyThreshold());
         final EffectiveIndexSegmentConfiguration segment =
                 new EffectiveIndexSegmentConfiguration(this.segment.maxKeys(),
                         this.segment.chunkKeyLimit(),
-                        value(values,
-                                RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE),
-                        value(values,
-                                RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE),
+                        tuning.segment().cacheKeyLimit(),
+                        tuning.segment().cachedSegmentLimit(),
                         this.segment.deltaCacheFileLimit());
         return new EffectiveIndexConfiguration<>(identity, segment, writePath,
                 bloomFilter, maintenance, io, logging, wal, filters);
-    }
-
-    private static int value(final Map<RuntimeSettingKey, Integer> values,
-            final RuntimeSettingKey key) {
-        return Vldtn.requireNonNull(values.get(key), key.name()).intValue();
     }
 
     private static void validateWal(final EffectiveIndexWalConfiguration wal) {

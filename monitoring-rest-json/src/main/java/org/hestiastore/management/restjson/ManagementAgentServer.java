@@ -15,7 +15,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,14 +34,15 @@ import java.util.stream.Collectors;
 
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.monitoring.MonitoredIndexProvider;
-import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfigPatch;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchResult;
-import org.hestiastore.index.segmentindex.tuning.RuntimePatchValidation;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningField;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatchBuilder;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
 import org.hestiastore.monitoring.json.api.ActionRequest;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
@@ -83,21 +83,21 @@ public final class ManagementAgentServer
     private static final int MAX_AUDIT_RECORDS = 10_000;
     private static final int MAX_ACTION_REPLAYS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
-    private static final Map<RuntimeSettingKey, String> API_NAME_BY_RUNTIME_KEY = Map
-            .of(RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
+    private static final Map<RuntimeTuningField, String> API_NAME_BY_RUNTIME_FIELD = Map
+            .of(RuntimeTuningField.SEGMENT_CACHED_SEGMENT_LIMIT,
                     "maxNumberOfSegmentsInCache",
-                    RuntimeSettingKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
+                    RuntimeTuningField.SEGMENT_CACHE_KEY_LIMIT,
                     "maxNumberOfKeysInSegmentCache",
-                    RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
+                    RuntimeTuningField.WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT,
                     "segmentWriteCacheKeyLimit",
-                    RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
+                    RuntimeTuningField.WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                     "segmentWriteCacheKeyLimitDuringMaintenance",
-                    RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
+                    RuntimeTuningField.WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT,
                     "indexBufferedWriteKeyLimit",
-                    RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
+                    RuntimeTuningField.WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD,
                     "segmentSplitKeyThreshold");
-    private static final Map<String, RuntimeSettingKey> RUNTIME_KEY_BY_API_NAME = buildRuntimeKeyByApiName();
-    private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_KEY
+    private static final Map<String, RuntimeTuningField> RUNTIME_FIELD_BY_API_NAME = buildRuntimeFieldByApiName();
+    private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_FIELD
             .values().stream().sorted().toList();
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -394,7 +394,7 @@ public final class ManagementAgentServer
         if (target.isEmpty()) {
             return;
         }
-        final RuntimeConfigPatch runtimePatch = toRuntimePatchOrReject(exchange,
+        final RuntimeTuningPatch runtimePatch = toRuntimePatchOrReject(exchange,
                 endpoint, body, request);
         if (runtimePatch == null) {
             return;
@@ -563,7 +563,7 @@ public final class ManagementAgentServer
         return Optional.of(target);
     }
 
-    private RuntimeConfigPatch toRuntimePatchOrReject(
+    private RuntimeTuningPatch toRuntimePatchOrReject(
             final HttpExchange exchange, final String endpoint,
             final String body, final ConfigPatchRequest request)
             throws IOException {
@@ -588,18 +588,26 @@ public final class ManagementAgentServer
     private void applyConfigPatch(final HttpExchange exchange,
             final String endpoint, final String body,
             final ConfigPatchRequest request, final RegisteredIndex target,
-            final RuntimeConfigPatch runtimePatch) throws IOException {
-        final RuntimePatchResult result = target.index().runtimeTuning()
-                .apply(runtimePatch);
-        if (!result.validation().valid()) {
-            final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
-                    formatValidationIssues(result.validation()), "",
-                    Instant.now());
-            writeJson(exchange, 400, error);
-            audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
+            final RuntimeTuningPatch runtimePatch) throws IOException {
+        if (request.dryRun()) {
+            final RuntimeTuningValidation validation = target.index()
+                    .runtimeTuning().validate(runtimePatch);
+            if (!validation.valid()) {
+                writeValidationError(exchange, endpoint, body, validation);
+                return;
+            }
+            writeNoContent(exchange);
+            audit(exchange, endpoint, body, 204, "DRY_RUN");
             return;
         }
-        if (!request.dryRun() && !result.applied()) {
+        final RuntimeTuningResult result = target.index().runtimeTuning()
+                .apply(runtimePatch);
+        if (!result.validation().valid()) {
+            writeValidationError(exchange, endpoint, body,
+                    result.validation());
+            return;
+        }
+        if (!result.applied()) {
             final ErrorResponse error = new ErrorResponse(ERROR_INVALID_STATE,
                     "Runtime patch was not applied.", "", Instant.now());
             writeJson(exchange, 409, error);
@@ -607,8 +615,16 @@ public final class ManagementAgentServer
             return;
         }
         writeNoContent(exchange);
-        audit(exchange, endpoint, body, 204,
-                request.dryRun() ? "DRY_RUN" : "APPLIED");
+        audit(exchange, endpoint, body, 204, "APPLIED");
+    }
+
+    private void writeValidationError(final HttpExchange exchange,
+            final String endpoint, final String body,
+            final RuntimeTuningValidation validation) throws IOException {
+        final ErrorResponse error = new ErrorResponse(ERROR_INVALID_REQUEST,
+                formatValidationIssues(validation), "", Instant.now());
+        writeJson(exchange, 400, error);
+        audit(exchange, endpoint, body, 400, AUDIT_REJECTED);
     }
 
     private ActionRequest parseActionRequest(final HttpExchange exchange,
@@ -916,27 +932,27 @@ public final class ManagementAgentServer
 
     private ConfigViewResponse toConfigViewResponse(
             final RegisteredIndex monitored) {
-        final ConfigurationSnapshot currentConfig = monitored.index()
-                .runtimeTuning().getCurrent();
-        final ConfigurationSnapshot originalConfig = monitored.index()
-                .runtimeTuning().getOriginal();
+        final RuntimeTuningSnapshot currentConfig = monitored.index()
+                .runtimeTuning().current();
+        final RuntimeTuningSnapshot originalConfig = monitored.index()
+                .runtimeTuning().original();
         return new ConfigViewResponse(monitored.indexName(),
-                toApiConfigMap(originalConfig.values()),
-                toApiConfigMap(currentConfig.values()),
+                toApiConfigMap(originalConfig),
+                toApiConfigMap(currentConfig),
                 supportedRuntimeConfigKeys(),
                 currentConfig.revision(), Instant.now());
     }
 
-    private RuntimeConfigPatch toRuntimePatch(
+    private RuntimeTuningPatch toRuntimePatch(
             final ConfigPatchRequest request) {
-        final EnumMap<RuntimeSettingKey, Integer> runtimeValues = new EnumMap<>(
-                RuntimeSettingKey.class);
+        final RuntimeTuningPatchBuilder builder =
+                RuntimeTuningPatch.builder();
         for (final Map.Entry<String, String> entry : request.values()
                 .entrySet()) {
             final String key = entry.getKey();
-            final RuntimeSettingKey runtimeKey = RUNTIME_KEY_BY_API_NAME
+            final RuntimeTuningField runtimeField = RUNTIME_FIELD_BY_API_NAME
                     .get(key);
-            if (runtimeKey == null) {
+            if (runtimeField == null) {
                 throw new ConfigKeyNotSupportedException("Config key '" + key
                         + "' is not supported for runtime tuning.");
             }
@@ -947,22 +963,46 @@ public final class ManagementAgentServer
                 throw new IllegalArgumentException(
                         "Config key '" + key + "' requires integer value.");
             }
-            runtimeValues.put(runtimeKey, Integer.valueOf(value));
+            applyRuntimePatchValue(builder, runtimeField, value);
         }
-        return new RuntimeConfigPatch(runtimeValues, request.dryRun(), null);
+        return builder.build();
     }
 
     private static List<String> supportedRuntimeConfigKeys() {
         return SUPPORTED_RUNTIME_CONFIG_KEYS;
     }
 
+    private static void applyRuntimePatchValue(
+            final RuntimeTuningPatchBuilder builder,
+            final RuntimeTuningField field, final int value) {
+        switch (field) {
+            case SEGMENT_CACHED_SEGMENT_LIMIT -> builder
+                    .segment(segment -> segment.cachedSegmentLimit(value));
+            case SEGMENT_CACHE_KEY_LIMIT -> builder
+                    .segment(segment -> segment.cacheKeyLimit(value));
+            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT -> builder
+                    .writePath(writePath -> writePath
+                            .segmentWriteCacheKeyLimit(value));
+            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> builder
+                    .writePath(writePath -> writePath
+                            .segmentWriteCacheKeyLimitDuringMaintenance(
+                                    value));
+            case WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT -> builder
+                    .writePath(writePath -> writePath
+                            .indexBufferedWriteKeyLimit(value));
+            case WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD -> builder
+                    .writePath(writePath -> writePath
+                            .segmentSplitKeyThreshold(value));
+        }
+    }
+
     private String formatValidationIssues(
-            final RuntimePatchValidation validation) {
+            final RuntimeTuningValidation validation) {
         return validation.issues().stream().map(issue -> {
-            if (issue.key() == null) {
+            if (issue.field() == null) {
                 return issue.message();
             }
-            return apiName(issue.key()) + ": " + issue.message();
+            return issue.field().path() + ": " + issue.message();
         }).collect(Collectors.joining("; "));
     }
 
@@ -1005,25 +1045,33 @@ public final class ManagementAgentServer
     }
 
     private static Map<String, Integer> toApiConfigMap(
-            final Map<RuntimeSettingKey, Integer> runtimeValues) {
+            final RuntimeTuningSnapshot runtimeValues) {
         final LinkedHashMap<String, Integer> values = new LinkedHashMap<>();
-        for (final Map.Entry<RuntimeSettingKey, String> entry : API_NAME_BY_RUNTIME_KEY
+        for (final Map.Entry<RuntimeTuningField, String> entry : API_NAME_BY_RUNTIME_FIELD
                 .entrySet()) {
-            final Integer value = runtimeValues.get(entry.getKey());
-            if (value == null) {
-                continue;
-            }
-            values.put(entry.getValue(), value);
+            values.put(entry.getValue(),
+                    Integer.valueOf(value(runtimeValues, entry.getKey())));
         }
         return Map.copyOf(values);
     }
 
-    private static String apiName(final RuntimeSettingKey runtimeKey) {
-        final String name = API_NAME_BY_RUNTIME_KEY.get(runtimeKey);
-        if (name != null) {
-            return name;
-        }
-        return runtimeKey.name();
+    private static int value(final RuntimeTuningSnapshot snapshot,
+            final RuntimeTuningField field) {
+        return switch (field) {
+            case SEGMENT_CACHED_SEGMENT_LIMIT -> snapshot.segment()
+                    .cachedSegmentLimit();
+            case SEGMENT_CACHE_KEY_LIMIT -> snapshot.segment()
+                    .cacheKeyLimit();
+            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT -> snapshot
+                    .writePath().segmentWriteCacheKeyLimit();
+            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> snapshot
+                    .writePath()
+                    .segmentWriteCacheKeyLimitDuringMaintenance();
+            case WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT -> snapshot
+                    .writePath().indexBufferedWriteKeyLimit();
+            case WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD -> snapshot.writePath()
+                    .segmentSplitKeyThreshold();
+        };
     }
 
     private void writeMethodNotAllowed(final HttpExchange exchange)
@@ -1215,9 +1263,10 @@ public final class ManagementAgentServer
         }
     }
 
-    private static Map<String, RuntimeSettingKey> buildRuntimeKeyByApiName() {
-        final LinkedHashMap<String, RuntimeSettingKey> values = new LinkedHashMap<>();
-        for (final Map.Entry<RuntimeSettingKey, String> entry : API_NAME_BY_RUNTIME_KEY
+    private static Map<String, RuntimeTuningField> buildRuntimeFieldByApiName() {
+        final LinkedHashMap<String, RuntimeTuningField> values =
+                new LinkedHashMap<>();
+        for (final Map.Entry<RuntimeTuningField, String> entry : API_NAME_BY_RUNTIME_FIELD
                 .entrySet()) {
             values.put(entry.getValue(), entry.getKey());
         }

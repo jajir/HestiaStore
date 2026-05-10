@@ -26,10 +26,10 @@ import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
-import org.hestiastore.index.segmentindex.tuning.ConfigurationSnapshot;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningServiceImpl;
-import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningServiceImpl;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -267,7 +267,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
         final IndexRuntimeMonitoring runtimeMonitoring =
                 new IndexRuntimeMonitoringImpl(openContext.conf,
                         openContext.stateSupplier, metricsSnapshotSupplier);
-        final RuntimeConfiguration runtimeConfiguration =
+        final RuntimeTuning runtimeTuning =
                 new RuntimeTuningServiceImpl(coreStorage.runtimeTuningState(),
                         runtimeLimitApplier::apply,
                         topologyRuntime::requestFullSplitScan,
@@ -275,10 +275,10 @@ final class SegmentIndexRuntimeFactory<K, V> {
         return new SegmentIndexRuntimeServices<>(walCoordinator,
                 createOperationAccess(topologyRuntime, walCoordinator),
                 maintenance, runtimeLimitApplier, metricsSnapshotSupplier,
-                runtimeMonitoring, runtimeConfiguration);
+                runtimeMonitoring, runtimeTuning);
     }
 
-    private void persistRuntimeTuning(final ConfigurationSnapshot snapshot) {
+    private void persistRuntimeTuning(final RuntimeTuningSnapshot snapshot) {
         new IndexConfigurationStorage<K, V>(openContext.directoryFacade)
                 .save(openContext.conf.withRuntimeTuning(snapshot));
     }

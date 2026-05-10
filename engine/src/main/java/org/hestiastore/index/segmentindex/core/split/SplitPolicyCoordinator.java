@@ -9,11 +9,10 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeSettingKey;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -353,8 +352,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private int splitThreshold() {
-        return runtimeTuningState.effectiveValue(
-                RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD);
+        return runtimeTuningState.segmentSplitKeyThreshold();
     }
 
     private long observedKeyCount(final BlockingSegment<K, V> segmentHandle) {
