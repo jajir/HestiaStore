@@ -61,11 +61,11 @@ final class SegmentIndexSessionOwner<K, V> {
         closeCoordinator.close();
     }
 
-    void completeStartup(final Runnable consistencyCheckHook) {
+    void completeStartup() {
         if (!startupCompleted.compareAndSet(false, true)) {
             return;
         }
-        startupCoordinator.completeStartup(consistencyCheckHook);
+        startupCoordinator.completeStartup();
     }
 
     void prepareFailedStartupCleanup(final Throwable failure) {
