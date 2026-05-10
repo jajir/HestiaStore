@@ -5,8 +5,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +18,9 @@ class SegmentIndexPointOperationFacadeTest {
     void setUp() {
         dataAccess = mock(SegmentIndexDataAccess.class);
         pointOperationFacade = new SegmentIndexPointOperationFacade<>(
-                new SegmentIndexTrackedOperationRunner<>(this::readyState,
+                new SegmentIndexTrackedOperationRunner<>(() -> {
+                    // Test guard allows all tracked operations immediately.
+                },
                         IndexOperationTrackingAccess.create()),
                 dataAccess);
     }
@@ -38,32 +38,4 @@ class SegmentIndexPointOperationFacadeTest {
         verify(dataAccess).delete(1);
     }
 
-    private IndexState<Integer, String> readyState() {
-        return new IndexState<>() {
-            @Override
-            public SegmentIndexState state() {
-                return SegmentIndexState.READY;
-            }
-
-            @Override
-            public IndexState<Integer, String> onReady() {
-                return this;
-            }
-
-            @Override
-            public IndexState<Integer, String> onClose() {
-                return this;
-            }
-
-            @Override
-            public IndexState<Integer, String> finishClose() {
-                return this;
-            }
-
-            @Override
-            public void tryPerformOperation() {
-                // The test state allows all tracked operations immediately.
-            }
-        };
-    }
 }

@@ -3,10 +3,10 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
@@ -24,7 +24,7 @@ final class SegmentIndexRuntimeServices<K, V> {
     private final MaintenanceService maintenance;
     private final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier;
     private final IndexRuntimeMonitoring runtimeMonitoring;
-    private final RuntimeConfiguration runtimeConfiguration;
+    private final RuntimeTuning runtimeConfiguration;
     private final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier;
 
     SegmentIndexRuntimeServices(
@@ -34,7 +34,7 @@ final class SegmentIndexRuntimeServices<K, V> {
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier,
             final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier,
             final IndexRuntimeMonitoring runtimeMonitoring,
-            final RuntimeConfiguration runtimeConfiguration) {
+            final RuntimeTuning runtimeConfiguration) {
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
         this.operationAccess = Vldtn.requireNonNull(
@@ -69,7 +69,7 @@ final class SegmentIndexRuntimeServices<K, V> {
         return runtimeMonitoring;
     }
 
-    RuntimeConfiguration runtimeTuning() {
+    RuntimeTuning runtimeTuning() {
         return runtimeConfiguration;
     }
 

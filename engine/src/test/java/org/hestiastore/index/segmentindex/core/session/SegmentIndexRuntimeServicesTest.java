@@ -7,10 +7,10 @@ import static org.mockito.Mockito.mock;
 
 import java.util.function.Supplier;
 
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.tuning.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
@@ -29,7 +29,7 @@ class SegmentIndexRuntimeServicesTest {
                         mock(SegmentRuntimeLimitApplier.class),
                         mock(Supplier.class),
                         mock(IndexRuntimeMonitoring.class),
-                        mock(RuntimeConfiguration.class)));
+                        mock(RuntimeTuning.class)));
 
         assertEquals("Property 'walCoordinator' must not be null.",
                 ex.getMessage());
@@ -45,7 +45,7 @@ class SegmentIndexRuntimeServicesTest {
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
                 mock(Supplier.class);
         final IndexRuntimeMonitoring runtimeMonitoring = mock(IndexRuntimeMonitoring.class);
-        final RuntimeConfiguration runtimeConfiguration = mock(RuntimeConfiguration.class);
+        final RuntimeTuning runtimeConfiguration = mock(RuntimeTuning.class);
         final SegmentRuntimeLimitApplier<Integer, String> runtimeLimitApplier =
                 mock(SegmentRuntimeLimitApplier.class);
 

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Verifies that {@link SegmentIndexImpl} rejects operations after the index is
- * closed, exercising the {@link IndexState} lifecycle transitions.
+ * closed, exercising the SegmentIndex lifecycle transitions.
  */
 class IndexStateTest {
 

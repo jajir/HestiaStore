@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.tuning.RuntimeConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
@@ -73,7 +73,7 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
     }
 
     @Override
-    public RuntimeConfiguration runtimeTuning() {
+    public RuntimeTuning runtimeTuning() {
         return delegate.runtimeTuning();
     }
 

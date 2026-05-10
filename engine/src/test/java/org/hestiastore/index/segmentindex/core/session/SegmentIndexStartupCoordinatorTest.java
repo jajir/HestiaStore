@@ -9,8 +9,8 @@ import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +29,7 @@ class SegmentIndexStartupCoordinatorTest {
     private SegmentIndexRuntime<Integer, String> runtime;
 
     @Mock
-    private IndexStateCoordinator<Integer, String> stateCoordinator;
+    private SegmentIndexStateMachine stateMachine;
 
     @Mock
     private IndexConsistencyCoordinator<Integer, String> consistencyCoordinator;
@@ -43,7 +43,7 @@ class SegmentIndexStartupCoordinatorTest {
     @BeforeEach
     void setUp() {
         startupCoordinator = new SegmentIndexStartupCoordinator<>(logger,
-                "startup-test", false, runtime, stateCoordinator,
+                "startup-test", false, runtime, stateMachine,
                 consistencyCoordinator);
     }
 
@@ -52,10 +52,10 @@ class SegmentIndexStartupCoordinatorTest {
         startupCoordinator.completeStartup(
                 startupConsistencyChecks::incrementAndGet);
 
-        final InOrder inOrder = inOrder(runtime, stateCoordinator);
+        final InOrder inOrder = inOrder(runtime, stateMachine);
         inOrder.verify(runtime).recoverFromWal();
         inOrder.verify(runtime).cleanupOrphanedSegmentDirectories();
-        inOrder.verify(stateCoordinator).markReady();
+        inOrder.verify(stateMachine).markReady();
         inOrder.verify(runtime).requestFullSplitScan();
         verify(consistencyCoordinator, never()).runStartupConsistencyCheck(any());
         assertEquals(0, startupConsistencyChecks.get());
@@ -64,7 +64,7 @@ class SegmentIndexStartupCoordinatorTest {
     @Test
     void completeStartup_runsConsistencyCheckAfterStaleLockRecovery() {
         startupCoordinator = new SegmentIndexStartupCoordinator<>(logger,
-                "startup-test", true, runtime, stateCoordinator,
+                "startup-test", true, runtime, stateMachine,
                 consistencyCoordinator);
         doAnswer(invocation -> {
             final Runnable consistencyCheck = invocation.getArgument(0);
@@ -75,11 +75,11 @@ class SegmentIndexStartupCoordinatorTest {
         startupCoordinator.completeStartup(
                 startupConsistencyChecks::incrementAndGet);
 
-        final InOrder inOrder = inOrder(runtime, stateCoordinator,
+        final InOrder inOrder = inOrder(runtime, stateMachine,
                 consistencyCoordinator);
         inOrder.verify(runtime).recoverFromWal();
         inOrder.verify(runtime).cleanupOrphanedSegmentDirectories();
-        inOrder.verify(stateCoordinator).markReady();
+        inOrder.verify(stateMachine).markReady();
         inOrder.verify(consistencyCoordinator)
                 .runStartupConsistencyCheck(any());
         inOrder.verify(runtime).requestFullSplitScan();

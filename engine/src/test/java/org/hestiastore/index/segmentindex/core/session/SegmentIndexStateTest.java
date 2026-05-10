@@ -54,8 +54,8 @@ class SegmentIndexStateTest {
 
     @Test
     void errorStateRejectsOperations() {
-        SegmentIndexTestAccess.stateCoordinator(errorIndex)
-                .failWithError(new IllegalStateException("boom"));
+        SegmentIndexTestAccess.stateMachine(errorIndex)
+                .markRuntimeFailure(new IllegalStateException("boom"));
         assertEquals(SegmentIndexState.ERROR, errorIndex.runtimeMonitoring().snapshot().getState());
         assertThrows(IllegalStateException.class, () -> errorIndex.get(1));
     }

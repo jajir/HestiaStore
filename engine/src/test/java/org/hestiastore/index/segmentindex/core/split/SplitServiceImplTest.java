@@ -36,7 +36,7 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
 import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -163,7 +163,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(0);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(0);
         final SplitPolicyState policyState = new SplitPolicyState();
         final SplitServiceImpl<String, String> runtime = newRuntime(
                 directExecutor(), () -> SegmentIndexState.READY, policyState);
@@ -187,7 +187,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId)).thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
@@ -215,7 +215,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(0);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(0);
         final SplitServiceImpl<String, String> runtime = newRuntime(
                 directExecutor(), () -> SegmentIndexState.READY,
                 new SplitPolicyState());
@@ -235,7 +235,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
@@ -262,7 +262,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
@@ -287,7 +287,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
                 .thenReturn(Optional.of(segmentHandle));
@@ -351,7 +351,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))
@@ -409,7 +409,7 @@ class SplitServiceImplTest {
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
-        when(runtimeTuningState.effectiveValue(any())).thenReturn(10);
+        when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
         when(segmentRegistry.tryGetSegment(segmentId))

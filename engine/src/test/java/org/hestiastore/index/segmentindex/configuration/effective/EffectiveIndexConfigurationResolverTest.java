@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
 import org.junit.jupiter.api.Test;
 
@@ -20,8 +19,8 @@ class EffectiveIndexConfigurationResolverTest {
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.maxKeys(4)).build();
 
-        final EffectiveIndexConfiguration<Integer, String> effective =
-                EffectiveIndexConfigurationResolver.resolveForCreate(request);
+        final EffectiveIndexConfiguration<Integer, String> effective = EffectiveIndexConfigurationResolver
+                .resolveForCreate(request);
 
         assertEquals("effective-resolver-test", effective.identity().name());
         assertEquals(4, effective.segment().maxKeys());
@@ -35,9 +34,8 @@ class EffectiveIndexConfigurationResolverTest {
 
     @Test
     void mergeWithStoredKeepsStoredFixedValuesAndAppliesRuntimeOverrides() {
-        final EffectiveIndexConfiguration<Integer, String> stored =
-                EffectiveIndexConfigurationResolver
-                        .resolveForCreate(baseRequest().build());
+        final EffectiveIndexConfiguration<Integer, String> stored = EffectiveIndexConfigurationResolver
+                .resolveForCreate(baseRequest().build());
         final IndexConfiguration<Integer, String> request = IndexConfiguration
                 .<Integer, String>builder()
                 .identity(identity -> identity.name("renamed-index"))
@@ -45,8 +43,8 @@ class EffectiveIndexConfigurationResolverTest {
                 .maintenance(maintenance -> maintenance.segmentThreads(2))
                 .logging(logging -> logging.contextEnabled(false)).build();
 
-        final EffectiveIndexConfiguration<Integer, String> effective =
-                EffectiveIndexConfigurationResolver.mergeWithStored(stored,
+        final EffectiveIndexConfiguration<Integer, String> effective = EffectiveIndexConfigurationResolver
+                .mergeWithStored(stored,
                         request);
 
         assertEquals("renamed-index", effective.identity().name());
@@ -61,9 +59,8 @@ class EffectiveIndexConfigurationResolverTest {
 
     @Test
     void mergeWithStoredRejectsFixedPropertyOverride() {
-        final EffectiveIndexConfiguration<Integer, String> stored =
-                EffectiveIndexConfigurationResolver
-                        .resolveForCreate(baseRequest().build());
+        final EffectiveIndexConfiguration<Integer, String> stored = EffectiveIndexConfigurationResolver
+                .resolveForCreate(baseRequest().build());
         final IndexConfiguration<Integer, String> request = IndexConfiguration
                 .<Integer, String>builder()
                 .segment(segment -> segment.maxKeys(

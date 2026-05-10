@@ -15,12 +15,10 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateOpening;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.junit.jupiter.api.Test;
@@ -122,11 +120,10 @@ class SegmentIndexStartupRecoveryTest {
         private static SegmentIndexSessionOwner<Integer, String> newSessionOwner(
                 final Directory directoryFacade,
                 final IndexConfiguration<Integer, String> conf) {
-            final IndexStateOpening<Integer, String> openingState =
-                    new IndexStateOpening<>(directoryFacade);
-            final IndexStateCoordinator<Integer, String> stateCoordinator =
-                    new IndexStateCoordinator<>(openingState,
-                            SegmentIndexState.OPENING);
+            final IndexDirectoryLock directoryLock =
+                    new IndexDirectoryLock(directoryFacade);
+            final SegmentIndexStateMachine stateMachine =
+                    new SegmentIndexStateMachine();
             final SegmentIndexRuntime<Integer, String> runtime = mockRuntime();
             final IndexConsistencyCoordinator<Integer, String> consistencyCoordinator =
                     new IndexConsistencyCoordinator<>(() -> {
@@ -134,17 +131,17 @@ class SegmentIndexStartupRecoveryTest {
                     }, () -> {
                     }, () -> {
                     }, segmentId -> false);
-            return new SegmentIndexSessionOwner<>(stateCoordinator, runtime,
+            return new SegmentIndexSessionOwner<>(stateMachine, runtime,
                     new IndexCloseCoordinator<>(
                             LoggerFactory.getLogger(TrackingIndex.class),
-                            conf.identity().name(), stateCoordinator,
+                            conf.identity().name(), stateMachine,
                             IndexOperationTrackingAccess.create(), new Stats(),
-                            runtime),
+                            runtime, directoryLock),
                     new SegmentIndexStartupCoordinator<>(
                             LoggerFactory.getLogger(TrackingIndex.class),
                             conf.identity().name(),
-                            openingState.wasStaleLockRecovered(), runtime,
-                            stateCoordinator, consistencyCoordinator));
+                            directoryLock.wasStaleLockRecovered(), runtime,
+                            stateMachine, consistencyCoordinator));
         }
 
         @SuppressWarnings("unchecked")
