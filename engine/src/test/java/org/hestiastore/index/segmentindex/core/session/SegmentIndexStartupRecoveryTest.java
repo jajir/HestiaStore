@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -70,28 +71,26 @@ class SegmentIndexStartupRecoveryTest {
     private static final class TrackingIndex
             extends SegmentIndexImpl<Integer, String> {
 
-        private int startupConsistencyChecks;
+        private final AtomicInteger startupConsistencyChecks;
 
         private TrackingIndex(final Directory directoryFacade) {
-            this(directoryFacade, buildConf());
+            this(directoryFacade, buildConf(), new AtomicInteger());
         }
 
         private TrackingIndex(final Directory directoryFacade,
-                final IndexConfiguration<Integer, String> conf) {
+                final IndexConfiguration<Integer, String> conf,
+                final AtomicInteger startupConsistencyChecks) {
             super(new TypeDescriptorInteger(), mockPointOperationFacade(),
                     mockReadFacade(), mock(MaintenanceService.class),
                     mockTrackedRunner(), mock(SegmentIndexMaintenance.class),
-                    newSessionOwner(directoryFacade, conf));
+                    newSessionOwner(directoryFacade, conf,
+                            startupConsistencyChecks));
+            this.startupConsistencyChecks = startupConsistencyChecks;
             completeStartup();
         }
 
-        @Override
-        protected void onStartupConsistencyCheck() {
-            startupConsistencyChecks++;
-        }
-
         private int getStartupConsistencyChecks() {
-            return startupConsistencyChecks;
+            return startupConsistencyChecks.get();
         }
 
         private static IndexConfiguration<Integer, String> buildConf() {
@@ -119,7 +118,8 @@ class SegmentIndexStartupRecoveryTest {
 
         private static SegmentIndexSessionOwner<Integer, String> newSessionOwner(
                 final Directory directoryFacade,
-                final IndexConfiguration<Integer, String> conf) {
+                final IndexConfiguration<Integer, String> conf,
+                final AtomicInteger startupConsistencyChecks) {
             final IndexDirectoryLock directoryLock =
                     new IndexDirectoryLock(directoryFacade);
             final SegmentIndexStateMachine stateMachine =
@@ -128,6 +128,7 @@ class SegmentIndexStartupRecoveryTest {
             final IndexConsistencyCoordinator<Integer, String> consistencyCoordinator =
                     new IndexConsistencyCoordinator<>(() -> {
                     }, segmentFilter -> {
+                        startupConsistencyChecks.incrementAndGet();
                     }, () -> {
                     }, () -> {
                     }, segmentId -> false);
