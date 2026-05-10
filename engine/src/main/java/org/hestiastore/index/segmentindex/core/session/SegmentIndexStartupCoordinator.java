@@ -38,16 +38,15 @@ final class SegmentIndexStartupCoordinator<K, V> {
                 consistencyCoordinator, "consistencyCoordinator");
     }
 
-    void completeStartup(final Runnable startupConsistencyCheck) {
-        final Runnable consistencyCheck = Vldtn.requireNonNull(
-                startupConsistencyCheck, "startupConsistencyCheck");
+    void completeStartup() {
         logger.debug("Opening index '{}'.", indexName);
         runtime.recoverFromWal();
         runtime.cleanupOrphanedSegmentDirectories();
         stateMachine.markReady();
         if (staleLockRecovered) {
             logger.info(STALE_LOCK_RECOVERY_MESSAGE);
-            consistencyCoordinator.runStartupConsistencyCheck(consistencyCheck);
+            consistencyCoordinator.runStartupConsistencyCheck(
+                    consistencyCoordinator::checkAndRepairConsistency);
         }
         runtime.requestFullSplitScan();
         logger.debug("Index '{}' opened.", indexName);
