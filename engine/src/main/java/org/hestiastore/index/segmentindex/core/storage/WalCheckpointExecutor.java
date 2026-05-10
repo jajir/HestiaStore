@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Executes WAL checkpoints and emits checkpoint diagnostics.
@@ -14,16 +15,17 @@ import org.slf4j.Logger;
  */
 final class WalCheckpointExecutor<K, V> {
 
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalCheckpointExecutor.class);
+
     private final WalRuntime<K, V> walRuntime;
     private final AtomicLong lastAppliedWalLsn;
     private final WalFailureTransitionHandler walFailureTransitionHandler;
 
-    WalCheckpointExecutor(final Logger logger,
+    WalCheckpointExecutor(
             final WalRuntime<K, V> walRuntime,
             final AtomicLong lastAppliedWalLsn,
             final WalFailureTransitionHandler walFailureTransitionHandler) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
         this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
                 "lastAppliedWalLsn");
@@ -45,11 +47,11 @@ final class WalCheckpointExecutor<K, V> {
     }
 
     private void logCheckpointStatsIfEnabled() {
-        if (!logger.isDebugEnabled()) {
+        if (!LOGGER.isDebugEnabled()) {
             return;
         }
         final var walStats = walRuntime.statsSnapshot();
-        logger.debug(
+        LOGGER.debug(
                 "WAL checkpoint: durableLsn={}, checkpointLsn={}, retainedBytes={}, segments={}",
                 walStats.durableLsn(), walStats.checkpointLsn(),
                 walStats.retainedBytes(), walStats.segmentCount());

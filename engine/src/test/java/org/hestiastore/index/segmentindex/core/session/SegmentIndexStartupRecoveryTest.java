@@ -134,12 +134,10 @@ class SegmentIndexStartupRecoveryTest {
                     }, segmentId -> false);
             return new SegmentIndexSessionOwner<>(stateMachine, runtime,
                     new IndexCloseCoordinator<>(
-                            LoggerFactory.getLogger(TrackingIndex.class),
                             conf.identity().name(), stateMachine,
                             IndexOperationTrackingAccess.create(), new Stats(),
                             runtime, directoryLock),
                     new SegmentIndexStartupCoordinator<>(
-                            LoggerFactory.getLogger(TrackingIndex.class),
                             conf.identity().name(),
                             directoryLock.wasStaleLockRecovered(), runtime,
                             stateMachine, consistencyCoordinator));

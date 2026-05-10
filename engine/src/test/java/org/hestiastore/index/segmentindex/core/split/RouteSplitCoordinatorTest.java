@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class RouteSplitCoordinatorTest {
@@ -72,8 +71,7 @@ class RouteSplitCoordinatorTest {
                 new SegmentIndexSplitPolicyThreshold<>(),
                 new RouteSplitPreparationService<>(materializationService,
                         new IndexRetryPolicy(maintenance.busyBackoffMillis(),
-                                maintenance.busyTimeoutMillis()),
-                        LoggerFactory.getLogger(RouteSplitCoordinator.class)));
+                                maintenance.busyTimeoutMillis())));
         splitPlan = new RouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
                 UPPER_SEGMENT_ID, 2, RouteSplitPlan.SplitMode.SPLIT);
     }

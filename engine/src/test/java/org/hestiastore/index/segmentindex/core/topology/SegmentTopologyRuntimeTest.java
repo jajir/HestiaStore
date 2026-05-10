@@ -16,7 +16,6 @@ import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeTestAc
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class SegmentTopologyRuntimeTest {
 
@@ -31,8 +30,7 @@ class SegmentTopologyRuntimeTest {
         final IndexConfiguration<Integer, String> conf = buildConf();
         executorRegistry = ExecutorRegistryFixture.from(conf);
         runtime = SegmentIndexRuntimeTestAccess.openRuntime(
-                LoggerFactory.getLogger(getClass()), new MemDirectory(), tdi,
-                tds, conf, executorRegistry);
+                new MemDirectory(), tdi, tds, conf, executorRegistry);
     }
 
     @AfterEach

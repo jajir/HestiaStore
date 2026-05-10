@@ -26,7 +26,6 @@ import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.slf4j.Logger;
 
 /**
  * Aggregates long-lived collaborators created for one running index session.
@@ -38,7 +37,6 @@ final class SegmentIndexRuntime<K, V>
         implements SegmentIndexDataAccess<K, V> {
 
     static <K, V> SegmentIndexRuntime<K, V> create(
-            final Logger logger,
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
@@ -47,8 +45,8 @@ final class SegmentIndexRuntime<K, V>
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
         return new SegmentIndexRuntimeFactory<>(
-                new SegmentIndexRuntimeOpenContext<>(logger,
-                        directoryFacade, keyTypeDescriptor,
+                new SegmentIndexRuntimeOpenContext<>(directoryFacade,
+                        keyTypeDescriptor,
                         valueTypeDescriptor, conf, executorRegistry, stats,
                         new java.util.concurrent.atomic.AtomicLong(),
                         new java.util.concurrent.atomic.AtomicLong(),

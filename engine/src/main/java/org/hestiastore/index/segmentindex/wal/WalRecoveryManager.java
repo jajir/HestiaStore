@@ -6,10 +6,13 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class WalRecoveryManager<K, V> {
 
     private static final int BUFFER_SIZE = 8 * 1024;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalRecoveryManager.class);
 
     private final IndexWalConfiguration wal;
     private final WalStorage storage;
@@ -17,20 +20,18 @@ final class WalRecoveryManager<K, V> {
     private final WalRecordCodec<K, V> recordCodec;
     private final WalSegmentCatalog segmentCatalog;
     private final WalRuntimeMetrics metrics;
-    private final Logger logger;
 
     WalRecoveryManager(final IndexWalConfiguration wal, final WalStorage storage,
             final WalMetadataCatalog metadataCatalog,
             final WalRecordCodec<K, V> recordCodec,
             final WalSegmentCatalog segmentCatalog,
-            final WalRuntimeMetrics metrics, final Logger logger) {
+            final WalRuntimeMetrics metrics) {
         this.wal = wal;
         this.storage = storage;
         this.metadataCatalog = metadataCatalog;
         this.recordCodec = recordCodec;
         this.segmentCatalog = segmentCatalog;
         this.metrics = metrics;
-        this.logger = logger;
     }
 
     WalRecoveryOutcome recover(
@@ -40,7 +41,7 @@ final class WalRecoveryManager<K, V> {
         segmentCatalog.resetRecoveredSegments();
         final List<WalSegmentDescriptor> discoveredSegments = catalogView
                 .discoveredSegments();
-        logger.info(
+        LOGGER.info(
                 "event=wal_recovery_start checkpointLsn={} segmentCount={} corruptionPolicy={}",
                 checkpointLsn, discoveredSegments.size(),
                 wal.getCorruptionPolicy());
@@ -63,7 +64,7 @@ final class WalRecoveryManager<K, V> {
             }
             if (scan.invalidTail()) {
                 truncatedTail = true;
-                logger.warn(
+                LOGGER.warn(
                         "event=wal_recovery_invalid_tail segment={} validBytes={} observedMaxLsn={} policy={}",
                         current.name(), scan.validBytes(), scan.maxLsn(),
                         wal.getCorruptionPolicy());
@@ -71,7 +72,7 @@ final class WalRecoveryManager<K, V> {
                 final int deletedAfterCorruption = segmentCatalog
                         .deleteSegmentsAfter(discoveredSegments, i + 1);
                 if (deletedAfterCorruption > 0) {
-                    logger.warn(
+                    LOGGER.warn(
                             "event=wal_recovery_drop_newer_segments deletedSegments={} fromSegmentIndex={}",
                             deletedAfterCorruption, i + 1);
                 }
@@ -94,7 +95,7 @@ final class WalRecoveryManager<K, V> {
                 final String name = current.name();
                 storage.delete(name);
                 storage.syncMetadata();
-                logger.info("event=wal_recovery_drop_empty_segment segment={}",
+                LOGGER.info("event=wal_recovery_drop_empty_segment segment={}",
                         name);
             }
         }
@@ -103,14 +104,14 @@ final class WalRecoveryManager<K, V> {
             checkpointLsn = lastSeenLsn;
             metadataCatalog.writeCheckpointLsnAtomic(checkpointLsn);
             maxLsn = lastSeenLsn;
-            logger.warn(
+            LOGGER.warn(
                     "event=wal_recovery_checkpoint_clamp previousCheckpointLsn={} clampedCheckpointLsn={} maxLsn={}",
                     previousCheckpointLsn, checkpointLsn, maxLsn);
         }
         if (lastReplayedLsn > maxLsn) {
             lastReplayedLsn = maxLsn;
         }
-        logger.info(
+        LOGGER.info(
                 "event=wal_recovery_complete maxLsn={} checkpointLsn={} lastReplayedLsn={} truncatedTail={} segmentCount={}",
                 maxLsn, checkpointLsn, lastReplayedLsn, truncatedTail,
                 segmentCatalog.segmentCount());
@@ -175,7 +176,7 @@ final class WalRecoveryManager<K, V> {
     private void handleInvalidTail(final String fileName, final long validBytes) {
         metrics.recordCorruption();
         if (wal.getCorruptionPolicy() == WalCorruptionPolicy.FAIL_FAST) {
-            logger.error(
+            LOGGER.error(
                     "event=wal_recovery_tail_repair action=fail_fast segment={} validBytes={}",
                     fileName, validBytes);
             throw new IndexException(
@@ -185,14 +186,14 @@ final class WalRecoveryManager<K, V> {
         if (validBytes <= 0L) {
             storage.delete(fileName);
             storage.syncMetadata();
-            logger.warn(
+            LOGGER.warn(
                     "event=wal_recovery_tail_repair action=delete_segment segment={} validBytes={}",
                     fileName, validBytes);
             return;
         }
         storage.truncate(fileName, validBytes);
         storage.sync(fileName);
-        logger.warn(
+        LOGGER.warn(
                 "event=wal_recovery_tail_repair action=truncate_segment segment={} validBytes={}",
                 fileName, validBytes);
     }

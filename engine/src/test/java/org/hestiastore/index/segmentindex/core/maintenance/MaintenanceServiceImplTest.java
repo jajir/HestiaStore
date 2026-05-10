@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class MaintenanceServiceImplTest {
@@ -73,7 +72,6 @@ class MaintenanceServiceImplTest {
         stats = new Stats();
         maintenanceExecutor = Executors.newSingleThreadExecutor();
         service = new MaintenanceServiceImpl<>(
-                LoggerFactory.getLogger(MaintenanceServiceImplTest.class),
                 synchronizedKeyToSegmentMap, stableSegmentGateway,
                 splitService, retryPolicy(), stats, maintenanceExecutor,
                 checkpointAction);
@@ -117,8 +115,6 @@ class MaintenanceServiceImplTest {
         when(stableSegments.flush(segmentId)).thenReturn(StableSegmentOperationResult.busy());
         final MaintenanceServiceImpl<Integer, String> maintenance =
                 new MaintenanceServiceImpl<>(
-                        LoggerFactory.getLogger(
-                                MaintenanceServiceImplTest.class),
                         mappedSegments, stableSegments, splitServiceValue,
                         retryPolicy(), new Stats(), maintenanceExecutor,
                         checkpoint);
@@ -133,7 +129,6 @@ class MaintenanceServiceImplTest {
     void flushSegment_recordsAcceptedToReadyLatencyAndBusyRetryCount() {
         final SegmentId segmentId = createBootstrapSegment("key");
         service = new MaintenanceServiceImpl<>(
-                LoggerFactory.getLogger(MaintenanceServiceImplTest.class),
                 synchronizedKeyToSegmentMap, stableSegmentGateway, splitService,
                 retryPolicy(), stats, maintenanceExecutor, checkpointAction,
                 sequenceNanoTimeSupplier(10_000L, 35_000L));
@@ -153,7 +148,6 @@ class MaintenanceServiceImplTest {
     void compactSegment_recordsAcceptedToReadyLatencyAndBusyRetryCount() {
         final SegmentId segmentId = createBootstrapSegment("key");
         service = new MaintenanceServiceImpl<>(
-                LoggerFactory.getLogger(MaintenanceServiceImplTest.class),
                 synchronizedKeyToSegmentMap, stableSegmentGateway, splitService,
                 retryPolicy(), stats, maintenanceExecutor, checkpointAction,
                 sequenceNanoTimeSupplier(20_000L, 68_000L));

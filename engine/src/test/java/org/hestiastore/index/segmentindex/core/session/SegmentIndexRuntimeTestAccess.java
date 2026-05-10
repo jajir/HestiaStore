@@ -23,7 +23,6 @@ import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.slf4j.Logger;
 
 /**
  * Test-only bridge exposing package-private runtime internals without keeping
@@ -34,14 +33,14 @@ public final class SegmentIndexRuntimeTestAccess {
     private SegmentIndexRuntimeTestAccess() {
     }
 
-    public static <K, V> Object openRuntime(final Logger logger,
+    public static <K, V> Object openRuntime(
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
-        return SegmentIndexRuntime.create(logger, directoryFacade,
-                keyTypeDescriptor, valueTypeDescriptor, effective(conf),
+        return SegmentIndexRuntime.create(directoryFacade, keyTypeDescriptor,
+                valueTypeDescriptor, effective(conf),
                 executorRegistry, new Stats(), () -> SegmentIndexState.READY,
                 failure -> {
                 });
@@ -107,9 +106,7 @@ public final class SegmentIndexRuntimeTestAccess {
         final SegmentIndexStateMachine stateMachine =
                 new SegmentIndexStateMachine();
         stateMachine.markReady();
-        new IndexCloseCoordinator<>(org.slf4j.LoggerFactory
-                .getLogger(SegmentIndexRuntimeTestAccess.class), indexName,
-                stateMachine,
+        new IndexCloseCoordinator<>(indexName, stateMachine,
                 mock(IndexOperationTrackingAccess.class),
                 new Stats(), runtime,
                 new IndexDirectoryLock(new MemDirectory()))

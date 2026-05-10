@@ -14,13 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentIndexStartupCoordinatorTest {
-
-    @Mock
-    private Logger logger;
 
     @Mock
     private SegmentIndexRuntime<Integer, String> runtime;
@@ -35,7 +31,7 @@ class SegmentIndexStartupCoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        startupCoordinator = new SegmentIndexStartupCoordinator<>(logger,
+        startupCoordinator = new SegmentIndexStartupCoordinator<>(
                 "startup-test", false, runtime, stateMachine,
                 consistencyCoordinator);
     }
@@ -54,7 +50,7 @@ class SegmentIndexStartupCoordinatorTest {
 
     @Test
     void completeStartup_runsConsistencyCheckAfterStaleLockRecovery() {
-        startupCoordinator = new SegmentIndexStartupCoordinator<>(logger,
+        startupCoordinator = new SegmentIndexStartupCoordinator<>(
                 "startup-test", true, runtime, stateMachine,
                 consistencyCoordinator);
         doAnswer(invocation -> {

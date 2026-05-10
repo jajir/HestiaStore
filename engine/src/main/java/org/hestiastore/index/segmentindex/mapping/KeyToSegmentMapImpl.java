@@ -29,7 +29,8 @@ import org.slf4j.LoggerFactory;
  */
 public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(KeyToSegmentMapImpl.class);
     private static final TypeDescriptorSegmentId tdSegId = new TypeDescriptorSegmentId();
 
     private static final String FILE_NAME = "index.map";
@@ -84,7 +85,7 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
             if (oldKey == null) {
                 tmp.put(segmentId, key);
             } else {
-                logger.error(String.format(
+                LOGGER.error(String.format(
                         "Segment id '%s' is used for segment with "
                                 + "key '%s' and segment with key '%s'.",
                         segmentId, key, oldKey));
@@ -286,8 +287,8 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         if (upperMaxKey == null) {
             return false;
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug(
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
                     "Split debug: map apply replacedSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', splitMode='{}', upperSegmentId='{}'.",
                     replacedSegmentId, upperMaxKey, lowerSegmentId,
                     plan.getLowerMaxKey(), plan.getSplitMode(),

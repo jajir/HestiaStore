@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class WalSegmentCatalogTest {
 
@@ -16,10 +15,9 @@ class WalSegmentCatalogTest {
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().segmentSizeBytes(16L).build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
-                storage, LoggerFactory.getLogger(WalSegmentCatalogTest.class));
+                storage);
         final WalSegmentCatalog catalog = new WalSegmentCatalog(wal, storage,
-                metadataCatalog,
-                LoggerFactory.getLogger(WalSegmentCatalogTest.class));
+                metadataCatalog);
 
         final WalSegmentDescriptor first = catalog.ensureActiveSegmentFor(1L,
                 8);
@@ -41,10 +39,9 @@ class WalSegmentCatalogTest {
                 .maxBytesBeforeForcedCheckpoint(1L).build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
-                storage, LoggerFactory.getLogger(WalSegmentCatalogTest.class));
+                storage);
         final WalSegmentCatalog catalog = new WalSegmentCatalog(wal, storage,
-                metadataCatalog,
-                LoggerFactory.getLogger(WalSegmentCatalogTest.class));
+                metadataCatalog);
 
         final WalSegmentDescriptor active = catalog.ensureActiveSegmentFor(1L,
                 4);

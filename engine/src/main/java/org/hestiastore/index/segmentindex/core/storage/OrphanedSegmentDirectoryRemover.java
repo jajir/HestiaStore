@@ -6,6 +6,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Removes orphaned segment directories through the registry with retry-aware
@@ -18,14 +19,15 @@ final class OrphanedSegmentDirectoryRemover<K, V> {
 
     private static final String OPERATION_CLEANUP_ORPHAN_SEGMENT = "cleanupOrphanSegment";
 
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(OrphanedSegmentDirectoryRemover.class);
+
     private final SegmentRegistry<K, V> segmentRegistry;
     private final IndexRetryPolicy retryPolicy;
 
-    OrphanedSegmentDirectoryRemover(final Logger logger,
+    OrphanedSegmentDirectoryRemover(
             final SegmentRegistry<K, V> segmentRegistry,
             final IndexRetryPolicy retryPolicy) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
@@ -51,14 +53,14 @@ final class OrphanedSegmentDirectoryRemover<K, V> {
     }
 
     private void logDeletedOrphanedSegment(final SegmentId segmentId) {
-        logger.info(
+        LOGGER.info(
                 "Deleted orphaned segment directory '{}' during recovery/consistency cleanup.",
                 segmentId);
     }
 
     private void logDeleteFailure(final SegmentId segmentId,
             final IndexException failure) {
-        logger.warn(
+        LOGGER.warn(
                 "Orphaned segment directory '{}' could not be deleted during cleanup: {}",
                 segmentId, failure.getMessage());
     }

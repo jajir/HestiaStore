@@ -19,7 +19,6 @@ import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperat
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class SegmentStreamingServiceBuilderTest {
 
@@ -41,8 +40,6 @@ class SegmentStreamingServiceBuilderTest {
 
         final SegmentStreamingService<Integer, String> service =
                 SegmentStreamingService.<Integer, String>builder()
-                        .logger(LoggerFactory.getLogger(
-                                SegmentStreamingServiceBuilderTest.class))
                         .keyToSegmentMap(keyToSegmentMap)
                         .segmentRegistry(segmentRegistry)
                         .stableSegmentGateway(stableSegmentGateway)
@@ -56,13 +53,14 @@ class SegmentStreamingServiceBuilderTest {
     }
 
     @Test
-    void buildRejectsMissingLogger() {
+    void buildRejectsMissingKeyToSegmentMap() {
         final SegmentStreamingServiceBuilder<Integer, String> builder =
                 SegmentStreamingService.<Integer, String>builder();
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class, builder::build);
 
-        assertEquals("Property 'logger' must not be null.", ex.getMessage());
+        assertEquals("Property 'keyToSegmentMap' must not be null.",
+                ex.getMessage());
     }
 }

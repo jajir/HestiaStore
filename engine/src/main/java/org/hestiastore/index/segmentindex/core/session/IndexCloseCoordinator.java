@@ -5,13 +5,16 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Owns the ordered close sequence for index runtime collaborators.
  */
 final class IndexCloseCoordinator<K, V> {
 
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(IndexCloseCoordinator.class);
+
     private final String indexName;
     private final SegmentIndexStateMachine stateMachine;
     private final IndexOperationTrackingAccess operationTracker;
@@ -19,13 +22,12 @@ final class IndexCloseCoordinator<K, V> {
     private final SegmentIndexRuntime<K, V> runtime;
     private final IndexDirectoryLock directoryLock;
 
-    IndexCloseCoordinator(final Logger logger, final String indexName,
+    IndexCloseCoordinator(final String indexName,
             final SegmentIndexStateMachine stateMachine,
             final IndexOperationTrackingAccess operationTracker,
             final Stats stats,
             final SegmentIndexRuntime<K, V> runtime,
             final IndexDirectoryLock directoryLock) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
         this.stateMachine = Vldtn.requireNonNull(stateMachine,
                 "stateMachine");
@@ -46,14 +48,14 @@ final class IndexCloseCoordinator<K, V> {
     }
 
     private void close(final Runnable beginClose) {
-        logger.debug("Closing index '{}'.", indexName);
+        LOGGER.debug("Closing index '{}'.", indexName);
         try {
             beginClose.run();
             awaitForegroundOperations();
             closeSplitRuntime();
             sealAndFlushRuntimeState();
             logOperationCounts();
-            logger.debug("Index '{}' closed.", indexName);
+            LOGGER.debug("Index '{}' closed.", indexName);
         } finally {
             try {
                 finishClosedState();
@@ -90,10 +92,10 @@ final class IndexCloseCoordinator<K, V> {
     }
 
     private void logOperationCounts() {
-        if (!logger.isDebugEnabled()) {
+        if (!LOGGER.isDebugEnabled()) {
             return;
         }
-        logger.debug(String.format(
+        LOGGER.debug(String.format(
                 "Index is closing, where was %s gets, %s puts and %s deletes.",
                 F.fmt(stats.getGetCount()),
                 F.fmt(stats.getPutCount()),

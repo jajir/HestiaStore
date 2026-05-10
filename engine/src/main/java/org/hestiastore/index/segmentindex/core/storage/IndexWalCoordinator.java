@@ -10,7 +10,6 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.slf4j.Logger;
 
 /**
  * Owns WAL replay, checkpointing, retention pressure handling, and failure
@@ -44,7 +43,7 @@ public final class IndexWalCoordinator<K, V> {
 
     @SuppressWarnings("java:S107")
     public static <K, V> IndexWalCoordinator<K, V> create(
-            final Logger logger, final EffectiveIndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
             final Runnable prepareDurableStateAction,
@@ -58,16 +57,15 @@ public final class IndexWalCoordinator<K, V> {
                         Vldtn.requireNonNull(lastAppliedWalLsn,
                                 "lastAppliedWalLsn"));
         final WalFailureTransitionHandler failureTransitionHandler =
-                new WalFailureTransitionHandler(
-                        Vldtn.requireNonNull(logger, "logger"), walRuntime,
+                new WalFailureTransitionHandler(walRuntime,
                         Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
                         Vldtn.requireNonNull(failureHandler,
                                 "failureHandler"));
         final WalCheckpointExecutor<K, V> checkpointExecutor =
-                new WalCheckpointExecutor<>(logger, walRuntime,
-                        lastAppliedWalLsn, failureTransitionHandler);
+                new WalCheckpointExecutor<>(walRuntime, lastAppliedWalLsn,
+                        failureTransitionHandler);
         final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator =
-                new WalRetentionPressureCoordinator<>(logger,
+                new WalRetentionPressureCoordinator<>(
                         Vldtn.requireNonNull(conf, "conf"), walRuntime,
                         Vldtn.requireNonNull(retryPolicy, "retryPolicy"),
                         Vldtn.requireNonNull(prepareDurableStateAction,
