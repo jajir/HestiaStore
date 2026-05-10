@@ -8,12 +8,10 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.session.IndexOperationTrackingAccess;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexDataAccess;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexTrackedOperationRunner;
-import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +27,9 @@ class SegmentIndexReadFacadeTest {
         dataAccess = mock(SegmentIndexDataAccess.class);
         iteratorDecorator = mock(SegmentIndexEntryIteratorDecorator.class);
         readFacade = new SegmentIndexReadFacade<>(
-                new SegmentIndexTrackedOperationRunner<>(this::readyState,
+                new SegmentIndexTrackedOperationRunner<>(() -> {
+                    // Test guard allows all tracked operations immediately.
+                },
                         IndexOperationTrackingAccess.create()),
                 dataAccess, iteratorDecorator);
     }
@@ -64,32 +64,4 @@ class SegmentIndexReadFacadeTest {
         verify(iteratorDecorator).decorate(windowIterator);
     }
 
-    private IndexState<Integer, String> readyState() {
-        return new IndexState<>() {
-            @Override
-            public SegmentIndexState state() {
-                return SegmentIndexState.READY;
-            }
-
-            @Override
-            public IndexState<Integer, String> onReady() {
-                return this;
-            }
-
-            @Override
-            public IndexState<Integer, String> onClose() {
-                return this;
-            }
-
-            @Override
-            public IndexState<Integer, String> finishClose() {
-                return this;
-            }
-
-            @Override
-            public void tryPerformOperation() {
-                // The test state allows all tracked operations immediately.
-            }
-        };
-    }
 }

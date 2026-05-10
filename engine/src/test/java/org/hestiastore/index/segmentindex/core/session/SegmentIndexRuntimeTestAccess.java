@@ -8,15 +8,16 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -103,11 +104,15 @@ public final class SegmentIndexRuntimeTestAccess {
 
     public static <K, V> void closeRuntime(final SegmentIndexRuntime<K, V> runtime,
             final String indexName) {
+        final SegmentIndexStateMachine stateMachine =
+                new SegmentIndexStateMachine();
+        stateMachine.markReady();
         new IndexCloseCoordinator<>(org.slf4j.LoggerFactory
                 .getLogger(SegmentIndexRuntimeTestAccess.class), indexName,
-                mockIndexStateCoordinator(),
+                stateMachine,
                 mock(IndexOperationTrackingAccess.class),
-                new org.hestiastore.index.segmentindex.metrics.Stats(), runtime)
+                new Stats(), runtime,
+                new IndexDirectoryLock(new MemDirectory()))
                 .close();
     }
 
@@ -122,9 +127,4 @@ public final class SegmentIndexRuntimeTestAccess {
         return (SegmentIndexRuntime<K, V>) runtime;
     }
 
-    @SuppressWarnings("unchecked")
-    private static <K, V> IndexStateCoordinator<K, V>
-            mockIndexStateCoordinator() {
-        return mock(IndexStateCoordinator.class);
-    }
 }

@@ -2,8 +2,8 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.slf4j.Logger;
 
 /**
@@ -13,38 +13,54 @@ final class IndexCloseCoordinator<K, V> {
 
     private final Logger logger;
     private final String indexName;
-    private final IndexStateCoordinator<K, V> stateCoordinator;
+    private final SegmentIndexStateMachine stateMachine;
     private final IndexOperationTrackingAccess operationTracker;
     private final Stats stats;
     private final SegmentIndexRuntime<K, V> runtime;
+    private final IndexDirectoryLock directoryLock;
 
     IndexCloseCoordinator(final Logger logger, final String indexName,
-            final IndexStateCoordinator<K, V> stateCoordinator,
+            final SegmentIndexStateMachine stateMachine,
             final IndexOperationTrackingAccess operationTracker,
             final Stats stats,
-            final SegmentIndexRuntime<K, V> runtime) {
+            final SegmentIndexRuntime<K, V> runtime,
+            final IndexDirectoryLock directoryLock) {
         this.logger = Vldtn.requireNonNull(logger, "logger");
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
-        this.stateCoordinator = Vldtn.requireNonNull(stateCoordinator,
-                "stateCoordinator");
+        this.stateMachine = Vldtn.requireNonNull(stateMachine,
+                "stateMachine");
         this.operationTracker = Vldtn.requireNonNull(operationTracker,
                 "operationTracker");
         this.stats = Vldtn.requireNonNull(stats, "stats");
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
+        this.directoryLock = Vldtn.requireNonNull(directoryLock,
+                "directoryLock");
     }
 
     void close() {
+        close(stateMachine::beginClose);
+    }
+
+    void closeAfterFailedStartup() {
+        close(stateMachine::beginFailedStartupClose);
+    }
+
+    private void close(final Runnable beginClose) {
         logger.debug("Closing index '{}'.", indexName);
         try {
-            stateCoordinator.beginClose();
+            beginClose.run();
             awaitForegroundOperations();
             closeSplitRuntime();
             sealAndFlushRuntimeState();
             logOperationCounts();
             logger.debug("Index '{}' closed.", indexName);
         } finally {
-            finishClosedState();
-            releaseWalRuntime();
+            try {
+                finishClosedState();
+                releaseWalRuntime();
+            } finally {
+                releaseDirectoryLock();
+            }
         }
     }
 
@@ -62,11 +78,15 @@ final class IndexCloseCoordinator<K, V> {
     }
 
     private void finishClosedState() {
-        stateCoordinator.completeCloseStateTransition();
+        stateMachine.completeClose();
     }
 
     private void releaseWalRuntime() {
         runtime.closeWalRuntime();
+    }
+
+    private void releaseDirectoryLock() {
+        directoryLock.close();
     }
 
     private void logOperationCounts() {
