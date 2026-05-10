@@ -53,11 +53,9 @@ class SegmentIndexSessionOwnerTest {
 
     @Test
     void completeStartupRunsOnlyOnce() {
-        final Runnable hook = mock(Runnable.class);
+        owner.completeStartup();
 
-        owner.completeStartup(hook);
-
-        verify(startupCoordinator).completeStartup(hook);
+        verify(startupCoordinator).completeStartup();
     }
 
     @Test

@@ -1,13 +1,10 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
@@ -34,10 +31,6 @@ class SegmentIndexStartupCoordinatorTest {
     @Mock
     private IndexConsistencyCoordinator<Integer, String> consistencyCoordinator;
 
-    @Mock
-    private SegmentIndexImpl<Integer, String> owner;
-
-    private final AtomicInteger startupConsistencyChecks = new AtomicInteger();
     private SegmentIndexStartupCoordinator<Integer, String> startupCoordinator;
 
     @BeforeEach
@@ -49,8 +42,7 @@ class SegmentIndexStartupCoordinatorTest {
 
     @Test
     void completeStartup_recoversAndMarksReadyWithoutConsistencyCheck() {
-        startupCoordinator.completeStartup(
-                startupConsistencyChecks::incrementAndGet);
+        startupCoordinator.completeStartup();
 
         final InOrder inOrder = inOrder(runtime, stateMachine);
         inOrder.verify(runtime).recoverFromWal();
@@ -58,7 +50,6 @@ class SegmentIndexStartupCoordinatorTest {
         inOrder.verify(stateMachine).markReady();
         inOrder.verify(runtime).requestFullSplitScan();
         verify(consistencyCoordinator, never()).runStartupConsistencyCheck(any());
-        assertEquals(0, startupConsistencyChecks.get());
     }
 
     @Test
@@ -72,8 +63,7 @@ class SegmentIndexStartupCoordinatorTest {
             return null;
         }).when(consistencyCoordinator).runStartupConsistencyCheck(any());
 
-        startupCoordinator.completeStartup(
-                startupConsistencyChecks::incrementAndGet);
+        startupCoordinator.completeStartup();
 
         final InOrder inOrder = inOrder(runtime, stateMachine,
                 consistencyCoordinator);
@@ -82,7 +72,8 @@ class SegmentIndexStartupCoordinatorTest {
         inOrder.verify(stateMachine).markReady();
         inOrder.verify(consistencyCoordinator)
                 .runStartupConsistencyCheck(any());
+        inOrder.verify(consistencyCoordinator).checkAndRepairConsistency();
         inOrder.verify(runtime).requestFullSplitScan();
-        assertEquals(1, startupConsistencyChecks.get());
+        verify(consistencyCoordinator).checkAndRepairConsistency();
     }
 }

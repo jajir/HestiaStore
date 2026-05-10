@@ -321,15 +321,8 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         sessionOwner.prepareFailedStartupCleanup(failure);
     }
 
-    /**
-     * Startup-only extension point invoked immediately before the first
-     * consistency repair that runs after stale lock recovery.
-     */
-    void onStartupConsistencyCheck() {
-    }
-
     final void completeStartup() {
-        sessionOwner.completeStartup(this::onStartupConsistencyCheck);
+        sessionOwner.completeStartup();
     }
 
     void ensureOperational() {
