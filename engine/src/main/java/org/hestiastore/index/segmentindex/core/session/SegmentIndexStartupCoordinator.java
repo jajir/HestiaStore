@@ -1,8 +1,8 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.slf4j.Logger;
 
 /**
@@ -20,20 +20,20 @@ final class SegmentIndexStartupCoordinator<K, V> {
     private final String indexName;
     private final boolean staleLockRecovered;
     private final SegmentIndexRuntime<K, V> runtime;
-    private final IndexStateCoordinator<K, V> stateCoordinator;
+    private final SegmentIndexStateMachine stateMachine;
     private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
 
     SegmentIndexStartupCoordinator(final Logger logger,
             final String indexName, final boolean staleLockRecovered,
             final SegmentIndexRuntime<K, V> runtime,
-            final IndexStateCoordinator<K, V> stateCoordinator,
+            final SegmentIndexStateMachine stateMachine,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
         this.logger = Vldtn.requireNonNull(logger, "logger");
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
         this.staleLockRecovered = staleLockRecovered;
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
-        this.stateCoordinator = Vldtn.requireNonNull(stateCoordinator,
-                "stateCoordinator");
+        this.stateMachine = Vldtn.requireNonNull(stateMachine,
+                "stateMachine");
         this.consistencyCoordinator = Vldtn.requireNonNull(
                 consistencyCoordinator, "consistencyCoordinator");
     }
@@ -44,7 +44,7 @@ final class SegmentIndexStartupCoordinator<K, V> {
         logger.debug("Opening index '{}'.", indexName);
         runtime.recoverFromWal();
         runtime.cleanupOrphanedSegmentDirectories();
-        stateCoordinator.markReady();
+        stateMachine.markReady();
         if (staleLockRecovered) {
             logger.info(STALE_LOCK_RECOVERY_MESSAGE);
             consistencyCoordinator.runStartupConsistencyCheck(consistencyCheck);

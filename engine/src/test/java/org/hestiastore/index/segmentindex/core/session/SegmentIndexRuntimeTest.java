@@ -14,10 +14,10 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.mockito.Mockito;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("unchecked")
 class SegmentIndexRuntimeTest {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -46,16 +45,18 @@ class SegmentIndexRuntimeTest {
                         executorRegistry, new Stats(), new AtomicLong(),
                         new AtomicLong(), new AtomicLong(),
                         () -> SegmentIndexState.READY, failureRef::set))
-                                .open();
+                .open();
     }
 
     @AfterEach
     void tearDown() {
         if (runtime != null) {
+            final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
+            stateMachine.markReady();
             new IndexCloseCoordinator<>(logger, "runtime-test",
-                    Mockito.mock(IndexStateCoordinator.class),
+                    stateMachine,
                     Mockito.mock(IndexOperationTrackingAccess.class), new Stats(),
-                    runtime).close();
+                    runtime, new IndexDirectoryLock(new MemDirectory())).close();
             SegmentIndexRuntimeTestAccess.keyToSegmentMap(runtime).close();
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {

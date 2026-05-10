@@ -8,8 +8,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.directory.FileLock;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,15 +36,24 @@ class IndexCloseCoordinatorTest {
     private SegmentIndexRuntime<Integer, String> runtime;
 
     @Mock
-    private IndexStateCoordinator<Integer, String> stateCoordinator;
+    private SegmentIndexStateMachine stateMachine;
 
     @Mock
     private IndexOperationTrackingAccess operationTracker;
+
+    @Mock
+    private Directory directory;
+
+    @Mock
+    private FileLock fileLock;
 
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
 
     @BeforeEach
     void setUp() {
+        when(directory.isFileExists(".lock")).thenReturn(false);
+        when(directory.getLock(".lock")).thenReturn(fileLock);
+        when(fileLock.isLocked()).thenReturn(false, true);
         doAnswer(invocation -> {
             awaitOperations.run();
             return null;
@@ -50,9 +61,10 @@ class IndexCloseCoordinatorTest {
         doAnswer(invocation -> {
             finishCloseTransition.run();
             return null;
-        }).when(stateCoordinator).completeCloseStateTransition();
+        }).when(stateMachine).completeClose();
         closeCoordinator = new IndexCloseCoordinator<>(logger, "test-index",
-                stateCoordinator, operationTracker, new Stats(), runtime);
+                stateMachine, operationTracker, new Stats(), runtime,
+                new IndexDirectoryLock(directory));
     }
 
     @Test
@@ -62,15 +74,30 @@ class IndexCloseCoordinatorTest {
         closeCoordinator.close();
 
         final InOrder inOrder = inOrder(awaitOperations, runtime,
-                stateCoordinator,
-                finishCloseTransition);
-        inOrder.verify(stateCoordinator).beginClose();
+                stateMachine,
+                finishCloseTransition, fileLock);
+        inOrder.verify(stateMachine).beginClose();
         inOrder.verify(awaitOperations).run();
         inOrder.verify(runtime).closeSplitRuntime();
         inOrder.verify(runtime).flushAndWait();
         inOrder.verify(runtime).closeSegmentRegistry();
         inOrder.verify(finishCloseTransition).run();
         inOrder.verify(runtime).closeWalRuntime();
+        inOrder.verify(fileLock).unlock();
+    }
+
+    @Test
+    void closeAfterFailedStartup_usesFailedStartupTransition() {
+        closeCoordinator.closeAfterFailedStartup();
+
+        final InOrder inOrder = inOrder(runtime, stateMachine, fileLock);
+        inOrder.verify(stateMachine).beginFailedStartupClose();
+        inOrder.verify(runtime).closeSplitRuntime();
+        inOrder.verify(runtime).flushAndWait();
+        inOrder.verify(runtime).closeSegmentRegistry();
+        inOrder.verify(stateMachine).completeClose();
+        inOrder.verify(runtime).closeWalRuntime();
+        inOrder.verify(fileLock).unlock();
     }
 
     @Test
@@ -83,5 +110,6 @@ class IndexCloseCoordinatorTest {
         verify(runtime).flushAndWait();
         verify(finishCloseTransition).run();
         verify(runtime).closeWalRuntime();
+        verify(fileLock).unlock();
     }
 }

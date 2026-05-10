@@ -13,7 +13,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.session.state.IndexState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +26,7 @@ class SegmentIndexFacadesTest {
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
     @Mock
-    private IndexState<Integer, String> indexState;
+    private Runnable operationalGuard;
 
     @Mock
     private SegmentIndexDataAccess<Integer, String> dataAccess;
@@ -39,7 +38,7 @@ class SegmentIndexFacadesTest {
     void setUp() {
         conf = buildConf();
         trackedRunner = new SegmentIndexTrackedOperationRunner<>(
-                () -> indexState,
+                operationalGuard,
                 IndexOperationTrackingAccess.create());
     }
 
@@ -53,7 +52,7 @@ class SegmentIndexFacadesTest {
 
         assertEquals("one", composition.pointOperationFacade().get(1));
         verify(dataAccess).get(1);
-        verify(indexState).tryPerformOperation();
+        verify(operationalGuard).run();
     }
 
     @Test

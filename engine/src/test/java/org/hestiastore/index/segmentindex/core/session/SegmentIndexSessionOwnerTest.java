@@ -9,8 +9,7 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.session.state.IndexState;
-import org.hestiastore.index.segmentindex.core.session.state.IndexStateCoordinator;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @SuppressWarnings("unchecked")
 class SegmentIndexSessionOwnerTest {
 
-    private IndexStateCoordinator<Integer, String> stateCoordinator;
+    private SegmentIndexStateMachine stateMachine;
     private SegmentIndexRuntime<Integer, String> runtime;
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
     private SegmentIndexStartupCoordinator<Integer, String> startupCoordinator;
@@ -28,30 +27,27 @@ class SegmentIndexSessionOwnerTest {
 
     @BeforeEach
     void setUp() {
-        stateCoordinator = mock(IndexStateCoordinator.class);
+        stateMachine = mock(SegmentIndexStateMachine.class);
         runtime = mock(SegmentIndexRuntime.class);
         closeCoordinator = mock(IndexCloseCoordinator.class);
         startupCoordinator = mock(SegmentIndexStartupCoordinator.class);
-        owner = new SegmentIndexSessionOwner<>(stateCoordinator, runtime,
+        owner = new SegmentIndexSessionOwner<>(stateMachine, runtime,
                 closeCoordinator, startupCoordinator);
     }
 
     @Test
     void delegatesStateAndRuntimeViews() {
-        final IndexState<Integer, String> indexState = mock(IndexState.class);
         final SegmentIndexMetricsSnapshot metricsSnapshot =
                 mock(SegmentIndexMetricsSnapshot.class);
         final RuntimeTuning runtimeConfiguration = mock(RuntimeTuning.class);
-        when(stateCoordinator.getIndexState()).thenReturn(indexState);
-        when(stateCoordinator.getState()).thenReturn(SegmentIndexState.READY);
+        when(stateMachine.getState()).thenReturn(SegmentIndexState.READY);
         when(runtime.metricsSnapshot()).thenReturn(metricsSnapshot);
         when(runtime.runtimeTuning()).thenReturn(runtimeConfiguration);
 
-        assertSame(indexState, owner.getIndexState());
         assertSame(SegmentIndexState.READY, owner.getState());
         assertSame(metricsSnapshot, owner.metricsSnapshot());
         assertSame(runtimeConfiguration, owner.runtimeTuning());
-        assertSame(stateCoordinator, owner.stateCoordinator());
+        assertSame(stateMachine, owner.stateMachine());
         assertSame(runtime, owner.runtime());
     }
 
@@ -65,35 +61,35 @@ class SegmentIndexSessionOwnerTest {
     }
 
     @Test
-    void closeAndFailureDelegateToCollaborators() {
-        final Throwable failure = new IllegalStateException("boom");
-
+    void closeDelegatesToCloseCoordinator() {
         owner.close();
-        owner.failWithError(failure);
 
         verify(closeCoordinator).close();
-        verify(stateCoordinator).failWithError(failure);
     }
 
     @Test
-    void ensureOperationalUsesCurrentIndexState() {
-        final IndexState<Integer, String> indexState = mock(IndexState.class);
-        when(stateCoordinator.getIndexState()).thenReturn(indexState);
+    void failedStartupCleanupUsesDedicatedClosePath() {
+        owner.prepareFailedStartupCleanup(new IllegalStateException("boom"));
 
+        owner.close();
+
+        verify(closeCoordinator).closeAfterFailedStartup();
+    }
+
+    @Test
+    void ensureOperationalUsesStateMachine() {
         assertDoesNotThrow(owner::ensureOperational);
 
-        verify(indexState).tryPerformOperation();
+        verify(stateMachine).ensureOperational();
     }
 
     @Test
     void runMaintenanceOperationAppliesGuardsAndCleanup() {
-        final IndexState<Integer, String> indexState = mock(IndexState.class);
         final Runnable action = mock(Runnable.class);
-        when(stateCoordinator.getIndexState()).thenReturn(indexState);
 
         assertDoesNotThrow(() -> owner.runMaintenanceOperation(action));
 
-        verify(indexState).tryPerformOperation();
+        verify(stateMachine).ensureOperational();
         verify(action).run();
         verify(runtime).invalidateSegmentIterators();
     }
