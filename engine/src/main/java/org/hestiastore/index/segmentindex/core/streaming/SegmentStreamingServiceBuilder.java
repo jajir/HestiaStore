@@ -5,7 +5,6 @@ import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.slf4j.Logger;
 
 /**
  * Builder for {@link SegmentStreamingService} instances.
@@ -15,24 +14,12 @@ import org.slf4j.Logger;
  */
 public final class SegmentStreamingServiceBuilder<K, V> {
 
-    private Logger logger;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
     private StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private IndexRetryPolicy retryPolicy;
 
     SegmentStreamingServiceBuilder() {
-    }
-
-    /**
-     * Sets the logger used by streaming operations.
-     *
-     * @param logger logger
-     * @return this builder
-     */
-    public SegmentStreamingServiceBuilder<K, V> logger(final Logger logger) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
-        return this;
     }
 
     /**
@@ -93,7 +80,6 @@ public final class SegmentStreamingServiceBuilder<K, V> {
      */
     public SegmentStreamingService<K, V> build() {
         return new SegmentStreamingServiceImpl<>(
-                Vldtn.requireNonNull(logger, "logger"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(stableSegmentGateway,

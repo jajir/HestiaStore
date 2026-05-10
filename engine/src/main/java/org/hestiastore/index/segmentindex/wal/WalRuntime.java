@@ -13,8 +13,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Compatibility-facing WAL runtime facade.
@@ -33,9 +31,6 @@ import org.slf4j.LoggerFactory;
  * @param <V> value type
  */
 public final class WalRuntime<K, V> implements AutoCloseable {
-
-    private static final Logger logger = LoggerFactory
-            .getLogger(WalRuntime.class);
 
     /**
      * WAL operation kind.
@@ -204,7 +199,7 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final AtomicBoolean closed = new AtomicBoolean();
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
-                storage, logger);
+                storage);
         final WalRecordCodec<K, V> recordCodec = new WalRecordCodec<>(
                 keyDescriptor == null ? null : keyDescriptor.getTypeEncoder(),
                 keyDescriptor == null ? null : keyDescriptor.getTypeDecoder(),
@@ -213,15 +208,14 @@ public final class WalRuntime<K, V> implements AutoCloseable {
                 valueDescriptor == null ? null
                         : valueDescriptor.getTypeDecoder());
         final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
-                storage, metadataCatalog, logger);
+                storage, metadataCatalog);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
-                metrics, logger, monitor, segmentCatalog::segments,
-                closed::get);
+                metrics, monitor, segmentCatalog::segments, closed::get);
         final WalWriter<K, V> writer = new WalWriter<>(wal, storage,
                 recordCodec, segmentCatalog, metrics, syncPolicy);
         final WalRecoveryManager<K, V> recoveryManager =
                 new WalRecoveryManager<>(wal, storage, metadataCatalog,
-                        recordCodec, segmentCatalog, metrics, logger);
+                        recordCodec, segmentCatalog, metrics);
         return new WalRuntime<>(wal, monitor, metrics, closed, metadataCatalog,
                 segmentCatalog, syncPolicy, writer, recoveryManager,
                 newGroupSyncExecutor(wal, syncPolicy));

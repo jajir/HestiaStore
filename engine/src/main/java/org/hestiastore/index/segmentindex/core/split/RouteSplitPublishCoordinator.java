@@ -16,9 +16,10 @@ import org.slf4j.LoggerFactory;
  */
 final class RouteSplitPublishCoordinator<K, V> {
 
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(RouteSplitPublishCoordinator.class);
     private static final String SPLIT_PLAN_ARG = "splitPlan";
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final DefaultSegmentMaterializationService<K, V> materializationService;
@@ -43,8 +44,8 @@ final class RouteSplitPublishCoordinator<K, V> {
             throw abortPreparedSplit(splitPlan, e);
         }
         if (!published) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
                         "Route split publish returned false: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
                         splitPlan.getReplacedSegmentId(),
                         splitPlan.getLowerSegmentId(),
@@ -61,8 +62,8 @@ final class RouteSplitPublishCoordinator<K, V> {
         Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
         keyToSegmentMap.flushIfDirty();
         deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
-        if (logger.isDebugEnabled()) {
-            logger.debug(
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
                     "Route split applied: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' lowerMaxKey='{}'",
                     splitPlan.getReplacedSegmentId(),
                     splitPlan.getLowerSegmentId(),
@@ -99,11 +100,11 @@ final class RouteSplitPublishCoordinator<K, V> {
             if (segmentRegistry.deleteSegmentIfAvailable(segmentId)) {
                 return;
             }
-            logger.warn(
+            LOGGER.warn(
                     "Retired parent segment '{}' remained on disk because delete was busy after split publish.",
                     segmentId);
         } catch (final IndexException e) {
-            logger.warn(
+            LOGGER.warn(
                     "Retired parent segment '{}' could not be deleted after split publish: {}",
                     segmentId, e.getMessage());
         }

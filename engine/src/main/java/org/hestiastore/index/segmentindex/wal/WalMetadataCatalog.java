@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.hestiastore.index.IndexException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class WalMetadataCatalog {
 
@@ -25,13 +26,13 @@ final class WalMetadataCatalog {
     private static final int SEGMENT_FILE_DIGITS = 20;
     private static final String SEGMENT_FILE_FORMAT = "%020d" + SEGMENT_SUFFIX;
     private static final int FORMAT_VERSION = 1;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalMetadataCatalog.class);
 
     private final WalStorage storage;
-    private final Logger logger;
 
-    WalMetadataCatalog(final WalStorage storage, final Logger logger) {
+    WalMetadataCatalog(final WalStorage storage) {
         this.storage = storage;
-        this.logger = logger;
     }
 
     void ensureFormatMarker() {
@@ -153,11 +154,11 @@ final class WalMetadataCatalog {
             storage.rename(CHECKPOINT_FILE_TMP, CHECKPOINT_FILE);
             storage.sync(CHECKPOINT_FILE);
             storage.syncMetadata();
-            logger.info(
+            LOGGER.info(
                     "event=wal_checkpoint_metadata_tmp_recovered checkpointLsn={}",
                     parsed);
         } catch (RuntimeException ex) {
-            logger.warn(
+            LOGGER.warn(
                     "event=wal_checkpoint_metadata_tmp_dropped reason=invalid error={}",
                     ex.getMessage());
             storage.delete(CHECKPOINT_FILE_TMP);
@@ -265,17 +266,17 @@ final class WalMetadataCatalog {
                 storage.rename(FORMAT_FILE_TMP, FORMAT_FILE);
                 storage.sync(FORMAT_FILE);
                 storage.syncMetadata();
-                logger.info(
+                LOGGER.info(
                         "event=wal_format_metadata_tmp_recovered version={} checksum={}",
                         meta.version(), meta.checksum());
                 return;
             }
-            logger.warn(
+            LOGGER.warn(
                     "event=wal_format_metadata_tmp_dropped reason=unsupported version={} checksum={} expectedVersion={} expectedChecksum={}",
                     meta.version(), meta.checksum(), FORMAT_VERSION,
                     expectedChecksum);
         } catch (RuntimeException ex) {
-            logger.warn(
+            LOGGER.warn(
                     "event=wal_format_metadata_tmp_dropped reason=invalid error={}",
                     ex.getMessage());
         }

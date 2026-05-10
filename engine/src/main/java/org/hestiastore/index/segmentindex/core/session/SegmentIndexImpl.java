@@ -27,7 +27,6 @@ import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.sorteddatafile.EntryComparator;
-import org.slf4j.Logger;
 
 /**
  * Base implementation of the segment index that manages routed segment
@@ -66,13 +65,12 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     @SuppressWarnings("java:S107")
-    static <K, V> SegmentIndexImpl<K, V> open(final Logger logger,
+    static <K, V> SegmentIndexImpl<K, V> open(
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
-        final Logger validatedLogger = Vldtn.requireNonNull(logger, "logger");
         final Directory validatedDirectory = Vldtn.requireNonNull(
                 directoryFacade, "directoryFacade");
         final TypeDescriptor<K> validatedKeyTypeDescriptor = Vldtn
@@ -95,8 +93,8 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner =
                     new SegmentIndexTrackedOperationRunner<>(
                             stateMachine::ensureOperational, operationTracker);
-            runtime = SegmentIndexRuntime.create(validatedLogger,
-                    validatedDirectory, validatedKeyTypeDescriptor,
+            runtime = SegmentIndexRuntime.create(validatedDirectory,
+                    validatedKeyTypeDescriptor,
                     validatedValueTypeDescriptor, validatedConf,
                     validatedExecutorRegistry, stats, stateMachine::getState,
                     stateMachine::markRuntimeFailure);
@@ -105,9 +103,8 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
             final SegmentIndexFacades<K, V> facades = SegmentIndexFacades
                     .create(validatedConf, trackedRunner, runtime);
             final SegmentIndexSessionOwner<K, V> sessionOwner = newSessionOwner(
-                    validatedLogger, validatedConf, stateMachine, runtime,
-                    operationTracker, stats, directoryLock,
-                    consistencyCoordinator);
+                    validatedConf, stateMachine, runtime, operationTracker,
+                    stats, directoryLock, consistencyCoordinator);
             final SegmentIndexMaintenance maintenanceApi = newMaintenanceApi(
                     sessionOwner, trackedRunner, runtime.maintenance(),
                     consistencyCoordinator);
@@ -175,18 +172,17 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     private static <K, V> SegmentIndexSessionOwner<K, V> newSessionOwner(
-            final Logger logger, final EffectiveIndexConfiguration<K, V> conf,
+            final EffectiveIndexConfiguration<K, V> conf,
             final SegmentIndexStateMachine stateMachine,
             final SegmentIndexRuntime<K, V> runtime,
             final IndexOperationTrackingAccess operationTracker,
             final Stats stats, final IndexDirectoryLock directoryLock,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
         return new SegmentIndexSessionOwner<>(stateMachine, runtime,
-                new IndexCloseCoordinator<>(logger, conf.identity().name(),
+                new IndexCloseCoordinator<>(conf.identity().name(),
                         stateMachine, operationTracker, stats, runtime,
                         directoryLock),
-                new SegmentIndexStartupCoordinator<>(logger,
-                        conf.identity().name(),
+                new SegmentIndexStartupCoordinator<>(conf.identity().name(),
                         directoryLock.wasStaleLockRecovered(), runtime,
                         stateMachine, consistencyCoordinator));
     }

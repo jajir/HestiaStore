@@ -16,14 +16,12 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 @SuppressWarnings("unchecked")
 class SegmentIndexRuntimeOpenContextTest {
 
     @Test
-    void constructorRejectsNullLogger() {
-        final Directory directory = mock(Directory.class);
+    void constructorRejectsNullDirectory() {
         final TypeDescriptor<Integer> keyTypeDescriptor = mock(
                 TypeDescriptor.class);
         final TypeDescriptor<String> valueTypeDescriptor = mock(
@@ -40,17 +38,17 @@ class SegmentIndexRuntimeOpenContextTest {
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new SegmentIndexRuntimeOpenContext<>(null, directory,
+                () -> new SegmentIndexRuntimeOpenContext<>(null,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
                         executorRegistry, stats, compactRequestHighWaterMark,
                         flushRequestHighWaterMark, lastAppliedWalLsn,
                         stateSupplier, failureHandler));
-        assertEquals("Property 'logger' must not be null.", ex.getMessage());
+        assertEquals("Property 'directoryFacade' must not be null.",
+                ex.getMessage());
     }
 
     @Test
     void constructorExposesValidatedAssemblyInputs() {
-        final Logger logger = mock(Logger.class);
         final Directory directory = mock(Directory.class);
         final TypeDescriptor<Integer> keyTypeDescriptor = mock(
                 TypeDescriptor.class);
@@ -68,13 +66,12 @@ class SegmentIndexRuntimeOpenContextTest {
         final Consumer<RuntimeException> failureHandler = failureHandler();
 
         final SegmentIndexRuntimeOpenContext<Integer, String> request =
-                new SegmentIndexRuntimeOpenContext<>(logger, directory,
+                new SegmentIndexRuntimeOpenContext<>(directory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
                         executorRegistry, stats, compactRequestHighWaterMark,
                         flushRequestHighWaterMark, lastAppliedWalLsn,
                         stateSupplier, failureHandler);
 
-        assertSame(logger, request.logger);
         assertSame(stats, request.stats);
         assertSame(compactRequestHighWaterMark,
                 request.compactRequestHighWaterMark);

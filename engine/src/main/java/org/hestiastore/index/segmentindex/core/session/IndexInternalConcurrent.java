@@ -16,7 +16,6 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
-import org.slf4j.LoggerFactory;
 
 /**
  * Direct, caller-thread implementation of {@link SegmentIndex}.
@@ -46,11 +45,11 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
     /**
      * Creates an index and completes startup before returning it.
      *
-     * @param directoryFacade      directory facade
-     * @param keyTypeDescriptor    key type descriptor
-     * @param valueTypeDescriptor  value type descriptor
-     * @param conf                 configuration for the index
-     * @param executorRegistry     shared executor registry
+     * @param directoryFacade     directory facade
+     * @param keyTypeDescriptor   key type descriptor
+     * @param valueTypeDescriptor value type descriptor
+     * @param conf                configuration for the index
+     * @param executorRegistry    shared executor registry
      * @return ready index
      */
     @SuppressWarnings("java:S107")
@@ -71,11 +70,11 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
      * Creates an index in opening state so the owning bootstrap flow can
      * register cleanup before completing startup.
      *
-     * @param directoryFacade      directory facade
-     * @param keyTypeDescriptor    key type descriptor
-     * @param valueTypeDescriptor  value type descriptor
-     * @param conf                 configuration for the index
-     * @param executorRegistry     shared executor registry
+     * @param directoryFacade     directory facade
+     * @param keyTypeDescriptor   key type descriptor
+     * @param valueTypeDescriptor value type descriptor
+     * @param conf                configuration for the index
+     * @param executorRegistry    shared executor registry
      * @return index waiting for startup completion
      */
     @SuppressWarnings("java:S107")
@@ -96,8 +95,7 @@ public final class IndexInternalConcurrent<K, V> extends AbstractCloseableResour
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry) {
-        return SegmentIndexImpl.open(LoggerFactory.getLogger(
-                SegmentIndexImpl.class), directoryFacade, keyTypeDescriptor,
+        return SegmentIndexImpl.open(directoryFacade, keyTypeDescriptor,
                 valueTypeDescriptor, conf, executorRegistry);
     }
 

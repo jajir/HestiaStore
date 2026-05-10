@@ -15,24 +15,26 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class SegmentStreamingServiceImpl<K, V>
         implements SegmentStreamingService<K, V> {
 
     private static final String OPEN_ITERATOR_OPERATION = "openIterator";
 
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SegmentStreamingServiceImpl.class);
+
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private final IndexRetryPolicy retryPolicy;
 
-    SegmentStreamingServiceImpl(final Logger logger,
+    SegmentStreamingServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final IndexRetryPolicy retryPolicy) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
@@ -90,7 +92,7 @@ final class SegmentStreamingServiceImpl<K, V>
         if (!isSegmentStillMapped(segmentId)) {
             return;
         }
-        logger.debug(
+        LOGGER.debug(
                 "Skipping iterator invalidation for segment '{}' because it is "
                         + "not immediately available.",
                 segmentId);
@@ -101,7 +103,7 @@ final class SegmentStreamingServiceImpl<K, V>
         if (!isSegmentStillMapped(segmentId)) {
             return;
         }
-        logger.debug(
+        LOGGER.debug(
                 "Skipping iterator invalidation for segment '{}' because registry lookup failed.",
                 segmentId, exception);
     }

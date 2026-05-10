@@ -9,6 +9,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handles WAL retention pressure backpressure, warning cadence, and forced
@@ -22,7 +23,9 @@ final class WalRetentionPressureCoordinator<K, V> {
     private static final long WAL_RETENTION_PRESSURE_WARN_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
 
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalRetentionPressureCoordinator.class);
+
     private final EffectiveIndexConfiguration<K, V> conf;
     private final WalRuntime<K, V> walRuntime;
     private final IndexRetryPolicy retryPolicy;
@@ -34,14 +37,13 @@ final class WalRetentionPressureCoordinator<K, V> {
     private final AtomicBoolean walRetentionPressureWarnActive = new AtomicBoolean(
             false);
 
-    WalRetentionPressureCoordinator(final Logger logger,
+    WalRetentionPressureCoordinator(
             final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
             final Runnable prepareDurableStateAction,
             final Runnable flushDurableStateAction,
             final Runnable checkpointAction) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
@@ -90,7 +92,7 @@ final class WalRetentionPressureCoordinator<K, V> {
             if (walRetentionPressureLastWarnNanos
                     .compareAndSet(previousWarnNanos, nowNanos)) {
                 walRetentionPressureWarnActive.set(true);
-                logger.warn(
+                LOGGER.warn(
                         "event=wal_retention_pressure_start retainedBytes={} threshold={} action=force_checkpoint_backpressure",
                         walRuntime.retainedBytes(),
                         conf.wal().getMaxBytesBeforeForcedCheckpoint());
@@ -106,7 +108,7 @@ final class WalRetentionPressureCoordinator<K, V> {
         }
         final long elapsedMillis = TimeUnit.NANOSECONDS
                 .toMillis(Math.max(0L, System.nanoTime() - startNanos));
-        logger.info(
+        LOGGER.info(
                 "event=wal_retention_pressure_cleared retainedBytes={} threshold={} checkpointAttempts={} elapsedMillis={}",
                 walRuntime.retainedBytes(),
                 conf.wal().getMaxBytesBeforeForcedCheckpoint(),

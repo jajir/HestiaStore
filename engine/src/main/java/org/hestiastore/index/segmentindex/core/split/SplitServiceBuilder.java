@@ -15,7 +15,6 @@ import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.slf4j.LoggerFactory;
 
 /**
  * Builder for the default split runtime service.
@@ -131,8 +130,7 @@ public final class SplitServiceBuilder<K, V> {
                 validatedConf.maintenance().busyTimeoutMillis());
         final RouteSplitPreparationService<K, V> preparationService =
                 new RouteSplitPreparationService<>(materializationService,
-                        retryPolicy,
-                        LoggerFactory.getLogger(RouteSplitCoordinator.class));
+                        retryPolicy);
         final RouteSplitCoordinator<K, V> routeSplitCoordinator =
                 new RouteSplitCoordinator<>(validatedSegmentRegistry,
                         new SegmentIndexSplitPolicyThreshold<>(),

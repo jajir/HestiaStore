@@ -8,15 +8,13 @@ import java.nio.charset.StandardCharsets;
 
 import org.hestiastore.index.directory.MemDirectory;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class WalMetadataCatalogTest {
 
     @Test
     void loadRecoveryCatalogPromotesValidCheckpointTempFile() {
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
-        final WalMetadataCatalog catalog = new WalMetadataCatalog(storage,
-                LoggerFactory.getLogger(WalMetadataCatalogTest.class));
+        final WalMetadataCatalog catalog = new WalMetadataCatalog(storage);
 
         catalog.ensureFormatMarker();
         final byte[] checkpoint = "5".getBytes(StandardCharsets.US_ASCII);
@@ -33,8 +31,7 @@ class WalMetadataCatalogTest {
     @Test
     void ensureFormatMarkerCreatesCanonicalMetadata() {
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
-        final WalMetadataCatalog catalog = new WalMetadataCatalog(storage,
-                LoggerFactory.getLogger(WalMetadataCatalogTest.class));
+        final WalMetadataCatalog catalog = new WalMetadataCatalog(storage);
 
         catalog.ensureFormatMarker();
 

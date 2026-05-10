@@ -22,12 +22,9 @@ import org.mockito.Mockito;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class SegmentIndexRuntimeTest {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
@@ -41,7 +38,7 @@ class SegmentIndexRuntimeTest {
         final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
         runtime = new SegmentIndexRuntimeFactory<>(
                 new SegmentIndexRuntimeOpenContext<>(
-                        logger, new MemDirectory(), tdi, tds, effective(conf),
+                        new MemDirectory(), tdi, tds, effective(conf),
                         executorRegistry, new Stats(), new AtomicLong(),
                         new AtomicLong(), new AtomicLong(),
                         () -> SegmentIndexState.READY, failureRef::set))
@@ -53,8 +50,7 @@ class SegmentIndexRuntimeTest {
         if (runtime != null) {
             final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
             stateMachine.markReady();
-            new IndexCloseCoordinator<>(logger, "runtime-test",
-                    stateMachine,
+            new IndexCloseCoordinator<>("runtime-test", stateMachine,
                     Mockito.mock(IndexOperationTrackingAccess.class), new Stats(),
                     runtime, new IndexDirectoryLock(new MemDirectory())).close();
             SegmentIndexRuntimeTestAccess.keyToSegmentMap(runtime).close();

@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class IndexRecoveryCleanupCoordinatorTest {
@@ -43,8 +42,6 @@ class IndexRecoveryCleanupCoordinatorTest {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
         coordinator = IndexRecoveryCleanupCoordinator.create(
-                LoggerFactory.getLogger(
-                        IndexRecoveryCleanupCoordinatorTest.class),
                 directory, synchronizedKeyToSegmentMap, segmentRegistry,
                 new IndexRetryPolicy(1, 10));
     }

@@ -11,6 +11,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Prepares route splits by choosing a split boundary and materializing child
@@ -22,18 +23,18 @@ import org.slf4j.Logger;
 final class RouteSplitPreparationService<K, V> {
 
     private static final String SEGMENT_ARG = "segment";
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(RouteSplitPreparationService.class);
 
     private final DefaultSegmentMaterializationService<K, V> materializationService;
     private final IndexRetryPolicy retryPolicy;
-    private final Logger logger;
 
     RouteSplitPreparationService(
             final DefaultSegmentMaterializationService<K, V> materializationService,
-            final IndexRetryPolicy retryPolicy, final Logger logger) {
+            final IndexRetryPolicy retryPolicy) {
         this.materializationService = Vldtn.requireNonNull(
                 materializationService, "materializationService");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-        this.logger = Vldtn.requireNonNull(logger, "logger");
     }
 
     RouteSplitPlan<K> prepare(final Segment<K, V> parentSegment,
@@ -121,8 +122,8 @@ final class RouteSplitPreparationService<K, V> {
 
     private void logMaterializationAbortedBecauseParentClosed(
             final Segment<K, V> parentSegment) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
                     "Route split aborted because parent segment closed before child materialization completed: segment='{}'",
                     parentSegment.getId());
         }
@@ -130,8 +131,8 @@ final class RouteSplitPreparationService<K, V> {
 
     private void logMaterializationAbortedBecauseIteratorInvalidated(
             final Segment<K, V> parentSegment) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
                     "Route split aborted because parent iterator was invalidated during child materialization: segment='{}'",
                     parentSegment.getId());
         }

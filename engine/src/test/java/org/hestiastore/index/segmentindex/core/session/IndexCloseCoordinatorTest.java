@@ -18,13 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 
 @ExtendWith(MockitoExtension.class)
 class IndexCloseCoordinatorTest {
-
-    @Mock
-    private Logger logger;
 
     @Mock
     private Runnable awaitOperations;
@@ -62,15 +58,13 @@ class IndexCloseCoordinatorTest {
             finishCloseTransition.run();
             return null;
         }).when(stateMachine).completeClose();
-        closeCoordinator = new IndexCloseCoordinator<>(logger, "test-index",
+        closeCoordinator = new IndexCloseCoordinator<>("test-index",
                 stateMachine, operationTracker, new Stats(), runtime,
                 new IndexDirectoryLock(directory));
     }
 
     @Test
     void close_runsShutdownStepsInOrder() {
-        when(logger.isDebugEnabled()).thenReturn(true);
-
         closeCoordinator.close();
 
         final InOrder inOrder = inOrder(awaitOperations, runtime,
