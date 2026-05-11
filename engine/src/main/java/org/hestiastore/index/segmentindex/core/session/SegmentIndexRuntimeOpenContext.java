@@ -11,7 +11,6 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.metrics.Stats;
-import org.slf4j.Logger;
 
 /**
  * Validated context for opening the runtime graph.
@@ -19,9 +18,9 @@ import org.slf4j.Logger;
  * @param <K> key type
  * @param <V> value type
  */
+// FIXME it should not be used at all
 final class SegmentIndexRuntimeOpenContext<K, V> {
 
-    final Logger logger;
     final Directory directoryFacade;
     final TypeDescriptor<K> keyTypeDescriptor;
     final TypeDescriptor<V> valueTypeDescriptor;
@@ -35,7 +34,6 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
     final Consumer<RuntimeException> failureHandler;
 
     SegmentIndexRuntimeOpenContext(
-            final Logger logger,
             final Directory directoryFacade,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
@@ -47,7 +45,6 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,

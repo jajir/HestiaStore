@@ -6,7 +6,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.slf4j.Logger;
 
 /**
  * Owns recovery-time cleanup of orphaned segment directories and stale lock
@@ -18,7 +17,6 @@ public final class IndexRecoveryCleanupCoordinator<K, V> {
     private final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover;
 
     public static <K, V> IndexRecoveryCleanupCoordinator<K, V> create(
-            final Logger logger,
             final Directory directoryFacade,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
@@ -28,7 +26,6 @@ public final class IndexRecoveryCleanupCoordinator<K, V> {
                 Vldtn.requireNonNull(directoryFacade, "directoryFacade"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap")),
                 new OrphanedSegmentDirectoryRemover<>(
-                        Vldtn.requireNonNull(logger, "logger"),
                         Vldtn.requireNonNull(segmentRegistry,
                                 "segmentRegistry"),
                         Vldtn.requireNonNull(retryPolicy, "retryPolicy")));

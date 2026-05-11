@@ -21,7 +21,8 @@ import org.slf4j.LoggerFactory;
  */
 final class RouteSplitCoordinator<K, V> {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(RouteSplitCoordinator.class);
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final RouteSplitPreparationService<K, V> preparationService;
@@ -69,24 +70,24 @@ final class RouteSplitCoordinator<K, V> {
         try {
             currentSegment = segmentRegistry.tryGetSegment(segmentId);
         } catch (final IndexException e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
                         "Route split aborted before validation because registry lookup failed: segment='{}'",
                         segmentId, e);
             }
             return false;
         }
         if (currentSegment.isEmpty()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
                         "Route split aborted before validation because segment is not immediately available: segment='{}'",
                         segmentId);
             }
             return false;
         }
         if (currentSegment.get() != segmentHandle) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
                         "Route split aborted because loaded segment changed: segment='{}'",
                         segmentId);
             }
@@ -110,8 +111,8 @@ final class RouteSplitCoordinator<K, V> {
 
     private void logSkippedSplit(final BlockingSegment<K, V> segmentHandle,
             final long estimatedVisibleKeys, final long splitThreshold) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
                     "Route split skipped: segment='{}' estimatedKeys='{}' threshold='{}' splitFeasible='{}'",
                     segmentHandle.getId(), estimatedVisibleKeys, splitThreshold,
                     isSplitFeasible(estimatedVisibleKeys));
@@ -120,7 +121,7 @@ final class RouteSplitCoordinator<K, V> {
 
     private void logStartedSplit(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
-        logger.debug("Route split started: segment='{}' threshold='{}'",
+        LOGGER.debug("Route split started: segment='{}' threshold='{}'",
                 segmentHandle.getId(), splitThreshold);
     }
 

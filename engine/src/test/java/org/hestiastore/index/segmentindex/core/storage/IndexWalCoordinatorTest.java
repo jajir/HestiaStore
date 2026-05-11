@@ -9,7 +9,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -31,13 +30,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 
 @ExtendWith(MockitoExtension.class)
 class IndexWalCoordinatorTest {
-
-    @Mock
-    private Logger logger;
 
     @Mock
     private WalRuntime<Integer, String> walRuntime;
@@ -113,7 +108,6 @@ class IndexWalCoordinatorTest {
         assertThrows(IndexException.class, coordinator::checkpoint);
 
         assertNull(handledFailure.get());
-        verifyNoMoreInteractions(logger);
     }
 
     @Test
@@ -130,7 +124,7 @@ class IndexWalCoordinatorTest {
 
     private IndexWalCoordinator<Integer, String> newCoordinator(
             final java.util.function.Supplier<SegmentIndexState> stateSupplier) {
-        return IndexWalCoordinator.create(logger, effective(buildConf()), walRuntime,
+        return IndexWalCoordinator.create(effective(buildConf()), walRuntime,
                 new IndexRetryPolicy(1, 10), drainCalls::incrementAndGet,
                 flushCalls::incrementAndGet, stateSupplier, handledFailure::set,
                 lastAppliedWalLsn);

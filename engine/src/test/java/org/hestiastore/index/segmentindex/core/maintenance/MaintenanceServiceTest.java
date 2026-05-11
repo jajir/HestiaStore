@@ -23,7 +23,6 @@ import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperat
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class MaintenanceServiceTest {
 
@@ -62,8 +61,6 @@ class MaintenanceServiceTest {
                     StableSegmentOperationResult.busy());
             final MaintenanceService maintenance = MaintenanceService
                     .<Integer, String>builder()
-                    .logger(LoggerFactory.getLogger(
-                            MaintenanceServiceTest.class))
                     .keyToSegmentMap(keyToSegmentMap)
                     .stableSegmentGateway(stableSegmentGateway)
                     .splitService(splitService)
@@ -88,14 +85,15 @@ class MaintenanceServiceTest {
     }
 
     @Test
-    void builderRejectsMissingLogger() {
+    void builderRejectsMissingKeyToSegmentMap() {
         final MaintenanceServiceBuilder<Integer, String> builder =
                 MaintenanceService.<Integer, String>builder();
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class, builder::build);
 
-        assertEquals("Property 'logger' must not be null.", ex.getMessage());
+        assertEquals("Property 'keyToSegmentMap' must not be null.",
+                ex.getMessage());
     }
 
     @Test
@@ -109,7 +107,6 @@ class MaintenanceServiceTest {
                 SplitService.class);
         final MaintenanceServiceBuilder<Integer, String> builder = MaintenanceService
                 .<Integer, String>builder()
-                .logger(LoggerFactory.getLogger(MaintenanceServiceTest.class))
                 .keyToSegmentMap(keyToSegmentMap)
                 .stableSegmentGateway(stableSegmentGateway)
                 .splitService(splitService)
@@ -137,8 +134,6 @@ class MaintenanceServiceTest {
         try {
             final MaintenanceServiceBuilder<Integer, String> builder =
                     MaintenanceService.<Integer, String>builder()
-                            .logger(LoggerFactory.getLogger(
-                                    MaintenanceServiceTest.class))
                             .keyToSegmentMap(keyToSegmentMap)
                             .stableSegmentGateway(stableSegmentGateway)
                             .splitService(splitService)

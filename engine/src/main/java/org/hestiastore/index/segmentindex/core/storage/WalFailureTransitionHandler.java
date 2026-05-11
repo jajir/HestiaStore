@@ -7,6 +7,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Transitions the owning index into the error state when WAL runtime failures
@@ -14,16 +15,17 @@ import org.slf4j.Logger;
  */
 final class WalFailureTransitionHandler {
 
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalFailureTransitionHandler.class);
+
     private final WalRuntime<?, ?> walRuntime;
     private final Supplier<SegmentIndexState> stateSupplier;
     private final Consumer<RuntimeException> failureHandler;
 
-    WalFailureTransitionHandler(final Logger logger,
+    WalFailureTransitionHandler(
             final WalRuntime<?, ?> walRuntime,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
         this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
                 "stateSupplier");
@@ -40,7 +42,7 @@ final class WalFailureTransitionHandler {
                 || state == SegmentIndexState.ERROR) {
             return failure;
         }
-        logger.error(
+        LOGGER.error(
                 "event=wal_sync_failure_transition state={} action=transition_to_error reason=wal_sync_failure",
                 state, failure);
         failureHandler.accept(failure);

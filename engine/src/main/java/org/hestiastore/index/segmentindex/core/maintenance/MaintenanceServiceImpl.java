@@ -16,6 +16,7 @@ import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Owns foreground flush and compaction orchestration across mapped stable
@@ -27,7 +28,9 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private static final String COMPACT_OPERATION_LABEL = "Compact";
     private static final String FLUSH_OPERATION_ID = "flush";
     private static final String FLUSH_OPERATION_LABEL = "Flush";
-    private final Logger logger;
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(MaintenanceServiceImpl.class);
+
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private final SplitService splitService;
@@ -37,19 +40,19 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private final Runnable checkpointAction;
     private final LongSupplier nanoTimeSupplier;
 
-    MaintenanceServiceImpl(final Logger logger,
+    MaintenanceServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService splitService,
             final IndexRetryPolicy retryPolicy, final Stats stats,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction) {
-        this(logger, keyToSegmentMap, stableSegmentGateway, splitService,
+        this(keyToSegmentMap, stableSegmentGateway, splitService,
                 retryPolicy, stats, maintenanceExecutor, checkpointAction,
                 System::nanoTime);
     }
 
-    MaintenanceServiceImpl(final Logger logger,
+    MaintenanceServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService splitService,
@@ -57,7 +60,6 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction,
             final LongSupplier nanoTimeSupplier) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.stableSegmentGateway = Vldtn.requireNonNull(stableSegmentGateway,
@@ -140,7 +142,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final java.util.function.LongConsumer acceptedToReadyLatencyRecorder,
             final java.util.function.Function<SegmentId,
                     StableSegmentOperationResult<BlockingSegment<K, V>>> operationRunner) {
-        logger.debug("{} attempt started: segment='{}' wait='{}'",
+        LOGGER.debug("{} attempt started: segment='{}' wait='{}'",
                 operationLabel, segmentId, waitForCompletion);
         final long startNanos = retryPolicy.startNanos();
         while (true) {
@@ -180,7 +182,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final String operationLabel,
             final java.util.function.LongConsumer acceptedToReadyLatencyRecorder,
             final BlockingSegment<K, V> segment) {
-        logger.debug("{} attempt accepted: segment='{}' wait='{}'",
+        LOGGER.debug("{} attempt accepted: segment='{}' wait='{}'",
                 operationLabel, segmentId, waitForCompletion);
         logOperation("{} accepted: segment='{}' wait='{}' state='{}'",
                 operationLabel, segmentId, waitForCompletion,
@@ -295,13 +297,13 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
         try {
             action.run();
         } catch (final RuntimeException e) {
-            logger.error("Index operation '{}' failed.", operation, e);
+            LOGGER.error("Index operation '{}' failed.", operation, e);
         }
     }
 
     private void logOperation(final String message, final Object... args) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(message, args);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(message, args);
         }
     }
 }

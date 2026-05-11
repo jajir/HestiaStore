@@ -12,13 +12,16 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class WalSyncPolicy {
+
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalSyncPolicy.class);
 
     private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalRuntimeMetrics metrics;
-    private final Logger logger;
     private final Object monitor;
     private final Supplier<List<WalSegmentDescriptor>> segmentsSupplier;
     private final BooleanSupplier closedSupplier;
@@ -30,14 +33,12 @@ final class WalSyncPolicy {
     private RuntimeException syncFailure;
 
     WalSyncPolicy(final IndexWalConfiguration wal, final WalStorage storage,
-            final WalRuntimeMetrics metrics, final Logger logger,
-            final Object monitor,
+            final WalRuntimeMetrics metrics, final Object monitor,
             final Supplier<List<WalSegmentDescriptor>> segmentsSupplier,
             final BooleanSupplier closedSupplier) {
         this.wal = wal;
         this.storage = storage;
         this.metrics = metrics;
-        this.logger = logger;
         this.monitor = monitor;
         this.segmentsSupplier = segmentsSupplier;
         this.closedSupplier = closedSupplier;
@@ -176,7 +177,7 @@ final class WalSyncPolicy {
             syncFailure = ex;
         }
         metrics.recordSyncFailure();
-        logger.error(
+        LOGGER.error(
                 "event=wal_sync_failure durableLsn={} pendingHighLsn={} pendingSyncBytes={} segmentCount={} syncFailureCount={}",
                 durableLsn.get(), pendingSyncHighLsn, pendingSyncBytes,
                 segmentsSupplier.get().size(), metrics.syncFailureCount(), ex);

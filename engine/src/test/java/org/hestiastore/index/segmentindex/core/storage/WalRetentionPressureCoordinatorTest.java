@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex.core.storage;
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -20,13 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 
 @ExtendWith(MockitoExtension.class)
 class WalRetentionPressureCoordinatorTest {
-
-    @Mock
-    private Logger logger;
 
     @Mock
     private WalRuntime<Integer, String> walRuntime;
@@ -37,7 +32,7 @@ class WalRetentionPressureCoordinatorTest {
         final AtomicInteger flushCalls = new AtomicInteger();
         final AtomicInteger checkpointCalls = new AtomicInteger();
         final WalRetentionPressureCoordinator<Integer, String> coordinator =
-                new WalRetentionPressureCoordinator<>(logger, effective(buildConf()),
+                new WalRetentionPressureCoordinator<>(effective(buildConf()),
                         walRuntime, new IndexRetryPolicy(1, 10),
                         prepareCalls::incrementAndGet,
                         flushCalls::incrementAndGet,
@@ -51,9 +46,6 @@ class WalRetentionPressureCoordinatorTest {
         assertEquals(1, prepareCalls.get());
         assertEquals(1, flushCalls.get());
         assertEquals(1, checkpointCalls.get());
-        verify(logger).warn(
-                "event=wal_retention_pressure_start retainedBytes={} threshold={} action=force_checkpoint_backpressure",
-                99L, 1024L);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

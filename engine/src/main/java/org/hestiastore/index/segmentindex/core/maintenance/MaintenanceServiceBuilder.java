@@ -9,7 +9,6 @@ import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.slf4j.Logger;
 
 /**
  * Builder for {@link MaintenanceService} instances.
@@ -19,7 +18,6 @@ import org.slf4j.Logger;
  */
 public final class MaintenanceServiceBuilder<K, V> {
 
-    private Logger logger;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private SplitService splitService;
@@ -30,17 +28,6 @@ public final class MaintenanceServiceBuilder<K, V> {
     private LongSupplier nanoTimeSupplier = System::nanoTime;
 
     MaintenanceServiceBuilder() {
-    }
-
-    /**
-     * Sets the logger used by stable segment maintenance operations.
-     *
-     * @param logger logger
-     * @return this builder
-     */
-    public MaintenanceServiceBuilder<K, V> logger(final Logger logger) {
-        this.logger = Vldtn.requireNonNull(logger, "logger");
-        return this;
     }
 
     /**
@@ -147,7 +134,6 @@ public final class MaintenanceServiceBuilder<K, V> {
      */
     public MaintenanceService build() {
         return new MaintenanceServiceImpl<>(
-                Vldtn.requireNonNull(logger, "logger"),
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),

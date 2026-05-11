@@ -8,7 +8,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class WalSyncPolicyTest {
 
@@ -18,16 +17,14 @@ class WalSyncPolicyTest {
                 .build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
-                storage, LoggerFactory.getLogger(WalSyncPolicyTest.class));
+                storage);
         final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
-                storage, metadataCatalog,
-                LoggerFactory.getLogger(WalSyncPolicyTest.class));
+                storage, metadataCatalog);
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final Object monitor = new Object();
         final AtomicBoolean closed = new AtomicBoolean(false);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage, metrics,
-                LoggerFactory.getLogger(WalSyncPolicyTest.class), monitor,
-                segmentCatalog::segments, closed::get);
+                monitor, segmentCatalog::segments, closed::get);
 
         synchronized (monitor) {
             final WalSegmentDescriptor segment = segmentCatalog

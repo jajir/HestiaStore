@@ -59,9 +59,7 @@ interface SplitExecutionCoordinator<K, V> {
                 new RouteSplitPreparationService<>(materializationService,
                         new org.hestiastore.index.segmentindex.IndexRetryPolicy(
                                 conf.maintenance().busyBackoffMillis(),
-                                conf.maintenance().busyTimeoutMillis()),
-                        org.slf4j.LoggerFactory.getLogger(
-                                RouteSplitCoordinator.class));
+                                conf.maintenance().busyTimeoutMillis()));
         return new SplitExecutionCoordinatorImpl<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentTopology, "segmentTopology"),

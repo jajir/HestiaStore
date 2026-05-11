@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class SegmentStreamingServiceImplTest {
@@ -58,7 +57,6 @@ class SegmentStreamingServiceImplTest {
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
         service = new SegmentStreamingServiceImpl<>(
-                LoggerFactory.getLogger(SegmentStreamingServiceImplTest.class),
                 synchronizedKeyToSegmentMap, segmentRegistry,
                 stableSegmentGateway, new IndexRetryPolicy(1, 10));
     }

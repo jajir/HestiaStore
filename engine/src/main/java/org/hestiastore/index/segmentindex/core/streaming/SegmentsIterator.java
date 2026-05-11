@@ -29,12 +29,12 @@ import org.slf4j.LoggerFactory;
 class SegmentsIterator<K, V> extends AbstractCloseableResource
         implements EntryIterator<K, V> {
 
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SegmentsIterator.class);
     private static final IndexRetryPolicy DEFAULT_RETRY_POLICY = new IndexRetryPolicy(
             IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
             IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
     private static final String OPEN_ITERATOR_OPERATION = "openIterator";
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIteratorIsolation isolation;
@@ -70,7 +70,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         nextEntry = null;
         while (position < ids.size()) {
             final SegmentId segmentId = ids.get(position);
-            logger.debug("Starting processing segment '{}' which is {} of {}",
+            LOGGER.debug("Starting processing segment '{}' which is {} of {}",
                     segmentId, position, ids.size());
             position++;
             final EntryIterator<K, V> iterator = openSegmentIterator(segmentId);
@@ -93,7 +93,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
     private EntryIterator<K, V> openSegmentIterator(final SegmentId segmentId) {
         final BlockingSegment<K, V> segmentHandle = awaitSegment(segmentId);
         if (segmentHandle == null) {
-            logger.debug(
+            LOGGER.debug(
                     "Skipping segment '{}' because it is not available in '{}' isolation mode.",
                     segmentId, isolation);
             return null;
@@ -101,7 +101,7 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
         final EntryIterator<K, V> iterator = awaitOpenIterator(segmentHandle,
                 segmentId);
         if (iterator == null) {
-            logger.debug(
+            LOGGER.debug(
                     "Skipping segment '{}' because iterator cannot be opened in '{}' isolation mode.",
                     segmentId, isolation);
         }
