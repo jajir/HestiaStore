@@ -26,9 +26,10 @@ import org.slf4j.LoggerFactory;
  * @param <V>
  */
 public final class IndexConsistencyChecker<K, V> {
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(IndexConsistencyChecker.class);
     private static final String ERROR_MSG = "Index is broken. "
             + "File 'index.map' containing information about segments is corrupted. ";
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final SegmentRegistry<K, V> segmentRegistry;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final Predicate<SegmentId> segmentFilter;
@@ -64,11 +65,11 @@ public final class IndexConsistencyChecker<K, V> {
                 throw new IndexException(ERROR_MSG + "Segment id is null.");
             }
             if (!segmentFilter.test(segmentId)) {
-                logger.debug("Skipping consistency check for segment '{}'.",
+                LOGGER.debug("Skipping consistency check for segment '{}'.",
                         segmentId);
                 return;
             }
-            logger.debug("checking segment '{}'.", segmentId);
+            LOGGER.debug("checking segment '{}'.", segmentId);
             final BlockingSegment<K, V> segment = awaitLoadedSegment(segmentId);
             final K maxKey = segment.checkAndRepairConsistency();
             if (maxKey == null) {
@@ -82,7 +83,7 @@ public final class IndexConsistencyChecker<K, V> {
                         + "Segment '%s' contains max key '%s', which routes to segment '%s' in the index map.",
                         segmentId, maxKey, routedSegmentId));
             }
-            logger.debug("Checking segment '{}' id done.", segmentId);
+            LOGGER.debug("Checking segment '{}' id done.", segmentId);
         });
     }
 
@@ -91,7 +92,7 @@ public final class IndexConsistencyChecker<K, V> {
         if (!confirmEmptyUnderIsolation(segment)) {
             return;
         }
-        logger.warn("Segment '{}' is empty. Removing it from index map.",
+        LOGGER.warn("Segment '{}' is empty. Removing it from index map.",
                 segmentId);
         keyToSegmentMap.removeSegmentRoute(segmentId);
         keyToSegmentMap.flushIfDirty();

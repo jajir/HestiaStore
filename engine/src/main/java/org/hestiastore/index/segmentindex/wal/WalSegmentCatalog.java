@@ -6,16 +6,18 @@ import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.segmentindex.IndexWalConfiguration;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class WalSegmentCatalog {
 
     private static final long CHECKPOINT_CLEANUP_LOG_INTERVAL_NANOS = TimeUnit.SECONDS
             .toNanos(5L);
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(WalSegmentCatalog.class);
 
     private final IndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
-    private final Logger logger;
     private final List<WalSegmentDescriptor> segments = new ArrayList<>();
 
     private long retainedBytes = 0L;
@@ -25,11 +27,10 @@ final class WalSegmentCatalog {
     private long checkpointCleanupSuppressedDeletedBytes = 0L;
 
     WalSegmentCatalog(final IndexWalConfiguration wal, final WalStorage storage,
-            final WalMetadataCatalog metadataCatalog, final Logger logger) {
+            final WalMetadataCatalog metadataCatalog) {
         this.wal = wal;
         this.storage = storage;
         this.metadataCatalog = metadataCatalog;
-        this.logger = logger;
     }
 
     void resetRecoveredSegments() {
@@ -154,7 +155,7 @@ final class WalSegmentCatalog {
         checkpointCleanupSuppressedDeletedSegments = 0L;
         checkpointCleanupSuppressedDeletedBytes = 0L;
         checkpointCleanupLastLogNanos = nowNanos;
-        logger.info(
+        LOGGER.info(
                 "event=wal_checkpoint_cleanup checkpointLsn={} deletedSegments={} deletedBytes={} retainedSegments={} retainedBytes={} suppressedEvents={} suppressedDeletedSegments={} suppressedDeletedBytes={}",
                 checkpointLsn, deletedCount, deletedBytes, segments.size(),
                 retainedBytes, suppressedEvents, suppressedDeletedSegments,

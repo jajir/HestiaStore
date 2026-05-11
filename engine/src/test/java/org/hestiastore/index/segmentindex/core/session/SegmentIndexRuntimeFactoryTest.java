@@ -31,12 +31,9 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class SegmentIndexRuntimeFactoryTest {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
@@ -56,8 +53,7 @@ class SegmentIndexRuntimeFactoryTest {
         if (runtime != null) {
             final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
             stateMachine.markReady();
-            new IndexCloseCoordinator<>(logger,
-                    "runtime-graph-builder-test",
+            new IndexCloseCoordinator<>("runtime-graph-builder-test",
                     stateMachine,
                     Mockito.mock(IndexOperationTrackingAccess.class), new Stats(),
                     runtime, new IndexDirectoryLock(new MemDirectory())).close();
@@ -118,7 +114,7 @@ class SegmentIndexRuntimeFactoryTest {
             final IndexConfiguration<Integer, String> conf,
             final Consumer<RuntimeException> failureHandler,
             final SegmentIndexRuntimeFactory.ResourceCreationObserver<Integer, String> resourceCreationObserver) {
-        final SegmentIndexRuntimeOpenContext<Integer, String> request = new SegmentIndexRuntimeOpenContext<>(logger,
+        final SegmentIndexRuntimeOpenContext<Integer, String> request = new SegmentIndexRuntimeOpenContext<>(
                 new MemDirectory(), tdi, tds, effective(conf),
                 executorRegistry, new Stats(), new AtomicLong(),
                 new AtomicLong(), new AtomicLong(),

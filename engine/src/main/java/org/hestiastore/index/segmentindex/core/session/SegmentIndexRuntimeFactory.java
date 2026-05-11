@@ -171,7 +171,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         coreStorage.segmentRegistry(),
                         coreStorage.retryPolicy());
         final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator =
-                IndexRecoveryCleanupCoordinator.create(openContext.logger,
+                IndexRecoveryCleanupCoordinator.create(
                         openContext.directoryFacade,
                         coreStorage.keyToSegmentMap(),
                         coreStorage.segmentRegistry(),
@@ -234,7 +234,6 @@ final class SegmentIndexRuntimeFactory<K, V> {
             final SegmentIndexCoreStorage<K, V> coreStorage,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway) {
         return SegmentStreamingService.<K, V>builder()
-                .logger(openContext.logger)
                 .keyToSegmentMap(coreStorage.keyToSegmentMap())
                 .segmentRegistry(coreStorage.segmentRegistry())
                 .stableSegmentGateway(stableSegmentGateway)
@@ -252,10 +251,9 @@ final class SegmentIndexRuntimeFactory<K, V> {
         final MaintenanceService maintenance = createMaintenance(coreStorage,
                 topologyRuntime, () -> checkpointAction.get().run());
         final IndexWalCoordinator<K, V> walCoordinator = IndexWalCoordinator
-                .create(openContext.logger, openContext.conf, walRuntime,
-                        coreStorage.retryPolicy(), () -> { },
-                        maintenance::flushAndWait, openContext.stateSupplier,
-                        openContext.failureHandler,
+                .create(openContext.conf, walRuntime, coreStorage.retryPolicy(),
+                        () -> { }, maintenance::flushAndWait,
+                        openContext.stateSupplier, openContext.failureHandler,
                         openContext.lastAppliedWalLsn);
         checkpointAction.set(walCoordinator::checkpoint);
         final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier =
@@ -288,7 +286,6 @@ final class SegmentIndexRuntimeFactory<K, V> {
             final SegmentTopologyRuntime<K, V> topologyRuntime,
             final Runnable checkpointAction) {
         return MaintenanceService.<K, V>builder()
-                .logger(openContext.logger)
                 .keyToSegmentMap(coreStorage.keyToSegmentMap())
                 .stableSegmentGateway(StableSegmentOperationAccess.create(
                         coreStorage.segmentRegistry()))

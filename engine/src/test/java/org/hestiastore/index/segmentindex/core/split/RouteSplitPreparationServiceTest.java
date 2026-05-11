@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 
 @ExtendWith(MockitoExtension.class)
 class RouteSplitPreparationServiceTest {
@@ -33,15 +32,12 @@ class RouteSplitPreparationServiceTest {
     @Mock
     private DefaultSegmentMaterializationService<Integer, String> materializationService;
 
-    @Mock
-    private Logger logger;
-
     private RouteSplitPreparationService<Integer, String> preparationService;
 
     @BeforeEach
     void setUp() {
         preparationService = new RouteSplitPreparationService<>(
-                materializationService, new IndexRetryPolicy(1, 1), logger);
+                materializationService, new IndexRetryPolicy(1, 1));
     }
 
     @Test
