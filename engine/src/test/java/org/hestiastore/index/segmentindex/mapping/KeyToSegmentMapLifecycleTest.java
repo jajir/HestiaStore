@@ -3,6 +3,8 @@ package org.hestiastore.index.segmentindex.mapping;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
+
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
@@ -49,5 +51,14 @@ class KeyToSegmentMapLifecycleTest {
         keyToSegmentMap.close();
         assertThrows(IllegalStateException.class,
                 () -> keyToSegmentMap.flushIfDirty());
+    }
+
+    @Test
+    void getSegmentIdsReturnsSnapshotAfterClose() {
+        final SegmentId segmentId = SegmentId.of(0);
+        keyToSegmentMap.insertSegment(1, segmentId);
+        keyToSegmentMap.close();
+
+        assertEquals(List.of(segmentId), keyToSegmentMap.getSegmentIds());
     }
 }

@@ -1,30 +1,31 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
+import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -48,11 +49,11 @@ final class SegmentIndexRuntime<K, V>
                 new SegmentIndexRuntimeOpenContext<>(directoryFacade,
                         keyTypeDescriptor,
                         valueTypeDescriptor, conf, executorRegistry, stats,
-                        new java.util.concurrent.atomic.AtomicLong(),
-                        new java.util.concurrent.atomic.AtomicLong(),
-                        new java.util.concurrent.atomic.AtomicLong(),
+                        new AtomicLong(),
+                        new AtomicLong(),
+                        new AtomicLong(),
                         stateSupplier, failureHandler))
-                                .open();
+                .open();
     }
 
     private final TypeDescriptor<K> keyTypeDescriptor;
@@ -163,7 +164,7 @@ final class SegmentIndexRuntime<K, V>
             final Predicate<SegmentId> segmentFilter) {
         new IndexConsistencyChecker<>(storage.keyToSegmentMap(),
                 storage.segmentRegistry(), keyTypeDescriptor, segmentFilter)
-                        .checkAndRepairConsistency();
+                .checkAndRepairConsistency();
     }
 
     void closeSplitRuntime() {
@@ -211,23 +212,18 @@ final class SegmentIndexRuntime<K, V>
         walRuntime.close();
     }
 
-    void closeForFailedStartup(final RuntimeException failure) {
-        RuntimeException cleanupFailure = closeForFailedStartup();
-        if (cleanupFailure != null) {
-            failure.addSuppressed(cleanupFailure);
-        }
-    }
-
-    private RuntimeException closeForFailedStartup() {
+    void closeAfterFailedInitialization() {
         RuntimeException failure = null;
         failure = closeResource(this::closeSplitRuntime, failure);
         failure = closeResource(this::closeSegmentRegistry, failure);
-        failure = closeResource(this::closeWalRuntime, failure);
         failure = closeResource(this::closeKeyToSegmentMapIfOpen, failure);
-        return failure;
+        failure = closeResource(this::closeWalRuntime, failure);
+        if (failure != null) {
+            throw failure;
+        }
     }
 
-    private void closeKeyToSegmentMapIfOpen() {
+    void closeKeyToSegmentMapIfOpen() {
         if (!storage.keyToSegmentMap().wasClosed()) {
             storage.keyToSegmentMap().close();
         }

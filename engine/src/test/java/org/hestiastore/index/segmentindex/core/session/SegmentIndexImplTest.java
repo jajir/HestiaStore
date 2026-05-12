@@ -1,51 +1,54 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import java.util.List;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentIndexImplTest {
 
-    private IndexInternalConcurrent<Integer, String> index;
+    private ExecutorRegistry executorRegistry;
+    private IndexInternal<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalConcurrent.createStarted(
+        executorRegistry = ExecutorRegistryFixture.from(conf);
+        index = IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), effective(conf),
-                ExecutorRegistryFixture.from(conf));
+                executorRegistry);
     }
 
     @AfterEach
     void tearDown() {
         if (index != null && !index.wasClosed()) {
             index.close();
+        }
+        if (executorRegistry != null && !executorRegistry.wasClosed()) {
+            executorRegistry.close();
         }
     }
 
@@ -60,115 +63,38 @@ class SegmentIndexImplTest {
     }
 
     @Test
-    void openingFactoryDefersStartupCompletion() {
-        final IndexConfiguration<Integer, String> conf = buildConf();
-        try (IndexInternalConcurrent<Integer, String> openingIndex =
-                IndexInternalConcurrent.createOpening(new MemDirectory(),
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), effective(conf),
-                        ExecutorRegistryFixture.from(conf))) {
-            assertEquals(SegmentIndexState.OPENING,
-                    openingIndex.runtimeMonitoring().snapshot().getState());
-
-            openingIndex.completeStartup();
-            openingIndex.completeStartup();
-
-            assertEquals(SegmentIndexState.READY,
-                    openingIndex.runtimeMonitoring().snapshot().getState());
-        }
-    }
-
-    @Test
-    void failedStartupCleanupClosesOpeningIndexWithoutErrorState() {
-        final MemDirectory directory = new MemDirectory();
-        final IndexConfiguration<Integer, String> conf = buildConf();
-        final IndexInternalConcurrent<Integer, String> openingIndex =
-                IndexInternalConcurrent.createOpening(directory,
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), effective(conf),
-                        ExecutorRegistryFixture.from(conf));
-        final SegmentIndexStateMachine stateMachine =
-                SegmentIndexTestAccess.stateMachine(openingIndex);
-
-        try {
-            openingIndex.abortStartup(
-                    new IllegalStateException("startup failed"));
-            openingIndex.close();
-
-            assertEquals(SegmentIndexState.CLOSED, stateMachine.getState());
-            assertFalse(directory.isFileExists(".lock"));
-        } finally {
-            cleanupOpeningIndex(openingIndex);
-        }
-    }
-
-    @Test
-    void failedStartupCleanupClosesReadyIndexWithoutErrorState() {
-        final MemDirectory directory = new MemDirectory();
-        final IndexConfiguration<Integer, String> conf = buildConf();
-        final IndexInternalConcurrent<Integer, String> openingIndex =
-                IndexInternalConcurrent.createOpening(directory,
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), effective(conf),
-                        ExecutorRegistryFixture.from(conf));
-        final SegmentIndexStateMachine stateMachine =
-                SegmentIndexTestAccess.stateMachine(openingIndex);
-
-        try {
-            openingIndex.completeStartup();
-            openingIndex.abortStartup(
-                    new IllegalStateException("startup failed after ready"));
-            openingIndex.close();
-
-            assertEquals(SegmentIndexState.CLOSED, stateMachine.getState());
-            assertFalse(directory.isFileExists(".lock"));
-        } finally {
-            cleanupOpeningIndex(openingIndex);
-        }
-    }
-
-    @Test
     void closeReleasesDirectoryLock() {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf();
-        final IndexInternalConcurrent<Integer, String> lockedIndex =
-                IndexInternalConcurrent.createStarted(directory,
+        final ExecutorRegistry registry = ExecutorRegistryFixture.from(conf);
+        try (registry;
+                IndexInternal<Integer, String> lockedIndex = IndexInternalTestSupport.createStarted(directory,
                         new TypeDescriptorInteger(),
                         new TypeDescriptorShortString(), effective(conf),
-                        ExecutorRegistryFixture.from(conf));
-
-        lockedIndex.close();
+                        registry)) {
+            assertTrue(directory.isFileExists(".lock"));
+        }
 
         assertFalse(directory.isFileExists(".lock"));
     }
 
     @Test
-    void failedOpenReleasesDirectoryLock() {
-        final Directory directory = mock(Directory.class);
-        final FileLock fileLock = mock(FileLock.class);
+    void failedOpenKeepsDirectoryLock() {
+        final MemDirectory directory = spy(new MemDirectory());
         final IndexConfiguration<Integer, String> conf = buildConf();
-        when(directory.isFileExists(".lock")).thenReturn(false);
-        when(directory.getLock(".lock")).thenReturn(fileLock);
-        when(fileLock.isLocked()).thenReturn(false, true);
-        when(directory.openSubDirectory(anyString()))
-                .thenThrow(new IllegalStateException("open failed"));
+        final ExecutorRegistry registry = ExecutorRegistryFixture.from(conf);
+        doThrow(new IllegalStateException("open failed")).when(directory)
+                .openSubDirectory(anyString());
 
-        assertThrows(RuntimeException.class,
-                () -> IndexInternalConcurrent.createStarted(directory,
-                        new TypeDescriptorInteger(),
-                        new TypeDescriptorShortString(), effective(conf),
-                        ExecutorRegistryFixture.from(conf)));
-
-        verify(fileLock).unlock();
-    }
-
-    private void cleanupOpeningIndex(
-            final IndexInternalConcurrent<Integer, String> openingIndex) {
-        if (openingIndex.wasClosed()) {
-            return;
+        try (registry) {
+            assertThrows(RuntimeException.class,
+                    () -> IndexInternalTestSupport.createStarted(directory,
+                            new TypeDescriptorInteger(),
+                            new TypeDescriptorShortString(), effective(conf),
+                            registry));
         }
-        openingIndex.abortStartup(new IllegalStateException("test cleanup"));
-        openingIndex.close();
+
+        assertTrue(directory.isFileExists(".lock"));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

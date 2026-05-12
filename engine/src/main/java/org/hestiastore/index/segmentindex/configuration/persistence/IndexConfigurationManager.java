@@ -5,9 +5,9 @@ import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
+import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
 
 /**
  * Loads, resolves, merges, and persists effective index configuration values.
@@ -37,8 +37,15 @@ public class IndexConfigurationManager<K, V> {
 
     public EffectiveIndexConfiguration<K, V> applyDefaults(
             final IndexConfiguration<K, V> request) {
-        return EffectiveIndexConfigurationResolver.resolveForCreate(request,
-                confStorage.chunkFilterProviderResolver());
+        return resolveForCreate(request).configuration();
+    }
+
+    public IndexConfigurationResolution<K, V> resolveForCreate(
+            final IndexConfiguration<K, V> request) {
+        return IndexConfigurationResolution.of(
+                EffectiveIndexConfigurationResolver.resolveForCreate(request,
+                        confStorage.chunkFilterProviderResolver()),
+                true);
     }
 
     public void save(
@@ -49,14 +56,22 @@ public class IndexConfigurationManager<K, V> {
 
     public EffectiveIndexConfiguration<K, V> mergeWithStored(
             final IndexConfiguration<K, V> request) {
+        final IndexConfigurationResolution<K, V> resolution = resolveForOpen(
+                request);
+        if (resolution.writeRequired()) {
+            confStorage.save(resolution.configuration());
+        }
+        return resolution.configuration();
+    }
+
+    public IndexConfigurationResolution<K, V> resolveForOpen(
+            final IndexConfiguration<K, V> request) {
         final EffectiveIndexConfiguration<K, V> stored = confStorage.load();
         final EffectiveIndexConfiguration<K, V> merged =
                 EffectiveIndexConfigurationResolver.mergeWithStored(stored,
                         request, confStorage.chunkFilterProviderResolver());
-        if (!sameConfiguration(stored, merged)) {
-            confStorage.save(merged);
-        }
-        return merged;
+        return IndexConfigurationResolution.of(merged,
+                !sameConfiguration(stored, merged));
     }
 
     private boolean sameConfiguration(

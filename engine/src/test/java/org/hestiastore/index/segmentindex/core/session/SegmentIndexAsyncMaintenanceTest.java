@@ -49,7 +49,7 @@ class SegmentIndexAsyncMaintenanceTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    private IndexInternalConcurrent<Integer, String> index;
+    private IndexInternal<Integer, String> index;
 
     @Mock
     private Segment<Integer, String> blockingSegment;
@@ -196,9 +196,9 @@ class SegmentIndexAsyncMaintenanceTest {
         }
     }
 
-    private IndexInternalConcurrent<Integer, String> newIndex() {
+    private IndexInternal<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        return IndexInternalConcurrent.createStarted(
+        return IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));

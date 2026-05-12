@@ -23,13 +23,13 @@ import org.junit.jupiter.api.Test;
 class SegmentIndexStateTest {
 
     private SegmentIndex<Integer, String> index;
-    private IndexInternalConcurrent<Integer, String> errorIndex;
+    private IndexInternal<Integer, String> errorIndex;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         index = SegmentIndex.create(new MemDirectory(), conf);
-        errorIndex = IndexInternalConcurrent.createStarted(
+        errorIndex = IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(), effective(conf),
                 ExecutorRegistryFixture.from(conf));

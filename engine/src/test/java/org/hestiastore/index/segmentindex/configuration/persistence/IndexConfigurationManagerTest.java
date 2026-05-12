@@ -3,7 +3,9 @@ package org.hestiastore.index.segmentindex.configuration.persistence;
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -32,6 +34,76 @@ class IndexConfigurationManagerTest {
         manager.mergeWithStored(runtime);
 
         assertNull(storage.getSaved());
+    }
+
+    @Test
+    void resolveForCreate_doesNotSaveAndMarksWriteRequired() {
+        final TestStorage<Integer, String> storage = new TestStorage<>(null);
+        final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
+                storage);
+
+        final IndexConfigurationResolution<Integer, String> resolution =
+                manager.resolveForCreate(buildStored());
+
+        assertTrue(resolution.writeRequired());
+        assertEquals("test-index", resolution.configuration().identity().name());
+        assertNull(storage.getSaved());
+    }
+
+    @Test
+    void resolveForOpen_withoutEffectiveChangeDoesNotSaveAndMarksWriteNotRequired() {
+        final EffectiveIndexConfiguration<Integer, String> stored = effective(
+                buildStored());
+        final TestStorage<Integer, String> storage = new TestStorage<>(stored);
+        final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
+                storage);
+        final IndexConfiguration<Integer, String> runtime = IndexConfiguration
+                .<Integer, String>builder()
+                .build();
+
+        final IndexConfigurationResolution<Integer, String> resolution =
+                manager.resolveForOpen(runtime);
+
+        assertFalse(resolution.writeRequired());
+        assertNull(storage.getSaved());
+    }
+
+    @Test
+    void resolveForOpen_withEffectiveChangeDoesNotSaveAndMarksWriteRequired() {
+        final EffectiveIndexConfiguration<Integer, String> stored = effective(
+                buildStored());
+        final TestStorage<Integer, String> storage = new TestStorage<>(stored);
+        final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
+                storage);
+        final IndexConfiguration<Integer, String> runtime = IndexConfiguration
+                .<Integer, String>builder()
+                .io(io -> io.diskBufferSizeBytes(2048))
+                .build();
+
+        final IndexConfigurationResolution<Integer, String> resolution =
+                manager.resolveForOpen(runtime);
+
+        assertTrue(resolution.writeRequired());
+        assertEquals(2048,
+                resolution.configuration().io().diskBufferSizeBytes());
+        assertNull(storage.getSaved());
+    }
+
+    @Test
+    void mergeWithStored_changedConfigurationStillSaves() {
+        final EffectiveIndexConfiguration<Integer, String> stored = effective(
+                buildStored());
+        final TestStorage<Integer, String> storage = new TestStorage<>(stored);
+        final IndexConfigurationManager<Integer, String> manager = new IndexConfigurationManager<>(
+                storage);
+        final IndexConfiguration<Integer, String> runtime = IndexConfiguration
+                .<Integer, String>builder()
+                .io(io -> io.diskBufferSizeBytes(2048))
+                .build();
+
+        manager.mergeWithStored(runtime);
+
+        assertEquals(2048, storage.getSaved().io().diskBufferSizeBytes());
     }
 
     @Test

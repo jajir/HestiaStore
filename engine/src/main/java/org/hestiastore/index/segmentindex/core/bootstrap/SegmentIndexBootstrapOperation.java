@@ -1,20 +1,12 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
+import java.util.Optional;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
-import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationManager;
-import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
-import org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 
 /**
  * Opens one segment-index bootstrap operation and owns cleanup until the
@@ -47,160 +39,27 @@ final class SegmentIndexBootstrapOperation<K, V> {
     }
 
     SegmentIndex<K, V> create() {
-        return openSession(true);
+        return openSession(SegmentIndexBootstrapMode.CREATE).requireIndex();
     }
 
     SegmentIndex<K, V> open() {
-        return openSession(false);
+        return openSession(SegmentIndexBootstrapMode.OPEN).requireIndex();
     }
 
-    private SegmentIndex<K, V> openSession(final boolean createIndex) {
-        final EffectiveIndexConfiguration<K, V> configuration =
-                loadConfiguration(createIndex);
-        final ExecutorRegistry executorRegistry = createExecutorRegistry(
-                configuration);
-        try {
-            return new SegmentIndexResourceClosingAdapter<>(
-                    createManagedIndex(configuration, executorRegistry),
-                    executorRegistry);
-        } catch (final RuntimeException e) {
-            closeExecutorRegistry(executorRegistry, e);
-            throw e;
-        }
+    Optional<SegmentIndex<K, V>> tryOpen() {
+        return openSession(SegmentIndexBootstrapMode.TRY_OPEN).index();
     }
 
-    private EffectiveIndexConfiguration<K, V> loadConfiguration(
-            final boolean createIndex) {
-        return createIndex ? createConfigurationForNewIndex()
-                : mergeWithStoredConfiguration();
-    }
-
-    private EffectiveIndexConfiguration<K, V> createConfigurationForNewIndex() {
-        final IndexConfigurationManager<K, V> manager = configurationManager();
-        final EffectiveIndexConfiguration<K, V> configuration = manager
-                .applyDefaults(userProvidedConfiguration);
-        manager.save(configuration);
-        return configuration;
-    }
-
-    private EffectiveIndexConfiguration<K, V> mergeWithStoredConfiguration() {
-        return configurationManager().mergeWithStored(userProvidedConfiguration);
-    }
-
-    private IndexConfigurationManager<K, V> configurationManager() {
-        return new IndexConfigurationManager<>(
-                new IndexConfigurationStorage<>(directory,
-                        resolveProviderResolver()));
-    }
-
-    private ChunkFilterProviderResolver resolveProviderResolver() {
-        return chunkFilterProviderResolver == null
-                ? userProvidedConfiguration.filters()
-                        .getChunkFilterProviderResolver()
-                : chunkFilterProviderResolver;
-    }
-
-    private ExecutorRegistry createExecutorRegistry(
-            final EffectiveIndexConfiguration<K, V> configuration) {
-        return ExecutorRegistry.builder()
-                .withIndexName(configuration.identity().name())
-                .withContextLoggingEnabled(
-                        configuration.logging().contextEnabled())
-                .withIndexMaintenanceThreads(
-                        configuration.maintenance().indexThreads())
-                .withSplitMaintenanceThreads(
-                        configuration.maintenance().indexThreads())
-                .withSegmentMaintenanceThreads(
-                        configuration.maintenance().segmentThreads())
-                .withRegistryMaintenanceThreads(
-                        configuration.maintenance().registryLifecycleThreads())
-                .build();
-    }
-
-    private SegmentIndex<K, V> createManagedIndex(
-            final EffectiveIndexConfiguration<K, V> configuration,
-            final ExecutorRegistry executorRegistry) {
-        if (!configuration.logging().contextEnabled()) {
-            return createStartedIndex(configuration, executorRegistry);
-        }
-        final IndexMdcScopeRunner contextScopeRunner =
-                new IndexMdcScopeRunner(configuration.identity().name());
-        return contextScopeRunner.supply(
-                () -> new IndexContextLoggingAdapter<>(
-                        createStartedIndex(configuration, executorRegistry),
-                        contextScopeRunner));
-    }
-
-    private IndexInternalConcurrent<K, V> createStartedIndex(
-            final EffectiveIndexConfiguration<K, V> configuration,
-            final ExecutorRegistry executorRegistry) {
-        IndexInternalConcurrent<K, V> index = null;
-        try {
-            index = IndexInternalConcurrent.createOpening(
-                    directory,
-                    resolveKeyTypeDescriptor(configuration),
-                    resolveValueTypeDescriptor(configuration),
-                    configuration,
-                    executorRegistry);
-            index.completeStartup();
-            return index;
-        } catch (final RuntimeException e) {
-            cleanupFailedIndex(index, e);
-            throw e;
-        }
-    }
-
-    private TypeDescriptor<K> resolveKeyTypeDescriptor(
-            final EffectiveIndexConfiguration<K, V> configuration) {
-        return DataTypeDescriptorRegistry
-                .makeInstance(configuration.identity().keyTypeDescriptor());
-    }
-
-    private TypeDescriptor<V> resolveValueTypeDescriptor(
-            final EffectiveIndexConfiguration<K, V> configuration) {
-        return DataTypeDescriptorRegistry
-                .makeInstance(configuration.identity().valueTypeDescriptor());
-    }
-
-    private void cleanupFailedIndex(final IndexInternalConcurrent<K, V> index,
-            final RuntimeException failure) {
-        if (index == null) {
-            return;
-        }
-        abortStartup(index, failure);
-        closeIndex(index, failure);
-    }
-
-    private void abortStartup(final IndexInternalConcurrent<K, V> index,
-            final RuntimeException failure) {
-        try {
-            index.abortStartup(failure);
-        } catch (final RuntimeException cleanupFailure) {
-            failure.addSuppressed(cleanupFailure);
-        }
-    }
-
-    private void closeIndex(final IndexInternalConcurrent<K, V> index,
-            final RuntimeException failure) {
-        if (index.wasClosed()) {
-            return;
-        }
-        try {
-            index.close();
-        } catch (final RuntimeException cleanupFailure) {
-            failure.addSuppressed(cleanupFailure);
-        }
-    }
-
-    private void closeExecutorRegistry(final ExecutorRegistry executorRegistry,
-            final RuntimeException failure) {
-        if (executorRegistry.wasClosed()) {
-            return;
-        }
-        try {
-            executorRegistry.close();
-        } catch (final RuntimeException cleanupFailure) {
-            failure.addSuppressed(cleanupFailure);
-        }
+    private SegmentIndexBootstrapResult<K, V> openSession(
+            final SegmentIndexBootstrapMode mode) {
+        final SegmentIndexBootstrapRequest<K, V> request =
+                new SegmentIndexBootstrapRequest<>(directory,
+                        userProvidedConfiguration, chunkFilterProviderResolver,
+                        mode);
+        final SegmentIndexBootstrapState<K, V> state =
+                new SegmentIndexBootstrapState<>();
+        return new SegmentIndexBootstrapPipeline<>(
+                SegmentIndexBootstrapSteps.<K, V>startingSteps())
+                .run(request, state);
     }
 }

@@ -43,10 +43,6 @@ final class IndexCloseCoordinator<K, V> {
         close(stateMachine::beginClose);
     }
 
-    void closeAfterFailedStartup() {
-        close(stateMachine::beginFailedStartupClose);
-    }
-
     private void close(final Runnable beginClose) {
         LOGGER.debug("Closing index '{}'.", indexName);
         try {
@@ -77,6 +73,7 @@ final class IndexCloseCoordinator<K, V> {
     private void sealAndFlushRuntimeState() {
         runtime.flushAndWait();
         runtime.closeSegmentRegistry();
+        runtime.closeKeyToSegmentMapIfOpen();
     }
 
     private void finishClosedState() {
