@@ -10,7 +10,7 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
  * @param <K> key type
  * @param <V> value type
  */
-interface IndexInternal<K, V> extends SegmentIndex<K, V> {
+public interface IndexInternal<K, V> extends SegmentIndex<K, V> {
 
     /**
      * Opens a segment iterator over the requested window.
@@ -19,4 +19,12 @@ interface IndexInternal<K, V> extends SegmentIndex<K, V> {
      * @return iterator over the selected segments
      */
     EntryIterator<K, V> openSegmentIterator(SegmentWindow segmentWindows);
+
+    /**
+     * In future should be removed.
+     * <p>
+     * Completes startup of the index if not already completed. Should be called
+     * after all necessary initialization steps have been performed.
+     */
+    void completeStartup();
 }

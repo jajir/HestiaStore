@@ -23,7 +23,6 @@ import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 class SegmentIndexStartupRecoveryTest {
 
@@ -120,13 +119,11 @@ class SegmentIndexStartupRecoveryTest {
                 final Directory directoryFacade,
                 final IndexConfiguration<Integer, String> conf,
                 final AtomicInteger startupConsistencyChecks) {
-            final IndexDirectoryLock directoryLock =
-                    new IndexDirectoryLock(directoryFacade);
-            final SegmentIndexStateMachine stateMachine =
-                    new SegmentIndexStateMachine();
+            final IndexDirectoryLock directoryLock = new IndexDirectoryLock(directoryFacade);
+            final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
             final SegmentIndexRuntime<Integer, String> runtime = mockRuntime();
-            final IndexConsistencyCoordinator<Integer, String> consistencyCoordinator =
-                    new IndexConsistencyCoordinator<>(() -> {
+            final IndexConsistencyCoordinator<Integer, String> consistencyCoordinator = new IndexConsistencyCoordinator<>(
+                    () -> {
                     }, segmentFilter -> {
                         startupConsistencyChecks.incrementAndGet();
                     }, () -> {
@@ -144,8 +141,7 @@ class SegmentIndexStartupRecoveryTest {
         }
 
         @SuppressWarnings("unchecked")
-        private static SegmentIndexPointOperationFacade<Integer, String>
-                mockPointOperationFacade() {
+        private static SegmentIndexPointOperationFacade<Integer, String> mockPointOperationFacade() {
             return mock(SegmentIndexPointOperationFacade.class);
         }
 
@@ -155,8 +151,7 @@ class SegmentIndexStartupRecoveryTest {
         }
 
         @SuppressWarnings("unchecked")
-        private static SegmentIndexTrackedOperationRunner<Integer, String>
-                mockTrackedRunner() {
+        private static SegmentIndexTrackedOperationRunner<Integer, String> mockTrackedRunner() {
             return mock(SegmentIndexTrackedOperationRunner.class);
         }
 

@@ -27,6 +27,29 @@ class IndexMdcScopeRunnerTest {
     }
 
     @Test
+    void openScopeSetsAndRestoresIndexNameInMdc() {
+        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner("idx");
+
+        MDC.put("index.name", "outer");
+        try (IndexMdcScope ignored = runner.openScope()) {
+            assertEquals("idx", MDC.get("index.name"));
+        }
+
+        assertEquals("outer", MDC.get("index.name"));
+    }
+
+    @Test
+    void openScopeClearsTemporaryIndexNameWhenNoPreviousValueExists() {
+        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner("idx");
+
+        try (IndexMdcScope ignored = runner.openScope()) {
+            assertEquals("idx", MDC.get("index.name"));
+        }
+
+        assertNull(MDC.get("index.name"));
+    }
+
+    @Test
     void runSetsAndRestoresIndexNameInMdc() {
         final IndexMdcScopeRunner runner = new IndexMdcScopeRunner(
                 "idx");

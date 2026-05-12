@@ -49,26 +49,6 @@ class SegmentIndexStateMachineTest {
     }
 
     @Test
-    void beginFailedStartupCloseAllowsOpeningState() {
-        final SegmentIndexStateMachine stateMachine =
-                new SegmentIndexStateMachine();
-
-        stateMachine.beginFailedStartupClose();
-        stateMachine.completeClose();
-
-        assertEquals(SegmentIndexState.CLOSED, stateMachine.getState());
-    }
-
-    @Test
-    void beginFailedStartupCloseAllowsReadyState() {
-        final SegmentIndexStateMachine stateMachine = readyStateMachine();
-
-        stateMachine.beginFailedStartupClose();
-
-        assertEquals(SegmentIndexState.CLOSING, stateMachine.getState());
-    }
-
-    @Test
     void completeCloseTransitionsClosingToClosed() {
         final SegmentIndexStateMachine stateMachine = closingStateMachine();
 

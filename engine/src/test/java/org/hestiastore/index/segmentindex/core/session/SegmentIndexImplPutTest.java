@@ -36,7 +36,7 @@ class SegmentIndexImplPutTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
-    private IndexInternalConcurrent<Integer, String> index;
+    private IndexInternal<Integer, String> index;
     private Directory directory;
 
     @BeforeEach
@@ -183,7 +183,7 @@ class SegmentIndexImplPutTest {
             index.close();
         }
         directory = new MemDirectory();
-        index = IndexInternalConcurrent.createStarted(directory, tdi, tds, effective(conf),
+        index = IndexInternalTestSupport.createStarted(directory, tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));
 
         index.put(1, "one");
@@ -207,7 +207,7 @@ class SegmentIndexImplPutTest {
         directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf(
                 maxKeysInSegment, segmentWriteCacheKeyLimit, wal);
-        index = IndexInternalConcurrent.createStarted(directory, tdi, tds, effective(conf),
+        index = IndexInternalTestSupport.createStarted(directory, tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));
     }
 

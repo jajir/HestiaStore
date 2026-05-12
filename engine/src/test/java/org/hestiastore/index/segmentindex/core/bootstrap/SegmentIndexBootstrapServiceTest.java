@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -14,8 +15,12 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 class SegmentIndexBootstrapServiceTest {
+
+    private static final String CHUNK_FILTER_PROVIDER_RESOLVER_REQUIRED_MESSAGE =
+            "Property 'chunkFilterProviderResolver' must not be null.";
 
     @Test
     void createStartsBootstrapOperation() {
@@ -49,6 +54,53 @@ class SegmentIndexBootstrapServiceTest {
         } finally {
             index.close();
         }
+    }
+
+    @Test
+    void createRejectsNullExplicitResolver() {
+        final SegmentIndexBootstrapService service =
+                new SegmentIndexBootstrapService(new MemDirectory());
+        final IndexConfiguration<Integer, String> configuration = buildConf(
+                "bootstrap-service-create-null-resolver", 1);
+
+        assertChunkFilterProviderResolverRequired(
+                () -> service.create(configuration, null));
+    }
+
+    @Test
+    void openRejectsNullExplicitResolver() {
+        final SegmentIndexBootstrapService service =
+                new SegmentIndexBootstrapService(new MemDirectory());
+        final IndexConfiguration<Integer, String> configuration = buildConf(
+                "bootstrap-service-open-null-resolver", 1);
+
+        assertChunkFilterProviderResolverRequired(
+                () -> service.open(configuration, null));
+    }
+
+    @Test
+    void openStoredRejectsNullExplicitResolver() {
+        final SegmentIndexBootstrapService service =
+                new SegmentIndexBootstrapService(new MemDirectory());
+
+        assertChunkFilterProviderResolverRequired(
+                () -> service.openStored(null));
+    }
+
+    @Test
+    void tryOpenRejectsNullExplicitResolver() {
+        final SegmentIndexBootstrapService service =
+                new SegmentIndexBootstrapService(new MemDirectory());
+
+        assertChunkFilterProviderResolverRequired(() -> service.tryOpen(null));
+    }
+
+    private static void assertChunkFilterProviderResolverRequired(
+            final Executable executable) {
+        final IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class, executable);
+        assertEquals(CHUNK_FILTER_PROVIDER_RESOLVER_REQUIRED_MESSAGE,
+                exception.getMessage());
     }
 
     private static IndexConfiguration<Integer, String> buildConf(
