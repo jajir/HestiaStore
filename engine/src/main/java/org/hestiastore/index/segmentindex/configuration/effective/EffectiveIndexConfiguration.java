@@ -22,6 +22,7 @@ public final class EffectiveIndexConfiguration<K, V> {
     private final EffectiveIndexLoggingConfiguration logging;
     private final EffectiveIndexWalConfiguration wal;
     private final EffectiveIndexFilterConfiguration filters;
+    private final EffectiveIndexChunkStoreCacheConfiguration chunkStoreCache;
 
     public EffectiveIndexConfiguration(
             final EffectiveIndexIdentityConfiguration<K, V> identity,
@@ -33,13 +34,31 @@ public final class EffectiveIndexConfiguration<K, V> {
             final EffectiveIndexLoggingConfiguration logging,
             final EffectiveIndexWalConfiguration wal,
             final EffectiveIndexFilterConfiguration filters) {
+        this(identity, segment, writePath, bloomFilter, maintenance, io,
+                logging, wal, filters,
+                new EffectiveIndexChunkStoreCacheConfiguration(0));
+    }
+
+    public EffectiveIndexConfiguration(
+            final EffectiveIndexIdentityConfiguration<K, V> identity,
+            final EffectiveIndexSegmentConfiguration segment,
+            final EffectiveIndexWritePathConfiguration writePath,
+            final EffectiveIndexBloomFilterConfiguration bloomFilter,
+            final EffectiveIndexMaintenanceConfiguration maintenance,
+            final EffectiveIndexIoConfiguration io,
+            final EffectiveIndexLoggingConfiguration logging,
+            final EffectiveIndexWalConfiguration wal,
+            final EffectiveIndexFilterConfiguration filters,
+            final EffectiveIndexChunkStoreCacheConfiguration chunkStoreCache) {
         this.identity = Vldtn.requireNonNull(identity, "identity");
         this.segment = Vldtn.requireNonNull(segment, "segment");
         final EffectiveIndexWritePathConfiguration validatedWritePath = Vldtn
                 .requireNonNull(writePath, "writePath");
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
         this.runtimeTuning = new EffectiveIndexRuntimeTuningConfiguration(
                 this.segment.cachedSegmentLimit(), this.segment.cacheKeyLimit(),
-                validatedWritePath);
+                validatedWritePath, this.chunkStoreCache);
         this.bloomFilter = Vldtn.requireNonNull(bloomFilter, "bloomFilter");
         this.maintenance = Vldtn.requireNonNull(maintenance, "maintenance");
         this.io = Vldtn.requireNonNull(io, "io");
@@ -96,6 +115,10 @@ public final class EffectiveIndexConfiguration<K, V> {
         return runtimeTuning;
     }
 
+    public EffectiveIndexChunkStoreCacheConfiguration chunkStoreCache() {
+        return chunkStoreCache;
+    }
+
     public EffectiveIndexConfiguration<K, V> withRuntimeTuning(
             final RuntimeTuningSnapshot snapshot) {
         final RuntimeTuningSnapshot tuning = Vldtn.requireNonNull(snapshot,
@@ -113,8 +136,12 @@ public final class EffectiveIndexConfiguration<K, V> {
                         tuning.segment().cacheKeyLimit(),
                         tuning.segment().cachedSegmentLimit(),
                         this.segment.deltaCacheFileLimit());
+        final EffectiveIndexChunkStoreCacheConfiguration chunkCache =
+                new EffectiveIndexChunkStoreCacheConfiguration(
+                        tuning.chunkStoreCache().pageLimit());
         return new EffectiveIndexConfiguration<>(identity, segment, writePath,
-                bloomFilter, maintenance, io, logging, wal, filters);
+                bloomFilter, maintenance, io, logging, wal, filters,
+                chunkCache);
     }
 
     private static void validateWal(final EffectiveIndexWalConfiguration wal) {

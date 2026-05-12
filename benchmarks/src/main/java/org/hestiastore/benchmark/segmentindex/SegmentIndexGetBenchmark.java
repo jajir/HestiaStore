@@ -43,6 +43,9 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     @Param({ "false", "true" })
     private boolean snappy;
 
+    @Param({ "0", "128" })
+    private int chunkStoreCachePageLimit;
+
     @Param({ "persisted", "live" })
     private String readPathMode;
 
@@ -68,6 +71,8 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                         .hashFunctions(3)
                         .falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .chunkStoreCache(cache -> cache
+                        .pageLimit(chunkStoreCachePageLimit))//
                 .maintenance(maintenance -> maintenance.segmentThreads(1)
                         .indexThreads(1).registryLifecycleThreads(1)
                         .backgroundAutoEnabled(false));

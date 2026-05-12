@@ -8,13 +8,16 @@ public final class IndexRuntimeTuningConfiguration {
     private final Integer maxSegmentsInCache;
     private final Integer segmentCacheKeyLimit;
     private final IndexWritePathConfiguration writePath;
+    private final IndexChunkStoreCacheConfiguration chunkStoreCache;
 
     IndexRuntimeTuningConfiguration(final Integer maxSegmentsInCache,
             final Integer segmentCacheKeyLimit,
-            final IndexWritePathConfiguration writePath) {
+            final IndexWritePathConfiguration writePath,
+            final IndexChunkStoreCacheConfiguration chunkStoreCache) {
         this.maxSegmentsInCache = maxSegmentsInCache;
         this.segmentCacheKeyLimit = segmentCacheKeyLimit;
         this.writePath = writePath;
+        this.chunkStoreCache = chunkStoreCache;
     }
 
     public Integer maxSegmentsInCache() {
@@ -27,5 +30,9 @@ public final class IndexRuntimeTuningConfiguration {
 
     public IndexWritePathConfiguration writePath() {
         return writePath;
+    }
+
+    public IndexChunkStoreCacheConfiguration chunkStoreCache() {
+        return chunkStoreCache;
     }
 }

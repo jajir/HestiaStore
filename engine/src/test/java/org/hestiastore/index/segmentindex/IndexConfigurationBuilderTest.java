@@ -54,6 +54,7 @@ class IndexConfigurationBuilderTest {
                         .backgroundAutoEnabled(false))
                 .io(io -> io.diskBufferSizeBytes(2048))
                 .logging(logging -> logging.contextEnabled(false))
+                .chunkStoreCache(cache -> cache.pageLimit(6))
                 .wal(wal -> wal.durability(WalDurabilityMode.SYNC)
                         .segmentSizeBytes(4096L))
                 .filters(filters -> filters
@@ -98,6 +99,10 @@ class IndexConfigurationBuilderTest {
         assertEquals(Integer.valueOf(2048),
                 grouped.io().diskBufferSizeBytes());
         assertFalse(grouped.logging().contextEnabled());
+        assertEquals(Integer.valueOf(6),
+                grouped.chunkStoreCache().pageLimit());
+        assertEquals(Integer.valueOf(6),
+                grouped.runtimeTuning().chunkStoreCache().pageLimit());
         assertTrue(grouped.wal().isEnabled());
         assertEquals(List.of(ChunkFilterSpecs.doNothing()),
                 grouped.filters().encodingChunkFilterSpecs());

@@ -767,6 +767,23 @@ public class ConsoleBackendClient {
                                 .asLong(0L)),
                 nonNegativeInt(indexNode.path("registryCacheSize").asInt(0)),
                 nonNegativeInt(indexNode.path("registryCacheLimit").asInt(0)),
+                nonNegativeInt(indexNode.path("chunkStoreCachePageLimit")
+                        .asInt(0)),
+                nonNegativeInt(indexNode.path("chunkStoreCachePageCount")
+                        .asInt(0)),
+                nonNegativeLong(indexNode.path("chunkStoreCacheEntryCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("chunkStoreCacheHitCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("chunkStoreCacheMissCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("chunkStoreCacheLoadCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode.path("chunkStoreCacheEvictionCount")
+                        .asLong(0L)),
+                nonNegativeLong(indexNode
+                        .path("chunkStoreCacheInvalidationCount")
+                        .asLong(0L)),
                 nonNegativeInt(indexNode.path("segmentCacheKeyLimitPerSegment")
                         .asInt(0)),
                 nonNegativeInt(indexNode.path("segmentWriteCacheKeyLimit")

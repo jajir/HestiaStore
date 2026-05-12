@@ -64,6 +64,7 @@ class IndexConfigurationStorageTest {
         assertEquals(10, loaded.writePath().segmentSplitKeyThreshold());
         assertEquals(7, loaded.maintenance().segmentThreads());
         assertFalse(loaded.maintenance().backgroundAutoEnabled());
+        assertEquals(0, loaded.chunkStoreCache().pageLimit());
     }
 
     @Test
@@ -99,6 +100,7 @@ class IndexConfigurationStorageTest {
                                 .backgroundAutoEnabled(false))
                         .io(io -> io.diskBufferSizeBytes(2048))
                         .logging(logging -> logging.contextEnabled(false))
+                        .chunkStoreCache(cache -> cache.pageLimit(5))
                         .filters(filters -> filters
                                 .encodingFilterSpecs(
                                         List.of(ChunkFilterSpecs.doNothing()))
@@ -119,6 +121,7 @@ class IndexConfigurationStorageTest {
         assertFalse(loaded.maintenance().backgroundAutoEnabled());
         assertEquals(Integer.valueOf(2048), loaded.io().diskBufferSizeBytes());
         assertFalse(loaded.logging().contextEnabled());
+        assertEquals(5, loaded.chunkStoreCache().pageLimit());
         assertEquals(List.of(ChunkFilterSpecs.doNothing()),
                 loaded.filters().encodingChunkFilterSpecs());
     }

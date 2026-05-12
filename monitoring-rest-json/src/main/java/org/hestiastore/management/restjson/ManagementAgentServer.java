@@ -95,7 +95,9 @@ public final class ManagementAgentServer
                     RuntimeTuningField.WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT,
                     "indexBufferedWriteKeyLimit",
                     RuntimeTuningField.WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD,
-                    "segmentSplitKeyThreshold");
+                    "segmentSplitKeyThreshold",
+                    RuntimeTuningField.CHUNK_STORE_CACHE_PAGE_LIMIT,
+                    "chunkStoreCachePageLimit");
     private static final Map<String, RuntimeTuningField> RUNTIME_FIELD_BY_API_NAME = buildRuntimeFieldByApiName();
     private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_FIELD
             .values().stream().sorted().toList();
@@ -872,6 +874,14 @@ public final class ManagementAgentServer
                 snapshot.getRegistryCacheSize(),
                 snapshot.getRegistryCacheLimit(),
                 snapshot.getSegmentCacheKeyLimitPerSegment(),
+                snapshot.getChunkStoreCachePageLimit(),
+                snapshot.getChunkStoreCachePageCount(),
+                snapshot.getChunkStoreCacheEntryCount(),
+                snapshot.getChunkStoreCacheHitCount(),
+                snapshot.getChunkStoreCacheMissCount(),
+                snapshot.getChunkStoreCacheLoadCount(),
+                snapshot.getChunkStoreCacheEvictionCount(),
+                snapshot.getChunkStoreCacheInvalidationCount(),
                 snapshot.getSegmentWriteCacheKeyLimit(),
                 snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance(),
                 snapshot.getIndexBufferedWriteKeyLimit(),
@@ -993,6 +1003,8 @@ public final class ManagementAgentServer
             case WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD -> builder
                     .writePath(writePath -> writePath
                             .segmentSplitKeyThreshold(value));
+            case CHUNK_STORE_CACHE_PAGE_LIMIT -> builder
+                    .chunkStoreCache(cache -> cache.pageLimit(value));
         }
     }
 
@@ -1071,6 +1083,8 @@ public final class ManagementAgentServer
                     .writePath().indexBufferedWriteKeyLimit();
             case WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD -> snapshot.writePath()
                     .segmentSplitKeyThreshold();
+            case CHUNK_STORE_CACHE_PAGE_LIMIT -> snapshot.chunkStoreCache()
+                    .pageLimit();
         };
     }
 

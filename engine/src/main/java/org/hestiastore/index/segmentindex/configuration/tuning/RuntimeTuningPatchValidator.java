@@ -64,6 +64,11 @@ final class RuntimeTuningPatchValidator {
                 continue;
             }
             final int intValue = value.asInt();
+            if (key == RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT) {
+                normalizeChunkStoreCachePageLimit(issues, normalized, key,
+                        value, intValue);
+                continue;
+            }
             if (intValue < MIN_GENERAL_VALUE) {
                 issues.add(new RuntimeTuningValidationIssue(key.field(),
                         "value must be >= 1"));
@@ -77,6 +82,19 @@ final class RuntimeTuningPatchValidator {
             }
             normalized.put(key, value);
         }
+    }
+
+    private void normalizeChunkStoreCachePageLimit(
+            final List<RuntimeTuningValidationIssue> issues,
+            final EnumMap<RuntimeSettingKey, RuntimeTuningValue> normalized,
+            final RuntimeSettingKey key, final RuntimeTuningValue value,
+            final int intValue) {
+        if (intValue < 0) {
+            issues.add(new RuntimeTuningValidationIssue(key.field(),
+                    "value must be >= 0"));
+            return;
+        }
+        normalized.put(key, value);
     }
 
     private void validateEffectiveLimits(

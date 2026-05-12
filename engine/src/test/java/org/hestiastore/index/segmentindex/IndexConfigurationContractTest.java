@@ -42,6 +42,7 @@ class IndexConfigurationContractTest {
 
         assertEquals(Boolean.TRUE,
                 contract.maintenance().backgroundAutoEnabled());
+        assertEquals(0, contract.chunkStoreCache().pageLimit());
         assertEquals(
                 IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS,
                 contract.maintenance().segmentThreads());

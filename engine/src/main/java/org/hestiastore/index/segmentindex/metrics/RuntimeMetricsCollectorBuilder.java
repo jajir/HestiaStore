@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
@@ -27,6 +28,7 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
     private Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
     private ExecutorRegistry executorRegistry;
     private RuntimeTuningState runtimeTuningState;
+    private ChunkStoreCache<K, V> chunkStoreCache;
     private WalRuntime<K, V> walRuntime;
     private Stats stats;
     private AtomicLong compactRequestHighWaterMark;
@@ -70,6 +72,12 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
     public RuntimeMetricsCollectorBuilder<K, V> withRuntimeTuningState(
             final RuntimeTuningState runtimeTuningState) {
         this.runtimeTuningState = runtimeTuningState;
+        return this;
+    }
+
+    public RuntimeMetricsCollectorBuilder<K, V> withChunkStoreCache(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.chunkStoreCache = chunkStoreCache;
         return this;
     }
 
@@ -127,6 +135,8 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
                                 "executorRegistry"),
                         Vldtn.requireNonNull(runtimeTuningState,
                                 "runtimeTuningState"),
+                        Vldtn.requireNonNull(chunkStoreCache,
+                                "chunkStoreCache"),
                         Vldtn.requireNonNull(walRuntime, "walRuntime"),
                         Vldtn.requireNonNull(stats, "stats"),
                         Vldtn.requireNonNull(compactRequestHighWaterMark,

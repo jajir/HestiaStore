@@ -87,6 +87,28 @@ class RuntimeTuningIT {
     }
 
     @Test
+    void chunkStoreCachePatchChangesLimitAndMetrics() {
+        final Directory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> index = SegmentIndex.create(
+                directory, buildConf("runtime-tuning-chunk-cache-it"))) {
+            final RuntimeTuningResult result = index.runtimeTuning()
+                    .apply(RuntimeTuningPatch.builder()
+                            .expectedRevision(index.runtimeTuning().current()
+                                    .revision())
+                            .chunkStoreCache(cache -> cache.pageLimit(5))
+                            .build());
+
+            assertTrue(result.applied());
+            assertEquals(5, index.runtimeTuning().current()
+                    .chunkStoreCache().pageLimit());
+            assertEquals(5, index.runtimeMonitoring().snapshot().getMetrics()
+                    .getChunkStoreCachePageLimit());
+            assertTrue(changePaths(result)
+                    .contains("chunkStoreCache.pageLimit"));
+        }
+    }
+
+    @Test
     void runtimeTuningIsDurableOnlyAfterPersistCurrent() {
         final Directory directory = new MemDirectory();
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(
@@ -130,6 +152,7 @@ class RuntimeTuningIT {
                                 .segmentWriteCacheKeyLimitDuringMaintenance(8)
                                 .indexBufferedWriteKeyLimit(12)
                                 .segmentSplitKeyThreshold(40))
+                        .chunkStoreCache(cache -> cache.pageLimit(2))
                         .build());
         assertTrue(result.applied());
     }

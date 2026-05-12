@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCacheStats;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -23,6 +24,7 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
 
     private final EffectiveIndexConfiguration<K, V> conf;
     private final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
+    private final Supplier<ChunkStoreCacheStats> chunkStoreCacheStatsSupplier;
     private final RuntimeTuningState runtimeTuningState;
     private final WalRuntime<K, V> walRuntime;
     private final Stats stats;
@@ -32,6 +34,7 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
     SegmentIndexMetricsSnapshotFactory(
             final EffectiveIndexConfiguration<K, V> conf,
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
+            final Supplier<ChunkStoreCacheStats> chunkStoreCacheStatsSupplier,
             final RuntimeTuningState runtimeTuningState,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong lastAppliedWalLsn,
@@ -39,6 +42,8 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.splitSnapshotSupplier = Vldtn.requireNonNull(
                 splitSnapshotSupplier, "splitSnapshotSupplier");
+        this.chunkStoreCacheStatsSupplier = Vldtn.requireNonNull(
+                chunkStoreCacheStatsSupplier, "chunkStoreCacheStatsSupplier");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
@@ -56,12 +61,22 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
             final WalStats walStats, final long compactRequestCount,
             final long flushRequestCount) {
         final SplitMetricsSnapshot splitSnapshot = splitSnapshotSupplier.get();
+        final ChunkStoreCacheStats chunkStoreCacheStats =
+                chunkStoreCacheStatsSupplier.get();
         return new SegmentIndexMetricsSnapshot(stats.getGetCount(),
                 stats.getPutCount(),
                 stats.getDeleteCount(), cacheStats.hitCount(),
                 cacheStats.missCount(), cacheStats.loadCount(),
                 cacheStats.evictionCount(), cacheStats.size(),
                 cacheStats.limit(),
+                chunkStoreCacheStats.pageLimit(),
+                chunkStoreCacheStats.pageCount(),
+                chunkStoreCacheStats.entryCount(),
+                chunkStoreCacheStats.hitCount(),
+                chunkStoreCacheStats.missCount(),
+                chunkStoreCacheStats.loadCount(),
+                chunkStoreCacheStats.evictionCount(),
+                chunkStoreCacheStats.invalidationCount(),
                 runtimeTuningState.cacheKeyLimit(),
                 runtimeTuningState.segmentWriteCacheKeyLimit(),
                 runtimeTuningState

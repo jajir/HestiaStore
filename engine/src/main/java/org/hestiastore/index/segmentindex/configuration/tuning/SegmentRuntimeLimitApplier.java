@@ -1,5 +1,8 @@
 package org.hestiastore.index.segmentindex.configuration.tuning;
 
+import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -15,12 +18,24 @@ public final class SegmentRuntimeLimitApplier<K, V> {
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentRegistry.Runtime<K, V> segmentRuntime;
+    private final ChunkStoreCache<K, V> chunkStoreCache;
 
     public SegmentRuntimeLimitApplier(
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentRegistry.Runtime<K, V> segmentRuntime) {
-        this.segmentRegistry = segmentRegistry;
-        this.segmentRuntime = segmentRuntime;
+        this(segmentRegistry, segmentRuntime, new LruChunkStoreCache<>(0));
+    }
+
+    public SegmentRuntimeLimitApplier(
+            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentRegistry.Runtime<K, V> segmentRuntime,
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
+        this.segmentRuntime = Vldtn.requireNonNull(segmentRuntime,
+                "segmentRuntime");
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
     }
 
     public void apply(final RuntimeTuningSnapshot effective) {
@@ -39,5 +54,6 @@ public final class SegmentRuntimeLimitApplier<K, V> {
                 .loadedSegmentsSnapshot()) {
             segment.getRuntime().updateRuntimeLimits(limits);
         }
+        chunkStoreCache.updateLimit(effective.chunkStoreCache().pageLimit());
     }
 }

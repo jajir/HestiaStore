@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -60,6 +61,7 @@ final class SegmentIndexMetricsCollector<K, V> {
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
+            final ChunkStoreCache<K, V> chunkStoreCache,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
@@ -80,7 +82,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                 Vldtn.requireNonNull(flushRequestHighWaterMark,
                         "flushRequestHighWaterMark"),
                 newSnapshotFactory(conf, splitSnapshotSupplier,
-                        runtimeTuningState, walRuntime, stats,
+                        runtimeTuningState, chunkStoreCache, walRuntime, stats,
                         lastAppliedWalLsn, stateSupplier));
     }
 
@@ -103,6 +105,7 @@ final class SegmentIndexMetricsCollector<K, V> {
             final EffectiveIndexConfiguration<K, V> conf,
             final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
             final RuntimeTuningState runtimeTuningState,
+            final ChunkStoreCache<K, V> chunkStoreCache,
             final WalRuntime<K, V> walRuntime, final Stats stats,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
@@ -110,6 +113,8 @@ final class SegmentIndexMetricsCollector<K, V> {
                 Vldtn.requireNonNull(conf, "conf"),
                 Vldtn.requireNonNull(splitSnapshotSupplier,
                         "splitSnapshotSupplier"),
+                Vldtn.requireNonNull(chunkStoreCache, "chunkStoreCache")
+                        ::stats,
                 Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
                 Vldtn.requireNonNull(walRuntime, "walRuntime"),
                 Vldtn.requireNonNull(stats, "stats"),

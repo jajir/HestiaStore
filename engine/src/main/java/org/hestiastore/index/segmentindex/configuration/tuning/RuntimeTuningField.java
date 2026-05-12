@@ -23,7 +23,10 @@ public enum RuntimeTuningField {
             RuntimeTuningValueType.INT),
     /** Split threshold for a single routed segment. */
     WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD(
-            "writePath.segmentSplitKeyThreshold", RuntimeTuningValueType.INT);
+            "writePath.segmentSplitKeyThreshold", RuntimeTuningValueType.INT),
+    /** Parsed persisted chunk page cache capacity. */
+    CHUNK_STORE_CACHE_PAGE_LIMIT("chunkStoreCache.pageLimit",
+            RuntimeTuningValueType.INT);
 
     private final String path;
     private final RuntimeTuningValueType valueType;
