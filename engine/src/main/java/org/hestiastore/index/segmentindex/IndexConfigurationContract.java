@@ -15,6 +15,7 @@ public interface IndexConfigurationContract {
     int DEFAULT_SEGMENT_CHUNK_KEY_LIMIT = 1_000;
     int DEFAULT_CACHED_SEGMENT_LIMIT = 10;
     int DEFAULT_DELTA_CACHE_FILE_LIMIT = 10;
+    int DEFAULT_CHUNK_STORE_CACHE_PAGE_LIMIT = 0;
 
     int DEFAULT_BLOOM_FILTER_HASH_FUNCTIONS = 3;
     int DEFAULT_BLOOM_FILTER_INDEX_SIZE_BYTES = 5_000_000;
@@ -70,7 +71,17 @@ public interface IndexConfigurationContract {
         final IndexSegmentConfiguration segment = segment();
         return new IndexRuntimeTuningConfiguration(
                 segment.cachedSegmentLimit(), segment.cacheKeyLimit(),
-                writePath());
+                writePath(), chunkStoreCache());
+    }
+
+    /**
+     * Returns default parsed chunk page cache settings.
+     *
+     * @return default chunk-store cache section
+     */
+    default IndexChunkStoreCacheConfiguration chunkStoreCache() {
+        return new IndexChunkStoreCacheConfiguration(
+                DEFAULT_CHUNK_STORE_CACHE_PAGE_LIMIT);
     }
 
     /**

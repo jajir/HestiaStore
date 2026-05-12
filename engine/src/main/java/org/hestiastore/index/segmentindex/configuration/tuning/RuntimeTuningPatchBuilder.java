@@ -31,6 +31,13 @@ public final class RuntimeTuningPatchBuilder {
         return this;
     }
 
+    public RuntimeTuningPatchBuilder chunkStoreCache(
+            final Consumer<RuntimeChunkStoreCacheTuningPatchBuilder> customizer) {
+        Vldtn.requireNonNull(customizer, "customizer").accept(
+                new RuntimeChunkStoreCacheTuningPatchBuilder(values));
+        return this;
+    }
+
     public RuntimeTuningPatchBuilder expectedRevision(final long value) {
         this.expectedRevision = Long.valueOf(value);
         return this;

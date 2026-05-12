@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCacheStats;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
@@ -53,6 +54,8 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
                 new SegmentIndexMetricsSnapshotFactory<>(effective(conf),
                         () -> new SplitMetricsSnapshot(3, 2),
+                        () -> new ChunkStoreCacheStats(5, 2, 4L, 6L, 7L, 8L,
+                                9L, 10L),
                         RuntimeTuningState.fromConfiguration(effective(conf)),
                         openDisabledWalRuntime(), stats, new AtomicLong(17L),
                         () -> SegmentIndexState.READY);
@@ -73,6 +76,8 @@ class SegmentIndexMetricsSnapshotFactoryTest {
                 5L, 7L);
 
         assertEquals(11L, snapshot.getRegistryCacheHitCount());
+        assertEquals(5, snapshot.getChunkStoreCachePageLimit());
+        assertEquals(6L, snapshot.getChunkStoreCacheHitCount());
         assertEquals(1, snapshot.getSegmentCount());
         assertEquals(5L, snapshot.getCompactRequestCount());
         assertEquals(7L, snapshot.getFlushRequestCount());

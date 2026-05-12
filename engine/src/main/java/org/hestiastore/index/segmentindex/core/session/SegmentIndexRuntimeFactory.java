@@ -258,7 +258,8 @@ final class SegmentIndexRuntimeFactory<K, V> {
         checkpointAction.set(walCoordinator::checkpoint);
         final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier =
                 new SegmentRuntimeLimitApplier<>(coreStorage.segmentRegistry(),
-                        coreStorage.segmentRegistry().runtime());
+                        coreStorage.segmentRegistry().runtime(),
+                        coreStorage.chunkStoreCache());
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
                 createMetricsSnapshotSupplier(coreStorage, topologyRuntime,
                         walRuntime);
@@ -321,6 +322,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         .withExecutorRegistry(openContext.executorRegistry)
                         .withRuntimeTuningState(
                                 coreStorage.runtimeTuningState())
+                        .withChunkStoreCache(coreStorage.chunkStoreCache())
                         .withWalRuntime(walRuntime)
                         .withStats(openContext.stats)
                         .withCompactRequestHighWaterMark(

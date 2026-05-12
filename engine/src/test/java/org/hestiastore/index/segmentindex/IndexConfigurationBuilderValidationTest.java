@@ -114,6 +114,16 @@ class IndexConfigurationBuilderValidationTest {
     }
 
     @Test
+    void test_chunkStoreCache_nullCustomizerRejected() {
+        final IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> newBuilder().chunkStoreCache(null));
+
+        assertEquals("Property 'customizer' must not be null.",
+                exception.getMessage());
+    }
+
+    @Test
     void test_name_setsValue() {
         final IndexConfiguration<Integer, String> config = newBuilder()
                 .identity(identity -> identity.name("orders")).build();
@@ -220,6 +230,26 @@ class IndexConfigurationBuilderValidationTest {
                 .segment(segment -> segment.chunkKeyLimit(7)).build();
 
         assertEquals(7, config.segment().chunkKeyLimit());
+    }
+
+    @Test
+    void test_chunkStoreCachePageLimit_setsValue() {
+        final IndexConfiguration<Integer, String> config = newBuilder()
+                .chunkStoreCache(cache -> cache.pageLimit(7)).build();
+
+        assertEquals(7, config.chunkStoreCache().pageLimit());
+    }
+
+    @Test
+    void test_chunkStoreCachePageLimit_rejectsNegative() {
+        final IndexConfigurationBuilder<Integer, String> builder = newBuilder()
+                .chunkStoreCache(cache -> cache.pageLimit(-1));
+
+        final IllegalArgumentException exception = assertBuildThrows(builder);
+
+        assertEquals(
+                "Property 'pageLimit' must be greater than or equal to 0",
+                exception.getMessage());
     }
 
     @Test

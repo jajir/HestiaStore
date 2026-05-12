@@ -91,6 +91,62 @@ public final class HestiaStoreMicrometerBinder implements MeterBinder {
                 .description("Configured segment registry cache size limit")
                 .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
 
+        Gauge.builder(HestiaStoreMetricNames.CHUNK_STORE_CACHE_PAGE_LIMIT,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCachePageLimit())
+                .description("Configured parsed chunk page cache limit")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        Gauge.builder(HestiaStoreMetricNames.CHUNK_STORE_CACHE_PAGE_COUNT,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCachePageCount())
+                .description("Current parsed chunk page cache page count")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        Gauge.builder(HestiaStoreMetricNames.CHUNK_STORE_CACHE_ENTRY_COUNT,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCacheEntryCount())
+                .description("Current parsed chunk page cache entry count")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        FunctionCounter.builder(
+                HestiaStoreMetricNames.CHUNK_STORE_CACHE_HIT_TOTAL,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCacheHitCount())
+                .description("Total number of parsed chunk page cache hits")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        FunctionCounter.builder(
+                HestiaStoreMetricNames.CHUNK_STORE_CACHE_MISS_TOTAL,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCacheMissCount())
+                .description("Total number of parsed chunk page cache misses")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        FunctionCounter.builder(
+                HestiaStoreMetricNames.CHUNK_STORE_CACHE_LOAD_TOTAL,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCacheLoadCount())
+                .description("Total number of parsed chunk page cache loads")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        FunctionCounter.builder(
+                HestiaStoreMetricNames.CHUNK_STORE_CACHE_EVICTION_TOTAL,
+                monitoredIndex,
+                i -> i.metricsSnapshot().getChunkStoreCacheEvictionCount())
+                .description(
+                        "Total number of parsed chunk page cache evictions")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
+        FunctionCounter.builder(
+                HestiaStoreMetricNames.CHUNK_STORE_CACHE_INVALIDATION_TOTAL,
+                monitoredIndex,
+                i -> i.metricsSnapshot()
+                        .getChunkStoreCacheInvalidationCount())
+                .description(
+                        "Total number of parsed chunk page cache invalidations")
+                .tag(TAG_INDEX, monitoredIndex.indexName()).register(registry);
+
         Gauge.builder(HestiaStoreMetricNames.SEGMENT_WRITE_CACHE_KEY_LIMIT,
                 monitoredIndex,
                 i -> i.metricsSnapshot().getSegmentWriteCacheKeyLimit())

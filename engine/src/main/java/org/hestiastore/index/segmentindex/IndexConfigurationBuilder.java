@@ -30,6 +30,8 @@ public class IndexConfigurationBuilder<K, V> {
             new IndexLoggingConfigurationBuilder<>();
     private final IndexFilterConfigurationBuilder<K, V> filters =
             new IndexFilterConfigurationBuilder<>();
+    private final IndexChunkStoreCacheConfigurationBuilder<K, V> chunkStoreCache =
+            new IndexChunkStoreCacheConfigurationBuilder<>();
     private boolean walConfigured;
 
     IndexConfigurationBuilder() {
@@ -146,6 +148,18 @@ public class IndexConfigurationBuilder<K, V> {
     }
 
     /**
+     * Configures parsed persisted chunk page cache settings.
+     *
+     * @param customizer chunk-store cache section customizer
+     * @return this builder
+     */
+    public IndexConfigurationBuilder<K, V> chunkStoreCache(
+            final Consumer<IndexChunkStoreCacheConfigurationBuilder<K, V>> customizer) {
+        applyCustomizer(customizer, chunkStoreCache);
+        return this;
+    }
+
+    /**
      * Builds an immutable {@link IndexConfiguration} from the collected
      * settings.
      *
@@ -158,15 +172,18 @@ public class IndexConfigurationBuilder<K, V> {
                 segment.build();
         final IndexWritePathConfiguration writePathConfiguration =
                 writePath.build();
+        final IndexChunkStoreCacheConfiguration chunkStoreCacheConfiguration =
+                chunkStoreCache.build();
         final IndexRuntimeTuningConfiguration runtimeTuningConfiguration =
                 new IndexRuntimeTuningConfiguration(
                         segmentConfiguration.cachedSegmentLimit(),
                         segmentConfiguration.cacheKeyLimit(),
-                        writePathConfiguration);
+                        writePathConfiguration, chunkStoreCacheConfiguration);
         return new IndexConfiguration<>(identityConfiguration,
                 segmentConfiguration, runtimeTuningConfiguration,
                 bloomFilter.build(), maintenance.build(), io.build(),
-                logging.build(), buildWal(), filters.build());
+                logging.build(), buildWal(), filters.build(),
+                chunkStoreCacheConfiguration);
     }
 
     private IndexWalConfiguration buildWal() {

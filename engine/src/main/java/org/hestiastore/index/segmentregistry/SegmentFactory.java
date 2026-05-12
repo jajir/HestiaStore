@@ -6,6 +6,8 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
@@ -33,6 +35,7 @@ final class SegmentFactory<K, V>
     private final TypeDescriptor<V> valueTypeDescriptor;
     private final EffectiveIndexConfiguration<K, V> conf;
     private final ExecutorService stableSegmentMaintenanceExecutor;
+    private final ChunkStoreCache<K, V> chunkStoreCache;
     private volatile SegmentRuntimeLimits runtimeLimits;
 
     /**
@@ -50,6 +53,28 @@ final class SegmentFactory<K, V>
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorService segmentMaintenanceExecutor) {
+        this(directoryFacade, keyTypeDescriptor, valueTypeDescriptor, conf,
+                segmentMaintenanceExecutor, new LruChunkStoreCache<>(0));
+    }
+
+    /**
+     * Creates a factory for building segments with shared configuration.
+     *
+     * @param directoryFacade            base directory for segment storage
+     * @param keyTypeDescriptor          key type descriptor
+     * @param valueTypeDescriptor        value type descriptor
+     * @param conf                       runtime index configuration
+     * @param segmentMaintenanceExecutor executor for stable segment
+     *                                   maintenance tasks
+     * @param chunkStoreCache            parsed chunk page cache shared by
+     *                                   loaded segments
+     */
+    SegmentFactory(final Directory directoryFacade,
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final TypeDescriptor<V> valueTypeDescriptor,
+            final EffectiveIndexConfiguration<K, V> conf,
+            final ExecutorService segmentMaintenanceExecutor,
+            final ChunkStoreCache<K, V> chunkStoreCache) {
         this.directoryFacade = Vldtn.requireNonNull(directoryFacade,
                 "directoryFacade");
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -60,6 +85,8 @@ final class SegmentFactory<K, V>
         this.stableSegmentMaintenanceExecutor = Vldtn
                 .requireNonNull(segmentMaintenanceExecutor,
                         "segmentMaintenanceExecutor");
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
         this.runtimeLimits = configuredRuntimeLimitsIfValid();
     }
 
@@ -125,7 +152,8 @@ final class SegmentFactory<K, V>
                         conf.bloomFilter().falsePositiveProbability())//
                 .withDiskIoBufferSize(conf.io().diskBufferSizeBytes())//
                 .withEncodingChunkFilterSuppliers(encodingChunkFilters)//
-                .withDecodingChunkFilterSuppliers(decodingChunkFilters);
+                .withDecodingChunkFilterSuppliers(decodingChunkFilters)//
+                .withChunkStoreCache(chunkStoreCache);
     }
 
     /**

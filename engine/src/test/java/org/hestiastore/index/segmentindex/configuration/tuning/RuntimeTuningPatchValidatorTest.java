@@ -66,6 +66,31 @@ class RuntimeTuningPatchValidatorTest {
                         RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
     }
 
+    @Test
+    void validateAcceptsZeroChunkStoreCachePageLimit() {
+        final RuntimeTuningValidation validation = validator
+                .validate(RuntimeTuningPatch.builder()
+                        .chunkStoreCache(cache -> cache.pageLimit(0))
+                        .build());
+
+        assertTrue(validation.valid());
+        assertEquals(RuntimeTuningValue.ofInt(0),
+                validation.normalizedValues().get(
+                        RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT));
+    }
+
+    @Test
+    void validateRejectsNegativeChunkStoreCachePageLimit() {
+        final RuntimeTuningValidation validation = validator
+                .validate(RuntimeTuningPatch.builder()
+                        .chunkStoreCache(cache -> cache.pageLimit(-1))
+                        .build());
+
+        assertFalse(validation.valid());
+        assertEquals(RuntimeTuningField.CHUNK_STORE_CACHE_PAGE_LIMIT,
+                validation.issues().get(0).field());
+    }
+
     private static IndexConfiguration<Integer, String> buildConf() {
         return IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))

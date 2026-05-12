@@ -22,6 +22,14 @@ public final class SegmentIndexMetricsSnapshot {
     private final long registryCacheEvictionCount;
     private final int registryCacheSize;
     private final int registryCacheLimit;
+    private int chunkStoreCachePageLimit;
+    private int chunkStoreCachePageCount;
+    private long chunkStoreCacheEntryCount;
+    private long chunkStoreCacheHitCount;
+    private long chunkStoreCacheMissCount;
+    private long chunkStoreCacheLoadCount;
+    private long chunkStoreCacheEvictionCount;
+    private long chunkStoreCacheInvalidationCount;
     private final int segmentCacheKeyLimitPerSegment;
     private final int segmentCount;
     private final int segmentReadyCount;
@@ -357,11 +365,151 @@ public final class SegmentIndexMetricsSnapshot {
         this.state = Vldtn.requireNonNull(state, "state");
     }
 
-    private static void requireNotNegative(final long value,
+    /**
+     * Creates an immutable runtime metrics snapshot with parsed chunk page cache
+     * metrics.
+     */
+    @SuppressWarnings("java:S107")
+    public SegmentIndexMetricsSnapshot(final long getOperationCount,
+            final long putOperationCount, final long deleteOperationCount,
+            final long registryCacheHitCount, final long registryCacheMissCount,
+            final long registryCacheLoadCount,
+            final long registryCacheEvictionCount, final int registryCacheSize,
+            final int registryCacheLimit,
+            final int chunkStoreCachePageLimit,
+            final int chunkStoreCachePageCount,
+            final long chunkStoreCacheEntryCount,
+            final long chunkStoreCacheHitCount,
+            final long chunkStoreCacheMissCount,
+            final long chunkStoreCacheLoadCount,
+            final long chunkStoreCacheEvictionCount,
+            final long chunkStoreCacheInvalidationCount,
+            final int segmentCacheKeyLimitPerSegment,
+            final int segmentWriteCacheKeyLimit,
+            final int segmentWriteCacheKeyLimitDuringMaintenance,
+            final int indexBufferedWriteKeyLimit, final int segmentCount,
+            final int segmentReadyCount, final int segmentMaintenanceCount,
+            final int segmentErrorCount, final int segmentClosedCount,
+            final int segmentBusyCount, final long totalSegmentKeys,
+            final long totalSegmentCacheKeys, final long totalBufferedWriteKeys,
+            final long totalDeltaCacheFiles, final long compactRequestCount,
+            final long flushRequestCount, final long splitScheduleCount,
+            final int splitInFlightCount, final int maintenanceQueueSize,
+            final int maintenanceQueueCapacity, final int splitQueueSize,
+            final int splitQueueCapacity,
+            final int indexMaintenanceActiveThreadCount,
+            final long indexMaintenanceCompletedTaskCount,
+            final long indexMaintenanceRejectedTaskCount,
+            final int splitMaintenanceActiveThreadCount,
+            final long splitMaintenanceCompletedTaskCount,
+            final long splitMaintenanceRejectedTaskCount,
+            final int stableSegmentMaintenanceActiveThreadCount,
+            final int stableSegmentMaintenanceQueueSize,
+            final int stableSegmentMaintenanceQueueCapacity,
+            final long stableSegmentMaintenanceCompletedTaskCount,
+            final long stableSegmentMaintenanceCallerRunsCount,
+            final long readLatencyP50Micros, final long readLatencyP95Micros,
+            final long readLatencyP99Micros, final long writeLatencyP50Micros,
+            final long writeLatencyP95Micros,
+            final long writeLatencyP99Micros,
+            final int bloomFilterHashFunctions,
+            final int bloomFilterIndexSizeInBytes,
+            final double bloomFilterProbabilityOfFalsePositive,
+            final long bloomFilterRequestCount,
+            final long bloomFilterRefusedCount,
+            final long bloomFilterPositiveCount,
+            final long bloomFilterFalsePositiveCount,
+            final boolean walEnabled, final long walAppendCount,
+            final long walAppendBytes, final long walSyncCount,
+            final long walSyncFailureCount, final long walCorruptionCount,
+            final long walTruncationCount, final long walRetainedBytes,
+            final int walSegmentCount, final long walDurableLsn,
+            final long walCheckpointLsn, final long walPendingSyncBytes,
+            final long walAppliedLsn, final long walSyncTotalNanos,
+            final long walSyncMaxNanos, final long walSyncBatchBytesTotal,
+            final long walSyncBatchBytesMax,
+            final long splitTaskStartDelayP95Micros,
+            final long splitTaskRunLatencyP95Micros,
+            final long drainTaskStartDelayP95Micros,
+            final long drainTaskRunLatencyP95Micros,
+            final long putBusyRetryCount, final long putBusyTimeoutCount,
+            final long putBusyWaitP95Micros,
+            final long flushAcceptedToReadyP95Micros,
+            final long compactAcceptedToReadyP95Micros,
+            final long flushBusyRetryCount,
+            final long compactBusyRetryCount,
+            final List<SegmentMetricsSnapshot> segmentRuntimeSnapshots,
+            final SegmentIndexState state) {
+        this(getOperationCount, putOperationCount, deleteOperationCount,
+                registryCacheHitCount, registryCacheMissCount,
+                registryCacheLoadCount, registryCacheEvictionCount,
+                registryCacheSize, registryCacheLimit,
+                segmentCacheKeyLimitPerSegment, segmentWriteCacheKeyLimit,
+                segmentWriteCacheKeyLimitDuringMaintenance,
+                indexBufferedWriteKeyLimit, segmentCount, segmentReadyCount,
+                segmentMaintenanceCount, segmentErrorCount, segmentClosedCount,
+                segmentBusyCount, totalSegmentKeys, totalSegmentCacheKeys,
+                totalBufferedWriteKeys, totalDeltaCacheFiles,
+                compactRequestCount, flushRequestCount, splitScheduleCount,
+                splitInFlightCount, maintenanceQueueSize,
+                maintenanceQueueCapacity, splitQueueSize, splitQueueCapacity,
+                indexMaintenanceActiveThreadCount,
+                indexMaintenanceCompletedTaskCount,
+                indexMaintenanceRejectedTaskCount,
+                splitMaintenanceActiveThreadCount,
+                splitMaintenanceCompletedTaskCount,
+                splitMaintenanceRejectedTaskCount,
+                stableSegmentMaintenanceActiveThreadCount,
+                stableSegmentMaintenanceQueueSize,
+                stableSegmentMaintenanceQueueCapacity,
+                stableSegmentMaintenanceCompletedTaskCount,
+                stableSegmentMaintenanceCallerRunsCount, readLatencyP50Micros,
+                readLatencyP95Micros, readLatencyP99Micros,
+                writeLatencyP50Micros, writeLatencyP95Micros,
+                writeLatencyP99Micros, bloomFilterHashFunctions,
+                bloomFilterIndexSizeInBytes,
+                bloomFilterProbabilityOfFalsePositive,
+                bloomFilterRequestCount, bloomFilterRefusedCount,
+                bloomFilterPositiveCount, bloomFilterFalsePositiveCount,
+                walEnabled, walAppendCount, walAppendBytes, walSyncCount,
+                walSyncFailureCount, walCorruptionCount, walTruncationCount,
+                walRetainedBytes, walSegmentCount, walDurableLsn,
+                walCheckpointLsn, walPendingSyncBytes, walAppliedLsn,
+                walSyncTotalNanos, walSyncMaxNanos, walSyncBatchBytesTotal,
+                walSyncBatchBytesMax, splitTaskStartDelayP95Micros,
+                splitTaskRunLatencyP95Micros, drainTaskStartDelayP95Micros,
+                drainTaskRunLatencyP95Micros, putBusyRetryCount,
+                putBusyTimeoutCount, putBusyWaitP95Micros,
+                flushAcceptedToReadyP95Micros,
+                compactAcceptedToReadyP95Micros, flushBusyRetryCount,
+                compactBusyRetryCount, segmentRuntimeSnapshots, state);
+        this.chunkStoreCachePageLimit = Vldtn
+                .requireGreaterThanOrEqualToZero(chunkStoreCachePageLimit,
+                        "chunkStoreCachePageLimit");
+        this.chunkStoreCachePageCount = Vldtn
+                .requireGreaterThanOrEqualToZero(chunkStoreCachePageCount,
+                        "chunkStoreCachePageCount");
+        this.chunkStoreCacheEntryCount = Vldtn
+                .requireGreaterThanOrEqualToZero(chunkStoreCacheEntryCount,
+                        "chunkStoreCacheEntryCount");
+        this.chunkStoreCacheHitCount = Vldtn.requireGreaterThanOrEqualToZero(
+                chunkStoreCacheHitCount, "chunkStoreCacheHitCount");
+        this.chunkStoreCacheMissCount = Vldtn.requireGreaterThanOrEqualToZero(
+                chunkStoreCacheMissCount, "chunkStoreCacheMissCount");
+        this.chunkStoreCacheLoadCount = Vldtn.requireGreaterThanOrEqualToZero(
+                chunkStoreCacheLoadCount, "chunkStoreCacheLoadCount");
+        this.chunkStoreCacheEvictionCount = Vldtn
+                .requireGreaterThanOrEqualToZero(chunkStoreCacheEvictionCount,
+                        "chunkStoreCacheEvictionCount");
+        this.chunkStoreCacheInvalidationCount = Vldtn
+                .requireGreaterThanOrEqualToZero(
+                        chunkStoreCacheInvalidationCount,
+                        "chunkStoreCacheInvalidationCount");
+    }
+
+    private static long requireNotNegative(final long value,
             final String name) {
-        if (value < 0L) {
-            throw new IllegalArgumentException(name + " must be >= 0");
-        }
+        return Vldtn.requireGreaterThanOrEqualToZero(value, name);
     }
 
     public long getGetOperationCount() {
@@ -398,6 +546,38 @@ public final class SegmentIndexMetricsSnapshot {
 
     public int getRegistryCacheLimit() {
         return registryCacheLimit;
+    }
+
+    public int getChunkStoreCachePageLimit() {
+        return chunkStoreCachePageLimit;
+    }
+
+    public int getChunkStoreCachePageCount() {
+        return chunkStoreCachePageCount;
+    }
+
+    public long getChunkStoreCacheEntryCount() {
+        return chunkStoreCacheEntryCount;
+    }
+
+    public long getChunkStoreCacheHitCount() {
+        return chunkStoreCacheHitCount;
+    }
+
+    public long getChunkStoreCacheMissCount() {
+        return chunkStoreCacheMissCount;
+    }
+
+    public long getChunkStoreCacheLoadCount() {
+        return chunkStoreCacheLoadCount;
+    }
+
+    public long getChunkStoreCacheEvictionCount() {
+        return chunkStoreCacheEvictionCount;
+    }
+
+    public long getChunkStoreCacheInvalidationCount() {
+        return chunkStoreCacheInvalidationCount;
     }
 
     public int getSegmentCacheKeyLimitPerSegment() {

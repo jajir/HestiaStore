@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
@@ -79,7 +80,8 @@ class SegmentIndexMetricsCollectorTest {
         collector = SegmentIndexMetricsCollector.create(
                 effective(conf), keyToSegmentMap, segmentRegistry,
                 () -> new SplitMetricsSnapshot(4, 3), executorRegistry,
-                RuntimeTuningState.fromConfiguration(effective(conf)), walRuntime, stats,
+                RuntimeTuningState.fromConfiguration(effective(conf)),
+                new LruChunkStoreCache<>(0), walRuntime, stats,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn, () -> SegmentIndexState.READY);
     }
@@ -153,7 +155,8 @@ class SegmentIndexMetricsCollectorTest {
                                 keyToSegmentMap, segmentRegistry,
                                 () -> new SplitMetricsSnapshot(0, 0),
                                 executorRegistry,
-                                mock(RuntimeTuningState.class), walRuntime,
+                                mock(RuntimeTuningState.class),
+                                new LruChunkStoreCache<>(0), walRuntime,
                                 stats, compactRequestHighWaterMark,
                                 flushRequestHighWaterMark, lastAppliedWalLsn,
                                 () -> SegmentIndexState.READY));

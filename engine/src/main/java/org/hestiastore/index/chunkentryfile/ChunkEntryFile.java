@@ -1,10 +1,14 @@
 package org.hestiastore.index.chunkentryfile;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
+import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIteratorWithCurrent;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bytes.ByteSequence;
+import org.hestiastore.index.chunkstorecache.ParsedChunkPage;
 import org.hestiastore.index.chunkstore.CellPosition;
 import org.hestiastore.index.chunkstore.ChunkStoreFile;
 import org.hestiastore.index.datablockfile.DataBlockSize;
@@ -133,6 +137,60 @@ public class ChunkEntryFile<K, V> {
             }
         }
         return null;
+    }
+
+    /**
+     * Loads a parsed page starting at a specific on-disk position.
+     *
+     * <p>
+     * This method decodes the same persisted chunk entries as
+     * {@link #searchAtPosition(Object, long, int, Comparator, FileReaderSeekable)}
+     * but materializes the page so repeated lookups can avoid chunk-store reads,
+     * decompression, and key/value decoding.
+     * </p>
+     *
+     * @param position start position in cells
+     * @param maxEntries maximum number of entries to parse
+     * @param seekableReader externally managed seekable reader
+     * @return parsed chunk page
+     */
+    public ParsedChunkPage<K, V> loadParsedPageAtPosition(final long position,
+            final int maxEntries, final FileReaderSeekable seekableReader) {
+        final int resolvedMaxEntries = Vldtn.requireGreaterThanZero(maxEntries,
+                "maxEntries");
+        final long resolvedPosition = Vldtn.requireGreaterThanOrEqualToZero(
+                position, "position");
+        final FileReaderSeekable resolvedSeekableReader = Vldtn
+                .requireNonNull(seekableReader, "seekableReader");
+
+        final Reader<ByteSequence> payloadReader = chunkStoreFile
+                .openPayloadReader(
+                        CellPosition.of(dataBlockSize, (int) resolvedPosition),
+                        resolvedSeekableReader);
+        final List<Entry<K, V>> entries = new ArrayList<>(resolvedMaxEntries);
+        int scannedEntries = 0;
+
+        while (scannedEntries < resolvedMaxEntries) {
+            final ByteSequence payload = payloadReader.read();
+            if (payload == null) {
+                return ParsedChunkPage.of(entries);
+            }
+            final MemFileReader payloadReaderCursor = new MemFileReader(payload);
+            final DiffKeyReader<K> keyReader = new DiffKeyReader<>(
+                    keyTypeDescriptor.getTypeDecoder());
+            final TypeReader<V> valueReader = valueTypeDescriptor
+                    .getTypeReader();
+            while (scannedEntries < resolvedMaxEntries) {
+                final K currentKey = keyReader.read(payloadReaderCursor);
+                if (currentKey == null) {
+                    break;
+                }
+                final V currentValue = valueReader.read(payloadReaderCursor);
+                entries.add(Entry.of(currentKey, currentValue));
+                scannedEntries++;
+            }
+        }
+        return ParsedChunkPage.of(entries);
     }
 
 }

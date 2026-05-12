@@ -28,6 +28,7 @@ public class IndexConfiguration<K, V> {
     private final IndexLoggingConfiguration logging;
     private final IndexWalConfiguration wal;
     private final IndexFilterConfiguration filters;
+    private final IndexChunkStoreCacheConfiguration chunkStoreCache;
 
     /**
      * Creates a new instance of IndexConfigurationBuilder.
@@ -48,7 +49,8 @@ public class IndexConfiguration<K, V> {
             final IndexIoConfiguration io,
             final IndexLoggingConfiguration logging,
             final IndexWalConfiguration wal,
-            final IndexFilterConfiguration filters) {
+            final IndexFilterConfiguration filters,
+            final IndexChunkStoreCacheConfiguration chunkStoreCache) {
         this.identity = identity;
         this.segment = segment;
         this.runtimeTuning = runtimeTuning;
@@ -58,6 +60,7 @@ public class IndexConfiguration<K, V> {
         this.logging = logging;
         this.wal = wal;
         this.filters = filters;
+        this.chunkStoreCache = chunkStoreCache;
     }
 
     /**
@@ -149,6 +152,15 @@ public class IndexConfiguration<K, V> {
      */
     public IndexRuntimeTuningConfiguration runtimeTuning() {
         return runtimeTuning;
+    }
+
+    /**
+     * Returns grouped parsed chunk page cache settings.
+     *
+     * @return immutable chunk-store cache settings view
+     */
+    public IndexChunkStoreCacheConfiguration chunkStoreCache() {
+        return chunkStoreCache;
     }
 
 }
