@@ -43,6 +43,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         return SegmentIndexFactory.create(directory, indexConf);
     }
 
+    /**
+     * Creates a brand new index using an explicit chunk filter provider
+     * resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory for the index
+     * @param indexConf                   requested configuration overrides
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return a newly created index instance
+     */
     static <M, N> SegmentIndex<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
@@ -67,6 +79,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         return SegmentIndexFactory.open(directory, indexConf);
     }
 
+    /**
+     * Opens an existing index with an explicit chunk filter provider resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory that already contains
+     *                                    the index
+     * @param indexConf                   configuration overrides to apply
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return index instance backed by the updated configuration
+     */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
@@ -88,6 +112,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         return SegmentIndexFactory.openStored(directory);
     }
 
+    /**
+     * Opens an existing index using stored configuration and an explicit chunk
+     * filter provider resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory with an existing
+     *                                    index
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return index instance backed by the persisted configuration
+     */
     static <M, N> SegmentIndex<M, N> open(final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return SegmentIndexFactory.openStored(directory,
@@ -109,6 +145,18 @@ public interface SegmentIndex<K, V> extends CloseableResource {
         return SegmentIndexFactory.tryOpen(directory);
     }
 
+    /**
+     * Attempts to open an index using an explicit chunk filter provider
+     * resolver.
+     *
+     * @param <M>                         key type
+     * @param <N>                         value type
+     * @param directory                   backing directory that may contain an
+     *                                    index
+     * @param chunkFilterProviderResolver resolver used to resolve persisted
+     *                                    chunk filter specs; must not be null
+     * @return optional index instance if the configuration was found
+     */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {

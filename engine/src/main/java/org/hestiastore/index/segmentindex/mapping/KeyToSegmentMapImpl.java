@@ -309,7 +309,6 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
      * @return ordered list of segment ids
      */
     public List<SegmentId> getSegmentIds() {
-        ensureOpen();
         return getSegmentIds(SegmentWindow.unbounded());
     }
 
@@ -320,7 +319,6 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
      * @return ordered list of segment ids
      */
     List<SegmentId> getSegmentIds(final SegmentWindow segmentWindow) {
-        ensureOpen();
         return snapshot.entrySet().stream()//
                 .skip(segmentWindow.getIntOffset())//
                 .limit(segmentWindow.getIntLimit())//

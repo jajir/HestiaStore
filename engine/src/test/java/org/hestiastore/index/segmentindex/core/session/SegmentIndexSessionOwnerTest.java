@@ -66,15 +66,6 @@ class SegmentIndexSessionOwnerTest {
     }
 
     @Test
-    void failedStartupCleanupUsesDedicatedClosePath() {
-        owner.prepareFailedStartupCleanup(new IllegalStateException("boom"));
-
-        owner.close();
-
-        verify(closeCoordinator).closeAfterFailedStartup();
-    }
-
-    @Test
     void ensureOperationalUsesStateMachine() {
         assertDoesNotThrow(owner::ensureOperational);
 

@@ -57,7 +57,6 @@ class SegmentIndexRuntimeFactoryTest {
                     stateMachine,
                     Mockito.mock(IndexOperationTrackingAccess.class), new Stats(),
                     runtime, new IndexDirectoryLock(new MemDirectory())).close();
-            SegmentIndexRuntimeTestAccess.keyToSegmentMap(runtime).close();
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             executorRegistry.close();

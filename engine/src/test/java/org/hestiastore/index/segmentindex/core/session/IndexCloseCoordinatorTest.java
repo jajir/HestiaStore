@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -75,21 +76,8 @@ class IndexCloseCoordinatorTest {
         inOrder.verify(runtime).closeSplitRuntime();
         inOrder.verify(runtime).flushAndWait();
         inOrder.verify(runtime).closeSegmentRegistry();
+        inOrder.verify(runtime).closeKeyToSegmentMapIfOpen();
         inOrder.verify(finishCloseTransition).run();
-        inOrder.verify(runtime).closeWalRuntime();
-        inOrder.verify(fileLock).unlock();
-    }
-
-    @Test
-    void closeAfterFailedStartup_usesFailedStartupTransition() {
-        closeCoordinator.closeAfterFailedStartup();
-
-        final InOrder inOrder = inOrder(runtime, stateMachine, fileLock);
-        inOrder.verify(stateMachine).beginFailedStartupClose();
-        inOrder.verify(runtime).closeSplitRuntime();
-        inOrder.verify(runtime).flushAndWait();
-        inOrder.verify(runtime).closeSegmentRegistry();
-        inOrder.verify(stateMachine).completeClose();
         inOrder.verify(runtime).closeWalRuntime();
         inOrder.verify(fileLock).unlock();
     }
@@ -102,6 +90,7 @@ class IndexCloseCoordinatorTest {
         assertThrows(IndexException.class, () -> closeCoordinator.close());
 
         verify(runtime).flushAndWait();
+        verify(runtime, never()).closeKeyToSegmentMapIfOpen();
         verify(finishCloseTransition).run();
         verify(runtime).closeWalRuntime();
         verify(fileLock).unlock();

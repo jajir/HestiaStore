@@ -25,12 +25,12 @@ class IndexStateTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
-    private IndexInternalConcurrent<Integer, String> index;
+    private IndexInternal<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalConcurrent.createStarted(
+        index = IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));

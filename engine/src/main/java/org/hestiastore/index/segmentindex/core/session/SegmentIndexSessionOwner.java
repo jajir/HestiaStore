@@ -23,7 +23,6 @@ final class SegmentIndexSessionOwner<K, V> {
     private final IndexCloseCoordinator<K, V> closeCoordinator;
     private final SegmentIndexStartupCoordinator<K, V> startupCoordinator;
     private final AtomicBoolean startupCompleted = new AtomicBoolean();
-    private final AtomicBoolean failedStartupCleanup = new AtomicBoolean();
 
     SegmentIndexSessionOwner(
             final SegmentIndexStateMachine stateMachine,
@@ -54,10 +53,6 @@ final class SegmentIndexSessionOwner<K, V> {
     }
 
     void close() {
-        if (failedStartupCleanup.get()) {
-            closeCoordinator.closeAfterFailedStartup();
-            return;
-        }
         closeCoordinator.close();
     }
 
@@ -66,11 +61,6 @@ final class SegmentIndexSessionOwner<K, V> {
             return;
         }
         startupCoordinator.completeStartup();
-    }
-
-    void prepareFailedStartupCleanup(final Throwable failure) {
-        Vldtn.requireNonNull(failure, "failure");
-        failedStartupCleanup.set(true);
     }
 
     SegmentIndexMetricsSnapshot metricsSnapshot() {

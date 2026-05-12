@@ -22,7 +22,7 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.IndexInternalConcurrent;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -94,7 +94,7 @@ class SegmentIndexFactoryTest {
                 ChunkFilterProviderResolverImpl.defaultResolver());
 
         assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-        assertInstanceOf(IndexInternalConcurrent.class, wrappedIndex(index));
+        assertInstanceOf(IndexInternal.class, wrappedIndex(index));
 
         index.close();
     }

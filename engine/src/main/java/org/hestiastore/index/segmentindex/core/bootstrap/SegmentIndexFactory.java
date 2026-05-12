@@ -44,7 +44,7 @@ public final class SegmentIndexFactory {
      * @param directory                   target index directory
      * @param indexConf                   user configuration overrides
      * @param chunkFilterProviderResolver resolver used to resolve persisted
-     *                                    chunk filter specs
+     *                                    chunk filter specs; must not be null
      * @return opened index instance
      */
     public static <M, N> SegmentIndex<M, N> create(final Directory directory,
@@ -77,7 +77,7 @@ public final class SegmentIndexFactory {
      * @param directory                   target index directory
      * @param indexConf                   user configuration overrides
      * @param chunkFilterProviderResolver resolver used to resolve persisted
-     *                                    chunk filter specs
+     *                                    chunk filter specs; must not be null
      * @return opened index instance
      */
     public static <M, N> SegmentIndex<M, N> open(final Directory directory,
@@ -107,7 +107,7 @@ public final class SegmentIndexFactory {
      * @param <N>                         value type
      * @param directory                   target index directory
      * @param chunkFilterProviderResolver resolver used to resolve persisted
-     *                                    chunk filter specs
+     *                                    chunk filter specs; must not be null
      * @return opened index instance
      */
     public static <M, N> SegmentIndex<M, N> openStored(final Directory directory,
@@ -135,7 +135,7 @@ public final class SegmentIndexFactory {
      * @param <N>                         value type
      * @param directory                   target index directory
      * @param chunkFilterProviderResolver resolver used to resolve persisted
-     *                                    chunk filter specs
+     *                                    chunk filter specs; must not be null
      * @return optional opened index
      */
     public static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
