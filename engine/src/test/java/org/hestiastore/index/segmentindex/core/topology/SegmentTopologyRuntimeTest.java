@@ -41,10 +41,6 @@ class SegmentTopologyRuntimeTest {
                     () -> SegmentIndexRuntimeTestAccess.closeRuntime(runtime,
                             "segment-topology-runtime-test"),
                     failure);
-            failure = closeIgnoringFailure(
-                    () -> SegmentIndexRuntimeTestAccess.keyToSegmentMap(runtime)
-                            .close(),
-                    failure);
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             failure = closeIgnoringFailure(executorRegistry::close, failure);

@@ -1,11 +1,13 @@
 package org.hestiastore.index.segmentindex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -64,6 +66,29 @@ class SegmentIndexTest {
             opened.put(2, "two");
             assertEquals("two", opened.get(2));
         }
+    }
+
+    @Test
+    void openNonExistingIndexThrowsException() {
+        final MemDirectory directory = new MemDirectory();
+
+        assertThrows(IndexException.class,
+                () -> SegmentIndex.open(directory,
+                        buildConf("segment-index-open-missing", 1)));
+    }
+
+    @Test
+    void createAlreadyExistingIndexThrowsException() {
+        final MemDirectory directory = new MemDirectory();
+        try (SegmentIndex<Integer, String> ignored = SegmentIndex.create(
+                directory, buildConf("segment-index-create-existing", 1))) {
+            ignored.put(1, "one");
+            assertEquals("one", ignored.get(1));
+        }
+
+        assertThrows(IndexException.class,
+                () -> SegmentIndex.create(directory,
+                        buildConf("segment-index-create-existing-new", 1)));
     }
 
     @Test

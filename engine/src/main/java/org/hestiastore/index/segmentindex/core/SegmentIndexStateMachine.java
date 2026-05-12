@@ -50,27 +50,6 @@ public final class SegmentIndexStateMachine {
     }
 
     /**
-     * Starts cleanup for an index that failed before bootstrap returned it to
-     * the caller.
-     */
-    public void beginFailedStartupClose() {
-        while (true) {
-            final SegmentIndexState current = state.get();
-            if (current == SegmentIndexState.OPENING
-                    || current == SegmentIndexState.READY) {
-                if (state.compareAndSet(current, SegmentIndexState.CLOSING)) {
-                    return;
-                }
-                continue;
-            }
-            if (current == SegmentIndexState.ERROR) {
-                return;
-            }
-            throw beginFailedStartupCloseFailure(current);
-        }
-    }
-
-    /**
      * Completes the close transition from CLOSING to CLOSED.
      */
     public void completeClose() {
@@ -161,21 +140,6 @@ public final class SegmentIndexStateMachine {
             case CLOSED:
                 return new IllegalStateException(
                         "Can't close already closed index.");
-            default:
-                return new IllegalStateException(
-                        "Unsupported SegmentIndex state: " + current);
-        }
-    }
-
-    private static IllegalStateException beginFailedStartupCloseFailure(
-            final SegmentIndexState current) {
-        switch (current) {
-            case CLOSING:
-                return new IllegalStateException(
-                        "Can't cleanup failed startup while index is already closing.");
-            case CLOSED:
-                return new IllegalStateException(
-                        "Can't cleanup failed startup on already closed index.");
             default:
                 return new IllegalStateException(
                         "Unsupported SegmentIndex state: " + current);

@@ -31,12 +31,12 @@ import org.junit.jupiter.api.Test;
 
 class SegmentIndexImplConcurrencyTest {
 
-    private IndexInternalConcurrent<Integer, String> index;
+    private IndexInternal<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalConcurrent.createStarted(
+        index = IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), effective(conf),
@@ -202,7 +202,7 @@ class SegmentIndexImplConcurrencyTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
-        index = IndexInternalConcurrent.createStarted(
+        index = IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), effective(conf),

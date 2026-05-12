@@ -4,12 +4,10 @@ import static org.hestiastore.index.segmentindex.configuration.effective.Effecti
 
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,14 +30,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class IndexInternalConcurrentTest {
+class IndexInternalTest {
 
-    private IndexInternalConcurrent<Integer, String> index;
+    private IndexInternal<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalConcurrent.createStarted(
+        index = IndexInternalTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(), effective(conf),
                 ExecutorRegistryFixture.from(conf));
@@ -50,16 +48,6 @@ class IndexInternalConcurrentTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
-    }
-
-    @Test
-    void exposesOnlyDelegateConstructor() {
-        final Constructor<?>[] constructors =
-                IndexInternalConcurrent.class.getConstructors();
-
-        assertEquals(1, constructors.length);
-        assertArrayEquals(new Class<?>[] { SegmentIndexImpl.class },
-                constructors[0].getParameterTypes());
     }
 
     @Test
@@ -166,9 +154,11 @@ class IndexInternalConcurrentTest {
         final List<Entry<Integer, String>> expected = List.of(
                 Entry.of(1, "one"), Entry.of(2, "two"),
                 Entry.of(3, "three"));
-        try (EntryIterator<Integer, String> iterator = index.openSegmentIterator(
+        try (Stream<Entry<Integer, String>> stream = index.getStream(
                 SegmentWindow.unbounded(),
                 SegmentIteratorIsolation.FAIL_FAST)) {
+            final Iterator<Entry<Integer, String>> iterator =
+                    stream.iterator();
             final var consumed = new java.util.ArrayList<Entry<Integer, String>>();
             assertTrue(iterator.hasNext());
             consumed.add(iterator.next());
@@ -190,9 +180,11 @@ class IndexInternalConcurrentTest {
         final List<Entry<Integer, String>> expected = List.of(
                 Entry.of(1, "one"), Entry.of(2, "two"),
                 Entry.of(3, "three"));
-        try (EntryIterator<Integer, String> iterator = index.openSegmentIterator(
+        try (Stream<Entry<Integer, String>> stream = index.getStream(
                 SegmentWindow.unbounded(),
                 SegmentIteratorIsolation.FAIL_FAST)) {
+            final Iterator<Entry<Integer, String>> iterator =
+                    stream.iterator();
             final var consumed = new java.util.ArrayList<Entry<Integer, String>>();
             assertTrue(iterator.hasNext());
             consumed.add(iterator.next());
@@ -205,7 +197,7 @@ class IndexInternalConcurrentTest {
     }
 
     private static <K, V> List<Entry<K, V>> consumeAll(
-            final EntryIterator<K, V> iterator) {
+            final Iterator<Entry<K, V>> iterator) {
         final var entries = new java.util.ArrayList<Entry<K, V>>();
         while (iterator.hasNext()) {
             entries.add(iterator.next());
