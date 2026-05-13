@@ -7,14 +7,15 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.chunkstore.ChunkFilterSpecs;
-import org.hestiastore.index.segmentindex.IndexBloomFilterConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexFilterConfiguration;
-import org.hestiastore.index.segmentindex.IndexIdentityConfiguration;
-import org.hestiastore.index.segmentindex.IndexMaintenanceConfiguration;
-import org.hestiastore.index.segmentindex.IndexSegmentConfiguration;
-import org.hestiastore.index.segmentindex.IndexWritePathConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexBloomFilterConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexChunkStoreCacheConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexFilterConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexIdentityConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexMaintenanceConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexSegmentConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWritePathConfiguration;
 import org.hestiastore.index.segmentindex.configuration.DataTypeDescriptorRegistry;
 import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationRegistry;
 
@@ -80,7 +81,8 @@ public final class EffectiveIndexConfigurationResolver {
                 mergeIo(validatedStored, validatedRequest),
                 mergeLogging(validatedStored, validatedRequest),
                 validatedStored.wal(),
-                mergeFilters(validatedStored, validatedResolver));
+                mergeFilters(validatedStored, validatedResolver),
+                mergeChunkStoreCache(validatedStored, validatedRequest));
     }
 
     private static <K, V> EffectiveIndexConfiguration<K, V> buildEffective(
@@ -116,6 +118,8 @@ public final class EffectiveIndexConfigurationResolver {
                                 * Math.max(1, cachedSegmentLimit)));
         final int chunkKeyLimit = intOr(request.segment().chunkKeyLimit(),
                 Math.min(defaultSegment.chunkKeyLimit(), maxKeys));
+        final int chunkStoreCachePageLimit = intOr(request.chunkStoreCache()
+                .pageLimit(), defaults.chunkStoreCache().pageLimit());
         return new EffectiveIndexConfiguration<>(
                 effectiveIdentity(request),
                 new EffectiveIndexSegmentConfiguration(maxKeys,
@@ -136,7 +140,9 @@ public final class EffectiveIndexConfigurationResolver {
                         defaults.logging().contextEnabled())),
                 EffectiveIndexWalConfiguration.fromIndexWalConfiguration(
                         request.wal()),
-                effectiveFilters(request, defaults, chunkFilterProviderResolver));
+                effectiveFilters(request, defaults, chunkFilterProviderResolver),
+                new EffectiveIndexChunkStoreCacheConfiguration(
+                        chunkStoreCachePageLimit));
     }
 
     private static <K, V> EffectiveIndexIdentityConfiguration<K, V> effectiveIdentity(
@@ -297,6 +303,16 @@ public final class EffectiveIndexConfigurationResolver {
                 stored.filters().encodingChunkFilterSpecs(),
                 stored.filters().decodingChunkFilterSpecs(),
                 chunkFilterProviderResolver);
+    }
+
+    private static <K, V> EffectiveIndexChunkStoreCacheConfiguration mergeChunkStoreCache(
+            final EffectiveIndexConfiguration<K, V> stored,
+            final IndexConfiguration<K, V> request) {
+        final IndexChunkStoreCacheConfiguration requestedCache =
+                request.chunkStoreCache();
+        return new EffectiveIndexChunkStoreCacheConfiguration(
+                intOr(requestedCache.pageLimit(),
+                        stored.chunkStoreCache().pageLimit()));
     }
 
     private static <K, V> void validateRequiredDatatypesAndIndexName(

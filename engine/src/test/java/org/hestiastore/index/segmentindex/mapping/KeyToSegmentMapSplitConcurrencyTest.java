@@ -17,7 +17,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
 
     private KeyToSegmentMapSynchronizedAdapter<Integer> adapter;
     private ExecutorService executor;
-    private RouteSplitPlan<Integer> plan;
+    private SegmentRouteSplitPlan<Integer> plan;
 
     @BeforeEach
     void setUp() {
@@ -36,8 +35,8 @@ class KeyToSegmentMapSplitConcurrencyTest {
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         adapter = new KeyToSegmentMapSynchronizedAdapter<>(rawKeyMap);
-        plan = new RouteSplitPlan<>(SegmentId.of(1), SegmentId.of(3),
-                SegmentId.of(4), 5, RouteSplitPlan.SplitMode.SPLIT);
+        plan = new SegmentRouteSplitPlan<>(SegmentId.of(1), SegmentId.of(3),
+                SegmentId.of(4), 5, SegmentRouteSplitPlan.SplitMode.SPLIT);
         executor = Executors.newFixedThreadPool(2);
     }
 

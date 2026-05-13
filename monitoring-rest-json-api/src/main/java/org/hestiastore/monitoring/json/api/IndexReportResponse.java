@@ -13,6 +13,11 @@ public record IndexReportResponse(String indexName, String state,
         long registryCacheMissCount, long registryCacheLoadCount,
         long registryCacheEvictionCount, int registryCacheSize,
         int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
+        int chunkStoreCachePageLimit, int chunkStoreCachePageCount,
+        long chunkStoreCacheEntryCount, long chunkStoreCacheHitCount,
+        long chunkStoreCacheMissCount, long chunkStoreCacheLoadCount,
+        long chunkStoreCacheEvictionCount,
+        long chunkStoreCacheInvalidationCount,
         int segmentWriteCacheKeyLimit,
         int segmentWriteCacheKeyLimitDuringMaintenance,
         int indexBufferedWriteKeyLimit,
@@ -50,6 +55,22 @@ public record IndexReportResponse(String indexName, String state,
                 "registryCacheEvictionCount");
         requireNotNegative(registryCacheSize, "registryCacheSize");
         requireNotNegative(registryCacheLimit, "registryCacheLimit");
+        requireNotNegative(chunkStoreCachePageLimit,
+                "chunkStoreCachePageLimit");
+        requireNotNegative(chunkStoreCachePageCount,
+                "chunkStoreCachePageCount");
+        requireNotNegative(chunkStoreCacheEntryCount,
+                "chunkStoreCacheEntryCount");
+        requireNotNegative(chunkStoreCacheHitCount,
+                "chunkStoreCacheHitCount");
+        requireNotNegative(chunkStoreCacheMissCount,
+                "chunkStoreCacheMissCount");
+        requireNotNegative(chunkStoreCacheLoadCount,
+                "chunkStoreCacheLoadCount");
+        requireNotNegative(chunkStoreCacheEvictionCount,
+                "chunkStoreCacheEvictionCount");
+        requireNotNegative(chunkStoreCacheInvalidationCount,
+                "chunkStoreCacheInvalidationCount");
         requireNotNegative(segmentCacheKeyLimitPerSegment,
                 "segmentCacheKeyLimitPerSegment");
         requireNotNegative(segmentWriteCacheKeyLimit,

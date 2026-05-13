@@ -10,8 +10,8 @@ import java.util.Set;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 
 /**
  * Shared properties schema metadata and migration helpers for index files.
@@ -87,6 +87,7 @@ public final class IndexPropertiesSchema {
         public static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = "diskIoBufferSizeInBytes";
         public static final String PROP_ENCODING_CHUNK_FILTERS = "encodingChunkFilters";
         public static final String PROP_DECODING_CHUNK_FILTERS = "decodingChunkFilters";
+        public static final String PROP_CHUNK_STORE_CACHE_PAGE_LIMIT = "chunkStoreCache.pageLimit";
         public static final String PROP_WAL_ENABLED = "wal.enabled";
         public static final String PROP_WAL_DURABILITY_MODE = "wal.durabilityMode";
         public static final String PROP_WAL_SEGMENT_SIZE_BYTES = "wal.segmentSizeBytes";
@@ -322,6 +323,7 @@ public final class IndexPropertiesSchema {
         addThreadingDefaults(defaults);
         addBloomAndIoDefaults(defaults);
         addChunkFilterDefaults(defaults);
+        addChunkStoreCacheDefaults(defaults);
         addWalDefaults(defaults);
 
         final Set<String> requiredKeys = new LinkedHashSet<>();
@@ -430,6 +432,13 @@ public final class IndexPropertiesSchema {
                 view -> "");
         defaults.put(IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS,
                 view -> "");
+    }
+
+    private static void addChunkStoreCacheDefaults(
+            final Map<String, DefaultValueProvider> defaults) {
+        defaults.put(IndexConfigurationKeys.PROP_CHUNK_STORE_CACHE_PAGE_LIMIT,
+                view -> String.valueOf(
+                        IndexConfigurationContract.DEFAULT_CHUNK_STORE_CACHE_PAGE_LIMIT));
     }
 
     private static void addWalDefaults(

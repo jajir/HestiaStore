@@ -11,6 +11,7 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 
@@ -142,7 +143,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        return SegmentIndexFactory.tryOpen(directory);
+        return SegmentIndexFactory.<M, N>tryOpen(directory)
+                .map(index -> index);
     }
 
     /**
@@ -160,8 +162,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return SegmentIndexFactory.tryOpen(directory,
-                chunkFilterProviderResolver);
+        return SegmentIndexFactory.<M, N>tryOpen(directory,
+                chunkFilterProviderResolver).map(index -> index);
     }
 
     /**

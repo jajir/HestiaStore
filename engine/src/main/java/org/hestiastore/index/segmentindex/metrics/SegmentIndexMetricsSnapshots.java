@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.metrics;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
@@ -63,6 +64,7 @@ final class SegmentIndexMetricsSnapshots {
                 .withSplitSnapshotSupplier(splitSnapshotSupplier)
                 .withExecutorRegistry(executorRegistry)
                 .withRuntimeTuningState(runtimeTuningState)
+                .withChunkStoreCache(new LruChunkStoreCache<>(0))
                 .withWalRuntime(walRuntime)
                 .withStats(stats)
                 .withCompactRequestHighWaterMark(compactRequestHighWaterMark)

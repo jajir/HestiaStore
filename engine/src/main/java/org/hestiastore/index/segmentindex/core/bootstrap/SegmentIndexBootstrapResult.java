@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 
 /**
  * Result of one segment-index bootstrap run.
@@ -14,23 +14,24 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 final class SegmentIndexBootstrapResult<K, V> {
 
     private final SegmentIndexBootstrapStatus status;
-    private final SegmentIndex<K, V> index;
+
+    private final IndexInternal<K, V> index;
 
     private SegmentIndexBootstrapResult(
             final SegmentIndexBootstrapStatus status,
-            final SegmentIndex<K, V> index) {
+            final IndexInternal<K, V> index) {
         this.status = Vldtn.requireNonNull(status, "status");
         this.index = validateIndex(status, index);
     }
 
     static <K, V> SegmentIndexBootstrapResult<K, V> created(
-            final SegmentIndex<K, V> index) {
+            final IndexInternal<K, V> index) {
         return new SegmentIndexBootstrapResult<>(
                 SegmentIndexBootstrapStatus.CREATED, index);
     }
 
     static <K, V> SegmentIndexBootstrapResult<K, V> opened(
-            final SegmentIndex<K, V> index) {
+            final IndexInternal<K, V> index) {
         return new SegmentIndexBootstrapResult<>(
                 SegmentIndexBootstrapStatus.OPENED, index);
     }
@@ -44,11 +45,11 @@ final class SegmentIndexBootstrapResult<K, V> {
         return status;
     }
 
-    Optional<SegmentIndex<K, V>> index() {
+    Optional<IndexInternal<K, V>> index() {
         return Optional.ofNullable(index);
     }
 
-    SegmentIndex<K, V> requireIndex() {
+    IndexInternal<K, V> requireIndex() {
         if (index == null) {
             throw new IllegalStateException(
                     "Bootstrap result does not contain an index.");
@@ -56,9 +57,9 @@ final class SegmentIndexBootstrapResult<K, V> {
         return index;
     }
 
-    private static <K, V> SegmentIndex<K, V> validateIndex(
+    private static <K, V> IndexInternal<K, V> validateIndex(
             final SegmentIndexBootstrapStatus status,
-            final SegmentIndex<K, V> index) {
+            final IndexInternal<K, V> index) {
         if (status == SegmentIndexBootstrapStatus.CREATED
                 || status == SegmentIndexBootstrapStatus.OPENED) {
             return Vldtn.requireNonNull(index, "index");

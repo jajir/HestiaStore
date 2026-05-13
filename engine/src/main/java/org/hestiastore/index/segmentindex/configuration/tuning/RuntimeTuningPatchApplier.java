@@ -65,11 +65,13 @@ final class RuntimeTuningPatchApplier {
                 RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT);
         addChange(changes, before, after,
                 RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD);
+        addChange(changes, before, after,
+                RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT);
         return List.copyOf(changes);
     }
 
     private static void addChange(final List<RuntimeTuningChange> changes,
-        final RuntimeTuningSnapshot before,
+            final RuntimeTuningSnapshot before,
             final RuntimeTuningSnapshot after, final RuntimeSettingKey key) {
         final RuntimeTuningValue beforeValue = before.value(key);
         final RuntimeTuningValue afterValue = after.value(key);

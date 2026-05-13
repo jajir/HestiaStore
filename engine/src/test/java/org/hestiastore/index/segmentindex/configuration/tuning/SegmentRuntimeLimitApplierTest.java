@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -37,6 +38,9 @@ class SegmentRuntimeLimitApplierTest {
 
     @Mock
     private BlockingSegment.Runtime secondRuntime;
+
+    @Mock
+    private ChunkStoreCache<Integer, String> chunkStoreCache;
 
     private SegmentRuntimeLimitApplier<Integer, String> applier;
 
@@ -72,5 +76,22 @@ class SegmentRuntimeLimitApplierTest {
         verify(secondRuntime).updateRuntimeLimits(segmentCaptor.capture());
         assertEquals(List.of(expectedLimits, expectedLimits),
                 segmentCaptor.getAllValues());
+    }
+
+    @Test
+    void applyUpdatesChunkStoreCacheLimit() {
+        final SegmentRuntimeLimitApplier<Integer, String> cacheApplier =
+                new SegmentRuntimeLimitApplier<>(segmentRegistry,
+                        segmentRuntime, chunkStoreCache);
+        when(segmentRuntime.loadedSegmentsSnapshot()).thenReturn(List.of());
+        final RuntimeTuningSnapshot effective = new RuntimeTuningSnapshot(
+                "segment-runtime-limit-applier-cache-test", 0L, Instant.now(),
+                new RuntimeSegmentTuningSnapshot(10, 3),
+                new RuntimeWritePathTuningSnapshot(5, 7, 9, 50),
+                new RuntimeChunkStoreCacheTuningSnapshot(6));
+
+        cacheApplier.apply(effective);
+
+        verify(chunkStoreCache).updateLimit(6);
     }
 }

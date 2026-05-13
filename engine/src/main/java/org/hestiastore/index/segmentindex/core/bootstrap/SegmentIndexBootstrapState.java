@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
@@ -22,9 +21,10 @@ final class SegmentIndexBootstrapState<K, V> {
     private TypeDescriptor<V> valueTypeDescriptor;
     private ExecutorRegistry executorRegistry;
     private IndexMdcScopeRunner indexMdcScopeRunner;
+    // FIXME why to store x time the same?
     private IndexInternal<K, V> internalIndex;
-    private SegmentIndex<K, V> managedIndex;
-    private SegmentIndex<K, V> index;
+    private IndexInternal<K, V> managedIndex;
+    private IndexInternal<K, V> index;
     private SegmentIndexBootstrapResult<K, V> result;
 
     void setConfiguration(
@@ -100,19 +100,19 @@ final class SegmentIndexBootstrapState<K, V> {
         return requireInitialized(internalIndex, "internalIndex");
     }
 
-    void setManagedIndex(final SegmentIndex<K, V> managedIndex) {
+    void setManagedIndex(final IndexInternal<K, V> managedIndex) {
         this.managedIndex = Vldtn.requireNonNull(managedIndex, "managedIndex");
     }
 
-    SegmentIndex<K, V> getManagedIndex() {
+    IndexInternal<K, V> getManagedIndex() {
         return requireInitialized(managedIndex, "managedIndex");
     }
 
-    void setIndex(final SegmentIndex<K, V> index) {
+    void setIndex(final IndexInternal<K, V> index) {
         this.index = Vldtn.requireNonNull(index, "index");
     }
 
-    SegmentIndex<K, V> getIndex() {
+    IndexInternal<K, V> getIndex() {
         return requireInitialized(index, "index");
     }
 

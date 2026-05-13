@@ -10,8 +10,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,14 +37,14 @@ class RouteSplitPublishCoordinatorTest {
     private DefaultSegmentMaterializationService<Integer, String> materializationService;
 
     private RouteSplitPublishCoordinator<Integer, String> coordinator;
-    private RouteSplitPlan<Integer> splitPlan;
+    private SegmentRouteSplitPlan<Integer> splitPlan;
 
     @BeforeEach
     void setUp() {
         coordinator = new RouteSplitPublishCoordinator<>(keyToSegmentMap,
                 segmentRegistry, materializationService);
-        splitPlan = new RouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
-                UPPER_SEGMENT_ID, 2, RouteSplitPlan.SplitMode.SPLIT);
+        splitPlan = new SegmentRouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
+                UPPER_SEGMENT_ID, 2, SegmentRouteSplitPlan.SplitMode.SPLIT);
     }
 
     @Test

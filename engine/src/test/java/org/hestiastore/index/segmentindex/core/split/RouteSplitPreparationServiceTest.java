@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,10 +12,12 @@ import java.util.List;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,16 +43,16 @@ class RouteSplitPreparationServiceTest {
 
     @Test
     void prepareReturnsMaterializedSplitForEligibleBoundary() {
-        final RouteSplitPlan<Integer> splitPlan = new RouteSplitPlan<>(
+        final SegmentRouteSplitPlan<Integer> splitPlan = new SegmentRouteSplitPlan<>(
                 SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2,
-                RouteSplitPlan.SplitMode.SPLIT);
+                SegmentRouteSplitPlan.SplitMode.SPLIT);
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()))
                 .thenReturn(iteratorResult(entries()));
         when(materializationService.materializeRouteSplit(eq(parentSegment),
                 eq(2L), any())).thenReturn(splitPlan);
 
-        final RouteSplitPlan<Integer> prepared = preparationService.prepare(
+        final SegmentRouteSplitPlan<Integer> prepared = preparationService.prepare(
                 parentSegment, 2L);
 
         assertNotNull(prepared);
@@ -66,7 +67,7 @@ class RouteSplitPreparationServiceTest {
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(List.of(Entry.of(1, "a"))));
 
-        final RouteSplitPlan<Integer> prepared = preparationService.prepare(
+        final SegmentRouteSplitPlan<Integer> prepared = preparationService.prepare(
                 parentSegment, 2L);
 
         assertNull(prepared);

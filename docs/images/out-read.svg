@@ -16,11 +16,11 @@
   <rect x="0" y="130" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="150">HestiaStoreBasic</text>
   <rect x="250" y="137" width="8" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />
-  <text class="value" x="274" y="150">8,770</text>
+  <text class="value" x="274" y="150">8,142</text>
   <rect x="0" y="190" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="210">HestiaStoreCompress</text>
   <rect x="250" y="197" width="8" height="26" rx="6" ry="6" fill="#E53935" stroke="#C2302D" stroke-width="2" />
-  <text class="value" x="274" y="210">6,886</text>
+  <text class="value" x="274" y="210">8,662</text>
   <rect x="0" y="250" width="1000" height="40" fill="rgba(255,255,255,0.15)" />
   <text class="label" x="20" y="270">LevelDB</text>
   <rect x="250" y="257" width="66" height="26" rx="6" ry="6" fill="#ebeb49" stroke="#C7C73E" stroke-width="2" />

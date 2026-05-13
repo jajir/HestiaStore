@@ -9,8 +9,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
@@ -30,6 +32,7 @@ public final class SegmentRegistryBuilder<K, V> {
     private ExecutorService segmentMaintenanceExecutor;
     private ExecutorService registryMaintenanceExecutor;
     private SegmentIdAllocator segmentIdAllocator;
+    private ChunkStoreCache<K, V> chunkStoreCache = new LruChunkStoreCache<>(0);
 
     SegmentRegistryBuilder() {
     }
@@ -127,6 +130,19 @@ public final class SegmentRegistryBuilder<K, V> {
     }
 
     /**
+     * Sets the index-scoped parsed chunk page cache.
+     *
+     * @param chunkStoreCache parsed chunk page cache
+     * @return this builder
+     */
+    public SegmentRegistryBuilder<K, V> withChunkStoreCache(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
+        return this;
+    }
+
+    /**
      * Builds a registry with the configured defaults and overrides.
      *
      * @return registry instance
@@ -159,7 +175,7 @@ public final class SegmentRegistryBuilder<K, V> {
         final SegmentFactory<K, V> resolvedFactory = new SegmentFactory<>(
                 resolvedDirectory, resolvedKeyDescriptor,
                 resolvedValueDescriptor, resolvedConf,
-                resolvedSegmentMaintenanceExecutor);
+                resolvedSegmentMaintenanceExecutor, chunkStoreCache);
         final SegmentIdAllocator resolvedAllocator = segmentIdAllocator == null
                 ? new DirectorySegmentIdAllocator(resolvedDirectory)
                 : segmentIdAllocator;
