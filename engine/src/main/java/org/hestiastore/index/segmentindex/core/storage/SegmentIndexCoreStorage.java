@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -18,11 +20,13 @@ public final class SegmentIndexCoreStorage<K, V> {
     private final RuntimeTuningState runtimeTuningState;
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
+    private final ChunkStoreCache<K, V> chunkStoreCache;
     private final IndexRetryPolicy retryPolicy;
 
     public SegmentIndexCoreStorage(final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
+            final ChunkStoreCache<K, V> chunkStoreCache,
             final IndexRetryPolicy retryPolicy) {
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
@@ -30,7 +34,17 @@ public final class SegmentIndexCoreStorage<K, V> {
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    }
+
+    public SegmentIndexCoreStorage(final RuntimeTuningState runtimeTuningState,
+            final KeyToSegmentMap<K> keyToSegmentMap,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final IndexRetryPolicy retryPolicy) {
+        this(runtimeTuningState, keyToSegmentMap, segmentRegistry,
+                new LruChunkStoreCache<>(0), retryPolicy);
     }
 
     public RuntimeTuningState runtimeTuningState() {
@@ -43,6 +57,10 @@ public final class SegmentIndexCoreStorage<K, V> {
 
     public SegmentRegistry<K, V> segmentRegistry() {
         return segmentRegistry;
+    }
+
+    public ChunkStoreCache<K, V> chunkStoreCache() {
+        return chunkStoreCache;
     }
 
     public IndexRetryPolicy retryPolicy() {

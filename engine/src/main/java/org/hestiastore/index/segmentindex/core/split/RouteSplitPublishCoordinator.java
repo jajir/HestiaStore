@@ -4,6 +4,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,7 @@ final class RouteSplitPublishCoordinator<K, V> {
                 materializationService, "materializationService");
     }
 
-    boolean applyPreparedSplit(final RouteSplitPlan<K> splitPlan) {
+    boolean applyPreparedSplit(final SegmentRouteSplitPlan<K> splitPlan) {
         Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
         final boolean published;
         try {
@@ -58,7 +59,7 @@ final class RouteSplitPublishCoordinator<K, V> {
         return true;
     }
 
-    private void completePreparedSplit(final RouteSplitPlan<K> splitPlan) {
+    private void completePreparedSplit(final SegmentRouteSplitPlan<K> splitPlan) {
         Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
         keyToSegmentMap.flushIfDirty();
         deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
@@ -72,7 +73,7 @@ final class RouteSplitPublishCoordinator<K, V> {
         }
     }
 
-    private RuntimeException abortPreparedSplit(final RouteSplitPlan<K> splitPlan,
+    private RuntimeException abortPreparedSplit(final SegmentRouteSplitPlan<K> splitPlan,
             final RuntimeException failure) {
         final RuntimeException cleanupFailure = deleteChildSegments(
                 Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG)
@@ -85,7 +86,7 @@ final class RouteSplitPublishCoordinator<K, V> {
         return failure;
     }
 
-    private void abortPreparedSplit(final RouteSplitPlan<K> splitPlan) {
+    private void abortPreparedSplit(final SegmentRouteSplitPlan<K> splitPlan) {
         final RuntimeException cleanupFailure = deleteChildSegments(
                 Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG)
                         .getLowerSegmentId(),

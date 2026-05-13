@@ -14,6 +14,14 @@ final class HestiaStoreMetricNames {
     static final String REGISTRY_CACHE_EVICTION_TOTAL = "hestiastore_registry_cache_eviction_total";
     static final String REGISTRY_CACHE_SIZE = "hestiastore_registry_cache_size";
     static final String REGISTRY_CACHE_LIMIT = "hestiastore_registry_cache_limit";
+    static final String CHUNK_STORE_CACHE_PAGE_LIMIT = "hestiastore_chunk_store_cache_page_limit";
+    static final String CHUNK_STORE_CACHE_PAGE_COUNT = "hestiastore_chunk_store_cache_page_count";
+    static final String CHUNK_STORE_CACHE_ENTRY_COUNT = "hestiastore_chunk_store_cache_entry_count";
+    static final String CHUNK_STORE_CACHE_HIT_TOTAL = "hestiastore_chunk_store_cache_hit_total";
+    static final String CHUNK_STORE_CACHE_MISS_TOTAL = "hestiastore_chunk_store_cache_miss_total";
+    static final String CHUNK_STORE_CACHE_LOAD_TOTAL = "hestiastore_chunk_store_cache_load_total";
+    static final String CHUNK_STORE_CACHE_EVICTION_TOTAL = "hestiastore_chunk_store_cache_eviction_total";
+    static final String CHUNK_STORE_CACHE_INVALIDATION_TOTAL = "hestiastore_chunk_store_cache_invalidation_total";
     static final String SEGMENT_WRITE_CACHE_KEY_LIMIT = "hestiastore_segment_write_cache_key_limit";
     static final String SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE = "hestiastore_segment_write_cache_key_limit_during_maintenance";
     static final String INDEX_BUFFERED_WRITE_KEY_LIMIT = "hestiastore_index_buffered_write_key_limit";

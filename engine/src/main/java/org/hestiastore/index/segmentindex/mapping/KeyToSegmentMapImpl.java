@@ -16,7 +16,6 @@ import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,7 +278,7 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         return removedKey;
     }
 
-    boolean tryApplySplitPlan(final RouteSplitPlan<K> plan) {
+    boolean tryApplySplitPlan(final SegmentRouteSplitPlan<K> plan) {
         Vldtn.requireNonNull(plan, "plan");
         final SegmentId replacedSegmentId = plan.getReplacedSegmentId();
         final SegmentId lowerSegmentId = plan.getLowerSegmentId();

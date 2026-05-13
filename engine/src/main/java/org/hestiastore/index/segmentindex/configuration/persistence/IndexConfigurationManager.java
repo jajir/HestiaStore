@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
 
@@ -84,6 +84,7 @@ public class IndexConfigurationManager<K, V> {
                 && sameMaintenance(left, right)
                 && sameIo(left, right)
                 && sameLogging(left, right)
+                && sameChunkStoreCache(left, right)
                 && left.wal().equals(right.wal())
                 && sameFilters(left.filters().encodingChunkFilterSpecs(),
                         right.filters().encodingChunkFilterSpecs())
@@ -174,6 +175,13 @@ public class IndexConfigurationManager<K, V> {
             final EffectiveIndexConfiguration<K, V> right) {
         return left.logging().contextEnabled() == right.logging()
                 .contextEnabled();
+    }
+
+    private boolean sameChunkStoreCache(
+            final EffectiveIndexConfiguration<K, V> left,
+            final EffectiveIndexConfiguration<K, V> right) {
+        return left.chunkStoreCache().pageLimit() == right.chunkStoreCache()
+                .pageLimit();
     }
 
     private boolean sameFilters(final List<ChunkFilterSpec> left,

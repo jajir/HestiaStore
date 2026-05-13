@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
@@ -37,14 +39,18 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
         final KeyToSegmentMap<K> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMapDelegate);
         openObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
-        final SegmentRegistry<K, V> segmentRegistry = newSegmentRegistry();
+        final ChunkStoreCache<K, V> chunkStoreCache =
+                newChunkStoreCache(openSpec.conf());
+        final SegmentRegistry<K, V> segmentRegistry = newSegmentRegistry(
+                chunkStoreCache);
         openObserver.onSegmentRegistryCreated(segmentRegistry);
         return new SegmentIndexCoreStorage<>(runtimeTuningState, keyToSegmentMap,
-                segmentRegistry,
+                segmentRegistry, chunkStoreCache,
                 newRetryPolicy(openSpec.conf()));
     }
 
-    private SegmentRegistry<K, V> newSegmentRegistry() {
+    private SegmentRegistry<K, V> newSegmentRegistry(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
         return SegmentRegistry.<K, V>builder()
                 .withDirectoryFacade(openSpec.directoryFacade())
                 .withKeyTypeDescriptor(openSpec.keyTypeDescriptor())
@@ -55,7 +61,13 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
                                 .getStableSegmentMaintenanceExecutor())
                 .withRegistryMaintenanceExecutor(
                         openSpec.executorRegistry().getRegistryMaintenanceExecutor())
+                .withChunkStoreCache(chunkStoreCache)
                 .build();
+    }
+
+    private ChunkStoreCache<K, V> newChunkStoreCache(
+            final EffectiveIndexConfiguration<K, V> conf) {
+        return new LruChunkStoreCache<>(conf.chunkStoreCache().pageLimit());
     }
 
     private IndexRetryPolicy newRetryPolicy(

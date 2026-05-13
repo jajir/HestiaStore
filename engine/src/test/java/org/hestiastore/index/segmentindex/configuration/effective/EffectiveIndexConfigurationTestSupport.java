@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.effective;
 
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 
 /**
  * Test helpers for crossing from user configuration requests to effective

@@ -51,6 +51,9 @@ public final class RuntimeTuningState {
         baselineValues.put(
                 RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                 RuntimeTuningValue.ofInt(writePath.segmentSplitKeyThreshold()));
+        baselineValues.put(RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT,
+                RuntimeTuningValue
+                        .ofInt(tuning.chunkStoreCache().pageLimit()));
         return new RuntimeTuningState(configuration.identity().name(),
                 baselineValues);
     }
@@ -124,6 +127,11 @@ public final class RuntimeTuningState {
 
     public synchronized int segmentSplitKeyThreshold() {
         return effectiveValue(RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD)
+                .asInt();
+    }
+
+    public synchronized int chunkStoreCachePageLimit() {
+        return effectiveValue(RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT)
                 .asInt();
     }
 

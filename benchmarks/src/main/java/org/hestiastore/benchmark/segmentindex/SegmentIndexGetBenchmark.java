@@ -2,7 +2,7 @@ package org.hestiastore.benchmark.segmentindex;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -43,6 +43,9 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
     @Param({ "false", "true" })
     private boolean snappy;
 
+    @Param({ "0", "128" })
+    private int chunkStoreCachePageLimit;
+
     @Param({ "persisted", "live" })
     private String readPathMode;
 
@@ -68,6 +71,8 @@ public class SegmentIndexGetBenchmark extends AbstractSegmentIndexGetBenchmark {
                         .hashFunctions(3)
                         .falsePositiveProbability(0.01D))//
                 .io(io -> io.diskBufferSizeBytes(8 * 1024))//
+                .chunkStoreCache(cache -> cache
+                        .pageLimit(chunkStoreCachePageLimit))//
                 .maintenance(maintenance -> maintenance.segmentThreads(1)
                         .indexThreads(1).registryLifecycleThreads(1)
                         .backgroundAutoEnabled(false));

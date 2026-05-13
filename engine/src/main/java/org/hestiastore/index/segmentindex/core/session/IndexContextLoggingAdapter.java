@@ -4,12 +4,12 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
+import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceContextLoggingAdapter;
@@ -17,7 +17,7 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningCont
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 
 /**
- * Adapter that wraps a {@link SegmentIndex} and ensures that the
+ * Adapter that wraps an internal index and ensures that the
  * {@code index.name} MDC key is present for every operation executed against
  * the wrapped index.
  *
@@ -25,14 +25,14 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
  * @param <V> type of values stored in the index
  */
 public final class IndexContextLoggingAdapter<K, V>
-        extends AbstractCloseableResource implements SegmentIndex<K, V> {
-    private final SegmentIndex<K, V> delegate;
+        extends AbstractCloseableResource implements IndexInternal<K, V> {
+    private final IndexInternal<K, V> delegate;
     private final IndexMdcScopeRunner contextScopeRunner;
     private final RuntimeTuning runtimeConfiguration;
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenance;
 
-    public IndexContextLoggingAdapter(final SegmentIndex<K, V> delegate,
+    public IndexContextLoggingAdapter(final IndexInternal<K, V> delegate,
             final IndexMdcScopeRunner contextScopeRunner) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
@@ -88,6 +88,18 @@ public final class IndexContextLoggingAdapter<K, V>
     public Stream<Entry<K, V>> getStream(
             final SegmentIteratorIsolation isolation) {
         return contextScopeRunner.supply(() -> delegate.getStream(isolation));
+    }
+
+    @Override
+    public EntryIterator<K, V> openSegmentIterator(
+            final SegmentWindow segmentWindows) {
+        return contextScopeRunner
+                .supply(() -> delegate.openSegmentIterator(segmentWindows));
+    }
+
+    @Override
+    public void completeStartup() {
+        contextScopeRunner.run(delegate::completeStartup);
     }
 
     @Override

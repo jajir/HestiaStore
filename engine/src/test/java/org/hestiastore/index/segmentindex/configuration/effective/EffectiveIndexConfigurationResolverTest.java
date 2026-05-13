@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
 import org.junit.jupiter.api.Test;
 
 class EffectiveIndexConfigurationResolverTest {
@@ -40,6 +40,7 @@ class EffectiveIndexConfigurationResolverTest {
                 .<Integer, String>builder()
                 .identity(identity -> identity.name("renamed-index"))
                 .segment(segment -> segment.cacheKeyLimit(12))
+                .chunkStoreCache(cache -> cache.pageLimit(7))
                 .maintenance(maintenance -> maintenance.segmentThreads(2))
                 .logging(logging -> logging.contextEnabled(false)).build();
 
@@ -53,6 +54,7 @@ class EffectiveIndexConfigurationResolverTest {
         assertEquals(stored.segment().maxKeys(),
                 effective.segment().maxKeys());
         assertEquals(12, effective.segment().cacheKeyLimit());
+        assertEquals(7, effective.chunkStoreCache().pageLimit());
         assertEquals(2, effective.maintenance().segmentThreads());
         assertFalse(effective.logging().contextEnabled());
     }

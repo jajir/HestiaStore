@@ -11,8 +11,7 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
@@ -32,10 +31,10 @@ class SegmentIndexBootstrapStateTest {
     private IndexInternal<Integer, String> internalIndex;
 
     @Mock
-    private SegmentIndex<Integer, String> managedIndex;
+    private IndexInternal<Integer, String> managedIndex;
 
     @Mock
-    private SegmentIndex<Integer, String> index;
+    private IndexInternal<Integer, String> index;
 
     @Test
     void productGettersThrowBeforeMatchingSetterIsCalled() {

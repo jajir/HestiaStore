@@ -21,7 +21,10 @@ enum RuntimeSettingKey {
             RuntimeTuningField.WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT),
     /** Split threshold for a single routed segment. */
     SEGMENT_SPLIT_KEY_THRESHOLD(
-            RuntimeTuningField.WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD);
+            RuntimeTuningField.WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD),
+    /** Parsed persisted chunk page cache capacity. */
+    CHUNK_STORE_CACHE_PAGE_LIMIT(
+            RuntimeTuningField.CHUNK_STORE_CACHE_PAGE_LIMIT);
 
     private final RuntimeTuningField field;
 

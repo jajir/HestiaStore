@@ -20,14 +20,16 @@ class NodeStateResponseTest {
                 1L, 2L, 3L,
                 4L, 5L, 6L, 7L,
                 8, 9, 10,
-                11, 12, 13, 14,
-                15, 16, 17, 18, 19,
-                20L, 21L, 22L, 23L,
-                24L, 25L, 26L,
-                27, 28, 29, 30, 31,
-                32L, 33L, 34L, 35L, 36L, 37L,
-                38, 39, 0.01D,
-                40L, 41L, 42L, 43L, List.of());
+                11, 12,
+                13L, 14L, 15L, 16L, 17L, 18L,
+                19, 20, 21, 22,
+                23, 24, 25, 26, 27,
+                28L, 29L, 30L, 31L,
+                32L, 33L, 34L,
+                35, 36, 37, 38, 39,
+                40L, 41L, 42L, 43L, 44L, 45L,
+                46, 47, 0.01D,
+                48L, 49L, 50L, 51L, List.of());
         final NodeReportResponse response = new NodeReportResponse(jvm,
                 List.of(index), now);
         assertEquals(jvm, response.jvm());

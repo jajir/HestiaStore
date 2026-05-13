@@ -7,6 +7,8 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilter;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
+import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 
@@ -41,6 +43,7 @@ public final class SegmentBuilder<K, V> {
     private int diskIoBufferSize = DEFAULT_INDEX_BUFEER_SIZE_IN_BYTES;
     private final List<Supplier<? extends ChunkFilter>> encodingChunkFilters = new ArrayList<>();
     private final List<Supplier<? extends ChunkFilter>> decodingChunkFilters = new ArrayList<>();
+    private ChunkStoreCache<K, V> chunkStoreCache = new LruChunkStoreCache<>(0);
     private Executor maintenanceExecutor;
     private SegmentMaintenancePolicy<K, V> maintenancePolicy;
     private boolean directoryLockingEnabled = true;
@@ -345,6 +348,19 @@ public final class SegmentBuilder<K, V> {
     }
 
     /**
+     * Sets the index-scoped parsed chunk page cache.
+     *
+     * @param chunkStoreCache parsed chunk page cache
+     * @return this builder for chaining
+     */
+    public SegmentBuilder<K, V> withChunkStoreCache(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
+        return this;
+    }
+
+    /**
      * Enables or disables segment directory locking during build.
      *
      * @param enabled true to enforce directory locking, false to skip it
@@ -422,7 +438,7 @@ public final class SegmentBuilder<K, V> {
             final SegmentReadPath<K, V> readPath = new SegmentReadPath<>(
                     context.segmentFiles, context.segmentConf,
                     context.segmentResources, segmentSearcher, segmentCache,
-                    context.versionController);
+                    context.versionController, chunkStoreCache);
             final SegmentWritePath<K, V> writePath = new SegmentWritePath<>(
                     segmentCache, context.versionController);
             final SegmentMaintenancePath<K, V> maintenancePath = new SegmentMaintenancePath<>(

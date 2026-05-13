@@ -15,6 +15,7 @@ import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyView;
 import org.hestiastore.index.properties.PropertyWriter;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexBloomFilterConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexChunkStoreCacheConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexFilterConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexIdentityConfiguration;
@@ -24,10 +25,10 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexSegmentConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWritePathConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 
 /**
  * Persists {@link EffectiveIndexConfiguration} instances to the index
@@ -67,6 +68,7 @@ public class IndexConfigurationStorage<K, V> {
     private static final String PROP_DISK_IO_BUFFER_SIZE_IN_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_DISK_IO_BUFFER_SIZE_IN_BYTES;
     private static final String PROP_ENCODING_CHUNK_FILTERS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_ENCODING_CHUNK_FILTERS;
     private static final String PROP_DECODING_CHUNK_FILTERS = IndexPropertiesSchema.IndexConfigurationKeys.PROP_DECODING_CHUNK_FILTERS;
+    private static final String PROP_CHUNK_STORE_CACHE_PAGE_LIMIT = IndexPropertiesSchema.IndexConfigurationKeys.PROP_CHUNK_STORE_CACHE_PAGE_LIMIT;
     private static final String PROP_WAL_ENABLED = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_ENABLED;
     private static final String PROP_WAL_DURABILITY_MODE = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_DURABILITY_MODE;
     private static final String PROP_WAL_SEGMENT_SIZE_BYTES = IndexPropertiesSchema.IndexConfigurationKeys.PROP_WAL_SEGMENT_SIZE_BYTES;
@@ -205,7 +207,10 @@ public class IndexConfigurationStorage<K, V> {
                         propsView.getBoolean(PROP_CONTEXT_LOGGING_ENABLED)),
                 loadWal(propsView),
                 EffectiveIndexFilterConfiguration.fromSpecs(encodingSpecs,
-                        decodingSpecs, chunkFilterProviderResolver));
+                        decodingSpecs, chunkFilterProviderResolver),
+                new EffectiveIndexChunkStoreCacheConfiguration(
+                        propsView.getInt(
+                                PROP_CHUNK_STORE_CACHE_PAGE_LIMIT)));
     }
 
     /**
@@ -287,6 +292,8 @@ public class IndexConfigurationStorage<K, V> {
         writer.setString(PROP_DECODING_CHUNK_FILTERS,
                 ChunkFilterSpecCodec
                         .serialize(filters.decodingChunkFilterSpecs()));
+        writer.setInt(PROP_CHUNK_STORE_CACHE_PAGE_LIMIT,
+                indexConfiguration.chunkStoreCache().pageLimit());
         final EffectiveIndexWalConfiguration wal =
                 EffectiveIndexWalConfiguration.orEmpty(
                         indexConfiguration.wal());

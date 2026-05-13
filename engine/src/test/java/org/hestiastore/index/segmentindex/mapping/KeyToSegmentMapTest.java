@@ -16,7 +16,6 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 import org.junit.jupiter.api.Test;
 
 class KeyToSegmentMapTest {
@@ -36,9 +35,9 @@ class KeyToSegmentMapTest {
         final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(1),
+        final SegmentRouteSplitPlan<Integer> plan = new SegmentRouteSplitPlan<>(SegmentId.of(1),
                 SegmentId.of(3), SegmentId.of(4), 5,
-                RouteSplitPlan.SplitMode.SPLIT);
+                SegmentRouteSplitPlan.SplitMode.SPLIT);
 
         assertTrue(cache.tryApplySplitPlan(plan));
 
@@ -51,9 +50,9 @@ class KeyToSegmentMapTest {
         final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(1),
+        final SegmentRouteSplitPlan<Integer> plan = new SegmentRouteSplitPlan<>(SegmentId.of(1),
                 SegmentId.of(3), null, 10,
-                RouteSplitPlan.SplitMode.COMPACTED);
+                SegmentRouteSplitPlan.SplitMode.COMPACTED);
 
         assertTrue(cache.tryApplySplitPlan(plan));
 
@@ -129,9 +128,9 @@ class KeyToSegmentMapTest {
                 Entry.of(30, SegmentId.of(3))));
         final Snapshot<Integer> snapshot = cache.snapshot();
 
-        final RouteSplitPlan<Integer> plan = new RouteSplitPlan<>(SegmentId.of(2),
+        final SegmentRouteSplitPlan<Integer> plan = new SegmentRouteSplitPlan<>(SegmentId.of(2),
                 SegmentId.of(4), SegmentId.of(5), 15,
-                RouteSplitPlan.SplitMode.SPLIT);
+                SegmentRouteSplitPlan.SplitMode.SPLIT);
         assertTrue(cache.tryApplySplitPlan(plan));
 
         assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),

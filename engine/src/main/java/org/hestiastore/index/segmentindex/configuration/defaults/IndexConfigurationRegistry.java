@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
 
 /**
  * Define contract, that define index configuration.

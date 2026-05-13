@@ -15,17 +15,29 @@ public final class RuntimeTuningSnapshot {
     private final Instant capturedAt;
     private final RuntimeSegmentTuningSnapshot segment;
     private final RuntimeWritePathTuningSnapshot writePath;
+    private final RuntimeChunkStoreCacheTuningSnapshot chunkStoreCache;
 
     RuntimeTuningSnapshot(final String indexName, final long revision,
             final Instant capturedAt,
             final RuntimeSegmentTuningSnapshot segment,
             final RuntimeWritePathTuningSnapshot writePath) {
+        this(indexName, revision, capturedAt, segment, writePath,
+                new RuntimeChunkStoreCacheTuningSnapshot(0));
+    }
+
+    RuntimeTuningSnapshot(final String indexName, final long revision,
+            final Instant capturedAt,
+            final RuntimeSegmentTuningSnapshot segment,
+            final RuntimeWritePathTuningSnapshot writePath,
+            final RuntimeChunkStoreCacheTuningSnapshot chunkStoreCache) {
         this.indexName = Vldtn.requireNotBlank(indexName, "indexName");
         this.revision = Vldtn.requireGreaterThanOrEqualToZero(revision,
                 "revision");
         this.capturedAt = Vldtn.requireNonNull(capturedAt, "capturedAt");
         this.segment = Vldtn.requireNonNull(segment, "segment");
         this.writePath = Vldtn.requireNonNull(writePath, "writePath");
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
     }
 
     static RuntimeTuningSnapshot fromValues(final String indexName,
@@ -54,7 +66,10 @@ public final class RuntimeTuningSnapshot {
                                 .asInt(),
                         value(input,
                                 RuntimeSettingKey.SEGMENT_SPLIT_KEY_THRESHOLD)
-                                .asInt()));
+                                .asInt()),
+                new RuntimeChunkStoreCacheTuningSnapshot(value(input,
+                        RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT)
+                        .asInt()));
     }
 
     public String indexName() {
@@ -77,6 +92,10 @@ public final class RuntimeTuningSnapshot {
         return writePath;
     }
 
+    public RuntimeChunkStoreCacheTuningSnapshot chunkStoreCache() {
+        return chunkStoreCache;
+    }
+
     RuntimeTuningValue value(final RuntimeSettingKey key) {
         return switch (key) {
             case MAX_NUMBER_OF_SEGMENTS_IN_CACHE -> RuntimeTuningValue
@@ -92,6 +111,8 @@ public final class RuntimeTuningSnapshot {
                     .ofInt(writePath.indexBufferedWriteKeyLimit());
             case SEGMENT_SPLIT_KEY_THRESHOLD -> RuntimeTuningValue
                     .ofInt(writePath.segmentSplitKeyThreshold());
+            case CHUNK_STORE_CACHE_PAGE_LIMIT -> RuntimeTuningValue
+                    .ofInt(chunkStoreCache.pageLimit());
         };
     }
 

@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.configuration.defaults;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationDefaultIntegerTest {

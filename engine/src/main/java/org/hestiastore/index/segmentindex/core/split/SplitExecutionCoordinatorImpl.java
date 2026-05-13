@@ -15,6 +15,7 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrain;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrainResult;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 
 /**
@@ -297,7 +298,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
         boolean published = false;
         try {
             drain.awaitDrained();
-            final RouteSplitPlan<K> splitPlan = prepareSplit(segmentHandle,
+            final SegmentRouteSplitPlan<K> splitPlan = prepareSplit(segmentHandle,
                     splitThreshold);
             if (splitPlan == null) {
                 return false;
@@ -329,7 +330,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
         }
     }
 
-    private RouteSplitPlan<K> prepareSplit(
+    private SegmentRouteSplitPlan<K> prepareSplit(
             final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         return routeSplitCoordinator.tryPrepareSplit(segmentHandle,
@@ -337,7 +338,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private boolean publishPreparedSplit(
-            final RouteSplitPlan<K> splitPlan) {
+            final SegmentRouteSplitPlan<K> splitPlan) {
         return routeSplitPublishCoordinator.applyPreparedSplit(splitPlan);
     }
 

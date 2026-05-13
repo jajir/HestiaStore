@@ -6,14 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexBootstrapResultTest {
 
     @Test
     void createdRequiresIndex() {
-        final SegmentIndex<Integer, String> index = mockIndex();
+        final IndexInternal<Integer, String> index = mockIndex();
 
         final SegmentIndexBootstrapResult<Integer, String> result =
                 SegmentIndexBootstrapResult.created(index);
@@ -27,7 +27,7 @@ class SegmentIndexBootstrapResultTest {
 
     @Test
     void openedRequiresIndex() {
-        final SegmentIndex<Integer, String> index = mockIndex();
+        final IndexInternal<Integer, String> index = mockIndex();
 
         final SegmentIndexBootstrapResult<Integer, String> result =
                 SegmentIndexBootstrapResult.opened(index);
@@ -50,7 +50,7 @@ class SegmentIndexBootstrapResultTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static SegmentIndex<Integer, String> mockIndex() {
-        return mock(SegmentIndex.class);
+    private static IndexInternal<Integer, String> mockIndex() {
+        return mock(IndexInternal.class);
     }
 }

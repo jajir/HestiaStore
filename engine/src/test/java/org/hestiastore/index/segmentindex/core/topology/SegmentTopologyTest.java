@@ -15,10 +15,10 @@ import java.util.concurrent.TimeUnit;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,9 +139,9 @@ class SegmentTopologyTest {
     }
 
     private void applySplitPlan() {
-        final RouteSplitPlan<Integer> splitPlan = new RouteSplitPlan<>(
+        final SegmentRouteSplitPlan<Integer> splitPlan = new SegmentRouteSplitPlan<>(
                 SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 50,
-                RouteSplitPlan.SplitMode.SPLIT);
+                SegmentRouteSplitPlan.SplitMode.SPLIT);
         assertTrue(keyToSegmentMap.tryApplySplitPlan(splitPlan));
     }
 }
