@@ -10,8 +10,8 @@ import java.util.Set;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 
 /**
  * Shared properties schema metadata and migration helpers for index files.

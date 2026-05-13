@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,7 +25,8 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +47,7 @@ class DefaultSegmentMaterializationServiceTest {
                 directory, registry.materialization());
 
         try {
-            final RouteSplitPlan<Integer> splitPlan = service
+            final SegmentRouteSplitPlan<Integer> splitPlan = service
                     .materializeRouteSplit(
                             registry.loadSegment(openSourceSegment(registry))
                                     .getSegment(),
@@ -89,7 +89,7 @@ class DefaultSegmentMaterializationServiceTest {
                 directory, registry.materialization());
 
         try {
-            final RouteSplitPlan<Integer> splitPlan = service
+            final SegmentRouteSplitPlan<Integer> splitPlan = service
                     .materializeRouteSplit(
                             registry.loadSegment(openSourceSegment(registry))
                                     .getSegment(),

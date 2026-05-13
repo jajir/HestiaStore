@@ -1,13 +1,12 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -26,6 +25,7 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDra
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class SplitExecutionCoordinatorImplTest {
     private RouteSplitPublishCoordinator<String, String> splitPublishCoordinator;
 
     @Mock
-    private RouteSplitPlan<String> splitPlan;
+    private SegmentRouteSplitPlan<String> splitPlan;
 
     @Mock
     private SegmentTopology<String> segmentTopology;

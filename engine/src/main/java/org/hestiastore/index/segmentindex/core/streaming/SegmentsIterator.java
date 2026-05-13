@@ -12,7 +12,7 @@ import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;

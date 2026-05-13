@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex.wal;
 import java.util.List;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

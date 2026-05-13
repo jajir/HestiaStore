@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
 import org.junit.jupiter.api.Test;
 
 class EffectiveIndexConfigurationResolverTest {

@@ -17,8 +17,8 @@ import org.hestiastore.index.chunkstore.ChunkFilterSnappyCompress;
 import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 
 final class SegmentIndexBenchmarkSupport {

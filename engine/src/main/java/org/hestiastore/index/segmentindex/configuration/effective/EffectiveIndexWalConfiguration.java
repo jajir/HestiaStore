@@ -3,9 +3,9 @@ package org.hestiastore.index.segmentindex.configuration.effective;
 import java.util.Objects;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 
 /**
  * Fully resolved WAL configuration stored as part of an effective index

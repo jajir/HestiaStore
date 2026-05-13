@@ -6,10 +6,10 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 
 final class IndexConfigurationMapper {
 

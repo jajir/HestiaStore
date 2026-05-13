@@ -5,8 +5,8 @@ import java.util.Optional;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 
 /**
  * Opens one segment-index bootstrap operation and owns cleanup until the
@@ -38,26 +38,24 @@ final class SegmentIndexBootstrapOperation<K, V> {
         this.chunkFilterProviderResolver = chunkFilterProviderResolver;
     }
 
-    SegmentIndex<K, V> create() {
+    IndexInternal<K, V> create() {
         return openSession(SegmentIndexBootstrapMode.CREATE).requireIndex();
     }
 
-    SegmentIndex<K, V> open() {
+    IndexInternal<K, V> open() {
         return openSession(SegmentIndexBootstrapMode.OPEN).requireIndex();
     }
 
-    Optional<SegmentIndex<K, V>> tryOpen() {
+    Optional<IndexInternal<K, V>> tryOpen() {
         return openSession(SegmentIndexBootstrapMode.TRY_OPEN).index();
     }
 
     private SegmentIndexBootstrapResult<K, V> openSession(
             final SegmentIndexBootstrapMode mode) {
-        final SegmentIndexBootstrapRequest<K, V> request =
-                new SegmentIndexBootstrapRequest<>(directory,
-                        userProvidedConfiguration, chunkFilterProviderResolver,
-                        mode);
-        final SegmentIndexBootstrapState<K, V> state =
-                new SegmentIndexBootstrapState<>();
+        final SegmentIndexBootstrapRequest<K, V> request = new SegmentIndexBootstrapRequest<>(directory,
+                userProvidedConfiguration, chunkFilterProviderResolver,
+                mode);
+        final SegmentIndexBootstrapState<K, V> state = new SegmentIndexBootstrapState<>();
         return new SegmentIndexBootstrapPipeline<>(
                 SegmentIndexBootstrapSteps.<K, V>startingSteps())
                 .run(request, state);

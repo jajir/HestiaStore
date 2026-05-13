@@ -2,7 +2,7 @@ package org.hestiastore.benchmark.segmentindex;
 
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;

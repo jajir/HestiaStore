@@ -4,12 +4,11 @@ import java.util.Optional;
 
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 
 /**
- * Central factory for {@link SegmentIndex} construction and dependent
- * resources.
+ * Central factory for index construction and dependent resources.
  * <p>
  * This class owns the public create/open entry points and starts the bootstrap
  * transaction that wires the managed close sequence used by returned index
@@ -31,7 +30,7 @@ public final class SegmentIndexFactory {
      * @param indexConf user configuration overrides
      * @return opened index instance
      */
-    public static <M, N> SegmentIndex<M, N> create(final Directory directory,
+    public static <M, N> IndexInternal<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         return bootstrapService(directory).create(indexConf);
     }
@@ -47,7 +46,7 @@ public final class SegmentIndexFactory {
      *                                    chunk filter specs; must not be null
      * @return opened index instance
      */
-    public static <M, N> SegmentIndex<M, N> create(final Directory directory,
+    public static <M, N> IndexInternal<M, N> create(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return bootstrapService(directory).create(indexConf,
@@ -63,7 +62,7 @@ public final class SegmentIndexFactory {
      * @param indexConf user configuration overrides
      * @return opened index instance
      */
-    public static <M, N> SegmentIndex<M, N> open(final Directory directory,
+    public static <M, N> IndexInternal<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf) {
         return bootstrapService(directory).open(indexConf);
     }
@@ -80,7 +79,7 @@ public final class SegmentIndexFactory {
      *                                    chunk filter specs; must not be null
      * @return opened index instance
      */
-    public static <M, N> SegmentIndex<M, N> open(final Directory directory,
+    public static <M, N> IndexInternal<M, N> open(final Directory directory,
             final IndexConfiguration<M, N> indexConf,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return bootstrapService(directory).open(indexConf,
@@ -95,7 +94,7 @@ public final class SegmentIndexFactory {
      * @param directory target index directory
      * @return opened index instance
      */
-    public static <M, N> SegmentIndex<M, N> openStored(final Directory directory) {
+    public static <M, N> IndexInternal<M, N> openStored(final Directory directory) {
         return bootstrapService(directory).openStored();
     }
 
@@ -110,7 +109,7 @@ public final class SegmentIndexFactory {
      *                                    chunk filter specs; must not be null
      * @return opened index instance
      */
-    public static <M, N> SegmentIndex<M, N> openStored(final Directory directory,
+    public static <M, N> IndexInternal<M, N> openStored(final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return bootstrapService(directory).openStored(chunkFilterProviderResolver);
     }
@@ -123,7 +122,7 @@ public final class SegmentIndexFactory {
      * @param directory target index directory
      * @return optional opened index
      */
-    public static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
+    public static <M, N> Optional<IndexInternal<M, N>> tryOpen(
             final Directory directory) {
         return bootstrapService(directory).tryOpen();
     }
@@ -138,7 +137,7 @@ public final class SegmentIndexFactory {
      *                                    chunk filter specs; must not be null
      * @return optional opened index
      */
-    public static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
+    public static <M, N> Optional<IndexInternal<M, N>> tryOpen(
             final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         return bootstrapService(directory).tryOpen(chunkFilterProviderResolver);

@@ -12,7 +12,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterSnappyCompress;
 import org.hestiastore.index.chunkstore.ChunkFilterSnappyDecompress;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.junit.jupiter.api.Test;

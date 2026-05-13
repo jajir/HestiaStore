@@ -39,10 +39,10 @@ import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.IndexWalConfigurationBuilder;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 import org.junit.jupiter.api.Test;
 
 class WalRuntimeTest {
