@@ -1,9 +1,9 @@
 package org.hestiastore.index.segmentindex.configuration.defaults;
 
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexBloomFilterConfiguration;
-import org.hestiastore.index.segmentindex.IndexIoConfiguration;
-import org.hestiastore.index.segmentindex.IndexSegmentConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexBloomFilterConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexIoConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexSegmentConfiguration;
 
 /**
  * Default configuration values for String keys.

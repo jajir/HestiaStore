@@ -27,7 +27,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
@@ -332,7 +332,7 @@ class SegmentIndexBootstrapOperationTest {
     void tryOpenReturnsEmptyWithoutConfigurationAndDoesNotAcquireLock() {
         final MemDirectory directory = new MemDirectory();
 
-        final Optional<SegmentIndex<Integer, String>> index =
+        final Optional<IndexInternal<Integer, String>> index =
                 SegmentIndexBootstrapOperation.create(directory,
                         buildConf("bootstrap-operation-try-open-empty", false),
                         null)
@@ -351,7 +351,7 @@ class SegmentIndexBootstrapOperationTest {
                 .create()
                 .close();
 
-        final Optional<SegmentIndex<Integer, String>> index =
+        final Optional<IndexInternal<Integer, String>> index =
                 SegmentIndexBootstrapOperation.create(directory,
                         buildConf("bootstrap-operation-try-open", false),
                         null)

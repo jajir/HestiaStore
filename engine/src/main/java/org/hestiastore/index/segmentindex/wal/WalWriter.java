@@ -2,8 +2,8 @@ package org.hestiastore.index.segmentindex.wal;
 
 import java.util.Objects;
 
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 
 final class WalWriter<K, V> {
 

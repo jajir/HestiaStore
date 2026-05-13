@@ -13,7 +13,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexEntryIteratorDecoratorTest {

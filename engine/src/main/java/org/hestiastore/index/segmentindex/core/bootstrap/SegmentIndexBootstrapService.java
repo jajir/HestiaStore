@@ -5,8 +5,8 @@ import java.util.Optional;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 
 /**
  * Internal bootstrap facade used by {@link SegmentIndexFactory} to create or
@@ -20,8 +20,7 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
  */
 final class SegmentIndexBootstrapService {
 
-    private static final String CHUNK_FILTER_PROVIDER_RESOLVER =
-            "chunkFilterProviderResolver";
+    private static final String CHUNK_FILTER_PROVIDER_RESOLVER = "chunkFilterProviderResolver";
 
     private final Directory directory;
 
@@ -29,52 +28,52 @@ final class SegmentIndexBootstrapService {
         this.directory = Vldtn.requireNonNull(directory, "directory");
     }
 
-    <K, V> SegmentIndex<K, V> create(
+    <K, V> IndexInternal<K, V> create(
             final IndexConfiguration<K, V> userProvidedConfiguration) {
         return operation(userProvidedConfiguration, null).create();
     }
 
-    <K, V> SegmentIndex<K, V> create(
+    <K, V> IndexInternal<K, V> create(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        final ChunkFilterProviderResolver validatedResolver =
-                requireChunkFilterProviderResolver(chunkFilterProviderResolver);
+        final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
+                chunkFilterProviderResolver);
         return operation(userProvidedConfiguration, validatedResolver).create();
     }
 
-    <K, V> SegmentIndex<K, V> open(
+    <K, V> IndexInternal<K, V> open(
             final IndexConfiguration<K, V> userProvidedConfiguration) {
         return operation(userProvidedConfiguration, null).open();
     }
 
-    <K, V> SegmentIndex<K, V> open(
+    <K, V> IndexInternal<K, V> open(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        final ChunkFilterProviderResolver validatedResolver =
-                requireChunkFilterProviderResolver(chunkFilterProviderResolver);
+        final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
+                chunkFilterProviderResolver);
         return operation(userProvidedConfiguration, validatedResolver).open();
     }
 
-    <K, V> SegmentIndex<K, V> openStored() {
+    <K, V> IndexInternal<K, V> openStored() {
         return open(emptyConfiguration());
     }
 
-    <K, V> SegmentIndex<K, V> openStored(
+    <K, V> IndexInternal<K, V> openStored(
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        final ChunkFilterProviderResolver validatedResolver =
-                requireChunkFilterProviderResolver(chunkFilterProviderResolver);
+        final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
+                chunkFilterProviderResolver);
         return this.<K, V>operation(emptyConfiguration(), validatedResolver)
                 .open();
     }
 
-    <K, V> Optional<SegmentIndex<K, V>> tryOpen() {
+    <K, V> Optional<IndexInternal<K, V>> tryOpen() {
         return this.<K, V>operation(emptyConfiguration(), null).tryOpen();
     }
 
-    <K, V> Optional<SegmentIndex<K, V>> tryOpen(
+    <K, V> Optional<IndexInternal<K, V>> tryOpen(
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        final ChunkFilterProviderResolver validatedResolver =
-                requireChunkFilterProviderResolver(chunkFilterProviderResolver);
+        final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
+                chunkFilterProviderResolver);
         return this.<K, V>operation(emptyConfiguration(), validatedResolver)
                 .tryOpen();
     }

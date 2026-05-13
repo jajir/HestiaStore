@@ -25,10 +25,10 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexSegmentConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWritePathConfiguration;
-import org.hestiastore.index.segmentindex.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 
 /**
  * Persists {@link EffectiveIndexConfiguration} instances to the index

@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.executorregistry;
 
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
-import org.hestiastore.index.segmentindex.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 
 /**
  * Test helper for creating executor registries from full index configuration

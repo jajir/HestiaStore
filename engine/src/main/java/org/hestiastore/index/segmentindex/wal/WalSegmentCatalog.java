@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

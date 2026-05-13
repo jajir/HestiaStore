@@ -8,7 +8,6 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.split.RouteSplitPlan;
 
 /**
  * Thread-safe adapter for {@link KeyToSegmentMapImpl} backed by a read/write
@@ -130,7 +129,7 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
     }
 
     @Override
-    public boolean tryApplySplitPlan(final RouteSplitPlan<K> plan) {
+    public boolean tryApplySplitPlan(final SegmentRouteSplitPlan<K> plan) {
         writeLock.lock();
         try {
             return delegate.tryApplySplitPlan(plan);

@@ -15,7 +15,7 @@ import java.nio.file.StandardOpenOption;
 
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.FsNioDirectory;
-import org.hestiastore.index.segmentindex.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.junit.jupiter.api.Test;
 
 class WalToolTest {

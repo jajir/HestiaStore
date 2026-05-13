@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BootstrapStepWrapResourceClosingTest {
 
     @Mock
-    private SegmentIndex<Integer, String> managedIndex;
+    private IndexInternal<Integer, String> managedIndex;
 
     @Mock
     private ExecutorRegistry executorRegistry;
