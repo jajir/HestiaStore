@@ -6,6 +6,11 @@ import java.util.function.Supplier;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningConfigurationMapper;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningServiceImpl;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
@@ -26,10 +31,6 @@ import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningServiceImpl;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
-import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -279,7 +280,8 @@ final class SegmentIndexRuntimeFactory<K, V> {
 
     private void persistRuntimeTuning(final RuntimeTuningSnapshot snapshot) {
         new IndexConfigurationStorage<K, V>(openContext.directoryFacade)
-                .save(openContext.conf.withRuntimeTuning(snapshot));
+                .save(RuntimeTuningConfigurationMapper.apply(openContext.conf,
+                        snapshot));
     }
 
     private MaintenanceService createMaintenance(

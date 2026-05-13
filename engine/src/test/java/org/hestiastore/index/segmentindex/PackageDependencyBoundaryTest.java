@@ -21,6 +21,10 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.topology..";
     private static final String SEGMENT_INDEX_CORE_SESSION_PACKAGES =
             "org.hestiastore.index.segmentindex.core.session..";
+    private static final String SEGMENT_INDEX_EFFECTIVE_CONFIGURATION_PACKAGES =
+            "org.hestiastore.index.segmentindex.configuration.effective..";
+    private static final String SEGMENT_INDEX_TUNING_CONFIGURATION_PACKAGES =
+            "org.hestiastore.index.segmentindex.configuration.tuning..";
     private static final String REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES =
             "org.hestiastore.index.segmentindex.config..";
     private static final String REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES =
@@ -67,4 +71,12 @@ class PackageDependencyBoundaryTest {
             .resideInAnyPackage(REMOVED_SEGMENT_INDEX_CONFIG_PACKAGES,
                     REMOVED_SEGMENT_INDEX_RUNTIME_CONFIG_PACKAGES,
                     REMOVED_SEGMENT_INDEX_CORE_CONTROL_PACKAGES);
+
+    @ArchTest
+    static final ArchRule effective_configuration_does_not_depend_on_runtime_tuning = noClasses()//
+            .that()//
+            .resideInAPackage(SEGMENT_INDEX_EFFECTIVE_CONFIGURATION_PACKAGES)//
+            .should()//
+            .dependOnClassesThat()//
+            .resideInAnyPackage(SEGMENT_INDEX_TUNING_CONFIGURATION_PACKAGES);
 }
