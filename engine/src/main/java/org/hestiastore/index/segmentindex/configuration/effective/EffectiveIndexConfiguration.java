@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.configuration.effective;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
 
 /**
  * Fully resolved, validated index configuration used for persistence and
@@ -117,31 +116,6 @@ public final class EffectiveIndexConfiguration<K, V> {
 
     public EffectiveIndexChunkStoreCacheConfiguration chunkStoreCache() {
         return chunkStoreCache;
-    }
-
-    public EffectiveIndexConfiguration<K, V> withRuntimeTuning(
-            final RuntimeTuningSnapshot snapshot) {
-        final RuntimeTuningSnapshot tuning = Vldtn.requireNonNull(snapshot,
-                "snapshot");
-        final EffectiveIndexWritePathConfiguration writePath =
-                new EffectiveIndexWritePathConfiguration(
-                        tuning.writePath().segmentWriteCacheKeyLimit(),
-                        tuning.writePath()
-                                .segmentWriteCacheKeyLimitDuringMaintenance(),
-                        tuning.writePath().indexBufferedWriteKeyLimit(),
-                        tuning.writePath().segmentSplitKeyThreshold());
-        final EffectiveIndexSegmentConfiguration segment =
-                new EffectiveIndexSegmentConfiguration(this.segment.maxKeys(),
-                        this.segment.chunkKeyLimit(),
-                        tuning.segment().cacheKeyLimit(),
-                        tuning.segment().cachedSegmentLimit(),
-                        this.segment.deltaCacheFileLimit());
-        final EffectiveIndexChunkStoreCacheConfiguration chunkCache =
-                new EffectiveIndexChunkStoreCacheConfiguration(
-                        tuning.chunkStoreCache().pageLimit());
-        return new EffectiveIndexConfiguration<>(identity, segment, writePath,
-                bloomFilter, maintenance, io, logging, wal, filters,
-                chunkCache);
     }
 
     private static void validateWal(final EffectiveIndexWalConfiguration wal) {
