@@ -8,7 +8,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationStatus;
@@ -35,7 +34,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private final SplitService splitService;
     private final IndexRetryPolicy retryPolicy;
-    private final Stats stats;
+    private final MaintenanceStatsRecorder statsRecorder;
     private final ExecutorService maintenanceExecutor;
     private final Runnable checkpointAction;
     private final LongSupplier nanoTimeSupplier;
@@ -44,19 +43,21 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService splitService,
-            final IndexRetryPolicy retryPolicy, final Stats stats,
+            final IndexRetryPolicy retryPolicy,
+            final MaintenanceStatsRecorder statsRecorder,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction) {
         this(keyToSegmentMap, stableSegmentGateway, splitService,
-                retryPolicy, stats, maintenanceExecutor, checkpointAction,
-                System::nanoTime);
+                retryPolicy, statsRecorder, maintenanceExecutor,
+                checkpointAction, System::nanoTime);
     }
 
     MaintenanceServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService splitService,
-            final IndexRetryPolicy retryPolicy, final Stats stats,
+            final IndexRetryPolicy retryPolicy,
+            final MaintenanceStatsRecorder statsRecorder,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction,
             final LongSupplier nanoTimeSupplier) {
@@ -66,7 +67,8 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
                 "stableSegmentGateway");
         this.splitService = Vldtn.requireNonNull(splitService, "splitService");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
+                "statsRecorder");
         this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
                 "maintenanceExecutor");
         this.checkpointAction = Vldtn.requireNonNull(checkpointAction,
@@ -119,20 +121,21 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
 
     void compactSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
+        statsRecorder.recordCompactRequest();
         runStableSegmentOperation(segmentId, waitForCompletion,
                 COMPACT_OPERATION_ID, COMPACT_OPERATION_LABEL,
-                stats::recordCompactBusyRetry,
-                stats::recordCompactAcceptedToReadyNanos,
+                statsRecorder::recordCompactBusyRetry,
+                statsRecorder::recordCompactAcceptedToReadyNanos,
                 stableSegmentGateway::compact);
     }
 
     void flushSegment(final SegmentId segmentId,
             final boolean waitForCompletion) {
-        stats.recordFlushRequest();
+        statsRecorder.recordFlushRequest();
         runStableSegmentOperation(segmentId, waitForCompletion,
                 FLUSH_OPERATION_ID, FLUSH_OPERATION_LABEL,
-                stats::recordFlushBusyRetry,
-                stats::recordFlushAcceptedToReadyNanos,
+                statsRecorder::recordFlushBusyRetry,
+                statsRecorder::recordFlushAcceptedToReadyNanos,
                 stableSegmentGateway::flush);
     }
 

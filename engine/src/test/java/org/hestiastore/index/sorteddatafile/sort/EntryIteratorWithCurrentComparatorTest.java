@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.sorteddatafile.sort;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

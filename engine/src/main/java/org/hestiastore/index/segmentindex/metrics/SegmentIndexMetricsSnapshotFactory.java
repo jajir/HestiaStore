@@ -8,7 +8,11 @@ import org.hestiastore.index.chunkstorecache.ChunkStoreCacheStats;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryStats;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorStats;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
@@ -23,31 +27,33 @@ import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 final class SegmentIndexMetricsSnapshotFactory<K, V> {
 
     private final EffectiveIndexConfiguration<K, V> conf;
-    private final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
+    private final Supplier<SplitStats> splitStatsSupplier;
     private final Supplier<ChunkStoreCacheStats> chunkStoreCacheStatsSupplier;
     private final RuntimeTuningState runtimeTuningState;
     private final WalRuntime<K, V> walRuntime;
-    private final Stats stats;
+    private final Supplier<IndexOperationStats> indexOperationStatsSupplier;
     private final AtomicLong lastAppliedWalLsn;
     private final Supplier<SegmentIndexState> stateSupplier;
 
     SegmentIndexMetricsSnapshotFactory(
             final EffectiveIndexConfiguration<K, V> conf,
-            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
+            final Supplier<SplitStats> splitStatsSupplier,
             final Supplier<ChunkStoreCacheStats> chunkStoreCacheStatsSupplier,
             final RuntimeTuningState runtimeTuningState,
-            final WalRuntime<K, V> walRuntime, final Stats stats,
+            final WalRuntime<K, V> walRuntime,
+            final Supplier<IndexOperationStats> indexOperationStatsSupplier,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
-        this.splitSnapshotSupplier = Vldtn.requireNonNull(
-                splitSnapshotSupplier, "splitSnapshotSupplier");
+        this.splitStatsSupplier = Vldtn.requireNonNull(
+                splitStatsSupplier, "splitStatsSupplier");
         this.chunkStoreCacheStatsSupplier = Vldtn.requireNonNull(
                 chunkStoreCacheStatsSupplier, "chunkStoreCacheStatsSupplier");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
-        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.indexOperationStatsSupplier = Vldtn.requireNonNull(
+                indexOperationStatsSupplier, "indexOperationStatsSupplier");
         this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
                 "lastAppliedWalLsn");
         this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
@@ -57,15 +63,20 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
     SegmentIndexMetricsSnapshot create(
             final SegmentRegistryCacheStats cacheStats,
             final StableSegmentRuntimeMetrics stableSegmentRuntime,
-            final IndexExecutorRuntimeAccess executorSnapshot,
-            final WalStats walStats, final long compactRequestCount,
+            final ExecutorRegistryStats executorSnapshot,
+            final WalStats walStats, final MaintenanceStats maintenanceStats,
+            final long compactRequestCount,
             final long flushRequestCount) {
-        final SplitMetricsSnapshot splitSnapshot = splitSnapshotSupplier.get();
+        final SplitStats splitStats = splitStatsSupplier.get();
         final ChunkStoreCacheStats chunkStoreCacheStats =
                 chunkStoreCacheStatsSupplier.get();
-        return new SegmentIndexMetricsSnapshot(stats.getGetCount(),
-                stats.getPutCount(),
-                stats.getDeleteCount(), cacheStats.hitCount(),
+        final IndexOperationStats operationStats =
+                indexOperationStatsSupplier.get();
+        final MaintenanceStats resolvedMaintenanceStats =
+                Vldtn.requireNonNull(maintenanceStats, "maintenanceStats");
+        return new SegmentIndexMetricsSnapshot(operationStats.getGetCount(),
+                operationStats.getPutCount(),
+                operationStats.getDeleteCount(), cacheStats.hitCount(),
                 cacheStats.missCount(), cacheStats.loadCount(),
                 cacheStats.evictionCount(), cacheStats.size(),
                 cacheStats.limit(),
@@ -94,8 +105,8 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 stableSegmentRuntime.getTotalStableSegmentWriteBufferKeyCount(),
                 stableSegmentRuntime.getTotalStableSegmentDeltaCacheFileCount(),
                 compactRequestCount, flushRequestCount,
-                stats.getSplitScheduleCount(),
-                splitSnapshot.splitInFlightCount(),
+                splitStats.splitScheduleCount(),
+                splitStats.splitInFlightCount(),
                 indexMaintenanceSnapshot(executorSnapshot).getQueueSize(),
                 indexMaintenanceSnapshot(executorSnapshot).getQueueCapacity(),
                 splitMaintenanceSnapshot(executorSnapshot).getQueueSize(),
@@ -122,12 +133,12 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                         .getCompletedTaskCount(),
                 stableSegmentMaintenanceSnapshot(executorSnapshot)
                         .getCallerRunsCount(),
-                stats.getReadLatencyP50Micros(),
-                stats.getReadLatencyP95Micros(),
-                stats.getReadLatencyP99Micros(),
-                stats.getWriteLatencyP50Micros(),
-                stats.getWriteLatencyP95Micros(),
-                stats.getWriteLatencyP99Micros(),
+                operationStats.getReadLatencyP50Micros(),
+                operationStats.getReadLatencyP95Micros(),
+                operationStats.getReadLatencyP99Micros(),
+                operationStats.getWriteLatencyP50Micros(),
+                operationStats.getWriteLatencyP95Micros(),
+                operationStats.getWriteLatencyP99Micros(),
                 conf.bloomFilter().hashFunctions(),
                 conf.bloomFilter().indexSizeBytes(),
                 conf.bloomFilter().falsePositiveProbability(),
@@ -144,31 +155,31 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 lastAppliedWalLsn.get(), walStats.syncTotalNanos(),
                 walStats.syncMaxNanos(), walStats.syncBatchBytesTotal(),
                 walStats.syncBatchBytesMax(),
-                stats.getSplitTaskStartDelayP95Micros(),
-                stats.getSplitTaskRunLatencyP95Micros(),
-                stats.getDrainTaskStartDelayP95Micros(),
-                stats.getDrainTaskRunLatencyP95Micros(),
+                splitStats.splitTaskStartDelayP95Micros(),
+                splitStats.splitTaskRunLatencyP95Micros(),
+                0L,
+                0L,
                 0L, 0L, 0L,
-                stats.getFlushAcceptedToReadyP95Micros(),
-                stats.getCompactAcceptedToReadyP95Micros(),
-                stats.getFlushBusyRetryCount(),
-                stats.getCompactBusyRetryCount(),
+                resolvedMaintenanceStats.getFlushAcceptedToReadyP95Micros(),
+                resolvedMaintenanceStats.getCompactAcceptedToReadyP95Micros(),
+                resolvedMaintenanceStats.getFlushBusyRetryCount(),
+                resolvedMaintenanceStats.getCompactBusyRetryCount(),
                 stableSegmentRuntime.getStableSegmentMetricsSnapshots(),
                 stateSupplier.get());
     }
 
-    private static IndexExecutorMetricsAccess indexMaintenanceSnapshot(
-            final IndexExecutorRuntimeAccess executorSnapshot) {
+    private static ExecutorStats indexMaintenanceSnapshot(
+            final ExecutorRegistryStats executorSnapshot) {
         return executorSnapshot.getIndexMaintenance();
     }
 
-    private static IndexExecutorMetricsAccess splitMaintenanceSnapshot(
-            final IndexExecutorRuntimeAccess executorSnapshot) {
+    private static ExecutorStats splitMaintenanceSnapshot(
+            final ExecutorRegistryStats executorSnapshot) {
         return executorSnapshot.getSplitMaintenance();
     }
 
-    private static IndexExecutorMetricsAccess stableSegmentMaintenanceSnapshot(
-            final IndexExecutorRuntimeAccess executorSnapshot) {
+    private static ExecutorStats stableSegmentMaintenanceSnapshot(
+            final ExecutorRegistryStats executorSnapshot) {
         return executorSnapshot.getStableSegmentMaintenance();
     }
 }

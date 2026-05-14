@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ final class RouteSplitCoordinator<K, V> {
                 "preparationService");
     }
 
-    SegmentRouteSplitPlan<K> tryPrepareSplit(
+    SegmentRouteSplit<K> tryPrepareSplit(
             final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         final BlockingSegment<K, V> nonNullBlockingSegment = requireBlockingSegment(

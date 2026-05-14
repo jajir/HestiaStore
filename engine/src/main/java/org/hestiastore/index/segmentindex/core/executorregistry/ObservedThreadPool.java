@@ -5,10 +5,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
 
 /**
- * Observed thread-pool wrapper that exposes executor metrics snapshots.
+ * Observed thread-pool wrapper that exposes executor stats snapshots.
  */
 final class ObservedThreadPool {
 
@@ -32,8 +31,8 @@ final class ObservedThreadPool {
         return executor;
     }
 
-    IndexExecutorMetricsAccess snapshot() {
-        return new ExecutorMetricsSnapshot(
+    ExecutorStats statsSnapshot() {
+        return new ExecutorStats(
                 executor.getActiveCount(), executor.getQueue().size(),
                 queueCapacity, executor.getCompletedTaskCount(),
                 rejectedTaskCount.sum(), callerRunsCount.sum());

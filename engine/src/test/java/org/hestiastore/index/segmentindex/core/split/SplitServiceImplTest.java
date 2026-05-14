@@ -35,7 +35,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -128,7 +127,7 @@ class SplitServiceImplTest {
                         .stateSupplier(stateSupplier)
                         .failureHandler(failure -> {
                         })
-                        .stats(new Stats())
+                        .statsRecorder(new SplitStatsRecorder())
                         .build());
 
         assertEquals("Property 'conf' must not be null.", ex.getMessage());
@@ -457,6 +456,7 @@ class SplitServiceImplTest {
             final Supplier<SegmentIndexState> stateSupplier,
             final SplitPolicyState policyState) {
         final ManagedSplitRuntimeState managedState = new ManagedSplitRuntimeState();
+        final SplitStatsRecorder statsRecorder = new SplitStatsRecorder();
         managedState.markRunning();
         return new SplitServiceImpl<>(splitExecutionCoordinator,
                 new SplitPolicyCoordinator<>(conf, runtimeTuningState,
@@ -464,9 +464,9 @@ class SplitServiceImplTest {
                         splitExecutionCoordinator, workerExecutor,
                         splitPolicyScheduler, stateSupplier,
                         SplitFailureReporter.noOp(),
-                        SplitTelemetry.from(new Stats()), policyState,
+                        statsRecorder, policyState,
                         new SplitCandidateRegistry()),
-                managedState);
+                managedState, statsRecorder);
     }
 
     @SuppressWarnings("unchecked")

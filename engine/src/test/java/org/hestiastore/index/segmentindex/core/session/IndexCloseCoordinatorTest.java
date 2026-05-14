@@ -12,7 +12,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,7 +60,8 @@ class IndexCloseCoordinatorTest {
             return null;
         }).when(stateMachine).completeClose();
         closeCoordinator = new IndexCloseCoordinator<>("test-index",
-                stateMachine, operationTracker, new Stats(), runtime,
+                stateMachine, operationTracker, new IndexOperationStatsRecorder(),
+                runtime,
                 new IndexDirectoryLock(directory));
     }
 

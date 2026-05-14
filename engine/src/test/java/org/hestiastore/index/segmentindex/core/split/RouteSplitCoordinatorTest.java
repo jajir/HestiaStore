@@ -21,7 +21,7 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexMaintenanceConfiguration;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +62,7 @@ class RouteSplitCoordinatorTest {
     private DefaultSegmentMaterializationService<Integer, String> materializationService;
 
     private RouteSplitCoordinator<Integer, String> coordinator;
-    private SegmentRouteSplitPlan<Integer> splitPlan;
+    private SegmentRouteSplit<Integer> splitPlan;
 
     @BeforeEach
     void setUp() {
@@ -73,8 +73,8 @@ class RouteSplitCoordinatorTest {
                 new RouteSplitPreparationService<>(materializationService,
                         new IndexRetryPolicy(maintenance.busyBackoffMillis(),
                                 maintenance.busyTimeoutMillis())));
-        splitPlan = new SegmentRouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
-                UPPER_SEGMENT_ID, 2, SegmentRouteSplitPlan.SplitMode.SPLIT);
+        splitPlan = new SegmentRouteSplit<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
+                UPPER_SEGMENT_ID, 2);
     }
 
     @Test
@@ -92,13 +92,13 @@ class RouteSplitCoordinatorTest {
                 eq(parentSegment), eq(2L), any()))
                 .thenReturn(splitPlan);
 
-        final SegmentRouteSplitPlan<Integer> prepared = coordinator
+        final SegmentRouteSplit<Integer> prepared = coordinator
                 .tryPrepareSplit(parentHandle, 2L);
 
         assertNotNull(prepared);
         assertSame(PARENT_SEGMENT_ID, prepared.getReplacedSegmentId());
         assertSame(LOWER_SEGMENT_ID, prepared.getLowerSegmentId());
-        assertSame(UPPER_SEGMENT_ID, prepared.getUpperSegmentId().orElseThrow());
+        assertSame(UPPER_SEGMENT_ID, prepared.getUpperSegmentId());
         verify(materializationService).materializeRouteSplit(
                 eq(parentSegment), eq(2L), any());
     }
@@ -111,7 +111,7 @@ class RouteSplitCoordinatorTest {
         when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
                 .thenReturn(Optional.of(currentHandle));
 
-        final SegmentRouteSplitPlan<Integer> prepared = coordinator
+        final SegmentRouteSplit<Integer> prepared = coordinator
                 .tryPrepareSplit(parentHandle, 2L);
 
         assertNull(prepared);

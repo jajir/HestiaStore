@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.sorteddatafile.sort;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +11,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.cache.UniqueCache;
 import org.hestiastore.index.cache.UniqueCacheBuilder;
 import org.hestiastore.index.datatype.TypeDescriptor;
+import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 
 /**

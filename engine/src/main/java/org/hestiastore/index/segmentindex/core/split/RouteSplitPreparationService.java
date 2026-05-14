@@ -10,7 +10,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ final class RouteSplitPreparationService<K, V> {
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
-    SegmentRouteSplitPlan<K> prepare(final Segment<K, V> parentSegment,
+    SegmentRouteSplit<K> prepare(final Segment<K, V> parentSegment,
             final long splitThreshold) {
         final Segment<K, V> nonNullParentSegment = Vldtn
                 .requireNonNull(parentSegment, SEGMENT_ARG);
@@ -74,7 +74,7 @@ final class RouteSplitPreparationService<K, V> {
         }
     }
 
-    private SegmentRouteSplitPlan<K> materializeChildSegments(
+    private SegmentRouteSplit<K> materializeChildSegments(
             final Segment<K, V> parentSegment, final long targetLowerCount) {
         try (EntryIterator<K, V> iterator = openIteratorWithRetry(parentSegment,
                 SegmentIteratorIsolation.FULL_ISOLATION)) {

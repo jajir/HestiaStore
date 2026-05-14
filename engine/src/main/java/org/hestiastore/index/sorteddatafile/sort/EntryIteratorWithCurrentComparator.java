@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.sorteddatafile.sort;
 
 import java.util.Comparator;
 import java.util.Optional;

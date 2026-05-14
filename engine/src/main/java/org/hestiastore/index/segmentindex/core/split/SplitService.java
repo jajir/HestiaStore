@@ -37,12 +37,12 @@ public interface SplitService extends AutoCloseable {
     void awaitQuiescence();
 
     /**
-     * Returns the metrics-facing split runtime view backed by the same split
+     * Returns the stats-facing split runtime view backed by the same split
      * runtime.
      *
-     * @return split metrics view
+     * @return split stats view
      */
-    SplitMetricsView splitMetricsView();
+    SplitStatsView splitStatsView();
 
     /**
      * Closes the managed split runtime. Shared executors are owned by the

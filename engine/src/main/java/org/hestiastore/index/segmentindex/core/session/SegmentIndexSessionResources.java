@@ -7,10 +7,12 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 
 /**
  * Holds package-private session resources while bootstrap steps live outside
@@ -23,7 +25,9 @@ public final class SegmentIndexSessionResources<K, V> {
 
     private IndexDirectoryLock directoryLock;
     private SegmentIndexStateMachine stateMachine;
-    private Stats stats;
+    private IndexOperationStatsRecorder operationStatsRecorder;
+    private MaintenanceStatsRecorder maintenanceStatsRecorder;
+    private SplitStatsRecorder splitStatsRecorder;
     private IndexOperationTrackingAccess operationTracker;
     private SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private SegmentIndexRuntime<K, V> runtime;
@@ -34,7 +38,9 @@ public final class SegmentIndexSessionResources<K, V> {
 
     public void createSessionInfrastructure() {
         stateMachine = new SegmentIndexStateMachine();
-        stats = new Stats();
+        operationStatsRecorder = new IndexOperationStatsRecorder();
+        maintenanceStatsRecorder = new MaintenanceStatsRecorder();
+        splitStatsRecorder = new SplitStatsRecorder();
         operationTracker = IndexOperationTrackingAccess.create();
         trackedRunner = new SegmentIndexTrackedOperationRunner<>(
                 stateMachine::ensureOperational, operationTracker);
@@ -46,7 +52,9 @@ public final class SegmentIndexSessionResources<K, V> {
             final EffectiveIndexConfiguration<K, V> configuration,
             final ExecutorRegistry executorRegistry) {
         runtime = SegmentIndexRuntime.create(directory, keyTypeDescriptor,
-                valueTypeDescriptor, configuration, executorRegistry, stats(),
+                valueTypeDescriptor, configuration, executorRegistry,
+                operationStatsRecorder(), maintenanceStatsRecorder(),
+                splitStatsRecorder(),
                 stateMachine()::getState, stateMachine()::markRuntimeFailure);
     }
 
@@ -93,7 +101,8 @@ public final class SegmentIndexSessionResources<K, V> {
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
         return new SegmentIndexSessionOwner<>(stateMachine(), runtime,
                 new IndexCloseCoordinator<>(conf.identity().name(),
-                        stateMachine(), operationTracker(), stats(), runtime,
+                        stateMachine(), operationTracker(),
+                        operationStatsRecorder(), runtime,
                         directoryLock()),
                 new SegmentIndexStartupCoordinator<>(conf.identity().name(),
                         directoryLock().wasStaleLockRecovered(), runtime,
@@ -135,8 +144,18 @@ public final class SegmentIndexSessionResources<K, V> {
         return Vldtn.requireNonNull(stateMachine, "stateMachine");
     }
 
-    private Stats stats() {
-        return Vldtn.requireNonNull(stats, "stats");
+    private IndexOperationStatsRecorder operationStatsRecorder() {
+        return Vldtn.requireNonNull(operationStatsRecorder,
+                "operationStatsRecorder");
+    }
+
+    private MaintenanceStatsRecorder maintenanceStatsRecorder() {
+        return Vldtn.requireNonNull(maintenanceStatsRecorder,
+                "maintenanceStatsRecorder");
+    }
+
+    private SplitStatsRecorder splitStatsRecorder() {
+        return Vldtn.requireNonNull(splitStatsRecorder, "splitStatsRecorder");
     }
 
     private IndexOperationTrackingAccess operationTracker() {
