@@ -7,7 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccess;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
@@ -37,14 +36,14 @@ class IndexOperationCoordinatorTest {
     @Mock
     private BlockingSegment<Integer, String> blockingSegment;
 
-    private Stats stats;
+    private IndexOperationStatsRecorder statsRecorder;
     private IndexOperationCoordinator<Integer, String> coordinator;
 
     @BeforeEach
     void setUp() {
-        stats = new Stats();
-        coordinator = new IndexOperationCoordinator<>(typeDescriptor, stats,
-                segmentAccessService, walCoordinator);
+        statsRecorder = new IndexOperationStatsRecorder();
+        coordinator = new IndexOperationCoordinator<>(typeDescriptor,
+                statsRecorder, segmentAccessService, walCoordinator);
     }
 
     @Test
@@ -55,7 +54,7 @@ class IndexOperationCoordinatorTest {
 
         coordinator.put(1, "one");
 
-        assertEquals(1L, stats.getPutCount());
+        assertEquals(1L, statsRecorder.statsSnapshot().getPutCount());
         verify(blockingSegment).put(1, "one");
         verify(segmentAccess).close();
         verify(walCoordinator).recordAppliedLsn(7L);
@@ -69,7 +68,7 @@ class IndexOperationCoordinatorTest {
 
         assertEquals("one", coordinator.get(1));
 
-        assertEquals(1L, stats.getGetCount());
+        assertEquals(1L, statsRecorder.statsSnapshot().getGetCount());
         verify(blockingSegment).get(1);
         verify(segmentAccess).close();
     }
@@ -80,7 +79,7 @@ class IndexOperationCoordinatorTest {
 
         assertNull(coordinator.get(1));
 
-        assertEquals(1L, stats.getGetCount());
+        assertEquals(1L, statsRecorder.statsSnapshot().getGetCount());
     }
 
     @Test
@@ -91,7 +90,7 @@ class IndexOperationCoordinatorTest {
 
         coordinator.delete(1);
 
-        assertEquals(1L, stats.getDeleteCount());
+        assertEquals(1L, statsRecorder.statsSnapshot().getDeleteCount());
         verify(blockingSegment).put(1,
                 TypeDescriptorShortString.TOMBSTONE_VALUE);
         verify(segmentAccess).close();

@@ -22,7 +22,9 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfigurati
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -61,6 +63,10 @@ class SegmentIndexMetricsSnapshotsTest {
                 SegmentRegistry.Runtime.class);
         executorRegistry = ExecutorRegistryFixture.from(conf);
         walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
+        final IndexOperationStatsRecorder operationStatsRecorder =
+                new IndexOperationStatsRecorder();
+        final MaintenanceStatsRecorder maintenanceStatsRecorder =
+                new MaintenanceStatsRecorder();
         Mockito.when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of());
         Mockito.when(segmentRegistry.runtime()).thenReturn(runtime);
         Mockito.when(runtime.loadedSegmentsSnapshot()).thenReturn(List.of());
@@ -71,10 +77,12 @@ class SegmentIndexMetricsSnapshotsTest {
         final Supplier<SegmentIndexMetricsSnapshot> snapshotSupplier =
                 SegmentIndexMetricsSnapshots.create(effective(conf), keyToSegmentMap,
                         segmentRegistry,
-                        () -> new SplitMetricsSnapshot(0, 0),
+                        () -> new SplitStats(0L, 0, 0, 0L, 0L),
                         executorRegistry,
                         RuntimeTuningState.fromConfiguration(effective(conf)), walRuntime,
-                        new Stats(), new AtomicLong(), new AtomicLong(),
+                        operationStatsRecorder::statsSnapshot,
+                        maintenanceStatsRecorder::statsSnapshot,
+                        new AtomicLong(), new AtomicLong(),
                         new AtomicLong(), () -> SegmentIndexState.READY);
 
         assertNotNull(snapshotSupplier);
@@ -89,10 +97,13 @@ class SegmentIndexMetricsSnapshotsTest {
                 () -> SegmentIndexMetricsSnapshots.create(null,
                         mock(KeyToSegmentMap.class),
                         mock(SegmentRegistry.class),
-                        () -> new SplitMetricsSnapshot(0, 0),
+                        () -> new SplitStats(0L, 0, 0, 0L, 0L),
                         mock(ExecutorRegistry.class),
                         mock(RuntimeTuningState.class),
-                        mock(WalRuntime.class), new Stats(), new AtomicLong(),
+                        mock(WalRuntime.class),
+                        new IndexOperationStatsRecorder()::statsSnapshot,
+                        new MaintenanceStatsRecorder()::statsSnapshot,
+                        new AtomicLong(),
                         new AtomicLong(), new AtomicLong(),
                         () -> SegmentIndexState.READY));
 

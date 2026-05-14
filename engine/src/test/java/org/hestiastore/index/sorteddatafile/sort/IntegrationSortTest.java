@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.sorteddatafile.sort;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +18,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.AbstractSegmentTest;
+import org.hestiastore.index.sorteddatafile.SortedDataFile;
 import org.hestiastore.index.unsorteddatafile.UnsortedDataFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

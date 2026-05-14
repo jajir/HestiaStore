@@ -17,7 +17,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,16 +43,15 @@ class RouteSplitPreparationServiceTest {
 
     @Test
     void prepareReturnsMaterializedSplitForEligibleBoundary() {
-        final SegmentRouteSplitPlan<Integer> splitPlan = new SegmentRouteSplitPlan<>(
-                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2,
-                SegmentRouteSplitPlan.SplitMode.SPLIT);
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2);
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()))
                 .thenReturn(iteratorResult(entries()));
         when(materializationService.materializeRouteSplit(eq(parentSegment),
-                eq(2L), any())).thenReturn(splitPlan);
+                eq(2L), any())).thenReturn(routeSplit);
 
-        final SegmentRouteSplitPlan<Integer> prepared = preparationService.prepare(
+        final SegmentRouteSplit<Integer> prepared = preparationService.prepare(
                 parentSegment, 2L);
 
         assertNotNull(prepared);
@@ -67,7 +66,7 @@ class RouteSplitPreparationServiceTest {
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(List.of(Entry.of(1, "a"))));
 
-        final SegmentRouteSplitPlan<Integer> prepared = preparationService.prepare(
+        final SegmentRouteSplit<Integer> prepared = preparationService.prepare(
                 parentSegment, 2L);
 
         assertNull(prepared);

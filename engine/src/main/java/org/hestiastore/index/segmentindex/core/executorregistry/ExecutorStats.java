@@ -1,11 +1,9 @@
 package org.hestiastore.index.segmentindex.core.executorregistry;
 
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
-
 /**
- * Immutable executor metrics snapshot owned by infrastructure monitoring.
+ * Immutable executor runtime statistics owned by executor infrastructure.
  */
-final class ExecutorMetricsSnapshot implements IndexExecutorMetricsAccess {
+public final class ExecutorStats {
 
     private final int activeThreadCount;
     private final int queueSize;
@@ -14,7 +12,7 @@ final class ExecutorMetricsSnapshot implements IndexExecutorMetricsAccess {
     private final long rejectedTaskCount;
     private final long callerRunsCount;
 
-    ExecutorMetricsSnapshot(final int activeThreadCount,
+    ExecutorStats(final int activeThreadCount,
             final int queueSize, final int queueCapacity,
             final long completedTaskCount, final long rejectedTaskCount,
             final long callerRunsCount) {
@@ -26,32 +24,26 @@ final class ExecutorMetricsSnapshot implements IndexExecutorMetricsAccess {
         this.callerRunsCount = Math.max(0L, callerRunsCount);
     }
 
-    @Override
     public int getActiveThreadCount() {
         return activeThreadCount;
     }
 
-    @Override
     public int getQueueSize() {
         return queueSize;
     }
 
-    @Override
     public int getQueueCapacity() {
         return queueCapacity;
     }
 
-    @Override
     public long getCompletedTaskCount() {
         return completedTaskCount;
     }
 
-    @Override
     public long getRejectedTaskCount() {
         return rejectedTaskCount;
     }
 
-    @Override
     public long getCallerRunsCount() {
         return callerRunsCount;
     }

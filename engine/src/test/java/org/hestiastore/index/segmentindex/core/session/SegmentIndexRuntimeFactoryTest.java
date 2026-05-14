@@ -24,7 +24,9 @@ import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.mockito.Mockito;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -55,7 +57,8 @@ class SegmentIndexRuntimeFactoryTest {
             stateMachine.markReady();
             new IndexCloseCoordinator<>("runtime-graph-builder-test",
                     stateMachine,
-                    Mockito.mock(IndexOperationTrackingAccess.class), new Stats(),
+                    Mockito.mock(IndexOperationTrackingAccess.class),
+                    new IndexOperationStatsRecorder(),
                     runtime, new IndexDirectoryLock(new MemDirectory())).close();
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
@@ -115,7 +118,9 @@ class SegmentIndexRuntimeFactoryTest {
             final SegmentIndexRuntimeFactory.ResourceCreationObserver<Integer, String> resourceCreationObserver) {
         final SegmentIndexRuntimeOpenContext<Integer, String> request = new SegmentIndexRuntimeOpenContext<>(
                 new MemDirectory(), tdi, tds, effective(conf),
-                executorRegistry, new Stats(), new AtomicLong(),
+                executorRegistry, new IndexOperationStatsRecorder(),
+                new MaintenanceStatsRecorder(), new SplitStatsRecorder(),
+                new AtomicLong(),
                 new AtomicLong(), new AtomicLong(),
                 () -> SegmentIndexState.READY, failureHandler);
         if (resourceCreationObserver == null) {

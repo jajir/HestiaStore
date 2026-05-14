@@ -26,7 +26,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
 
     private KeyToSegmentMapSynchronizedAdapter<Integer> adapter;
     private ExecutorService executor;
-    private SegmentRouteSplitPlan<Integer> plan;
+    private SegmentRouteSplit<Integer> plan;
 
     @BeforeEach
     void setUp() {
@@ -35,8 +35,8 @@ class KeyToSegmentMapSplitConcurrencyTest {
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         adapter = new KeyToSegmentMapSynchronizedAdapter<>(rawKeyMap);
-        plan = new SegmentRouteSplitPlan<>(SegmentId.of(1), SegmentId.of(3),
-                SegmentId.of(4), 5, SegmentRouteSplitPlan.SplitMode.SPLIT);
+        plan = new SegmentRouteSplit<>(SegmentId.of(1), SegmentId.of(3),
+                SegmentId.of(4), 5);
         executor = Executors.newFixedThreadPool(2);
     }
 
@@ -91,7 +91,7 @@ class KeyToSegmentMapSplitConcurrencyTest {
         assertTrue(await(startedOps, 5),
                 "Workers did not perform initial ops in time");
 
-        assertTrue(adapter.tryApplySplitPlan(plan));
+        assertTrue(adapter.tryReplaceRouteWithSplit(plan));
         adapter.flushIfDirty();
 
         awaitFuture(reader, "Reader did not finish in time");

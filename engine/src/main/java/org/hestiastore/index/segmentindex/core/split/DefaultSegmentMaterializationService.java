@@ -11,7 +11,7 @@ import org.hestiastore.index.WriteTransaction;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -43,7 +43,7 @@ final class DefaultSegmentMaterializationService<K, V> {
                 "materialization");
     }
 
-    SegmentRouteSplitPlan<K> materializeRouteSplit(
+    SegmentRouteSplit<K> materializeRouteSplit(
             final Segment<K, V> parentSegment,
             final long targetLowerCount,
             final EntryIterator<K, V> iterator) {
@@ -71,12 +71,11 @@ final class DefaultSegmentMaterializationService<K, V> {
             commitPreparedSegment(upperWriterTx, upperWriter);
             materializationCompleted = true;
             final K lowerMaxKey = upperSegment.lowerMaxKey();
-            return new SegmentRouteSplitPlan<>(
+            return new SegmentRouteSplit<>(
                     parentSegment.getId(),
                     lowerSegmentId,
                     upperSegmentId,
-                    lowerMaxKey,
-                    SegmentRouteSplitPlan.SplitMode.SPLIT);
+                    lowerMaxKey);
         } finally {
             if (materializationCompleted) {
                 closePreparedWriter(lowerWriter);

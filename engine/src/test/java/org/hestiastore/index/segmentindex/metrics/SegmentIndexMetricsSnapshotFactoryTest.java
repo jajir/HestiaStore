@@ -23,7 +23,9 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfigurati
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -47,17 +49,22 @@ class SegmentIndexMetricsSnapshotFactoryTest {
     @Test
     void createBuildsSnapshotFromCollectedRuntimeInputs() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        final Stats stats = new Stats();
-        stats.recordGetRequest();
-        stats.recordPutRequest();
+        final IndexOperationStatsRecorder operationStatsRecorder =
+                new IndexOperationStatsRecorder();
+        final MaintenanceStatsRecorder maintenanceStatsRecorder =
+                new MaintenanceStatsRecorder();
+        operationStatsRecorder.recordGetRequest();
+        operationStatsRecorder.recordPutRequest();
         executorRegistry = ExecutorRegistryFixture.from(conf);
         final SegmentIndexMetricsSnapshotFactory<Integer, String> factory =
                 new SegmentIndexMetricsSnapshotFactory<>(effective(conf),
-                        () -> new SplitMetricsSnapshot(3, 2),
+                        () -> new SplitStats(3L, 2, 0, 0L, 0L),
                         () -> new ChunkStoreCacheStats(5, 2, 4L, 6L, 7L, 8L,
                                 9L, 10L),
                         RuntimeTuningState.fromConfiguration(effective(conf)),
-                        openDisabledWalRuntime(), stats, new AtomicLong(17L),
+                        openDisabledWalRuntime(),
+                        operationStatsRecorder::statsSnapshot,
+                        new AtomicLong(17L),
                         () -> SegmentIndexState.READY);
         final StableSegmentRuntimeMetrics stableSegmentRuntime =
                 new StableSegmentRuntimeMetrics();
@@ -70,9 +77,10 @@ class SegmentIndexMetricsSnapshotFactoryTest {
 
         final SegmentIndexMetricsSnapshot snapshot = factory.create(
                 new SegmentRegistryCacheStats(11L, 12L, 13L, 14L, 2, 9),
-                stableSegmentRuntime, executorRegistry.runtimeSnapshot(),
+                stableSegmentRuntime, executorRegistry.statsSnapshot(),
                 new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L),
+                maintenanceStatsRecorder.statsSnapshot(),
                 5L, 7L);
 
         assertEquals(11L, snapshot.getRegistryCacheHitCount());

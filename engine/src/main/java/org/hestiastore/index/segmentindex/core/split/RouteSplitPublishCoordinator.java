@@ -4,7 +4,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ final class RouteSplitPublishCoordinator<K, V> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(RouteSplitPublishCoordinator.class);
-    private static final String SPLIT_PLAN_ARG = "splitPlan";
+    private static final String ROUTE_SPLIT_ARG = "routeSplit";
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
@@ -36,49 +36,49 @@ final class RouteSplitPublishCoordinator<K, V> {
                 materializationService, "materializationService");
     }
 
-    boolean applyPreparedSplit(final SegmentRouteSplitPlan<K> splitPlan) {
-        Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
+    boolean applyPreparedSplit(final SegmentRouteSplit<K> routeSplit) {
+        Vldtn.requireNonNull(routeSplit, ROUTE_SPLIT_ARG);
         final boolean published;
         try {
-            published = keyToSegmentMap.tryApplySplitPlan(splitPlan);
+            published = keyToSegmentMap.tryReplaceRouteWithSplit(routeSplit);
         } catch (final RuntimeException e) {
-            throw abortPreparedSplit(splitPlan, e);
+            throw abortPreparedSplit(routeSplit, e);
         }
         if (!published) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
                         "Route split publish returned false: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}'",
-                        splitPlan.getReplacedSegmentId(),
-                        splitPlan.getLowerSegmentId(),
-                        splitPlan.getUpperSegmentId().orElse(null));
+                        routeSplit.getReplacedSegmentId(),
+                        routeSplit.getLowerSegmentId(),
+                        routeSplit.getUpperSegmentId());
             }
-            abortPreparedSplit(splitPlan);
+            abortPreparedSplit(routeSplit);
             return false;
         }
-        completePreparedSplit(splitPlan);
+        completePreparedSplit(routeSplit);
         return true;
     }
 
-    private void completePreparedSplit(final SegmentRouteSplitPlan<K> splitPlan) {
-        Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG);
+    private void completePreparedSplit(final SegmentRouteSplit<K> routeSplit) {
+        Vldtn.requireNonNull(routeSplit, ROUTE_SPLIT_ARG);
         keyToSegmentMap.flushIfDirty();
-        deleteRetiredParentSegment(splitPlan.getReplacedSegmentId());
+        deleteRetiredParentSegment(routeSplit.getReplacedSegmentId());
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(
                     "Route split applied: replacedSegmentId='{}' lowerSegmentId='{}' upperSegmentId='{}' lowerMaxKey='{}'",
-                    splitPlan.getReplacedSegmentId(),
-                    splitPlan.getLowerSegmentId(),
-                    splitPlan.getUpperSegmentId().orElse(null),
-                    splitPlan.getLowerMaxKey());
+                    routeSplit.getReplacedSegmentId(),
+                    routeSplit.getLowerSegmentId(),
+                    routeSplit.getUpperSegmentId(),
+                    routeSplit.getLowerMaxKey());
         }
     }
 
-    private RuntimeException abortPreparedSplit(final SegmentRouteSplitPlan<K> splitPlan,
+    private RuntimeException abortPreparedSplit(final SegmentRouteSplit<K> routeSplit,
             final RuntimeException failure) {
         final RuntimeException cleanupFailure = deleteChildSegments(
-                Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG)
+                Vldtn.requireNonNull(routeSplit, ROUTE_SPLIT_ARG)
                         .getLowerSegmentId(),
-                splitPlan.getUpperSegmentId().orElse(null));
+                routeSplit.getUpperSegmentId());
         if (cleanupFailure == null) {
             return failure;
         }
@@ -86,11 +86,11 @@ final class RouteSplitPublishCoordinator<K, V> {
         return failure;
     }
 
-    private void abortPreparedSplit(final SegmentRouteSplitPlan<K> splitPlan) {
+    private void abortPreparedSplit(final SegmentRouteSplit<K> routeSplit) {
         final RuntimeException cleanupFailure = deleteChildSegments(
-                Vldtn.requireNonNull(splitPlan, SPLIT_PLAN_ARG)
+                Vldtn.requireNonNull(routeSplit, ROUTE_SPLIT_ARG)
                         .getLowerSegmentId(),
-                splitPlan.getUpperSegmentId().orElse(null));
+                routeSplit.getUpperSegmentId());
         if (cleanupFailure != null) {
             throw cleanupFailure;
         }

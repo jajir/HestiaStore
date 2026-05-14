@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
@@ -65,7 +64,7 @@ class MaintenanceServiceTest {
                     .stableSegmentGateway(stableSegmentGateway)
                     .splitService(splitService)
                     .retryPolicy(new IndexRetryPolicy(1, 10))
-                    .stats(new Stats())
+                    .statsRecorder(new MaintenanceStatsRecorder())
                     .maintenanceExecutor(maintenanceExecutor)
                     .checkpointAction(checkpointAction)
                     .build();
@@ -111,7 +110,7 @@ class MaintenanceServiceTest {
                 .stableSegmentGateway(stableSegmentGateway)
                 .splitService(splitService)
                 .retryPolicy(new IndexRetryPolicy(1, 10))
-                .stats(new Stats());
+                .statsRecorder(new MaintenanceStatsRecorder());
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class, builder::build);
@@ -138,7 +137,7 @@ class MaintenanceServiceTest {
                             .stableSegmentGateway(stableSegmentGateway)
                             .splitService(splitService)
                             .retryPolicy(new IndexRetryPolicy(1, 10))
-                            .stats(new Stats())
+                            .statsRecorder(new MaintenanceStatsRecorder())
                             .maintenanceExecutor(maintenanceExecutor);
 
             final IllegalArgumentException ex = assertThrows(

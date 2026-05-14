@@ -16,8 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 import org.junit.jupiter.api.Test;
 
 class ExecutorRegistryTest {
@@ -278,7 +276,7 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void runtimeSnapshotTracksIndexMaintenanceQueuePressureAndRejections()
+    void statsSnapshotTracksIndexMaintenanceQueuePressureAndRejections()
             throws InterruptedException {
         final ExecutorRegistry registry = newRegistry(1, 1, 1);
         final CountDownLatch workerStarted = new CountDownLatch(1);
@@ -299,7 +297,8 @@ class ExecutorRegistryTest {
                     () -> indexMaintenanceExecutor.execute(() -> {
                     }));
 
-            final IndexExecutorMetricsAccess snapshot = registry.runtimeSnapshot().getIndexMaintenance();
+            final ExecutorStats snapshot =
+                    registry.statsSnapshot().getIndexMaintenance();
             assertEquals(1, snapshot.getActiveThreadCount());
             assertEquals(64, snapshot.getQueueSize());
             assertEquals(64, snapshot.getQueueCapacity());
@@ -312,7 +311,7 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void runtimeSnapshotTracksCompletedTasksAndCallerRuns()
+    void statsSnapshotTracksCompletedTasksAndCallerRuns()
             throws InterruptedException, ExecutionException {
         final ExecutorRegistry registry = newRegistry(1, 1, 1);
         final CountDownLatch workerStarted = new CountDownLatch(1);
@@ -341,18 +340,19 @@ class ExecutorRegistryTest {
 
             assertEquals(submittingThreadName, callerRunThread.get());
 
-            final IndexExecutorRuntimeAccess runtimeSnapshot = registry.runtimeSnapshot();
-            assertEquals(1L, runtimeSnapshot.getSplitMaintenance()
+            final ExecutorRegistryStats statsSnapshot =
+                    registry.statsSnapshot();
+            assertEquals(1L, statsSnapshot.getSplitMaintenance()
                     .getCompletedTaskCount());
-            assertEquals(1L, runtimeSnapshot.getStableSegmentMaintenance()
+            assertEquals(1L, statsSnapshot.getStableSegmentMaintenance()
                     .getCompletedTaskCount());
-            assertEquals(1L, runtimeSnapshot.getStableSegmentMaintenance()
+            assertEquals(1L, statsSnapshot.getStableSegmentMaintenance()
                     .getCallerRunsCount());
-            assertEquals(1, runtimeSnapshot.getStableSegmentMaintenance()
+            assertEquals(1, statsSnapshot.getStableSegmentMaintenance()
                     .getActiveThreadCount());
-            assertEquals(64, runtimeSnapshot.getStableSegmentMaintenance()
+            assertEquals(64, statsSnapshot.getStableSegmentMaintenance()
                     .getQueueSize());
-            assertEquals(64, runtimeSnapshot.getStableSegmentMaintenance()
+            assertEquals(64, statsSnapshot.getStableSegmentMaintenance()
                     .getQueueCapacity());
         } finally {
             releaseWorker.countDown();
