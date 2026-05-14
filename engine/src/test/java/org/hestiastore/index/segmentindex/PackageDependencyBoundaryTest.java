@@ -23,8 +23,16 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.session..";
     private static final String SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES =
             "org.hestiastore.index.segmentindex.core.bootstrap..";
+    private static final String SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES =
+            "org.hestiastore.index.segmentindex.core.operations..";
+    private static final String SEGMENT_INDEX_CORE_MAINTENANCE_PACKAGES =
+            "org.hestiastore.index.segmentindex.core.maintenance..";
     private static final String SEGMENT_INDEX_CORE_SPLIT_PACKAGES =
             "org.hestiastore.index.segmentindex.core.split..";
+    private static final String SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES =
+            "org.hestiastore.index.segmentindex.core.executorregistry..";
+    private static final String SEGMENT_INDEX_METRICS_PACKAGES =
+            "org.hestiastore.index.segmentindex.metrics..";
     private static final String SEGMENT_INDEX_MAPPING_PACKAGES =
             "org.hestiastore.index.segmentindex.mapping..";
     private static final String SEGMENT_INDEX_EFFECTIVE_CONFIGURATION_PACKAGES =
@@ -101,4 +109,15 @@ class PackageDependencyBoundaryTest {
             .should()//
             .dependOnClassesThat()//
             .resideInAnyPackage(SEGMENT_INDEX_CORE_SPLIT_PACKAGES);
+
+    @ArchTest
+    static final ArchRule operational_runtime_packages_do_not_depend_on_metrics = noClasses()//
+            .that()//
+            .resideInAnyPackage(SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES,
+                    SEGMENT_INDEX_CORE_MAINTENANCE_PACKAGES,
+                    SEGMENT_INDEX_CORE_SPLIT_PACKAGES,
+                    SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES)//
+            .should()//
+            .dependOnClassesThat()//
+            .resideInAnyPackage(SEGMENT_INDEX_METRICS_PACKAGES);
 }

@@ -3,6 +3,20 @@
 `SegmentIndex.runtimeMonitoring().snapshot().getMetrics()` exposes a stable,
 read-only metrics contract for index-level telemetry.
 
+## Ownership Convention
+
+- Domain packages own runtime statistics snapshots and name them `*Stats`.
+  Examples include `IndexOperationStats`, `MaintenanceStats`, `SplitStats`,
+  `WalStats`, `ChunkStoreCacheStats`, `SegmentRegistryCacheStats`, and
+  `SegmentStats`.
+- Mutable statistics writers live next to the domain runtime they observe and
+  are named `*StatsRecorder` or `*Telemetry`.
+- Snapshot-returning runtime methods use `statsSnapshot()`.
+- `org.hestiastore.index.segmentindex.metrics` does not record domain events
+  directly. It obtains read-only `*Stats` snapshots from operation,
+  maintenance, split, WAL, executor, cache, registry, and segment runtimes, then
+  assembles the public `SegmentIndexMetricsSnapshot`.
+
 ## Current Fields
 
 - Operation counters:

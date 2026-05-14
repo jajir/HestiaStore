@@ -18,7 +18,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,9 +139,8 @@ class SegmentTopologyTest {
     }
 
     private void applySplitPlan() {
-        final SegmentRouteSplitPlan<Integer> splitPlan = new SegmentRouteSplitPlan<>(
-                SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 50,
-                SegmentRouteSplitPlan.SplitMode.SPLIT);
-        assertTrue(keyToSegmentMap.tryApplySplitPlan(splitPlan));
+        final SegmentRouteSplit<Integer> split = new SegmentRouteSplit<>(
+                SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 50);
+        assertTrue(keyToSegmentMap.tryReplaceRouteWithSplit(split));
     }
 }

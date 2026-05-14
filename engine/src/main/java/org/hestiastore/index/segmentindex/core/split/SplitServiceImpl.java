@@ -12,22 +12,26 @@ import org.hestiastore.index.segmentregistry.BlockingSegment;
  * @param <V> value type
  */
 final class SplitServiceImpl<K, V>
-        implements SplitService, SplitMetricsView {
+        implements SplitService, SplitStatsView {
 
     private final SplitExecutionCoordinator<K, V> splitCoordinator;
     private final SplitPolicyCoordinator<K, V> splitPolicyCoordinator;
     private final ManagedSplitRuntimeState managedState;
+    private final SplitStatsRecorder statsRecorder;
 
     SplitServiceImpl(
             final SplitExecutionCoordinator<K, V> splitCoordinator,
             final SplitPolicyCoordinator<K, V> splitPolicyCoordinator,
-            final ManagedSplitRuntimeState managedState) {
+            final ManagedSplitRuntimeState managedState,
+            final SplitStatsRecorder statsRecorder) {
         this.splitCoordinator = Vldtn.requireNonNull(splitCoordinator,
                 "splitCoordinator");
         this.splitPolicyCoordinator = Vldtn.requireNonNull(
                 splitPolicyCoordinator, "splitPolicyCoordinator");
         this.managedState = Vldtn.requireNonNull(managedState,
                 "managedState");
+        this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
+                "statsRecorder");
     }
 
     boolean scheduleEligibleSplit(
@@ -52,7 +56,7 @@ final class SplitServiceImpl<K, V>
     }
 
     @Override
-    public SplitMetricsView splitMetricsView() {
+    public SplitStatsView splitStatsView() {
         return this;
     }
 
@@ -79,8 +83,8 @@ final class SplitServiceImpl<K, V>
     }
 
     @Override
-    public SplitMetricsSnapshot metricsSnapshot() {
-        return new SplitMetricsSnapshot(splitCoordinator.splitInFlightCount(),
+    public SplitStats statsSnapshot() {
+        return statsRecorder.statsSnapshot(splitCoordinator.splitInFlightCount(),
                 splitCoordinator.splitBlockedCount());
     }
 

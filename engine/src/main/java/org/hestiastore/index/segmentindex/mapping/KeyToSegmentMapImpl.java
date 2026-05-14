@@ -278,27 +278,28 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         return removedKey;
     }
 
-    boolean tryApplySplitPlan(final SegmentRouteSplitPlan<K> plan) {
-        Vldtn.requireNonNull(plan, "plan");
-        final SegmentId replacedSegmentId = plan.getReplacedSegmentId();
-        final SegmentId lowerSegmentId = plan.getLowerSegmentId();
+    boolean tryReplaceRouteWithSplit(final SegmentRouteSplit<K> split) {
+        Vldtn.requireNonNull(split, "split");
+        final SegmentId replacedSegmentId = split.getReplacedSegmentId();
+        final SegmentId lowerSegmentId = split.getLowerSegmentId();
         final K upperMaxKey = removeSegmentAndReturnMaxKey(replacedSegmentId);
         if (upperMaxKey == null) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
+                        "Route split publish rejected because replaced segment route is missing: replacedSegmentId='{}', lowerSegmentId='{}', lowerMaxKey='{}', upperSegmentId='{}'.",
+                        replacedSegmentId, lowerSegmentId,
+                        split.getLowerMaxKey(), split.getUpperSegmentId());
+            }
             return false;
         }
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(
-                    "Split debug: map apply replacedSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', splitMode='{}', upperSegmentId='{}'.",
+                    "Split debug: map apply replacedSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', upperSegmentId='{}'.",
                     replacedSegmentId, upperMaxKey, lowerSegmentId,
-                    plan.getLowerMaxKey(), plan.getSplitMode(),
-                    plan.getUpperSegmentId().orElse(null));
+                    split.getLowerMaxKey(), split.getUpperSegmentId());
         }
-        insertSegment(plan.getLowerMaxKey(), lowerSegmentId);
-        if (plan.isSplit()) {
-            final SegmentId upperSegmentId = Vldtn.requireNonNull(
-                    plan.getUpperSegmentId().orElse(null), "upperSegmentId");
-            insertSegment(upperMaxKey, upperSegmentId);
-        }
+        insertSegment(split.getLowerMaxKey(), lowerSegmentId);
+        insertSegment(upperMaxKey, split.getUpperSegmentId());
         return true;
     }
 

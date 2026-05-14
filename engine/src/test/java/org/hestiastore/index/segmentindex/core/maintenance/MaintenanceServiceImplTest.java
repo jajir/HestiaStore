@@ -22,7 +22,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
@@ -59,7 +58,7 @@ class MaintenanceServiceImplTest {
     private KeyToSegmentMapImpl<String> keyToSegmentMap;
     private KeyToSegmentMap<String> synchronizedKeyToSegmentMap;
     private MaintenanceServiceImpl<String, String> service;
-    private Stats stats;
+    private MaintenanceStatsRecorder statsRecorder;
     private ExecutorService maintenanceExecutor;
 
     @BeforeEach
@@ -69,11 +68,11 @@ class MaintenanceServiceImplTest {
                 new TypeDescriptorShortString());
         synchronizedKeyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 keyToSegmentMap);
-        stats = new Stats();
+        statsRecorder = new MaintenanceStatsRecorder();
         maintenanceExecutor = Executors.newSingleThreadExecutor();
         service = new MaintenanceServiceImpl<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway,
-                splitService, retryPolicy(), stats, maintenanceExecutor,
+                splitService, retryPolicy(), statsRecorder, maintenanceExecutor,
                 checkpointAction);
     }
 
@@ -97,7 +96,8 @@ class MaintenanceServiceImplTest {
         service.compact();
 
         verify(stableSegmentGateway, timeout(1_000)).compact(segmentId);
-        assertEquals(0L, stats.getCompactBusyRetryCount());
+        assertEquals(0L,
+                statsRecorder.statsSnapshot().getCompactBusyRetryCount());
     }
 
     @Test
@@ -116,8 +116,8 @@ class MaintenanceServiceImplTest {
         final MaintenanceServiceImpl<Integer, String> maintenance =
                 new MaintenanceServiceImpl<>(
                         mappedSegments, stableSegments, splitServiceValue,
-                        retryPolicy(), new Stats(), maintenanceExecutor,
-                        checkpoint);
+                        retryPolicy(), new MaintenanceStatsRecorder(),
+                        maintenanceExecutor, checkpoint);
 
         maintenance.flush();
 
@@ -130,8 +130,8 @@ class MaintenanceServiceImplTest {
         final SegmentId segmentId = createBootstrapSegment("key");
         service = new MaintenanceServiceImpl<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway, splitService,
-                retryPolicy(), stats, maintenanceExecutor, checkpointAction,
-                sequenceNanoTimeSupplier(10_000L, 35_000L));
+                retryPolicy(), statsRecorder, maintenanceExecutor,
+                checkpointAction, sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId))
                 .thenReturn(StableSegmentOperationResult.busy())
@@ -140,6 +140,7 @@ class MaintenanceServiceImplTest {
 
         service.flushSegment(segmentId, true);
 
+        final MaintenanceStats stats = statsRecorder.statsSnapshot();
         assertEquals(1L, stats.getFlushBusyRetryCount());
         assertEquals(25L, stats.getFlushAcceptedToReadyP95Micros());
     }
@@ -149,8 +150,8 @@ class MaintenanceServiceImplTest {
         final SegmentId segmentId = createBootstrapSegment("key");
         service = new MaintenanceServiceImpl<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway, splitService,
-                retryPolicy(), stats, maintenanceExecutor, checkpointAction,
-                sequenceNanoTimeSupplier(20_000L, 68_000L));
+                retryPolicy(), statsRecorder, maintenanceExecutor,
+                checkpointAction, sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.compact(segmentId))
                 .thenReturn(StableSegmentOperationResult.busy())
@@ -159,6 +160,7 @@ class MaintenanceServiceImplTest {
 
         service.compactSegment(segmentId, true);
 
+        final MaintenanceStats stats = statsRecorder.statsSnapshot();
         assertEquals(1L, stats.getCompactBusyRetryCount());
         assertEquals(48L, stats.getCompactAcceptedToReadyP95Micros());
     }
@@ -170,7 +172,8 @@ class MaintenanceServiceImplTest {
                 .thenReturn(StableSegmentOperationResult.busy());
 
         assertDoesNotThrow(() -> service.compactSegment(segmentId, false));
-        assertEquals(0L, stats.getCompactBusyRetryCount());
+        assertEquals(0L,
+                statsRecorder.statsSnapshot().getCompactBusyRetryCount());
     }
 
     @Test

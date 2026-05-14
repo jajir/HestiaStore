@@ -26,8 +26,10 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfigurati
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -60,7 +62,8 @@ class SegmentIndexMetricsCollectorTest {
     @Mock
     private BlockingSegment.Runtime segmentRuntime;
 
-    private Stats stats;
+    private IndexOperationStatsRecorder operationStatsRecorder;
+    private MaintenanceStatsRecorder maintenanceStatsRecorder;
     private AtomicLong compactRequestHighWaterMark;
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
@@ -71,7 +74,8 @@ class SegmentIndexMetricsCollectorTest {
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        stats = new Stats();
+        operationStatsRecorder = new IndexOperationStatsRecorder();
+        maintenanceStatsRecorder = new MaintenanceStatsRecorder();
         compactRequestHighWaterMark = new AtomicLong();
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(123L);
@@ -79,9 +83,11 @@ class SegmentIndexMetricsCollectorTest {
         walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 effective(conf), keyToSegmentMap, segmentRegistry,
-                () -> new SplitMetricsSnapshot(4, 3), executorRegistry,
+                () -> new SplitStats(4L, 3, 0, 0L, 0L), executorRegistry,
                 RuntimeTuningState.fromConfiguration(effective(conf)),
-                new LruChunkStoreCache<>(0), walRuntime, stats,
+                new LruChunkStoreCache<>(0), walRuntime,
+                operationStatsRecorder::statsSnapshot,
+                maintenanceStatsRecorder::statsSnapshot,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
                 lastAppliedWalLsn, () -> SegmentIndexState.READY);
     }
@@ -110,13 +116,12 @@ class SegmentIndexMetricsCollectorTest {
                 new SegmentRuntimeSnapshot(SegmentId.of(1), SegmentState.READY,
                         0L, 8L, 0L, 5L, 2, 3, 5L, 7L, 9L, 1L, 8L, 1L));
 
-        stats.recordGetRequest();
-        stats.recordPutRequest();
-        stats.recordDeleteRequest();
-        stats.recordFlushRequest();
-        stats.recordSplitScheduled();
-        stats.recordFlushBusyRetry();
-        stats.recordCompactBusyRetry();
+        operationStatsRecorder.recordGetRequest();
+        operationStatsRecorder.recordPutRequest();
+        operationStatsRecorder.recordDeleteRequest();
+        maintenanceStatsRecorder.recordFlushRequest();
+        maintenanceStatsRecorder.recordFlushBusyRetry();
+        maintenanceStatsRecorder.recordCompactBusyRetry();
 
         final SegmentIndexMetricsSnapshot firstSnapshot =
                 collector.metricsSnapshot();
@@ -153,11 +158,13 @@ class SegmentIndexMetricsCollectorTest {
                 .assertThrows(IllegalArgumentException.class,
                         () -> SegmentIndexMetricsCollector.create(null,
                                 keyToSegmentMap, segmentRegistry,
-                                () -> new SplitMetricsSnapshot(0, 0),
+                                () -> new SplitStats(0L, 0, 0, 0L, 0L),
                                 executorRegistry,
                                 mock(RuntimeTuningState.class),
                                 new LruChunkStoreCache<>(0), walRuntime,
-                                stats, compactRequestHighWaterMark,
+                                operationStatsRecorder::statsSnapshot,
+                                maintenanceStatsRecorder::statsSnapshot,
+                                compactRequestHighWaterMark,
                                 flushRequestHighWaterMark, lastAppliedWalLsn,
                                 () -> SegmentIndexState.READY));
 

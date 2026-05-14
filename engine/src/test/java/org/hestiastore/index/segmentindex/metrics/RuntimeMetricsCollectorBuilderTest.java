@@ -17,7 +17,9 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfigurati
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -43,7 +45,8 @@ class RuntimeMetricsCollectorBuilderTest {
 
     private EffectiveIndexConfiguration<Integer, String> conf;
     private RuntimeTuningState runtimeTuningState;
-    private Stats stats;
+    private IndexOperationStatsRecorder operationStatsRecorder;
+    private MaintenanceStatsRecorder maintenanceStatsRecorder;
     private AtomicLong compactRequestHighWaterMark;
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
@@ -55,7 +58,8 @@ class RuntimeMetricsCollectorBuilderTest {
         conf = SegmentIndexMetricsTestConfigurationFactory.build(
                 "metric-service-builder");
         runtimeTuningState = RuntimeTuningState.fromConfiguration(conf);
-        stats = new Stats();
+        operationStatsRecorder = new IndexOperationStatsRecorder();
+        maintenanceStatsRecorder = new MaintenanceStatsRecorder();
         compactRequestHighWaterMark = new AtomicLong();
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(42L);
@@ -79,7 +83,7 @@ class RuntimeMetricsCollectorBuilderTest {
         when(segmentRegistry.metricsSnapshot())
                 .thenReturn(new SegmentRegistryCacheStats(2L, 3L, 4L, 5L, 6,
                         7));
-        stats.recordGetRequest();
+        operationStatsRecorder.recordGetRequest();
 
         final RuntimeMetricsCollector service = completeBuilder().build();
         final SegmentIndexMetricsSnapshot snapshot = service.metricsSnapshot();
@@ -109,13 +113,16 @@ class RuntimeMetricsCollectorBuilderTest {
                 .withConf(conf)
                 .withKeyToSegmentMap(keyToSegmentMap)
                 .withSegmentRegistry(segmentRegistry)
-                .withSplitSnapshotSupplier(
-                        () -> new SplitMetricsSnapshot(2, 1))
+                .withSplitStatsSupplier(() -> new SplitStats(0L, 2, 1, 0L,
+                        0L))
                 .withExecutorRegistry(executorRegistry)
                 .withRuntimeTuningState(runtimeTuningState)
                 .withChunkStoreCache(new LruChunkStoreCache<>(0))
                 .withWalRuntime(walRuntime)
-                .withStats(stats)
+                .withIndexOperationStatsSupplier(
+                        operationStatsRecorder::statsSnapshot)
+                .withMaintenanceStatsSupplier(
+                        maintenanceStatsRecorder::statsSnapshot)
                 .withCompactRequestHighWaterMark(compactRequestHighWaterMark)
                 .withFlushRequestHighWaterMark(flushRequestHighWaterMark)
                 .withLastAppliedWalLsn(lastAppliedWalLsn)

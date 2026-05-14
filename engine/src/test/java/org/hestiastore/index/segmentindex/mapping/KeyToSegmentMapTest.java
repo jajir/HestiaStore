@@ -31,33 +31,33 @@ class KeyToSegmentMapTest {
     }
 
     @Test
-    void tryApplySplitPlan_replacesOldSegmentWithLowerAndUpper() {
+    void tryReplaceRouteWithSplit_replacesOldSegmentWithLowerAndUpper() {
         final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final SegmentRouteSplitPlan<Integer> plan = new SegmentRouteSplitPlan<>(SegmentId.of(1),
-                SegmentId.of(3), SegmentId.of(4), 5,
-                SegmentRouteSplitPlan.SplitMode.SPLIT);
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 5);
 
-        assertTrue(cache.tryApplySplitPlan(plan));
+        assertTrue(cache.tryReplaceRouteWithSplit(routeSplit));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(4), SegmentId.of(2)),
                 cache.getSegmentIds());
     }
 
     @Test
-    void tryApplySplitPlan_replacesOldSegmentWhenCompacted() {
+    void tryReplaceRouteWithSplitReturnsFalseWithoutMutationWhenRouteMissing() {
         final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
-        final SegmentRouteSplitPlan<Integer> plan = new SegmentRouteSplitPlan<>(SegmentId.of(1),
-                SegmentId.of(3), null, 10,
-                SegmentRouteSplitPlan.SplitMode.COMPACTED);
+        final Snapshot<Integer> before = cache.snapshot();
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(9), SegmentId.of(3), SegmentId.of(4), 5);
 
-        assertTrue(cache.tryApplySplitPlan(plan));
+        assertFalse(cache.tryReplaceRouteWithSplit(routeSplit));
 
-        assertEquals(List.of(SegmentId.of(3), SegmentId.of(2)),
+        assertEquals(before.getSegmentIds(SegmentWindow.unbounded()),
                 cache.getSegmentIds());
+        assertTrue(cache.isAtVersion(before.version()));
     }
 
     @Test
@@ -128,10 +128,9 @@ class KeyToSegmentMapTest {
                 Entry.of(30, SegmentId.of(3))));
         final Snapshot<Integer> snapshot = cache.snapshot();
 
-        final SegmentRouteSplitPlan<Integer> plan = new SegmentRouteSplitPlan<>(SegmentId.of(2),
-                SegmentId.of(4), SegmentId.of(5), 15,
-                SegmentRouteSplitPlan.SplitMode.SPLIT);
-        assertTrue(cache.tryApplySplitPlan(plan));
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(2), SegmentId.of(4), SegmentId.of(5), 15);
+        assertTrue(cache.tryReplaceRouteWithSplit(routeSplit));
 
         assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),
                 snapshot.getSegmentIds(SegmentWindow.unbounded()));

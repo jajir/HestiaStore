@@ -17,9 +17,11 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningStat
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -41,7 +43,9 @@ public final class SegmentIndexRuntimeTestAccess {
             final ExecutorRegistry executorRegistry) {
         return SegmentIndexRuntime.create(directoryFacade, keyTypeDescriptor,
                 valueTypeDescriptor, effective(conf),
-                executorRegistry, new Stats(), () -> SegmentIndexState.READY,
+                executorRegistry, new IndexOperationStatsRecorder(),
+                new MaintenanceStatsRecorder(), new SplitStatsRecorder(),
+                () -> SegmentIndexState.READY,
                 failure -> {
                 });
     }
@@ -108,7 +112,7 @@ public final class SegmentIndexRuntimeTestAccess {
         stateMachine.markReady();
         new IndexCloseCoordinator<>(indexName, stateMachine,
                 mock(IndexOperationTrackingAccess.class),
-                new Stats(), runtime,
+                new IndexOperationStatsRecorder(), runtime,
                 new IndexDirectoryLock(new MemDirectory()))
                 .close();
     }

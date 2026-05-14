@@ -22,10 +22,12 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningStat
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -52,7 +54,9 @@ class SegmentIndexRuntimeTest {
         runtime = new SegmentIndexRuntimeFactory<>(
                 new SegmentIndexRuntimeOpenContext<>(
                         new MemDirectory(), tdi, tds, effective(conf),
-                        executorRegistry, new Stats(), new AtomicLong(),
+                        executorRegistry, new IndexOperationStatsRecorder(),
+                        new MaintenanceStatsRecorder(),
+                        new SplitStatsRecorder(), new AtomicLong(),
                         new AtomicLong(), new AtomicLong(),
                         () -> SegmentIndexState.READY, failureRef::set))
                 .open();
@@ -64,7 +68,8 @@ class SegmentIndexRuntimeTest {
             final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
             stateMachine.markReady();
             new IndexCloseCoordinator<>("runtime-test", stateMachine,
-                    mock(IndexOperationTrackingAccess.class), new Stats(),
+                    mock(IndexOperationTrackingAccess.class),
+                    new IndexOperationStatsRecorder(),
                     runtime, new IndexDirectoryLock(new MemDirectory())).close();
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {

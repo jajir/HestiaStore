@@ -26,7 +26,7 @@ import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +47,7 @@ class DefaultSegmentMaterializationServiceTest {
                 directory, registry.materialization());
 
         try {
-            final SegmentRouteSplitPlan<Integer> splitPlan = service
+            final SegmentRouteSplit<Integer> splitPlan = service
                     .materializeRouteSplit(
                             registry.loadSegment(openSourceSegment(registry))
                                     .getSegment(),
@@ -59,7 +59,7 @@ class DefaultSegmentMaterializationServiceTest {
                         .loadSegment(splitPlan.getLowerSegmentId())
                         .getSegment();
                 final Segment<Integer, String> upperSegment = registry
-                        .loadSegment(splitPlan.getUpperSegmentId().orElseThrow())
+                        .loadSegment(splitPlan.getUpperSegmentId())
                         .getSegment();
                 assertEquals(List.of(Entry.of(1, "a"), Entry.of(2, "b")),
                         readEntries(lowerSegment));
@@ -89,15 +89,14 @@ class DefaultSegmentMaterializationServiceTest {
                 directory, registry.materialization());
 
         try {
-            final SegmentRouteSplitPlan<Integer> splitPlan = service
+            final SegmentRouteSplit<Integer> splitPlan = service
                     .materializeRouteSplit(
                             registry.loadSegment(openSourceSegment(registry))
                                     .getSegment(),
                             2L,
                             EntryIterator.make(entries().iterator()));
             final SegmentId lowerSegmentId = splitPlan.getLowerSegmentId();
-            final SegmentId upperSegmentId = splitPlan.getUpperSegmentId()
-                    .orElseThrow();
+            final SegmentId upperSegmentId = splitPlan.getUpperSegmentId();
 
             assertTrue(directory.isFileExists(lowerSegmentId.getName()));
             assertTrue(directory.isFileExists(upperSegmentId.getName()));

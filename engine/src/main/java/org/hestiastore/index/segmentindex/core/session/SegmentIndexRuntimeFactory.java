@@ -227,7 +227,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         .getSplitPolicyScheduler())
                 .stateSupplier(openContext.stateSupplier)
                 .failureHandler(openContext.failureHandler)
-                .stats(openContext.stats)
+                .statsRecorder(openContext.splitStatsRecorder)
                 .build();
     }
 
@@ -294,7 +294,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         coreStorage.segmentRegistry()))
                 .splitService(topologyRuntime.splitService())
                 .retryPolicy(coreStorage.retryPolicy())
-                .stats(openContext.stats)
+                .statsRecorder(openContext.maintenanceStatsRecorder)
                 .maintenanceExecutor(openContext.executorRegistry
                         .getIndexMaintenanceExecutor())
                 .checkpointAction(checkpointAction)
@@ -305,7 +305,8 @@ final class SegmentIndexRuntimeFactory<K, V> {
             final SegmentTopologyRuntime<K, V> topologyRuntime,
             final IndexWalCoordinator<K, V> walCoordinator) {
         return SegmentIndexOperationAccess.create(
-                openContext.valueTypeDescriptor, openContext.stats,
+                openContext.valueTypeDescriptor,
+                openContext.operationStatsRecorder,
                 topologyRuntime.segmentAccessService(), walCoordinator);
     }
 
@@ -318,15 +319,20 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         .withConf(openContext.conf)
                         .withKeyToSegmentMap(coreStorage.keyToSegmentMap())
                         .withSegmentRegistry(coreStorage.segmentRegistry())
-                        .withSplitSnapshotSupplier(() -> topologyRuntime
-                                .splitService().splitMetricsView()
-                                .metricsSnapshot())
+                        .withSplitStatsSupplier(() -> topologyRuntime
+                                .splitService().splitStatsView()
+                                .statsSnapshot())
                         .withExecutorRegistry(openContext.executorRegistry)
                         .withRuntimeTuningState(
                                 coreStorage.runtimeTuningState())
                         .withChunkStoreCache(coreStorage.chunkStoreCache())
                         .withWalRuntime(walRuntime)
-                        .withStats(openContext.stats)
+                        .withIndexOperationStatsSupplier(
+                                openContext.operationStatsRecorder
+                                        ::statsSnapshot)
+                        .withMaintenanceStatsSupplier(
+                                openContext.maintenanceStatsRecorder
+                                        ::statsSnapshot)
                         .withCompactRequestHighWaterMark(
                                 openContext.compactRequestHighWaterMark)
                         .withFlushRequestHighWaterMark(

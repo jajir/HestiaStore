@@ -25,7 +25,7 @@ import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDra
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ class SplitExecutionCoordinatorImplTest {
     private RouteSplitPublishCoordinator<String, String> splitPublishCoordinator;
 
     @Mock
-    private SegmentRouteSplitPlan<String> splitPlan;
+    private SegmentRouteSplit<String> splitPlan;
 
     @Mock
     private SegmentTopology<String> segmentTopology;
