@@ -1,4 +1,4 @@
-package org.hestiastore.index.sorteddatafile;
+package org.hestiastore.index.sorteddatafile.sort;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.IndexException;

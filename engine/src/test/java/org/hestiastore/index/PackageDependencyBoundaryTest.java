@@ -17,6 +17,9 @@ class PackageDependencyBoundaryTest {
     private static final String INDEX_PACKAGES = "org.hestiastore.index..";
     private static final String SEGMENT_PACKAGES =
             "org.hestiastore.index.segment..";
+    private static final String SORTED_DATA_FILE_PACKAGE =
+            "org.hestiastore.index.sorteddatafile";
+    private static final String CACHE_PACKAGES = "org.hestiastore.index.cache..";
     private static final String[] CORE_FORBIDDEN_PACKAGES = {
             "org.hestiastore.index.monitoring..",
             "org.hestiastore.index.management..",
@@ -42,4 +45,10 @@ class PackageDependencyBoundaryTest {
             noClasses().that().resideInAPackage(SEGMENT_PACKAGES)
                     .should().dependOnClassesThat()
                     .resideInAnyPackage(SEGMENT_FORBIDDEN_PACKAGES);
+
+    @ArchTest
+    static final ArchRule sorted_data_file_primitives_do_not_depend_on_cache =
+            noClasses().that().resideInAPackage(SORTED_DATA_FILE_PACKAGE)
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(CACHE_PACKAGES);
 }
