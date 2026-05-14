@@ -14,7 +14,9 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("unchecked")
@@ -29,7 +31,12 @@ class SegmentIndexRuntimeOpenContextTest {
         final EffectiveIndexConfiguration<Integer, String> conf = mock(
                 EffectiveIndexConfiguration.class);
         final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
-        final Stats stats = new Stats();
+        final IndexOperationStatsRecorder operationStatsRecorder =
+                new IndexOperationStatsRecorder();
+        final MaintenanceStatsRecorder maintenanceStatsRecorder =
+                new MaintenanceStatsRecorder();
+        final SplitStatsRecorder splitStatsRecorder =
+                new SplitStatsRecorder();
         final AtomicLong compactRequestHighWaterMark = new AtomicLong();
         final AtomicLong flushRequestHighWaterMark = new AtomicLong();
         final AtomicLong lastAppliedWalLsn = new AtomicLong();
@@ -40,7 +47,9 @@ class SegmentIndexRuntimeOpenContextTest {
                 IllegalArgumentException.class,
                 () -> new SegmentIndexRuntimeOpenContext<>(null,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
-                        executorRegistry, stats, compactRequestHighWaterMark,
+                        executorRegistry, operationStatsRecorder,
+                        maintenanceStatsRecorder, splitStatsRecorder,
+                        compactRequestHighWaterMark,
                         flushRequestHighWaterMark, lastAppliedWalLsn,
                         stateSupplier, failureHandler));
         assertEquals("Property 'directoryFacade' must not be null.",
@@ -58,7 +67,12 @@ class SegmentIndexRuntimeOpenContextTest {
                 EffectiveIndexConfiguration.class);
         final ExecutorRegistry executorRegistry = mock(
                 ExecutorRegistry.class);
-        final Stats stats = new Stats();
+        final IndexOperationStatsRecorder operationStatsRecorder =
+                new IndexOperationStatsRecorder();
+        final MaintenanceStatsRecorder maintenanceStatsRecorder =
+                new MaintenanceStatsRecorder();
+        final SplitStatsRecorder splitStatsRecorder =
+                new SplitStatsRecorder();
         final AtomicLong compactRequestHighWaterMark = new AtomicLong();
         final AtomicLong flushRequestHighWaterMark = new AtomicLong();
         final AtomicLong lastAppliedWalLsn = new AtomicLong();
@@ -68,11 +82,15 @@ class SegmentIndexRuntimeOpenContextTest {
         final SegmentIndexRuntimeOpenContext<Integer, String> request =
                 new SegmentIndexRuntimeOpenContext<>(directory,
                         keyTypeDescriptor, valueTypeDescriptor, conf,
-                        executorRegistry, stats, compactRequestHighWaterMark,
+                        executorRegistry, operationStatsRecorder,
+                        maintenanceStatsRecorder, splitStatsRecorder,
+                        compactRequestHighWaterMark,
                         flushRequestHighWaterMark, lastAppliedWalLsn,
                         stateSupplier, failureHandler);
 
-        assertSame(stats, request.stats);
+        assertSame(operationStatsRecorder, request.operationStatsRecorder);
+        assertSame(maintenanceStatsRecorder, request.maintenanceStatsRecorder);
+        assertSame(splitStatsRecorder, request.splitStatsRecorder);
         assertSame(compactRequestHighWaterMark,
                 request.compactRequestHighWaterMark);
         assertSame(flushRequestHighWaterMark,

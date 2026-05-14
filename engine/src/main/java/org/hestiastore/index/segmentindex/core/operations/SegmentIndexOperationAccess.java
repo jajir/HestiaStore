@@ -4,7 +4,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -18,13 +17,13 @@ public interface SegmentIndexOperationAccess<K, V> {
 
     static <K, V> SegmentIndexOperationAccess<K, V> create(
             final TypeDescriptor<V> valueTypeDescriptor,
-            final Stats stats,
+            final IndexOperationStatsRecorder statsRecorder,
             final SegmentAccessService<K, V> segmentAccessService,
             final IndexWalCoordinator<K, V> walCoordinator) {
         return new IndexOperationCoordinator<>(
                 Vldtn.requireNonNull(valueTypeDescriptor,
                         "valueTypeDescriptor"),
-                Vldtn.requireNonNull(stats, "stats"),
+                Vldtn.requireNonNull(statsRecorder, "statsRecorder"),
                 Vldtn.requireNonNull(segmentAccessService,
                         "segmentAccessService"),
                 Vldtn.requireNonNull(walCoordinator, "walCoordinator"));

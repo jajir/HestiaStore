@@ -18,10 +18,10 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexStartupRecoveryTest {
@@ -132,7 +132,8 @@ class SegmentIndexStartupRecoveryTest {
             return new SegmentIndexSessionOwner<>(stateMachine, runtime,
                     new IndexCloseCoordinator<>(
                             conf.identity().name(), stateMachine,
-                            IndexOperationTrackingAccess.create(), new Stats(),
+                            IndexOperationTrackingAccess.create(),
+                            new IndexOperationStatsRecorder(),
                             runtime, directoryLock),
                     new SegmentIndexStartupCoordinator<>(
                             conf.identity().name(),

@@ -7,7 +7,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorMetricsAccess;
 import org.junit.jupiter.api.Test;
 
 class ObservedThreadPoolTest {
@@ -28,8 +27,8 @@ class ObservedThreadPoolTest {
             executor.shutdown();
             executor.awaitTermination(2, TimeUnit.SECONDS);
 
-            final IndexExecutorMetricsAccess snapshot =
-                    observedThreadPool.snapshot();
+            final ExecutorStats snapshot =
+                    observedThreadPool.statsSnapshot();
 
             assertEquals(0, snapshot.getActiveThreadCount());
             assertEquals(0, snapshot.getQueueSize());

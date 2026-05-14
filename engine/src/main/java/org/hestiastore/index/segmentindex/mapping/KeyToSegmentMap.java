@@ -34,7 +34,7 @@ public interface KeyToSegmentMap<K> extends CloseableResource {
 
     boolean extendMaxKeyIfNeeded(K key);
 
-    boolean tryApplySplitPlan(SegmentRouteSplitPlan<K> plan);
+    boolean tryReplaceRouteWithSplit(SegmentRouteSplit<K> split);
 
     void removeSegmentRoute(SegmentId segmentId);
 

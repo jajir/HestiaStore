@@ -10,7 +10,9 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 
 /**
  * Validated context for opening the runtime graph.
@@ -26,7 +28,9 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
     final TypeDescriptor<V> valueTypeDescriptor;
     final EffectiveIndexConfiguration<K, V> conf;
     final ExecutorRegistry executorRegistry;
-    final Stats stats;
+    final IndexOperationStatsRecorder operationStatsRecorder;
+    final MaintenanceStatsRecorder maintenanceStatsRecorder;
+    final SplitStatsRecorder splitStatsRecorder;
     final AtomicLong compactRequestHighWaterMark;
     final AtomicLong flushRequestHighWaterMark;
     final AtomicLong lastAppliedWalLsn;
@@ -39,7 +43,9 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> conf,
             final ExecutorRegistry executorRegistry,
-            final Stats stats,
+            final IndexOperationStatsRecorder operationStatsRecorder,
+            final MaintenanceStatsRecorder maintenanceStatsRecorder,
+            final SplitStatsRecorder splitStatsRecorder,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
             final AtomicLong lastAppliedWalLsn,
@@ -54,7 +60,12 @@ final class SegmentIndexRuntimeOpenContext<K, V> {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
-        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.operationStatsRecorder = Vldtn.requireNonNull(
+                operationStatsRecorder, "operationStatsRecorder");
+        this.maintenanceStatsRecorder = Vldtn.requireNonNull(
+                maintenanceStatsRecorder, "maintenanceStatsRecorder");
+        this.splitStatsRecorder = Vldtn.requireNonNull(splitStatsRecorder,
+                "splitStatsRecorder");
         this.compactRequestHighWaterMark = Vldtn.requireNonNull(
                 compactRequestHighWaterMark, "compactRequestHighWaterMark");
         this.flushRequestHighWaterMark = Vldtn.requireNonNull(

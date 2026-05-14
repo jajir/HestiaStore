@@ -19,12 +19,14 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
@@ -42,13 +44,18 @@ final class SegmentIndexRuntime<K, V>
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> conf,
-            final ExecutorRegistry executorRegistry, final Stats stats,
+            final ExecutorRegistry executorRegistry,
+            final IndexOperationStatsRecorder operationStatsRecorder,
+            final MaintenanceStatsRecorder maintenanceStatsRecorder,
+            final SplitStatsRecorder splitStatsRecorder,
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler) {
         return new SegmentIndexRuntimeFactory<>(
                 new SegmentIndexRuntimeOpenContext<>(directoryFacade,
                         keyTypeDescriptor,
-                        valueTypeDescriptor, conf, executorRegistry, stats,
+                        valueTypeDescriptor, conf, executorRegistry,
+                        operationStatsRecorder, maintenanceStatsRecorder,
+                        splitStatsRecorder,
                         new AtomicLong(),
                         new AtomicLong(),
                         new AtomicLong(),

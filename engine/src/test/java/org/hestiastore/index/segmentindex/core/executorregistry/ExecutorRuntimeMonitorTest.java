@@ -7,21 +7,20 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 import org.junit.jupiter.api.Test;
 
 class ExecutorRuntimeMonitorTest {
 
     @Test
-    void runtimeSnapshotUsesObservedPools() {
+    void statsSnapshotUsesObservedPools() {
         final ExecutorRuntimeMonitor runtimeMonitor =
                 new ExecutorRuntimeMonitor(
                         observedThreadPool(4, 1L, 2L),
                         observedThreadPool(8, 3L, 4L),
                         observedThreadPool(16, 5L, 6L));
 
-        final IndexExecutorRuntimeAccess snapshot = runtimeMonitor
-                .runtimeSnapshot();
+        final ExecutorRegistryStats snapshot = runtimeMonitor
+                .statsSnapshot();
 
         assertEquals(4, snapshot.getIndexMaintenance().getQueueCapacity());
         assertEquals(1L,

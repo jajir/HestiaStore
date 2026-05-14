@@ -129,10 +129,10 @@ public final class KeyToSegmentMapSynchronizedAdapter<K>
     }
 
     @Override
-    public boolean tryApplySplitPlan(final SegmentRouteSplitPlan<K> plan) {
+    public boolean tryReplaceRouteWithSplit(final SegmentRouteSplit<K> split) {
         writeLock.lock();
         try {
-            return delegate.tryApplySplitPlan(plan);
+            return delegate.tryReplaceRouteWithSplit(split);
         } finally {
             writeLock.unlock();
         }

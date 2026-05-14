@@ -5,7 +5,6 @@ import java.util.function.LongSupplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.metrics.Stats;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -22,7 +21,7 @@ public final class MaintenanceServiceBuilder<K, V> {
     private StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private SplitService splitService;
     private IndexRetryPolicy retryPolicy;
-    private Stats stats;
+    private MaintenanceStatsRecorder statsRecorder;
     private ExecutorService maintenanceExecutor;
     private Runnable checkpointAction;
     private LongSupplier nanoTimeSupplier = System::nanoTime;
@@ -82,13 +81,15 @@ public final class MaintenanceServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the stats sink used for maintenance telemetry.
+     * Sets the stats recorder used for maintenance telemetry.
      *
-     * @param stats stats sink
+     * @param statsRecorder stats recorder
      * @return this builder
      */
-    public MaintenanceServiceBuilder<K, V> stats(final Stats stats) {
-        this.stats = Vldtn.requireNonNull(stats, "stats");
+    public MaintenanceServiceBuilder<K, V> statsRecorder(
+            final MaintenanceStatsRecorder statsRecorder) {
+        this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
+                "statsRecorder");
         return this;
     }
 
@@ -139,7 +140,7 @@ public final class MaintenanceServiceBuilder<K, V> {
                         "stableSegmentGateway"),
                 Vldtn.requireNonNull(splitService, "splitService"),
                 Vldtn.requireNonNull(retryPolicy, "retryPolicy"),
-                Vldtn.requireNonNull(stats, "stats"),
+                Vldtn.requireNonNull(statsRecorder, "statsRecorder"),
                 Vldtn.requireNonNull(maintenanceExecutor,
                         "maintenanceExecutor"),
                 Vldtn.requireNonNull(checkpointAction, "checkpointAction"),

@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplitPlan;
+import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,19 +37,19 @@ class RouteSplitPublishCoordinatorTest {
     private DefaultSegmentMaterializationService<Integer, String> materializationService;
 
     private RouteSplitPublishCoordinator<Integer, String> coordinator;
-    private SegmentRouteSplitPlan<Integer> splitPlan;
+    private SegmentRouteSplit<Integer> splitPlan;
 
     @BeforeEach
     void setUp() {
         coordinator = new RouteSplitPublishCoordinator<>(keyToSegmentMap,
                 segmentRegistry, materializationService);
-        splitPlan = new SegmentRouteSplitPlan<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
-                UPPER_SEGMENT_ID, 2, SegmentRouteSplitPlan.SplitMode.SPLIT);
+        splitPlan = new SegmentRouteSplit<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
+                UPPER_SEGMENT_ID, 2);
     }
 
     @Test
     void applyPreparedSplitReturnsMapResult() {
-        when(keyToSegmentMap.tryApplySplitPlan(splitPlan)).thenReturn(true);
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(true);
 
         final boolean published = coordinator.applyPreparedSplit(splitPlan);
 
@@ -58,7 +58,7 @@ class RouteSplitPublishCoordinatorTest {
 
     @Test
     void applyPreparedSplitRethrowsFatalMapFailure() {
-        when(keyToSegmentMap.tryApplySplitPlan(splitPlan))
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan))
                 .thenThrow(new IllegalStateException("boom"));
 
         final IllegalStateException thrown = assertThrows(
@@ -72,14 +72,14 @@ class RouteSplitPublishCoordinatorTest {
 
     @Test
     void applyPreparedSplitFlushesMapBeforeDeletingParent() {
-        when(keyToSegmentMap.tryApplySplitPlan(splitPlan)).thenReturn(true);
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(true);
         when(segmentRegistry.deleteSegmentIfAvailable(PARENT_SEGMENT_ID))
                 .thenReturn(true);
 
         coordinator.applyPreparedSplit(splitPlan);
 
         final InOrder inOrder = inOrder(keyToSegmentMap, segmentRegistry);
-        inOrder.verify(keyToSegmentMap).tryApplySplitPlan(splitPlan);
+        inOrder.verify(keyToSegmentMap).tryReplaceRouteWithSplit(splitPlan);
         inOrder.verify(keyToSegmentMap).flushIfDirty();
         inOrder.verify(segmentRegistry)
                 .deleteSegmentIfAvailable(PARENT_SEGMENT_ID);
@@ -87,7 +87,7 @@ class RouteSplitPublishCoordinatorTest {
 
     @Test
     void applyPreparedSplitDeletesMaterializedChildrenOnMapFailure() {
-        when(keyToSegmentMap.tryApplySplitPlan(splitPlan)).thenReturn(false);
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(false);
 
         coordinator.applyPreparedSplit(splitPlan);
 
@@ -97,7 +97,7 @@ class RouteSplitPublishCoordinatorTest {
 
     @Test
     void applyPreparedSplitDoesNotDeletePublishedChildrenOnCompletionFailure() {
-        when(keyToSegmentMap.tryApplySplitPlan(splitPlan)).thenReturn(true);
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(true);
         doThrow(new IllegalStateException("flush failed"))
                 .when(keyToSegmentMap).flushIfDirty();
 
@@ -112,7 +112,7 @@ class RouteSplitPublishCoordinatorTest {
 
     @Test
     void applyPreparedSplitRethrowsCleanupFailureAfterMapRejectsSplit() {
-        when(keyToSegmentMap.tryApplySplitPlan(splitPlan)).thenReturn(false);
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(false);
         doThrow(new IllegalStateException("cleanup failed"))
                 .when(materializationService)
                 .deletePreparedSegment(LOWER_SEGMENT_ID);

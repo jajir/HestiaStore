@@ -28,7 +28,7 @@ class ObservedThreadPoolFactoryTest {
             assertThrows(RejectedExecutionException.class,
                     () -> executor.execute(() -> {
                     }));
-            assertEquals(1L, pool.snapshot().getRejectedTaskCount());
+            assertEquals(1L, pool.statsSnapshot().getRejectedTaskCount());
         } finally {
             blocker.countDown();
             executor.shutdownNow();
@@ -51,7 +51,7 @@ class ObservedThreadPoolFactoryTest {
             executor.execute(() -> {
             });
 
-            assertEquals(1L, pool.snapshot().getCallerRunsCount());
+            assertEquals(1L, pool.statsSnapshot().getCallerRunsCount());
         } finally {
             blocker.countDown();
             executor.shutdownNow();

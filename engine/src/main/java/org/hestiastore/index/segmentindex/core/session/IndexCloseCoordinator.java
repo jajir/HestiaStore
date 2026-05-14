@@ -3,7 +3,8 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.metrics.Stats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,14 +19,14 @@ final class IndexCloseCoordinator<K, V> {
     private final String indexName;
     private final SegmentIndexStateMachine stateMachine;
     private final IndexOperationTrackingAccess operationTracker;
-    private final Stats stats;
+    private final IndexOperationStatsRecorder operationStatsRecorder;
     private final SegmentIndexRuntime<K, V> runtime;
     private final IndexDirectoryLock directoryLock;
 
     IndexCloseCoordinator(final String indexName,
             final SegmentIndexStateMachine stateMachine,
             final IndexOperationTrackingAccess operationTracker,
-            final Stats stats,
+            final IndexOperationStatsRecorder operationStatsRecorder,
             final SegmentIndexRuntime<K, V> runtime,
             final IndexDirectoryLock directoryLock) {
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
@@ -33,7 +34,8 @@ final class IndexCloseCoordinator<K, V> {
                 "stateMachine");
         this.operationTracker = Vldtn.requireNonNull(operationTracker,
                 "operationTracker");
-        this.stats = Vldtn.requireNonNull(stats, "stats");
+        this.operationStatsRecorder = Vldtn.requireNonNull(
+                operationStatsRecorder, "operationStatsRecorder");
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
         this.directoryLock = Vldtn.requireNonNull(directoryLock,
                 "directoryLock");
@@ -92,6 +94,8 @@ final class IndexCloseCoordinator<K, V> {
         if (!LOGGER.isDebugEnabled()) {
             return;
         }
+        final IndexOperationStats stats =
+                operationStatsRecorder.statsSnapshot();
         LOGGER.debug(String.format(
                 "Index is closing, where was %s gets, %s puts and %s deletes.",
                 F.fmt(stats.getGetCount()),

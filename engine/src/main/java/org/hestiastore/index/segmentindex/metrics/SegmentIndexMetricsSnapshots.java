@@ -8,7 +8,9 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -31,11 +33,12 @@ final class SegmentIndexMetricsSnapshots {
      * @param conf index configuration
      * @param keyToSegmentMap runtime route map
      * @param segmentRegistry runtime segment registry
-     * @param splitSnapshotSupplier split runtime snapshot supplier
+     * @param splitStatsSupplier split runtime stats supplier
      * @param executorRegistry executor runtime registry
      * @param runtimeTuningState mutable runtime tuning state
      * @param walRuntime WAL runtime
-     * @param stats live operation statistics
+     * @param indexOperationStatsSupplier point-operation stats supplier
+     * @param maintenanceStatsSupplier maintenance stats supplier
      * @param compactRequestHighWaterMark compact request high-water mark
      * @param flushRequestHighWaterMark flush request high-water mark
      * @param lastAppliedWalLsn last applied WAL LSN
@@ -48,10 +51,12 @@ final class SegmentIndexMetricsSnapshots {
             final EffectiveIndexConfiguration<K, V> conf,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
-            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier,
+            final Supplier<SplitStats> splitStatsSupplier,
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
-            final WalRuntime<K, V> walRuntime, final Stats stats,
+            final WalRuntime<K, V> walRuntime,
+            final Supplier<IndexOperationStats> indexOperationStatsSupplier,
+            final Supplier<MaintenanceStats> maintenanceStatsSupplier,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
             final AtomicLong lastAppliedWalLsn,
@@ -61,12 +66,13 @@ final class SegmentIndexMetricsSnapshots {
                 .withConf(conf)
                 .withKeyToSegmentMap(keyToSegmentMap)
                 .withSegmentRegistry(segmentRegistry)
-                .withSplitSnapshotSupplier(splitSnapshotSupplier)
+                .withSplitStatsSupplier(splitStatsSupplier)
                 .withExecutorRegistry(executorRegistry)
                 .withRuntimeTuningState(runtimeTuningState)
                 .withChunkStoreCache(new LruChunkStoreCache<>(0))
                 .withWalRuntime(walRuntime)
-                .withStats(stats)
+                .withIndexOperationStatsSupplier(indexOperationStatsSupplier)
+                .withMaintenanceStatsSupplier(maintenanceStatsSupplier)
                 .withCompactRequestHighWaterMark(compactRequestHighWaterMark)
                 .withFlushRequestHighWaterMark(flushRequestHighWaterMark)
                 .withLastAppliedWalLsn(lastAppliedWalLsn)

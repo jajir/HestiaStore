@@ -4,7 +4,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hestiastore.index.CloseableResource;
-import org.hestiastore.index.segmentindex.metrics.IndexExecutorRuntimeAccess;
 
 /**
  * Owns executor lifecycle for SegmentIndex subsystems.
@@ -61,10 +60,10 @@ public interface ExecutorRegistry extends CloseableResource {
     ExecutorService getRegistryMaintenanceExecutor();
 
     /**
-     * Captures current executor runtime metrics.
+     * Captures current executor runtime stats.
      *
-     * @return executor runtime snapshot
+     * @return executor registry stats snapshot
      * @throws IllegalStateException when registry has already been closed
      */
-    IndexExecutorRuntimeAccess runtimeSnapshot();
+    ExecutorRegistryStats statsSnapshot();
 }

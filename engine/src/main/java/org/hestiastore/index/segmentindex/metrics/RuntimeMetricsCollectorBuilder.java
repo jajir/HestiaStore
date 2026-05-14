@@ -8,7 +8,9 @@ import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.split.SplitMetricsSnapshot;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
+import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -25,12 +27,13 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
     private EffectiveIndexConfiguration<K, V> conf;
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
-    private Supplier<SplitMetricsSnapshot> splitSnapshotSupplier;
+    private Supplier<SplitStats> splitStatsSupplier;
     private ExecutorRegistry executorRegistry;
     private RuntimeTuningState runtimeTuningState;
     private ChunkStoreCache<K, V> chunkStoreCache;
     private WalRuntime<K, V> walRuntime;
-    private Stats stats;
+    private Supplier<IndexOperationStats> indexOperationStatsSupplier;
+    private Supplier<MaintenanceStats> maintenanceStatsSupplier;
     private AtomicLong compactRequestHighWaterMark;
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
@@ -57,9 +60,9 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
         return this;
     }
 
-    public RuntimeMetricsCollectorBuilder<K, V> withSplitSnapshotSupplier(
-            final Supplier<SplitMetricsSnapshot> splitSnapshotSupplier) {
-        this.splitSnapshotSupplier = splitSnapshotSupplier;
+    public RuntimeMetricsCollectorBuilder<K, V> withSplitStatsSupplier(
+            final Supplier<SplitStats> splitStatsSupplier) {
+        this.splitStatsSupplier = splitStatsSupplier;
         return this;
     }
 
@@ -87,8 +90,15 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
         return this;
     }
 
-    public RuntimeMetricsCollectorBuilder<K, V> withStats(final Stats stats) {
-        this.stats = stats;
+    public RuntimeMetricsCollectorBuilder<K, V> withIndexOperationStatsSupplier(
+            final Supplier<IndexOperationStats> indexOperationStatsSupplier) {
+        this.indexOperationStatsSupplier = indexOperationStatsSupplier;
+        return this;
+    }
+
+    public RuntimeMetricsCollectorBuilder<K, V> withMaintenanceStatsSupplier(
+            final Supplier<MaintenanceStats> maintenanceStatsSupplier) {
+        this.maintenanceStatsSupplier = maintenanceStatsSupplier;
         return this;
     }
 
@@ -129,8 +139,8 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
                                 "keyToSegmentMap"),
                         Vldtn.requireNonNull(segmentRegistry,
                                 "segmentRegistry"),
-                        Vldtn.requireNonNull(splitSnapshotSupplier,
-                                "splitSnapshotSupplier"),
+                        Vldtn.requireNonNull(splitStatsSupplier,
+                                "splitStatsSupplier"),
                         Vldtn.requireNonNull(executorRegistry,
                                 "executorRegistry"),
                         Vldtn.requireNonNull(runtimeTuningState,
@@ -138,7 +148,10 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
                         Vldtn.requireNonNull(chunkStoreCache,
                                 "chunkStoreCache"),
                         Vldtn.requireNonNull(walRuntime, "walRuntime"),
-                        Vldtn.requireNonNull(stats, "stats"),
+                        Vldtn.requireNonNull(indexOperationStatsSupplier,
+                                "indexOperationStatsSupplier"),
+                        Vldtn.requireNonNull(maintenanceStatsSupplier,
+                                "maintenanceStatsSupplier"),
                         Vldtn.requireNonNull(compactRequestHighWaterMark,
                                 "compactRequestHighWaterMark"),
                         Vldtn.requireNonNull(flushRequestHighWaterMark,
