@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.segmentaccess;
+package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,12 +10,12 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
 
-class SegmentAccessServiceBuilderTest {
+class SegmentLeaseServiceBuilderTest {
 
     @Test
     void buildCreatesServiceFromDependencies() {
-        final SegmentAccessService<Integer, String> service =
-                SegmentAccessService.<Integer, String>builder()
+        final SegmentLeaseService<Integer, String> service =
+                SegmentLeaseService.<Integer, String>builder()
                         .keyToSegmentMap(mockKeyToSegmentMap())
                         .segmentRegistry(mockSegmentRegistry())
                         .segmentTopology(mockSegmentTopology())
@@ -27,8 +27,8 @@ class SegmentAccessServiceBuilderTest {
 
     @Test
     void buildRejectsMissingKeyToSegmentMap() {
-        final SegmentAccessServiceBuilder<Integer, String> builder =
-                SegmentAccessService.<Integer, String>builder()
+        final SegmentLeaseServiceBuilder<Integer, String> builder =
+                SegmentLeaseService.<Integer, String>builder()
                         .segmentRegistry(mockSegmentRegistry())
                         .segmentTopology(mockSegmentTopology())
                         .retryPolicy(mock(IndexRetryPolicy.class));
@@ -38,8 +38,8 @@ class SegmentAccessServiceBuilderTest {
 
     @Test
     void keyToSegmentMapRejectsNull() {
-        final SegmentAccessServiceBuilder<Integer, String> builder =
-                SegmentAccessService.builder();
+        final SegmentLeaseServiceBuilder<Integer, String> builder =
+                SegmentLeaseService.builder();
 
         assertThrows(IllegalArgumentException.class,
                 () -> builder.keyToSegmentMap(null));

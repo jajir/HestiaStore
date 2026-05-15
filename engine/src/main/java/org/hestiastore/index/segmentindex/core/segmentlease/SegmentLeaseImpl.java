@@ -1,16 +1,16 @@
-package org.hestiastore.index.segmentindex.core.segmentaccess;
+package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLease;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 
-final class SegmentAccessImpl<K, V> implements SegmentAccess<K, V> {
+final class SegmentLeaseImpl<K, V> implements SegmentLease<K, V> {
 
     private final RouteLease routeLease;
     private final BlockingSegment<K, V> segment;
 
-    SegmentAccessImpl(final RouteLease routeLease,
+    SegmentLeaseImpl(final RouteLease routeLease,
             final BlockingSegment<K, V> segment) {
         this.routeLease = Vldtn.requireNonNull(routeLease, "routeLease");
         this.segment = Vldtn.requireNonNull(segment, "segment");

@@ -2,8 +2,8 @@ package org.hestiastore.index.segmentindex.core.operations;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccess;
-import org.hestiastore.index.segmentindex.core.segmentaccess.SegmentAccessService;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
@@ -17,18 +17,18 @@ final class IndexOperationCoordinator<K, V>
         implements SegmentIndexOperationAccess<K, V> {
 
     private final IndexOperationStatsRecorder statsRecorder;
-    private final SegmentAccessService<K, V> segmentAccessService;
+    private final SegmentLeaseService<K, V> segmentLeaseService;
     private final IndexWalCoordinator<K, V> walCoordinator;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
     IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
             final IndexOperationStatsRecorder statsRecorder,
-            final SegmentAccessService<K, V> segmentAccessService,
+            final SegmentLeaseService<K, V> segmentLeaseService,
             final IndexWalCoordinator<K, V> walCoordinator) {
         this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
                 "statsRecorder");
-        this.segmentAccessService = Vldtn.requireNonNull(segmentAccessService,
-                "segmentAccessService");
+        this.segmentLeaseService = Vldtn.requireNonNull(segmentLeaseService,
+                "segmentLeaseService");
         this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
                 "walCoordinator");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
@@ -80,20 +80,20 @@ final class IndexOperationCoordinator<K, V>
     }
 
     private V readFromSegment(final K key) {
-        final SegmentAccess<K, V> access = segmentAccessService.acquireForRead(
+        final SegmentLease<K, V> lease = segmentLeaseService.acquireForRead(
                 key);
-        if (access == null) {
+        if (lease == null) {
             return null;
         }
-        try (SegmentAccess<K, V> activeAccess = access) {
-            return activeAccess.segment().get(key);
+        try (SegmentLease<K, V> activeLease = lease) {
+            return activeLease.segment().get(key);
         }
     }
 
     private void writeToSegment(final K key, final V value) {
-        try (SegmentAccess<K, V> access = segmentAccessService
+        try (SegmentLease<K, V> lease = segmentLeaseService
                 .acquireForWrite(key)) {
-            access.segment().put(key, value);
+            lease.segment().put(key, value);
         }
     }
 

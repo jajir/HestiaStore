@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.segmentaccess;
+package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentAccessImplTest {
+class SegmentLeaseImplTest {
 
     @Mock
     private RouteLease routeLease;
@@ -23,28 +23,28 @@ class SegmentAccessImplTest {
     @Mock
     private BlockingSegment<Integer, String> segment;
 
-    private SegmentAccessImpl<Integer, String> access;
+    private SegmentLeaseImpl<Integer, String> lease;
 
     @BeforeEach
     void setUp() {
-        access = new SegmentAccessImpl<>(routeLease, segment);
+        lease = new SegmentLeaseImpl<>(routeLease, segment);
     }
 
     @Test
     void segmentIdReturnsRouteLeaseSegmentId() {
         when(routeLease.segmentId()).thenReturn(SegmentId.of(7));
 
-        assertEquals(SegmentId.of(7), access.segmentId());
+        assertEquals(SegmentId.of(7), lease.segmentId());
     }
 
     @Test
     void segmentReturnsLoadedSegment() {
-        assertSame(segment, access.segment());
+        assertSame(segment, lease.segment());
     }
 
     @Test
     void closeClosesRouteLease() {
-        access.close();
+        lease.close();
 
         verify(routeLease).close();
     }

@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.segmentaccess;
+package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
@@ -7,19 +7,19 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
- * Builder for {@link SegmentAccessService} instances.
+ * Builder for {@link SegmentLeaseService} instances.
  *
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentAccessServiceBuilder<K, V> {
+public final class SegmentLeaseServiceBuilder<K, V> {
 
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
     private SegmentTopology<K> segmentTopology;
     private IndexRetryPolicy retryPolicy;
 
-    SegmentAccessServiceBuilder() {
+    SegmentLeaseServiceBuilder() {
     }
 
     /**
@@ -28,7 +28,7 @@ public final class SegmentAccessServiceBuilder<K, V> {
      * @param keyToSegmentMap key-to-segment map
      * @return this builder
      */
-    public SegmentAccessServiceBuilder<K, V> keyToSegmentMap(
+    public SegmentLeaseServiceBuilder<K, V> keyToSegmentMap(
             final KeyToSegmentMap<K> keyToSegmentMap) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -41,7 +41,7 @@ public final class SegmentAccessServiceBuilder<K, V> {
      * @param segmentRegistry segment registry
      * @return this builder
      */
-    public SegmentAccessServiceBuilder<K, V> segmentRegistry(
+    public SegmentLeaseServiceBuilder<K, V> segmentRegistry(
             final SegmentRegistry<K, V> segmentRegistry) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 "segmentRegistry");
@@ -54,7 +54,7 @@ public final class SegmentAccessServiceBuilder<K, V> {
      * @param segmentTopology segment topology
      * @return this builder
      */
-    public SegmentAccessServiceBuilder<K, V> segmentTopology(
+    public SegmentLeaseServiceBuilder<K, V> segmentTopology(
             final SegmentTopology<K> segmentTopology) {
         this.segmentTopology = Vldtn.requireNonNull(segmentTopology,
                 "segmentTopology");
@@ -62,12 +62,12 @@ public final class SegmentAccessServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the retry policy used while waiting for route access.
+     * Sets the retry policy used while waiting for route leases.
      *
      * @param retryPolicy retry policy
      * @return this builder
      */
-    public SegmentAccessServiceBuilder<K, V> retryPolicy(
+    public SegmentLeaseServiceBuilder<K, V> retryPolicy(
             final IndexRetryPolicy retryPolicy) {
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         return this;
@@ -76,10 +76,10 @@ public final class SegmentAccessServiceBuilder<K, V> {
     /**
      * Builds the service.
      *
-     * @return segment access service
+     * @return segment lease service
      */
-    public SegmentAccessService<K, V> build() {
-        return new SegmentAccessServiceImpl<>(
+    public SegmentLeaseService<K, V> build() {
+        return new SegmentLeaseServiceImpl<>(
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
