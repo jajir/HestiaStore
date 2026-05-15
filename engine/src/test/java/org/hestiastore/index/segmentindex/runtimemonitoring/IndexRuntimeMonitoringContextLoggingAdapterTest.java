@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,7 @@ class IndexRuntimeMonitoringContextLoggingAdapterTest {
 
         final IndexRuntimeMonitoringContextLoggingAdapter adapter =
                 new IndexRuntimeMonitoringContextLoggingAdapter(delegate,
-                        new IndexMdcScopeRunner("idx"));
+                        new IndexMdcCallWrapper("idx"));
 
         assertSame(snapshot, adapter.snapshot());
         assertEquals("idx", observedMdc.get());

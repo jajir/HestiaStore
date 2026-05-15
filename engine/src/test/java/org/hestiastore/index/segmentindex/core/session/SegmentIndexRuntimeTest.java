@@ -26,7 +26,6 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -94,8 +93,8 @@ class SegmentIndexRuntimeTest {
     @Test
     @SuppressWarnings("unchecked")
     void closeAfterFailedInitializationClosesRuntimeResourcesInOrder() {
-        final SegmentTopologyRuntime<Integer, String> topologyRuntime =
-                mock(SegmentTopologyRuntime.class);
+        final SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime =
+                mock(SegmentTopologyRuntimeAccess.class);
         final KeyToSegmentMap<Integer> keyToSegmentMap =
                 mock(KeyToSegmentMap.class);
         final SegmentRegistry<Integer, String> segmentRegistry =
@@ -119,7 +118,7 @@ class SegmentIndexRuntimeTest {
 
     @SuppressWarnings("unchecked")
     private SegmentIndexRuntime<Integer, String> newRuntime(
-            final SegmentTopologyRuntime<Integer, String> topologyRuntime,
+            final SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime,
             final KeyToSegmentMap<Integer> keyToSegmentMap,
             final SegmentRegistry<Integer, String> segmentRegistry,
             final WalRuntime<Integer, String> walRuntime) {

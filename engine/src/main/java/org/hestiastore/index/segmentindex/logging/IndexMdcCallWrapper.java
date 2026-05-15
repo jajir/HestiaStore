@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core;
+package org.hestiastore.index.segmentindex.logging;
 
 import java.util.function.Supplier;
 
@@ -7,11 +7,11 @@ import org.hestiastore.index.Vldtn;
 /**
  * Runs delegated operations with the index name present in MDC.
  */
-public final class IndexMdcScopeRunner {
+public final class IndexMdcCallWrapper {
 
     private final String indexName;
 
-    public IndexMdcScopeRunner(final String indexName) {
+    public IndexMdcCallWrapper(final String indexName) {
         this.indexName = Vldtn.requireNotBlank(indexName, "indexName");
     }
 

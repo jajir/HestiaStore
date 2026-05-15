@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.configuration.tuning;
+package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
@@ -6,7 +6,12 @@ import static org.mockito.Mockito.when;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,7 +60,7 @@ class RuntimeTuningContextLoggingAdapterTest {
 
         final RuntimeTuningContextLoggingAdapter adapter =
                 new RuntimeTuningContextLoggingAdapter(delegate,
-                        new IndexMdcScopeRunner("idx"));
+                        new IndexMdcCallWrapper("idx"));
 
         assertSame(actual, adapter.current());
         assertSame(original, adapter.original());

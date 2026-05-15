@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.maintenance;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 
 /**
  * Adds index MDC context around maintenance commands.
@@ -10,38 +10,38 @@ public final class SegmentIndexMaintenanceContextLoggingAdapter
         implements SegmentIndexMaintenance {
 
     private final SegmentIndexMaintenance delegate;
-    private final IndexMdcScopeRunner contextScopeRunner;
+    private final IndexMdcCallWrapper contextCallWrapper;
 
     public SegmentIndexMaintenanceContextLoggingAdapter(
             final SegmentIndexMaintenance delegate,
-            final IndexMdcScopeRunner contextScopeRunner) {
+            final IndexMdcCallWrapper contextCallWrapper) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
-        this.contextScopeRunner = Vldtn.requireNonNull(contextScopeRunner,
-                "contextScopeRunner");
+        this.contextCallWrapper = Vldtn.requireNonNull(contextCallWrapper,
+                "contextCallWrapper");
     }
 
     @Override
     public void compact() {
-        contextScopeRunner.run(delegate::compact);
+        contextCallWrapper.run(delegate::compact);
     }
 
     @Override
     public void compactAndWait() {
-        contextScopeRunner.run(delegate::compactAndWait);
+        contextCallWrapper.run(delegate::compactAndWait);
     }
 
     @Override
     public void flush() {
-        contextScopeRunner.run(delegate::flush);
+        contextCallWrapper.run(delegate::flush);
     }
 
     @Override
     public void flushAndWait() {
-        contextScopeRunner.run(delegate::flushAndWait);
+        contextCallWrapper.run(delegate::flushAndWait);
     }
 
     @Override
     public void checkAndRepairConsistency() {
-        contextScopeRunner.run(delegate::checkAndRepairConsistency);
+        contextCallWrapper.run(delegate::checkAndRepairConsistency);
     }
 }

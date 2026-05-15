@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core;
+package org.hestiastore.index.segmentindex.logging;
 
 import org.hestiastore.index.Vldtn;
 import org.slf4j.MDC;

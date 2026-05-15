@@ -1,7 +1,6 @@
-package org.hestiastore.index.segmentindex.core.topology;
+package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 
@@ -12,7 +11,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeTestAccess;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,11 +50,9 @@ class SegmentTopologyRuntimeTest {
 
     @Test
     void createBuildsUnifiedSplitManagementBoundary() {
-        final SegmentTopologyRuntime<Integer, String> topologyRuntime =
+        final SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime =
                 SegmentIndexRuntimeTestAccess.topologyRuntime(runtime);
 
-        assertNotNull(topologyRuntime.splitService());
-        assertNotNull(topologyRuntime.segmentAccessService());
         assertDoesNotThrow(topologyRuntime::requestFullSplitScan);
         assertDoesNotThrow(
                 topologyRuntime::cleanupOrphanedSegmentDirectories);
