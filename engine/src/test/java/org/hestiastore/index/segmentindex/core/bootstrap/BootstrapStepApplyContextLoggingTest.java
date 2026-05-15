@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
@@ -43,7 +43,7 @@ class BootstrapStepApplyContextLoggingTest {
     }
 
     @Test
-    void apply_usesInternalIndexDirectlyWhenMdcRunnerIsMissing() {
+    void apply_usesInternalIndexDirectlyWhenMdcCallWrapperIsMissing() {
         final SegmentIndexBootstrapState<Integer, String> state =
                 stateWithInternalIndex();
 
@@ -55,13 +55,13 @@ class BootstrapStepApplyContextLoggingTest {
     }
 
     @Test
-    void apply_wrapsInternalIndexWhenMdcRunnerExists() {
+    void apply_wrapsInternalIndexWhenMdcCallWrapperExists() {
         when(internalIndex.runtimeTuning()).thenReturn(runtimeTuning);
         when(internalIndex.runtimeMonitoring()).thenReturn(runtimeMonitoring);
         when(internalIndex.maintenance()).thenReturn(maintenance);
         final SegmentIndexBootstrapState<Integer, String> state =
                 stateWithInternalIndex();
-        state.setIndexMdcScopeRunner(new IndexMdcScopeRunner(
+        state.setIndexMdcCallWrapper(new IndexMdcCallWrapper(
                 "bootstrap-step-context-logging"));
 
         assertDoesNotThrow(() -> step.apply(

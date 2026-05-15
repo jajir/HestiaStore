@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.streaming;
+package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
@@ -9,9 +9,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.session.IndexOperationTrackingAccess;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexDataAccess;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexTrackedOperationRunner;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -26,7 +26,6 @@ import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker;
 import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
@@ -65,13 +64,13 @@ final class SegmentIndexRuntime<K, V>
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexRuntimeStorage<K, V> storage;
-    private final SegmentTopologyRuntime<K, V> topologyRuntime;
+    private final SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
     private final SegmentIndexRuntimeServices<K, V> services;
     private final WalRuntime<K, V> walRuntime;
 
     SegmentIndexRuntime(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentIndexRuntimeStorage<K, V> storage,
-            final SegmentTopologyRuntime<K, V> topologyRuntime,
+            final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
             final WalRuntime<K, V> walRuntime,
             final SegmentIndexRuntimeServices<K, V> services) {
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -108,7 +107,7 @@ final class SegmentIndexRuntime<K, V>
         return walRuntime;
     }
 
-    SegmentTopologyRuntime<K, V> topologyRuntime() {
+    SegmentTopologyRuntimeAccess<K, V> topologyRuntime() {
         return topologyRuntime;
     }
 
