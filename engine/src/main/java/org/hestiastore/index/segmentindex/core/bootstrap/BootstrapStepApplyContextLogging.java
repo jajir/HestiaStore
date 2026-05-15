@@ -11,11 +11,11 @@ final class BootstrapStepApplyContextLogging<K, V>
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        if (!state.hasIndexMdcScopeRunner()) {
+        if (!state.hasIndexMdcCallWrapper()) {
             state.setManagedIndex(state.getInternalIndex());
             return;
         }
         state.setManagedIndex(new IndexContextLoggingAdapter<>(
-                state.getInternalIndex(), state.getIndexMdcScopeRunner()));
+                state.getInternalIndex(), state.getIndexMdcCallWrapper()));
     }
 }

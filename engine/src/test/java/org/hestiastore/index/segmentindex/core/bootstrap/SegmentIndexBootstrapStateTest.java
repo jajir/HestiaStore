@@ -13,7 +13,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.junit.jupiter.api.Test;
@@ -49,12 +49,12 @@ class SegmentIndexBootstrapStateTest {
                 state::getValueTypeDescriptor);
         assertThrows(IllegalStateException.class, state::getExecutorRegistry);
         assertThrows(IllegalStateException.class,
-                state::getIndexMdcScopeRunner);
+                state::getIndexMdcCallWrapper);
         assertThrows(IllegalStateException.class, state::getInternalIndex);
         assertThrows(IllegalStateException.class, state::getManagedIndex);
         assertThrows(IllegalStateException.class, state::getIndex);
         assertThrows(IllegalStateException.class, state::getResult);
-        assertFalse(state.hasIndexMdcScopeRunner());
+        assertFalse(state.hasIndexMdcCallWrapper());
         assertFalse(state.hasResult());
     }
 
@@ -68,15 +68,15 @@ class SegmentIndexBootstrapStateTest {
                 new TypeDescriptorInteger();
         final TypeDescriptorShortString valueTypeDescriptor =
                 new TypeDescriptorShortString();
-        final IndexMdcScopeRunner scopeRunner =
-                new IndexMdcScopeRunner("bootstrap-state-test");
+        final IndexMdcCallWrapper callWrapper =
+                new IndexMdcCallWrapper("bootstrap-state-test");
 
         state.setConfiguration(configuration);
         state.setConfigurationWriteRequired(true);
         state.setKeyTypeDescriptor(keyTypeDescriptor);
         state.setValueTypeDescriptor(valueTypeDescriptor);
         state.setExecutorRegistry(executorRegistry);
-        state.setIndexMdcScopeRunner(scopeRunner);
+        state.setIndexMdcCallWrapper(callWrapper);
         state.setInternalIndex(internalIndex);
         state.setManagedIndex(managedIndex);
         state.setIndex(index);
@@ -87,8 +87,8 @@ class SegmentIndexBootstrapStateTest {
         assertSame(keyTypeDescriptor, state.getKeyTypeDescriptor());
         assertSame(valueTypeDescriptor, state.getValueTypeDescriptor());
         assertSame(executorRegistry, state.getExecutorRegistry());
-        assertSame(scopeRunner, state.getIndexMdcScopeRunner());
-        assertTrue(state.hasIndexMdcScopeRunner());
+        assertSame(callWrapper, state.getIndexMdcCallWrapper());
+        assertTrue(state.hasIndexMdcCallWrapper());
         assertSame(internalIndex, state.getInternalIndex());
         assertSame(managedIndex, state.getManagedIndex());
         assertSame(index, state.getIndex());
@@ -110,7 +110,7 @@ class SegmentIndexBootstrapStateTest {
         assertThrows(IllegalArgumentException.class,
                 () -> state.setExecutorRegistry(null));
         assertThrows(IllegalArgumentException.class,
-                () -> state.setIndexMdcScopeRunner(null));
+                () -> state.setIndexMdcCallWrapper(null));
         assertThrows(IllegalArgumentException.class,
                 () -> state.setInternalIndex(null));
         assertThrows(IllegalArgumentException.class,

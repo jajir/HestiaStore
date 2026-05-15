@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core;
+package org.hestiastore.index.segmentindex.logging;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
-class IndexMdcScopeRunnerTest {
+class IndexMdcCallWrapperTest {
 
     @AfterEach
     void tearDown() {
@@ -21,17 +21,17 @@ class IndexMdcScopeRunnerTest {
     void constructorRejectsBlankIndexName() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexMdcScopeRunner(" "));
+                () -> new IndexMdcCallWrapper(" "));
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
 
     @Test
     void openScopeSetsAndRestoresIndexNameInMdc() {
-        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner("idx");
+        final IndexMdcCallWrapper wrapper = new IndexMdcCallWrapper("idx");
 
         MDC.put("index.name", "outer");
-        try (IndexMdcScope ignored = runner.openScope()) {
+        try (IndexMdcScope ignored = wrapper.openScope()) {
             assertEquals("idx", MDC.get("index.name"));
         }
 
@@ -40,9 +40,9 @@ class IndexMdcScopeRunnerTest {
 
     @Test
     void openScopeClearsTemporaryIndexNameWhenNoPreviousValueExists() {
-        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner("idx");
+        final IndexMdcCallWrapper wrapper = new IndexMdcCallWrapper("idx");
 
-        try (IndexMdcScope ignored = runner.openScope()) {
+        try (IndexMdcScope ignored = wrapper.openScope()) {
             assertEquals("idx", MDC.get("index.name"));
         }
 
@@ -51,12 +51,12 @@ class IndexMdcScopeRunnerTest {
 
     @Test
     void runSetsAndRestoresIndexNameInMdc() {
-        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner(
+        final IndexMdcCallWrapper wrapper = new IndexMdcCallWrapper(
                 "idx");
         final AtomicReference<String> observed = new AtomicReference<>();
 
         MDC.put("index.name", "outer");
-        runner.run(() -> observed.set(MDC.get("index.name")));
+        wrapper.run(() -> observed.set(MDC.get("index.name")));
 
         assertEquals("idx", observed.get());
         assertEquals("outer", MDC.get("index.name"));
@@ -64,10 +64,10 @@ class IndexMdcScopeRunnerTest {
 
     @Test
     void supplyClearsTemporaryIndexNameWhenNoPreviousValueExists() {
-        final IndexMdcScopeRunner runner = new IndexMdcScopeRunner(
+        final IndexMdcCallWrapper wrapper = new IndexMdcCallWrapper(
                 "idx");
 
-        final String value = runner.supply(() -> MDC.get("index.name"));
+        final String value = wrapper.supply(() -> MDC.get("index.name"));
 
         assertEquals("idx", value);
         assertNull(MDC.get("index.name"));

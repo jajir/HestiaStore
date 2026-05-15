@@ -77,6 +77,14 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.hestiastore:engine</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <extraJars>
+                                <extraJar>${project.parent.basedir}/engine/target/engine-${project.version}.jar</extraJar>
+                            </extraJars>
                             <transformers>
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">

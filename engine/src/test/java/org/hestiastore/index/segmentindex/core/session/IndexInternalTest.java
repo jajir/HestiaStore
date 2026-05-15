@@ -24,7 +24,6 @@ import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexReadFacade;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -26,7 +26,6 @@ import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorag
 import org.hestiastore.index.segmentindex.core.streaming.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
@@ -111,12 +110,18 @@ final class SegmentIndexRuntimeFactory<K, V> {
             final SegmentIndexCoreStorage<K, V> coreStorage = openCoreStorage();
             keyToSegmentMap = coreStorage.keyToSegmentMap();
             segmentRegistry = coreStorage.segmentRegistry();
-            final SegmentTopologyRuntime<K, V> topologyRuntime =
-                    createTopologyRuntime(
-                    coreStorage);
+            final SegmentTopology<K> segmentTopology =
+                    createSegmentTopology(coreStorage);
+            final SegmentAccessService<K, V> segmentAccessService =
+                    newSegmentAccessService(coreStorage, segmentTopology);
+            final SplitService splitService = newSplitService(coreStorage,
+                    segmentTopology);
+            final SegmentTopologyRuntimeAccess<K, V> topologyRuntime =
+                    createTopologyRuntime(coreStorage, splitService);
             walRuntime = openWalRuntime();
             notifyWalRuntimeCreated(walRuntime);
-            return createRuntime(coreStorage, topologyRuntime, walRuntime);
+            return createRuntime(coreStorage, topologyRuntime, walRuntime,
+                    segmentAccessService, splitService);
         } catch (final RuntimeException failure) {
             throw cleanupFailedBuild(failure, walRuntime, segmentRegistry,
                     keyToSegmentMap);
@@ -153,18 +158,19 @@ final class SegmentIndexRuntimeFactory<K, V> {
         };
     }
 
-    private SegmentTopologyRuntime<K, V> createTopologyRuntime(
+    private SegmentTopology<K> createSegmentTopology(
             final SegmentIndexCoreStorage<K, V> coreStorage) {
-        final SegmentTopology<K> segmentTopology = SegmentTopology.<K>builder()
+        return SegmentTopology.<K>builder()
                 .snapshot(coreStorage.keyToSegmentMap().snapshot())
                 .build();
+    }
+
+    private SegmentTopologyRuntimeAccess<K, V> createTopologyRuntime(
+            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final SplitService splitService) {
         final StableSegmentOperationAccess<K, V> stableSegmentGateway =
                 StableSegmentOperationAccess.create(
                         coreStorage.segmentRegistry());
-        final SegmentAccessService<K, V> segmentAccessService =
-                newSegmentAccessService(coreStorage, segmentTopology);
-        final SplitService splitService = newSplitService(coreStorage,
-                segmentTopology);
         final SegmentStreamingService<K, V> streamingService =
                 newStreamingService(coreStorage, stableSegmentGateway);
         final DirectSegmentAccess<K, V> directSegmentAccess =
@@ -177,17 +183,20 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         coreStorage.keyToSegmentMap(),
                         coreStorage.segmentRegistry(),
                         coreStorage.retryPolicy());
-        return new SegmentTopologyRuntime<>(splitService, streamingService,
-                segmentAccessService, directSegmentAccess,
+        return SegmentTopologyRuntimeAccess.create(splitService,
+                streamingService, directSegmentAccess,
                 recoveryCleanupCoordinator);
     }
 
     private SegmentIndexRuntime<K, V> createRuntime(
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentTopologyRuntime<K, V> topologyRuntime,
-            final WalRuntime<K, V> walRuntime) {
+            final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
+            final WalRuntime<K, V> walRuntime,
+            final SegmentAccessService<K, V> segmentAccessService,
+            final SplitService splitService) {
         final SegmentIndexRuntimeServices<K, V> serviceState =
-                createRuntimeServices(coreStorage, topologyRuntime, walRuntime);
+                createRuntimeServices(coreStorage, topologyRuntime, walRuntime,
+                        segmentAccessService, splitService);
         final SegmentIndexRuntimeStorage<K, V> storage =
                 new SegmentIndexRuntimeStorage<>(
                         coreStorage.runtimeTuningState(),
@@ -244,13 +253,15 @@ final class SegmentIndexRuntimeFactory<K, V> {
 
     private SegmentIndexRuntimeServices<K, V> createRuntimeServices(
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentTopologyRuntime<K, V> topologyRuntime,
-            final WalRuntime<K, V> walRuntime) {
+            final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
+            final WalRuntime<K, V> walRuntime,
+            final SegmentAccessService<K, V> segmentAccessService,
+            final SplitService splitService) {
         final AtomicReference<Runnable> checkpointAction =
                 new AtomicReference<>(() -> {
                 });
         final MaintenanceService maintenance = createMaintenance(coreStorage,
-                topologyRuntime, () -> checkpointAction.get().run());
+                splitService, () -> checkpointAction.get().run());
         final IndexWalCoordinator<K, V> walCoordinator = IndexWalCoordinator
                 .create(openContext.conf, walRuntime, coreStorage.retryPolicy(),
                         () -> { }, maintenance::flushAndWait,
@@ -262,7 +273,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         coreStorage.segmentRegistry().runtime(),
                         coreStorage.chunkStoreCache());
         final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier =
-                createMetricsSnapshotSupplier(coreStorage, topologyRuntime,
+                createMetricsSnapshotSupplier(coreStorage, splitService,
                         walRuntime);
         final IndexRuntimeMonitoring runtimeMonitoring =
                 new IndexRuntimeMonitoringImpl(openContext.conf,
@@ -273,7 +284,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
                         topologyRuntime::requestFullSplitScan,
                         this::persistRuntimeTuning);
         return new SegmentIndexRuntimeServices<>(walCoordinator,
-                createOperationAccess(topologyRuntime, walCoordinator),
+                createOperationAccess(segmentAccessService, walCoordinator),
                 maintenance, runtimeLimitApplier, metricsSnapshotSupplier,
                 runtimeMonitoring, runtimeTuning);
     }
@@ -286,13 +297,13 @@ final class SegmentIndexRuntimeFactory<K, V> {
 
     private MaintenanceService createMaintenance(
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentTopologyRuntime<K, V> topologyRuntime,
+            final SplitService splitService,
             final Runnable checkpointAction) {
         return MaintenanceService.<K, V>builder()
                 .keyToSegmentMap(coreStorage.keyToSegmentMap())
                 .stableSegmentGateway(StableSegmentOperationAccess.create(
                         coreStorage.segmentRegistry()))
-                .splitService(topologyRuntime.splitService())
+                .splitService(splitService)
                 .retryPolicy(coreStorage.retryPolicy())
                 .statsRecorder(openContext.maintenanceStatsRecorder)
                 .maintenanceExecutor(openContext.executorRegistry
@@ -302,26 +313,25 @@ final class SegmentIndexRuntimeFactory<K, V> {
     }
 
     private SegmentIndexOperationAccess<K, V> createOperationAccess(
-            final SegmentTopologyRuntime<K, V> topologyRuntime,
+            final SegmentAccessService<K, V> segmentAccessService,
             final IndexWalCoordinator<K, V> walCoordinator) {
         return SegmentIndexOperationAccess.create(
                 openContext.valueTypeDescriptor,
-                openContext.operationStatsRecorder,
-                topologyRuntime.segmentAccessService(), walCoordinator);
+                openContext.operationStatsRecorder, segmentAccessService,
+                walCoordinator);
     }
 
     private Supplier<SegmentIndexMetricsSnapshot> createMetricsSnapshotSupplier(
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentTopologyRuntime<K, V> topologyRuntime,
+            final SplitService splitService,
             final WalRuntime<K, V> walRuntime) {
         final RuntimeMetricsCollector runtimeMetricsCollector =
                 RuntimeMetricsCollector.<K, V>builder()
                         .withConf(openContext.conf)
                         .withKeyToSegmentMap(coreStorage.keyToSegmentMap())
                         .withSegmentRegistry(coreStorage.segmentRegistry())
-                        .withSplitStatsSupplier(() -> topologyRuntime
-                                .splitService().splitStatsView()
-                                .statsSnapshot())
+                        .withSplitStatsSupplier(() -> splitService
+                                .splitStatsView().statsSnapshot())
                         .withExecutorRegistry(openContext.executorRegistry)
                         .withRuntimeTuningState(
                                 coreStorage.runtimeTuningState())

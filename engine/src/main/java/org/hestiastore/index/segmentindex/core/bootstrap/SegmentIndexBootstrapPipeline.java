@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.IndexMdcScope;
+import org.hestiastore.index.segmentindex.logging.IndexMdcScope;
 
 /**
  * Runs segment-index bootstrap steps and rolls back completed steps after a
@@ -105,11 +105,11 @@ final class SegmentIndexBootstrapPipeline<K, V> {
 
     private void runInScope(final SegmentIndexBootstrapState<K, V> state,
             final Runnable action) {
-        if (!state.hasIndexMdcScopeRunner()) {
+        if (!state.hasIndexMdcCallWrapper()) {
             action.run();
             return;
         }
-        try (IndexMdcScope ignored = state.getIndexMdcScopeRunner()
+        try (IndexMdcScope ignored = state.getIndexMdcCallWrapper()
                 .openScope()) {
             action.run();
         }

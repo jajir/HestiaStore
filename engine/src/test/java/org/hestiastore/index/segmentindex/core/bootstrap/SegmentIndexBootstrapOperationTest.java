@@ -223,7 +223,7 @@ class SegmentIndexBootstrapOperationTest {
 
         final RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> runBootstrapLikeOperation(request, state,
-                        stepsThroughMdcRunnerThen(
+                        stepsThroughMdcCallWrapperThen(
                                 mdcRecordingStep("resource", calls, failure))));
 
         assertSame(failure, thrown);
@@ -244,7 +244,7 @@ class SegmentIndexBootstrapOperationTest {
         MDC.put(MDC_INDEX_NAME_KEY, "outer");
         assertThrows(RuntimeException.class,
                 () -> runBootstrapLikeOperation(request, state,
-                        stepsThroughMdcRunnerThen(failingStep())));
+                        stepsThroughMdcCallWrapperThen(failingStep())));
 
         assertEquals("outer", MDC.get(MDC_INDEX_NAME_KEY));
     }
@@ -494,13 +494,13 @@ class SegmentIndexBootstrapOperationTest {
         return List.copyOf(steps);
     }
 
-    private static List<SegmentIndexBootstrapStep<Integer, String>> stepsThroughMdcRunnerThen(
+    private static List<SegmentIndexBootstrapStep<Integer, String>> stepsThroughMdcCallWrapperThen(
             final SegmentIndexBootstrapStep<Integer, String> nextStep) {
         final SegmentIndexSessionResources<Integer, String> sessionResources =
                 new SegmentIndexSessionResources<>();
         return List.of(new BootstrapStepAcquireDirectoryLock<>(sessionResources),
                 SegmentIndexBootstrapSteps.resolveConfiguration(),
-                SegmentIndexBootstrapSteps.createMdcScopeRunner(), nextStep);
+                SegmentIndexBootstrapSteps.createMdcCallWrapper(), nextStep);
     }
 
     private static List<SegmentIndexBootstrapStep<Integer, String>> commonStepsThroughExecutor(
@@ -509,7 +509,7 @@ class SegmentIndexBootstrapOperationTest {
                 new ArrayList<>();
         steps.add(new BootstrapStepAcquireDirectoryLock<>(sessionResources));
         steps.add(SegmentIndexBootstrapSteps.resolveConfiguration());
-        steps.add(SegmentIndexBootstrapSteps.createMdcScopeRunner());
+        steps.add(SegmentIndexBootstrapSteps.createMdcCallWrapper());
         steps.add(SegmentIndexBootstrapSteps.resolveTypeDescriptors());
         steps.add(SegmentIndexBootstrapSteps.writeConfiguration());
         steps.add(SegmentIndexBootstrapSteps.createExecutorRegistry());

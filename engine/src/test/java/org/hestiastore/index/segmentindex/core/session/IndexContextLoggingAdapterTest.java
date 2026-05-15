@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
@@ -49,7 +49,7 @@ class IndexContextLoggingAdapterTest {
         when(delegate.runtimeTuning()).thenReturn(mock(RuntimeTuning.class));
         when(delegate.runtimeMonitoring()).thenReturn(mock(IndexRuntimeMonitoring.class));
         when(delegate.maintenance()).thenReturn(maintenance);
-        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
+        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcCallWrapper("idx"));
     }
 
     @AfterEach
@@ -65,7 +65,7 @@ class IndexContextLoggingAdapterTest {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> new IndexContextLoggingAdapter<>(delegate,
-                        new IndexMdcScopeRunner("  ")));
+                        new IndexMdcCallWrapper("  ")));
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
@@ -144,7 +144,7 @@ class IndexContextLoggingAdapterTest {
             mdcAtApply.set(MDC.get("index.name"));
             return mock(RuntimeTuningResult.class);
         });
-        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcScopeRunner("idx"));
+        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcCallWrapper("idx"));
 
         final RuntimeTuning wrappedRuntimeTuning = adapter.runtimeTuning();
         assertSame(wrappedRuntimeTuning, adapter.runtimeTuning());
