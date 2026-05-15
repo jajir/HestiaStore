@@ -11,6 +11,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
 
@@ -68,19 +69,35 @@ public final class SegmentIndexSessionResources<K, V> {
             final EffectiveIndexConfiguration<K, V> configuration,
             final TypeDescriptor<K> keyTypeDescriptor) {
         final SegmentIndexRuntime<K, V> initializedRuntime = runtime();
-        final IndexConsistencyCoordinator<K, V> consistencyCoordinator = newConsistencyCoordinator(initializedRuntime);
-        final SegmentIndexFacades<K, V> facades = SegmentIndexFacades
-                .create(configuration, trackedRunner(), initializedRuntime);
+        final IndexConsistencyCoordinator<K, V> consistencyCoordinator =
+                newConsistencyCoordinator(initializedRuntime);
+        final SegmentIndexPointOperationFacade<K, V> pointOperationFacade =
+                newPointOperationFacade(initializedRuntime);
+        final SegmentIndexReadFacade<K, V> readFacade = newReadFacade(
+                configuration, initializedRuntime);
         final SegmentIndexSessionOwner<K, V> sessionOwner = newSessionOwner(
                 configuration, initializedRuntime, consistencyCoordinator);
         final SegmentIndexMaintenance maintenanceApi = newMaintenanceApi(
                 sessionOwner, trackedRunner(), initializedRuntime.maintenance(),
                 consistencyCoordinator);
         final SegmentIndexImpl<K, V> index = new SegmentIndexImpl<>(
-                keyTypeDescriptor, facades.pointOperationFacade(),
-                facades.readFacade(), initializedRuntime.maintenance(),
+                keyTypeDescriptor, pointOperationFacade,
+                readFacade, initializedRuntime.maintenance(),
                 trackedRunner(), maintenanceApi, sessionOwner);
         return index;
+    }
+
+    private SegmentIndexPointOperationFacade<K, V> newPointOperationFacade(
+            final SegmentIndexDataAccess<K, V> dataAccess) {
+        return new SegmentIndexPointOperationFacade<>(trackedRunner(),
+                dataAccess);
+    }
+
+    private SegmentIndexReadFacade<K, V> newReadFacade(
+            final EffectiveIndexConfiguration<K, V> configuration,
+            final SegmentIndexDataAccess<K, V> dataAccess) {
+        return new SegmentIndexReadFacade<>(trackedRunner(), dataAccess,
+                new SegmentIndexEntryIteratorDecorator<>(configuration));
     }
 
     private IndexConsistencyCoordinator<K, V> newConsistencyCoordinator(

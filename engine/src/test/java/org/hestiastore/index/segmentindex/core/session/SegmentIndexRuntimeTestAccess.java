@@ -21,7 +21,6 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopologyRuntime;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -70,12 +69,12 @@ public final class SegmentIndexRuntimeTestAccess {
         return runtime.walRuntime();
     }
 
-    public static <K, V> SegmentTopologyRuntime<K, V> topologyRuntime(
+    public static <K, V> SegmentTopologyRuntimeAccess<K, V> topologyRuntime(
             final SegmentIndexRuntime<K, V> runtime) {
         return runtime.topologyRuntime();
     }
 
-    public static <K, V> SegmentTopologyRuntime<K, V> topologyRuntime(
+    public static <K, V> SegmentTopologyRuntimeAccess<K, V> topologyRuntime(
             final Object runtime) {
         return topologyRuntime(castRuntime(runtime));
     }

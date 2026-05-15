@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 
@@ -20,7 +20,7 @@ final class SegmentIndexBootstrapState<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private ExecutorRegistry executorRegistry;
-    private IndexMdcScopeRunner indexMdcScopeRunner;
+    private IndexMdcCallWrapper indexMdcCallWrapper;
     // FIXME why to store x time the same?
     private IndexInternal<K, V> internalIndex;
     private IndexInternal<K, V> managedIndex;
@@ -76,18 +76,18 @@ final class SegmentIndexBootstrapState<K, V> {
         return requireInitialized(executorRegistry, "executorRegistry");
     }
 
-    void setIndexMdcScopeRunner(
-            final IndexMdcScopeRunner indexMdcScopeRunner) {
-        this.indexMdcScopeRunner = Vldtn.requireNonNull(indexMdcScopeRunner,
-                "indexMdcScopeRunner");
+    void setIndexMdcCallWrapper(
+            final IndexMdcCallWrapper indexMdcCallWrapper) {
+        this.indexMdcCallWrapper = Vldtn.requireNonNull(indexMdcCallWrapper,
+                "indexMdcCallWrapper");
     }
 
-    boolean hasIndexMdcScopeRunner() {
-        return indexMdcScopeRunner != null;
+    boolean hasIndexMdcCallWrapper() {
+        return indexMdcCallWrapper != null;
     }
 
-    IndexMdcScopeRunner getIndexMdcScopeRunner() {
-        return requireInitialized(indexMdcScopeRunner, "indexMdcScopeRunner");
+    IndexMdcCallWrapper getIndexMdcCallWrapper() {
+        return requireInitialized(indexMdcCallWrapper, "indexMdcCallWrapper");
     }
 
     void setInternalIndex(

@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +54,7 @@ class SegmentIndexMaintenanceContextLoggingAdapterTest {
 
         final SegmentIndexMaintenanceContextLoggingAdapter adapter =
                 new SegmentIndexMaintenanceContextLoggingAdapter(delegate,
-                        new IndexMdcScopeRunner("idx"));
+                        new IndexMdcCallWrapper("idx"));
         adapter.compact();
         adapter.compactAndWait();
         adapter.flush();

@@ -24,11 +24,22 @@
         </fileSet>
     </fileSets>
 
+    <files>
+        <file>
+            <source>${project.parent.basedir}/engine/target/engine-${project.version}.jar</source>
+            <outputDirectory>lib</outputDirectory>
+            <destName>engine-${project.version}.jar</destName>
+        </file>
+    </files>
+
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <scope>runtime</scope>
             <useProjectArtifact>false</useProjectArtifact>
+            <excludes>
+                <exclude>org.hestiastore:engine</exclude>
+            </excludes>
             <unpack>false</unpack>
         </dependencySet>
     </dependencySets>

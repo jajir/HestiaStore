@@ -15,12 +15,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
-class BootstrapStepCreateMdcScopeRunnerTest {
+class BootstrapStepCreateMdcCallWrapperTest {
 
     private static final String MDC_INDEX_NAME_KEY = "index.name";
 
-    private final BootstrapStepCreateMdcScopeRunner<Integer, String> step =
-            new BootstrapStepCreateMdcScopeRunner<>();
+    private final BootstrapStepCreateMdcCallWrapper<Integer, String> step =
+            new BootstrapStepCreateMdcCallWrapper<>();
 
     @AfterEach
     void tearDown() {
@@ -28,7 +28,7 @@ class BootstrapStepCreateMdcScopeRunnerTest {
     }
 
     @Test
-    void apply_createsScopeRunnerWhenContextLoggingIsEnabled() {
+    void apply_createsCallWrapperWhenContextLoggingIsEnabled() {
         final SegmentIndexBootstrapState<Integer, String> state =
                 stateWithConfiguration(effectiveConfiguration(configuration(
                         "bootstrap-step-mdc-enabled", true)));
@@ -37,15 +37,15 @@ class BootstrapStepCreateMdcScopeRunnerTest {
                 request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
                 state));
 
-        assertTrue(state.hasIndexMdcScopeRunner());
-        state.getIndexMdcScopeRunner().run(() -> assertEquals(
+        assertTrue(state.hasIndexMdcCallWrapper());
+        state.getIndexMdcCallWrapper().run(() -> assertEquals(
                 "bootstrap-step-mdc-enabled",
                 MDC.get(MDC_INDEX_NAME_KEY)));
         assertNull(MDC.get(MDC_INDEX_NAME_KEY));
     }
 
     @Test
-    void apply_skipsScopeRunnerWhenContextLoggingIsDisabled() {
+    void apply_skipsCallWrapperWhenContextLoggingIsDisabled() {
         final SegmentIndexBootstrapState<Integer, String> state =
                 stateWithConfiguration(effectiveConfiguration(configuration(
                         "bootstrap-step-mdc-disabled", false)));
@@ -54,6 +54,6 @@ class BootstrapStepCreateMdcScopeRunnerTest {
                 request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
                 state));
 
-        assertFalse(state.hasIndexMdcScopeRunner());
+        assertFalse(state.hasIndexMdcCallWrapper());
     }
 }

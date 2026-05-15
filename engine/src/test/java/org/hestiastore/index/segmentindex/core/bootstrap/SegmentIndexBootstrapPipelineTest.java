@@ -15,7 +15,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.IndexMdcScopeRunner;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -82,12 +82,12 @@ class SegmentIndexBootstrapPipelineTest {
     }
 
     @Test
-    void run_executesStepsAndCleanupInsideMdcScopeAfterRunnerExists() {
+    void run_executesStepsAndCleanupInsideMdcScopeAfterCallWrapperExists() {
         final List<String> calls = new ArrayList<>();
         final RuntimeException failure = new IllegalStateException("boom");
         final SegmentIndexBootstrapPipeline<Integer, String> pipeline =
                 new SegmentIndexBootstrapPipeline<>(List.of(
-                        new ScopeRunnerStep("bootstrap-pipeline-test", calls),
+                        new CallWrapperStep("bootstrap-pipeline-test", calls),
                         new MdcRecordingStep("resource", calls, failure)));
 
         final RuntimeException thrown = assertThrows(RuntimeException.class,
@@ -301,13 +301,13 @@ class SegmentIndexBootstrapPipelineTest {
         }
     }
 
-    private static final class ScopeRunnerStep
+    private static final class CallWrapperStep
             extends SegmentIndexBootstrapStep<Integer, String> {
 
         private final String indexName;
         private final List<String> calls;
 
-        private ScopeRunnerStep(final String indexName,
+        private CallWrapperStep(final String indexName,
                 final List<String> calls) {
             this.indexName = indexName;
             this.calls = calls;
@@ -317,7 +317,7 @@ class SegmentIndexBootstrapPipelineTest {
         void apply(
                 final SegmentIndexBootstrapRequest<Integer, String> request,
                 final SegmentIndexBootstrapState<Integer, String> state) {
-            state.setIndexMdcScopeRunner(new IndexMdcScopeRunner(indexName));
+            state.setIndexMdcCallWrapper(new IndexMdcCallWrapper(indexName));
         }
 
         @Override
