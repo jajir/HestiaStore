@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
@@ -23,7 +22,6 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,16 +42,10 @@ class RouteSplitCoordinatorTest {
     private IndexMaintenanceConfiguration maintenance;
 
     @Mock
-    private SegmentRegistry<Integer, String> segmentRegistry;
-
-    @Mock
     private Segment<Integer, String> parentSegment;
 
     @Mock
     private BlockingSegment<Integer, String> parentHandle;
-
-    @Mock
-    private BlockingSegment<Integer, String> currentHandle;
 
     @Mock
     private BlockingSegment.Runtime parentRuntime;
@@ -68,7 +60,7 @@ class RouteSplitCoordinatorTest {
     void setUp() {
         when(maintenance.busyBackoffMillis()).thenReturn(1);
         when(maintenance.busyTimeoutMillis()).thenReturn(1);
-        coordinator = new RouteSplitCoordinator<>(segmentRegistry,
+        coordinator = new RouteSplitCoordinator<>(
                 new SegmentIndexSplitPolicyThreshold<>(),
                 new RouteSplitPreparationService<>(materializationService,
                         new IndexRetryPolicy(maintenance.busyBackoffMillis(),
@@ -83,8 +75,6 @@ class RouteSplitCoordinatorTest {
         when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
         when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
         when(parentHandle.getSegment()).thenReturn(parentSegment);
-        when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
-                .thenReturn(Optional.of(parentHandle));
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()))
                 .thenReturn(iteratorResult(entries()));
@@ -104,12 +94,9 @@ class RouteSplitCoordinatorTest {
     }
 
     @Test
-    void tryPrepareSplitReturnsNullWhenLoadedSegmentChanged() {
+    void tryPrepareSplitReturnsNullWhenSegmentIsTooSmall() {
         when(parentHandle.getRuntime()).thenReturn(parentRuntime);
-        when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
-        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
-        when(segmentRegistry.tryGetSegment(PARENT_SEGMENT_ID))
-                .thenReturn(Optional.of(currentHandle));
+        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(1L);
 
         final SegmentRouteSplit<Integer> prepared = coordinator
                 .tryPrepareSplit(parentHandle, 2L);

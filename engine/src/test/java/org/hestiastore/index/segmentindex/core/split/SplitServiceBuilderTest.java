@@ -14,7 +14,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -43,7 +43,7 @@ class SplitServiceBuilderTest {
                     .conf(conf)
                     .runtimeTuningState(mock(RuntimeTuningState.class))
                     .keyToSegmentMap(mock(KeyToSegmentMap.class))
-                    .segmentTopology(mock(SegmentTopology.class))
+                    .segmentLeaseService(mock(SegmentLeaseService.class))
                     .segmentRegistry(segmentRegistry)
                     .directoryFacade(mock(Directory.class))
                     .splitExecutor(directExecutor())

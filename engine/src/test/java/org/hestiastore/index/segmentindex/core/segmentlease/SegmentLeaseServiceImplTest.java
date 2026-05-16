@@ -4,12 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -106,8 +110,7 @@ class SegmentLeaseServiceImplTest {
     void acquireForWriteClosesRouteLeaseWhenSegmentLoadFails() {
         keyToSegmentMap.extendMaxKeyIfNeeded(10);
         final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
-        @SuppressWarnings("unchecked")
-        final SegmentTopology<Integer> topology = mock(SegmentTopology.class);
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
         final SegmentTopology.RouteLeaseResult result = mock(
                 SegmentTopology.RouteLeaseResult.class);
         final SegmentTopology.RouteLease lease = mock(
@@ -151,6 +154,131 @@ class SegmentLeaseServiceImplTest {
     }
 
     @Test
+    void tryAcquireMappedSegmentReturnsLeaseAndClosesRouteLease() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
+        final SegmentTopology<Integer> topology = mockTopologyWithRouteLease(
+                snapshot);
+        final SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), snapshot.version()).lease();
+        when(lease.segmentId()).thenReturn(SegmentId.of(0));
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        when(segmentRegistry.tryGetSegment(SegmentId.of(0)))
+                .thenReturn(Optional.of(blockingSegment));
+
+        final Optional<SegmentLease<Integer, String>> result = leaseService
+                .tryAcquireMappedSegment(SegmentId.of(0));
+
+        assertTrue(result.isPresent());
+        try (SegmentLease<Integer, String> acquired = result.get()) {
+            assertSame(blockingSegment, acquired.segment());
+            assertEquals(SegmentId.of(0), acquired.segmentId());
+        }
+        verify(lease).close();
+    }
+
+    @Test
+    void tryAcquireMappedSegmentReturnsEmptyAndClosesRouteLeaseWhenUnavailable() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
+        final SegmentTopology<Integer> topology = mockTopologyWithRouteLease(
+                snapshot);
+        final SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), snapshot.version()).lease();
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        when(segmentRegistry.tryGetSegment(SegmentId.of(0)))
+                .thenReturn(Optional.empty());
+
+        final Optional<SegmentLease<Integer, String>> result = leaseService
+                .tryAcquireMappedSegment(SegmentId.of(0));
+
+        assertTrue(result.isEmpty());
+        verify(lease).close();
+    }
+
+    @Test
+    void tryAcquireForSplitReturnsEmptyWhenDrainUnavailable() {
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
+        final SegmentTopology.RouteDrainResult drainResult = mock(
+                SegmentTopology.RouteDrainResult.class);
+        when(topology.tryBeginDrain(SegmentId.of(0))).thenReturn(drainResult);
+        when(drainResult.isAcquired()).thenReturn(false);
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+
+        final Optional<SegmentSplitLease<Integer, String>> result =
+                leaseService.tryAcquireForSplit(SegmentId.of(0));
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(segmentRegistry);
+    }
+
+    @Test
+    void splitLeaseAbortCallsDrainAbort() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
+        final SegmentTopology.RouteDrain drain = mockRouteDrain(topology);
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        when(segmentRegistry.tryGetSegment(SegmentId.of(0)))
+                .thenReturn(Optional.of(blockingSegment));
+
+        final Optional<SegmentSplitLease<Integer, String>> result =
+                leaseService.tryAcquireForSplit(SegmentId.of(0));
+
+        assertTrue(result.isPresent());
+        result.get().abort();
+        verify(drain).abort();
+        verify(drain, never()).complete();
+    }
+
+    @Test
+    void splitLeaseCompleteAfterPublishReconcilesTopologyAndCompletesDrain() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
+        final SegmentTopology.RouteDrain drain = mockRouteDrain(topology);
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        when(segmentRegistry.tryGetSegment(SegmentId.of(0)))
+                .thenReturn(Optional.of(blockingSegment));
+
+        final Optional<SegmentSplitLease<Integer, String>> result =
+                leaseService.tryAcquireForSplit(SegmentId.of(0));
+
+        assertTrue(result.isPresent());
+        result.get().completeAfterPublish();
+        verify(topology).reconcile(any());
+        verify(drain).complete();
+        verify(drain, never()).abort();
+    }
+
+    @Test
+    void tryAcquireForSplitReleasesDrainWhenSegmentLoadFails() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
+        final SegmentTopology.RouteDrain drain = mockRouteDrain(topology);
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        final IndexException failure = new IndexException("load failed");
+        when(segmentRegistry.tryGetSegment(SegmentId.of(0))).thenThrow(failure);
+
+        final IndexException thrown = assertThrows(IndexException.class,
+                () -> leaseService.tryAcquireForSplit(SegmentId.of(0)));
+
+        assertSame(failure, thrown);
+        verify(drain).abort();
+        verify(drain, never()).complete();
+    }
+
+    @Test
     void acquireForWriteRetriesUnavailableRouteUntilRetryPolicyFails() {
         keyToSegmentMap.extendMaxKeyIfNeeded(10);
         segmentTopology.reconcile(keyToSegmentMap.snapshot());
@@ -167,8 +295,7 @@ class SegmentLeaseServiceImplTest {
 
     private SegmentTopology<Integer> mockTopologyStaleThenAcquired(
             final Snapshot<Integer> snapshot) {
-        @SuppressWarnings("unchecked")
-        final SegmentTopology<Integer> topology = mock(SegmentTopology.class);
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
         final SegmentTopology.RouteLeaseResult stale = mock(
                 SegmentTopology.RouteLeaseResult.class);
         final SegmentTopology.RouteLeaseResult acquired = mock(
@@ -183,5 +310,36 @@ class SegmentLeaseServiceImplTest {
         when(acquired.lease()).thenReturn(lease);
         when(lease.segmentId()).thenReturn(SegmentId.of(0));
         return topology;
+    }
+
+    private SegmentTopology<Integer> mockTopologyWithRouteLease(
+            final Snapshot<Integer> snapshot) {
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
+        final SegmentTopology.RouteLeaseResult result = mock(
+                SegmentTopology.RouteLeaseResult.class);
+        final SegmentTopology.RouteLease lease = mock(
+                SegmentTopology.RouteLease.class);
+        when(topology.tryAcquire(SegmentId.of(0), snapshot.version()))
+                .thenReturn(result);
+        when(result.isAcquired()).thenReturn(true);
+        when(result.lease()).thenReturn(lease);
+        return topology;
+    }
+
+    private SegmentTopology.RouteDrain mockRouteDrain(
+            final SegmentTopology<Integer> topology) {
+        final SegmentTopology.RouteDrainResult drainResult = mock(
+                SegmentTopology.RouteDrainResult.class);
+        final SegmentTopology.RouteDrain drain = mock(
+                SegmentTopology.RouteDrain.class);
+        when(topology.tryBeginDrain(SegmentId.of(0))).thenReturn(drainResult);
+        when(drainResult.isAcquired()).thenReturn(true);
+        when(drainResult.drain()).thenReturn(drain);
+        return drain;
+    }
+
+    @SuppressWarnings("unchecked")
+    private SegmentTopology<Integer> mockSegmentTopology() {
+        return mock(SegmentTopology.class);
     }
 }

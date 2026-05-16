@@ -1,5 +1,9 @@
 package org.hestiastore.index.segmentindex.core.segmentlease;
 
+import java.util.Optional;
+
+import org.hestiastore.index.segment.SegmentId;
+
 /**
  * Provides scoped blocking leases for the segment that owns a key.
  * <p>
@@ -39,4 +43,23 @@ public interface SegmentLeaseService<K, V> {
      * @return segment lease
      */
     SegmentLease<K, V> acquireForWrite(K key);
+
+    /**
+     * Attempts to acquire a foreground lease for the exact mapped segment id.
+     *
+     * @param segmentId segment id to load
+     * @return loaded segment lease when the route and segment are immediately
+     *         available
+     */
+    Optional<SegmentLease<K, V>> tryAcquireMappedSegment(SegmentId segmentId);
+
+    /**
+     * Attempts to acquire an exclusive split lease for the exact mapped segment
+     * id.
+     *
+     * @param segmentId segment id to drain and split
+     * @return split lease when the route drain and segment are immediately
+     *         available
+     */
+    Optional<SegmentSplitLease<K, V>> tryAcquireForSplit(SegmentId segmentId);
 }

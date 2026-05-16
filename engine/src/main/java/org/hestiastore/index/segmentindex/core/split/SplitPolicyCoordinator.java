@@ -10,12 +10,14 @@ import java.util.function.Supplier;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
  * Owns periodic full split scans, candidate deduplication, and policy workers
@@ -33,7 +35,7 @@ final class SplitPolicyCoordinator<K, V> {
     private final EffectiveIndexConfiguration<K, V> conf;
     private final RuntimeTuningState runtimeTuningState;
     private final KeyToSegmentMap<K> keyToSegmentMap;
-    private final SegmentRegistry<K, V> segmentRegistry;
+    private final SegmentLeaseService<K, V> segmentLeaseService;
     private final SplitExecutionCoordinator<K, V> splitExecutionCoordinator;
     private final Supplier<SegmentIndexState> stateSupplier;
     private final SplitPolicyState policyState;
@@ -46,7 +48,7 @@ final class SplitPolicyCoordinator<K, V> {
     SplitPolicyCoordinator(final EffectiveIndexConfiguration<K, V> conf,
             final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry,
+            final SegmentLeaseService<K, V> segmentLeaseService,
             final SplitExecutionCoordinator<K, V> splitExecutionCoordinator,
             final Executor workerExecutor,
             final ScheduledExecutorService splitPolicyScheduler,
@@ -60,8 +62,8 @@ final class SplitPolicyCoordinator<K, V> {
                 "runtimeTuningState");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
-        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
-                "segmentRegistry");
+        this.segmentLeaseService = Vldtn.requireNonNull(segmentLeaseService,
+                "segmentLeaseService");
         this.splitExecutionCoordinator = Vldtn.requireNonNull(
                 splitExecutionCoordinator, "splitExecutionCoordinator");
         this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
@@ -300,22 +302,28 @@ final class SplitPolicyCoordinator<K, V> {
         if (!isSegmentStillMapped(segmentId)) {
             return false;
         }
-        final BlockingSegment<K, V> segmentHandle = tryLoadSplitCandidate(
+        final Optional<SegmentLease<K, V>> leaseResult = tryAcquireSplitCandidate(
                 segmentId);
-        if (segmentHandle == null) {
+        if (leaseResult.isEmpty()) {
             return false;
         }
-        final long observedKeyCount = observedKeyCount(segmentHandle);
-        if (!exceedsSplitThreshold(observedKeyCount, threshold)) {
-            return false;
+        try (SegmentLease<K, V> lease = leaseResult.get()) {
+            final BlockingSegment<K, V> segmentHandle = lease.segment();
+            if (isClosedCandidate(segmentHandle)) {
+                return false;
+            }
+            final long observedKeyCount = observedKeyCount(segmentHandle);
+            if (!exceedsSplitThreshold(observedKeyCount, threshold)) {
+                return false;
+            }
+            final boolean scheduled = splitExecutionCoordinator
+                    .scheduleEligibleSplit(segmentId, threshold,
+                            observedKeyCount);
+            if (scheduled) {
+                telemetry.recordSplitScheduled();
+            }
+            return scheduled;
         }
-        final boolean scheduled = splitExecutionCoordinator
-                .scheduleEligibleSplit(segmentHandle, threshold,
-                        observedKeyCount);
-        if (scheduled) {
-            telemetry.recordSplitScheduled();
-        }
-        return scheduled;
     }
 
     private void offerScanCandidateIfEligible(final SegmentId segmentId,
@@ -323,29 +331,29 @@ final class SplitPolicyCoordinator<K, V> {
         if (!isSegmentStillMapped(segmentId)) {
             return;
         }
-        final BlockingSegment<K, V> segmentHandle = tryLoadSplitCandidate(
+        final Optional<SegmentLease<K, V>> leaseResult = tryAcquireSplitCandidate(
                 segmentId);
-        if (segmentHandle == null) {
+        if (leaseResult.isEmpty()) {
             return;
         }
-        if (!exceedsSplitThreshold(observedKeyCount(segmentHandle), threshold)) {
-            return;
+        try (SegmentLease<K, V> lease = leaseResult.get()) {
+            final BlockingSegment<K, V> segmentHandle = lease.segment();
+            if (isClosedCandidate(segmentHandle)
+                    || !exceedsSplitThreshold(observedKeyCount(segmentHandle),
+                            threshold)) {
+                return;
+            }
+            candidateRegistry.offer(segmentId);
         }
-        candidateRegistry.offer(segmentId);
     }
 
-    private BlockingSegment<K, V> tryLoadSplitCandidate(
+    private Optional<SegmentLease<K, V>> tryAcquireSplitCandidate(
             final SegmentId segmentId) {
         try {
-            final Optional<BlockingSegment<K, V>> loaded = segmentRegistry
-                    .tryGetSegment(segmentId);
-            if (loaded.isPresent()) {
-                return loaded.get();
-            }
-            return null;
+            return segmentLeaseService.tryAcquireMappedSegment(segmentId);
         } catch (final IndexException e) {
             if (!isSegmentStillMapped(segmentId)) {
-                return null;
+                return Optional.empty();
             }
             throw e;
         }
@@ -357,6 +365,10 @@ final class SplitPolicyCoordinator<K, V> {
 
     private long observedKeyCount(final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle.getRuntime().getNumberOfKeysInCache();
+    }
+
+    private boolean isClosedCandidate(final BlockingSegment<K, V> segmentHandle) {
+        return segmentHandle.getRuntime().getState() == SegmentState.CLOSED;
     }
 
     private boolean exceedsSplitThreshold(final long observedKeyCount,

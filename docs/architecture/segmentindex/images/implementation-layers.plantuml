@@ -1,4 +1,4 @@
-@startuml implementation layers
+@startuml implementation-layers
 skinparam componentStyle rectangle
 skinparam shadowing false
 skinparam defaultTextAlignment center
@@ -24,7 +24,9 @@ component "WAL runtime\nwal\n\nWalRuntime.open(...)\nWalRuntime" as WAL_RUNTIME
 
 component "Point operation orchestration\ncore.operations\n\nIndexOperationCoordinator\nSegmentIndexOperationAccess" as OPERATIONS
 
-component "Route and stable-segment access\n\nSegmentAccessService\nSegmentAccess\nStableSegmentOperationGateway\nSegmentStreamingService" as ACCESS
+component "Route and segment lease access\ncore.segmentlease\n\nSegmentLeaseService\nSegmentLease\nSegmentSplitLease" as ACCESS
+
+component "Stable segment operations\ncore.stablesegment + core.streaming\n\nStableSegmentOperationGateway\nSegmentStreamingService\nDirectSegmentAccess" as STABLE_ACCESS
 
 component "Route state\n\nKeyToSegmentMap\nSegmentTopology" as ROUTE
 
@@ -44,7 +46,9 @@ TOPOLOGY_RUNTIME --> SPLIT_RUNTIME : own split runtime
 RUNTIME --> WAL_RUNTIME : open WAL runtime
 RUNTIME --> OPERATIONS : point put/get/delete
 OPERATIONS --> ACCESS : route key and load segment
+TOPOLOGY_RUNTIME --> STABLE_ACCESS : iterators and direct access
 ACCESS --> REGISTRY : loaded segment handle
+STABLE_ACCESS --> REGISTRY : stable segment handle
 REGISTRY --> SEGMENT : retry-aware segment calls
 SEGMENT --> FILES : persisted structures
 
@@ -53,7 +57,9 @@ TOPOLOGY_RUNTIME --> ROUTE : split and topology coordination
 
 note right of ACCESS
 This is where routed SegmentIndex
-operations meet SegmentRegistry.
+operations and split drains combine
+KeyToSegmentMap, SegmentTopology,
+and SegmentRegistry.
 end note
 
 note right of REGISTRY

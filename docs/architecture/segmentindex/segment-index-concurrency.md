@@ -7,6 +7,9 @@
   checks.
 - Segment topology: runtime route state (`ACTIVE`, `DRAINING`, `RETIRED`) plus
   in-flight route leases for mapped segment ids.
+- Segment lease service: boundary that combines route snapshots, runtime route
+  leases/drains, and registry segment loading into scoped `SegmentLease` and
+  `SegmentSplitLease` objects.
 - Segment registry: cache of Segment instances plus the maintenance executor.
 - Split service: accepts split hints, full-scan requests, quiescence waits, and
   lifecycle shutdown for the managed split runtime.
@@ -40,9 +43,10 @@
   write lock and increment the version.
 - SegmentTopology is rebuilt from the persisted map on startup and reconciled
   after route-map changes. It does not own segment instances or persistence.
-- Foreground `put`, `delete`, and `get` resolve a map snapshot, acquire a
-  matching `SegmentTopology` route lease, and only then access the segment
-  through `SegmentRegistry`.
+- Foreground `put`, `delete`, and `get` use `SegmentLeaseService` to resolve a
+  map snapshot, acquire a matching `SegmentTopology` route lease, load the
+  segment through `SegmentRegistry`, and release the route lease when the
+  scoped operation is closed.
 - Segment implementations are thread-safe; read/write operations proceed in
   parallel when the segment state allows it.
 
@@ -77,15 +81,23 @@
 - Admitted splits run on the shared split-maintenance executor; only one split
   per segment id can be in flight.
 - RouteSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts throw.
-- Split execution first moves the parent route to `DRAINING` in
-  SegmentTopology. New foreground leases for that parent fail as BUSY and
-  retry; existing leases are allowed to finish.
-- After the parent route drains, split materialization reads the parent stable
-  data through `FULL_ISOLATION`, materializes child stable segments, and then
-  publishes the child routes through KeyToSegmentMap.
+- SplitPolicyCoordinator uses `SegmentLeaseService.tryAcquireMappedSegment(...)`
+  to inspect candidate size without combining topology and registry access
+  itself.
+- SplitExecutionCoordinator schedules by `SegmentId` and uses
+  `SegmentLeaseService.tryAcquireForSplit(...)` to acquire a
+  `SegmentSplitLease`. That lease moves the parent route to `DRAINING`, waits
+  for existing route leases to finish, verifies the route is still mapped, and
+  loads the parent segment through `SegmentRegistry`.
+- While the parent route is draining, new foreground leases for that parent
+  fail as BUSY and retry; existing leases are allowed to finish.
+- After the split lease is acquired, split materialization reads the parent
+  stable data through `FULL_ISOLATION`, materializes child stable segments, and
+  then publishes the child routes through KeyToSegmentMap.
 - After a split, KeyToSegmentMap updates the mapping and flushes it to disk.
-  SegmentTopology is reconciled from the new snapshot so children become
-  `ACTIVE` and the parent route becomes `RETIRED`.
+  `SegmentSplitLease.completeAfterPublish()` reconciles SegmentTopology from
+  the new snapshot so children become `ACTIVE` and the parent route becomes
+  `RETIRED`, then completes the drain.
 
 ## Index State Machine
 
@@ -123,14 +135,16 @@ Notes:
   propagate as IndexException.
 - Split failures surface through the split future and are rethrown when joined.
 - If split materialization or pre-publish validation fails, prepared child
-  directories are deleted and the parent route drain is aborted.
+  directories are deleted and the `SegmentSplitLease` aborts the parent route
+  drain.
 - If KeyToSegmentMap rejects a split because the parent route is no longer
-  mapped, prepared children are deleted and the parent topology drain is
-  aborted.
-- If route-map persistence, topology reconciliation, or retired-parent cleanup
-  fails after the in-memory route map has accepted the children, the split
-  failure is fatal. Prepared children are not deleted because the current route
-  map may already reference them.
+  mapped, prepared children are deleted. If the parent is still mapped, the
+  split lease aborts the drain; if another publisher already replaced the
+  parent, the split lease completes the drain after topology reconciliation.
+- If route-map persistence, split-lease topology reconciliation, or
+  retired-parent cleanup fails after the in-memory route map has accepted the
+  children, the split failure is fatal. Prepared children are not deleted
+  because the current route map may already reference them.
 - Retired parent deletion after publish is best-effort. If the segment is busy,
   the directory remains orphaned and recovery/consistency cleanup retries
   deletion through SegmentRegistry.
@@ -143,8 +157,9 @@ Notes:
 - SegmentIndex (public API): thread-safe entry point.
 - SegmentIndexImpl: retries BUSY, routes operations to segments, and manages
   maintenance.
-- SegmentAccessService: route snapshot and SegmentTopology lease acquisition
-  for point reads and writes.
+- SegmentLeaseService: route snapshot, SegmentTopology lease/drain acquisition,
+  SegmentRegistry loading, and scoped `SegmentLease` / `SegmentSplitLease`
+  ownership.
 - StableSegmentOperationGateway: single-attempt stable-segment operation access
   through SegmentRegistry.
 - IndexRetryPolicy: backoff + timeout for BUSY retries.
@@ -158,9 +173,9 @@ Notes:
 - SplitService: managed split runtime boundary for hints, full scans,
   quiescence, metrics, and shutdown.
 - SplitPolicyCoordinator: split scheduling decisions.
-- SplitExecutionCoordinator: split execution admission, cooldowns, and split
-  worker scheduling.
-- RouteSplitCoordinator: split materialization and route-map publish.
+- SplitExecutionCoordinator: split execution admission, cooldowns, split
+  worker scheduling, and `SegmentSplitLease` lifecycle.
+- RouteSplitCoordinator: split feasibility check and child materialization.
 - RouteSplitPublishCoordinator: route-map publish and split cleanup boundaries.
 
 ## Iterator Isolation
