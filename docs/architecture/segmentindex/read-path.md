@@ -12,7 +12,7 @@ SegmentIndex-level orchestration path.
 ## High‑Level Flow (Point Lookup)
 
 1. API call: `SegmentIndex.get(key)`
-1. Resolve the target segment using the key→segment map and `SegmentTopology`
+1. Resolve the target segment using `SegmentLeaseService`
 1. Read directly from the routed segment
 1. Inside the segment: consult write cache → delta cache → Bloom filter →
    sparse index → local scan
@@ -25,15 +25,16 @@ in-memory write cache before falling back to stable on-disk state.
 - `segmentindex/core/SegmentIndexImpl#get(K)` delegates to
   `SegmentIndexPointOperationFacade`, which runs the point lookup under index
   state and close-safety checks.
-- `IndexOperationCoordinator#get(K)` uses `SegmentAccessService` to resolve the
-  current route, acquire a `SegmentTopology` lease, and load the segment.
+- `IndexOperationCoordinator#get(K)` uses `SegmentLeaseService` to resolve the
+  current route, acquire a `SegmentTopology` route lease, and load the segment
+  from `SegmentRegistry`.
 - The loaded segment handles the local `get(K)` lookup.
 
 Key classes:
 `segmentindex/core/session/SegmentIndexImpl.java`,
 `segmentindex/core/session/SegmentIndexPointOperationFacade.java`,
 `segmentindex/core/operations/IndexOperationCoordinator.java`,
-`segmentindex/core/segmentaccess/SegmentAccessService.java`,
+`segmentindex/core/segmentlease/SegmentLeaseService.java`,
 `segmentindex/mapping/KeyToSegmentMap.java`.
 
 ## Per‑Segment Read Path

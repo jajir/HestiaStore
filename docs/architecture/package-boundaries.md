@@ -57,10 +57,21 @@ Rules:
 - Management/console REST JSON communication must reuse contracts from
   `org.hestiastore.monitoring.json.api.*` and avoid duplicate DTO definitions.
 
+SegmentIndex internal rules:
+
+- `core.topology` owns runtime route state and must not depend on session or
+  segment lease packages.
+- `core.segmentlease` is the only package that combines `KeyToSegmentMap`,
+  `SegmentTopology`, and `SegmentRegistry` for point-operation leases and
+  split drains.
+- `core.split` may depend on `SegmentRegistry` for child materialization and
+  retired/prepared segment cleanup, but it must not depend on `core.topology`.
+  Split code obtains route-drain access through `SegmentLeaseService`.
+- `mapping` must not depend on split orchestration packages.
+
 ## Enforcement
 
-The test `PackageDependencyBoundaryTest` enforces that core source files do not
-import monitoring, management, or console packages.
-
-This test is intentionally source-level and lightweight so it can run without
-additional architecture tooling.
+The `PackageDependencyBoundaryTest` classes enforce these rules with ArchUnit.
+The SegmentIndex-specific test includes the `core.split` to `core.topology`
+rule so future split changes keep topology/registry coordination inside
+`core.segmentlease`.

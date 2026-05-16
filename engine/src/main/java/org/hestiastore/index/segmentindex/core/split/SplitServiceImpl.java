@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentregistry.BlockingSegment;
 
 /**
  * Aggregates split execution and policy scheduling inside one managed runtime
@@ -35,9 +34,9 @@ final class SplitServiceImpl<K, V>
     }
 
     boolean scheduleEligibleSplit(
-            final BlockingSegment<K, V> segmentHandle,
+            final SegmentId segmentId,
             final long splitThreshold, final long observedKeyCount) {
-        return splitCoordinator.scheduleEligibleSplit(segmentHandle,
+        return splitCoordinator.scheduleEligibleSplit(segmentId,
                 splitThreshold, observedKeyCount);
     }
 

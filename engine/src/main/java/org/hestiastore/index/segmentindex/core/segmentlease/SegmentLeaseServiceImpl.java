@@ -1,16 +1,21 @@
 package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrain;
+import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrainResult;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLease;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteLeaseResult;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 final class SegmentLeaseServiceImpl<K, V>
@@ -54,6 +59,41 @@ final class SegmentLeaseServiceImpl<K, V>
         return loadSegmentLease(acquireWriteRouteLease(nonNullKey));
     }
 
+    @Override
+    public Optional<SegmentLease<K, V>> tryAcquireMappedSegment(
+            final SegmentId segmentId) {
+        final SegmentId nonNullSegmentId = requireSegmentId(segmentId);
+        final Snapshot<K> snapshot = currentRouteSnapshot();
+        if (!isMapped(snapshot, nonNullSegmentId)) {
+            return Optional.empty();
+        }
+        final RouteLease lease = tryAcquireRouteLease(nonNullSegmentId,
+                snapshot);
+        if (lease == null) {
+            return Optional.empty();
+        }
+        return loadOptionalSegmentLease(nonNullSegmentId, lease);
+    }
+
+    @Override
+    public Optional<SegmentSplitLease<K, V>> tryAcquireForSplit(
+            final SegmentId segmentId) {
+        final SegmentId nonNullSegmentId = requireSegmentId(segmentId);
+        final RouteDrainResult drainResult = segmentTopology.tryBeginDrain(
+                nonNullSegmentId);
+        if (!drainResult.isAcquired()) {
+            return Optional.empty();
+        }
+        final RouteDrain drain = drainResult.drain();
+        try {
+            drain.awaitDrained();
+        } catch (final RuntimeException e) {
+            abortDrain(drain);
+            throw e;
+        }
+        return loadSplitLease(nonNullSegmentId, drain);
+    }
+
     private SegmentLease<K, V> loadSegmentLease(final RouteLease lease) {
         try {
             return new SegmentLeaseImpl<>(lease,
@@ -61,6 +101,84 @@ final class SegmentLeaseServiceImpl<K, V>
         } catch (final RuntimeException e) {
             lease.close();
             throw e;
+        }
+    }
+
+    private Optional<SegmentLease<K, V>> loadOptionalSegmentLease(
+            final SegmentId segmentId,
+            final RouteLease lease) {
+        try {
+            final Optional<BlockingSegment<K, V>> segment =
+                    segmentRegistry.tryGetSegment(segmentId);
+            if (segment.isEmpty()) {
+                lease.close();
+                return Optional.empty();
+            }
+            return Optional.of(new SegmentLeaseImpl<>(lease, segment.get()));
+        } catch (final IndexException e) {
+            lease.close();
+            if (!isCurrentlyMapped(segmentId)) {
+                return Optional.empty();
+            }
+            throw e;
+        } catch (final RuntimeException e) {
+            lease.close();
+            throw e;
+        }
+    }
+
+    private Optional<SegmentSplitLease<K, V>> loadSplitLease(
+            final SegmentId segmentId,
+            final RouteDrain drain) {
+        if (!isCurrentlyMapped(segmentId)) {
+            completeDrain(drain);
+            return Optional.empty();
+        }
+        try {
+            final Optional<BlockingSegment<K, V>> segment =
+                    segmentRegistry.tryGetSegment(segmentId);
+            if (segment.isEmpty()) {
+                finishUnavailableSplitDrain(segmentId, drain);
+                return Optional.empty();
+            }
+            return Optional.of(new SegmentSplitLeaseImpl<>(drain,
+                    keyToSegmentMap, segmentTopology, segment.get()));
+        } catch (final IndexException e) {
+            finishUnavailableSplitDrain(segmentId, drain);
+            if (!isCurrentlyMapped(segmentId)) {
+                return Optional.empty();
+            }
+            throw e;
+        } catch (final RuntimeException e) {
+            abortDrain(drain);
+            throw e;
+        }
+    }
+
+    private void finishUnavailableSplitDrain(final SegmentId segmentId,
+            final RouteDrain drain) {
+        if (isCurrentlyMapped(segmentId)) {
+            abortDrain(drain);
+        } else {
+            completeDrain(drain);
+        }
+    }
+
+    private void abortDrain(final RouteDrain drain) {
+        drain.abort();
+    }
+
+    private void completeDrain(final RouteDrain drain) {
+        RuntimeException reconcileFailure = null;
+        try {
+            segmentTopology.reconcile(keyToSegmentMap.snapshot());
+        } catch (final RuntimeException e) {
+            reconcileFailure = e;
+        } finally {
+            drain.complete();
+        }
+        if (reconcileFailure != null) {
+            throw reconcileFailure;
         }
     }
 
@@ -149,7 +267,21 @@ final class SegmentLeaseServiceImpl<K, V>
         return Vldtn.requireNonNull(key, "key");
     }
 
+    private SegmentId requireSegmentId(final SegmentId segmentId) {
+        return Vldtn.requireNonNull(segmentId, "segmentId");
+    }
+
     private Snapshot<K> currentRouteSnapshot() {
         return keyToSegmentMap.snapshot();
+    }
+
+    private boolean isCurrentlyMapped(final SegmentId segmentId) {
+        return isMapped(currentRouteSnapshot(), segmentId);
+    }
+
+    private boolean isMapped(final Snapshot<K> snapshot,
+            final SegmentId segmentId) {
+        return snapshot.getSegmentIds(SegmentWindow.unbounded())
+                .contains(segmentId);
     }
 }

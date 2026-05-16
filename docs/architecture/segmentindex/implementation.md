@@ -30,7 +30,7 @@ Source: [implementation-layers.plantuml](images/implementation-layers.plantuml)
 | Topology runtime | `SegmentTopologyRuntime`, `SegmentTopology`, `SplitService` | Segment route topology, split runtime, iterator invalidation, direct segment access, and recovery cleanup. Topology is created by the runtime factory because it depends on storage, executors, runtime state, and failure handling. |
 | Core storage runtime | `SegmentIndexCoreStorageFactory`, `SegmentIndexCoreStorageOpenSpec`, `SegmentIndexCoreStorageOpenObserver`, `IndexWalCoordinator` | Opens storage-owned route map, segment registry, runtime tuning state, retry policy, and WAL coordination helpers without depending on session classes. |
 | Point operations | `IndexOperationCoordinator`, `SegmentIndexOperationAccess` | Point `put`, `get`, `delete`, WAL append/replay, applied LSN recording, request counters, and operation latency metrics. |
-| Route access | `SegmentAccessService`, `SegmentAccess`, `KeyToSegmentMap`, `SegmentTopology` | Key-to-segment lookup, route snapshot validation, route leases, retry on stale/draining routes, and scoped access to the routed segment. |
+| Route and segment lease access | `SegmentLeaseService`, `SegmentLease`, `SegmentSplitLease`, `KeyToSegmentMap`, `SegmentTopology` | Key-to-segment lookup, route snapshot validation, route leases/drains, registry-backed segment loading, retry on stale/draining routes, and scoped access to routed or split-drained segments. |
 | Stable segment operations | `StableSegmentOperationGateway`, `StableSegmentOperationResult`, `StableSegmentOperationStatus`, `SegmentStreamingService`, `MaintenanceServiceImpl` | Single-attempt stable-segment calls used by iterator and maintenance paths, with `OK`, `BUSY`, `CLOSED`, and `ERROR` translated into index-level retry decisions. |
 | Registry and segment handle | `SegmentRegistry`, `BlockingSegment` | Segment cache, lifecycle, loading/reloading, materialization helpers, runtime tuning view, and retry-aware access to a loaded segment. `BlockingSegment` is the current segment handler/handle layer. |
 | Segment engine | `Segment`, `SegmentImpl`, `SegmentCore`, `SegmentSearcher`, `SegmentCompacter` | Segment-local reads, writes, flush, compaction, consistency checking, caches, sparse index, Bloom filter, and on-disk files. |
@@ -45,8 +45,8 @@ Source: [implementation-layers.plantuml](images/implementation-layers.plantuml)
   `IndexStateCoordinator` in `core.session.state`.
 - Point `put`, `get`, or `delete`: inspect `SegmentIndexPointOperationFacade`,
   `SegmentIndexRuntime`, and `IndexOperationCoordinator`.
-- Key routing, route drains, or stale topology retries: inspect
-  `SegmentAccessService`, `KeyToSegmentMap`, and `SegmentTopology`.
+- Key routing, route drains, split leases, or stale topology retries: inspect
+  `SegmentLeaseService`, `KeyToSegmentMap`, and `SegmentTopology`.
 - Segment loading, registry cache, or retry-aware segment handles: inspect
   `SegmentRegistry` and `BlockingSegment`.
 - Iterator and stream behavior: inspect `SegmentIndexReadFacade`,
@@ -57,8 +57,8 @@ Source: [implementation-layers.plantuml](images/implementation-layers.plantuml)
 - Actual per-segment data layout and lookup mechanics: inspect `Segment`,
   `SegmentImpl`, `SegmentCore`, `SegmentSearcher`, and `SegmentCompacter`.
 - Split scheduling and route publication: inspect `SplitService`,
-  `SplitPolicyCoordinator`, `RouteSplitCoordinator`, and
-  `RouteSplitPublishCoordinator`.
+  `SplitPolicyCoordinator`, `SplitExecutionCoordinator`,
+  `RouteSplitCoordinator`, and `RouteSplitPublishCoordinator`.
 
 ## Related Docs
 

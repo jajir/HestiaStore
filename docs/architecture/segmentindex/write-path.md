@@ -14,7 +14,7 @@ orchestration and operation flow.
 1. API call: `SegmentIndex.put(key, value)` or `SegmentIndex.delete(key)`
 1. Append the logical operation to WAL when WAL is enabled
 1. Resolve the routed segment through a `KeyToSegmentMap` snapshot
-1. Acquire a matching `SegmentTopology` route lease
+1. Acquire a matching `SegmentLeaseService` scoped segment lease
 1. Write directly into the target segment
 1. Segment-local maintenance later flushes or compacts that segment
 1. Autonomous split policy may remap hot routes to child segments
@@ -48,14 +48,14 @@ additional files or provide durability.
 Every `put` / `delete` now goes straight to the routed stable segment:
 
 - `IndexOperationCoordinator` appends to WAL first when enabled
-- `SegmentAccessService` resolves the current route and acquires a
-  `SegmentTopology` lease
+- `SegmentLeaseService` resolves the current route, acquires a
+  `SegmentTopology` lease, and loads the segment through `SegmentRegistry`
 - the loaded segment receives the `Segment.put(...)` call
 - read-after-write is then guaranteed by the target segment's write cache
 
 Key classes:
 `segmentindex/core/operations/IndexOperationCoordinator`,
-`segmentindex/core/segmentaccess/SegmentAccessService`,
+`segmentindex/core/segmentlease/SegmentLeaseService`,
 `segment/SegmentImpl`.
 
 ## Flush and Segment Maintenance
@@ -125,12 +125,18 @@ When a routed segment grows beyond
 `writePath().segmentSplitKeyThreshold()`,
 the split coordinator computes a route-first split plan, materializes child
 stable segments from the parent stable snapshot, and atomically updates the
-key-to-segment mapping.
+key-to-segment mapping. Split policy inspects candidates through
+`SegmentLeaseService.tryAcquireMappedSegment(...)`; split execution acquires a
+`SegmentSplitLease` with `tryAcquireForSplit(...)`, which drains the parent
+route and loads the parent segment before child materialization.
 
 Key classes:
+`segmentindex/core/segmentlease/SegmentLeaseService`,
+`segmentindex/core/segmentlease/SegmentSplitLease`,
 `segmentindex/core/split/SplitPolicyCoordinator`,
+`segmentindex/core/split/SplitExecutionCoordinator`,
 `segmentindex/core/split/RouteSplitCoordinator`,
-`segmentindex/core/split/RouteSplitPlan`,
+`segmentindex/core/split/RouteSplitPublishCoordinator`,
 `segmentindex/mapping/KeyToSegmentMap`.
 
 ## Delete Semantics (Tombstones)
@@ -193,7 +199,7 @@ Key classes:
 
 1. `SegmentIndex.put(k,v)` → validate inputs; forbid direct tombstone values
 1. Append to WAL (when enabled)
-1. Resolve write route via key→segment map and `SegmentTopology`
+1. Resolve write route via key→segment map and `SegmentLeaseService`
 1. Write latest `(k,v)` into the routed segment write cache
 1. If the route is draining, stale, closed, or transiently busy: retry through
    `IndexRetryPolicy`
