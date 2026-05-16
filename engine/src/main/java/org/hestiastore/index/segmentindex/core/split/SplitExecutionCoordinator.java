@@ -1,19 +1,9 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import java.util.Comparator;
-import java.util.concurrent.Executor;
-
-import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
-import org.hestiastore.index.segmentregistry.BlockingSegment;
 
 /**
- * Coordinates split execution and topology-aware split publishing after the
+ * Coordinates split execution and lease-backed split publishing after the
  * policy layer has already accepted a candidate.
  *
  * @param <K> key type
@@ -22,69 +12,15 @@ import org.hestiastore.index.segmentregistry.BlockingSegment;
 interface SplitExecutionCoordinator<K, V> {
 
     /**
-     * Builds the default split-execution coordinator from split collaborators
-     * and policies.
-     *
-     * @param conf            index configuration
-     * @param keyComparator   key comparator
-     * @param keyToSegmentMap route map
-     * @param segmentRegistry segment registry
-     * @param segmentTopology runtime route topology
-     * @param directoryFacade root segment directory
-     * @param splitExecutor   split executor
-     * @param failureReporter split failure reporter
-     * @param telemetry       split telemetry recorder
-     * @param <K>             key type
-     * @param <V>             value type
-     * @return split-execution coordinator
-     */
-    static <K, V> SplitExecutionCoordinator<K, V> create(
-            final EffectiveIndexConfiguration<K, V> conf,
-            final Comparator<K> keyComparator,
-            final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final SegmentTopology<K> segmentTopology,
-            final Directory directoryFacade,
-            final Executor splitExecutor,
-            final SplitFailureReporter failureReporter,
-            final SplitTelemetry telemetry) {
-        final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
-                .requireNonNull(segmentRegistry, "segmentRegistry");
-        Vldtn.requireNonNull(keyComparator, "keyComparator");
-        final DefaultSegmentMaterializationService<K, V> materializationService = new DefaultSegmentMaterializationService<>(
-                Vldtn.requireNonNull(directoryFacade,
-                        "directoryFacade"),
-                validatedSegmentRegistry.materialization());
-        final RouteSplitPreparationService<K, V> preparationService =
-                new RouteSplitPreparationService<>(materializationService,
-                        new org.hestiastore.index.segmentindex.IndexRetryPolicy(
-                                conf.maintenance().busyBackoffMillis(),
-                                conf.maintenance().busyTimeoutMillis()));
-        return new SplitExecutionCoordinatorImpl<>(
-                Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
-                Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
-                new RouteSplitCoordinator<>(
-                        validatedSegmentRegistry,
-                        new SegmentIndexSplitPolicyThreshold<>(),
-                        preparationService),
-                new RouteSplitPublishCoordinator<>(
-                        keyToSegmentMap, validatedSegmentRegistry,
-                        materializationService),
-                Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
-                Vldtn.requireNonNull(failureReporter, "failureReporter"),
-                Vldtn.requireNonNull(telemetry, "telemetry"));
-    }
-
-    /**
      * Schedules split execution for a candidate already accepted by the policy
      * layer.
      *
-     * @param segmentHandle    accepted split candidate
+     * @param segmentId        accepted split candidate id
      * @param splitThreshold   active split threshold
      * @param observedKeyCount key count observed by policy evaluation
      * @return {@code true} when split work was scheduled
      */
-    boolean scheduleEligibleSplit(BlockingSegment<K, V> segmentHandle,
+    boolean scheduleEligibleSplit(SegmentId segmentId,
             long splitThreshold, long observedKeyCount);
 
     /**

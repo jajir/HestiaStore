@@ -11,6 +11,8 @@ described has been removed. The current implementation contract is:
 - `get()` reads through `DirectSegmentCoordinator`
 - `KeyToSegmentMap` remains the persisted routing source of truth
 - `SegmentTopology` owns runtime route availability and split drain state
+- `SegmentLeaseService` is the boundary that combines route-map lookup,
+  topology leases/drains, and registry segment loading
 - WAL replay restores writes by reusing the same direct write path on open
 
 ## Split Behavior
@@ -18,11 +20,15 @@ described has been removed. The current implementation contract is:
 - split is no longer an overlay reassignment workflow
 - `SplitPolicyCoordinator` schedules route-first split work in the
   background
+- `SplitPolicyCoordinator` inspects candidate size through
+  `SegmentLeaseService.tryAcquireMappedSegment(...)`
+- `SplitExecutionCoordinator` acquires `SegmentSplitLease` by segment id
+  before preparing a split
 - `RouteSplitCoordinator` materializes child stable segments from the parent
   stable snapshot before route publish
-- `SegmentTopology` drains the parent route before child materialization, so
-  no new writes can enter the old parent while the split snapshot is being
-  materialized
+- `SegmentSplitLease` drains the parent route through `SegmentTopology` before
+  child materialization, so no new writes can enter the old parent while the
+  split snapshot is being materialized
 - writes to the affected route may be retried internally as `BUSY` while the
   route is draining or while the topology catches up to a newer route-map
   snapshot

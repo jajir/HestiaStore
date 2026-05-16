@@ -11,7 +11,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -26,7 +26,7 @@ public final class SplitServiceBuilder<K, V> {
     private EffectiveIndexConfiguration<K, V> conf;
     private RuntimeTuningState runtimeTuningState;
     private KeyToSegmentMap<K> keyToSegmentMap;
-    private SegmentTopology<K> segmentTopology;
+    private SegmentLeaseService<K, V> segmentLeaseService;
     private SegmentRegistry<K, V> segmentRegistry;
     private Directory directoryFacade;
     private Executor splitExecutor;
@@ -57,9 +57,9 @@ public final class SplitServiceBuilder<K, V> {
         return this;
     }
 
-    public SplitServiceBuilder<K, V> segmentTopology(
-            final SegmentTopology<K> segmentTopology) {
-        this.segmentTopology = segmentTopology;
+    public SplitServiceBuilder<K, V> segmentLeaseService(
+            final SegmentLeaseService<K, V> segmentLeaseService) {
+        this.segmentLeaseService = segmentLeaseService;
         return this;
     }
 
@@ -120,6 +120,8 @@ public final class SplitServiceBuilder<K, V> {
                 .requireNonNull(conf, "conf");
         final SegmentRegistry<K, V> validatedSegmentRegistry = Vldtn
                 .requireNonNull(segmentRegistry, "segmentRegistry");
+        final SegmentLeaseService<K, V> validatedSegmentLeaseService = Vldtn
+                .requireNonNull(segmentLeaseService, "segmentLeaseService");
         final DefaultSegmentMaterializationService<K, V> materializationService =
                 new DefaultSegmentMaterializationService<>(
                         Vldtn.requireNonNull(directoryFacade,
@@ -132,7 +134,7 @@ public final class SplitServiceBuilder<K, V> {
                 new RouteSplitPreparationService<>(materializationService,
                         retryPolicy);
         final RouteSplitCoordinator<K, V> routeSplitCoordinator =
-                new RouteSplitCoordinator<>(validatedSegmentRegistry,
+                new RouteSplitCoordinator<>(
                         new SegmentIndexSplitPolicyThreshold<>(),
                         preparationService);
         final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator =
@@ -142,8 +144,7 @@ public final class SplitServiceBuilder<K, V> {
                         validatedSegmentRegistry, materializationService);
         final SplitExecutionCoordinator<K, V> splitCoordinator =
                 new SplitExecutionCoordinatorImpl<>(keyToSegmentMap,
-                        Vldtn.requireNonNull(segmentTopology,
-                                "segmentTopology"),
+                        validatedSegmentLeaseService,
                         routeSplitCoordinator, routeSplitPublishCoordinator,
                         Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
                         failureReporter, validatedStatsRecorder);
@@ -151,7 +152,7 @@ public final class SplitServiceBuilder<K, V> {
                 new SplitPolicyCoordinator<>(validatedConf,
                         Vldtn.requireNonNull(runtimeTuningState,
                                 "runtimeTuningState"),
-                        keyToSegmentMap, validatedSegmentRegistry,
+                        keyToSegmentMap, validatedSegmentLeaseService,
                         splitCoordinator,
                         Vldtn.requireNonNull(workerExecutor, "workerExecutor"),
                         Vldtn.requireNonNull(splitPolicyScheduler,

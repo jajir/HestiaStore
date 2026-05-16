@@ -121,6 +121,14 @@ class PackageDependencyBoundaryTest {
             .resideInAnyPackage(SEGMENT_INDEX_CORE_SPLIT_PACKAGES);
 
     @ArchTest
+    static final ArchRule segment_index_split_does_not_depend_on_topology = noClasses()//
+            .that()//
+            .resideInAPackage(SEGMENT_INDEX_CORE_SPLIT_PACKAGES)//
+            .should()//
+            .dependOnClassesThat()//
+            .resideInAnyPackage(SEGMENT_INDEX_CORE_TOPOLOGY_PACKAGES);
+
+    @ArchTest
     static final ArchRule operational_runtime_packages_do_not_depend_on_metrics = noClasses()//
             .that()//
             .resideInAnyPackage(SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES,
