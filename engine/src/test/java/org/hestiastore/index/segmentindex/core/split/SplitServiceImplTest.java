@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -30,8 +31,9 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
@@ -64,6 +66,12 @@ class SplitServiceImplTest {
 
     @Mock
     private SegmentRegistry<String, String> segmentRegistry;
+
+    @Mock
+    private SegmentLeaseService<String, String> segmentLeaseService;
+
+    @Mock
+    private SegmentLease<String, String> segmentLease;
 
     @Mock
     private SplitExecutionCoordinator<String, String> splitExecutionCoordinator;
@@ -118,7 +126,7 @@ class SplitServiceImplTest {
                         .conf(null)
                         .runtimeTuningState(tuningState)
                         .keyToSegmentMap(map)
-                        .segmentTopology(mockSegmentTopology())
+                        .segmentLeaseService(mockSegmentLeaseService())
                         .segmentRegistry(registry)
                         .directoryFacade(mock(Directory.class))
                         .splitExecutor(directExecutor())
@@ -189,8 +197,9 @@ class SplitServiceImplTest {
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId)).thenReturn(List.of(segmentId));
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
+        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+                .thenReturn(Optional.of(segmentLease));
+        when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
         final SplitServiceImpl<String, String> runtime = newRuntime(
@@ -203,7 +212,7 @@ class SplitServiceImplTest {
 
         scheduledWorkers.get(0).run();
 
-        verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentHandle,
+        verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentId,
                 10, 11L);
         runtime.close();
     }
@@ -222,7 +231,7 @@ class SplitServiceImplTest {
         runtime.hintSplitCandidate(SegmentId.of(7));
 
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
-                any(Integer.class), any(Long.class));
+                anyLong(), anyLong());
         runtime.close();
     }
 
@@ -237,11 +246,12 @@ class SplitServiceImplTest {
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
+        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+                .thenReturn(Optional.of(segmentLease));
+        when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
-        when(splitExecutionCoordinator.scheduleEligibleSplit(segmentHandle, 10,
+        when(splitExecutionCoordinator.scheduleEligibleSplit(segmentId, 10,
                 11L)).thenReturn(true);
         final SplitServiceImpl<String, String> runtime = newRuntime(
                 directExecutor(), () -> SegmentIndexState.READY,
@@ -249,7 +259,7 @@ class SplitServiceImplTest {
 
         runtime.requestFullSplitScan();
 
-        verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentHandle,
+        verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentId,
                 10, 11L);
         runtime.close();
     }
@@ -264,7 +274,7 @@ class SplitServiceImplTest {
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
-        when(segmentRegistry.tryGetSegment(segmentId))
+        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
                 .thenReturn(Optional.empty());
         final SplitServiceImpl<String, String> runtime = newRuntime(
                 directExecutor(), () -> SegmentIndexState.READY,
@@ -272,9 +282,9 @@ class SplitServiceImplTest {
 
         runtime.requestFullSplitScan();
 
-        verify(segmentRegistry).tryGetSegment(segmentId);
+        verify(segmentLeaseService).tryAcquireMappedSegment(segmentId);
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
-                any(Integer.class), any(Long.class));
+                anyLong(), anyLong());
         runtime.close();
     }
 
@@ -288,8 +298,9 @@ class SplitServiceImplTest {
                 .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
+        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+                .thenReturn(Optional.of(segmentLease));
+        when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(runtime.getNumberOfKeysInCache()).thenReturn(9L);
         final SplitServiceImpl<String, String> runtimeUnderTest = newRuntime(
@@ -298,9 +309,9 @@ class SplitServiceImplTest {
 
         runtimeUnderTest.requestFullSplitScan();
 
-        verify(segmentRegistry).tryGetSegment(segmentId);
+        verify(segmentLeaseService).tryAcquireMappedSegment(segmentId);
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
-                any(Integer.class), any(Long.class));
+                anyLong(), anyLong());
         runtimeUnderTest.close();
     }
 
@@ -353,11 +364,12 @@ class SplitServiceImplTest {
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
+        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+                .thenReturn(Optional.of(segmentLease));
+        when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
-        when(splitExecutionCoordinator.scheduleEligibleSplit(segmentHandle, 10,
+        when(splitExecutionCoordinator.scheduleEligibleSplit(segmentId, 10,
                 11L))
                 .thenAnswer(invocation -> {
                     splitEntered.countDown();
@@ -411,11 +423,12 @@ class SplitServiceImplTest {
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
-        when(segmentRegistry.tryGetSegment(segmentId))
-                .thenReturn(Optional.of(segmentHandle));
+        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+                .thenReturn(Optional.of(segmentLease));
+        when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
         when(segmentRuntime.getNumberOfKeysInCache()).thenReturn(11L);
-        when(splitExecutionCoordinator.scheduleEligibleSplit(segmentHandle, 10,
+        when(splitExecutionCoordinator.scheduleEligibleSplit(segmentId, 10,
                 11L))
                 .thenAnswer(invocation -> {
                     splitEntered.countDown();
@@ -460,7 +473,7 @@ class SplitServiceImplTest {
         managedState.markRunning();
         return new SplitServiceImpl<>(splitExecutionCoordinator,
                 new SplitPolicyCoordinator<>(conf, runtimeTuningState,
-                        synchronizedKeyToSegmentMap, segmentRegistry,
+                        synchronizedKeyToSegmentMap, segmentLeaseService,
                         splitExecutionCoordinator, workerExecutor,
                         splitPolicyScheduler, stateSupplier,
                         SplitFailureReporter.noOp(),
@@ -485,8 +498,8 @@ class SplitServiceImplTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K> SegmentTopology<K> mockSegmentTopology() {
-        return mock(SegmentTopology.class);
+    private static <K, V> SegmentLeaseService<K, V> mockSegmentLeaseService() {
+        return mock(SegmentLeaseService.class);
     }
 
 }

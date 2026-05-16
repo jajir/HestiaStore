@@ -115,7 +115,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
             final SegmentLeaseService<K, V> segmentLeaseService =
                     newSegmentLeaseService(coreStorage, segmentTopology);
             final SplitService splitService = newSplitService(coreStorage,
-                    segmentTopology);
+                    segmentLeaseService);
             final SegmentTopologyRuntimeAccess<K, V> topologyRuntime =
                     createTopologyRuntime(coreStorage, splitService);
             walRuntime = openWalRuntime();
@@ -220,12 +220,12 @@ final class SegmentIndexRuntimeFactory<K, V> {
 
     private SplitService newSplitService(
             final SegmentIndexCoreStorage<K, V> coreStorage,
-            final SegmentTopology<K> segmentTopology) {
+            final SegmentLeaseService<K, V> segmentLeaseService) {
         return SplitService.<K, V>builder()
                 .conf(openContext.conf)
                 .runtimeTuningState(coreStorage.runtimeTuningState())
                 .keyToSegmentMap(coreStorage.keyToSegmentMap())
-                .segmentTopology(segmentTopology)
+                .segmentLeaseService(segmentLeaseService)
                 .segmentRegistry(coreStorage.segmentRegistry())
                 .directoryFacade(openContext.directoryFacade)
                 .splitExecutor(openContext.executorRegistry

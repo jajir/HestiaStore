@@ -1,13 +1,8 @@
 package org.hestiastore.index.segmentindex.core.split;
 
-import java.util.Optional;
-
-import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,15 +19,11 @@ final class RouteSplitCoordinator<K, V> {
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(RouteSplitCoordinator.class);
-    private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIndexSplitPolicy<K, V> splitPolicy;
     private final RouteSplitPreparationService<K, V> preparationService;
 
-    RouteSplitCoordinator(final SegmentRegistry<K, V> segmentRegistry,
-            final SegmentIndexSplitPolicy<K, V> splitPolicy,
+    RouteSplitCoordinator(final SegmentIndexSplitPolicy<K, V> splitPolicy,
             final RouteSplitPreparationService<K, V> preparationService) {
-        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
-                "segmentRegistry");
         this.splitPolicy = Vldtn.requireNonNull(splitPolicy, "splitPolicy");
         this.preparationService = Vldtn.requireNonNull(preparationService,
                 "preparationService");
@@ -52,9 +43,6 @@ final class RouteSplitCoordinator<K, V> {
             return null;
         }
         logStartedSplit(nonNullBlockingSegment, splitThreshold);
-        if (!isStillCurrentSegment(nonNullBlockingSegment)) {
-            return null;
-        }
         return preparationService.prepare(nonNullBlockingSegment.getSegment(),
                 splitThreshold);
     }
@@ -62,39 +50,6 @@ final class RouteSplitCoordinator<K, V> {
     private boolean shouldSplit(final BlockingSegment<K, V> segmentHandle,
             final long splitThreshold) {
         return splitPolicy.shouldSplit(segmentHandle, splitThreshold);
-    }
-
-    private boolean isStillCurrentSegment(
-            final BlockingSegment<K, V> segmentHandle) {
-        final SegmentId segmentId = segmentHandle.getId();
-        final Optional<BlockingSegment<K, V>> currentSegment;
-        try {
-            currentSegment = segmentRegistry.tryGetSegment(segmentId);
-        } catch (final IndexException e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(
-                        "Route split aborted before validation because registry lookup failed: segment='{}'",
-                        segmentId, e);
-            }
-            return false;
-        }
-        if (currentSegment.isEmpty()) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(
-                        "Route split aborted before validation because segment is not immediately available: segment='{}'",
-                        segmentId);
-            }
-            return false;
-        }
-        if (currentSegment.get() != segmentHandle) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(
-                        "Route split aborted because loaded segment changed: segment='{}'",
-                        segmentId);
-            }
-            return false;
-        }
-        return true;
     }
 
     private BlockingSegment<K, V> requireBlockingSegment(

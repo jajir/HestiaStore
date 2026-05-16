@@ -68,14 +68,14 @@ Routed key range that receives a disproportionately large share of reads or
 writes compared with the rest of the index. Hot routes are where split policy,
 segment write-cache pressure, and maintenance latency matter most. Code:
 `segmentindex/core/split/SplitPolicyCoordinator.java`,
-`segmentindex/core/segmentaccess/DefaultSegmentAccessService.java`.
+`segmentindex/core/segmentlease/SegmentLeaseService.java`.
 
 ## Ingest (Index Ingest)
 Index write path where `put` and `delete` append to WAL first when enabled,
 resolve the current route, and write directly into the target stable segment.
 Read-after-write visibility is provided by the segment write cache. Code:
 `segmentindex/core/operations/IndexOperationCoordinator.java`,
-`segmentindex/core/segmentaccess/DefaultSegmentAccessService.java`.
+`segmentindex/core/segmentlease/SegmentLeaseService.java`.
 
 ## Key-to-Segment Map
 Global sorted map of max key → SegmentId that routes lookups and stable publish targets. Persisted as `index.map`. Code: `segmentindex/mapping/KeyToSegmentMap.java`.
@@ -85,6 +85,15 @@ Runtime route table that tracks `ACTIVE`, `DRAINING`, and `RETIRED` route
 states plus in-flight route leases. It is rebuilt from KeyToSegmentMap
 snapshots and is not persisted independently. Code:
 `segmentindex/core/topology/SegmentTopology.java`.
+
+## Segment Lease
+Scoped access object returned by `SegmentLeaseService` after it resolves a
+route-map snapshot, acquires the matching `SegmentTopology` lease or drain, and
+loads the mapped segment through `SegmentRegistry`. Point operations use
+`SegmentLease`; split execution uses `SegmentSplitLease`. Code:
+`segmentindex/core/segmentlease/SegmentLeaseService.java`,
+`segmentindex/core/segmentlease/SegmentLease.java`,
+`segmentindex/core/segmentlease/SegmentSplitLease.java`.
 
 ## Logging Context
 Optional MDC enrichment that sets `index.name` for log correlation when enabled.
@@ -126,6 +135,7 @@ Per‑segment, sorted sample of keys that points to chunk start positions in the
 Maintenance operation that replaces one routed segment range with child ranges
 when split policy is met; the route map is remapped atomically after child
 segments are materialized. Code:
+`segmentindex/core/segmentlease/SegmentSplitLease.java`,
 `segmentindex/core/split/RouteSplitCoordinator.java`,
 `segmentindex/core/split/SplitPolicyCoordinator.java`.
 
@@ -134,10 +144,12 @@ Background decision logic that identifies routed ranges worth splitting and sche
 
 ## Split Procedure
 Route-first split flow: compute the split boundary from the parent stable
-snapshot, materialize lower/upper child stable segments, atomically apply the
-route-map update, and retire the parent segment. Code:
+snapshot under a `SegmentSplitLease`, materialize lower/upper child stable
+segments, atomically apply the route-map update, complete the split lease, and
+retire the parent segment. Code:
+`segmentindex/core/segmentlease/SegmentSplitLease.java`,
 `segmentindex/core/split/RouteSplitCoordinator.java`,
-`segmentindex/core/split/RouteSplitPlan.java`.
+`segmentindex/core/split/RouteSplitPublishCoordinator.java`.
 
 ## Split-heavy Workload
 Workload pattern or benchmark mode that intentionally drives frequent split

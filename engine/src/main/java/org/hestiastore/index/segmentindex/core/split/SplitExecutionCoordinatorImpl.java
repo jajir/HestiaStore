@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.core.split;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -11,9 +12,8 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrain;
-import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrainResult;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentSplitLease;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -41,7 +41,7 @@ final class SplitExecutionCoordinatorImpl<K, V>
     private static final long SPLIT_COOLDOWN_SMOOTHING_WEIGHT_OBSERVED = 1L;
 
     private final KeyToSegmentMap<K> keyToSegmentMap;
-    private final SegmentTopology<K> segmentTopology;
+    private final SegmentLeaseService<K, V> segmentLeaseService;
     private final RouteSplitCoordinator<K, V> routeSplitCoordinator;
     private final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator;
     private final Executor splitExecutor;
@@ -58,43 +58,43 @@ final class SplitExecutionCoordinatorImpl<K, V>
 
     SplitExecutionCoordinatorImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentTopology<K> segmentTopology,
+            final SegmentLeaseService<K, V> segmentLeaseService,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter) {
-        this(keyToSegmentMap, segmentTopology, routeSplitCoordinator,
+        this(keyToSegmentMap, segmentLeaseService, routeSplitCoordinator,
                 routeSplitPublishCoordinator, splitExecutor,
                 failureReporter, SplitTelemetry.noOp(), System::nanoTime);
     }
 
     SplitExecutionCoordinatorImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentTopology<K> segmentTopology,
+            final SegmentLeaseService<K, V> segmentLeaseService,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
             final SplitTelemetry telemetry) {
-        this(keyToSegmentMap, segmentTopology, routeSplitCoordinator,
+        this(keyToSegmentMap, segmentLeaseService, routeSplitCoordinator,
                 routeSplitPublishCoordinator, splitExecutor,
                 failureReporter, telemetry, System::nanoTime);
     }
 
     SplitExecutionCoordinatorImpl(final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentTopology<K> segmentTopology,
+            final SegmentLeaseService<K, V> segmentLeaseService,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
             final SplitFailureReporter failureReporter,
             final LongSupplier nanoTimeSupplier) {
-        this(keyToSegmentMap, segmentTopology, routeSplitCoordinator,
+        this(keyToSegmentMap, segmentLeaseService, routeSplitCoordinator,
                 routeSplitPublishCoordinator, splitExecutor,
                 failureReporter, SplitTelemetry.noOp(), nanoTimeSupplier);
     }
 
     SplitExecutionCoordinatorImpl(final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentTopology<K> segmentTopology,
+            final SegmentLeaseService<K, V> segmentLeaseService,
             final RouteSplitCoordinator<K, V> routeSplitCoordinator,
             final RouteSplitPublishCoordinator<K, V> routeSplitPublishCoordinator,
             final Executor splitExecutor,
@@ -103,8 +103,8 @@ final class SplitExecutionCoordinatorImpl<K, V>
             final LongSupplier nanoTimeSupplier) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
-        this.segmentTopology = Vldtn.requireNonNull(segmentTopology,
-                "segmentTopology");
+        this.segmentLeaseService = Vldtn.requireNonNull(segmentLeaseService,
+                "segmentLeaseService");
         this.routeSplitCoordinator = Vldtn.requireNonNull(
                 routeSplitCoordinator, "routeSplitCoordinator");
         this.routeSplitPublishCoordinator = Vldtn.requireNonNull(
@@ -120,19 +120,16 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     @Override
-    public boolean scheduleEligibleSplit(final BlockingSegment<K, V> segmentHandle,
+    public boolean scheduleEligibleSplit(final SegmentId segmentId,
             final long splitThreshold, final long observedKeyCount) {
-        if (!hasCandidate(segmentHandle)) {
+        if (!hasCandidate(segmentId)) {
             return false;
         }
-        final SegmentId segmentId = segmentHandle.getId();
-        if (isClosedCandidate(segmentHandle)
-                || isUnmappedCandidate(segmentId)
-                || !canScheduleSplit(splitThreshold)) {
+        if (!canScheduleSplit(splitThreshold)) {
             clearAttemptState(segmentId);
             return false;
         }
-        return scheduleAcceptedSplit(segmentHandle, splitThreshold,
+        return scheduleAcceptedSplit(segmentId, splitThreshold,
                 observedKeyCount);
     }
 
@@ -194,28 +191,26 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private boolean scheduleAcceptedSplit(
-            final BlockingSegment<K, V> segmentHandle,
+            final SegmentId segmentId,
             final long splitThreshold, final long observedKeyCount) {
-        final SegmentId segmentId = segmentHandle.getId();
         if (!isEligibleAfterCooldown(segmentId, observedKeyCount,
                 splitThreshold)) {
             return false;
         }
-        return scheduleSplitAsync(segmentHandle, splitThreshold,
+        return scheduleSplitAsync(segmentId, splitThreshold,
                 observedKeyCount);
     }
 
     private boolean scheduleSplitAsync(
-            final BlockingSegment<K, V> segmentHandle,
+            final SegmentId segmentId,
             final long splitThreshold, final long observedKeyCount) {
-        final SegmentId segmentId = segmentHandle.getId();
         if (!tryMarkSplitScheduled(segmentId)) {
             return false;
         }
         final long scheduledAtNanos = nanoTimeSupplier.getAsLong();
         try {
             splitExecutor.execute(
-                    () -> executeScheduledSplit(segmentHandle, splitThreshold,
+                    () -> executeScheduledSplit(segmentId, splitThreshold,
                             observedKeyCount, scheduledAtNanos));
         } catch (final RuntimeException e) {
             scheduledSplits.remove(segmentId);
@@ -226,14 +221,14 @@ final class SplitExecutionCoordinatorImpl<K, V>
     }
 
     private void executeScheduledSplit(
-            final BlockingSegment<K, V> segmentHandle,
+            final SegmentId segmentId,
             final long splitThreshold, final long observedKeyCount,
             final long scheduledAtNanos) {
         final long startedAtNanos = nanoTimeSupplier.getAsLong();
         telemetry.recordSplitTaskStartDelayNanos(
                 Math.max(0L, startedAtNanos - scheduledAtNanos));
         try {
-            executeSplitAsync(segmentHandle, splitThreshold, observedKeyCount,
+            executeSplitAsync(segmentId, splitThreshold, observedKeyCount,
                     startedAtNanos);
         } finally {
             telemetry.recordSplitTaskRunLatencyNanos(Math.max(0L,
@@ -241,13 +236,12 @@ final class SplitExecutionCoordinatorImpl<K, V>
         }
     }
 
-    private void executeSplitAsync(final BlockingSegment<K, V> segmentHandle,
+    private void executeSplitAsync(final SegmentId segmentId,
             final long splitThreshold, final long observedKeyCount,
             final long startNanos) {
-        final SegmentId segmentId = segmentHandle.getId();
         boolean splitApplied = false;
         try {
-            splitApplied = tryApplyPreparedSplit(segmentHandle, splitThreshold);
+            splitApplied = tryApplyPreparedSplit(segmentId, splitThreshold);
         } catch (final RuntimeException e) {
             splitFailure.compareAndSet(null, e);
             failureReporter.reportFailure(e);
@@ -265,16 +259,12 @@ final class SplitExecutionCoordinatorImpl<K, V>
         }
     }
 
-    private boolean hasCandidate(final BlockingSegment<K, V> segmentHandle) {
-        return segmentHandle != null;
+    private boolean hasCandidate(final SegmentId segmentId) {
+        return segmentId != null;
     }
 
     private boolean isClosedCandidate(final BlockingSegment<K, V> segmentHandle) {
         return segmentHandle.getRuntime().getState() == SegmentState.CLOSED;
-    }
-
-    private boolean isUnmappedCandidate(final SegmentId segmentId) {
-        return !keyToSegmentMap.getSegmentIds().contains(segmentId);
     }
 
     private void clearAttemptState(final SegmentId segmentId) {
@@ -287,46 +277,23 @@ final class SplitExecutionCoordinatorImpl<K, V>
         return isSplitSchedulingEnabled(splitThreshold);
     }
 
-    private boolean tryApplyPreparedSplit(final BlockingSegment<K, V> segmentHandle,
+    private boolean tryApplyPreparedSplit(final SegmentId segmentId,
             final long splitThreshold) {
-        final RouteDrainResult drainResult = segmentTopology.tryBeginDrain(
-                segmentHandle.getId());
-        if (!drainResult.isAcquired()) {
+        final Optional<SegmentSplitLease<K, V>> splitLease =
+                segmentLeaseService.tryAcquireForSplit(segmentId);
+        if (splitLease.isEmpty()) {
             return false;
         }
-        final RouteDrain drain = drainResult.drain();
-        boolean published = false;
-        try {
-            drain.awaitDrained();
-            final SegmentRouteSplit<K> routeSplit = prepareSplit(segmentHandle,
-                    splitThreshold);
+        try (SegmentSplitLease<K, V> lease = splitLease.get()) {
+            if (isClosedCandidate(lease.segment())) {
+                return false;
+            }
+            final SegmentRouteSplit<K> routeSplit = prepareSplit(
+                    lease.segment(), splitThreshold);
             if (routeSplit == null) {
                 return false;
             }
-            published = publishPreparedSplit(routeSplit);
-            return published;
-        } finally {
-            if (published) {
-                completePublishedDrain(drain);
-            } else if (isParentStillMapped(segmentHandle.getId())) {
-                drain.abort();
-            } else {
-                completePublishedDrain(drain);
-            }
-        }
-    }
-
-    private void completePublishedDrain(final RouteDrain drain) {
-        RuntimeException reconcileFailure = null;
-        try {
-            segmentTopology.reconcile(keyToSegmentMap.snapshot());
-        } catch (final RuntimeException e) {
-            reconcileFailure = e;
-        } finally {
-            drain.complete();
-        }
-        if (reconcileFailure != null) {
-            throw reconcileFailure;
+            return publishSplit(routeSplit, lease);
         }
     }
 
@@ -340,6 +307,21 @@ final class SplitExecutionCoordinatorImpl<K, V>
     private boolean publishPreparedSplit(
             final SegmentRouteSplit<K> routeSplit) {
         return routeSplitPublishCoordinator.applyPreparedSplit(routeSplit);
+    }
+
+    private boolean publishSplit(final SegmentRouteSplit<K> routeSplit,
+            final SegmentSplitLease<K, V> splitLease) {
+        boolean published = false;
+        try {
+            published = publishPreparedSplit(routeSplit);
+            return published;
+        } finally {
+            if (published || !isParentStillMapped(splitLease.segmentId())) {
+                splitLease.completeAfterPublish();
+            } else {
+                splitLease.abort();
+            }
+        }
     }
 
     private boolean isParentStillMapped(final SegmentId segmentId) {
