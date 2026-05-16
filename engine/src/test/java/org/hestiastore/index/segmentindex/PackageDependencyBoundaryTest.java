@@ -21,8 +21,8 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.topology..";
     private static final String SEGMENT_INDEX_CORE_SESSION_PACKAGES =
             "org.hestiastore.index.segmentindex.core.session..";
-    private static final String SEGMENT_INDEX_CORE_SEGMENT_ACCESS_PACKAGES =
-            "org.hestiastore.index.segmentindex.core.segmentaccess..";
+    private static final String SEGMENT_INDEX_CORE_SEGMENT_LEASE_PACKAGES =
+            "org.hestiastore.index.segmentindex.core.segmentlease..";
     private static final String SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES =
             "org.hestiastore.index.segmentindex.core.bootstrap..";
     private static final String SEGMENT_INDEX_CORE_OPERATIONS_PACKAGES =
@@ -76,12 +76,12 @@ class PackageDependencyBoundaryTest {
             .resideInAnyPackage(SEGMENT_INDEX_CORE_SESSION_PACKAGES);
 
     @ArchTest
-    static final ArchRule segment_index_topology_does_not_depend_on_segment_access = noClasses()//
+    static final ArchRule segment_index_topology_does_not_depend_on_segment_lease = noClasses()//
             .that()//
             .resideInAPackage(SEGMENT_INDEX_CORE_TOPOLOGY_PACKAGES)//
             .should()//
             .dependOnClassesThat()//
-            .resideInAnyPackage(SEGMENT_INDEX_CORE_SEGMENT_ACCESS_PACKAGES);
+            .resideInAnyPackage(SEGMENT_INDEX_CORE_SEGMENT_LEASE_PACKAGES);
 
     @ArchTest
     static final ArchRule removed_segment_index_packages_are_not_used_by_internal_code = noClasses()//

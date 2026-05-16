@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.segmentaccess;
+package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -31,7 +31,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentAccessServiceImplTest {
+class SegmentLeaseServiceImplTest {
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -44,7 +44,7 @@ class SegmentAccessServiceImplTest {
 
     private KeyToSegmentMap<Integer> keyToSegmentMap;
     private SegmentTopology<Integer> segmentTopology;
-    private SegmentAccessService<Integer, String> service;
+    private SegmentLeaseService<Integer, String> service;
 
     @BeforeEach
     void setUp() {
@@ -53,7 +53,7 @@ class SegmentAccessServiceImplTest {
                         new TypeDescriptorInteger()));
         segmentTopology = SegmentTopology.<Integer>builder()
                 .snapshot(keyToSegmentMap.snapshot()).build();
-        service = new SegmentAccessServiceImpl<>(keyToSegmentMap,
+        service = new SegmentLeaseServiceImpl<>(keyToSegmentMap,
                 segmentRegistry, segmentTopology, retryPolicy);
     }
 
@@ -66,7 +66,7 @@ class SegmentAccessServiceImplTest {
 
     @Test
     void acquireForReadReturnsNullWhenKeyHasNoRoute() {
-        final SegmentAccess<Integer, String> result = service
+        final SegmentLease<Integer, String> result = service
                 .acquireForRead(10);
 
         assertNull(result);
@@ -74,14 +74,14 @@ class SegmentAccessServiceImplTest {
     }
 
     @Test
-    void acquireForWriteCreatesBootstrapRouteAndReturnsAccess() {
+    void acquireForWriteCreatesBootstrapRouteAndReturnsLease() {
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);
 
-        try (SegmentAccess<Integer, String> access = service
+        try (SegmentLease<Integer, String> lease = service
                 .acquireForWrite(11)) {
-            assertSame(blockingSegment, access.segment());
-            assertEquals(SegmentId.of(0), access.segmentId());
+            assertSame(blockingSegment, lease.segment());
+            assertEquals(SegmentId.of(0), lease.segmentId());
         }
 
         assertEquals(SegmentId.of(0),
@@ -94,9 +94,9 @@ class SegmentAccessServiceImplTest {
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);
 
-        try (SegmentAccess<Integer, String> access = service
+        try (SegmentLease<Integer, String> lease = service
                 .acquireForWrite(11)) {
-            access.segment().put(11, "v11");
+            lease.segment().put(11, "v11");
         }
 
         verify(blockingSegment).put(11, "v11");
@@ -117,15 +117,15 @@ class SegmentAccessServiceImplTest {
         when(result.isAcquired()).thenReturn(true);
         when(result.lease()).thenReturn(lease);
         when(lease.segmentId()).thenReturn(SegmentId.of(0));
-        final SegmentAccessService<Integer, String> accessService =
-                new SegmentAccessServiceImpl<>(keyToSegmentMap,
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
                         segmentRegistry, topology, retryPolicy);
         final IllegalStateException failure = new IllegalStateException(
                 "failed");
         when(segmentRegistry.loadSegment(SegmentId.of(0))).thenThrow(failure);
 
         assertThrows(IllegalStateException.class,
-                () -> accessService.acquireForWrite(10));
+                () -> leaseService.acquireForWrite(10));
 
         verify(lease).close();
     }
@@ -136,15 +136,15 @@ class SegmentAccessServiceImplTest {
         final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
         final SegmentTopology<Integer> topology = mockTopologyStaleThenAcquired(
                 snapshot);
-        final SegmentAccessService<Integer, String> accessService =
-                new SegmentAccessServiceImpl<>(keyToSegmentMap,
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
                         segmentRegistry, topology, retryPolicy);
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);
 
-        try (SegmentAccess<Integer, String> access = accessService
+        try (SegmentLease<Integer, String> lease = leaseService
                 .acquireForRead(10)) {
-            assertSame(blockingSegment, access.segment());
+            assertSame(blockingSegment, lease.segment());
         }
 
         verify(topology).reconcile(any());

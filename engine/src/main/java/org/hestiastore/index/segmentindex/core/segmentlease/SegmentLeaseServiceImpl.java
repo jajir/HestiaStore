@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.segmentaccess;
+package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import java.util.List;
 
@@ -13,8 +13,8 @@ import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
-final class SegmentAccessServiceImpl<K, V>
-        implements SegmentAccessService<K, V> {
+final class SegmentLeaseServiceImpl<K, V>
+        implements SegmentLeaseService<K, V> {
 
     private static final String OPERATION_READ = "acquireForRead";
     private static final String OPERATION_WRITE = "acquireForWrite";
@@ -24,7 +24,7 @@ final class SegmentAccessServiceImpl<K, V>
     private final SegmentTopology<K> segmentTopology;
     private final IndexRetryPolicy retryPolicy;
 
-    SegmentAccessServiceImpl(
+    SegmentLeaseServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentTopology<K> segmentTopology,
@@ -39,24 +39,24 @@ final class SegmentAccessServiceImpl<K, V>
     }
 
     @Override
-    public SegmentAccess<K, V> acquireForRead(final K key) {
+    public SegmentLease<K, V> acquireForRead(final K key) {
         final K nonNullKey = requireKey(key);
         final RouteLease lease = acquireReadRouteLease(nonNullKey);
         if (lease == null) {
             return null;
         }
-        return loadSegmentAccess(lease);
+        return loadSegmentLease(lease);
     }
 
     @Override
-    public SegmentAccess<K, V> acquireForWrite(final K key) {
+    public SegmentLease<K, V> acquireForWrite(final K key) {
         final K nonNullKey = requireKey(key);
-        return loadSegmentAccess(acquireWriteRouteLease(nonNullKey));
+        return loadSegmentLease(acquireWriteRouteLease(nonNullKey));
     }
 
-    private SegmentAccess<K, V> loadSegmentAccess(final RouteLease lease) {
+    private SegmentLease<K, V> loadSegmentLease(final RouteLease lease) {
         try {
-            return new SegmentAccessImpl<>(lease,
+            return new SegmentLeaseImpl<>(lease,
                     segmentRegistry.loadSegment(lease.segmentId()));
         } catch (final RuntimeException e) {
             lease.close();
