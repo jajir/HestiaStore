@@ -29,6 +29,7 @@ public final class SegmentIndexSessionResources<K, V> {
     private IndexOperationStatsRecorder operationStatsRecorder;
     private MaintenanceStatsRecorder maintenanceStatsRecorder;
     private SplitStatsRecorder splitStatsRecorder;
+    private ExecutorRegistry executorRegistry;
     private IndexOperationTrackingAccess operationTracker;
     private SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private SegmentIndexRuntime<K, V> runtime;
@@ -52,6 +53,8 @@ public final class SegmentIndexSessionResources<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> configuration,
             final ExecutorRegistry executorRegistry) {
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
         runtime = SegmentIndexRuntime.create(directory, keyTypeDescriptor,
                 valueTypeDescriptor, configuration, executorRegistry,
                 operationStatsRecorder(), maintenanceStatsRecorder(),
@@ -120,7 +123,7 @@ public final class SegmentIndexSessionResources<K, V> {
                 new IndexCloseCoordinator<>(conf.identity().name(),
                         stateMachine(), operationTracker(),
                         operationStatsRecorder(), runtime,
-                        directoryLock()),
+                        executorRegistry(), directoryLock()),
                 new SegmentIndexStartupCoordinator<>(conf.identity().name(),
                         directoryLock().wasStaleLockRecovered(), runtime,
                         stateMachine(), consistencyCoordinator));
@@ -169,6 +172,10 @@ public final class SegmentIndexSessionResources<K, V> {
     private MaintenanceStatsRecorder maintenanceStatsRecorder() {
         return Vldtn.requireNonNull(maintenanceStatsRecorder,
                 "maintenanceStatsRecorder");
+    }
+
+    private ExecutorRegistry executorRegistry() {
+        return Vldtn.requireNonNull(executorRegistry, "executorRegistry");
     }
 
     private SplitStatsRecorder splitStatsRecorder() {

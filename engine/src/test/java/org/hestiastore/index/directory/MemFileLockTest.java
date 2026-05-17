@@ -1,5 +1,6 @@
 package org.hestiastore.index.directory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -48,6 +49,20 @@ class MemFileLockTest {
         lock1.unlock();
         assertFalse(lock1.isLocked());
         assertThrows(IllegalStateException.class, () -> lock1.unlock());
+    }
+
+    @Test
+    void test_unlock_owned_lock_does_not_reread_metadata() {
+        final CountingMemDirectory countingDirectory =
+                new CountingMemDirectory();
+        final FileLock lock = countingDirectory.getLock(LOCK_FILE_NAME);
+        lock.lock();
+        countingDirectory.resetReadCount();
+
+        lock.unlock();
+
+        assertEquals(0, countingDirectory.getReadCount());
+        assertFalse(countingDirectory.isFileExists(LOCK_FILE_NAME));
     }
 
     @Test
@@ -112,6 +127,32 @@ class MemFileLockTest {
     @BeforeEach
     void createNewStack() {
         directory = new MemDirectory();
+    }
+
+    private static final class CountingMemDirectory extends MemDirectory {
+
+        private int readCount;
+
+        @Override
+        public FileReader getFileReader(final String fileName) {
+            readCount++;
+            return super.getFileReader(fileName);
+        }
+
+        @Override
+        public FileReader getFileReader(final String fileName,
+                final int bufferSize) {
+            readCount++;
+            return super.getFileReader(fileName, bufferSize);
+        }
+
+        void resetReadCount() {
+            readCount = 0;
+        }
+
+        int getReadCount() {
+            return readCount;
+        }
     }
 
 }

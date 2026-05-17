@@ -214,6 +214,10 @@ final class SegmentIndexRuntime<K, V>
         services.maintenance().flushAndWait();
     }
 
+    void sealAsyncMaintenanceAndWait() {
+        services.maintenance().sealAsyncMaintenanceAndWait();
+    }
+
     void closeWalRuntime() {
         walRuntime.close();
     }

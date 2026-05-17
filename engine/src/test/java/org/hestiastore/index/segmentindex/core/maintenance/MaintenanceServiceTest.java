@@ -35,7 +35,7 @@ class MaintenanceServiceTest {
                 .toList();
 
         assertEquals(List.of("compact", "compactAndWait", "flush",
-                "flushAndWait"),
+                "flushAndWait", "sealAsyncMaintenanceAndWait"),
                 declaredMethodNames);
     }
 
