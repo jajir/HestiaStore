@@ -52,8 +52,6 @@ final class IndexDirectoryLock {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        if (fileLock.isLocked()) {
-            fileLock.unlock();
-        }
+        fileLock.unlock();
     }
 }

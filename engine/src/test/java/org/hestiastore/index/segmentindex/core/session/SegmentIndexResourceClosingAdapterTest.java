@@ -12,7 +12,6 @@ import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
@@ -21,30 +20,26 @@ import org.junit.jupiter.api.Test;
 class SegmentIndexResourceClosingAdapterTest {
 
     @Test
-    void closeClosesDelegateAndExecutorRegistry() {
+    void closeClosesDelegate() {
         final NoopSegmentIndex delegate = new NoopSegmentIndex();
-        final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
 
         try (SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
-                delegate, executorRegistry)) {
+                delegate)) {
             // close triggered by try-with-resources
         }
 
         assertTrue(delegate.wasClosed(), "Delegate index should be closed");
-        verify(executorRegistry).close();
     }
 
     @Test
     void delegatesInternalOperations() {
         final IndexInternal<String, String> delegate = mockIndex();
-        final ExecutorRegistry executorRegistry = mock(ExecutorRegistry.class);
         final SegmentWindow window = SegmentWindow.unbounded();
         final EntryIterator<String, String> iterator = mockIterator();
         when(delegate.openSegmentIterator(window)).thenReturn(iterator);
 
         try (SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
-                delegate,
-                executorRegistry)) {
+                delegate)) {
             assertSame(iterator, adapter.openSegmentIterator(window));
             adapter.completeStartup();
         }

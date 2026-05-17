@@ -10,7 +10,6 @@ public class FsFileLock implements FileLock {
     private final Directory directory;
 
     private final String lockFileName;
-    private FileLockMetadata ownedMetadata;
 
     FsFileLock(final Directory directory, final String lockFileName) {
         this.directory = Vldtn.requireNonNull(directory, "directory");
@@ -47,7 +46,6 @@ public class FsFileLock implements FileLock {
         }
         final FileLockMetadata metadata = FileLockMetadata.currentProcess();
         metadata.write(directory, lockFileName);
-        ownedMetadata = metadata;
     }
 
     @Override
@@ -56,18 +54,7 @@ public class FsFileLock implements FileLock {
             throw new IllegalStateException(String.format(
                     "Can't unlock already unlocked file '%s'.", lockFileName));
         }
-        if (ownedMetadata != null) {
-            final FileLockMetadata currentMetadata = FileLockMetadata
-                    .read(directory, lockFileName).orElse(null);
-            if (currentMetadata != null
-                    && !ownedMetadata.hasSameSession(currentMetadata)) {
-                throw new IllegalStateException(String.format(
-                        "Can't unlock file '%s' owned by another process.",
-                        lockFileName));
-            }
-        }
         directory.deleteFile(lockFileName);
-        ownedMetadata = null;
     }
 
 }

@@ -37,7 +37,8 @@ class SegmentTopologyRuntimeTest {
         if (runtime != null) {
             failure = closeIgnoringFailure(
                     () -> SegmentIndexRuntimeTestAccess.closeRuntime(runtime,
-                            "segment-topology-runtime-test"),
+                            "segment-topology-runtime-test",
+                            executorRegistry),
                     failure);
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {

@@ -12,6 +12,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,6 @@ class IndexCloseCoordinatorTest {
 
     @Mock
     private Runnable awaitOperations;
-
-    @Mock
-    private Runnable finishCloseTransition;
 
     @Mock
     private SegmentIndexRuntime<Integer, String> runtime;
@@ -44,6 +42,9 @@ class IndexCloseCoordinatorTest {
     @Mock
     private FileLock fileLock;
 
+    @Mock
+    private ExecutorRegistry executorRegistry;
+
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
 
     @BeforeEach
@@ -55,13 +56,9 @@ class IndexCloseCoordinatorTest {
             awaitOperations.run();
             return null;
         }).when(operationTracker).awaitOperations();
-        doAnswer(invocation -> {
-            finishCloseTransition.run();
-            return null;
-        }).when(stateMachine).completeClose();
         closeCoordinator = new IndexCloseCoordinator<>("test-index",
                 stateMachine, operationTracker, new IndexOperationStatsRecorder(),
-                runtime,
+                runtime, executorRegistry,
                 new IndexDirectoryLock(directory));
     }
 
@@ -70,21 +67,22 @@ class IndexCloseCoordinatorTest {
         closeCoordinator.close();
 
         final InOrder inOrder = inOrder(awaitOperations, runtime,
-                stateMachine,
-                finishCloseTransition, fileLock);
+                stateMachine, executorRegistry, fileLock);
         inOrder.verify(stateMachine).beginClose();
         inOrder.verify(awaitOperations).run();
         inOrder.verify(runtime).closeSplitRuntime();
+        inOrder.verify(runtime).sealAsyncMaintenanceAndWait();
         inOrder.verify(runtime).flushAndWait();
         inOrder.verify(runtime).closeSegmentRegistry();
         inOrder.verify(runtime).closeKeyToSegmentMapIfOpen();
-        inOrder.verify(finishCloseTransition).run();
         inOrder.verify(runtime).closeWalRuntime();
+        inOrder.verify(executorRegistry).close();
+        inOrder.verify(stateMachine).completeClose();
         inOrder.verify(fileLock).unlock();
     }
 
     @Test
-    void close_stillFinishesAndClosesWalWhenRegistryCloseFails() {
+    void close_marksErrorAndKeepsLockWhenRegistryCloseFails() {
         doThrow(new IndexException("close failed")).when(runtime)
                 .closeSegmentRegistry();
 
@@ -92,8 +90,25 @@ class IndexCloseCoordinatorTest {
 
         verify(runtime).flushAndWait();
         verify(runtime, never()).closeKeyToSegmentMapIfOpen();
-        verify(finishCloseTransition).run();
+        verify(runtime, never()).closeWalRuntime();
+        verify(executorRegistry, never()).close();
+        verify(stateMachine, never()).completeClose();
+        verify(fileLock, never()).unlock();
+        verify(stateMachine).markRuntimeFailure(
+                org.mockito.ArgumentMatchers.any(IndexException.class));
+    }
+
+    @Test
+    void close_keepsLockWhenExecutorShutdownFails() {
+        doThrow(new IndexException("executor timeout")).when(executorRegistry)
+                .close();
+
+        assertThrows(IndexException.class, () -> closeCoordinator.close());
+
         verify(runtime).closeWalRuntime();
-        verify(fileLock).unlock();
+        verify(stateMachine, never()).completeClose();
+        verify(fileLock, never()).unlock();
+        verify(stateMachine).markRuntimeFailure(
+                org.mockito.ArgumentMatchers.any(IndexException.class));
     }
 }

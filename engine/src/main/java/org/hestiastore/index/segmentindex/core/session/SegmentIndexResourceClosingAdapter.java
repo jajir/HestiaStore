@@ -10,7 +10,6 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 
 /**
@@ -21,13 +20,9 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
         extends AbstractCloseableResource implements IndexInternal<K, V> {
 
     private final IndexInternal<K, V> delegate;
-    private final ExecutorRegistry executorRegistry;
 
-    public SegmentIndexResourceClosingAdapter(final IndexInternal<K, V> index,
-            final ExecutorRegistry executorRegistry) {
+    public SegmentIndexResourceClosingAdapter(final IndexInternal<K, V> index) {
         this.delegate = Vldtn.requireNonNull(index, "index");
-        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
-                "executorRegistry");
     }
 
     @Override
@@ -101,11 +96,7 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
     /** {@inheritDoc} */
     @Override
     protected void doClose() {
-        final CloseFailureAccumulator closeFailures =
-                new CloseFailureAccumulator();
-        closeFailures.close(delegate);
-        closeFailures.close(executorRegistry);
-        closeFailures.rethrowIfPresent();
+        delegate.close();
     }
 
 }

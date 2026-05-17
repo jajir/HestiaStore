@@ -268,7 +268,7 @@ class SegmentImpl<K, V> implements Segment<K, V> {
     }
 
     private void scheduleMaintenanceIfNeeded() {
-        if (gate.getState() != SegmentState.READY) {
+        if (gate.isClosing() || gate.getState() != SegmentState.READY) {
             return;
         }
         final SegmentMaintenanceDecision decision = maintenancePolicy
@@ -401,14 +401,17 @@ class SegmentImpl<K, V> implements Segment<K, V> {
                 gate.fail();
                 return false;
             }
+            releaseDirectoryLock();
             return true;
         } catch (final RuntimeException e) {
             gate.fail();
             return false;
-        } finally {
-            if (directoryLocking != null) {
-                directoryLocking.unlock();
-            }
+        }
+    }
+
+    private void releaseDirectoryLock() {
+        if (directoryLocking != null) {
+            directoryLocking.unlock();
         }
     }
 

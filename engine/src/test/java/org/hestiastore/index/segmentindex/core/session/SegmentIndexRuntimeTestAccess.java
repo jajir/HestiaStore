@@ -105,20 +105,21 @@ public final class SegmentIndexRuntimeTestAccess {
     }
 
     public static <K, V> void closeRuntime(final SegmentIndexRuntime<K, V> runtime,
-            final String indexName) {
+            final String indexName, final ExecutorRegistry executorRegistry) {
         final SegmentIndexStateMachine stateMachine =
                 new SegmentIndexStateMachine();
         stateMachine.markReady();
         new IndexCloseCoordinator<>(indexName, stateMachine,
                 mock(IndexOperationTrackingAccess.class),
                 new IndexOperationStatsRecorder(), runtime,
+                executorRegistry,
                 new IndexDirectoryLock(new MemDirectory()))
                 .close();
     }
 
     public static void closeRuntime(final Object runtime,
-            final String indexName) {
-        closeRuntime(castRuntime(runtime), indexName);
+            final String indexName, final ExecutorRegistry executorRegistry) {
+        closeRuntime(castRuntime(runtime), indexName, executorRegistry);
     }
 
     @SuppressWarnings("unchecked")

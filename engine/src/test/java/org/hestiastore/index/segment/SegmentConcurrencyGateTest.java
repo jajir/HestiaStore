@@ -70,6 +70,22 @@ class SegmentConcurrencyGateTest {
     }
 
     @Test
+    void closeRequestedDuringMaintenanceBlocksNewWorkUntilReady() {
+        assertTrue(gate.tryEnterFreezeAndDrain());
+        assertTrue(gate.enterMaintenanceRunning());
+
+        assertFalse(gate.tryEnterCloseAndDrain());
+        assertTrue(gate.isClosing());
+        assertFalse(gate.tryEnterWrite());
+        assertFalse(gate.tryEnterFreezeAndDrain());
+
+        assertTrue(gate.finishMaintenanceToFreeze());
+        assertTrue(gate.finishFreezeToReady());
+        assertTrue(gate.tryEnterCloseAndDrain());
+        assertEquals(SegmentState.FREEZE, gate.getState());
+    }
+
+    @Test
     void finishMaintenanceToFreeze_waits_for_in_flight_operations()
             throws Exception {
         assertTrue(gate.tryEnterFreezeAndDrain());

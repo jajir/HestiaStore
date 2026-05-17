@@ -67,9 +67,6 @@ final class SegmentDirectoryLocking {
             lockHandle.unlock();
         } catch (final IllegalStateException e) {
             // Another closer may have released the file just before this call.
-            if (lockHandle.isLocked()) {
-                throw e;
-            }
         }
     }
 
