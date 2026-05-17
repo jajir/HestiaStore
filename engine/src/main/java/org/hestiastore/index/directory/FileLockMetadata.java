@@ -141,10 +141,6 @@ final class FileLockMetadata {
         return false;
     }
 
-    boolean hasSameSession(final FileLockMetadata other) {
-        return other != null && sessionId.equals(other.sessionId);
-    }
-
     long getPid() {
         return pid;
     }

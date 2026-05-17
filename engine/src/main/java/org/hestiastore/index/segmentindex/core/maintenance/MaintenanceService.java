@@ -30,4 +30,10 @@ public interface MaintenanceService {
      * Flushes mapped segments and waits until durable maintenance is settled.
      */
     void flushAndWait();
+
+    /**
+     * Seals asynchronous maintenance submission and waits for accepted
+     * asynchronous work to finish.
+     */
+    void sealAsyncMaintenanceAndWait();
 }

@@ -33,6 +33,8 @@ public final class ExecutorRegistryFixture {
                         configuration.maintenance().segmentThreads())
                 .withRegistryMaintenanceThreads(
                         configuration.maintenance().registryLifecycleThreads())
+                .withShutdownTimeoutMillis(
+                        configuration.maintenance().busyTimeoutMillis())
                 .build();
     }
 }

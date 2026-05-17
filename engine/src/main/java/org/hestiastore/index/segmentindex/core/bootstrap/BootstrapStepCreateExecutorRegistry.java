@@ -28,6 +28,8 @@ final class BootstrapStepCreateExecutorRegistry<K, V>
                         configuration.maintenance().segmentThreads())
                 .withRegistryMaintenanceThreads(
                         configuration.maintenance().registryLifecycleThreads())
+                .withShutdownTimeoutMillis(
+                        configuration.maintenance().busyTimeoutMillis())
                 .build();
         state.setExecutorRegistry(executorRegistry);
     }
