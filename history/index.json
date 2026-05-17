@@ -5,13 +5,13 @@
         "main": {
           "latestPointerPath": "history/segment-index-nightly/latest-main.json",
           "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
-          "timestampUtc": "2026-05-16T04:14:39.652849+00:00"
+          "timestampUtc": "2026-05-17T04:25:53.826593+00:00"
         }
       },
       "latestChannel": "main",
       "latestPointerPath": "history/segment-index-nightly/latest-main.json",
       "sha": "e72f4974ea597aa48d2725b131d13e39bcfa6872",
-      "timestampUtc": "2026-05-16T04:14:39.652849+00:00"
+      "timestampUtc": "2026-05-17T04:25:53.826593+00:00"
     },
     "segment-index-pr-smoke": {
       "channels": {
