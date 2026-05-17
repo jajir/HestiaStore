@@ -12,7 +12,7 @@ final class BootstrapStepWrapResourceClosing<K, V>
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
         final IndexInternal<K, V> returnedIndex = new SegmentIndexResourceClosingAdapter<>(
-                state.getManagedIndex(), state.getExecutorRegistry());
+                state.getManagedIndex());
         state.setIndex(returnedIndex);
     }
 }

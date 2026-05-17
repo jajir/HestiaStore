@@ -4,6 +4,7 @@ import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTes
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.directory.MemDirectory;
@@ -49,7 +50,7 @@ class BootstrapStepWrapResourceClosingTest {
     }
 
     @Test
-    void returnedIndexCloseClosesManagedIndexAndExecutorRegistry() {
+    void returnedIndexCloseClosesManagedIndexOnly() {
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
         state.setManagedIndex(managedIndex);
@@ -60,6 +61,6 @@ class BootstrapStepWrapResourceClosingTest {
         assertDoesNotThrow(() -> state.getIndex().close());
 
         verify(managedIndex).close();
-        verify(executorRegistry).close();
+        verify(executorRegistry, never()).close();
     }
 }

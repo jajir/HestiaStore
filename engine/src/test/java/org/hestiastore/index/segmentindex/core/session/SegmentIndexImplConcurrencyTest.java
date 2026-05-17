@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
@@ -113,20 +114,7 @@ class SegmentIndexImplConcurrencyTest {
 
         setSplitThreshold(32);
 
-        boolean splitObserved = false;
-        for (int i = 0; i < 256; i++) {
-            index.put(49, "trigger-49-" + i);
-            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            if (snapshot.getSplitScheduleCount() > 0
-                    || snapshot.getSplitInFlightCount() > 0
-                    || snapshot.getSegmentCount() > 1) {
-                splitObserved = true;
-                break;
-            }
-        }
-
-        assertTrue(splitObserved,
-                "Expected split scheduling while writes were in progress.");
+        awaitSplitObservedWhileWriting();
         setSplitThreshold(10_000_000);
         awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1,
                 30_000L);
@@ -226,6 +214,23 @@ class SegmentIndexImplConcurrencyTest {
                                 .segmentSplitKeyThreshold(threshold))
                         .build());
         assertTrue(patchResult.applied());
+    }
+
+    private void awaitSplitObservedWhileWriting() {
+        final AtomicInteger writeCount = new AtomicInteger();
+        awaitCondition(() -> {
+            final int current = writeCount.getAndIncrement();
+            index.put(49, "trigger-49-" + current);
+            return hasSplitActivity();
+        }, 10_000L);
+    }
+
+    private boolean hasSplitActivity() {
+        final SegmentIndexMetricsSnapshot snapshot =
+                index.runtimeMonitoring().snapshot().getMetrics();
+        return snapshot.getSplitScheduleCount() > 0
+                || snapshot.getSplitInFlightCount() > 0
+                || snapshot.getSegmentCount() > 1;
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,

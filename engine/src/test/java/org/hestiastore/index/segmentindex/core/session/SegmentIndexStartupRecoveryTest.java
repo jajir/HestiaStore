@@ -17,6 +17,7 @@ import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
@@ -133,7 +134,8 @@ class SegmentIndexStartupRecoveryTest {
                             conf.identity().name(), stateMachine,
                             IndexOperationTrackingAccess.create(),
                             new IndexOperationStatsRecorder(),
-                            runtime, directoryLock),
+                            runtime, mock(ExecutorRegistry.class),
+                            directoryLock),
                     new SegmentIndexStartupCoordinator<>(
                             conf.identity().name(),
                             directoryLock.wasStaleLockRecovered(), runtime,

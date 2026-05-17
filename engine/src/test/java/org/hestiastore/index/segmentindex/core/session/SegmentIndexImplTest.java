@@ -67,8 +67,7 @@ class SegmentIndexImplTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf();
         final ExecutorRegistry registry = ExecutorRegistryFixture.from(conf);
-        try (registry;
-                IndexInternal<Integer, String> lockedIndex = IndexInternalTestSupport.createStarted(directory,
+        try (IndexInternal<Integer, String> lockedIndex = IndexInternalTestSupport.createStarted(directory,
                         new TypeDescriptorInteger(),
                         new TypeDescriptorShortString(), effective(conf),
                         registry)) {

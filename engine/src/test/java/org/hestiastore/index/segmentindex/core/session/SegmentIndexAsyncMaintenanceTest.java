@@ -147,6 +147,49 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     @Test
+    void closeWaitsForAcceptedAsyncFlushBeforeFinalShutdown()
+            throws Exception {
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        final CountDownLatch releaseFlush = new CountDownLatch(1);
+        try {
+            index.put(1, "one");
+            index.maintenance().flushAndWait();
+
+            final SegmentId segmentId = readKeyToSegmentMap(index)
+                    .findSegmentIdForKey(1);
+            final SegmentRegistry<Integer, String> registry = readSegmentRegistry(
+                    index);
+            final CountDownLatch flushStarted = new CountDownLatch(1);
+            final AtomicReference<SegmentState> stateRef =
+                    new AtomicReference<>(SegmentState.READY);
+            final Segment<Integer, String> mockedSegment = mockFlushBlockingSegment(
+                    segmentId, flushStarted, releaseFlush, stateRef);
+            replaceSegment(registry, segmentId, mockedSegment);
+
+            index.maintenance().flush();
+            assertTrue(flushStarted.await(1, TimeUnit.SECONDS));
+
+            final Future<?> closeTask = executor.submit(index::close);
+            awaitCondition(
+                    () -> index.runtimeMonitoring()
+                            .snapshot()
+                            .getState() == SegmentIndexState.CLOSING,
+                    5_000L);
+            assertFalse(closeTask.isDone());
+
+            releaseFlush.countDown();
+            closeTask.get(5, TimeUnit.SECONDS);
+        } finally {
+            releaseFlush.countDown();
+            executor.shutdownNow();
+        }
+
+        assertTrue(index.wasClosed());
+        assertEquals(SegmentIndexState.CLOSED,
+                index.runtimeMonitoring().snapshot().getState());
+    }
+
+    @Test
     void closeExposesClosingStateWhileBlockedSegmentCloseCompletes()
             throws Exception {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -247,6 +290,37 @@ class SegmentIndexAsyncMaintenanceTest {
             return OperationResult.ok();
         });
         return blockingSegment;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Segment<Integer, String> mockFlushBlockingSegment(
+            final SegmentId segmentId, final CountDownLatch started,
+            final CountDownLatch release,
+            final AtomicReference<SegmentState> stateRef) throws Exception {
+        final Segment<Integer, String> blockedSegment = mock(Segment.class);
+        lenient().when(blockedSegment.getId()).thenReturn(segmentId);
+        lenient().when(blockedSegment.getState()).thenAnswer(
+                invocation -> stateRef.get());
+        lenient().when(blockedSegment.getRuntimeSnapshot()).thenAnswer(
+                invocation -> new SegmentRuntimeSnapshot(segmentId,
+                        stateRef.get(), 0L, 0L, 0L, 0L, 0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L));
+        when(blockedSegment.flush()).thenAnswer(invocation -> {
+            stateRef.set(SegmentState.MAINTENANCE_RUNNING);
+            started.countDown();
+            if (!release.await(5, TimeUnit.SECONDS)) {
+                throw new TimeoutException(
+                        "Timed out waiting to release blocked flush.");
+            }
+            stateRef.set(SegmentState.READY);
+            return OperationResult.ok();
+        });
+        lenient().when(blockedSegment.compact()).thenReturn(OperationResult.ok());
+        lenient().when(blockedSegment.close()).thenAnswer(invocation -> {
+            stateRef.set(SegmentState.CLOSED);
+            return OperationResult.ok();
+        });
+        return blockedSegment;
     }
 
     @SuppressWarnings("unchecked")

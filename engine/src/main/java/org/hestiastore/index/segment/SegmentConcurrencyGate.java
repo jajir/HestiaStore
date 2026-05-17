@@ -34,11 +34,23 @@ final class SegmentConcurrencyGate {
      * @return true when close admission succeeded
      */
     boolean tryEnterCloseAndDrain() {
+        closing.set(true);
+        if (stateMachine.getState() != SegmentState.READY) {
+            return false;
+        }
         if (!stateMachine.tryEnterFreeze()) {
             return false;
         }
-        closing.set(true);
         return awaitNoInFlight();
+    }
+
+    /**
+     * Returns whether close has been requested.
+     *
+     * @return true when close admission has started
+     */
+    boolean isClosing() {
+        return closing.get();
     }
 
     /**

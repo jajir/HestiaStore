@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.executorregistry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.hestiastore.index.Vldtn;
 
@@ -15,6 +16,7 @@ public final class ExecutorRegistryBuilder {
     private static final String ARG_SPLIT_MAINTENANCE_THREADS = "splitMaintenanceThreads";
     private static final String ARG_SEGMENT_MAINTENANCE_THREADS = "numberOfSegmentMaintenanceThreads";
     private static final String ARG_REGISTRY_MAINTENANCE_THREADS = "registryMaintenanceThreads";
+    private static final String ARG_SHUTDOWN_TIMEOUT_MILLIS = "shutdownTimeoutMillis";
     private static final String ARG_INDEX_NAME = "indexName";
     private static final String THREAD_NAME_PREFIX_INDEX_MAINTENANCE = "index-maintenance-";
     private static final String THREAD_NAME_PREFIX_SPLIT_MAINTENANCE = "split-maintenance-";
@@ -26,6 +28,7 @@ public final class ExecutorRegistryBuilder {
     private Integer indexMaintenanceThreads;
     private Integer splitMaintenanceThreads;
     private Integer registryMaintenanceThreads;
+    private Integer shutdownTimeoutMillis = 30_000;
     private boolean contextLoggingEnabled;
     private String indexName;
 
@@ -77,6 +80,18 @@ public final class ExecutorRegistryBuilder {
     public ExecutorRegistryBuilder withRegistryMaintenanceThreads(
             final Integer threads) {
         this.registryMaintenanceThreads = threads;
+        return this;
+    }
+
+    /**
+     * Sets executor shutdown wait timeout in milliseconds.
+     *
+     * @param value shutdown timeout
+     * @return this builder
+     */
+    public ExecutorRegistryBuilder withShutdownTimeoutMillis(
+            final Integer value) {
+        this.shutdownTimeoutMillis = value;
         return this;
     }
 
@@ -143,10 +158,18 @@ public final class ExecutorRegistryBuilder {
                                 () -> contextDecorator.decorate(
                                         createRegistryMaintenanceExecutor(
                                                 threadPoolFactory,
-                                                registryMaintenanceThreadCount)))),
+                                                registryMaintenanceThreadCount))),
+                        shutdownTimeoutMillis()),
                 new ExecutorRuntimeMonitor(indexMaintenanceThreadPool,
                         splitMaintenanceThreadPool,
                         stableSegmentMaintenanceThreadPool));
+    }
+
+    private int shutdownTimeoutMillis() {
+        return Vldtn.requireGreaterThanZero(
+                Vldtn.requireNonNull(shutdownTimeoutMillis,
+                        ARG_SHUTDOWN_TIMEOUT_MILLIS),
+                ARG_SHUTDOWN_TIMEOUT_MILLIS);
     }
 
     private String contextIndexName() {
@@ -199,9 +222,14 @@ public final class ExecutorRegistryBuilder {
 
     private ScheduledExecutorService createSplitPolicyScheduler(
             final ObservedThreadPoolFactory threadPoolFactory) {
-        return Executors.newSingleThreadScheduledExecutor(
-                threadPoolFactory.daemonThreadFactory(
-                        THREAD_NAME_PREFIX_SPLIT_POLICY));
+        final ScheduledThreadPoolExecutor executor =
+                new ScheduledThreadPoolExecutor(1,
+                        threadPoolFactory.daemonThreadFactory(
+                                THREAD_NAME_PREFIX_SPLIT_POLICY));
+        executor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        executor.setRemoveOnCancelPolicy(true);
+        return executor;
     }
 
     private ExecutorService createFixedDaemonExecutor(

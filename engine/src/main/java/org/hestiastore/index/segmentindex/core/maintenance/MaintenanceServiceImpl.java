@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex.core.maintenance;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 
 import org.hestiastore.index.IndexException;
@@ -38,6 +40,10 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private final ExecutorService maintenanceExecutor;
     private final Runnable checkpointAction;
     private final LongSupplier nanoTimeSupplier;
+    private final AtomicBoolean asyncMaintenanceClosed =
+            new AtomicBoolean(false);
+    private final AtomicInteger asyncMaintenanceInFlight =
+            new AtomicInteger();
 
     MaintenanceServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
@@ -103,6 +109,16 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
         splitService.awaitQuiescence();
         flushMappedSegmentsAndWait();
         finalizeSettledMaintenance(this::flushMappedSegmentsAndWait);
+    }
+
+    @Override
+    public void sealAsyncMaintenanceAndWait() {
+        asyncMaintenanceClosed.set(true);
+        final long startNanos = retryPolicy.startNanos();
+        while (asyncMaintenanceInFlight.get() > 0) {
+            retryPolicy.backoffOrThrow(startNanos, "asyncMaintenanceClose",
+                    asyncMaintenanceInFlight.get());
+        }
     }
 
     void flushSegments(final boolean waitForCompletion) {
@@ -288,12 +304,43 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     }
 
     private void executeAsync(final String operation, final Runnable action) {
+        enterAsyncMaintenance(operation);
         try {
-            maintenanceExecutor.execute(() -> runAsync(operation, action));
+            maintenanceExecutor
+                    .execute(() -> runAsyncMaintenance(operation, action));
         } catch (final RuntimeException e) {
+            exitAsyncMaintenance();
             throw new IndexException(String.format(
                     "Unable to schedule index operation '%s'.", operation), e);
         }
+    }
+
+    private void enterAsyncMaintenance(final String operation) {
+        if (asyncMaintenanceClosed.get()) {
+            throw new IndexException(String.format(
+                    "Index operation '%s' cannot be scheduled because maintenance is closing.",
+                    operation));
+        }
+        asyncMaintenanceInFlight.incrementAndGet();
+        if (asyncMaintenanceClosed.get()) {
+            exitAsyncMaintenance();
+            throw new IndexException(String.format(
+                    "Index operation '%s' cannot be scheduled because maintenance is closing.",
+                    operation));
+        }
+    }
+
+    private void runAsyncMaintenance(final String operation,
+            final Runnable action) {
+        try {
+            runAsync(operation, action);
+        } finally {
+            exitAsyncMaintenance();
+        }
+    }
+
+    private void exitAsyncMaintenance() {
+        asyncMaintenanceInFlight.decrementAndGet();
     }
 
     private void runAsync(final String operation, final Runnable action) {

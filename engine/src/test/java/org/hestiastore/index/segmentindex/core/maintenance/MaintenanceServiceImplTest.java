@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.maintenance;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -10,8 +11,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 
@@ -80,6 +83,7 @@ class MaintenanceServiceImplTest {
     void tearDown() {
         if (maintenanceExecutor != null) {
             maintenanceExecutor.shutdownNow();
+            awaitMaintenanceExecutorClosed();
         }
         if (synchronizedKeyToSegmentMap != null
                 && !synchronizedKeyToSegmentMap.wasClosed()) {
@@ -240,6 +244,87 @@ class MaintenanceServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void sealAsyncMaintenanceAndWait_drainsAcceptedTaskAndRejectsNewAsyncWork()
+            throws Exception {
+        final KeyToSegmentMap<Integer> mappedSegments = mock(
+                KeyToSegmentMap.class);
+        final MaintenanceServiceImpl<Integer, String> maintenance =
+                new MaintenanceServiceImpl<>(
+                        mappedSegments, mock(StableSegmentOperationAccess.class),
+                        splitService, retryPolicy(),
+                        new MaintenanceStatsRecorder(), maintenanceExecutor,
+                        checkpointAction);
+        final CountDownLatch taskStarted = new CountDownLatch(1);
+        final CountDownLatch releaseTask = new CountDownLatch(1);
+        when(mappedSegments.getSegmentIds()).thenAnswer(invocation -> {
+            taskStarted.countDown();
+            awaitLatch(releaseTask);
+            return List.of();
+        });
+
+        maintenance.flush();
+        assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
+        releaseTask.countDown();
+
+        maintenance.sealAsyncMaintenanceAndWait();
+
+        assertThrows(IndexException.class, maintenance::flush);
+    }
+
+    @Test
+    void flushAndWait_stillRunsAfterAsyncMaintenanceIsSealed() {
+        final SegmentId segmentId = createBootstrapSegment("sealed-wait-key");
+        when(segmentHandle.getRuntime()).thenReturn(runtime);
+        when(runtime.getState()).thenReturn(SegmentState.READY);
+        when(stableSegmentGateway.flush(segmentId))
+                .thenReturn(StableSegmentOperationResult.ok(segmentHandle));
+
+        service.sealAsyncMaintenanceAndWait();
+        service.flushAndWait();
+
+        verify(stableSegmentGateway).flush(segmentId);
+        verify(checkpointAction).run();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void sealAsyncMaintenanceAndWait_timesOutWhenAcceptedTaskDoesNotFinish()
+            throws Exception {
+        final KeyToSegmentMap<Integer> mappedSegments = mock(
+                KeyToSegmentMap.class);
+        final MaintenanceServiceImpl<Integer, String> maintenance =
+                new MaintenanceServiceImpl<>(
+                        mappedSegments, mock(StableSegmentOperationAccess.class),
+                        splitService, new IndexRetryPolicy(1, 25),
+                        new MaintenanceStatsRecorder(), maintenanceExecutor,
+                        checkpointAction);
+        final CountDownLatch taskStarted = new CountDownLatch(1);
+        final CountDownLatch releaseTask = new CountDownLatch(1);
+        final CountDownLatch taskFinished = new CountDownLatch(1);
+        when(mappedSegments.getSegmentIds()).thenAnswer(invocation -> {
+            try {
+                taskStarted.countDown();
+                awaitLatch(releaseTask);
+                return List.of();
+            } finally {
+                taskFinished.countDown();
+            }
+        });
+
+        maintenance.flush();
+        assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
+
+        try {
+            assertThrows(IndexException.class,
+                    maintenance::sealAsyncMaintenanceAndWait);
+        } finally {
+            releaseTask.countDown();
+        }
+        assertTrue(taskFinished.await(1, TimeUnit.SECONDS));
+    }
+
+    @Test
     void compactAndWait_settlesSplitsCompactsFlushesAndCheckpoints() {
         final SegmentId segmentId = createBootstrapSegment("compact-wait-key");
         when(segmentHandle.getRuntime()).thenReturn(runtime);
@@ -269,6 +354,26 @@ class MaintenanceServiceImplTest {
 
     private static IndexRetryPolicy retryPolicy() {
         return new IndexRetryPolicy(1, 1_000);
+    }
+
+    private void awaitMaintenanceExecutorClosed() {
+        try {
+            assertTrue(maintenanceExecutor.awaitTermination(1,
+                    TimeUnit.SECONDS));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while closing maintenance executor.", e);
+        }
+    }
+
+    private static void awaitLatch(final CountDownLatch latch) {
+        try {
+            assertTrue(latch.await(1, TimeUnit.SECONDS));
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IndexException("Interrupted while waiting for latch.", e);
+        }
     }
 
     private SegmentId createBootstrapSegment(final String key) {

@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ final class IndexCloseCoordinator<K, V> {
     private final IndexOperationTrackingAccess operationTracker;
     private final IndexOperationStatsRecorder operationStatsRecorder;
     private final SegmentIndexRuntime<K, V> runtime;
+    private final ExecutorRegistry executorRegistry;
     private final IndexDirectoryLock directoryLock;
 
     IndexCloseCoordinator(final String indexName,
@@ -28,6 +30,7 @@ final class IndexCloseCoordinator<K, V> {
             final IndexOperationTrackingAccess operationTracker,
             final IndexOperationStatsRecorder operationStatsRecorder,
             final SegmentIndexRuntime<K, V> runtime,
+            final ExecutorRegistry executorRegistry,
             final IndexDirectoryLock directoryLock) {
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
         this.stateMachine = Vldtn.requireNonNull(stateMachine,
@@ -37,6 +40,8 @@ final class IndexCloseCoordinator<K, V> {
         this.operationStatsRecorder = Vldtn.requireNonNull(
                 operationStatsRecorder, "operationStatsRecorder");
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
+        this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
+                "executorRegistry");
         this.directoryLock = Vldtn.requireNonNull(directoryLock,
                 "directoryLock");
     }
@@ -51,16 +56,17 @@ final class IndexCloseCoordinator<K, V> {
             beginClose.run();
             awaitForegroundOperations();
             closeSplitRuntime();
+            sealAsyncMaintenanceAndWait();
             sealAndFlushRuntimeState();
             logOperationCounts();
+            releaseWalRuntime();
+            closeExecutorRegistry();
+            finishClosedState();
+            releaseDirectoryLock();
             LOGGER.debug("Index '{}' closed.", indexName);
-        } finally {
-            try {
-                finishClosedState();
-                releaseWalRuntime();
-            } finally {
-                releaseDirectoryLock();
-            }
+        } catch (final RuntimeException e) {
+            stateMachine.markRuntimeFailure(e);
+            throw e;
         }
     }
 
@@ -70,6 +76,10 @@ final class IndexCloseCoordinator<K, V> {
 
     private void closeSplitRuntime() {
         runtime.closeSplitRuntime();
+    }
+
+    private void sealAsyncMaintenanceAndWait() {
+        runtime.sealAsyncMaintenanceAndWait();
     }
 
     private void sealAndFlushRuntimeState() {
@@ -84,6 +94,10 @@ final class IndexCloseCoordinator<K, V> {
 
     private void releaseWalRuntime() {
         runtime.closeWalRuntime();
+    }
+
+    private void closeExecutorRegistry() {
+        executorRegistry.close();
     }
 
     private void releaseDirectoryLock() {
