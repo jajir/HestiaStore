@@ -1,0 +1,141 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync
+# Parameters: (chunkStoreCachePageLimit = 0, keyCount = 12000, maxKeysInChunk = 256, readPathMode = live, snappy = true, valueLength = 64)
+
+# Run progress: 0.00% complete, ETA 00:00:16
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+2332542.665 ops/s
+Iteration   1: 3089052.795 ops/s
+Iteration   2: 2893326.689 ops/s
+Iteration   3: 2810999.782 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync":
+  2931126.422 ±(99.9%) 2605723.791 ops/s [Average]
+  (min, avg, max) = (2810999.782, 2931126.422, 3089052.795), stdev = 142828.514
+  CI (99.9%): [325402.631, 5536850.213] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync
+# Parameters: (chunkStoreCachePageLimit = 128, keyCount = 12000, maxKeysInChunk = 256, readPathMode = live, snappy = true, valueLength = 64)
+
+# Run progress: 25.00% complete, ETA 00:03:43
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+2517304.032 ops/s
+Iteration   1: 2954749.111 ops/s
+Iteration   2: 2769690.931 ops/s
+Iteration   3: 2541230.192 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getHitSync":
+  2755223.411 ±(99.9%) 3778981.649 ops/s [Average]
+  (min, avg, max) = (2541230.192, 2755223.411, 2954749.111), stdev = 207138.736
+  CI (99.9%): [≈ 0, 6534205.060] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync
+# Parameters: (chunkStoreCachePageLimit = 0, keyCount = 12000, maxKeysInChunk = 256, readPathMode = live, snappy = true, valueLength = 64)
+
+# Run progress: 50.00% complete, ETA 00:02:28
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+4578684.892 ops/s
+Iteration   1: 4726700.939 ops/s
+Iteration   2: 4657820.397 ops/s
+Iteration   3: 4692510.663 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync":
+  4692344.000 ±(99.9%) 628324.273 ops/s [Average]
+  (min, avg, max) = (4657820.397, 4692344.000, 4726700.939), stdev = 34440.574
+  CI (99.9%): [4064019.727, 5320668.273] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 1 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync
+# Parameters: (chunkStoreCachePageLimit = 128, keyCount = 12000, maxKeysInChunk = 256, readPathMode = live, snappy = true, valueLength = 64)
+
+# Run progress: 75.00% complete, ETA 00:01:14
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+4429985.247 ops/s
+Iteration   1: 4762429.503 ops/s
+Iteration   2: 4868113.490 ops/s
+Iteration   3: 4617713.641 ops/s
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexGetBenchmark.getMissSync":
+  4749418.878 ±(99.9%) 2293343.943 ops/s [Average]
+  (min, avg, max) = (4617713.641, 4749418.878, 4868113.490), stdev = 125705.920
+  CI (99.9%): [2456074.935, 7042762.821] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:04:57
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                             (chunkStoreCachePageLimit)  (keyCount)  (maxKeysInChunk)  (readPathMode)  (snappy)  (valueLength)   Mode  Cnt        Score         Error  Units
+SegmentIndexGetBenchmark.getHitSync                            0       12000               256            live      true             64  thrpt    3  2931126.422 ± 2605723.791  ops/s
+SegmentIndexGetBenchmark.getHitSync                          128       12000               256            live      true             64  thrpt    3  2755223.411 ± 3778981.649  ops/s
+SegmentIndexGetBenchmark.getMissSync                           0       12000               256            live      true             64  thrpt    3  4692344.000 ±  628324.273  ops/s
+SegmentIndexGetBenchmark.getMissSync                         128       12000               256            live      true             64  thrpt    3  4749418.878 ± 2293343.943  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-get-live.json
