@@ -1,7 +1,9 @@
 package org.hestiastore.index.segmentindex.core.segmentlease;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 
 /**
@@ -52,6 +54,33 @@ public interface SegmentLeaseService<K, V> {
      *         available
      */
     Optional<SegmentLease<K, V>> tryAcquireMappedSegment(SegmentId segmentId);
+
+    /**
+     * Returns a best-effort snapshot of loaded segment ids that are also
+     * present in the current route map.
+     *
+     * @return loaded mapped segment ids
+     */
+    default List<SegmentId> getLoadedMappedSegmentIds() {
+        return List.of();
+    }
+
+    /**
+     * Attempts to acquire a foreground lease for an already-loaded mapped
+     * segment id.
+     * <p>
+     * This is a no-load acquisition path. It returns empty when the segment is
+     * mapped but not currently loaded.
+     *
+     * @param segmentId segment id to acquire
+     * @return loaded segment lease when the route and loaded segment are
+     *         immediately available
+     */
+    default Optional<SegmentLease<K, V>> tryAcquireLoadedMappedSegment(
+            final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        return Optional.empty();
+    }
 
     /**
      * Attempts to acquire an exclusive split lease for the exact mapped segment

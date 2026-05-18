@@ -67,7 +67,7 @@ class SegmentIndexRuntimeTest {
             final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
             stateMachine.markReady();
             new IndexCloseCoordinator<>("runtime-test", stateMachine,
-                    mock(IndexOperationTrackingAccess.class),
+                    mock(SegmentIndexOperationGate.class),
                     new IndexOperationStatsRecorder(),
                     runtime, executorRegistry,
                     new IndexDirectoryLock(new MemDirectory())).close();

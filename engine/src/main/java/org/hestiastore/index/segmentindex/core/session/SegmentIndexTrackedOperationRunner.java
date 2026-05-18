@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 
 /**
  * Runs index operations under shared operation tracking and readiness checks.
@@ -12,23 +13,22 @@ import org.hestiastore.index.Vldtn;
  */
 public final class SegmentIndexTrackedOperationRunner<K, V> {
 
-    private final Runnable operationalGuard;
-    private final IndexOperationTrackingAccess operationTracker;
+    private final SegmentIndexStateMachine stateMachine;
+    private final SegmentIndexOperationGate operationGate;
 
     public SegmentIndexTrackedOperationRunner(
-            final Runnable operationalGuard,
-            final IndexOperationTrackingAccess operationTracker) {
-        this.operationalGuard = Vldtn.requireNonNull(operationalGuard,
-                "operationalGuard");
-        this.operationTracker = Vldtn.requireNonNull(operationTracker,
-                "operationTracker");
+            final SegmentIndexStateMachine stateMachine,
+            final SegmentIndexOperationGate operationGate) {
+        this.stateMachine = Vldtn.requireNonNull(stateMachine, "stateMachine");
+        this.operationGate = Vldtn.requireNonNull(operationGate,
+                "operationGate");
     }
 
     public <T> T runTracked(final Supplier<T> operation) {
         final Supplier<T> nonNullOperation = Vldtn.requireNonNull(operation,
                 "operation");
-        return operationTracker.runTracked(() -> {
-            operationalGuard.run();
+        return operationGate.trackOperation(() -> {
+            stateMachine.ensureOperational();
             return nonNullOperation.get();
         });
     }

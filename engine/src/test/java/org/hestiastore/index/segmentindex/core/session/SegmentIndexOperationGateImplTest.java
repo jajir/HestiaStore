@@ -12,11 +12,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-class IndexOperationTrackerTest {
+class SegmentIndexOperationGateImplTest {
 
     @Test
-    void awaitOperations_waitsForTrackedSyncTaskToFinish() throws Exception {
-        final IndexOperationTracker tracker = new IndexOperationTracker();
+    void awaitOperationDrain_waitsForTrackedSyncTaskToFinish() throws Exception {
+        final SegmentIndexOperationGateImpl gate =
+                new SegmentIndexOperationGateImpl();
         final CountDownLatch taskStarted = new CountDownLatch(1);
         final CountDownLatch releaseTask = new CountDownLatch(1);
         final ExecutorService trackedExecutor = Executors
@@ -25,7 +26,7 @@ class IndexOperationTrackerTest {
                 .newSingleThreadExecutor();
         try {
             final Future<?> trackedTask = trackedExecutor.submit(
-                    () -> tracker.runTracked(() -> {
+                    () -> gate.trackOperation(() -> {
                         taskStarted.countDown();
                         await(releaseTask);
                         return null;
@@ -33,7 +34,7 @@ class IndexOperationTrackerTest {
             assertTrue(taskStarted.await(1, TimeUnit.SECONDS));
 
             final Future<?> awaitTask = waiterExecutor
-                    .submit(tracker::awaitOperations);
+                    .submit(gate::awaitOperationDrain);
             assertThrows(java.util.concurrent.TimeoutException.class,
                     () -> awaitTask.get(100, TimeUnit.MILLISECONDS));
 
@@ -47,13 +48,14 @@ class IndexOperationTrackerTest {
     }
 
     @Test
-    void awaitOperations_throwsWhenCalledFromTrackedSyncOperation() {
-        final IndexOperationTracker tracker = new IndexOperationTracker();
+    void awaitOperationDrain_throwsWhenCalledFromTrackedSyncOperation() {
+        final SegmentIndexOperationGateImpl gate =
+                new SegmentIndexOperationGateImpl();
 
         final IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
-                () -> tracker.runTracked(() -> {
-                    tracker.awaitOperations();
+                () -> gate.trackOperation(() -> {
+                    gate.awaitOperationDrain();
                     return null;
                 }));
 
