@@ -46,9 +46,7 @@ final class SegmentIndexSessionOwner<K, V> {
         stateMachine.ensureOperational();
     }
 
-    void runMaintenanceOperation(final Runnable action) {
-        ensureOperational();
-        Vldtn.requireNonNull(action, "action").run();
+    void invalidateSegmentIterators() {
         runtime.invalidateSegmentIterators();
     }
 

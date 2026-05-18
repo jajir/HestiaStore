@@ -19,7 +19,7 @@ final class IndexCloseCoordinator<K, V> {
 
     private final String indexName;
     private final SegmentIndexStateMachine stateMachine;
-    private final IndexOperationTrackingAccess operationTracker;
+    private final SegmentIndexOperationGate operationGate;
     private final IndexOperationStatsRecorder operationStatsRecorder;
     private final SegmentIndexRuntime<K, V> runtime;
     private final ExecutorRegistry executorRegistry;
@@ -27,7 +27,7 @@ final class IndexCloseCoordinator<K, V> {
 
     IndexCloseCoordinator(final String indexName,
             final SegmentIndexStateMachine stateMachine,
-            final IndexOperationTrackingAccess operationTracker,
+            final SegmentIndexOperationGate operationGate,
             final IndexOperationStatsRecorder operationStatsRecorder,
             final SegmentIndexRuntime<K, V> runtime,
             final ExecutorRegistry executorRegistry,
@@ -35,8 +35,8 @@ final class IndexCloseCoordinator<K, V> {
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
         this.stateMachine = Vldtn.requireNonNull(stateMachine,
                 "stateMachine");
-        this.operationTracker = Vldtn.requireNonNull(operationTracker,
-                "operationTracker");
+        this.operationGate = Vldtn.requireNonNull(operationGate,
+                "operationGate");
         this.operationStatsRecorder = Vldtn.requireNonNull(
                 operationStatsRecorder, "operationStatsRecorder");
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
@@ -71,7 +71,7 @@ final class IndexCloseCoordinator<K, V> {
     }
 
     private void awaitForegroundOperations() {
-        operationTracker.awaitOperations();
+        operationGate.awaitOperationDrain();
     }
 
     private void closeSplitRuntime() {

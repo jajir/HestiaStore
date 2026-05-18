@@ -30,7 +30,7 @@ public final class SegmentIndexSessionResources<K, V> {
     private MaintenanceStatsRecorder maintenanceStatsRecorder;
     private SplitStatsRecorder splitStatsRecorder;
     private ExecutorRegistry executorRegistry;
-    private IndexOperationTrackingAccess operationTracker;
+    private SegmentIndexOperationGate operationGate;
     private SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private SegmentIndexRuntime<K, V> runtime;
 
@@ -43,9 +43,9 @@ public final class SegmentIndexSessionResources<K, V> {
         operationStatsRecorder = new IndexOperationStatsRecorder();
         maintenanceStatsRecorder = new MaintenanceStatsRecorder();
         splitStatsRecorder = new SplitStatsRecorder();
-        operationTracker = IndexOperationTrackingAccess.create();
-        trackedRunner = new SegmentIndexTrackedOperationRunner<>(
-                stateMachine::ensureOperational, operationTracker);
+        operationGate = SegmentIndexOperationGate.create();
+        trackedRunner = new SegmentIndexTrackedOperationRunner<>(stateMachine,
+                operationGate);
     }
 
     public void createRuntime(final Directory directory,
@@ -120,7 +120,7 @@ public final class SegmentIndexSessionResources<K, V> {
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
         return new SegmentIndexSessionOwner<>(stateMachine(), runtime,
                 new IndexCloseCoordinator<>(conf.identity().name(),
-                        stateMachine(), operationTracker(),
+                        stateMachine(), operationGate(),
                         operationStatsRecorder(), runtime,
                         executorRegistry(), directoryLock()),
                 new SegmentIndexStartupCoordinator<>(conf.identity().name(),
@@ -166,8 +166,8 @@ public final class SegmentIndexSessionResources<K, V> {
         return Vldtn.requireNonNull(splitStatsRecorder, "splitStatsRecorder");
     }
 
-    private IndexOperationTrackingAccess operationTracker() {
-        return Vldtn.requireNonNull(operationTracker, "operationTracker");
+    private SegmentIndexOperationGate operationGate() {
+        return Vldtn.requireNonNull(operationGate, "operationGate");
     }
 
     private SegmentIndexTrackedOperationRunner<K, V> trackedRunner() {

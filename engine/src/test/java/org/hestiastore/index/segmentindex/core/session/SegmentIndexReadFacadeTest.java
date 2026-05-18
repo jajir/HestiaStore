@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,26 +10,34 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 @SuppressWarnings("unchecked")
 class SegmentIndexReadFacadeTest {
 
+    @Mock
     private SegmentIndexDataAccess<Integer, String> dataAccess;
+
+    @Mock
     private SegmentIndexEntryIteratorDecorator<Integer, String> iteratorDecorator;
+
+    @Mock
+    private SegmentIndexStateMachine stateMachine;
+
     private SegmentIndexReadFacade<Integer, String> readFacade;
 
     @BeforeEach
     void setUp() {
-        dataAccess = mock(SegmentIndexDataAccess.class);
-        iteratorDecorator = mock(SegmentIndexEntryIteratorDecorator.class);
         readFacade = new SegmentIndexReadFacade<>(
-                new SegmentIndexTrackedOperationRunner<>(() -> {
-                    // Test guard allows all tracked operations immediately.
-                },
-                        IndexOperationTrackingAccess.create()),
+                new SegmentIndexTrackedOperationRunner<>(stateMachine,
+                        SegmentIndexOperationGate.create()),
                 dataAccess, iteratorDecorator);
     }
 
@@ -60,6 +69,7 @@ class SegmentIndexReadFacadeTest {
         verify(dataAccess).openWindowIterator(window,
                 SegmentIteratorIsolation.FAIL_FAST);
         verify(iteratorDecorator).decorate(windowIterator);
+        verify(stateMachine, times(2)).ensureOperational();
     }
 
 }

@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -11,6 +14,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -27,8 +31,8 @@ class SegmentIndexMaintenanceSessionAdapterTest {
     private SegmentIndexTrackedOperationRunner<Integer, String> trackedRunner;
 
     @Test
-    void maintenanceCommandsRunThroughSessionAndTrackingBoundaries() {
-        enablePassThroughBoundaries();
+    void maintenanceCommandsRunThroughTrackingAndInvalidateIterators() {
+        enablePassThroughTracking();
         final SegmentIndexMaintenance adapter =
                 new SegmentIndexMaintenanceSessionAdapter<>(delegate,
                         sessionOwner, trackedRunner);
@@ -41,14 +45,35 @@ class SegmentIndexMaintenanceSessionAdapterTest {
             adapter.checkAndRepairConsistency();
         });
 
-        verify(delegate).compact();
-        verify(delegate).compactAndWait();
-        verify(delegate).flush();
-        verify(delegate).flushAndWait();
-        verify(delegate).checkAndRepairConsistency();
-        verify(sessionOwner, times(5)).runMaintenanceOperation(
-                any(Runnable.class));
         verify(trackedRunner, times(5)).runTrackedVoid(any(Runnable.class));
+        final InOrder inOrder = inOrder(delegate, sessionOwner);
+        inOrder.verify(delegate).compact();
+        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(delegate).compactAndWait();
+        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(delegate).flush();
+        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(delegate).flushAndWait();
+        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(delegate).checkAndRepairConsistency();
+        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        verifyNoMoreInteractions(delegate, sessionOwner, trackedRunner);
+    }
+
+    @Test
+    void maintenanceFailureDoesNotInvalidateIterators() {
+        enablePassThroughTracking();
+        doThrow(new IllegalStateException("flush failed")).when(delegate)
+                .flush();
+        final SegmentIndexMaintenance adapter =
+                new SegmentIndexMaintenanceSessionAdapter<>(delegate,
+                        sessionOwner, trackedRunner);
+
+        assertThrows(IllegalStateException.class, adapter::flush);
+
+        verify(trackedRunner).runTrackedVoid(any(Runnable.class));
+        verify(delegate).flush();
+        verify(sessionOwner, never()).invalidateSegmentIterators();
         verifyNoMoreInteractions(delegate, sessionOwner, trackedRunner);
     }
 
@@ -67,11 +92,7 @@ class SegmentIndexMaintenanceSessionAdapterTest {
                         sessionOwner, null));
     }
 
-    private void enablePassThroughBoundaries() {
-        doAnswer(invocation -> {
-            invocation.<Runnable>getArgument(0).run();
-            return null;
-        }).when(sessionOwner).runMaintenanceOperation(any(Runnable.class));
+    private void enablePassThroughTracking() {
         doAnswer(invocation -> {
             invocation.<Runnable>getArgument(0).run();
             return null;

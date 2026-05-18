@@ -25,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class IndexCloseCoordinatorTest {
 
     @Mock
-    private Runnable awaitOperations;
+    private Runnable awaitOperationDrain;
 
     @Mock
     private SegmentIndexRuntime<Integer, String> runtime;
@@ -34,7 +34,7 @@ class IndexCloseCoordinatorTest {
     private SegmentIndexStateMachine stateMachine;
 
     @Mock
-    private IndexOperationTrackingAccess operationTracker;
+    private SegmentIndexOperationGate operationGate;
 
     @Mock
     private Directory directory;
@@ -53,11 +53,11 @@ class IndexCloseCoordinatorTest {
         when(directory.getLock(".lock")).thenReturn(fileLock);
         when(fileLock.isLocked()).thenReturn(false, true);
         doAnswer(invocation -> {
-            awaitOperations.run();
+            awaitOperationDrain.run();
             return null;
-        }).when(operationTracker).awaitOperations();
+        }).when(operationGate).awaitOperationDrain();
         closeCoordinator = new IndexCloseCoordinator<>("test-index",
-                stateMachine, operationTracker, new IndexOperationStatsRecorder(),
+                stateMachine, operationGate, new IndexOperationStatsRecorder(),
                 runtime, executorRegistry,
                 new IndexDirectoryLock(directory));
     }
@@ -66,10 +66,10 @@ class IndexCloseCoordinatorTest {
     void close_runsShutdownStepsInOrder() {
         closeCoordinator.close();
 
-        final InOrder inOrder = inOrder(awaitOperations, runtime,
+        final InOrder inOrder = inOrder(awaitOperationDrain, runtime,
                 stateMachine, executorRegistry, fileLock);
         inOrder.verify(stateMachine).beginClose();
-        inOrder.verify(awaitOperations).run();
+        inOrder.verify(awaitOperationDrain).run();
         inOrder.verify(runtime).closeSplitRuntime();
         inOrder.verify(runtime).sealAsyncMaintenanceAndWait();
         inOrder.verify(runtime).flushAndWait();

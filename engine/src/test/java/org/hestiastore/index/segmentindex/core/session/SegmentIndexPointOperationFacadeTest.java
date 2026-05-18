@@ -1,27 +1,33 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@SuppressWarnings("unchecked")
+@ExtendWith(MockitoExtension.class)
 class SegmentIndexPointOperationFacadeTest {
 
+    @Mock
     private SegmentIndexDataAccess<Integer, String> dataAccess;
+
+    @Mock
+    private SegmentIndexStateMachine stateMachine;
+
     private SegmentIndexPointOperationFacade<Integer, String> pointOperationFacade;
 
     @BeforeEach
     void setUp() {
-        dataAccess = mock(SegmentIndexDataAccess.class);
         pointOperationFacade = new SegmentIndexPointOperationFacade<>(
-                new SegmentIndexTrackedOperationRunner<>(() -> {
-                    // Test guard allows all tracked operations immediately.
-                },
-                        IndexOperationTrackingAccess.create()),
+                new SegmentIndexTrackedOperationRunner<>(stateMachine,
+                        SegmentIndexOperationGate.create()),
                 dataAccess);
     }
 
@@ -36,6 +42,7 @@ class SegmentIndexPointOperationFacadeTest {
         verify(dataAccess).put(1, "one");
         verify(dataAccess).get(1);
         verify(dataAccess).delete(1);
+        verify(stateMachine, times(3)).ensureOperational();
     }
 
 }

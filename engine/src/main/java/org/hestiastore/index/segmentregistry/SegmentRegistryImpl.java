@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentregistry;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -33,7 +33,7 @@ final class SegmentRegistryImpl<K, V>
             .getLogger(SegmentRegistryImpl.class);
     private static final String SEGMENT_ID_PARAMETER = "segmentId";
 
-    private final SegmentRegistryCache<SegmentId, Segment<K, V>> cache;
+    private final SegmentRegistryCache<K, V> cache;
     private final SegmentRegistryStateMachine gate;
     private final BusyRetryPolicy closeRetryPolicy;
     private final BusyRetryPolicy blockingRetryPolicy;
@@ -58,7 +58,7 @@ final class SegmentRegistryImpl<K, V>
      */
     SegmentRegistryImpl(final SegmentIdAllocator segmentIdAllocator,
             final SegmentRegistryFileSystem fileSystem,
-            final SegmentRegistryCache<SegmentId, Segment<K, V>> cache,
+            final SegmentRegistryCache<K, V> cache,
             final BusyRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate,
             final PreparedSegmentWriterFactory<K, V> preparedSegmentWriterFactory,
@@ -105,6 +105,18 @@ final class SegmentRegistryImpl<K, V>
         final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
                 SEGMENT_ID_PARAMETER);
         return blockingFacade.tryGetSegment(validatedSegmentId)
+                .map(segment -> toBlockingSegment(validatedSegmentId, segment));
+    }
+
+    @Override
+    public Optional<BlockingSegment<K, V>> tryGetLoadedSegment(
+            final SegmentId segmentId) {
+        final SegmentId validatedSegmentId = Vldtn.requireNonNull(segmentId,
+                SEGMENT_ID_PARAMETER);
+        if (gate.getState() != SegmentRegistryState.READY) {
+            return Optional.empty();
+        }
+        return cache.getIfReady(validatedSegmentId)
                 .map(segment -> toBlockingSegment(validatedSegmentId, segment));
     }
 
