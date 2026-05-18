@@ -1,6 +1,8 @@
 package org.hestiastore.index.segmentindex.maintenance;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 
 /**
  * Default {@link SegmentIndexMaintenance} implementation backed by index
@@ -9,49 +11,40 @@ import org.hestiastore.index.Vldtn;
 public final class SegmentIndexMaintenanceImpl
         implements SegmentIndexMaintenance {
 
-    private final Runnable compactAction;
-    private final Runnable compactAndWaitAction;
-    private final Runnable flushAction;
-    private final Runnable flushAndWaitAction;
-    private final Runnable consistencyRepairAction;
+    private final MaintenanceService maintenanceService;
+    private final IndexConsistencyCoordinator<?, ?> consistencyCoordinator;
 
-    public SegmentIndexMaintenanceImpl(final Runnable compactAction,
-            final Runnable compactAndWaitAction, final Runnable flushAction,
-            final Runnable flushAndWaitAction,
-            final Runnable consistencyRepairAction) {
-        this.compactAction = Vldtn.requireNonNull(compactAction,
-                "compactAction");
-        this.compactAndWaitAction = Vldtn.requireNonNull(compactAndWaitAction,
-                "compactAndWaitAction");
-        this.flushAction = Vldtn.requireNonNull(flushAction, "flushAction");
-        this.flushAndWaitAction = Vldtn.requireNonNull(flushAndWaitAction,
-                "flushAndWaitAction");
-        this.consistencyRepairAction = Vldtn.requireNonNull(
-                consistencyRepairAction, "consistencyRepairAction");
+    public SegmentIndexMaintenanceImpl(
+            final MaintenanceService maintenanceService,
+            final IndexConsistencyCoordinator<?, ?> consistencyCoordinator) {
+        this.maintenanceService = Vldtn.requireNonNull(maintenanceService,
+                "maintenanceService");
+        this.consistencyCoordinator = Vldtn.requireNonNull(
+                consistencyCoordinator, "consistencyCoordinator");
     }
 
     @Override
     public void compact() {
-        compactAction.run();
+        maintenanceService.compact();
     }
 
     @Override
     public void compactAndWait() {
-        compactAndWaitAction.run();
+        maintenanceService.compactAndWait();
     }
 
     @Override
     public void flush() {
-        flushAction.run();
+        maintenanceService.flush();
     }
 
     @Override
     public void flushAndWait() {
-        flushAndWaitAction.run();
+        maintenanceService.flushAndWait();
     }
 
     @Override
     public void checkAndRepairConsistency() {
-        consistencyRepairAction.run();
+        consistencyCoordinator.checkAndRepairConsistency();
     }
 }
