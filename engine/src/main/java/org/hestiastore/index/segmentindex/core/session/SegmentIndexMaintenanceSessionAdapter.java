@@ -52,9 +52,8 @@ final class SegmentIndexMaintenanceSessionAdapter<K, V>
         run(delegate::checkAndRepairConsistency);
     }
 
-    // TODO dependency on meessy package
     private void run(final Runnable action) {
-        sessionOwner.runMaintenanceOperation(
-                () -> trackedRunner.runTrackedVoid(action));
+        trackedRunner.runTrackedVoid(action);
+        sessionOwner.invalidateSegmentIterators();
     }
 }

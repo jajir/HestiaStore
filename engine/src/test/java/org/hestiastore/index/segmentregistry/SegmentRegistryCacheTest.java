@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -19,11 +20,19 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.segment.Segment;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segment.SegmentState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.mockito.Mockito;
 
 @Timeout(value = 5, unit = TimeUnit.SECONDS)
 class SegmentRegistryCacheTest {
@@ -45,65 +54,137 @@ class SegmentRegistryCacheTest {
     @Test
     void getLoadsOnceAndReturnsSameInstance() {
         final AtomicInteger loads = new AtomicInteger();
-        final SegmentRegistryCache<Integer, Object> cache = new SegmentRegistryCache<>(
+        final SegmentRegistryCache<Integer, String> cache = newCache(
                 10, key -> {
                     loads.incrementAndGet();
-                    return new Object();
+                    return segment(key.getId());
                 }, value -> {
                 });
 
-        final Object first = cache.get(1);
-        final Object second = cache.get(1);
+        final Segment<Integer, String> first = cache.get(id(1));
+        final Segment<Integer, String> second = cache.get(id(1));
 
         assertSame(first, second);
         assertEquals(1, loads.get());
     }
 
     @Test
-    void getBlocksSameKeyWhileLoading() throws Exception {
-        final CountDownLatch loadStarted = new CountDownLatch(1);
-        final CountDownLatch allowLoad = new CountDownLatch(1);
-        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
+    void getIfReadyReturnsEmptyWithoutLoadingMissingEntry() {
+        final AtomicInteger loads = new AtomicInteger();
+        final SegmentRegistryCache<Integer, String> cache = newCache(
                 10, key -> {
-                    loadStarted.countDown();
-                    awaitLatch(allowLoad);
-                    return "value";
+                    loads.incrementAndGet();
+                    return segment(key.getId());
                 }, value -> {
                 });
 
-        final Future<String> first = executor.submit(() -> cache.get(1));
+        assertTrue(cache.getIfReady(id(1)).isEmpty());
+
+        assertEquals(0, loads.get());
+        assertEquals(0, cache.getSize());
+    }
+
+    @Test
+    void getIfReadyReturnsLoadedValueWithoutLoading() {
+        final AtomicInteger loads = new AtomicInteger();
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> {
+                    loads.incrementAndGet();
+                    return segment(key.getId());
+                }, value -> {
+                });
+
+        final Segment<Integer, String> loaded = cache.get(id(1));
+
+        assertSame(loaded, cache.getIfReady(id(1)).orElseThrow());
+        assertEquals(1, loads.get());
+        assertEquals(1, cache.getSize());
+    }
+
+    @Test
+    void getIfReadyReturnsEmptyForLoadingAndUnloadingEntries()
+            throws Exception {
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch allowLoad = new CountDownLatch(1);
+        final CountDownLatch unloadStarted = new CountDownLatch(1);
+        final CountDownLatch allowUnload = new CountDownLatch(1);
+        final Segment<Integer, String> value = segment(1);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> {
+                    loadStarted.countDown();
+                    awaitLatch(allowLoad);
+                    return value;
+                }, segment -> {
+                    unloadStarted.countDown();
+                    awaitLatch(allowUnload);
+                });
+
+        final Future<Segment<Integer, String>> loading = executor
+                .submit(() -> cache.get(id(1)));
+        assertTrue(loadStarted.await(1, TimeUnit.SECONDS));
+        assertTrue(cache.getIfReady(id(1)).isEmpty());
+        allowLoad.countDown();
+        assertSame(value, loading.get(1, TimeUnit.SECONDS));
+
+        final Future<SegmentRegistryCache.InvalidateStatus> invalidation =
+                executor.submit(() -> cache.invalidate(id(1)));
+        assertTrue(unloadStarted.await(1, TimeUnit.SECONDS));
+
+        assertTrue(cache.getIfReady(id(1)).isEmpty());
+
+        allowUnload.countDown();
+        assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
+                invalidation.get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void getBlocksSameKeyWhileLoading() throws Exception {
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch allowLoad = new CountDownLatch(1);
+        final Segment<Integer, String> value = segment(1);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> {
+                    loadStarted.countDown();
+                    awaitLatch(allowLoad);
+                    return value;
+                }, segment -> {
+                });
+
+        final Future<Segment<Integer, String>> first = executor
+                .submit(() -> cache.get(id(1)));
         loadStarted.await(1, TimeUnit.SECONDS);
-        final Future<String> second = executor.submit(() -> cache.get(1));
+        final Future<Segment<Integer, String>> second = executor
+                .submit(() -> cache.get(id(1)));
 
         assertFalse(second.isDone());
         allowLoad.countDown();
 
-        assertEquals("value", first.get(1, TimeUnit.SECONDS));
-        assertEquals("value", second.get(1, TimeUnit.SECONDS));
+        assertSame(value, first.get(1, TimeUnit.SECONDS));
+        assertSame(value, second.get(1, TimeUnit.SECONDS));
     }
 
     @Test
     void getDifferentKeysDoNotBlock() throws Exception {
         final CountDownLatch loadStarted = new CountDownLatch(1);
         final CountDownLatch allowLoad = new CountDownLatch(1);
-        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
+        final SegmentRegistryCache<Integer, String> cache = newCache(
                 10, key -> {
-                    if (key == 1) {
+                    if (key.equals(id(1))) {
                         loadStarted.countDown();
                         awaitLatch(allowLoad);
-                        return "slow";
                     }
-                    return "fast";
-                }, value -> {
+                    return segment(key.getId());
+                }, segment -> {
                 });
 
-        final Future<String> slow = executor.submit(() -> cache.get(1));
+        final Future<Segment<Integer, String>> slow = executor
+                .submit(() -> cache.get(id(1)));
         loadStarted.await(1, TimeUnit.SECONDS);
 
-        assertEquals("fast", cache.get(2));
+        assertEquals(id(2), cache.get(id(2)).getId());
 
         allowLoad.countDown();
-        assertEquals("slow", slow.get(1, TimeUnit.SECONDS));
+        assertEquals(id(1), slow.get(1, TimeUnit.SECONDS).getId());
     }
 
     @Test
@@ -113,20 +194,20 @@ class SegmentRegistryCacheTest {
         final CountDownLatch start = new CountDownLatch(1);
         final CountDownLatch loadStarted = new CountDownLatch(1);
         final CountDownLatch allowLoad = new CountDownLatch(1);
-        final SegmentRegistryCache<Integer, Object> cache = new SegmentRegistryCache<>(
+        final SegmentRegistryCache<Integer, String> cache = newCache(
                 10, key -> {
                     loads.incrementAndGet();
                     loadStarted.countDown();
                     awaitLatch(allowLoad);
-                    return new Object();
-                }, value -> {
+                    return segment(key.getId());
+                }, segment -> {
                 });
 
-        final List<Future<Object>> futures = new ArrayList<>();
+        final List<Future<Segment<Integer, String>>> futures = new ArrayList<>();
         for (int i = 0; i < callers; i++) {
             futures.add(executor.submit(() -> {
                 awaitLatch(start);
-                return cache.get(1);
+                return cache.get(id(1));
             }));
         }
 
@@ -134,9 +215,10 @@ class SegmentRegistryCacheTest {
         assertTrue(loadStarted.await(1, TimeUnit.SECONDS));
         allowLoad.countDown();
 
-        Object first = null;
-        for (final Future<Object> future : futures) {
-            final Object value = future.get(1, TimeUnit.SECONDS);
+        Segment<Integer, String> first = null;
+        for (final Future<Segment<Integer, String>> future : futures) {
+            final Segment<Integer, String> value = future.get(1,
+                    TimeUnit.SECONDS);
             if (first == null) {
                 first = value;
             } else {
@@ -157,25 +239,26 @@ class SegmentRegistryCacheTest {
         final CountDownLatch startWaiters = new CountDownLatch(1);
         final CountDownLatch allowFailure = new CountDownLatch(1);
         final RuntimeException expected = new RuntimeException("load failed");
-        final SegmentRegistryCache<Integer, Object> cache = new SegmentRegistryCache<>(
+        final SegmentRegistryCache<Integer, String> cache = newCache(
                 10, key -> {
                     loads.incrementAndGet();
                     loadStarted.countDown();
                     awaitLatch(allowFailure);
                     throw expected;
-                }, value -> {
+                }, segment -> {
                 });
 
-        final Future<Object> first = executor.submit(() -> cache.get(1));
+        final Future<Segment<Integer, String>> first = executor
+                .submit(() -> cache.get(id(1)));
         assertTrue(loadStarted.await(1, TimeUnit.SECONDS));
 
-        final List<Future<Object>> waiterFutures = new ArrayList<>();
+        final List<Future<Segment<Integer, String>>> waiterFutures = new ArrayList<>();
         for (int i = 0; i < waiters; i++) {
             waiterFutures.add(executor.submit(() -> {
                 waitersReady.countDown();
                 awaitLatch(startWaiters);
                 waitersStartedLoad.countDown();
-                return cache.get(1);
+                return cache.get(id(1));
             }));
         }
         assertTrue(waitersReady.await(1, TimeUnit.SECONDS));
@@ -187,7 +270,7 @@ class SegmentRegistryCacheTest {
                 ExecutionException.class,
                 () -> futureGetWithTimeout(first));
         assertSame(expected, firstFailure.getCause());
-        for (final Future<Object> waiter : waiterFutures) {
+        for (final Future<Segment<Integer, String>> waiter : waiterFutures) {
             final ExecutionException waiterFailure = assertThrows(
                     ExecutionException.class,
                     () -> futureGetWithTimeout(waiter));
@@ -201,13 +284,14 @@ class SegmentRegistryCacheTest {
     @Test
     void evictsLeastRecentlyUsedWhenLimitExceeded() {
         final List<Integer> evicted = new CopyOnWriteArrayList<>();
-        final SegmentRegistryCache<Integer, Integer> cache = new SegmentRegistryCache<>(
-                2, key -> key, evicted::add);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                2, key -> segment(key.getId()),
+                value -> evicted.add(value.getId().getId()));
 
-        cache.get(1);
-        cache.get(2);
-        cache.get(1); // key 2 becomes the least recently used
-        cache.get(3);
+        cache.get(id(1));
+        cache.get(id(2));
+        cache.get(id(1)); // key 2 becomes the least recently used
+        cache.get(id(3));
 
         assertTrue(cache.getSize() <= 2);
         assertEquals(1, evicted.size());
@@ -216,14 +300,14 @@ class SegmentRegistryCacheTest {
 
     @Test
     void metricsSnapshotTracksHitsMissesLoadsAndEvictions() throws Exception {
-        final SegmentRegistryCache<Integer, Integer> cache = new SegmentRegistryCache<>(
-                2, key -> key, value -> {
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                2, key -> segment(key.getId()), value -> {
                 });
 
-        cache.get(1); // miss + load
-        cache.get(1); // hit
-        cache.get(2); // miss + load
-        cache.get(3); // miss + load + eviction
+        cache.get(id(1)); // miss + load
+        cache.get(id(1)); // hit
+        cache.get(id(2)); // miss + load
+        cache.get(id(3)); // miss + load + eviction
 
         waitUntil(() -> cache.getSize() <= 2, 1000);
         final SegmentRegistryCacheStats snapshot = cache.metricsSnapshot();
@@ -238,54 +322,49 @@ class SegmentRegistryCacheTest {
     @Test
     void removeLastRecentUsedSegmentSkipsExceptKey() {
         final List<Integer> evicted = new CopyOnWriteArrayList<>();
-        final SegmentRegistryCache<Integer, Integer> cache = new SegmentRegistryCache<>(
-                10, key -> key, evicted::add);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> segment(key.getId()),
+                value -> evicted.add(value.getId().getId()));
 
-        cache.get(1);
-        cache.get(2);
-        cache.get(3);
-        cache.get(2);
-        cache.get(3);
+        cache.get(id(1));
+        cache.get(id(2));
+        cache.get(id(3));
+        cache.get(id(2));
+        cache.get(id(3));
 
-        assertTrue(cache.removeLastRecentUsedSegment(1));
+        assertTrue(cache.removeLastRecentUsedSegment(id(1)));
 
         assertEquals(1, evicted.size());
         assertEquals(2, evicted.get(0));
-        assertEquals(1, cache.get(1));
+        assertEquals(id(1), cache.get(id(1)).getId());
     }
 
     @Test
     void removeLastRecentUsedSegmentSkipsBusyCandidateWithoutStall()
             throws Exception {
-        final class Value {
-            private final int id;
-            private volatile boolean unloadAllowed = true;
-
-            private Value(final int id) {
-                this.id = id;
-            }
-        }
-
         final List<Integer> evicted = new CopyOnWriteArrayList<>();
+        final AtomicBoolean segmentTwoUnloadAllowed = new AtomicBoolean(true);
         final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
-            final SegmentRegistryCache<Integer, Value> cache = new SegmentRegistryCache<>(
-                    10, Value::new, value -> evicted.add(value.id),
-                    unloadExecutor, value -> value.unloadAllowed);
+            final SegmentRegistryCache<Integer, String> cache = newCache(
+                    10, key -> segment(key.getId()),
+                    value -> evicted.add(value.getId().getId()), unloadExecutor,
+                    value -> value.getId().getId() != 2
+                            || segmentTwoUnloadAllowed.get());
 
-            cache.get(1);
-            cache.get(2);
-            cache.get(3);
-            cache.get(2);
-            cache.get(3);
-            cache.get(2).unloadAllowed = false;
+            cache.get(id(1));
+            cache.get(id(2));
+            cache.get(id(3));
+            cache.get(id(2));
+            cache.get(id(3));
+            segmentTwoUnloadAllowed.set(false);
 
-            assertTrue(cache.removeLastRecentUsedSegment(1));
+            assertTrue(cache.removeLastRecentUsedSegment(id(1)));
             waitUntil(() -> evicted.size() == 1, 1000);
 
             assertEquals(1, evicted.size());
             assertEquals(3, evicted.get(0));
-            assertEquals(2, cache.get(2).id);
+            assertEquals(id(2), cache.get(id(2)).getId());
         } finally {
             unloadExecutor.shutdownNow();
         }
@@ -298,16 +377,18 @@ class SegmentRegistryCacheTest {
         final CountDownLatch allowClose = new CountDownLatch(1);
         final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
-            final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
-                    1, key -> "value-" + key, value -> {
+            final SegmentRegistryCache<Integer, String> cache = newCache(
+                    1, key -> segment(key.getId()), value -> {
                         closeStarted.countDown();
                         awaitLatch(allowClose);
                     }, unloadExecutor);
 
-            assertEquals("value-1", cache.get(1));
+            assertEquals(id(1), cache.get(id(1)).getId());
 
-            final Future<String> loadSecond = executor.submit(() -> cache.get(2));
-            assertEquals("value-2", loadSecond.get(300, TimeUnit.MILLISECONDS));
+            final Future<Segment<Integer, String>> loadSecond = executor
+                    .submit(() -> cache.get(id(2)));
+            assertEquals(id(2),
+                    loadSecond.get(300, TimeUnit.MILLISECONDS).getId());
             assertTrue(closeStarted.await(1, TimeUnit.SECONDS));
             assertEquals(2, cache.getSize());
 
@@ -324,19 +405,19 @@ class SegmentRegistryCacheTest {
         final CountDownLatch closeStarted = new CountDownLatch(1);
         final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
-            final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
-                    1, key -> "value-" + key, value -> {
+            final SegmentRegistryCache<Integer, String> cache = newCache(
+                    1, key -> segment(key.getId()), value -> {
                         closeStarted.countDown();
                         throw new IllegalStateException("close failed");
                     }, unloadExecutor);
 
-            assertEquals("value-1", cache.get(1));
-            assertEquals("value-2", cache.get(2));
+            assertEquals(id(1), cache.get(id(1)).getId());
+            assertEquals(id(2), cache.get(id(2)).getId());
             assertTrue(closeStarted.await(1, TimeUnit.SECONDS));
 
             waitUntil(() -> {
                 try {
-                    return "value-1".equals(cache.get(1));
+                    return id(1).equals(cache.get(id(1)).getId());
                 } catch (final SegmentRegistryCache.EntryBusyException ex) {
                     return false;
                 }
@@ -350,15 +431,15 @@ class SegmentRegistryCacheTest {
     @Test
     void failedExplicitInvalidateCancelsUnloadAndKeepsEntryAvailable() {
         final AtomicInteger loads = new AtomicInteger();
-        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
-                2, key -> "value-" + loads.incrementAndGet(), value -> {
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                2, key -> segment(loads.incrementAndGet()), value -> {
                     throw new IllegalStateException("close failed");
                 });
 
-        assertEquals("value-1", cache.get(1));
+        final Segment<Integer, String> first = cache.get(id(1));
         assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
-                cache.invalidate(1));
-        assertEquals("value-1", cache.get(1));
+                cache.invalidate(id(1)));
+        assertSame(first, cache.get(id(1)));
         assertEquals(1, loads.get());
     }
 
@@ -368,26 +449,26 @@ class SegmentRegistryCacheTest {
         final AtomicInteger loads = new AtomicInteger();
         final CountDownLatch unloadStarted = new CountDownLatch(1);
         final CountDownLatch allowUnload = new CountDownLatch(1);
-        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
-                2, key -> "value-" + loads.incrementAndGet(), value -> {
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                2, key -> segment(loads.incrementAndGet()), value -> {
                     unloadStarted.countDown();
                     awaitLatch(allowUnload);
                 });
 
-        assertEquals("value-1", cache.get(1));
+        assertEquals(id(1), cache.get(id(1)).getId());
 
         final Future<SegmentRegistryCache.InvalidateStatus> invalidation = executor
-                .submit(() -> cache.invalidate(1));
+                .submit(() -> cache.invalidate(id(1)));
         unloadStarted.await(1, TimeUnit.SECONDS);
 
         assertThrows(SegmentRegistryCache.EntryBusyException.class,
-                () -> cache.get(1));
+                () -> cache.get(id(1)));
 
         allowUnload.countDown();
 
         assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
                 invalidation.get(1, TimeUnit.SECONDS));
-        assertEquals("value-2", cache.get(1));
+        assertEquals(id(2), cache.get(id(1)).getId());
         assertEquals(2, loads.get());
     }
 
@@ -395,21 +476,21 @@ class SegmentRegistryCacheTest {
     void unloadingOneKeyDoesNotBlockOtherKeys() throws Exception {
         final CountDownLatch unloadStarted = new CountDownLatch(1);
         final CountDownLatch allowUnload = new CountDownLatch(1);
-        final SegmentRegistryCache<Integer, String> cache = new SegmentRegistryCache<>(
-                10, key -> "value-" + key, value -> {
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> segment(key.getId()), value -> {
                     unloadStarted.countDown();
                     awaitLatch(allowUnload);
                 });
 
-        assertEquals("value-1", cache.get(1));
+        assertEquals(id(1), cache.get(id(1)).getId());
 
         final Future<SegmentRegistryCache.InvalidateStatus> invalidation = executor
-                .submit(() -> cache.invalidate(1));
+                .submit(() -> cache.invalidate(id(1)));
         assertTrue(unloadStarted.await(1, TimeUnit.SECONDS));
 
-        assertEquals("value-2", cache.get(2));
+        assertEquals(id(2), cache.get(id(2)).getId());
         assertThrows(SegmentRegistryCache.EntryBusyException.class,
-                () -> cache.get(1));
+                () -> cache.get(id(1)));
 
         allowUnload.countDown();
         assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
@@ -420,21 +501,24 @@ class SegmentRegistryCacheTest {
     void invalidateIsBusyWhileUnloadPredicateRejectsValue() {
         final ExecutorService unloadExecutor = Executors.newSingleThreadExecutor();
         try {
-            final SegmentRegistryCache<Integer, TrackedValue> cache = new SegmentRegistryCache<>(
-                    2, key -> new TrackedValue(), TrackedValue::close,
-                    unloadExecutor, value -> value.isUnloadAllowed());
+            final AtomicBoolean closed = new AtomicBoolean();
+            final AtomicBoolean unloadAllowed = new AtomicBoolean(true);
+            final Segment<Integer, String> value = segment(1);
+            final SegmentRegistryCache<Integer, String> cache = newCache(
+                    2, key -> value, segment -> closed.set(true),
+                    unloadExecutor, segment -> unloadAllowed.get());
 
-            final TrackedValue value = cache.get(1);
-            value.setUnloadAllowed(false);
+            assertSame(value, cache.get(id(1)));
+            unloadAllowed.set(false);
             assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
-                    cache.invalidate(1));
-            assertFalse(value.isClosed(),
+                    cache.invalidate(id(1)));
+            assertFalse(closed.get(),
                     "Value should not be closed when unload predicate rejects.");
 
-            value.setUnloadAllowed(true);
+            unloadAllowed.set(true);
             assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
-                    cache.invalidate(1));
-            assertTrue(value.isClosed(), "Value should be closed after removal.");
+                    cache.invalidate(id(1)));
+            assertTrue(closed.get(), "Value should be closed after removal.");
         } finally {
             unloadExecutor.shutdownNow();
         }
@@ -447,11 +531,12 @@ class SegmentRegistryCacheTest {
 
         assertTrue(entry.tryStartLoad());
 
-        entry.finishLoad("value");
-        assertEquals("value", entry.waitWhileLoading(8L));
+        final String value = "value";
+        entry.finishLoad(value);
+        assertEquals(value, entry.waitWhileLoading(8L));
 
-        assertTrue(entry.tryStartUnload(value -> true));
-        assertEquals("value", entry.getValueForUnload());
+        assertTrue(entry.tryStartUnload(value));
+        assertEquals(value, entry.getValueForUnload());
         entry.finishUnload();
 
         assertThrows(SegmentRegistryCache.EntryBusyException.class,
@@ -473,25 +558,61 @@ class SegmentRegistryCacheTest {
         assertThrows(IllegalStateException.class, entry::finishUnload);
     }
 
-    private static final class TrackedValue {
-        private final AtomicBoolean closed = new AtomicBoolean();
-        private final AtomicBoolean unloadAllowed = new AtomicBoolean(true);
+    private static SegmentRegistryCache<Integer, String> newCache(
+            final int limit,
+            final Function<SegmentId, Segment<Integer, String>> loader,
+            final Consumer<Segment<Integer, String>> unloader) {
+        return newCache(limit, loader, unloader, Runnable::run,
+                value -> true);
+    }
 
-        void close() {
-            closed.set(true);
-        }
+    private static SegmentRegistryCache<Integer, String> newCache(
+            final int limit,
+            final Function<SegmentId, Segment<Integer, String>> loader,
+            final Consumer<Segment<Integer, String>> unloader,
+            final Executor unloadExecutor) {
+        return newCache(limit, loader, unloader, unloadExecutor,
+                value -> true);
+    }
 
-        boolean isClosed() {
-            return closed.get();
-        }
+    private static SegmentRegistryCache<Integer, String> newCache(
+            final int limit,
+            final Function<SegmentId, Segment<Integer, String>> loader,
+            final Consumer<Segment<Integer, String>> unloader,
+            final Executor unloadExecutor,
+            final Predicate<Segment<Integer, String>> unloadablePredicate) {
+        @SuppressWarnings("unchecked")
+        final SegmentLoadCloseOperations<Integer, String> segmentOperations = Mockito
+                .mock(SegmentLoadCloseOperations.class);
+        Mockito.when(segmentOperations.loadSegment(Mockito.any(SegmentId.class)))
+                .thenAnswer(invocation -> loader
+                        .apply(invocation.getArgument(0)));
+        Mockito.doAnswer(invocation -> {
+            unloader.accept(invocation.getArgument(0));
+            return null;
+        }).when(segmentOperations)
+                .closeSegmentIfNeeded(Mockito.<Segment<Integer, String>>any());
+        final SegmentUnloadEligibility unloadEligibility = Mockito
+                .mock(SegmentUnloadEligibility.class);
+        Mockito.when(unloadEligibility.canUnload(Mockito.any()))
+                .thenAnswer(invocation -> unloadablePredicate
+                        .test(invocation.getArgument(0)));
+        return new SegmentRegistryCache<>(limit, segmentOperations,
+                unloadEligibility, unloadExecutor);
+    }
 
-        boolean isUnloadAllowed() {
-            return unloadAllowed.get();
-        }
+    private static Segment<Integer, String> segment(final int id) {
+        @SuppressWarnings("unchecked")
+        final Segment<Integer, String> segment = Mockito.mock(Segment.class);
+        Mockito.when(segment.getId()).thenReturn(id(id));
+        Mockito.when(segment.getState()).thenReturn(SegmentState.READY);
+        Mockito.when(segment.getNumberOfKeysInWriteCache()).thenReturn(0);
+        Mockito.when(segment.close()).thenReturn(OperationResult.ok());
+        return segment;
+    }
 
-        void setUnloadAllowed(final boolean allowed) {
-            unloadAllowed.set(allowed);
-        }
+    private static SegmentId id(final int id) {
+        return SegmentId.of(id);
     }
 
     private static void awaitLatch(final CountDownLatch latch) {

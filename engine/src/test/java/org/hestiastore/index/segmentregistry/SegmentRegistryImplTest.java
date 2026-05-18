@@ -1,10 +1,9 @@
 package org.hestiastore.index.segmentregistry;
 
-import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.OperationStatus;
-import org.hestiastore.index.OperationResult;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
+import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -13,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -21,6 +21,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
+import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -208,6 +210,50 @@ class SegmentRegistryImplTest {
         removeCacheEntry(segmentId);
     }
 
+    @Test
+    void tryGetLoadedSegmentReturnsDefaultBlockingSegmentForLoadedEntry() {
+        final Segment<Integer, String> created = registry.tryCreateSegment()
+                .getValue();
+
+        final Optional<BlockingSegment<Integer, String>> loaded = registry
+                .tryGetLoadedSegment(created.getId());
+
+        assertTrue(loaded.isPresent());
+        assertSame(created.getId(), loaded.get().getId());
+        assertInstanceOf(DefaultBlockingSegment.class, loaded.get());
+        assertSame(created, loaded.get().getSegment());
+    }
+
+    @Test
+    void tryGetLoadedSegmentReturnsEmptyWithoutLoadingMissingSegment() {
+        final SegmentRegistryCacheStats before = registry.metricsSnapshot();
+
+        final Optional<BlockingSegment<Integer, String>> loaded = registry
+                .tryGetLoadedSegment(SegmentId.of(123));
+
+        final SegmentRegistryCacheStats after = registry.metricsSnapshot();
+        assertTrue(loaded.isEmpty());
+        assertEquals(before.missCount(), after.missCount());
+        assertEquals(before.loadCount(), after.loadCount());
+        assertEquals(before.size(), after.size());
+    }
+
+    @Test
+    void tryGetLoadedSegmentReturnsEmptyWhenEntryIsUnloading() {
+        final Segment<Integer, String> created = registry.tryCreateSegment()
+                .getValue();
+        final SegmentId segmentId = created.getId();
+        final Object entry = getCacheEntry(segmentId);
+        assertTrue(invokeTryStartUnload(entry));
+
+        final Optional<BlockingSegment<Integer, String>> loaded = registry
+                .tryGetLoadedSegment(segmentId);
+
+        assertTrue(loaded.isEmpty());
+        closeAndAssertClosed(created);
+        removeCacheEntry(segmentId);
+    }
+
     private void rebuildRegistry() {
         closeRegistry();
         registryMaintenancePool = Executors.newSingleThreadExecutor();
@@ -316,13 +362,23 @@ class SegmentRegistryImplTest {
     private boolean invokeTryStartUnload(final Object entry) {
         try {
             final java.lang.reflect.Method method = entry.getClass()
-                    .getDeclaredMethod("tryStartUnload",
-                            java.util.function.Predicate.class);
+                    .getDeclaredMethod("tryStartUnload", Object.class);
             method.setAccessible(true);
-            final java.util.function.Predicate<Object> alwaysTrue = value -> true;
-            return ((Boolean) method.invoke(entry, alwaysTrue)).booleanValue();
+            return ((Boolean) method.invoke(entry, getReadyValue(entry)))
+                    .booleanValue();
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException("Unable to start unload", ex);
+        }
+    }
+
+    private Object getReadyValue(final Object entry) {
+        try {
+            final java.lang.reflect.Method method = entry.getClass()
+                    .getDeclaredMethod("getReadyValue");
+            method.setAccessible(true);
+            return method.invoke(entry);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException("Unable to read ready value", ex);
         }
     }
 

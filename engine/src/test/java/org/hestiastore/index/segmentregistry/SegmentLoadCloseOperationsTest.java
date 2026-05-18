@@ -2,7 +2,6 @@ package org.hestiastore.index.segmentregistry;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
-import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -16,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.hestiastore.index.BusyRetryPolicy;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.chunkstore.ChunkFilter;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -29,7 +29,7 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-class SegmentLifecycleMaintenanceTest {
+class SegmentLoadCloseOperationsTest {
 
     private static final TypeDescriptorInteger KEY_DESCRIPTOR = new TypeDescriptorInteger();
     private static final TypeDescriptorShortString VALUE_DESCRIPTOR = new TypeDescriptorShortString();
@@ -43,12 +43,12 @@ class SegmentLifecycleMaintenanceTest {
             fixture.createSegmentDirectory(segmentId);
             fixture.gate.finishFreezeToReady();
 
-            final Segment<Integer, String> loaded = fixture.maintenance
+            final Segment<Integer, String> loaded = fixture.segmentOperations
                     .loadSegment(segmentId);
 
             assertNotNull(loaded);
             assertEquals(segmentId, loaded.getId());
-            fixture.maintenance.closeSegmentIfNeeded(loaded);
+            fixture.segmentOperations.closeSegmentIfNeeded(loaded);
         }
     }
 
@@ -57,11 +57,12 @@ class SegmentLifecycleMaintenanceTest {
         try (Fixture fixture = new Fixture()) {
             fixture.gate.finishFreezeToReady();
             final SegmentId missingSegmentId = SegmentId.of(10);
-            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
+            final SegmentLoadCloseOperations<Integer, String> segmentOperations =
+                    fixture.segmentOperations;
 
             final SegmentBusyException ex = assertThrows(
                     SegmentBusyException.class,
-                    () -> maintenance.loadSegment(missingSegmentId));
+                    () -> segmentOperations.loadSegment(missingSegmentId));
             assertSame(SegmentBusyException.class, ex.getClass());
         }
     }
@@ -71,10 +72,11 @@ class SegmentLifecycleMaintenanceTest {
         try (Fixture fixture = new Fixture()) {
             final SegmentId segmentId = SegmentId.of(2);
             fixture.createSegmentDirectory(segmentId);
-            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
+            final SegmentLoadCloseOperations<Integer, String> segmentOperations =
+                    fixture.segmentOperations;
 
             assertThrows(SegmentBusyException.class,
-                    () -> maintenance.loadSegment(segmentId));
+                    () -> segmentOperations.loadSegment(segmentId));
         }
     }
 
@@ -88,7 +90,7 @@ class SegmentLifecycleMaintenanceTest {
             when(segment.close()).thenReturn(OperationResult.busy())
                     .thenReturn(OperationResult.ok());
 
-            fixture.maintenance.closeSegmentIfNeeded(segment);
+            fixture.segmentOperations.closeSegmentIfNeeded(segment);
 
             verify(segment, times(2)).close();
         }
@@ -100,10 +102,10 @@ class SegmentLifecycleMaintenanceTest {
             final SegmentId segmentId = SegmentId.of(3);
             fixture.createSegmentDirectory(segmentId);
             fixture.gate.finishFreezeToReady();
-            final Segment<Integer, String> loaded = fixture.maintenance
+            final Segment<Integer, String> loaded = fixture.segmentOperations
                     .loadSegment(segmentId);
 
-            fixture.maintenance.closeSegmentIfNeeded(loaded);
+            fixture.segmentOperations.closeSegmentIfNeeded(loaded);
 
             assertEquals(SegmentState.CLOSED, loaded.getState());
         }
@@ -115,14 +117,15 @@ class SegmentLifecycleMaintenanceTest {
             final SegmentId segmentId = SegmentId.of(4);
             fixture.createSegmentDirectory(segmentId);
             fixture.gate.finishFreezeToReady();
-            final Segment<Integer, String> loaded = fixture.maintenance
+            final Segment<Integer, String> loaded = fixture.segmentOperations
                     .loadSegment(segmentId);
-            final SegmentLifecycleMaintenance<Integer, String> maintenance = fixture.maintenance;
+            final SegmentLoadCloseOperations<Integer, String> segmentOperations =
+                    fixture.segmentOperations;
             try {
                 assertThrows(SegmentBusyException.class,
-                        () -> maintenance.loadSegment(segmentId));
+                        () -> segmentOperations.loadSegment(segmentId));
             } finally {
-                fixture.maintenance.closeSegmentIfNeeded(loaded);
+                fixture.segmentOperations.closeSegmentIfNeeded(loaded);
             }
         }
     }
@@ -141,7 +144,7 @@ class SegmentLifecycleMaintenanceTest {
         private final SegmentRegistryFileSystem fileSystem = new SegmentRegistryFileSystem(
                 asyncDirectory);
         private final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        private final SegmentLifecycleMaintenance<Integer, String> maintenance = new SegmentLifecycleMaintenance<>(
+        private final SegmentLoadCloseOperations<Integer, String> segmentOperations = new SegmentLoadCloseOperations<>(
                 segmentFactory, fileSystem, new BusyRetryPolicy(1, 1000),
                 gate);
 
@@ -161,7 +164,7 @@ class SegmentLifecycleMaintenanceTest {
                         .valueClass(String.class)//
                         .keyTypeDescriptor(KEY_DESCRIPTOR)//
                         .valueTypeDescriptor(VALUE_DESCRIPTOR)//
-                        .name("segment-lifecycle-maintenance-test"))//
+                        .name("segment-load-close-operations-test"))//
                 .segment(segment -> segment.cacheKeyLimit(10))//
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))//
                 .writePath(writePath -> writePath

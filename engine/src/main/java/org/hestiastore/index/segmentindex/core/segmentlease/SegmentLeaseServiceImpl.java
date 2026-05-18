@@ -64,7 +64,7 @@ final class SegmentLeaseServiceImpl<K, V>
             final SegmentId segmentId) {
         final SegmentId nonNullSegmentId = requireSegmentId(segmentId);
         final Snapshot<K> snapshot = currentRouteSnapshot();
-        if (!isMapped(snapshot, nonNullSegmentId)) {
+        if (!isRoutedSegment(snapshot, nonNullSegmentId)) {
             return Optional.empty();
         }
         final RouteLease lease = tryAcquireRouteLease(nonNullSegmentId,
@@ -73,6 +73,35 @@ final class SegmentLeaseServiceImpl<K, V>
             return Optional.empty();
         }
         return loadOptionalSegmentLease(nonNullSegmentId, lease);
+    }
+
+    @Override
+    public List<SegmentId> getLoadedMappedSegmentIds() {
+        final Snapshot<K> snapshot = currentRouteSnapshot();
+        final List<SegmentId> routedSegmentIds = snapshot
+                .getSegmentIds(SegmentWindow.unbounded());
+        if (routedSegmentIds.isEmpty()) {
+            return List.of();
+        }
+        return segmentRegistry.runtime().loadedSegmentsSnapshot().stream()
+                .map(BlockingSegment::getId)
+                .filter(routedSegmentIds::contains).distinct().toList();
+    }
+
+    @Override
+    public Optional<SegmentLease<K, V>> tryAcquireLoadedMappedSegment(
+            final SegmentId segmentId) {
+        final SegmentId nonNullSegmentId = requireSegmentId(segmentId);
+        final Snapshot<K> snapshot = currentRouteSnapshot();
+        if (!isRoutedSegment(snapshot, nonNullSegmentId)) {
+            return Optional.empty();
+        }
+        final RouteLease lease = tryAcquireRouteLease(nonNullSegmentId,
+                snapshot);
+        if (lease == null) {
+            return Optional.empty();
+        }
+        return loadOptionalLoadedSegmentLease(nonNullSegmentId, lease);
     }
 
     @Override
@@ -110,6 +139,29 @@ final class SegmentLeaseServiceImpl<K, V>
         try {
             final Optional<BlockingSegment<K, V>> segment =
                     segmentRegistry.tryGetSegment(segmentId);
+            if (segment.isEmpty()) {
+                lease.close();
+                return Optional.empty();
+            }
+            return Optional.of(new SegmentLeaseImpl<>(lease, segment.get()));
+        } catch (final IndexException e) {
+            lease.close();
+            if (!isCurrentlyMapped(segmentId)) {
+                return Optional.empty();
+            }
+            throw e;
+        } catch (final RuntimeException e) {
+            lease.close();
+            throw e;
+        }
+    }
+
+    private Optional<SegmentLease<K, V>> loadOptionalLoadedSegmentLease(
+            final SegmentId segmentId,
+            final RouteLease lease) {
+        try {
+            final Optional<BlockingSegment<K, V>> segment =
+                    segmentRegistry.tryGetLoadedSegment(segmentId);
             if (segment.isEmpty()) {
                 lease.close();
                 return Optional.empty();
@@ -276,10 +328,10 @@ final class SegmentLeaseServiceImpl<K, V>
     }
 
     private boolean isCurrentlyMapped(final SegmentId segmentId) {
-        return isMapped(currentRouteSnapshot(), segmentId);
+        return isRoutedSegment(currentRouteSnapshot(), segmentId);
     }
 
-    private boolean isMapped(final Snapshot<K> snapshot,
+    private boolean isRoutedSegment(final Snapshot<K> snapshot,
             final SegmentId segmentId) {
         return snapshot.getSegmentIds(SegmentWindow.unbounded())
                 .contains(segmentId);

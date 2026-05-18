@@ -57,7 +57,7 @@ class SegmentIndexRuntimeFactoryTest {
             stateMachine.markReady();
             new IndexCloseCoordinator<>("runtime-graph-builder-test",
                     stateMachine,
-                    Mockito.mock(IndexOperationTrackingAccess.class),
+                    Mockito.mock(SegmentIndexOperationGate.class),
                     new IndexOperationStatsRecorder(),
                     runtime, executorRegistry,
                     new IndexDirectoryLock(new MemDirectory())).close();

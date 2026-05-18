@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.hestiastore.index.IndexException;
@@ -39,6 +40,9 @@ class SegmentLeaseServiceImplTest {
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
+
+    @Mock
+    private SegmentRegistry.Runtime<Integer, String> registryRuntime;
 
     @Mock
     private BlockingSegment<Integer, String> blockingSegment;
@@ -197,6 +201,80 @@ class SegmentLeaseServiceImplTest {
                 .tryAcquireMappedSegment(SegmentId.of(0));
 
         assertTrue(result.isEmpty());
+        verify(lease).close();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void getLoadedMappedSegmentIdsReturnsOnlyLoadedMappedSegments() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final BlockingSegment<Integer, String> unmappedSegment = mock(
+                BlockingSegment.class);
+        when(segmentRegistry.runtime()).thenReturn(registryRuntime);
+        when(registryRuntime.loadedSegmentsSnapshot()).thenReturn(
+                List.of(blockingSegment, unmappedSegment));
+        when(blockingSegment.getId()).thenReturn(SegmentId.of(0));
+        when(unmappedSegment.getId()).thenReturn(SegmentId.of(9));
+
+        final List<SegmentId> result = service.getLoadedMappedSegmentIds();
+
+        assertEquals(List.of(SegmentId.of(0)), result);
+    }
+
+    @Test
+    void getLoadedMappedSegmentIdsReturnsEmptyWithoutRegistryLookupWhenNoRoutes() {
+        final List<SegmentId> result = service.getLoadedMappedSegmentIds();
+
+        assertTrue(result.isEmpty());
+        verify(segmentRegistry, never()).runtime();
+    }
+
+    @Test
+    void tryAcquireLoadedMappedSegmentReturnsLeaseAndClosesRouteLease() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
+        final SegmentTopology<Integer> topology = mockTopologyWithRouteLease(
+                snapshot);
+        final SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), snapshot.version()).lease();
+        when(lease.segmentId()).thenReturn(SegmentId.of(0));
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        when(segmentRegistry.tryGetLoadedSegment(SegmentId.of(0)))
+                .thenReturn(Optional.of(blockingSegment));
+
+        final Optional<SegmentLease<Integer, String>> result = leaseService
+                .tryAcquireLoadedMappedSegment(SegmentId.of(0));
+
+        assertTrue(result.isPresent());
+        try (SegmentLease<Integer, String> acquired = result.get()) {
+            assertSame(blockingSegment, acquired.segment());
+            assertEquals(SegmentId.of(0), acquired.segmentId());
+        }
+        verify(segmentRegistry, never()).tryGetSegment(SegmentId.of(0));
+        verify(lease).close();
+    }
+
+    @Test
+    void tryAcquireLoadedMappedSegmentReturnsEmptyAndClosesRouteLeaseWhenUnloaded() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
+        final SegmentTopology<Integer> topology = mockTopologyWithRouteLease(
+                snapshot);
+        final SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), snapshot.version()).lease();
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap,
+                        segmentRegistry, topology, retryPolicy);
+        when(segmentRegistry.tryGetLoadedSegment(SegmentId.of(0)))
+                .thenReturn(Optional.empty());
+
+        final Optional<SegmentLease<Integer, String>> result = leaseService
+                .tryAcquireLoadedMappedSegment(SegmentId.of(0));
+
+        assertTrue(result.isEmpty());
+        verify(segmentRegistry, never()).tryGetSegment(SegmentId.of(0));
         verify(lease).close();
     }
 

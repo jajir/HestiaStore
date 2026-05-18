@@ -262,7 +262,7 @@ final class SplitPolicyCoordinator<K, V> {
         if (!isEnabled(threshold)) {
             return;
         }
-        keyToSegmentMap.getSegmentIds().forEach(
+        segmentLeaseService.getLoadedMappedSegmentIds().forEach(
                 segmentId -> offerScanCandidateIfEligible(segmentId,
                         threshold));
     }
@@ -350,7 +350,7 @@ final class SplitPolicyCoordinator<K, V> {
     private Optional<SegmentLease<K, V>> tryAcquireSplitCandidate(
             final SegmentId segmentId) {
         try {
-            return segmentLeaseService.tryAcquireMappedSegment(segmentId);
+            return segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId);
         } catch (final IndexException e) {
             if (!isSegmentStillMapped(segmentId)) {
                 return Optional.empty();

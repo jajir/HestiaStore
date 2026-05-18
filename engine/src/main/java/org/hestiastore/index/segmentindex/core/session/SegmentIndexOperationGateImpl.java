@@ -8,18 +8,19 @@ import org.hestiastore.index.Vldtn;
  * Tracks in-flight synchronous index operations and provides a close-safe
  * waiting point.
  */
-final class IndexOperationTracker implements IndexOperationTrackingAccess {
+final class SegmentIndexOperationGateImpl
+        implements SegmentIndexOperationGate {
 
     private final Object operationMonitor = new Object();
     private int syncOperationsInFlight;
     private final ThreadLocal<Integer> syncOperationDepth = ThreadLocal
             .withInitial(() -> Integer.valueOf(0));
 
-    IndexOperationTracker() {
+    SegmentIndexOperationGateImpl() {
     }
 
     @Override
-    public <T> T runTracked(final Supplier<T> task) {
+    public <T> T trackOperation(final Supplier<T> task) {
         final Supplier<T> nonNullTask = Vldtn.requireNonNull(task, "task");
         if (isInSyncOperation()) {
             return runWithSyncOperationContext(nonNullTask);
@@ -33,7 +34,7 @@ final class IndexOperationTracker implements IndexOperationTrackingAccess {
     }
 
     @Override
-    public void awaitOperations() {
+    public void awaitOperationDrain() {
         if (isInSyncOperation()) {
             throw new IllegalStateException(
                     "close() must not be called from an index operation.");

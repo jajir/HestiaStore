@@ -185,10 +185,6 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         sessionOwner.ensureOperational();
     }
 
-    void runMaintenanceOperation(final Runnable action) {
-        sessionOwner.runMaintenanceOperation(action);
-    }
-
     @Override
     public SegmentIndexMaintenance maintenance() {
         return maintenanceApi;
