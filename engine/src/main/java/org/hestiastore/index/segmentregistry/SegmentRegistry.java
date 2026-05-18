@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import java.util.List;
 import java.util.Optional;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentFullWriterTx;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeLimits;
@@ -59,6 +60,22 @@ public interface SegmentRegistry<K, V> {
      * @return loaded segment when immediately available, otherwise empty
      */
     Optional<BlockingSegment<K, V>> tryGetSegment(SegmentId segmentId);
+
+    /**
+     * Returns the blocking segment for the provided id only when it is already
+     * loaded in the registry cache.
+     * <p>
+     * This method is a no-load lookup: it must not create cache entries or
+     * materialize a segment from storage.
+     *
+     * @param segmentId segment id to look up
+     * @return already-loaded segment when present, otherwise empty
+     */
+    default Optional<BlockingSegment<K, V>> tryGetLoadedSegment(
+            final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        return Optional.empty();
+    }
 
     /**
      * Creates and registers a new segment, waiting until the segment becomes

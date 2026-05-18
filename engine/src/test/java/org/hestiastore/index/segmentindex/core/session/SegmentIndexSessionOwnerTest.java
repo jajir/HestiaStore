@@ -73,13 +73,9 @@ class SegmentIndexSessionOwnerTest {
     }
 
     @Test
-    void runMaintenanceOperationAppliesGuardsAndCleanup() {
-        final Runnable action = mock(Runnable.class);
+    void invalidateSegmentIteratorsDelegatesToRuntime() {
+        assertDoesNotThrow(owner::invalidateSegmentIterators);
 
-        assertDoesNotThrow(() -> owner.runMaintenanceOperation(action));
-
-        verify(stateMachine).ensureOperational();
-        verify(action).run();
         verify(runtime).invalidateSegmentIterators();
     }
 }

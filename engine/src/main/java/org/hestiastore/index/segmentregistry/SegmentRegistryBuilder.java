@@ -9,9 +9,7 @@ import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 
 /**
@@ -191,32 +189,18 @@ public final class SegmentRegistryBuilder<K, V> {
         final BusyRetryPolicy resolvedRegistryCloseRetryPolicy = new BusyRetryPolicy(
                 busyBackoffMillis, REGISTRY_CLOSE_TIMEOUT_MILLIS);
         final SegmentRegistryStateMachine gate = new SegmentRegistryStateMachine();
-        final SegmentLifecycleMaintenance<K, V> maintenance = new SegmentLifecycleMaintenance<>(
+        final SegmentLoadCloseOperations<K, V> segmentOperations = new SegmentLoadCloseOperations<>(
                 resolvedFactory, resolvedFileSystem, resolvedCloseRetryPolicy,
                 gate);
-        final SegmentRegistryCache<SegmentId, Segment<K, V>> cache = new SegmentRegistryCache<>(
-                maxNumberOfSegmentsInCache, maintenance::loadSegment,
-                maintenance::closeSegmentIfNeeded,
-                resolvedRegistryMaintenanceExecutor,
-                segment -> isEvictable(segment, gate));
+        final SegmentUnloadEligibility unloadEligibility = new SegmentUnloadEligibility(
+                gate);
+        final SegmentRegistryCache<K, V> cache = new SegmentRegistryCache<>(
+                maxNumberOfSegmentsInCache, segmentOperations,
+                unloadEligibility,
+                resolvedRegistryMaintenanceExecutor);
         return new SegmentRegistryImpl<>(resolvedAllocator, resolvedFileSystem,
                 cache, resolvedRegistryCloseRetryPolicy, gate, resolvedFactory,
                 resolvedFactory, resolvedBlockingRetryPolicy);
-    }
-
-    private static <K, V> boolean isEvictable(final Segment<K, V> segment,
-            final SegmentRegistryStateMachine gate) {
-        return segment != null && (segment.getState() == SegmentState.CLOSED
-                || isReadySegmentEvictable(segment, gate));
-    }
-
-    private static <K, V> boolean isReadySegmentEvictable(
-            final Segment<K, V> segment,
-            final SegmentRegistryStateMachine gate) {
-        final boolean closing = gate.getState() != SegmentRegistryState.READY;
-        final SegmentId segmentId = segment.getId();
-        return segmentId != null && segment.getState() == SegmentState.READY
-                && (closing || segment.getNumberOfKeysInWriteCache() == 0);
     }
 
 }

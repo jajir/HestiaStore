@@ -12,7 +12,8 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 
 /**
- * Encapsulates direct segment lifecycle operations used by the registry cache.
+ * Encapsulates direct segment load and close operations used by the registry
+ * cache.
  * <p>
  * This class is responsible for:
  * <ul>
@@ -23,7 +24,7 @@ import org.hestiastore.index.segment.SegmentState;
  * @param <K> key type
  * @param <V> value type
  */
-final class SegmentLifecycleMaintenance<K, V> {
+final class SegmentLoadCloseOperations<K, V> {
 
     private static final String SEGMENT_CLOSE_FAILED_FORMAT = "Segment '%s' failed during close: %s";
     private final SegmentBuildService<K, V> segmentFactory;
@@ -31,7 +32,7 @@ final class SegmentLifecycleMaintenance<K, V> {
     private final BusyRetryPolicy closeRetryPolicy;
     private final SegmentRegistryStateMachine gate;
 
-    SegmentLifecycleMaintenance(final SegmentBuildService<K, V> segmentFactory,
+    SegmentLoadCloseOperations(final SegmentBuildService<K, V> segmentFactory,
             final SegmentRegistryFileSystem fileSystem,
             final BusyRetryPolicy closeRetryPolicy,
             final SegmentRegistryStateMachine gate) {
@@ -105,4 +106,5 @@ final class SegmentLifecycleMaintenance<K, V> {
                             segment.getId(), status));
         }
     }
+
 }

@@ -130,7 +130,7 @@ class SegmentIndexStartupRecoveryTest {
             return new SegmentIndexSessionOwner<>(stateMachine, runtime,
                     new IndexCloseCoordinator<>(
                             conf.identity().name(), stateMachine,
-                            IndexOperationTrackingAccess.create(),
+                            SegmentIndexOperationGate.create(),
                             new IndexOperationStatsRecorder(),
                             runtime, mock(ExecutorRegistry.class),
                             directoryLock),

@@ -196,8 +196,10 @@ class SplitServiceImplTest {
                 .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
-                .thenReturn(List.of(segmentId)).thenReturn(List.of(segmentId));
-        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+                .thenReturn(List.of(segmentId));
+        when(segmentLeaseService.getLoadedMappedSegmentIds())
+                .thenReturn(List.of(segmentId));
+        when(segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId))
                 .thenReturn(Optional.of(segmentLease));
         when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
@@ -214,6 +216,7 @@ class SplitServiceImplTest {
 
         verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentId,
                 10, 11L);
+        verify(segmentLeaseService, never()).tryAcquireMappedSegment(segmentId);
         runtime.close();
     }
 
@@ -246,7 +249,9 @@ class SplitServiceImplTest {
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
                 .thenReturn(List.of(segmentId));
-        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+        when(segmentLeaseService.getLoadedMappedSegmentIds())
+                .thenReturn(List.of(segmentId));
+        when(segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId))
                 .thenReturn(Optional.of(segmentLease));
         when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
@@ -261,20 +266,22 @@ class SplitServiceImplTest {
 
         verify(splitExecutionCoordinator).scheduleEligibleSplit(segmentId,
                 10, 11L);
+        verify(segmentLeaseService, never()).tryAcquireMappedSegment(segmentId);
         runtime.close();
     }
 
     @Test
-    void requestFullSplitScan_skipsUnloadedCandidates() {
+    void requestFullSplitScan_skipsCandidateEvictedBeforeAcquire() {
         final SegmentId segmentId = SegmentId.of(9);
         when(conf.maintenance().backgroundAutoEnabled()).thenReturn(Boolean.TRUE);
         when(splitPolicyScheduler.schedule(any(Runnable.class), eq(250L),
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
-        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        when(segmentLeaseService.getLoadedMappedSegmentIds())
                 .thenReturn(List.of(segmentId));
-        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+        when(segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId))
                 .thenReturn(Optional.empty());
         final SplitServiceImpl<String, String> runtime = newRuntime(
                 directExecutor(), () -> SegmentIndexState.READY,
@@ -282,7 +289,8 @@ class SplitServiceImplTest {
 
         runtime.requestFullSplitScan();
 
-        verify(segmentLeaseService).tryAcquireMappedSegment(segmentId);
+        verify(segmentLeaseService).tryAcquireLoadedMappedSegment(segmentId);
+        verify(segmentLeaseService, never()).tryAcquireMappedSegment(segmentId);
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
                 anyLong(), anyLong());
         runtime.close();
@@ -298,7 +306,9 @@ class SplitServiceImplTest {
                 .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
         when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
-        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+        when(segmentLeaseService.getLoadedMappedSegmentIds())
+                .thenReturn(List.of(segmentId));
+        when(segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId))
                 .thenReturn(Optional.of(segmentLease));
         when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(runtime);
@@ -309,7 +319,8 @@ class SplitServiceImplTest {
 
         runtimeUnderTest.requestFullSplitScan();
 
-        verify(segmentLeaseService).tryAcquireMappedSegment(segmentId);
+        verify(segmentLeaseService).tryAcquireLoadedMappedSegment(segmentId);
+        verify(segmentLeaseService, never()).tryAcquireMappedSegment(segmentId);
         verify(splitExecutionCoordinator, never()).scheduleEligibleSplit(any(),
                 anyLong(), anyLong());
         runtimeUnderTest.close();
@@ -362,9 +373,8 @@ class SplitServiceImplTest {
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
-        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
-                .thenReturn(List.of(segmentId));
-        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        when(segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId))
                 .thenReturn(Optional.of(segmentLease));
         when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
@@ -421,9 +431,8 @@ class SplitServiceImplTest {
                 eq(TimeUnit.MILLISECONDS)))
                 .thenReturn(mockScheduledFuture());
         when(runtimeTuningState.segmentSplitKeyThreshold()).thenReturn(10);
-        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId))
-                .thenReturn(List.of(segmentId));
-        when(segmentLeaseService.tryAcquireMappedSegment(segmentId))
+        when(keyToSegmentMap.getSegmentIds()).thenReturn(List.of(segmentId));
+        when(segmentLeaseService.tryAcquireLoadedMappedSegment(segmentId))
                 .thenReturn(Optional.of(segmentLease));
         when(segmentLease.segment()).thenReturn(segmentHandle);
         when(segmentHandle.getRuntime()).thenReturn(segmentRuntime);
