@@ -1,55 +1,60 @@
 package org.hestiastore.index.segmentindex.maintenance;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class SegmentIndexMaintenanceImplTest {
 
-    @Test
-    void delegatesMaintenanceCommands() {
-        final List<String> calls = new ArrayList<>();
-        final SegmentIndexMaintenance maintenance =
-                new SegmentIndexMaintenanceImpl(
-                        () -> calls.add("compact"),
-                        () -> calls.add("compactAndWait"),
-                        () -> calls.add("flush"),
-                        () -> calls.add("flushAndWait"),
-                        () -> calls.add("checkAndRepairConsistency"));
+    @Mock
+    private MaintenanceService maintenanceService;
 
-        maintenance.compact();
-        maintenance.compactAndWait();
-        maintenance.flush();
-        maintenance.flushAndWait();
-        maintenance.checkAndRepairConsistency();
+    @Mock
+    private IndexConsistencyCoordinator<Object, Object> consistencyCoordinator;
 
-        assertEquals(List.of("compact", "compactAndWait", "flush",
-                "flushAndWait", "checkAndRepairConsistency"), calls);
+    private SegmentIndexMaintenance maintenance;
+
+    @BeforeEach
+    void setUp() {
+        maintenance = new SegmentIndexMaintenanceImpl(maintenanceService,
+                consistencyCoordinator);
     }
 
     @Test
-    void constructorRejectsMissingActions() {
-        final Runnable action = () -> {
-        };
+    void delegatesMaintenanceCommands() {
+        assertDoesNotThrow(() -> {
+            maintenance.compact();
+            maintenance.compactAndWait();
+            maintenance.flush();
+            maintenance.flushAndWait();
+            maintenance.checkAndRepairConsistency();
+        });
 
+        verify(maintenanceService).compact();
+        verify(maintenanceService).compactAndWait();
+        verify(maintenanceService).flush();
+        verify(maintenanceService).flushAndWait();
+        verify(consistencyCoordinator).checkAndRepairConsistency();
+        verifyNoMoreInteractions(maintenanceService, consistencyCoordinator);
+    }
+
+    @Test
+    void constructorRejectsMissingCollaborators() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexMaintenanceImpl(null, action, action,
-                        action, action));
+                () -> new SegmentIndexMaintenanceImpl(null,
+                        consistencyCoordinator));
         assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexMaintenanceImpl(action, null, action,
-                        action, action));
-        assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexMaintenanceImpl(action, action, null,
-                        action, action));
-        assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexMaintenanceImpl(action, action, action,
-                        null, action));
-        assertThrows(IllegalArgumentException.class,
-                () -> new SegmentIndexMaintenanceImpl(action, action, action,
-                        action, null));
+                () -> new SegmentIndexMaintenanceImpl(maintenanceService,
+                        null));
     }
 }
