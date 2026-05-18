@@ -18,7 +18,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
@@ -80,8 +79,7 @@ class SegmentIndexStartupRecoveryTest {
                 final IndexConfiguration<Integer, String> conf,
                 final AtomicInteger startupConsistencyChecks) {
             super(new TypeDescriptorInteger(), mockPointOperationFacade(),
-                    mockReadFacade(), mock(MaintenanceService.class),
-                    mockTrackedRunner(), mock(SegmentIndexMaintenance.class),
+                    mockReadFacade(), mock(SegmentIndexMaintenance.class),
                     newSessionOwner(directoryFacade, conf,
                             startupConsistencyChecks));
             this.startupConsistencyChecks = startupConsistencyChecks;
@@ -150,11 +148,6 @@ class SegmentIndexStartupRecoveryTest {
         @SuppressWarnings("unchecked")
         private static SegmentIndexReadFacade<Integer, String> mockReadFacade() {
             return mock(SegmentIndexReadFacade.class);
-        }
-
-        @SuppressWarnings("unchecked")
-        private static SegmentIndexTrackedOperationRunner<Integer, String> mockTrackedRunner() {
-            return mock(SegmentIndexTrackedOperationRunner.class);
         }
 
         @SuppressWarnings("unchecked")

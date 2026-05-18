@@ -23,7 +23,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -213,8 +212,7 @@ class IndexInternalTest {
         private RecordingIndex(final EntryIterator<Integer, String> iterator,
                 final IndexConfiguration<Integer, String> conf) {
             super(new TypeDescriptorInteger(), mockPointOperationFacade(),
-                    mockReadFacade(), mock(MaintenanceService.class),
-                    mockTrackedRunner(), mock(SegmentIndexMaintenance.class),
+                    mockReadFacade(), mock(SegmentIndexMaintenance.class),
                     mockSessionOwner());
             this.iterator = iterator;
         }
@@ -278,12 +276,6 @@ class IndexInternalTest {
     @SuppressWarnings("unchecked")
     private static SegmentIndexReadFacade<Integer, String> mockReadFacade() {
         return mock(SegmentIndexReadFacade.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static SegmentIndexTrackedOperationRunner<Integer, String>
-            mockTrackedRunner() {
-        return mock(SegmentIndexTrackedOperationRunner.class);
     }
 
     @SuppressWarnings("unchecked")
