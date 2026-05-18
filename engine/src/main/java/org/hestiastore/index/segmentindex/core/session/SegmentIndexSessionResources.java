@@ -85,8 +85,7 @@ public final class SegmentIndexSessionResources<K, V> {
                 consistencyCoordinator);
         final SegmentIndexImpl<K, V> index = new SegmentIndexImpl<>(
                 keyTypeDescriptor, pointOperationFacade,
-                readFacade, initializedRuntime.maintenance(),
-                trackedRunner(), maintenanceApi, sessionOwner);
+                readFacade, maintenanceApi, sessionOwner);
         return index;
     }
 
@@ -134,26 +133,11 @@ public final class SegmentIndexSessionResources<K, V> {
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
             final MaintenanceService maintenance,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
-        return new SegmentIndexMaintenanceImpl(
-                () -> runTrackedMaintenanceOperation(sessionOwner,
-                        trackedRunner, maintenance::compact),
-                () -> runTrackedMaintenanceOperation(sessionOwner,
-                        trackedRunner, maintenance::compactAndWait),
-                () -> runTrackedMaintenanceOperation(sessionOwner,
-                        trackedRunner, maintenance::flush),
-                () -> runTrackedMaintenanceOperation(sessionOwner,
-                        trackedRunner, maintenance::flushAndWait),
-                () -> runTrackedMaintenanceOperation(sessionOwner,
-                        trackedRunner,
-                        consistencyCoordinator::checkAndRepairConsistency));
-    }
-
-    private void runTrackedMaintenanceOperation(
-            final SegmentIndexSessionOwner<K, V> sessionOwner,
-            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
-            final Runnable action) {
-        sessionOwner.runMaintenanceOperation(
-                () -> trackedRunner.runTrackedVoid(action));
+        final SegmentIndexMaintenance maintenanceApi =
+                new SegmentIndexMaintenanceImpl(maintenance,
+                        consistencyCoordinator);
+        return new SegmentIndexMaintenanceSessionAdapter<>(maintenanceApi,
+                sessionOwner, trackedRunner);
     }
 
     private IndexDirectoryLock directoryLock() {

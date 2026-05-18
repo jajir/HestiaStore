@@ -17,7 +17,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.sorteddatafile.EntryComparator;
 
@@ -37,12 +36,9 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final SegmentIndexMaintenance maintenanceApi;
     private final SegmentIndexSessionOwner<K, V> sessionOwner;
 
-    @SuppressWarnings("java:S107")
     SegmentIndexImpl(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentIndexPointOperationFacade<K, V> pointOperationFacade,
             final SegmentIndexReadFacade<K, V> readFacade,
-            final MaintenanceService maintenance,
-            final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
             final SegmentIndexMaintenance maintenanceApi,
             final SegmentIndexSessionOwner<K, V> sessionOwner) {
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -50,8 +46,6 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.pointOperationFacade = Vldtn.requireNonNull(pointOperationFacade,
                 "pointOperationFacade");
         this.readFacade = Vldtn.requireNonNull(readFacade, "readFacade");
-        Vldtn.requireNonNull(maintenance, "maintenance");
-        Vldtn.requireNonNull(trackedRunner, "trackedRunner");
         this.maintenanceApi = Vldtn.requireNonNull(maintenanceApi,
                 "maintenanceApi");
         this.sessionOwner = Vldtn.requireNonNull(sessionOwner, "sessionOwner");
