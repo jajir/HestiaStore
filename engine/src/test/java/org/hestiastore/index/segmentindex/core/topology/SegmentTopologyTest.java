@@ -140,7 +140,7 @@ class SegmentTopologyTest {
 
     private void applySplitPlan() {
         final SegmentRouteSplit<Integer> split = new SegmentRouteSplit<>(
-                SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 50);
+                SegmentId.of(0), SegmentId.of(1), SegmentId.of(2), 50, 100);
         assertTrue(keyToSegmentMap.tryReplaceRouteWithSplit(split));
     }
 }

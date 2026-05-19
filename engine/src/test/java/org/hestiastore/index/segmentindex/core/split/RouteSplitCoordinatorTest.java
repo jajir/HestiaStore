@@ -66,7 +66,7 @@ class RouteSplitCoordinatorTest {
                         new IndexRetryPolicy(maintenance.busyBackoffMillis(),
                                 maintenance.busyTimeoutMillis())));
         splitPlan = new SegmentRouteSplit<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
-                UPPER_SEGMENT_ID, 2);
+                UPPER_SEGMENT_ID, 2, null);
     }
 
     @Test
