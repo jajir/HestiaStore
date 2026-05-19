@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -54,6 +55,7 @@ class DefaultSegmentMaterializationServiceTest {
                             2L,
                             EntryIterator.make(entries().iterator()));
 
+            assertEquals(Optional.of(4), splitPlan.getUpperMaxKey());
             try {
                 final Segment<Integer, String> lowerSegment = registry
                         .loadSegment(splitPlan.getLowerSegmentId())

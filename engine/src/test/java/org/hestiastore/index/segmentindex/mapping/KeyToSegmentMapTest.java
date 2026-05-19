@@ -31,17 +31,119 @@ class KeyToSegmentMapTest {
     }
 
     @Test
+    void insertSegmentRejectsDuplicateBoundaryKey() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1))));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> cache.insertSegment(10, SegmentId.of(2)));
+    }
+
+    @Test
+    void findSegmentIdForKeyRoutesPastLastBoundaryToTail() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1)),
+                Entry.of(30, SegmentId.of(2))));
+
+        assertEquals(SegmentId.of(2), cache.findSegmentIdForKey(31));
+        assertEquals(SegmentId.of(2),
+                cache.snapshot().findSegmentIdForKey(31));
+    }
+
+    @Test
+    void extendMaxKeyIfNeededDoesNotMutateNonEmptyTailBoundary() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(
+                List.of());
+        assertTrue(cache.extendMaxKeyIfNeeded(10));
+        final Snapshot<Integer> before = cache.snapshot();
+        final List<SegmentId> segmentIdsBefore = cache.getSegmentIds();
+
+        assertTrue(cache.extendMaxKeyIfNeeded(20));
+
+        assertTrue(cache.isAtVersion(before.version()));
+        assertEquals(segmentIdsBefore, cache.getSegmentIds());
+        assertEquals(SegmentId.of(0), cache.findSegmentIdForKey(20));
+    }
+
+    @Test
     void tryReplaceRouteWithSplit_replacesOldSegmentWithLowerAndUpper() {
         final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
                 Entry.of(10, SegmentId.of(1)),
                 Entry.of(30, SegmentId.of(2))));
         final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
-                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 5);
+                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 5, null);
 
         assertTrue(cache.tryReplaceRouteWithSplit(routeSplit));
 
         assertEquals(List.of(SegmentId.of(3), SegmentId.of(4), SegmentId.of(2)),
                 cache.getSegmentIds());
+    }
+
+    @Test
+    void tryReplaceTailRouteWithSplitUsesUpperMaxKey() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1))));
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 20, 40);
+
+        assertTrue(cache.tryReplaceRouteWithSplit(routeSplit));
+
+        assertEquals(List.of(SegmentId.of(3), SegmentId.of(4)),
+                cache.getSegmentIds());
+        assertEquals(SegmentId.of(3), cache.findSegmentIdForKey(20));
+        assertEquals(SegmentId.of(4), cache.findSegmentIdForKey(21));
+        assertEquals(SegmentId.of(4), cache.findSegmentIdForKey(41));
+    }
+
+    @Test
+    void tryReplaceNonTailRouteWithSplitPreservesOldUpperBoundary() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1)),
+                Entry.of(30, SegmentId.of(2))));
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 5, 8);
+
+        assertTrue(cache.tryReplaceRouteWithSplit(routeSplit));
+
+        assertEquals(SegmentId.of(3), cache.findSegmentIdForKey(5));
+        assertEquals(SegmentId.of(4), cache.findSegmentIdForKey(6));
+        assertEquals(SegmentId.of(4), cache.findSegmentIdForKey(10));
+        assertEquals(SegmentId.of(2), cache.findSegmentIdForKey(11));
+    }
+
+    @Test
+    void tryReplaceTailRouteWithSplitRequiresUpperMaxKey() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1))));
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 5, null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> cache.tryReplaceRouteWithSplit(routeSplit));
+    }
+
+    @Test
+    void tryReplaceRouteWithSplitRejectsInvalidChildBoundaryOrder() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1))));
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(3), SegmentId.of(4), 40, 30);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> cache.tryReplaceRouteWithSplit(routeSplit));
+    }
+
+    @Test
+    void tryReplaceRouteWithSplitRejectsDuplicateBoundaryKey() {
+        final KeyToSegmentMapImpl<Integer> cache = newCacheWithEntries(List.of(
+                Entry.of(10, SegmentId.of(1)),
+                Entry.of(20, SegmentId.of(2)),
+                Entry.of(30, SegmentId.of(3))));
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(2), SegmentId.of(4), SegmentId.of(5), 10, 25);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> cache.tryReplaceRouteWithSplit(routeSplit));
     }
 
     @Test
@@ -51,7 +153,7 @@ class KeyToSegmentMapTest {
                 Entry.of(30, SegmentId.of(2))));
         final Snapshot<Integer> before = cache.snapshot();
         final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
-                SegmentId.of(9), SegmentId.of(3), SegmentId.of(4), 5);
+                SegmentId.of(9), SegmentId.of(3), SegmentId.of(4), 5, null);
 
         assertFalse(cache.tryReplaceRouteWithSplit(routeSplit));
 
@@ -129,7 +231,7 @@ class KeyToSegmentMapTest {
         final Snapshot<Integer> snapshot = cache.snapshot();
 
         final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
-                SegmentId.of(2), SegmentId.of(4), SegmentId.of(5), 15);
+                SegmentId.of(2), SegmentId.of(4), SegmentId.of(5), 15, null);
         assertTrue(cache.tryReplaceRouteWithSplit(routeSplit));
 
         assertEquals(List.of(SegmentId.of(1), SegmentId.of(2), SegmentId.of(3)),

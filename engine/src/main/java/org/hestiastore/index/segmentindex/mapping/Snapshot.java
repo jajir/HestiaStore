@@ -27,7 +27,11 @@ public final class Snapshot<K> {
     public SegmentId findSegmentIdForKey(final K key) {
         Vldtn.requireNonNull(key, "key");
         final Map.Entry<K, SegmentId> ceilingEntry = map.ceilingEntry(key);
-        return ceilingEntry == null ? null : ceilingEntry.getValue();
+        if (ceilingEntry != null) {
+            return ceilingEntry.getValue();
+        }
+        final Map.Entry<K, SegmentId> tailEntry = map.lastEntry();
+        return tailEntry == null ? null : tailEntry.getValue();
     }
 
     public List<SegmentId> getSegmentIds(final SegmentWindow segmentWindow) {
