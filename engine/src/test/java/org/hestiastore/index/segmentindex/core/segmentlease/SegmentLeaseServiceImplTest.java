@@ -98,6 +98,27 @@ class SegmentLeaseServiceImplTest {
     }
 
     @Test
+    void acquireForWriteUsesOpenTailWithoutExtendingRouteMap() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(10);
+        segmentTopology.reconcile(keyToSegmentMap.snapshot());
+        final Snapshot<Integer> before = keyToSegmentMap.snapshot();
+        when(segmentRegistry.loadSegment(SegmentId.of(0)))
+                .thenReturn(blockingSegment);
+
+        try (SegmentLease<Integer, String> lease = service
+                .acquireForWrite(20)) {
+            assertSame(blockingSegment, lease.segment());
+            assertEquals(SegmentId.of(0), lease.segmentId());
+        }
+
+        assertTrue(keyToSegmentMap.isAtVersion(before.version()));
+        assertEquals(SegmentId.of(0),
+                keyToSegmentMap.findSegmentIdForKey(20));
+        verify(retryPolicy, never()).backoffOrThrow(0L, "acquireForWrite",
+                SegmentId.of(0));
+    }
+
+    @Test
     void acquireForWriteProvidesSegmentForCallerOperation() {
         when(segmentRegistry.loadSegment(SegmentId.of(0)))
                 .thenReturn(blockingSegment);

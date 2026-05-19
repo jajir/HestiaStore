@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Optional;
+
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +24,7 @@ class SegmentRouteSplitTest {
         lowerSegmentId = SegmentId.of(2);
         upperSegmentId = SegmentId.of(3);
         routeSplit = new SegmentRouteSplit<>(replacedSegmentId, lowerSegmentId,
-                upperSegmentId, 10);
+                upperSegmentId, 10, null);
     }
 
     @AfterEach
@@ -39,6 +41,15 @@ class SegmentRouteSplitTest {
         assertSame(lowerSegmentId, routeSplit.getLowerSegmentId());
         assertSame(upperSegmentId, routeSplit.getUpperSegmentId());
         assertEquals(10, routeSplit.getLowerMaxKey());
+        assertEquals(Optional.empty(), routeSplit.getUpperMaxKey());
+    }
+
+    @Test
+    void getters_return_optional_upper_max_key() {
+        final SegmentRouteSplit<Integer> split = new SegmentRouteSplit<>(
+                replacedSegmentId, lowerSegmentId, upperSegmentId, 10, 20);
+
+        assertEquals(Optional.of(20), split.getUpperMaxKey());
     }
 
     @Test
@@ -46,7 +57,7 @@ class SegmentRouteSplitTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new SegmentRouteSplit<>(replacedSegmentId, lowerSegmentId,
-                        null, 10));
+                        null, 10, null));
         assertEquals("Property 'upperSegmentId' must not be null.",
                 err.getMessage());
     }
@@ -56,7 +67,7 @@ class SegmentRouteSplitTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new SegmentRouteSplit<>(null, lowerSegmentId, upperSegmentId,
-                        10));
+                        10, null));
         assertEquals("Property 'replacedSegmentId' must not be null.",
                 err.getMessage());
     }
@@ -66,7 +77,7 @@ class SegmentRouteSplitTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new SegmentRouteSplit<>(replacedSegmentId, null,
-                        upperSegmentId, 10));
+                        upperSegmentId, 10, null));
         assertEquals("Property 'lowerSegmentId' must not be null.",
                 err.getMessage());
     }
@@ -76,7 +87,7 @@ class SegmentRouteSplitTest {
         final IllegalArgumentException err = assertThrows(
                 IllegalArgumentException.class,
                 () -> new SegmentRouteSplit<>(replacedSegmentId, lowerSegmentId,
-                        upperSegmentId, null));
+                        upperSegmentId, null, null));
         assertEquals("Property 'lowerMaxKey' must not be null.",
                 err.getMessage());
     }

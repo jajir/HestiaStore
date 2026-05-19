@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,10 +19,12 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -87,6 +86,40 @@ class SegmentIndexImplPutTest {
         awaitSegmentReady(segment);
         awaitSegmentCount(cache, 2);
         assertEquals(SegmentId.of(1), cache.findSegmentIdForKey(1));
+        assertEquals("a", index.get(1));
+        assertEquals("b", index.get(2));
+        assertEquals("c", index.get(3));
+        assertEquals("d", index.get(4));
+        assertEquals("e", index.get(5));
+
+        index.put(6, "f");
+
+        assertEquals("f", index.get(6));
+    }
+
+    @Test
+    void ascendingWritesRouteThroughPersistedOpenTailAfterReopen() {
+        final IndexConfiguration<Integer, String> conf = buildConf(100, 2,
+                IndexWalConfiguration.EMPTY);
+        if (index != null && !index.wasClosed()) {
+            index.close();
+        }
+        index = null;
+        directory = new MemDirectory();
+
+        try (SegmentIndex<Integer, String> created = SegmentIndex.create(
+                directory, conf)) {
+            created.put(10, "ten");
+            created.put(20, "twenty");
+            created.maintenance().flushAndWait();
+        }
+
+        try (SegmentIndex<Integer, String> reopened = SegmentIndex.open(
+                directory, conf)) {
+            assertEquals("ten", reopened.get(10));
+            assertEquals("twenty", reopened.get(20));
+            assertNull(reopened.get(30));
+        }
     }
 
     @Test

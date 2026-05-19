@@ -44,7 +44,7 @@ class RouteSplitPreparationServiceTest {
     @Test
     void prepareReturnsMaterializedSplitForEligibleBoundary() {
         final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
-                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2);
+                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 2, null);
         when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
                 .thenReturn(iteratorResult(entries()))
                 .thenReturn(iteratorResult(entries()));
