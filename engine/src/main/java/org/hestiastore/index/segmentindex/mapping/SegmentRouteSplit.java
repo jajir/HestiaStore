@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.mapping;
 
+import java.util.Optional;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 
@@ -15,6 +17,7 @@ public final class SegmentRouteSplit<K> {
     private final SegmentId lowerSegmentId;
     private final SegmentId upperSegmentId;
     private final K lowerMaxKey;
+    private final K upperMaxKey;
 
     /**
      * Creates an immutable split describing how a split outcome should be
@@ -24,10 +27,12 @@ public final class SegmentRouteSplit<K> {
      * @param lowerSegmentId    newly created lower segment id
      * @param upperSegmentId    newly created upper segment id
      * @param lowerMaxKey       maximum key covered by the lower segment
+     * @param upperMaxKey       maximum key covered by the upper segment when it
+     *                          is known
      */
     public SegmentRouteSplit(final SegmentId replacedSegmentId,
             final SegmentId lowerSegmentId, final SegmentId upperSegmentId,
-            final K lowerMaxKey) {
+            final K lowerMaxKey, final K upperMaxKey) {
         this.replacedSegmentId = Vldtn.requireNonNull(replacedSegmentId,
                 "replacedSegmentId");
         this.lowerSegmentId = Vldtn.requireNonNull(lowerSegmentId,
@@ -35,6 +40,7 @@ public final class SegmentRouteSplit<K> {
         this.upperSegmentId = Vldtn.requireNonNull(upperSegmentId,
                 "upperSegmentId");
         this.lowerMaxKey = Vldtn.requireNonNull(lowerMaxKey, "lowerMaxKey");
+        this.upperMaxKey = upperMaxKey;
     }
 
     /**
@@ -63,5 +69,12 @@ public final class SegmentRouteSplit<K> {
      */
     public K getLowerMaxKey() {
         return lowerMaxKey;
+    }
+
+    /**
+     * @return maximum key covered by the upper segment when known
+     */
+    public Optional<K> getUpperMaxKey() {
+        return Optional.ofNullable(upperMaxKey);
     }
 }

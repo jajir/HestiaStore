@@ -258,7 +258,7 @@ final class SegmentLeaseServiceImpl<K, V>
             final Snapshot<K> snapshot = currentRouteSnapshot();
             final SegmentId routedSegmentId = snapshot.findSegmentIdForKey(key);
             final RouteLease lease = routedSegmentId == null
-                    ? tryAcquireTailRoute(snapshot, key)
+                    ? tryAcquireBootstrapRoute(key)
                     : tryAcquireRouteLease(routedSegmentId, snapshot);
             if (lease != null) {
                 return lease;
@@ -266,25 +266,6 @@ final class SegmentLeaseServiceImpl<K, V>
             retryPolicy.backoffOrThrow(startNanos, OPERATION_WRITE,
                     routedSegmentId);
         }
-    }
-
-    private RouteLease tryAcquireTailRoute(final Snapshot<K> snapshot,
-            final K key) {
-        final List<SegmentId> segmentIds = snapshot
-                .getSegmentIds(SegmentWindow.unbounded());
-        if (segmentIds.isEmpty()) {
-            return tryAcquireBootstrapRoute(key);
-        }
-        final SegmentId tailSegmentId = segmentIds.get(segmentIds.size() - 1);
-        final RouteLease lease = tryAcquireRouteLease(tailSegmentId, snapshot);
-        if (lease == null) {
-            return null;
-        }
-        if (!keyToSegmentMap.extendMaxKeyIfNeeded(key)) {
-            lease.close();
-            return null;
-        }
-        return lease;
     }
 
     private RouteLease tryAcquireBootstrapRoute(final K key) {

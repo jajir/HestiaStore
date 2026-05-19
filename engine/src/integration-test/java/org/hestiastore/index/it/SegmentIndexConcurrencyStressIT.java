@@ -11,6 +11,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -42,6 +43,8 @@ class SegmentIndexConcurrencyStressIT {
 
     private static final long RETRY_TIMEOUT_MILLIS = 5_000L;
     private static final long RETRY_BACKOFF_MILLIS = 5L;
+    private static final long SPLIT_EVIDENCE_TIMEOUT_MILLIS = 2_000L;
+    private static final long SPLIT_EVIDENCE_POLL_MILLIS = 25L;
     private static final int TEST_CPU_THREADS = Math.max(1,
             Runtime.getRuntime().availableProcessors());
     private static final int MAX_TEST_WORKERS = Math.max(2,
@@ -225,6 +228,7 @@ class SegmentIndexConcurrencyStressIT {
             }
             index.maintenance().flushAndWait();
             observeSplitEvidence(indexRef.get(), splitObserved);
+            awaitSplitEvidence(indexRef.get(), splitObserved);
         } finally {
             lifecycleLock.writeLock().unlock();
         }
@@ -314,6 +318,7 @@ class SegmentIndexConcurrencyStressIT {
                     checkAndRepairConsistencyWithRetry(current,
                             RETRY_TIMEOUT_MILLIS);
                     observeSplitEvidence(current, splitObserved);
+                    awaitSplitEvidence(current, splitObserved);
                 }
             } finally {
                 lifecycleLock.writeLock().unlock();
@@ -409,6 +414,27 @@ class SegmentIndexConcurrencyStressIT {
                 || snapshot.getSplitInFlightCount() > 0
                 || snapshot.getSegmentCount() > 1) {
             splitObserved.set(true);
+        }
+    }
+
+    private static void awaitSplitEvidence(
+            final SegmentIndex<Integer, Integer> index,
+            final AtomicBoolean splitObserved) {
+        final long deadline = System.nanoTime()
+                + TimeUnit.MILLISECONDS
+                        .toNanos(SPLIT_EVIDENCE_TIMEOUT_MILLIS);
+        while (!splitObserved.get() && System.nanoTime() < deadline) {
+            observeSplitEvidence(index, splitObserved);
+            if (splitObserved.get()) {
+                return;
+            }
+            LockSupport.parkNanos(
+                    TimeUnit.MILLISECONDS
+                            .toNanos(SPLIT_EVIDENCE_POLL_MILLIS));
+            if (Thread.currentThread().isInterrupted()) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
     }
 

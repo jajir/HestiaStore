@@ -7,14 +7,12 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 
 /**
- * Holds {@code map<key, segmentId>} where each key is the max key in a given
- * segment.
+ * Holds {@code map<key, segmentId>} where each key is a route boundary.
  *
  * Provide information about keys and particular segment files. Each key
- * represents one segment. All keys in that segment are equal or smaller than
- * the given key. The last key represents the highest key in the index. When a
- * new value outside current routing is entered, the max key must be extended so
- * routing still covers the whole key space.
+ * represents one segment. Non-tail route keys are inclusive upper bounds. The
+ * last route is an open-ended tail, so keys above the last stored boundary
+ * still route to the last segment.
  *
  * Note that this is similar to scarce index, but still different.
  *

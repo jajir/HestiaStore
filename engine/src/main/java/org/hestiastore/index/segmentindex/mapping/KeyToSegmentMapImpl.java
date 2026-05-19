@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.mapping;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -130,13 +131,6 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
             isDirty = true;
             return true;
         }
-        final Map.Entry<K, SegmentId> lastEntry = list.lastEntry();
-        if (keyComparator.compare(key, lastEntry.getKey()) > 0) {
-            list.remove(lastEntry.getKey());
-            list.put(key, lastEntry.getValue());
-            refreshSnapshot();
-            isDirty = true;
-        }
         return true;
     }
 
@@ -153,12 +147,10 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         final Entry<K, SegmentId> entry = localFindSegmentForKey(key, list);
         if (entry == null) {
             /*
-             * Key is bigger that all key so it will at last segment. But key at
-             * last segment is smaller than adding one. Because of that key have
-             * to be upgraded.
+             * No route exists yet, so bootstrap the first segment.
              */
             isDirty = true;
-            return updateMaxKey(key);
+            return bootstrapFirstSegment(key);
         } else {
             return entry.getValue();
         }
@@ -168,27 +160,20 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
             final TreeMap<K, SegmentId> source) {
         Vldtn.requireNonNull(key, "key");
         final Map.Entry<K, SegmentId> ceilingEntry = source.ceilingEntry(key);
-        if (ceilingEntry == null) {
-            return null;
-        } else {
+        if (ceilingEntry != null) {
             return Entry.of(ceilingEntry.getKey(), ceilingEntry.getValue());
         }
+        final Map.Entry<K, SegmentId> tailEntry = source.lastEntry();
+        if (tailEntry == null) {
+            return null;
+        }
+        return Entry.of(tailEntry.getKey(), tailEntry.getValue());
     }
 
-    private SegmentId updateMaxKey(final K key) {
-        if (list.size() == 0) {
-            list.put(key, FIRST_SEGMENT_ID);
-            refreshSnapshot();
-            return FIRST_SEGMENT_ID;
-        } else {
-            final Entry<K, SegmentId> max = Entry.of(list.lastEntry().getKey(),
-                    list.lastEntry().getValue());
-            list.remove(max.getKey());
-            final Entry<K, SegmentId> newMax = Entry.of(key, max.getValue());
-            list.put(newMax.getKey(), newMax.getValue());
-            refreshSnapshot();
-            return newMax.getValue();
-        }
+    private SegmentId bootstrapFirstSegment(final K key) {
+        list.put(key, FIRST_SEGMENT_ID);
+        refreshSnapshot();
+        return FIRST_SEGMENT_ID;
     }
 
     /**
@@ -200,6 +185,12 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
     void insertSegment(final K key, final SegmentId segmentId) {
         ensureOpen();
         Vldtn.requireNonNull(key, "key");
+        Vldtn.requireNonNull(segmentId, "segmentId");
+        if (list.containsKey(key) && !segmentId.equals(list.get(key))) {
+            throw new IllegalArgumentException(String.format(
+                    "Segment max key '%s' is already bound to segment '%s'",
+                    key, list.get(key)));
+        }
         if (list.containsValue(segmentId)) {
             throw new IllegalArgumentException(
                     String.format("Segment id '%s' already exists", segmentId));
@@ -260,8 +251,8 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         }
         boolean removed = false;
         K removedKey = null;
-        final java.util.Iterator<Map.Entry<K, SegmentId>> iterator = list
-                .entrySet().iterator();
+        final Iterator<Map.Entry<K, SegmentId>> iterator = list.entrySet()
+                .iterator();
         while (iterator.hasNext()) {
             final Map.Entry<K, SegmentId> entry = iterator.next();
             if (segmentId.equals(entry.getValue())) {
@@ -279,11 +270,13 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
     }
 
     boolean tryReplaceRouteWithSplit(final SegmentRouteSplit<K> split) {
+        ensureOpen();
         Vldtn.requireNonNull(split, "split");
         final SegmentId replacedSegmentId = split.getReplacedSegmentId();
         final SegmentId lowerSegmentId = split.getLowerSegmentId();
-        final K upperMaxKey = removeSegmentAndReturnMaxKey(replacedSegmentId);
-        if (upperMaxKey == null) {
+        final RouteBoundary<K> replacedBoundary = findRouteBoundary(
+                replacedSegmentId);
+        if (replacedBoundary == null) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
                         "Route split publish rejected because replaced segment route is missing: replacedSegmentId='{}', lowerSegmentId='{}', lowerMaxKey='{}', upperSegmentId='{}'.",
@@ -292,15 +285,107 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
             }
             return false;
         }
+        validateSplitSegmentIds(split);
+        final K upperBoundary = upperBoundaryForSplit(split,
+                replacedBoundary);
+        validateSplitBoundaries(split.getLowerMaxKey(), upperBoundary);
+        validateSplitBoundaryKeys(split, replacedBoundary, upperBoundary);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(
-                    "Split debug: map apply replacedSegmentId='{}', oldMaxKey='{}', lowerSegmentId='{}', lowerMaxKey='{}', upperSegmentId='{}'.",
-                    replacedSegmentId, upperMaxKey, lowerSegmentId,
+                    "Split debug: map apply replacedSegmentId='{}', upperBoundary='{}', lowerSegmentId='{}', lowerMaxKey='{}', upperSegmentId='{}'.",
+                    replacedSegmentId, upperBoundary, lowerSegmentId,
                     split.getLowerMaxKey(), split.getUpperSegmentId());
         }
-        insertSegment(split.getLowerMaxKey(), lowerSegmentId);
-        insertSegment(upperMaxKey, split.getUpperSegmentId());
+        applyRouteSplit(replacedBoundary.key(), split, upperBoundary);
         return true;
+    }
+
+    private RouteBoundary<K> findRouteBoundary(final SegmentId segmentId) {
+        final Map.Entry<K, SegmentId> tailEntry = list.lastEntry();
+        for (final Map.Entry<K, SegmentId> entry : list.entrySet()) {
+            if (segmentId.equals(entry.getValue())) {
+                return new RouteBoundary<>(entry.getKey(),
+                        isTailEntry(entry, tailEntry));
+            }
+        }
+        return null;
+    }
+
+    private boolean isTailEntry(final Map.Entry<K, SegmentId> entry,
+            final Map.Entry<K, SegmentId> tailEntry) {
+        return tailEntry != null
+                && keyComparator.compare(entry.getKey(), tailEntry.getKey())
+                        == 0;
+    }
+
+    private void validateSplitSegmentIds(final SegmentRouteSplit<K> split) {
+        if (split.getLowerSegmentId().equals(split.getUpperSegmentId())) {
+            throw new IllegalArgumentException(String.format(
+                    "Split child segment id '%s' is used for both routes.",
+                    split.getLowerSegmentId()));
+        }
+        validateNewSplitSegmentId(split.getLowerSegmentId(),
+                split.getReplacedSegmentId());
+        validateNewSplitSegmentId(split.getUpperSegmentId(),
+                split.getReplacedSegmentId());
+    }
+
+    private void validateNewSplitSegmentId(final SegmentId segmentId,
+            final SegmentId replacedSegmentId) {
+        if (segmentId.equals(replacedSegmentId)
+                || !list.containsValue(segmentId)) {
+            return;
+        }
+        throw new IllegalArgumentException(
+                String.format("Segment id '%s' already exists", segmentId));
+    }
+
+    private K upperBoundaryForSplit(final SegmentRouteSplit<K> split,
+            final RouteBoundary<K> replacedBoundary) {
+        if (!replacedBoundary.tail()) {
+            return replacedBoundary.key();
+        }
+        return split.getUpperMaxKey().orElseThrow(
+                () -> new IllegalArgumentException(String.format(
+                        "Tail route split for segment '%s' requires upperMaxKey.",
+                        split.getReplacedSegmentId())));
+    }
+
+    private void validateSplitBoundaries(final K lowerBoundary,
+            final K upperBoundary) {
+        if (keyComparator.compare(lowerBoundary, upperBoundary) < 0) {
+            return;
+        }
+        throw new IllegalArgumentException(String.format(
+                "Split lower max key '%s' must be smaller than upper boundary '%s'.",
+                lowerBoundary, upperBoundary));
+    }
+
+    private void validateSplitBoundaryKeys(final SegmentRouteSplit<K> split,
+            final RouteBoundary<K> replacedBoundary, final K upperBoundary) {
+        validateSplitBoundaryKey(split.getLowerMaxKey(),
+                replacedBoundary.key());
+        validateSplitBoundaryKey(upperBoundary, replacedBoundary.key());
+    }
+
+    private void validateSplitBoundaryKey(final K boundary,
+            final K replacedBoundary) {
+        if (!list.containsKey(boundary)
+                || keyComparator.compare(boundary, replacedBoundary) == 0) {
+            return;
+        }
+        throw new IllegalArgumentException(String.format(
+                "Segment max key '%s' is already bound to segment '%s'",
+                boundary, list.get(boundary)));
+    }
+
+    private void applyRouteSplit(final K replacedBoundary,
+            final SegmentRouteSplit<K> split, final K upperBoundary) {
+        list.remove(replacedBoundary);
+        list.put(split.getLowerMaxKey(), split.getLowerSegmentId());
+        list.put(upperBoundary, split.getUpperSegmentId());
+        refreshSnapshot();
+        isDirty = true;
     }
 
     /**
@@ -358,6 +443,25 @@ public final class KeyToSegmentMapImpl<K> extends AbstractCloseableResource {
         if (wasClosed()) {
             throw new IllegalStateException(
                     getClass().getSimpleName() + " already closed");
+        }
+    }
+
+    private static final class RouteBoundary<T> {
+
+        private final T key;
+        private final boolean tail;
+
+        private RouteBoundary(final T key, final boolean tail) {
+            this.key = key;
+            this.tail = tail;
+        }
+
+        private T key() {
+            return key;
+        }
+
+        private boolean tail() {
+            return tail;
         }
     }
 
