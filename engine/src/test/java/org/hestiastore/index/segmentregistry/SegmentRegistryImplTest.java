@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentregistry;
 import static org.hestiastore.index.segment.SegmentTestHelper.closeAndAssertClosed;
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -23,6 +24,7 @@ import java.util.concurrent.locks.LockSupport;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.OperationStatus;
+import org.hestiastore.index.bytes.ByteSequences;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -252,6 +254,80 @@ class SegmentRegistryImplTest {
         assertTrue(loaded.isEmpty());
         closeAndAssertClosed(created);
         removeCacheEntry(segmentId);
+    }
+
+    @Test
+    void deleteRetiredSegmentClosesAndDeletesDirtyReadySegment() {
+        final Segment<Integer, String> created = registry.tryCreateSegment()
+                .getValue();
+        final SegmentId segmentId = created.getId();
+
+        assertSame(OperationStatus.OK, created.put(1, "one").getStatus());
+        assertTrue(created.getNumberOfKeysInWriteCache() > 0);
+        assertTrue(directoryFacade.isFileExists(segmentId.getName()));
+
+        registry.deleteRetiredSegment(segmentId);
+
+        assertSame(SegmentState.CLOSED, created.getState());
+        assertFalse(directoryFacade.isFileExists(segmentId.getName()));
+        assertFalse(readCacheMap().containsKey(segmentId));
+    }
+
+    @Test
+    void tryDeleteRetiredSegmentReturnsBusyWhenEntryIsLoading() {
+        final SegmentId segmentId = SegmentId.of(1001);
+        final Object entry = createLoadingEntry(10L);
+        putCacheEntry(segmentId, entry);
+
+        final OperationResult<Void> result = registry
+                .tryDeleteRetiredSegment(segmentId);
+
+        assertSame(OperationStatus.BUSY, result.getStatus());
+        removeCacheEntry(segmentId);
+    }
+
+    @Test
+    void tryDeleteRetiredSegmentReturnsBusyWhenEntryIsUnloading() {
+        final Segment<Integer, String> created = registry.tryCreateSegment()
+                .getValue();
+        final SegmentId segmentId = created.getId();
+        final Object entry = getCacheEntry(segmentId);
+        assertTrue(invokeTryStartUnload(entry));
+
+        final OperationResult<Void> result = registry
+                .tryDeleteRetiredSegment(segmentId);
+
+        assertSame(OperationStatus.BUSY, result.getStatus());
+        closeAndAssertClosed(created);
+        removeCacheEntry(segmentId);
+    }
+
+    @Test
+    void tryDeleteRetiredSegmentDeletesDirectoryWithoutCacheEntry() {
+        final SegmentId segmentId = SegmentId.of(1002);
+        directoryFacade.mkdir(segmentId.getName());
+        assertTrue(directoryFacade.isFileExists(segmentId.getName()));
+
+        final OperationResult<Void> result = registry
+                .tryDeleteRetiredSegment(segmentId);
+
+        assertSame(OperationStatus.OK, result.getStatus());
+        assertFalse(directoryFacade.isFileExists(segmentId.getName()));
+    }
+
+    @Test
+    void tryDeleteRetiredSegmentReturnsErrorLikeNormalDeleteOnDeleteFailure() {
+        final SegmentId segmentId = SegmentId.of(1003);
+        ((MemDirectory) directoryFacade).setFileSequence(segmentId.getName(),
+                ByteSequences.wrap(new byte[] {1}));
+
+        final OperationResult<Void> normal = registry.tryDeleteSegment(
+                segmentId);
+        final OperationResult<Void> retired = registry.tryDeleteRetiredSegment(
+                segmentId);
+
+        assertSame(OperationStatus.ERROR, normal.getStatus());
+        assertSame(normal.getStatus(), retired.getStatus());
     }
 
     private void rebuildRegistry() {

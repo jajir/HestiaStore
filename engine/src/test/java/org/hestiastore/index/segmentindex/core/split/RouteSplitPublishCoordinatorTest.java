@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
@@ -73,8 +74,6 @@ class RouteSplitPublishCoordinatorTest {
     @Test
     void applyPreparedSplitFlushesMapBeforeDeletingParent() {
         when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(true);
-        when(segmentRegistry.deleteSegmentIfAvailable(PARENT_SEGMENT_ID))
-                .thenReturn(true);
 
         coordinator.applyPreparedSplit(splitPlan);
 
@@ -82,7 +81,21 @@ class RouteSplitPublishCoordinatorTest {
         inOrder.verify(keyToSegmentMap).tryReplaceRouteWithSplit(splitPlan);
         inOrder.verify(keyToSegmentMap).flushIfDirty();
         inOrder.verify(segmentRegistry)
-                .deleteSegmentIfAvailable(PARENT_SEGMENT_ID);
+                .deleteRetiredSegment(PARENT_SEGMENT_ID);
+    }
+
+    @Test
+    void applyPreparedSplitKeepsPublishedChildrenWhenRetiredParentDeleteFails() {
+        when(keyToSegmentMap.tryReplaceRouteWithSplit(splitPlan)).thenReturn(true);
+        doThrow(new IndexException("cleanup timeout"))
+                .when(segmentRegistry).deleteRetiredSegment(PARENT_SEGMENT_ID);
+
+        assertTrue(coordinator.applyPreparedSplit(splitPlan));
+
+        verify(materializationService, never())
+                .deletePreparedSegment(LOWER_SEGMENT_ID);
+        verify(materializationService, never())
+                .deletePreparedSegment(UPPER_SEGMENT_ID);
     }
 
     @Test
