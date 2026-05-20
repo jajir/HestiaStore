@@ -118,6 +118,27 @@ final class BlockingSegmentRegistryAdapter<K, V> {
         }
     }
 
+    void deleteRetiredSegment(final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
+        final long startNanos = retryPolicy.startNanos();
+        while (true) {
+            final OperationResult<Void> deleted = segmentRegistry
+                    .tryDeleteRetiredSegment(segmentId);
+            if (deleted.getStatus() == OperationStatus.OK
+                    || deleted.getStatus() == OperationStatus.CLOSED) {
+                return;
+            }
+            if (deleted.getStatus() == OperationStatus.BUSY) {
+                retryPolicy.backoffOrThrow(startNanos,
+                        "deleteRetiredSegment", segmentId);
+                continue;
+            }
+            throw new IndexException(String.format(
+                    "Retired segment '%s' failed to delete: %s", segmentId,
+                    deleted.getStatus()));
+        }
+    }
+
     boolean deleteSegmentIfAvailable(final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PROPERTY);
         final OperationResult<Void> deleted = segmentRegistry

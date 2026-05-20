@@ -94,6 +94,20 @@ public interface SegmentRegistry<K, V> {
     void deleteSegment(SegmentId segmentId);
 
     /**
+     * Removes a retired segment after its route has already been removed from
+     * the key-to-segment map.
+     * <p>
+     * Implementations may use stronger cleanup semantics than normal cache
+     * eviction because retired split parents are no longer reachable through
+     * public routing.
+     *
+     * @param segmentId retired segment id to remove
+     */
+    default void deleteRetiredSegment(final SegmentId segmentId) {
+        deleteSegment(segmentId);
+    }
+
+    /**
      * Performs a bounded fail-fast attempt to delete the requested segment.
      *
      * @param segmentId segment id to remove
