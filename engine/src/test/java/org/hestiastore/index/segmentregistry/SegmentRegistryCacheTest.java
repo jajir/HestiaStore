@@ -525,6 +525,85 @@ class SegmentRegistryCacheTest {
     }
 
     @Test
+    void forceInvalidateBypassesUnloadPredicateAndClosesValue() {
+        final AtomicBoolean closed = new AtomicBoolean();
+        final Segment<Integer, String> value = segment(1);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                2, key -> value, segment -> closed.set(true), Runnable::run,
+                segment -> false);
+
+        assertSame(value, cache.get(id(1)));
+
+        assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
+                cache.forceInvalidate(id(1)));
+        assertTrue(closed.get(), "Forced invalidation should close value.");
+        assertTrue(cache.getIfReady(id(1)).isEmpty());
+    }
+
+    @Test
+    void forceInvalidateReturnsBusyWhileEntryLoading() throws Exception {
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch allowLoad = new CountDownLatch(1);
+        final Segment<Integer, String> value = segment(1);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> {
+                    loadStarted.countDown();
+                    awaitLatch(allowLoad);
+                    return value;
+                }, segment -> {
+                });
+
+        final Future<Segment<Integer, String>> loading = executor
+                .submit(() -> cache.get(id(1)));
+        assertTrue(loadStarted.await(1, TimeUnit.SECONDS));
+
+        assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
+                cache.forceInvalidate(id(1)));
+
+        allowLoad.countDown();
+        assertSame(value, loading.get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void forceInvalidateReturnsBusyWhileEntryUnloading() throws Exception {
+        final CountDownLatch unloadStarted = new CountDownLatch(1);
+        final CountDownLatch allowUnload = new CountDownLatch(1);
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                10, key -> segment(key.getId()), value -> {
+                    unloadStarted.countDown();
+                    awaitLatch(allowUnload);
+                });
+
+        assertEquals(id(1), cache.get(id(1)).getId());
+
+        final Future<SegmentRegistryCache.InvalidateStatus> invalidation =
+                executor.submit(() -> cache.forceInvalidate(id(1)));
+        assertTrue(unloadStarted.await(1, TimeUnit.SECONDS));
+
+        assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
+                cache.forceInvalidate(id(1)));
+
+        allowUnload.countDown();
+        assertEquals(SegmentRegistryCache.InvalidateStatus.REMOVED,
+                invalidation.get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void forceInvalidateCloseFailureCancelsUnloadAndKeepsEntryAvailable() {
+        final AtomicInteger loads = new AtomicInteger();
+        final SegmentRegistryCache<Integer, String> cache = newCache(
+                2, key -> segment(loads.incrementAndGet()), value -> {
+                    throw new IllegalStateException("close failed");
+                });
+
+        final Segment<Integer, String> first = cache.get(id(1));
+        assertEquals(SegmentRegistryCache.InvalidateStatus.BUSY,
+                cache.forceInvalidate(id(1)));
+        assertSame(first, cache.get(id(1)));
+        assertEquals(1, loads.get());
+    }
+
+    @Test
     void entryTransitionsFromLoadingToReadyToUnloading() {
         final SegmentRegistryCache.Entry<String> entry = new SegmentRegistryCache.Entry<>(
                 7L);

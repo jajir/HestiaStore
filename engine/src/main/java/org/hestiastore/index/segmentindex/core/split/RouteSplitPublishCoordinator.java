@@ -98,12 +98,7 @@ final class RouteSplitPublishCoordinator<K, V> {
 
     private void deleteRetiredParentSegment(final SegmentId segmentId) {
         try {
-            if (segmentRegistry.deleteSegmentIfAvailable(segmentId)) {
-                return;
-            }
-            LOGGER.warn(
-                    "Retired parent segment '{}' remained on disk because delete was busy after split publish.",
-                    segmentId);
+            segmentRegistry.deleteRetiredSegment(segmentId);
         } catch (final IndexException e) {
             LOGGER.warn(
                     "Retired parent segment '{}' could not be deleted after split publish: {}",

@@ -1,16 +1,16 @@
 package org.hestiastore.index.segmentregistry;
 
-import org.hestiastore.index.OperationResult;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
+import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.junit.jupiter.api.Test;
@@ -70,6 +70,20 @@ class BlockingSegmentRegistryAdapterTest {
     }
 
     @Test
+    void deleteRetiredSegment_retriesBusyUntilClosed() {
+        when(registry.tryDeleteRetiredSegment(SEGMENT_ID))
+                .thenReturn(OperationResult.busy())
+                .thenReturn(OperationResult.closed());
+        final BlockingSegmentRegistryAdapter<Integer, String> adapter =
+                new BlockingSegmentRegistryAdapter<>(registry,
+                        new BusyRetryPolicy(1, 50));
+
+        adapter.deleteRetiredSegment(SEGMENT_ID);
+
+        verify(registry, times(2)).tryDeleteRetiredSegment(SEGMENT_ID);
+    }
+
+    @Test
     void deleteSegmentIfAvailable_returnsFalseWhenRegistryStaysBusy() {
         when(registry.tryDeleteSegment(SEGMENT_ID))
                 .thenReturn(OperationResult.busy())
@@ -91,5 +105,29 @@ class BlockingSegmentRegistryAdapterTest {
 
         assertThrows(IndexException.class,
                 () -> adapter.loadSegment(SEGMENT_ID));
+    }
+
+    @Test
+    void deleteSegment_throwsWhenRegistryReturnsError() {
+        when(registry.tryDeleteSegment(SEGMENT_ID))
+                .thenReturn(OperationResult.error());
+        final BlockingSegmentRegistryAdapter<Integer, String> adapter =
+                new BlockingSegmentRegistryAdapter<>(registry,
+                        new BusyRetryPolicy(1, 50));
+
+        assertThrows(IndexException.class,
+                () -> adapter.deleteSegment(SEGMENT_ID));
+    }
+
+    @Test
+    void deleteRetiredSegment_throwsWhenRegistryReturnsError() {
+        when(registry.tryDeleteRetiredSegment(SEGMENT_ID))
+                .thenReturn(OperationResult.error());
+        final BlockingSegmentRegistryAdapter<Integer, String> adapter =
+                new BlockingSegmentRegistryAdapter<>(registry,
+                        new BusyRetryPolicy(1, 50));
+
+        assertThrows(IndexException.class,
+                () -> adapter.deleteRetiredSegment(SEGMENT_ID));
     }
 }

@@ -11,13 +11,15 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
-interface SegmentRegistryStatusAccess<K, V> {
+abstract class SegmentRegistryStatusAccess<K, V> {
 
-    OperationResult<Segment<K, V>> tryLoadSegment(SegmentId segmentId);
+    abstract OperationResult<Segment<K, V>> tryLoadSegment(SegmentId segmentId);
 
-    OperationResult<SegmentId> allocateSegmentId();
+    abstract OperationResult<SegmentId> allocateSegmentId();
 
-    OperationResult<Segment<K, V>> tryCreateSegment();
+    abstract OperationResult<Segment<K, V>> tryCreateSegment();
 
-    OperationResult<Void> tryDeleteSegment(SegmentId segmentId);
+    abstract OperationResult<Void> tryDeleteSegment(SegmentId segmentId);
+
+    abstract OperationResult<Void> tryDeleteRetiredSegment(SegmentId segmentId);
 }
