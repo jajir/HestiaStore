@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
  * @param <K> key type
  * @param <V> value type
  */
-final class SegmentRegistryImpl<K, V>
-        implements SegmentRegistry<K, V>, SegmentRegistryStatusAccess<K, V> {
+final class SegmentRegistryImpl<K, V> extends SegmentRegistryStatusAccess<K, V>
+        implements SegmentRegistry<K, V> {
 
     private static final Logger logger = LoggerFactory
             .getLogger(SegmentRegistryImpl.class);
@@ -133,6 +133,12 @@ final class SegmentRegistryImpl<K, V>
     }
 
     @Override
+    public void deleteRetiredSegment(final SegmentId segmentId) {
+        blockingFacade.deleteRetiredSegment(segmentId);
+        blockingSegments.remove(segmentId);
+    }
+
+    @Override
     public boolean deleteSegmentIfAvailable(final SegmentId segmentId) {
         final boolean deleted = blockingFacade.deleteSegmentIfAvailable(
                 segmentId);
@@ -146,7 +152,7 @@ final class SegmentRegistryImpl<K, V>
      * {@inheritDoc}
      */
     @Override
-    public OperationResult<SegmentId> allocateSegmentId() {
+    OperationResult<SegmentId> allocateSegmentId() {
         final SegmentRegistryState state = gate.getState();
         if (state != SegmentRegistryState.READY) {
             return OperationResult.fromStatus(resultForState(state));
@@ -172,7 +178,7 @@ final class SegmentRegistryImpl<K, V>
      * @return result containing the segment or a status
      */
     @Override
-    public OperationResult<Segment<K, V>> tryLoadSegment(
+    OperationResult<Segment<K, V>> tryLoadSegment(
             final SegmentId segmentId) {
         return loadSegmentInternal(segmentId);
     }
@@ -183,7 +189,7 @@ final class SegmentRegistryImpl<K, V>
      * @return registry result containing the new segment or a status
      */
     @Override
-    public OperationResult<Segment<K, V>> tryCreateSegment() {
+    OperationResult<Segment<K, V>> tryCreateSegment() {
         final OperationResult<SegmentId> allocated = allocateSegmentId();
         if (!allocated.isOk()) {
             return OperationResult.fromStatus(allocated.getStatus());
@@ -248,7 +254,7 @@ final class SegmentRegistryImpl<K, V>
      * @param segmentId segment id to remove
      */
     @Override
-    public OperationResult<Void> tryDeleteSegment(
+    OperationResult<Void> tryDeleteSegment(
             final SegmentId segmentId) {
         Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
         final SegmentRegistryState state = gate.getState();
@@ -257,6 +263,27 @@ final class SegmentRegistryImpl<K, V>
         }
         final SegmentRegistryCache.InvalidateStatus status = cache
                 .invalidate(segmentId);
+        if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
+            return OperationResult.busy();
+        }
+        try {
+            fileSystem.deleteSegmentFiles(segmentId);
+        } catch (final RuntimeException ex) {
+            return OperationResult.error();
+        }
+        return OperationResult.ok();
+    }
+
+    @Override
+    OperationResult<Void> tryDeleteRetiredSegment(
+            final SegmentId segmentId) {
+        Vldtn.requireNonNull(segmentId, SEGMENT_ID_PARAMETER);
+        final SegmentRegistryState state = gate.getState();
+        if (state != SegmentRegistryState.READY) {
+            return OperationResult.fromStatus(resultForState(state));
+        }
+        final SegmentRegistryCache.InvalidateStatus status = cache
+                .forceInvalidate(segmentId);
         if (status == SegmentRegistryCache.InvalidateStatus.BUSY) {
             return OperationResult.busy();
         }

@@ -133,6 +133,24 @@ final class SegmentRegistryCache<K, V> {
                 || !entry.tryStartUnload(readyValue)) {
             return InvalidateStatus.BUSY;
         }
+        return unloadAndRemove(key, entry);
+    }
+
+    InvalidateStatus forceInvalidate(final SegmentId key) {
+        Vldtn.requireNonNull(key, "key");
+        final Entry<Segment<K, V>> entry = map.get(key);
+        if (entry == null) {
+            return InvalidateStatus.REMOVED;
+        }
+        final Segment<K, V> readyValue = entry.getReadyValue();
+        if (readyValue == null || !entry.tryStartUnload(readyValue)) {
+            return InvalidateStatus.BUSY;
+        }
+        return unloadAndRemove(key, entry);
+    }
+
+    private InvalidateStatus unloadAndRemove(final SegmentId key,
+            final Entry<Segment<K, V>> entry) {
         final Segment<K, V> value = entry.getValueForUnload();
         if (value == null) {
             entry.cancelUnload();
