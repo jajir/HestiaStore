@@ -1,8 +1,11 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +49,23 @@ class SegmentIndexResourceClosingAdapterTest {
 
         verify(delegate).openSegmentIterator(window);
         verify(delegate).completeStartup();
+    }
+
+    @Test
+    void putAfterCloseFailsBeforeDelegate() {
+        final IndexInternal<String, String> delegate = mockIndex();
+        final SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
+                delegate);
+        adapter.close();
+
+        final IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> adapter.put("key", "value"));
+
+        assertEquals("Can't perform operation on closed index.",
+                thrown.getMessage());
+        verify(delegate).close();
+        verify(delegate, never()).put("key", "value");
     }
 
     private static final class NoopSegmentIndex extends AbstractCloseableResource

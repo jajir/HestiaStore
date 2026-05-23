@@ -27,59 +27,70 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
 
     @Override
     public void put(final K key, final V value) {
+        ensureOpen();
         delegate.put(key, value);
     }
 
     @Override
     public void put(final Entry<K, V> entry) {
+        ensureOpen();
         delegate.put(entry);
     }
 
     @Override
     public V get(final K key) {
+        ensureOpen();
         return delegate.get(key);
     }
 
     @Override
     public void delete(final K key) {
+        ensureOpen();
         delegate.delete(key);
     }
 
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows) {
+        ensureOpen();
         return delegate.getStream(segmentWindows);
     }
 
     @Override
     public Stream<Entry<K, V>> getStream(final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
+        ensureOpen();
         return delegate.getStream(segmentWindows, isolation);
     }
 
     @Override
     public Stream<Entry<K, V>> getStream() {
+        ensureOpen();
         return delegate.getStream();
     }
 
     @Override
     public Stream<Entry<K, V>> getStream(
             final SegmentIteratorIsolation isolation) {
+        ensureOpen();
         return delegate.getStream(isolation);
     }
 
     @Override
     public EntryIterator<K, V> openSegmentIterator(
             final SegmentWindow segmentWindows) {
+        ensureOpen();
         return delegate.openSegmentIterator(segmentWindows);
     }
 
     @Override
     public void completeStartup() {
+        ensureOpen();
         delegate.completeStartup();
     }
 
     @Override
     public RuntimeTuning runtimeTuning() {
+        ensureOpen();
         return delegate.runtimeTuning();
     }
 
@@ -90,6 +101,7 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
 
     @Override
     public SegmentIndexMaintenance maintenance() {
+        ensureOpen();
         return delegate.maintenance();
     }
 
@@ -97,6 +109,13 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
     @Override
     protected void doClose() {
         delegate.close();
+    }
+
+    private void ensureOpen() {
+        if (wasClosed()) {
+            throw new IllegalStateException(
+                    "Can't perform operation on closed index.");
+        }
     }
 
 }
