@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.topology;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.hestiastore.index.BusyRetryPolicy;
+import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
@@ -28,6 +31,7 @@ class SegmentTopologyTest {
 
     private KeyToSegmentMap<Integer> keyToSegmentMap;
     private ExecutorService executor;
+    private BusyRetryPolicy retryPolicy;
 
     @BeforeEach
     void setUp() {
@@ -35,6 +39,7 @@ class SegmentTopologyTest {
                 new KeyToSegmentMapImpl<>(new MemDirectory(),
                         new TypeDescriptorInteger()));
         executor = Executors.newSingleThreadExecutor();
+        retryPolicy = new BusyRetryPolicy(1, 1000);
     }
 
     @AfterEach
@@ -90,6 +95,48 @@ class SegmentTopologyTest {
     }
 
     @Test
+    void drainWaitsForAllInflightLeases() throws Exception {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final SegmentTopology<Integer> topology = newTopology();
+        final SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
+                        .version())
+                .lease();
+        final CountDownLatch waiting = new CountDownLatch(1);
+
+        final Future<?> waitFuture = executor.submit(() -> {
+            waiting.countDown();
+            topology.drain();
+        });
+
+        assertTrue(waiting.await(5, TimeUnit.SECONDS));
+        assertFalse(waitFuture.isDone());
+
+        lease.close();
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            waitFuture.get(5, TimeUnit.SECONDS);
+        });
+    }
+
+    @Test
+    void drainTimesOutWhenInflightLeaseRemainsOpen() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final SegmentTopology<Integer> topology = newTopology(
+                new BusyRetryPolicy(1, 1));
+        final SegmentTopology.RouteLease lease = topology
+                .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
+                        .version())
+                .lease();
+
+        try {
+            assertThrows(IndexException.class, topology::drain);
+        } finally {
+            lease.close();
+        }
+    }
+
+    @Test
     void reconcilePublishesChildRoutesAndRetiresParentRoute() {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
         final SegmentTopology<Integer> topology = newTopology();
@@ -114,7 +161,8 @@ class SegmentTopologyTest {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
         final Snapshot<Integer> olderSnapshot = keyToSegmentMap.snapshot();
         final SegmentTopology<Integer> topology = SegmentTopology
-                .<Integer>builder().snapshot(olderSnapshot).build();
+                .<Integer>builder().snapshot(olderSnapshot)
+                .retryPolicy(retryPolicy).build();
         applySplitPlan();
         final Snapshot<Integer> newerSnapshot = keyToSegmentMap.snapshot();
         topology.reconcile(newerSnapshot);
@@ -134,8 +182,14 @@ class SegmentTopologyTest {
     }
 
     private SegmentTopology<Integer> newTopology() {
+        return newTopology(retryPolicy);
+    }
+
+    private SegmentTopology<Integer> newTopology(
+            final BusyRetryPolicy topologyRetryPolicy) {
         return SegmentTopology.<Integer>builder()
-                .snapshot(keyToSegmentMap.snapshot()).build();
+                .snapshot(keyToSegmentMap.snapshot())
+                .retryPolicy(topologyRetryPolicy).build();
     }
 
     private void applySplitPlan() {

@@ -47,6 +47,11 @@ public interface SegmentLeaseService<K, V> {
     SegmentLease<K, V> acquireForWrite(K key);
 
     /**
+     * Waits until currently acquired segment leases are returned.
+     */
+    void drain();
+
+    /**
      * Attempts to acquire a foreground lease for the exact mapped segment id.
      *
      * @param segmentId segment id to load

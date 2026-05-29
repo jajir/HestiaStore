@@ -60,7 +60,8 @@ class SegmentLeaseServiceImplTest {
                 new KeyToSegmentMapImpl<>(new MemDirectory(),
                         new TypeDescriptorInteger()));
         segmentTopology = SegmentTopology.<Integer>builder()
-                .snapshot(keyToSegmentMap.snapshot()).build();
+                .snapshot(keyToSegmentMap.snapshot()).retryPolicy(retryPolicy)
+                .build();
         service = new SegmentLeaseServiceImpl<>(keyToSegmentMap,
                 segmentRegistry, segmentTopology, retryPolicy);
     }
@@ -129,6 +130,18 @@ class SegmentLeaseServiceImplTest {
         }
 
         verify(blockingSegment).put(11, "v11");
+    }
+
+    @Test
+    void drainDelegatesToTopology() {
+        final SegmentTopology<Integer> topology = mockSegmentTopology();
+        final SegmentLeaseService<Integer, String> leaseService =
+                new SegmentLeaseServiceImpl<>(keyToSegmentMap, segmentRegistry,
+                        topology, retryPolicy);
+
+        leaseService.drain();
+
+        verify(topology).drain();
     }
 
     @Test

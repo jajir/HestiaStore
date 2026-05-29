@@ -60,6 +60,11 @@ final class SegmentLeaseServiceImpl<K, V>
     }
 
     @Override
+    public void drain() {
+        segmentTopology.drain();
+    }
+
+    @Override
     public Optional<SegmentLease<K, V>> tryAcquireMappedSegment(
             final SegmentId segmentId) {
         final SegmentId nonNullSegmentId = requireSegmentId(segmentId);
