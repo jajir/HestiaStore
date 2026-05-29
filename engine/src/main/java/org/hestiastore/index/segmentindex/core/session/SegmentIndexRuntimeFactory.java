@@ -162,6 +162,7 @@ final class SegmentIndexRuntimeFactory<K, V> {
             final SegmentIndexCoreStorage<K, V> coreStorage) {
         return SegmentTopology.<K>builder()
                 .snapshot(coreStorage.keyToSegmentMap().snapshot())
+                .retryPolicy(coreStorage.retryPolicy())
                 .build();
     }
 

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
@@ -15,11 +16,16 @@ import org.hestiastore.index.segmentindex.mapping.Snapshot;
 
 final class SegmentTopologyImpl<K> implements SegmentTopology<K> {
 
+    private static final String OPERATION_DRAIN = "drainRouteLeases";
+
     private final Object monitor = new Object();
     private final Map<SegmentId, RouteEntry> routes = new HashMap<>();
+    private final BusyRetryPolicy retryPolicy;
     private long version;
 
-    SegmentTopologyImpl(final Snapshot<K> snapshot) {
+    SegmentTopologyImpl(final Snapshot<K> snapshot,
+            final BusyRetryPolicy retryPolicy) {
+        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         reconcile(snapshot);
     }
 
@@ -53,6 +59,14 @@ final class SegmentTopologyImpl<K> implements SegmentTopology<K> {
             monitor.notifyAll();
             return DefaultRouteDrainResult
                     .acquired(new DefaultRouteDrain(this, segmentId));
+        }
+    }
+
+    @Override
+    public void drain() {
+        final long startNanos = retryPolicy.startNanos();
+        while (hasInFlightLeasesSnapshot()) {
+            retryPolicy.backoffOrThrow(startNanos, OPERATION_DRAIN, null);
         }
     }
 
@@ -148,5 +162,15 @@ final class SegmentTopologyImpl<K> implements SegmentTopology<K> {
     private long inFlightCount(final SegmentId segmentId) {
         final RouteEntry entry = routes.get(segmentId);
         return entry == null ? 0L : entry.inFlight();
+    }
+
+    private boolean hasInFlightLeases() {
+        return routes.values().stream().anyMatch(RouteEntry::hasInFlight);
+    }
+
+    private boolean hasInFlightLeasesSnapshot() {
+        synchronized (monitor) {
+            return hasInFlightLeases();
+        }
     }
 }
