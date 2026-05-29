@@ -144,6 +144,14 @@ final class DefaultBlockingSegment<K, V> implements BlockingSegment<K, V> {
             final Function<Segment<K, V>, OperationResult<T>> action) {
         final long startNanos = retryPolicy.startNanos();
         while (true) {
+            /**
+             * Problems:
+             * 
+             * - executton could be here waiting for stopping BUSY, but it have about 5 ms
+             * to move it to CLOSED state. Status CLOSED mean closing segment and unloading
+             * of segment from memory.
+             * 
+             */
             final Segment<K, V> currentSegment = loadSegment();
             final OperationResult<T> result = action.apply(currentSegment);
             if (result.getStatus() == OperationStatus.OK) {
