@@ -1,12 +1,12 @@
 {
   "branch": "HEAD",
   "channel": "devel",
-  "comparisonJsonPath": "history/segment-index-pr-smoke/2026/05/2026-05-23T08-55-09.998157+00-00_cee49a5a0e7e_26328556214/comparison-vs-previous.json",
-  "comparisonMarkdownPath": "history/segment-index-pr-smoke/2026/05/2026-05-23T08-55-09.998157+00-00_cee49a5a0e7e_26328556214/comparison-vs-previous.md",
+  "comparisonJsonPath": "history/segment-index-pr-smoke/2026/05/2026-05-29T07-17-12.505606+00-00_afc62792cea4_26623682511/comparison-vs-previous.json",
+  "comparisonMarkdownPath": "history/segment-index-pr-smoke/2026/05/2026-05-29T07-17-12.505606+00-00_afc62792cea4_26623682511/comparison-vs-previous.md",
   "prNumber": null,
   "profile": "segment-index-pr-smoke",
-  "runPath": "history/segment-index-pr-smoke/2026/05/2026-05-23T08-55-09.998157+00-00_cee49a5a0e7e_26328556214",
-  "sha": "cee49a5a0e7ec40a3b8ed557dd1b8b2dc5e22511",
-  "summaryPath": "history/segment-index-pr-smoke/2026/05/2026-05-23T08-55-09.998157+00-00_cee49a5a0e7e_26328556214/summary.json",
-  "timestampUtc": "2026-05-23T08:55:09.998157+00:00"
+  "runPath": "history/segment-index-pr-smoke/2026/05/2026-05-29T07-17-12.505606+00-00_afc62792cea4_26623682511",
+  "sha": "afc62792cea444b4d3f438b5c4f0ffbce30e8371",
+  "summaryPath": "history/segment-index-pr-smoke/2026/05/2026-05-29T07-17-12.505606+00-00_afc62792cea4_26623682511/summary.json",
+  "timestampUtc": "2026-05-29T07:17:12.505606+00:00"
 }
