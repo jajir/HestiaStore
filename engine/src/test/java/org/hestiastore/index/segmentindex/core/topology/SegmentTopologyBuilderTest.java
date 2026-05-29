@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
@@ -18,12 +19,14 @@ import org.junit.jupiter.api.Test;
 class SegmentTopologyBuilderTest {
 
     private KeyToSegmentMap<Integer> keyToSegmentMap;
+    private BusyRetryPolicy retryPolicy;
 
     @BeforeEach
     void setUp() {
         keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
                 new KeyToSegmentMapImpl<>(new MemDirectory(),
                         new TypeDescriptorInteger()));
+        retryPolicy = new BusyRetryPolicy(1, 1000);
     }
 
     @AfterEach
@@ -39,7 +42,8 @@ class SegmentTopologyBuilderTest {
         final Snapshot<Integer> snapshot = keyToSegmentMap.snapshot();
 
         final SegmentTopology<Integer> topology = SegmentTopology
-                .<Integer>builder().snapshot(snapshot).build();
+                .<Integer>builder().snapshot(snapshot)
+                .retryPolicy(retryPolicy).build();
 
         final SegmentTopology.RouteLeaseResult leaseResult = topology
                 .tryAcquire(SegmentId.of(0), snapshot.version());
@@ -54,7 +58,16 @@ class SegmentTopologyBuilderTest {
     @Test
     void buildRejectsMissingSnapshot() {
         final SegmentTopologyBuilder<Integer> builder = SegmentTopology
-                .builder();
+                .<Integer>builder().retryPolicy(retryPolicy);
+
+        assertThrows(IllegalArgumentException.class, builder::build);
+    }
+
+    @Test
+    void buildRejectsMissingRetryPolicy() {
+        keyToSegmentMap.extendMaxKeyIfNeeded(100);
+        final SegmentTopologyBuilder<Integer> builder = SegmentTopology
+                .<Integer>builder().snapshot(keyToSegmentMap.snapshot());
 
         assertThrows(IllegalArgumentException.class, builder::build);
     }
@@ -66,5 +79,14 @@ class SegmentTopologyBuilderTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> builder.snapshot(null));
+    }
+
+    @Test
+    void retryPolicyRejectsNullRetryPolicy() {
+        final SegmentTopologyBuilder<Integer> builder = SegmentTopology
+                .builder();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> builder.retryPolicy(null));
     }
 }

@@ -1,10 +1,11 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -82,33 +83,54 @@ class IndexCloseCoordinatorTest {
     }
 
     @Test
-    void close_marksErrorAndKeepsLockWhenRegistryCloseFails() {
-        doThrow(new IndexException("close failed")).when(runtime)
-                .closeSegmentRegistry();
+    void close_marksErrorAndReleasesResourcesWhenRegistryCloseFails() {
+        final IndexException failure = new IndexException("close failed");
+        doThrow(failure).when(runtime).closeSegmentRegistry();
 
-        assertThrows(IndexException.class, () -> closeCoordinator.close());
+        final IndexException thrown = assertThrows(IndexException.class,
+                () -> closeCoordinator.close());
 
+        assertSame(failure, thrown);
         verify(runtime).flushAndWait();
-        verify(runtime, never()).closeKeyToSegmentMapIfOpen();
-        verify(runtime, never()).closeWalRuntime();
-        verify(executorRegistry, never()).close();
-        verify(stateMachine, never()).completeClose();
-        verify(fileLock, never()).unlock();
-        verify(stateMachine).markRuntimeFailure(
-                org.mockito.ArgumentMatchers.any(IndexException.class));
+        verify(runtime).closeKeyToSegmentMapIfOpen();
+        verify(runtime).closeWalRuntime();
+        verify(executorRegistry).close();
+        verify(stateMachine).completeClose();
+        verify(fileLock).unlock();
+        verify(stateMachine).markRuntimeFailure(failure);
     }
 
     @Test
-    void close_keepsLockWhenExecutorShutdownFails() {
-        doThrow(new IndexException("executor timeout")).when(executorRegistry)
-                .close();
+    void close_releasesLockWhenExecutorShutdownFails() {
+        final IndexException failure = new IndexException("executor timeout");
+        doThrow(failure).when(executorRegistry).close();
 
-        assertThrows(IndexException.class, () -> closeCoordinator.close());
+        final IndexException thrown = assertThrows(IndexException.class,
+                () -> closeCoordinator.close());
 
+        assertSame(failure, thrown);
         verify(runtime).closeWalRuntime();
-        verify(stateMachine, never()).completeClose();
-        verify(fileLock, never()).unlock();
-        verify(stateMachine).markRuntimeFailure(
-                org.mockito.ArgumentMatchers.any(IndexException.class));
+        verify(stateMachine).completeClose();
+        verify(fileLock).unlock();
+        verify(stateMachine).markRuntimeFailure(failure);
+    }
+
+    @Test
+    void close_suppressesLaterFailuresOnFirstCloseFailure() {
+        final IndexException firstFailure = new IndexException(
+                "registry failed");
+        final IndexException secondFailure = new IndexException("wal failed");
+        doThrow(firstFailure).when(runtime).closeSegmentRegistry();
+        doThrow(secondFailure).when(runtime).closeWalRuntime();
+
+        final IndexException thrown = assertThrows(IndexException.class,
+                () -> closeCoordinator.close());
+
+        assertSame(firstFailure, thrown);
+        assertEquals(1, thrown.getSuppressed().length);
+        assertSame(secondFailure, thrown.getSuppressed()[0]);
+        verify(executorRegistry).close();
+        verify(fileLock).unlock();
+        verify(stateMachine).markRuntimeFailure(firstFailure);
     }
 }

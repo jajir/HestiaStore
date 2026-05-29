@@ -39,6 +39,11 @@ public interface SegmentTopology<K> {
     RouteDrainResult tryBeginDrain(SegmentId segmentId);
 
     /**
+     * Waits until all currently acquired route leases are returned.
+     */
+    void drain();
+
+    /**
      * Reconciles runtime routes with the persisted route-map snapshot.
      *
      * @param snapshot route-map snapshot
