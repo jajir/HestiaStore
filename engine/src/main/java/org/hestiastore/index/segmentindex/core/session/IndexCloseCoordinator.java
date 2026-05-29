@@ -1,11 +1,10 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import org.hestiastore.index.F;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.teardown.SegmentIndexTeardownPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,22 +46,10 @@ final class IndexCloseCoordinator<K, V> {
     }
 
     void close() {
-        close(stateMachine::beginClose);
-    }
-
-    private void close(final Runnable beginClose) {
         LOGGER.debug("Closing index '{}'.", indexName);
         try {
-            beginClose.run();
-            awaitForegroundOperations();
-            closeSplitRuntime();
-            sealAsyncMaintenanceAndWait();
-            sealAndFlushRuntimeState();
-            logOperationCounts();
-            releaseWalRuntime();
-            closeExecutorRegistry();
-            finishClosedState();
-            releaseDirectoryLock();
+            stateMachine.beginClose();
+            teardownPipeline().run(this);
             LOGGER.debug("Index '{}' closed.", indexName);
         } catch (final RuntimeException e) {
             stateMachine.markRuntimeFailure(e);
@@ -70,50 +57,32 @@ final class IndexCloseCoordinator<K, V> {
         }
     }
 
-    private void awaitForegroundOperations() {
-        operationGate.awaitOperationDrain();
+    private SegmentIndexTeardownPipeline<IndexCloseCoordinator<K, V>> teardownPipeline() {
+        return SegmentIndexTeardownPipeline
+                .of(IndexCloseTeardownSteps.<K, V>closeSteps());
     }
 
-    private void closeSplitRuntime() {
-        runtime.closeSplitRuntime();
+    SegmentIndexOperationGate operationGate() {
+        return operationGate;
     }
 
-    private void sealAsyncMaintenanceAndWait() {
-        runtime.sealAsyncMaintenanceAndWait();
+    SegmentIndexRuntime<K, V> runtime() {
+        return runtime;
     }
 
-    private void sealAndFlushRuntimeState() {
-        runtime.flushAndWait();
-        runtime.closeSegmentRegistry();
-        runtime.closeKeyToSegmentMapIfOpen();
+    IndexOperationStatsRecorder operationStatsRecorder() {
+        return operationStatsRecorder;
     }
 
-    private void finishClosedState() {
-        stateMachine.completeClose();
+    ExecutorRegistry executorRegistry() {
+        return executorRegistry;
     }
 
-    private void releaseWalRuntime() {
-        runtime.closeWalRuntime();
+    SegmentIndexStateMachine stateMachine() {
+        return stateMachine;
     }
 
-    private void closeExecutorRegistry() {
-        executorRegistry.close();
-    }
-
-    private void releaseDirectoryLock() {
-        directoryLock.close();
-    }
-
-    private void logOperationCounts() {
-        if (!LOGGER.isDebugEnabled()) {
-            return;
-        }
-        final IndexOperationStats stats =
-                operationStatsRecorder.statsSnapshot();
-        LOGGER.debug(String.format(
-                "Index is closing, where was %s gets, %s puts and %s deletes.",
-                F.fmt(stats.getGetCount()),
-                F.fmt(stats.getPutCount()),
-                F.fmt(stats.getDeleteCount())));
+    IndexDirectoryLock directoryLock() {
+        return directoryLock;
     }
 }
