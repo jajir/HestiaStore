@@ -8,7 +8,7 @@ component "Public API\n\nSegmentIndex\nIndexConfiguration" as API
 
 component "Session and lifecycle\ncore.session\n\nIndexInternalConcurrent\nIndexContextLoggingAdapter\nSegmentIndexImpl.open(...)\nSegmentIndexTrackedOperationRunner" as SESSION
 
-component "Lifecycle and lock state\ncore.session.state\n\nIndexStateCoordinator\nIndexCloseCoordinator\nSegmentIndexStartupCoordinator" as SESSION_STATE
+component "Lifecycle and lock state\ncore.session\n\nSegmentIndexSessionOwner\nIndexCloseCoordinator\nIndexDirectoryLock" as SESSION_STATE
 
 component "Operation facades\n\nSegmentIndexPointOperationFacade\nSegmentIndexReadFacade\nMaintenanceService" as FACADES
 

@@ -33,9 +33,37 @@ public final class SegmentIndexSessionResources<K, V> {
     private SegmentIndexOperationGate operationGate;
     private SegmentIndexTrackedOperationRunner<K, V> trackedRunner;
     private SegmentIndexRuntime<K, V> runtime;
+    private IndexConsistencyCoordinator<K, V> consistencyCoordinator;
 
     public void acquireDirectoryLock(final Directory directory) {
         directoryLock = new IndexDirectoryLock(directory);
+    }
+
+    public boolean wasStaleLockRecovered() {
+        return directoryLock().wasStaleLockRecovered();
+    }
+
+    public void recoverFromWal() {
+        runtime().recoverFromWal();
+    }
+
+    public void cleanupOrphanedSegmentDirectories() {
+        runtime().cleanupOrphanedSegmentDirectories();
+    }
+
+    public void markReady() {
+        stateMachine().markReady();
+    }
+
+    public void runStartupConsistencyCheck() {
+        final IndexConsistencyCoordinator<K, V> coordinator =
+                consistencyCoordinator();
+        coordinator.runStartupConsistencyCheck(
+                coordinator::checkAndRepairConsistency);
+    }
+
+    public void requestFullSplitScan() {
+        runtime().requestFullSplitScan();
     }
 
     public void createSessionInfrastructure() {
@@ -72,14 +100,13 @@ public final class SegmentIndexSessionResources<K, V> {
             final EffectiveIndexConfiguration<K, V> configuration,
             final TypeDescriptor<K> keyTypeDescriptor) {
         final SegmentIndexRuntime<K, V> initializedRuntime = runtime();
-        final IndexConsistencyCoordinator<K, V> consistencyCoordinator =
-                newConsistencyCoordinator(initializedRuntime);
+        consistencyCoordinator = newConsistencyCoordinator(initializedRuntime);
         final SegmentIndexPointOperationFacade<K, V> pointOperationFacade =
                 newPointOperationFacade(initializedRuntime);
         final SegmentIndexReadFacade<K, V> readFacade = newReadFacade(
                 configuration, initializedRuntime);
         final SegmentIndexSessionOwner<K, V> sessionOwner = newSessionOwner(
-                configuration, initializedRuntime, consistencyCoordinator);
+                configuration, initializedRuntime);
         final SegmentIndexMaintenance maintenanceApi = newMaintenanceApi(
                 sessionOwner, trackedRunner(), initializedRuntime.maintenance(),
                 consistencyCoordinator);
@@ -116,16 +143,12 @@ public final class SegmentIndexSessionResources<K, V> {
 
     private SegmentIndexSessionOwner<K, V> newSessionOwner(
             final EffectiveIndexConfiguration<K, V> conf,
-            final SegmentIndexRuntime<K, V> runtime,
-            final IndexConsistencyCoordinator<K, V> consistencyCoordinator) {
+            final SegmentIndexRuntime<K, V> runtime) {
         return new SegmentIndexSessionOwner<>(stateMachine(), runtime,
                 new IndexCloseCoordinator<>(conf.identity().name(),
                         stateMachine(), operationGate(),
                         operationStatsRecorder(), runtime,
-                        executorRegistry(), directoryLock()),
-                new SegmentIndexStartupCoordinator<>(conf.identity().name(),
-                        directoryLock().wasStaleLockRecovered(), runtime,
-                        stateMachine(), consistencyCoordinator));
+                        executorRegistry(), directoryLock()));
     }
 
     private SegmentIndexMaintenance newMaintenanceApi(
@@ -176,5 +199,10 @@ public final class SegmentIndexSessionResources<K, V> {
 
     private SegmentIndexRuntime<K, V> runtime() {
         return Vldtn.requireNonNull(runtime, "runtime");
+    }
+
+    private IndexConsistencyCoordinator<K, V> consistencyCoordinator() {
+        return Vldtn.requireNonNull(consistencyCoordinator,
+                "consistencyCoordinator");
     }
 }

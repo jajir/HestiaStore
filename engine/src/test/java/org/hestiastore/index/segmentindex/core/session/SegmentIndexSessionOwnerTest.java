@@ -22,7 +22,6 @@ class SegmentIndexSessionOwnerTest {
     private SegmentIndexStateMachine stateMachine;
     private SegmentIndexRuntime<Integer, String> runtime;
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
-    private SegmentIndexStartupCoordinator<Integer, String> startupCoordinator;
     private SegmentIndexSessionOwner<Integer, String> owner;
 
     @BeforeEach
@@ -30,9 +29,8 @@ class SegmentIndexSessionOwnerTest {
         stateMachine = mock(SegmentIndexStateMachine.class);
         runtime = mock(SegmentIndexRuntime.class);
         closeCoordinator = mock(IndexCloseCoordinator.class);
-        startupCoordinator = mock(SegmentIndexStartupCoordinator.class);
         owner = new SegmentIndexSessionOwner<>(stateMachine, runtime,
-                closeCoordinator, startupCoordinator);
+                closeCoordinator);
     }
 
     @Test
@@ -51,14 +49,6 @@ class SegmentIndexSessionOwnerTest {
         assertSame(runtime, owner.runtime());
     }
 
-    @Test
-    void completeStartupRunsOnlyOnce() {
-        owner.completeStartup();
-
-        verify(startupCoordinator).completeStartup();
-    }
-
-    @Test
     void closeDelegatesToCloseCoordinator() {
         owner.close();
 

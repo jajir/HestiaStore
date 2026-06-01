@@ -83,12 +83,6 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
     }
 
     @Override
-    public void completeStartup() {
-        ensureOpen();
-        delegate.completeStartup();
-    }
-
-    @Override
     public RuntimeTuning runtimeTuning() {
         ensureOpen();
         return delegate.runtimeTuning();

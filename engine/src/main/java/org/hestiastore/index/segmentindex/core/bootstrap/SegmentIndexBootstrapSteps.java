@@ -28,7 +28,7 @@ final class SegmentIndexBootstrapSteps {
                 sessionResources));
         steps.add(new BootstrapStepCreateRuntime<>(sessionResources));
         steps.add(new BootstrapStepCreateIndex<>(sessionResources));
-        steps.add(new BootstrapStepCompleteStartup<>());
+        steps.add(new BootstrapStepCompleteStartup<>(sessionResources));
         steps.add(applyContextLogging());
         steps.add(wrapResourceClosing());
         return List.copyOf(steps);
