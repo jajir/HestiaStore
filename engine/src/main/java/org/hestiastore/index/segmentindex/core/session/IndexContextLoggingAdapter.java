@@ -97,11 +97,6 @@ public final class IndexContextLoggingAdapter<K, V>
     }
 
     @Override
-    public void completeStartup() {
-        contextCallWrapper.run(delegate::completeStartup);
-    }
-
-    @Override
     public RuntimeTuning runtimeTuning() {
         return runtimeConfiguration;
     }

@@ -176,11 +176,6 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         sessionOwner.close();
     }
 
-    @Override
-    public final void completeStartup() {
-        sessionOwner.completeStartup();
-    }
-
     void ensureOperational() {
         sessionOwner.ensureOperational();
     }

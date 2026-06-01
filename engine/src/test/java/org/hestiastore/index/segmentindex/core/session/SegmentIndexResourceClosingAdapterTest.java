@@ -44,11 +44,9 @@ class SegmentIndexResourceClosingAdapterTest {
         try (SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
                 delegate)) {
             assertSame(iterator, adapter.openSegmentIterator(window));
-            adapter.completeStartup();
         }
 
         verify(delegate).openSegmentIterator(window);
-        verify(delegate).completeStartup();
     }
 
     @Test
@@ -96,11 +94,6 @@ class SegmentIndexResourceClosingAdapterTest {
         public EntryIterator<String, String> openSegmentIterator(
                 final SegmentWindow segmentWindows) {
             return mockIterator();
-        }
-
-        @Override
-        public void completeStartup() {
-            // no-op
         }
 
         @Override
