@@ -1,7 +1,5 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
@@ -21,21 +19,16 @@ final class SegmentIndexSessionOwner<K, V> {
     private final SegmentIndexStateMachine stateMachine;
     private final SegmentIndexRuntime<K, V> runtime;
     private final IndexCloseCoordinator<K, V> closeCoordinator;
-    private final SegmentIndexStartupCoordinator<K, V> startupCoordinator;
-    private final AtomicBoolean startupCompleted = new AtomicBoolean();
 
     SegmentIndexSessionOwner(
             final SegmentIndexStateMachine stateMachine,
             final SegmentIndexRuntime<K, V> runtime,
-            final IndexCloseCoordinator<K, V> closeCoordinator,
-            final SegmentIndexStartupCoordinator<K, V> startupCoordinator) {
+            final IndexCloseCoordinator<K, V> closeCoordinator) {
         this.stateMachine = Vldtn.requireNonNull(stateMachine,
                 "stateMachine");
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
         this.closeCoordinator = Vldtn.requireNonNull(closeCoordinator,
                 "closeCoordinator");
-        this.startupCoordinator = Vldtn.requireNonNull(startupCoordinator,
-                "startupCoordinator");
     }
 
     SegmentIndexState getState() {
@@ -52,13 +45,6 @@ final class SegmentIndexSessionOwner<K, V> {
 
     void close() {
         closeCoordinator.close();
-    }
-
-    void completeStartup() {
-        if (!startupCompleted.compareAndSet(false, true)) {
-            return;
-        }
-        startupCoordinator.completeStartup();
     }
 
     SegmentIndexMetricsSnapshot metricsSnapshot() {

@@ -26,7 +26,13 @@ final class IndexInternalTestSupport {
                     valueTypeDescriptor, configuration, executorRegistry);
             final IndexInternal<K, V> index = sessionResources.createIndex(
                     configuration, keyTypeDescriptor);
-            index.completeStartup();
+            sessionResources.recoverFromWal();
+            sessionResources.cleanupOrphanedSegmentDirectories();
+            sessionResources.markReady();
+            if (sessionResources.wasStaleLockRecovered()) {
+                sessionResources.runStartupConsistencyCheck();
+            }
+            sessionResources.requestFullSplitScan();
             return index;
         } catch (final RuntimeException failure) {
             sessionResources.closeRuntimeAfterFailedInitialization();

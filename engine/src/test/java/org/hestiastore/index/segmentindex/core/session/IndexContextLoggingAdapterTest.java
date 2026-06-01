@@ -168,24 +168,15 @@ class IndexContextLoggingAdapterTest {
         final EntryIterator<String, String> iterator = mockIterator();
         final AtomicReference<String> mdcAtOpenSegmentIterator =
                 new AtomicReference<>();
-        final AtomicReference<String> mdcAtCompleteStartup =
-                new AtomicReference<>();
         when(delegate.openSegmentIterator(window)).thenAnswer(invocation -> {
             mdcAtOpenSegmentIterator.set(MDC.get("index.name"));
             return iterator;
         });
-        doAnswer(invocation -> {
-            mdcAtCompleteStartup.set(MDC.get("index.name"));
-            return null;
-        }).when(delegate).completeStartup();
 
         assertSame(iterator, adapter.openSegmentIterator(window));
-        adapter.completeStartup();
 
         assertEquals("idx", mdcAtOpenSegmentIterator.get());
-        assertEquals("idx", mdcAtCompleteStartup.get());
         assertNull(MDC.get("index.name"));
-        verify(delegate).completeStartup();
     }
 
     @Test
