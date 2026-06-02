@@ -1,0 +1,443 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads (1 group; 4x "getWorkload", 16x "putWorkload" in each group), will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed
+# Parameters: (hotKeySpace = 256, workloadMode = splitHeavy)
+
+# Run progress: 0.00% complete, ETA 00:00:14
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+72414.345 ops/s
+# Warmup Iteration   2: 212539.463 ops/s
+Iteration   1: 247284.412 ops/s
+                 getWorkload: 245563.405 ops/s
+                 putWorkload: 1721.006 ops/s
+
+Iteration   2: 258074.372 ops/s
+                 getWorkload: 256570.094 ops/s
+                 putWorkload: 1504.279 ops/s
+
+Iteration   3: 280744.857 ops/s
+                 getWorkload: 279460.888 ops/s
+                 putWorkload: 1283.969 ops/s
+
+Iteration   4: <failure>
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.putWorkload_thrpt_jmhStub(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:228)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:153)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.putWorkload_thrpt_jmhStub(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:228)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:153)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+org.hestiastore.index.IndexException: Index operation 'put' timed out after 30000 ms
+	at org.hestiastore.index.segmentindex.IndexRetryPolicy.backoffOrThrow(IndexRetryPolicy.java:69)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.retryWhileBusy(IndexOperationCoordinator.java:131)
+	at org.hestiastore.index.segmentindex.core.IndexOperationCoordinator.put(IndexOperationCoordinator.java:58)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.lambda$put$4(SegmentIndexImpl.java:112)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runWithSyncOperationContext(IndexOperationTracker.java:58)
+	at org.hestiastore.index.segmentindex.core.IndexOperationTracker.runTracked(IndexOperationTracker.java:28)
+	at org.hestiastore.index.segmentindex.core.SegmentIndexImpl.put(SegmentIndexImpl.java:110)
+	at org.hestiastore.index.segmentindex.core.IndexAsyncAdapter.put(IndexAsyncAdapter.java:36)
+	at org.hestiastore.index.segmentindex.core.IndexDirectoryClosingAdapter.put(IndexDirectoryClosingAdapter.java:45)
+	at org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.putWorkload(SegmentIndexMixedDrainBenchmark.java:81)
+	at org.hestiastore.benchmark.segmentindex.jmh_generated.SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.partitionedIngestMixed_Throughput(SegmentIndexMixedDrainBenchmark_partitionedIngestMixed_jmhTest.java:158)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:527)
+	at org.openjdk.jmh.runner.BenchmarkHandler$BenchmarkTask.call(BenchmarkHandler.java:504)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed":
+  262034.547 ±(99.9%) 311568.699 ops/s [Average]
+  (min, avg, max) = (247284.412, 262034.547, 280744.857), stdev = 17078.132
+  CI (99.9%): [≈ 0, 573603.246] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:getWorkload":
+  260531.462 ±(99.9%) 315478.836 ops/s [Average]
+  (min, avg, max) = (245563.405, 260531.462, 279460.888), stdev = 17292.460
+  CI (99.9%): [≈ 0, 576010.299] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:putWorkload":
+  1503.085 ±(99.9%) 3986.638 ops/s [Average]
+  (min, avg, max) = (1283.969, 1503.085, 1721.006), stdev = 218.521
+  CI (99.9%): [≈ 0, 5489.722] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:49
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                           (hotKeySpace)  (workloadMode)   Mode  Cnt       Score        Error  Units
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed                        256      splitHeavy  thrpt    3  262034.547 ± 311568.699  ops/s
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:getWorkload            256      splitHeavy  thrpt    3  260531.462 ± 315478.836  ops/s
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:putWorkload            256      splitHeavy  thrpt    3    1503.085 ±   3986.638  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-mixed-split-heavy.json
