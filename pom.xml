@@ -32,7 +32,7 @@
         <junit.jupiter.version>6.1.0</junit.jupiter.version>
         <junit.platform.version>6.1.0</junit.platform.version>
         <failsafe.plugin.version>3.5.6</failsafe.plugin.version>
-        <surefire.plugin.version>3.5.5</surefire.plugin.version>
+        <surefire.plugin.version>3.5.6</surefire.plugin.version>
         <mockito.version>5.23.0</mockito.version>
         <archunit.version>1.4.2</archunit.version>
         <jacoco.version>0.8.14</jacoco.version>
