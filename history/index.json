@@ -833,6 +833,12 @@
           "sha": "e2f10654ef0ff7092c68bac79e5902aa5e26a2be",
           "timestampUtc": "2026-06-04T02:11:17.908443+00:00"
         },
+        "272": {
+          "channel": "pr-272",
+          "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-272/latest.json",
+          "sha": "1d19f019effc504b2743711f9b3e6cc60f337b49",
+          "timestampUtc": "2026-06-04T02:11:43.626603+00:00"
+        },
         "273": {
           "channel": "pr-273",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-273/latest.json",
