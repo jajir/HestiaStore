@@ -12,35 +12,28 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCacheStats;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 class SegmentIndexMetricsSnapshotFactoryTest {
 
-    private WalRuntime<Integer, String> walRuntime;
     private ExecutorRegistry executorRegistry;
 
     @AfterEach
     void tearDown() {
-        if (walRuntime != null) {
-            walRuntime.close();
-        }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             executorRegistry.close();
         }
@@ -62,7 +55,6 @@ class SegmentIndexMetricsSnapshotFactoryTest {
                         () -> new ChunkStoreCacheStats(5, 2, 4L, 6L, 7L, 8L,
                                 9L, 10L),
                         RuntimeTuningState.fromConfiguration(effective(conf)),
-                        openDisabledWalRuntime(),
                         operationStatsRecorder::statsSnapshot,
                         new AtomicLong(17L),
                         () -> SegmentIndexState.READY);
@@ -78,8 +70,7 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         final SegmentIndexMetricsSnapshot snapshot = factory.create(
                 new SegmentRegistryCacheStats(11L, 12L, 13L, 14L, 2, 9),
                 stableSegmentRuntime, executorRegistry.statsSnapshot(),
-                new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L,
-                        0L, 0L, 0L),
+                WalStats.empty(),
                 maintenanceStatsRecorder.statsSnapshot(),
                 5L, 7L);
 
@@ -91,11 +82,6 @@ class SegmentIndexMetricsSnapshotFactoryTest {
         assertEquals(7L, snapshot.getFlushRequestCount());
         assertEquals(17L, snapshot.getWalAppliedLsn());
         assertFalse(snapshot.isWalEnabled());
-    }
-
-    private WalRuntime<Integer, String> openDisabledWalRuntime() {
-        walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
-        return walRuntime;
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {

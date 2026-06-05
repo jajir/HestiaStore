@@ -74,26 +74,24 @@ class IndexCloseCoordinatorTest {
         inOrder.verify(runtime).closeSplitRuntime();
         inOrder.verify(runtime).sealAsyncMaintenanceAndWait();
         inOrder.verify(runtime).flushAndWait();
-        inOrder.verify(runtime).closeSegmentRegistry();
-        inOrder.verify(runtime).closeKeyToSegmentMapIfOpen();
-        inOrder.verify(runtime).closeWalRuntime();
+        inOrder.verify(runtime).closeCoreStorage();
+        inOrder.verify(runtime).closeWalCoordinator();
         inOrder.verify(executorRegistry).close();
         inOrder.verify(stateMachine).completeClose();
         inOrder.verify(fileLock).unlock();
     }
 
     @Test
-    void close_marksErrorAndReleasesResourcesWhenRegistryCloseFails() {
+    void close_marksErrorAndReleasesResourcesWhenCoreStorageCloseFails() {
         final IndexException failure = new IndexException("close failed");
-        doThrow(failure).when(runtime).closeSegmentRegistry();
+        doThrow(failure).when(runtime).closeCoreStorage();
 
         final IndexException thrown = assertThrows(IndexException.class,
                 () -> closeCoordinator.close());
 
         assertSame(failure, thrown);
         verify(runtime).flushAndWait();
-        verify(runtime).closeKeyToSegmentMapIfOpen();
-        verify(runtime).closeWalRuntime();
+        verify(runtime).closeWalCoordinator();
         verify(executorRegistry).close();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
@@ -109,7 +107,7 @@ class IndexCloseCoordinatorTest {
                 () -> closeCoordinator.close());
 
         assertSame(failure, thrown);
-        verify(runtime).closeWalRuntime();
+        verify(runtime).closeWalCoordinator();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
         verify(stateMachine).markRuntimeFailure(failure);
@@ -118,10 +116,10 @@ class IndexCloseCoordinatorTest {
     @Test
     void close_suppressesLaterFailuresOnFirstCloseFailure() {
         final IndexException firstFailure = new IndexException(
-                "registry failed");
+                "core storage failed");
         final IndexException secondFailure = new IndexException("wal failed");
-        doThrow(firstFailure).when(runtime).closeSegmentRegistry();
-        doThrow(secondFailure).when(runtime).closeWalRuntime();
+        doThrow(firstFailure).when(runtime).closeCoreStorage();
+        doThrow(secondFailure).when(runtime).closeWalCoordinator();
 
         final IndexException thrown = assertThrows(IndexException.class,
                 () -> closeCoordinator.close());

@@ -8,11 +8,14 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
+import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 
 final class BootstrapStepTestSupport {
 
@@ -36,7 +39,22 @@ final class BootstrapStepTestSupport {
     static IndexConfiguration<Integer, String> configuration(
             final String indexName, final boolean contextLoggingEnabled,
             final int registryLifecycleThreads) {
-        return IndexConfiguration.<Integer, String>builder()
+        return configuration(indexName, contextLoggingEnabled,
+                registryLifecycleThreads, null);
+    }
+
+    static IndexConfiguration<Integer, String> configurationWithWal(
+            final String indexName) {
+        return configuration(indexName, false, 1,
+                IndexWalConfiguration.builder().build());
+    }
+
+    private static IndexConfiguration<Integer, String> configuration(
+            final String indexName, final boolean contextLoggingEnabled,
+            final int registryLifecycleThreads,
+            final IndexWalConfiguration walConfiguration) {
+        final IndexConfigurationBuilder<Integer, String> builder =
+                IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))
                 .identity(identity -> identity.valueClass(String.class))
                 .identity(identity -> identity
@@ -66,8 +84,11 @@ final class BootstrapStepTestSupport {
                 .filters(filters -> filters.encodingFilters(
                         List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(
-                        List.of(new ChunkFilterDoNothing())))
-                .build();
+                        List.of(new ChunkFilterDoNothing())));
+        if (walConfiguration != null) {
+            builder.wal(wal -> wal.configuration(walConfiguration));
+        }
+        return builder.build();
     }
 
     static EffectiveIndexConfiguration<Integer, String> effectiveConfiguration(
@@ -121,5 +142,42 @@ final class BootstrapStepTestSupport {
     static ExecutorRegistry executorRegistry(
             final EffectiveIndexConfiguration<Integer, String> configuration) {
         return ExecutorRegistryFixture.from(configuration);
+    }
+
+    static <K, V> void closeRuntimePreparationResources(
+            final SegmentIndexBootstrapState<K, V> state) {
+        RuntimeException failure = null;
+        if (state.hasRuntimeSplitService()) {
+            failure = closeIgnoringFailure(
+                    state.getRuntimeSplitService()::close, failure);
+        }
+        if (state.hasCoreStorage()) {
+            final SegmentIndexCoreStorage<K, V> coreStorage =
+                    state.getCoreStorage();
+            if (!coreStorage.wasClosed()) {
+                failure = closeIgnoringFailure(coreStorage::close, failure);
+            }
+        }
+        if (state.hasRuntimeWalRuntime()) {
+            failure = closeIgnoringFailure(state.getRuntimeWalRuntime()::close,
+                    failure);
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private static RuntimeException closeIgnoringFailure(
+            final Runnable closeAction, final RuntimeException failure) {
+        try {
+            closeAction.run();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            if (failure == null) {
+                return cleanupFailure;
+            }
+            failure.addSuppressed(cleanupFailure);
+            return failure;
+        }
     }
 }

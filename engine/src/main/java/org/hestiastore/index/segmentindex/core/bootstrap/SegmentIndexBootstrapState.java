@@ -1,11 +1,19 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
+import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
+import org.hestiastore.index.segmentindex.core.split.SplitService;
+import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
  * Mutable products created during one segment-index bootstrap run.
@@ -15,6 +23,9 @@ import org.hestiastore.index.segmentindex.core.session.IndexInternal;
  */
 final class SegmentIndexBootstrapState<K, V> {
 
+    private final AtomicLong compactRequestHighWaterMark = new AtomicLong();
+    private final AtomicLong flushRequestHighWaterMark = new AtomicLong();
+    private final AtomicLong lastAppliedWalLsn = new AtomicLong();
     private EffectiveIndexConfiguration<K, V> configuration;
     private Boolean configurationWriteRequired;
     private TypeDescriptor<K> keyTypeDescriptor;
@@ -26,6 +37,13 @@ final class SegmentIndexBootstrapState<K, V> {
     private IndexInternal<K, V> managedIndex;
     private IndexInternal<K, V> index;
     private SegmentIndexBootstrapResult<K, V> result;
+    private SegmentIndexCoreStorage<K, V> coreStorage;
+    private SegmentLeaseService<K, V> runtimeSegmentLeaseService;
+    private SplitService runtimeSplitService;
+    private SegmentTopologyRuntimeAccess<K, V> runtimeTopologyRuntime;
+    private WalRuntime<K, V> runtimeWalRuntime;
+    private SegmentIndexRuntimeServices<K, V> runtimeServices;
+    private Boolean indexRuntimeWasCreated = Boolean.FALSE;
 
     void setConfiguration(
             final EffectiveIndexConfiguration<K, V> configuration) {
@@ -126,6 +144,96 @@ final class SegmentIndexBootstrapState<K, V> {
 
     SegmentIndexBootstrapResult<K, V> getResult() {
         return requireInitialized(result, "result");
+    }
+
+    AtomicLong compactRequestHighWaterMark() {
+        return compactRequestHighWaterMark;
+    }
+
+    AtomicLong flushRequestHighWaterMark() {
+        return flushRequestHighWaterMark;
+    }
+
+    AtomicLong lastAppliedWalLsn() {
+        return lastAppliedWalLsn;
+    }
+
+    void setCoreStorage(final SegmentIndexCoreStorage<K, V> coreStorage) {
+        this.coreStorage = Vldtn.requireNonNull(coreStorage, "coreStorage");
+    }
+
+    boolean hasCoreStorage() {
+        return coreStorage != null;
+    }
+
+    SegmentIndexCoreStorage<K, V> getCoreStorage() {
+        return requireInitialized(coreStorage, "coreStorage");
+    }
+
+    void setRuntimeSegmentLeaseService(
+            final SegmentLeaseService<K, V> runtimeSegmentLeaseService) {
+        this.runtimeSegmentLeaseService = Vldtn.requireNonNull(
+                runtimeSegmentLeaseService, "runtimeSegmentLeaseService");
+    }
+
+    SegmentLeaseService<K, V> getRuntimeSegmentLeaseService() {
+        return requireInitialized(runtimeSegmentLeaseService,
+                "runtimeSegmentLeaseService");
+    }
+
+    void setRuntimeSplitService(final SplitService runtimeSplitService) {
+        this.runtimeSplitService = Vldtn.requireNonNull(runtimeSplitService,
+                "runtimeSplitService");
+    }
+
+    boolean hasRuntimeSplitService() {
+        return runtimeSplitService != null;
+    }
+
+    SplitService getRuntimeSplitService() {
+        return requireInitialized(runtimeSplitService, "runtimeSplitService");
+    }
+
+    void setRuntimeTopologyRuntime(
+            final SegmentTopologyRuntimeAccess<K, V> runtimeTopologyRuntime) {
+        this.runtimeTopologyRuntime = Vldtn.requireNonNull(
+                runtimeTopologyRuntime, "runtimeTopologyRuntime");
+    }
+
+    SegmentTopologyRuntimeAccess<K, V> getRuntimeTopologyRuntime() {
+        return requireInitialized(runtimeTopologyRuntime,
+                "runtimeTopologyRuntime");
+    }
+
+    void setRuntimeWalRuntime(final WalRuntime<K, V> runtimeWalRuntime) {
+        this.runtimeWalRuntime = Vldtn.requireNonNull(runtimeWalRuntime,
+                "runtimeWalRuntime");
+    }
+
+    boolean hasRuntimeWalRuntime() {
+        return runtimeWalRuntime != null;
+    }
+
+    WalRuntime<K, V> getRuntimeWalRuntime() {
+        return requireInitialized(runtimeWalRuntime, "runtimeWalRuntime");
+    }
+
+    void setRuntimeServices(
+            final SegmentIndexRuntimeServices<K, V> runtimeServices) {
+        this.runtimeServices = Vldtn.requireNonNull(runtimeServices,
+                "runtimeServices");
+    }
+
+    SegmentIndexRuntimeServices<K, V> getRuntimeServices() {
+        return requireInitialized(runtimeServices, "runtimeServices");
+    }
+
+    void markIndexRuntimeCreated() {
+        indexRuntimeWasCreated = Boolean.TRUE;
+    }
+
+    boolean indexRuntimeWasCreated() {
+        return Boolean.TRUE.equals(indexRuntimeWasCreated);
     }
 
     private static <T> T requireInitialized(final T value,

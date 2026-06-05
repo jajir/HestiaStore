@@ -26,9 +26,9 @@ Source: [implementation-layers.plantuml](images/implementation-layers.plantuml)
 | Public API | `SegmentIndex`, `IndexConfiguration`, `IndexConfigurationBuilder` | External create/open and user-facing operations. This is the compatibility boundary. |
 | Session and lifecycle | `IndexInternalConcurrent`, `IndexContextLoggingAdapter`, `SegmentIndexImpl`, `SegmentIndexTrackedOperationRunner`, `IndexOperationTracker`, `core.session.state` | API method implementation, lifecycle state checks, lifecycle/lock ownership, close safety, context logging, and operation tracking for one live index session. `SegmentIndexImpl.open(...)` is the session composition point and keeps failed-startup cleanup local to session ownership. |
 | Operation facades | `SegmentIndexPointOperationFacade`, `SegmentIndexReadFacade`, `MaintenanceService` | Small call-specific boundaries for point operations, iterator operations, and foreground maintenance. |
-| Runtime opening | `SegmentIndexRuntime`, `SegmentIndexRuntimeFactory`, `SegmentIndexRuntimeOpenContext`, `SegmentIndexRuntimeServices` | Long-lived runtime graph for one open index: storage, topology, WAL, metrics, runtime tuning, and service wiring. `SegmentIndexRuntimeFactory` is the broad resource-opening point and owns rollback cleanup for partially opened runtime resources. |
-| Topology runtime | `SegmentTopologyRuntime`, `SegmentTopology`, `SplitService` | Segment route topology, split runtime, iterator invalidation, direct segment access, and recovery cleanup. Topology is created by the runtime factory because it depends on storage, executors, runtime state, and failure handling. |
-| Core storage runtime | `SegmentIndexCoreStorageFactory`, `SegmentIndexCoreStorageOpenSpec`, `SegmentIndexCoreStorageOpenObserver`, `IndexWalCoordinator` | Opens storage-owned route map, segment registry, runtime tuning state, retry policy, and WAL coordination helpers without depending on session classes. |
+| Runtime opening | `SegmentIndexBootstrapSteps`, `SegmentIndexRuntime`, `SegmentIndexRuntimeServices` | Long-lived runtime graph for one open index: core storage, topology, WAL, metrics, runtime tuning, and service wiring. Bootstrap steps open runtime resources in order and own rollback cleanup until `SegmentIndexRuntime` takes ownership. |
+| Topology runtime | `SegmentTopologyRuntime`, `SegmentTopology`, `SplitService` | Segment route topology, split runtime, iterator invalidation, direct segment access, and recovery cleanup. Topology is created during bootstrap because it depends on storage, executors, runtime state, and failure handling. |
+| Core storage | `SegmentIndexCoreStorage`, `SegmentIndexCoreStorageFactory`, `SegmentIndexCoreStorageOpenSpec`, `IndexWalCoordinator` | Opens and owns the storage-owned route map, segment registry, runtime tuning state, retry policy, and WAL coordination helpers without depending on session classes. |
 | Point operations | `IndexOperationCoordinator`, `SegmentIndexOperationAccess` | Point `put`, `get`, `delete`, WAL append/replay, applied LSN recording, request counters, and operation latency metrics. |
 | Route and segment lease access | `SegmentLeaseService`, `SegmentLease`, `SegmentSplitLease`, `KeyToSegmentMap`, `SegmentTopology` | Key-to-segment lookup, route snapshot validation, route leases/drains, registry-backed segment loading, retry on stale/draining routes, and scoped access to routed or split-drained segments. |
 | Stable segment operations | `StableSegmentOperationGateway`, `StableSegmentOperationResult`, `StableSegmentOperationStatus`, `SegmentStreamingService`, `MaintenanceServiceImpl` | Single-attempt stable-segment calls used by iterator and maintenance paths, with `OK`, `BUSY`, `CLOSED`, and `ERROR` translated into index-level retry decisions. |
@@ -39,7 +39,7 @@ Source: [implementation-layers.plantuml](images/implementation-layers.plantuml)
 
 - Public API behavior: start at `SegmentIndex` and `SegmentIndexImpl`.
 - Create/open flow: inspect `SegmentIndexBootstrapOperation`,
-  `SegmentIndexImpl.open(...)`, and `SegmentIndexRuntimeFactory`.
+  `SegmentIndexImpl.open(...)`, and `SegmentIndexBootstrapSteps`.
 - Operation rejected during close/open/error: inspect
   `SegmentIndexTrackedOperationRunner`, `IndexOperationTracker`, and
   `IndexStateCoordinator` in `core.session.state`.

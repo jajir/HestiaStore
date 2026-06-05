@@ -15,7 +15,7 @@ import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -27,7 +27,7 @@ final class SegmentIndexMetricsCollector<K, V> {
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector;
     private final ExecutorRegistry executorRegistry;
-    private final WalRuntime<K, V> walRuntime;
+    private final Supplier<WalStats> walStatsSupplier;
     private final Supplier<MaintenanceStats> maintenanceStatsSupplier;
     private final AtomicLong compactRequestHighWaterMark;
     private final AtomicLong flushRequestHighWaterMark;
@@ -37,7 +37,7 @@ final class SegmentIndexMetricsCollector<K, V> {
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector,
             final ExecutorRegistry executorRegistry,
-            final WalRuntime<K, V> walRuntime,
+            final Supplier<WalStats> walStatsSupplier,
             final Supplier<MaintenanceStats> maintenanceStatsSupplier,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
@@ -48,7 +48,8 @@ final class SegmentIndexMetricsCollector<K, V> {
                 stableSegmentRuntimeCollector, "stableSegmentRuntimeCollector");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
-        this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
+        this.walStatsSupplier = Vldtn.requireNonNull(walStatsSupplier,
+                "walStatsSupplier");
         this.maintenanceStatsSupplier = Vldtn.requireNonNull(
                 maintenanceStatsSupplier, "maintenanceStatsSupplier");
         this.compactRequestHighWaterMark = Vldtn.requireNonNull(
@@ -67,7 +68,7 @@ final class SegmentIndexMetricsCollector<K, V> {
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
             final ChunkStoreCache<K, V> chunkStoreCache,
-            final WalRuntime<K, V> walRuntime,
+            final Supplier<WalStats> walStatsSupplier,
             final Supplier<IndexOperationStats> indexOperationStatsSupplier,
             final Supplier<MaintenanceStats> maintenanceStatsSupplier,
             final AtomicLong compactRequestHighWaterMark,
@@ -82,7 +83,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                         Vldtn.requireNonNull(segmentRegistry,
                                 "segmentRegistry")),
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry"),
-                Vldtn.requireNonNull(walRuntime, "walRuntime"),
+                Vldtn.requireNonNull(walStatsSupplier, "walStatsSupplier"),
                 Vldtn.requireNonNull(maintenanceStatsSupplier,
                         "maintenanceStatsSupplier"),
                 Vldtn.requireNonNull(compactRequestHighWaterMark,
@@ -90,7 +91,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                 Vldtn.requireNonNull(flushRequestHighWaterMark,
                         "flushRequestHighWaterMark"),
                 newSnapshotFactory(conf, splitStatsSupplier,
-                        runtimeTuningState, chunkStoreCache, walRuntime,
+                        runtimeTuningState, chunkStoreCache,
                         indexOperationStatsSupplier, lastAppliedWalLsn,
                         stateSupplier));
     }
@@ -104,7 +105,7 @@ final class SegmentIndexMetricsCollector<K, V> {
                 maintenanceStatsSupplier.get();
         return snapshotFactory.create(segmentRegistry.metricsSnapshot(),
                 stableSegmentRuntime, executorSnapshot,
-                walRuntime.statsSnapshot(), maintenanceStats,
+                walStatsSupplier.get(), maintenanceStats,
                 resolveRequestCount(maintenanceStats.getCompactRequestCount(),
                         compactRequestHighWaterMark,
                         stableSegmentRuntime.getTotalCompactRequestCount()),
@@ -118,7 +119,6 @@ final class SegmentIndexMetricsCollector<K, V> {
             final Supplier<SplitStats> splitStatsSupplier,
             final RuntimeTuningState runtimeTuningState,
             final ChunkStoreCache<K, V> chunkStoreCache,
-            final WalRuntime<K, V> walRuntime,
             final Supplier<IndexOperationStats> indexOperationStatsSupplier,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
@@ -129,7 +129,6 @@ final class SegmentIndexMetricsCollector<K, V> {
                 Vldtn.requireNonNull(chunkStoreCache, "chunkStoreCache")
                         ::stats,
                 Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
-                Vldtn.requireNonNull(walRuntime, "walRuntime"),
                 Vldtn.requireNonNull(indexOperationStatsSupplier,
                         "indexOperationStatsSupplier"),
                 Vldtn.requireNonNull(lastAppliedWalLsn, "lastAppliedWalLsn"),

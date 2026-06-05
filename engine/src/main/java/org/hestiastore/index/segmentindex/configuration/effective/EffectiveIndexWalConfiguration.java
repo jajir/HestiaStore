@@ -85,6 +85,18 @@ public final class EffectiveIndexWalConfiguration {
         return durabilityMode;
     }
 
+    public boolean isAsyncDurabilityMode() {
+        return durabilityMode == WalDurabilityMode.ASYNC;
+    }
+
+    public boolean isSyncDurabilityMode() {
+        return durabilityMode == WalDurabilityMode.SYNC;
+    }
+
+    public boolean isGroupSyncDurabilityMode() {
+        return durabilityMode == WalDurabilityMode.GROUP_SYNC;
+    }
+
     public long getSegmentSizeBytes() {
         return segmentSizeBytes;
     }
@@ -103,6 +115,10 @@ public final class EffectiveIndexWalConfiguration {
 
     public WalCorruptionPolicy getCorruptionPolicy() {
         return corruptionPolicy;
+    }
+
+    public boolean isFailFastCorruptionPolicy() {
+        return corruptionPolicy == WalCorruptionPolicy.FAIL_FAST;
     }
 
     public boolean isEpochSupport() {

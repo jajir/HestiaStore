@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.metrics;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
@@ -26,8 +27,8 @@ final class StableSegmentRuntimeMetrics {
     private long totalBloomFilterRefusedCount;
     private long totalBloomFilterPositiveCount;
     private long totalBloomFilterFalsePositiveCount;
-    private final java.util.List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> stableSegmentMetricsSnapshots =
-            new java.util.ArrayList<>();
+    private final List<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot> stableSegmentMetricsSnapshots =
+            new ArrayList<>();
 
     void setTotalMappedStableSegmentCount(final int count) {
         totalMappedStableSegmentCount = Math.max(0, count);

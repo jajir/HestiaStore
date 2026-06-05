@@ -1,8 +1,8 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
-import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -15,7 +15,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexCoreStorage<K, V> {
+public final class SegmentIndexCoreStorage<K, V>
+        extends AbstractCloseableResource {
 
     private final RuntimeTuningState runtimeTuningState;
     private final KeyToSegmentMap<K> keyToSegmentMap;
@@ -39,14 +40,6 @@ public final class SegmentIndexCoreStorage<K, V> {
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
     }
 
-    public SegmentIndexCoreStorage(final RuntimeTuningState runtimeTuningState,
-            final KeyToSegmentMap<K> keyToSegmentMap,
-            final SegmentRegistry<K, V> segmentRegistry,
-            final IndexRetryPolicy retryPolicy) {
-        this(runtimeTuningState, keyToSegmentMap, segmentRegistry,
-                new LruChunkStoreCache<>(0), retryPolicy);
-    }
-
     public RuntimeTuningState runtimeTuningState() {
         return runtimeTuningState;
     }
@@ -65,5 +58,48 @@ public final class SegmentIndexCoreStorage<K, V> {
 
     public IndexRetryPolicy retryPolicy() {
         return retryPolicy;
+    }
+
+    @Override
+    protected void doClose() {
+        RuntimeException failure = null;
+        failure = closeSegmentRegistry(failure);
+        failure = closeKeyToSegmentMap(failure);
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private RuntimeException closeSegmentRegistry(
+            final RuntimeException failure) {
+        try {
+            segmentRegistry.close();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            return appendCleanupFailure(failure, cleanupFailure);
+        }
+    }
+
+    private RuntimeException closeKeyToSegmentMap(
+            final RuntimeException failure) {
+        if (keyToSegmentMap.wasClosed()) {
+            return failure;
+        }
+        try {
+            keyToSegmentMap.close();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            return appendCleanupFailure(failure, cleanupFailure);
+        }
+    }
+
+    private RuntimeException appendCleanupFailure(
+            final RuntimeException failure,
+            final RuntimeException cleanupFailure) {
+        if (failure == null) {
+            return cleanupFailure;
+        }
+        failure.addSuppressed(cleanupFailure);
+        return failure;
     }
 }

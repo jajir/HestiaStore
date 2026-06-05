@@ -11,16 +11,14 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 
 /**
- * Compatibility-facing WAL runtime facade.
+ * Active WAL runtime facade.
  *
  * <p>
- * Public behavior stays stable while the implementation is split across
- * metadata/catalog, writer, recovery, segment management, and sync-policy
- * collaborators.
+ * The implementation is split across metadata/catalog, writer, recovery,
+ * segment management, and sync-policy collaborators.
  *
  * <p>
  * Concurrency invariant: all stateful operations other than best-effort
@@ -31,6 +29,12 @@ import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
  * @param <V> value type
  */
 public final class WalRuntime<K, V> implements AutoCloseable {
+
+    /**
+     * Directory name that stores WAL metadata and segment files under an index
+     * directory.
+     */
+    public static final String WAL_DIRECTORY = WalMetadataCatalog.WAL_DIRECTORY;
 
     /**
      * WAL operation kind.
@@ -109,7 +113,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         void accept(ReplayRecord<K, V> replayRecord);
     }
 
-    private final boolean enabled;
     private final Object monitor;
     private final WalRuntimeMetrics metrics;
     private final AtomicBoolean closed;
@@ -123,14 +126,13 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     private long checkpointLsn = 0L;
 
     @SuppressWarnings("java:S107")
-    private WalRuntime(final IndexWalConfiguration wal, final Object monitor,
+    WalRuntime(final Object monitor,
             final WalRuntimeMetrics metrics, final AtomicBoolean closed,
             final WalMetadataCatalog metadataCatalog,
             final WalSegmentCatalog segmentCatalog,
             final WalSyncPolicy syncPolicy, final WalWriter<K, V> writer,
             final WalRecoveryManager<K, V> recoveryManager,
             final ScheduledExecutorService groupSyncExecutor) {
-        this.enabled = Vldtn.requireNonNull(wal, "wal").isEnabled();
         this.monitor = Vldtn.requireNonNull(monitor, "monitor");
         this.metrics = Vldtn.requireNonNull(metrics, "metrics");
         this.closed = Vldtn.requireNonNull(closed, "closed");
@@ -154,47 +156,33 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @return runtime instance
      */
     public static <K, V> WalRuntime<K, V> open(final Directory indexDirectory,
-            final IndexWalConfiguration wal, final TypeDescriptor<K> keyDescriptor,
+            final EffectiveIndexWalConfiguration wal,
+            final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        Vldtn.requireNonNull(indexDirectory, "indexDirectory");
-        final IndexWalConfiguration resolvedWal = IndexWalConfiguration.orEmpty(wal);
-        if (!resolvedWal.isEnabled()) {
-            return disabled(resolvedWal);
-        }
-        final Directory walDirectory = indexDirectory
-                .openSubDirectory(WalMetadataCatalog.WAL_DIRECTORY);
-        final WalStorage storage = WalStorageFactory.create(walDirectory);
-        final WalRuntime<K, V> runtime = create(resolvedWal, storage,
-                keyDescriptor, valueDescriptor);
+        final Directory directory = Vldtn.requireNonNull(indexDirectory,
+                "indexDirectory");
+        final EffectiveIndexWalConfiguration resolvedWal = requireEnabledWal(wal);
+        final Directory walDirectory = directory.openSubDirectory(WAL_DIRECTORY);
+        final WalRuntime<K, V> runtime = createRuntime(resolvedWal,
+                WalStorageFactory.create(walDirectory), keyDescriptor,
+                valueDescriptor);
         runtime.metadataCatalog.ensureFormatMarker();
         return runtime;
     }
 
-    static <K, V> WalRuntime<K, V> openForTests(final IndexWalConfiguration wal,
+    private static EffectiveIndexWalConfiguration requireEnabledWal(
+            final EffectiveIndexWalConfiguration wal) {
+        final EffectiveIndexWalConfiguration resolvedWal = EffectiveIndexWalConfiguration
+                .orEmpty(wal);
+        Vldtn.requireTrue(resolvedWal.isEnabled(),
+                "WAL configuration must be enabled to create WalRuntime.");
+        return resolvedWal;
+    }
+
+    private static <K, V> WalRuntime<K, V> createRuntime(
+            final EffectiveIndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        final WalRuntime<K, V> runtime = create(IndexWalConfiguration.orEmpty(wal),
-                Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
-                valueDescriptor);
-        if (runtime.enabled) {
-            runtime.metadataCatalog.ensureFormatMarker();
-        }
-        return runtime;
-    }
-
-    private static <K, V> WalRuntime<K, V> disabled(
-            final IndexWalConfiguration wal) {
-        return new WalRuntime<>(wal, new Object(), new WalRuntimeMetrics(),
-                new AtomicBoolean(), null, null, null, null, null, null);
-    }
-
-    private static <K, V> WalRuntime<K, V> create(
-            final IndexWalConfiguration wal, final WalStorage storage,
-            final TypeDescriptor<K> keyDescriptor,
-            final TypeDescriptor<V> valueDescriptor) {
-        if (!wal.isEnabled()) {
-            return disabled(wal);
-        }
         final Object monitor = new Object();
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final AtomicBoolean closed = new AtomicBoolean();
@@ -216,14 +204,15 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         final WalRecoveryManager<K, V> recoveryManager =
                 new WalRecoveryManager<>(wal, storage, metadataCatalog,
                         recordCodec, segmentCatalog, metrics);
-        return new WalRuntime<>(wal, monitor, metrics, closed, metadataCatalog,
+        return new WalRuntime<>(monitor, metrics, closed, metadataCatalog,
                 segmentCatalog, syncPolicy, writer, recoveryManager,
                 newGroupSyncExecutor(wal, syncPolicy));
     }
 
     private static ScheduledExecutorService newGroupSyncExecutor(
-            final IndexWalConfiguration wal, final WalSyncPolicy syncPolicy) {
-        if (wal.getDurabilityMode() != WalDurabilityMode.GROUP_SYNC
+            final EffectiveIndexWalConfiguration wal,
+            final WalSyncPolicy syncPolicy) {
+        if (!wal.isGroupSyncDurabilityMode()
                 || wal.getGroupSyncDelayMillis() <= 0) {
             return null;
         }
@@ -237,10 +226,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         return executor;
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
     /**
      * Replays WAL records above checkpoint and repairs invalid tail according
      * to configured policy.
@@ -249,9 +234,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @return recovery summary
      */
     public RecoveryResult recover(final ReplayConsumer<K, V> replayConsumer) {
-        if (!enabled) {
-            return new RecoveryResult(0L, 0L, false);
-        }
         Vldtn.requireNonNull(replayConsumer, "replayConsumer");
         synchronized (monitor) {
             syncPolicy.checkSyncFailure();
@@ -293,9 +275,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
      * @param checkpointLsn checkpoint LSN fully reflected in stable state
      */
     public void onCheckpoint(final long checkpointLsn) {
-        if (!enabled) {
-            return;
-        }
         synchronized (monitor) {
             syncPolicy.checkSyncFailure();
             ensureOpen();
@@ -312,43 +291,28 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     public boolean isRetentionPressure() {
-        if (!enabled) {
-            return false;
-        }
         synchronized (monitor) {
             return segmentCatalog.isRetentionPressure();
         }
     }
 
     public long retainedBytes() {
-        if (!enabled) {
-            return 0L;
-        }
         synchronized (monitor) {
             return segmentCatalog.retainedBytes();
         }
     }
 
     public long durableLsn() {
-        if (!enabled) {
-            return 0L;
-        }
         return syncPolicy.durableLsn();
     }
 
     public boolean hasSyncFailure() {
-        if (!enabled) {
-            return false;
-        }
         synchronized (monitor) {
             return syncPolicy.hasSyncFailure();
         }
     }
 
     public WalStats statsSnapshot() {
-        if (!enabled) {
-            return WalRuntimeMetrics.emptySnapshot();
-        }
         synchronized (monitor) {
             return metrics.snapshot(segmentCatalog.retainedBytes(),
                     segmentCatalog.segmentCount(), syncPolicy.durableLsn(),
@@ -358,9 +322,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
 
     @Override
     public void close() {
-        if (!enabled) {
-            return;
-        }
         synchronized (monitor) {
             if (closed.get()) {
                 return;
@@ -377,9 +338,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     }
 
     private long append(final Operation operation, final K key, final V value) {
-        if (!enabled) {
-            return 0L;
-        }
         synchronized (monitor) {
             syncPolicy.checkSyncFailure();
             ensureOpen();
@@ -396,14 +354,6 @@ public final class WalRuntime<K, V> implements AutoCloseable {
     static int computeCrc32(final byte[] data, final int offset,
             final int length) {
         return WalRecordCodec.computeCrc32(data, offset, length);
-    }
-
-    static void putInt(final byte[] bytes, final int offset, final int value) {
-        WalRecordCodec.putInt(bytes, offset, value);
-    }
-
-    static int readInt(final byte[] bytes, final int offset) {
-        return WalRecordCodec.readInt(bytes, offset);
     }
 
     static void putLong(final byte[] bytes, final int offset, final long value) {

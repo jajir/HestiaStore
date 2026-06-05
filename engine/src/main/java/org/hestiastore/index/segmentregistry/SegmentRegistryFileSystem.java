@@ -5,12 +5,16 @@ import java.util.stream.Stream;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Filesystem operations used by {@link SegmentRegistryImpl}.
  */
 final class SegmentRegistryFileSystem {
 
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SegmentRegistryFileSystem.class);
     private static final String SEGMENT_ID_ARG = "segmentId";
     private final Directory directoryFacade;
 
@@ -113,7 +117,8 @@ final class SegmentRegistryFileSystem {
         try {
             directoryFacade.rmdir(directoryName);
         } catch (final RuntimeException ex) {
-            return;
+            LOGGER.debug("Unable to remove segment directory '{}'.",
+                    directoryName, ex);
         }
     }
 
@@ -142,7 +147,8 @@ final class SegmentRegistryFileSystem {
             clearDirectory(subDirectory);
             directory.rmdir(directoryName);
         } catch (final RuntimeException ex) {
-            return;
+            LOGGER.debug("Unable to delete segment subdirectory '{}'.",
+                    directoryName, ex);
         }
     }
 

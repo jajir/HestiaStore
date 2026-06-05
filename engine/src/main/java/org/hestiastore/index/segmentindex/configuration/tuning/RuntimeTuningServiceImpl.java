@@ -71,6 +71,7 @@ public final class RuntimeTuningServiceImpl
 
     private static void unsupportedPersistence(
             final RuntimeTuningSnapshot snapshot) {
+        Vldtn.requireNonNull(snapshot, "snapshot");
         throw new UnsupportedOperationException(
                 "Runtime tuning persistence is not available for this service.");
     }

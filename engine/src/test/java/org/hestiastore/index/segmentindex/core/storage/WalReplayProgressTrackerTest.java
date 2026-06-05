@@ -24,7 +24,6 @@ class WalReplayProgressTrackerTest {
         final AtomicLong lastAppliedWalLsn = new AtomicLong(5L);
         final WalReplayProgressTracker<Integer, String> tracker =
                 new WalReplayProgressTracker<>(walRuntime, lastAppliedWalLsn);
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.recover(any()))
                 .thenReturn(new WalRuntime.RecoveryResult(3L, 7L, false));
 
@@ -40,7 +39,6 @@ class WalReplayProgressTrackerTest {
         final AtomicLong lastAppliedWalLsn = new AtomicLong(0L);
         final WalReplayProgressTracker<Integer, String> tracker =
                 new WalReplayProgressTracker<>(walRuntime, lastAppliedWalLsn);
-        when(walRuntime.isEnabled()).thenReturn(true);
 
         tracker.recordAppliedLsn(4L);
         tracker.recordAppliedLsn(2L);

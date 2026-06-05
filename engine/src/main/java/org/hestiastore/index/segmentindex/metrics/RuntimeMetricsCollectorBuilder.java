@@ -14,6 +14,7 @@ import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -31,7 +32,7 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
     private ExecutorRegistry executorRegistry;
     private RuntimeTuningState runtimeTuningState;
     private ChunkStoreCache<K, V> chunkStoreCache;
-    private WalRuntime<K, V> walRuntime;
+    private Supplier<WalStats> walStatsSupplier;
     private Supplier<IndexOperationStats> indexOperationStatsSupplier;
     private Supplier<MaintenanceStats> maintenanceStatsSupplier;
     private AtomicLong compactRequestHighWaterMark;
@@ -86,7 +87,15 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
 
     public RuntimeMetricsCollectorBuilder<K, V> withWalRuntime(
             final WalRuntime<K, V> walRuntime) {
-        this.walRuntime = walRuntime;
+        final WalRuntime<K, V> resolvedWalRuntime = Vldtn.requireNonNull(
+                walRuntime, "walRuntime");
+        this.walStatsSupplier = resolvedWalRuntime::statsSnapshot;
+        return this;
+    }
+
+    public RuntimeMetricsCollectorBuilder<K, V> withWalStatsSupplier(
+            final Supplier<WalStats> walStatsSupplier) {
+        this.walStatsSupplier = walStatsSupplier;
         return this;
     }
 
@@ -147,7 +156,8 @@ public final class RuntimeMetricsCollectorBuilder<K, V> {
                                 "runtimeTuningState"),
                         Vldtn.requireNonNull(chunkStoreCache,
                                 "chunkStoreCache"),
-                        Vldtn.requireNonNull(walRuntime, "walRuntime"),
+                        Vldtn.requireNonNull(walStatsSupplier,
+                                "walStatsSupplier"),
                         Vldtn.requireNonNull(indexOperationStatsSupplier,
                                 "indexOperationStatsSupplier"),
                         Vldtn.requireNonNull(maintenanceStatsSupplier,

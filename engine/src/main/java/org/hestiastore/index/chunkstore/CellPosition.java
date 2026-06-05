@@ -113,7 +113,7 @@ public class CellPosition {
      * @return New position advanced by one data block size.
      */
     public CellPosition addDataBlock() {
-        return CellPosition.of(dataBlockSize,
+        return of(dataBlockSize,
                 position + dataBlockSize.getDataBlockSize());
     }
 
@@ -130,7 +130,7 @@ public class CellPosition {
         if (byteCount % CELL_SIZE != 0) {
             cells++;
         }
-        return CellPosition.of(dataBlockSize, position + cells * CELL_SIZE);
+        return of(dataBlockSize, position + cells * CELL_SIZE);
     }
 
     private int getStartingByteInBlockOfCell() {
@@ -143,7 +143,7 @@ public class CellPosition {
      * @return SegmentIndex of cell within data block.
      */
     public int getCellIndex() {
-        return (getStartingByteInBlockOfCell()) / CELL_SIZE;
+        return getStartingByteInBlockOfCell() / CELL_SIZE;
     }
 
     /**

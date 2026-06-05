@@ -23,6 +23,10 @@ Use this skill when the task is to review a diff, branch, or pull request in Hes
 - Keep summaries brief and secondary.
 - If no findings are present, state that explicitly and mention any remaining verification gaps.
 - Limit visibility of classes, methods, and variables to the minimum needed for their intended use.
+- For test-only access to package-private production internals, prefer same-package test sources under `src/test/java` over widening production visibility. Do not make package-private production types public only for tests.
+- When tests in another package need package-private behavior, add a same-package test-support or fixture class under `src/test/java` that exposes only the needed shielding method. Prefer that over adding `*ForTests` methods or public test seams to production code.
+- Production classes should contain production behavior only. Keep test doubles, fake implementations, and test-only `NO_OPERATION` implementations under `src/test/java`, unless the no-op is a real production null-object behavior for a disabled feature or supported runtime mode.
+- Avoid putting feature-enabled switches such as `enabled` or `isEnabled` inside service/runtime/resource objects to make their methods silently no-op. Let the calling assembly code decide whether to create the real implementation or a separate production null-object/no-op implementation behind the same interface.
 - Remove all unused code, including imports, variables, methods, and classes.
 - Check static factory method names against `docs/development/code-quality-charter.md`:
   use `of(...)` for direct value assembly, `fromXxx(...)` for conversion from

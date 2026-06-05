@@ -56,7 +56,7 @@ final class WalRetentionPressureCoordinator<K, V> {
     }
 
     void enforceIfNeeded() {
-        if (!walRuntime.isEnabled() || !walRuntime.isRetentionPressure()) {
+        if (!walRuntime.isRetentionPressure()) {
             return;
         }
         logWalRetentionPressureStartIfNeeded();

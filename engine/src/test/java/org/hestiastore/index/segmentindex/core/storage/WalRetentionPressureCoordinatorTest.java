@@ -37,7 +37,6 @@ class WalRetentionPressureCoordinatorTest {
                         prepareCalls::incrementAndGet,
                         flushCalls::incrementAndGet,
                         checkpointCalls::incrementAndGet);
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.isRetentionPressure()).thenReturn(true, true, false);
         when(walRuntime.retainedBytes()).thenReturn(99L);
 

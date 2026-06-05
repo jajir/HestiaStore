@@ -3,10 +3,8 @@ package org.hestiastore.index.segmentindex.core.storage;
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -15,8 +13,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,11 +33,8 @@ class SegmentIndexCoreStorageFactoryTest {
     @AfterEach
     void tearDown() {
         RuntimeException failure = null;
-        if (coreStorage != null) {
-            failure = closeIgnoringFailure(coreStorage.segmentRegistry()::close,
-                    failure);
-            failure = closeIgnoringFailure(coreStorage.keyToSegmentMap()::close,
-                    failure);
+        if (coreStorage != null && !coreStorage.wasClosed()) {
+            failure = closeIgnoringFailure(coreStorage::close, failure);
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             failure = closeIgnoringFailure(executorRegistry::close, failure);
@@ -52,34 +45,18 @@ class SegmentIndexCoreStorageFactoryTest {
     }
 
     @Test
-    void createBuildsCoreStorageAndNotifiesObserver() {
-        final AtomicReference<KeyToSegmentMap<Integer>> keyToSegmentMapRef =
-                new AtomicReference<>();
-        final AtomicReference<SegmentRegistry<Integer, String>> segmentRegistryRef =
-                new AtomicReference<>();
+    void createBuildsCoreStorage() {
         final SegmentIndexCoreStorageOpenSpec<Integer, String> request =
                 newRequest();
         final SegmentIndexCoreStorageFactory<Integer, String> factory =
-                new SegmentIndexCoreStorageFactory<>(request,
-                        new SegmentIndexCoreStorageOpenObserver<>() {
-                            @Override
-                            public void onKeyToSegmentMapCreated(
-                                    final KeyToSegmentMap<Integer> keyToSegmentMap) {
-                                keyToSegmentMapRef.set(keyToSegmentMap);
-                            }
-
-                            @Override
-                            public void onSegmentRegistryCreated(
-                                    final SegmentRegistry<Integer, String> segmentRegistry) {
-                                segmentRegistryRef.set(segmentRegistry);
-                            }
-                        });
+                new SegmentIndexCoreStorageFactory<>(request);
 
         coreStorage = factory.create();
 
         assertNotNull(coreStorage.runtimeTuningState());
-        assertSame(coreStorage.keyToSegmentMap(), keyToSegmentMapRef.get());
-        assertSame(coreStorage.segmentRegistry(), segmentRegistryRef.get());
+        assertNotNull(coreStorage.keyToSegmentMap());
+        assertNotNull(coreStorage.segmentRegistry());
+        assertNotNull(coreStorage.chunkStoreCache());
         assertNotNull(coreStorage.retryPolicy());
     }
 

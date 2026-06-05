@@ -147,8 +147,7 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
 
             @Override
             public int characteristics() {
-                return Spliterator.DISTINCT | Spliterator.IMMUTABLE
-                        | Spliterator.NONNULL | Spliterator.SORTED;
+                return DISTINCT | IMMUTABLE | NONNULL | SORTED;
             }
 
             @Override

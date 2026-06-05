@@ -14,7 +14,6 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStats;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 
@@ -30,7 +29,6 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
     private final Supplier<SplitStats> splitStatsSupplier;
     private final Supplier<ChunkStoreCacheStats> chunkStoreCacheStatsSupplier;
     private final RuntimeTuningState runtimeTuningState;
-    private final WalRuntime<K, V> walRuntime;
     private final Supplier<IndexOperationStats> indexOperationStatsSupplier;
     private final AtomicLong lastAppliedWalLsn;
     private final Supplier<SegmentIndexState> stateSupplier;
@@ -40,7 +38,6 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
             final Supplier<SplitStats> splitStatsSupplier,
             final Supplier<ChunkStoreCacheStats> chunkStoreCacheStatsSupplier,
             final RuntimeTuningState runtimeTuningState,
-            final WalRuntime<K, V> walRuntime,
             final Supplier<IndexOperationStats> indexOperationStatsSupplier,
             final AtomicLong lastAppliedWalLsn,
             final Supplier<SegmentIndexState> stateSupplier) {
@@ -51,7 +48,6 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 chunkStoreCacheStatsSupplier, "chunkStoreCacheStatsSupplier");
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
-        this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
         this.indexOperationStatsSupplier = Vldtn.requireNonNull(
                 indexOperationStatsSupplier, "indexOperationStatsSupplier");
         this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
@@ -146,7 +142,7 @@ final class SegmentIndexMetricsSnapshotFactory<K, V> {
                 stableSegmentRuntime.getTotalBloomFilterRefusedCount(),
                 stableSegmentRuntime.getTotalBloomFilterPositiveCount(),
                 stableSegmentRuntime.getTotalBloomFilterFalsePositiveCount(),
-                walRuntime.isEnabled(), walStats.appendCount(),
+                conf.wal().isEnabled(), walStats.appendCount(),
                 walStats.appendBytes(), walStats.syncCount(),
                 walStats.syncFailureCount(), walStats.corruptionCount(),
                 walStats.truncationCount(), walStats.retainedBytes(),

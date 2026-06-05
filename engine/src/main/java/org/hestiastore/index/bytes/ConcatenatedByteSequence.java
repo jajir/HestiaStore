@@ -73,7 +73,7 @@ public final class ConcatenatedByteSequence extends ByteSequenceCaching {
     public ByteSequence slice(final int fromInclusive, final int toExclusive) {
         validateSliceRange(fromInclusive, toExclusive, totalLength);
         if (fromInclusive == toExclusive) {
-            return ByteSequence.EMPTY;
+            return EMPTY;
         }
         if (toExclusive <= firstLength) {
             return first.slice(fromInclusive, toExclusive);
@@ -85,7 +85,7 @@ public final class ConcatenatedByteSequence extends ByteSequenceCaching {
         final ByteSequence firstPart = first.slice(fromInclusive, firstLength);
         final ByteSequence secondPart = second.slice(0,
                 toExclusive - firstLength);
-        return ConcatenatedByteSequence.of(firstPart, secondPart);
+        return of(firstPart, secondPart);
     }
 
     private void validateIndex(final int index) {

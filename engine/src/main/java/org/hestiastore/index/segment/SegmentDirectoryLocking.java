@@ -3,11 +3,16 @@ package org.hestiastore.index.segment;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Coordinates acquisition and release of a segment directory lock.
  */
 final class SegmentDirectoryLocking {
+
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SegmentDirectoryLocking.class);
 
     private final Directory directoryFacade;
     private final SegmentDirectoryLayout layout;
@@ -66,7 +71,7 @@ final class SegmentDirectoryLocking {
         try {
             lockHandle.unlock();
         } catch (final IllegalStateException e) {
-            // Another closer may have released the file just before this call.
+            LOGGER.debug("Segment lock was already released.", e);
         }
     }
 

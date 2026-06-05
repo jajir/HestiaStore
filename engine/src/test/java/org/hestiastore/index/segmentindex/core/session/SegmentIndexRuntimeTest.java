@@ -1,33 +1,25 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
-import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
-import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexRuntimeStorage;
+import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,34 +35,23 @@ class SegmentIndexRuntimeTest {
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
     private ExecutorRegistry executorRegistry;
+    private Object openedRuntime;
     private SegmentIndexRuntime<Integer, String> runtime;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        final AtomicReference<RuntimeException> failureRef = new AtomicReference<>();
-        runtime = new SegmentIndexRuntimeFactory<>(
-                new SegmentIndexRuntimeOpenContext<>(
-                        new MemDirectory(), tdi, tds, effective(conf),
-                        executorRegistry, new IndexOperationStatsRecorder(),
-                        new MaintenanceStatsRecorder(),
-                        new SplitStatsRecorder(), new AtomicLong(),
-                        new AtomicLong(), new AtomicLong(),
-                        () -> SegmentIndexState.READY, failureRef::set))
-                .open();
+        openedRuntime = SegmentIndexRuntimeTestAccess.openRuntime(
+                new MemDirectory(), tdi, tds, conf, executorRegistry);
+        runtime = SegmentIndexRuntimeTestAccess.runtime(openedRuntime);
     }
 
     @AfterEach
     void tearDown() {
-        if (runtime != null) {
-            final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
-            stateMachine.markReady();
-            new IndexCloseCoordinator<>("runtime-test", stateMachine,
-                    mock(SegmentIndexOperationGate.class),
-                    new IndexOperationStatsRecorder(),
-                    runtime, executorRegistry,
-                    new IndexDirectoryLock(new MemDirectory())).close();
+        if (openedRuntime != null) {
+            SegmentIndexRuntimeTestAccess.closeRuntime(openedRuntime,
+                    "runtime-test", executorRegistry);
         }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             executorRegistry.close();
@@ -83,7 +64,6 @@ class SegmentIndexRuntimeTest {
         assertNotNull(SegmentIndexRuntimeTestAccess.segmentRegistry(runtime));
         assertNotNull(
                 SegmentIndexRuntimeTestAccess.runtimeTuningState(runtime));
-        assertNotNull(SegmentIndexRuntimeTestAccess.walRuntime(runtime));
         assertNotNull(SegmentIndexRuntimeTestAccess.walCoordinator(runtime));
         assertNotNull(SegmentIndexRuntimeTestAccess.operationAccess(runtime));
         assertNotNull(
@@ -100,21 +80,22 @@ class SegmentIndexRuntimeTest {
                 mock(KeyToSegmentMap.class);
         final SegmentRegistry<Integer, String> segmentRegistry =
                 mock(SegmentRegistry.class);
-        final WalRuntime<Integer, String> walRuntime = mock(WalRuntime.class);
+        final IndexWalCoordinator<Integer, String> walCoordinator =
+                mock(IndexWalCoordinator.class);
         when(keyToSegmentMap.wasClosed()).thenReturn(false);
         final SegmentIndexRuntime<Integer, String> failedRuntime =
                 newRuntime(topologyRuntime, keyToSegmentMap, segmentRegistry,
-                        walRuntime);
+                        walCoordinator);
 
         failedRuntime.closeAfterFailedInitialization();
 
         final InOrder inOrder = inOrder(topologyRuntime, segmentRegistry,
-                keyToSegmentMap, walRuntime);
+                keyToSegmentMap, walCoordinator);
         inOrder.verify(topologyRuntime).closeSplitRuntime();
         inOrder.verify(segmentRegistry).close();
         inOrder.verify(keyToSegmentMap).wasClosed();
         inOrder.verify(keyToSegmentMap).close();
-        inOrder.verify(walRuntime).close();
+        inOrder.verify(walCoordinator).close();
     }
 
     @SuppressWarnings("unchecked")
@@ -122,13 +103,16 @@ class SegmentIndexRuntimeTest {
             final SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime,
             final KeyToSegmentMap<Integer> keyToSegmentMap,
             final SegmentRegistry<Integer, String> segmentRegistry,
-            final WalRuntime<Integer, String> walRuntime) {
+            final IndexWalCoordinator<Integer, String> walCoordinator) {
+        final SegmentIndexRuntimeServices<Integer, String> services =
+                mock(SegmentIndexRuntimeServices.class);
+        when(services.walCoordinator()).thenReturn(walCoordinator);
         return new SegmentIndexRuntime<>(tdi,
-                new SegmentIndexRuntimeStorage<>(
+                new SegmentIndexCoreStorage<>(
                         mock(RuntimeTuningState.class), keyToSegmentMap,
-                        segmentRegistry, mock(IndexRetryPolicy.class)),
-                topologyRuntime, walRuntime,
-                mock(SegmentIndexRuntimeServices.class));
+                        segmentRegistry, mock(ChunkStoreCache.class),
+                        mock(IndexRetryPolicy.class)),
+                topologyRuntime, services);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

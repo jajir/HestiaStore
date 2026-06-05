@@ -21,7 +21,7 @@ class WalRecordCodecTest {
 
         final byte[] bytes = codec.encodeRecord(WalRuntime.Operation.PUT, 7L,
                 "key", "value");
-        final int bodyLength = WalRuntime.readInt(bytes, 0);
+        final int bodyLength = WalRecordCodec.readInt(bytes, 0);
         final byte[] body = new byte[bodyLength];
         System.arraycopy(bytes, 4, body, 0, body.length);
 
@@ -44,7 +44,7 @@ class WalRecordCodecTest {
 
         final byte[] bytes = codec.encodeRecord(WalRuntime.Operation.DELETE, 3L,
                 "key", null);
-        final int bodyLength = WalRuntime.readInt(bytes, 0);
+        final int bodyLength = WalRecordCodec.readInt(bytes, 0);
         final byte[] body = new byte[bodyLength];
         System.arraycopy(bytes, 4, body, 0, body.length);
 

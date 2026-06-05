@@ -13,8 +13,8 @@ import org.hestiastore.index.Vldtn;
 public final class ChunkFilterProviderResolverImpl
         implements ChunkFilterProviderResolver {
 
-    private static final ChunkFilterProviderResolverImpl DEFAULT_RESOLVER = ChunkFilterProviderResolverImpl
-            .builder().withDefaultProviders().build();
+    private static final ChunkFilterProviderResolverImpl DEFAULT_RESOLVER =
+            builder().withDefaultProviders().build();
 
     private final Map<String, ChunkFilterProvider> providers;
 

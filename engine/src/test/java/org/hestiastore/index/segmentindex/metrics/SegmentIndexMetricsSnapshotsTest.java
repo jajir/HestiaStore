@@ -14,11 +14,9 @@ import java.util.function.Supplier;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
@@ -26,7 +24,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
@@ -40,13 +38,9 @@ class SegmentIndexMetricsSnapshotsTest {
             "Property 'conf' must not be null.";
 
     private ExecutorRegistry executorRegistry;
-    private WalRuntime<Integer, String> walRuntime;
 
     @AfterEach
     void tearDown() {
-        if (walRuntime != null) {
-            walRuntime.close();
-        }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             executorRegistry.close();
         }
@@ -62,7 +56,6 @@ class SegmentIndexMetricsSnapshotsTest {
         final SegmentRegistry.Runtime<Integer, String> runtime = mock(
                 SegmentRegistry.Runtime.class);
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
         final IndexOperationStatsRecorder operationStatsRecorder =
                 new IndexOperationStatsRecorder();
         final MaintenanceStatsRecorder maintenanceStatsRecorder =
@@ -79,7 +72,8 @@ class SegmentIndexMetricsSnapshotsTest {
                         segmentRegistry,
                         () -> new SplitStats(0L, 0, 0, 0L, 0L),
                         executorRegistry,
-                        RuntimeTuningState.fromConfiguration(effective(conf)), walRuntime,
+                        RuntimeTuningState.fromConfiguration(effective(conf)),
+                        WalStats::empty,
                         operationStatsRecorder::statsSnapshot,
                         maintenanceStatsRecorder::statsSnapshot,
                         new AtomicLong(), new AtomicLong(),
@@ -100,7 +94,7 @@ class SegmentIndexMetricsSnapshotsTest {
                         () -> new SplitStats(0L, 0, 0, 0L, 0L),
                         mock(ExecutorRegistry.class),
                         mock(RuntimeTuningState.class),
-                        mock(WalRuntime.class),
+                        WalStats::empty,
                         new IndexOperationStatsRecorder()::statsSnapshot,
                         new MaintenanceStatsRecorder()::statsSnapshot,
                         new AtomicLong(),

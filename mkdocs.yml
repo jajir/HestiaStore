@@ -49,7 +49,6 @@ nav:
         - Chain of Filters: architecture/chain-of-filters.md
         - Concurrency Model: architecture/concurrency.md
         - Consistency & Recovery: architecture/recovery.md
-        - Package Layout: architecture/package-boundaries.md
         - Limitations & Trade-offs: architecture/limits.md
         - Glossary: architecture/glossary.md
         - Monitoring:
@@ -68,7 +67,6 @@ nav:
             - Performance Model & Sizing: architecture/segmentindex/performance.md
             - Metrics Snapshot: architecture/segmentindex/metrics-snapshot.md
             - Segment Index Concurrency: architecture/segmentindex/segment-index-concurrency.md
-            - Implementation: architecture/segmentindex/implementation.md
         - Segment:
             - Overview: architecture/segment/index.md
             - Segment Design: architecture/segment/segment.md
@@ -78,18 +76,23 @@ nav:
         - Registry:
             - Overview: architecture/registry/index.md
             - Segment Registry: architecture/registry/registry.md
+    - Development:
+        - Overview: development/code.md
+        - Code Structure: architecture/package-boundaries.md
+        - Configuration Flow: development/configuration-flow.md
+        - Coding Guidelines: development/code-quality-charter.md
+        - Segment Index: architecture/segmentindex/implementation.md
+        - Developer Guides: development/guides.md
+        - JVM Profiling: development/profiler-stacktrace.md
     - Contribute & Community:
         - Overview: development/index.md
         - Contributing: CONTRIBUTING.md
         - Code of Conduct: CODE_OF_CONDUCT.md
         - Changelog: CHANGELOG.md
         - Release Process: development/release.md
-        - Code Quality Charter: development/code-quality-charter.md
         - Quality Reporting: development/quality-reporting.md
         - Documentation Guide: development/documentation-guidelines.md
-        - Developer Guides: development/guides.md
         - Segment API: development/segment-api.md
-        - JVM Profiling: development/profiler-stacktrace.md
         - Compatibility Matrix: development/compatibility-matrix.md
         - Upgrade Notes: development/upgrade-notes-multimodule.md
         - Rollout Quality Gates: development/rollout-quality-gates.md

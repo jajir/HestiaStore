@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 
 /**
  * Read-only runtime snapshot view for one index instance.
@@ -16,23 +16,23 @@ public final class IndexRuntimeMonitoringImpl
 
     private final EffectiveIndexConfiguration<?, ?> conf;
     private final Supplier<SegmentIndexState> stateSupplier;
-    private final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier;
+    private final RuntimeMetricsCollector metricsCollector;
 
     public IndexRuntimeMonitoringImpl(
             final EffectiveIndexConfiguration<?, ?> conf,
             final Supplier<SegmentIndexState> stateSupplier,
-            final Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier) {
+            final RuntimeMetricsCollector metricsCollector) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
                 "stateSupplier");
-        this.metricsSnapshotSupplier = Vldtn.requireNonNull(
-                metricsSnapshotSupplier, "metricsSnapshotSupplier");
+        this.metricsCollector = Vldtn.requireNonNull(metricsCollector,
+                "metricsCollector");
     }
 
     @Override
     public IndexRuntimeSnapshot snapshot() {
         return new IndexRuntimeSnapshot(conf.identity().name(),
-                stateSupplier.get(), metricsSnapshotSupplier.get(),
+                stateSupplier.get(), metricsCollector.metricsSnapshot(),
                 Instant.now());
     }
 }
