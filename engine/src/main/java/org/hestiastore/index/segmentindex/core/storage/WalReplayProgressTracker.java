@@ -25,14 +25,11 @@ final class WalReplayProgressTracker<K, V> {
     }
 
     void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
-        if (!walRuntime.isEnabled()) {
-            return;
-        }
         recordRecoveredLsn(walRuntime.recover(replayConsumer));
     }
 
     void recordAppliedLsn(final long walLsn) {
-        if (walLsn <= 0L || !walRuntime.isEnabled()) {
+        if (walLsn <= 0L) {
             return;
         }
         while (true) {

@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntime;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 
 /**
@@ -10,6 +11,7 @@ final class BootstrapStepCreateRuntime<K, V>
         extends SegmentIndexBootstrapStep<K, V> {
 
     private final SegmentIndexSessionResources<K, V> sessionResources;
+    private SegmentIndexBootstrapState<K, V> state;
 
     BootstrapStepCreateRuntime(
             final SegmentIndexSessionResources<K, V> sessionResources) {
@@ -20,13 +22,20 @@ final class BootstrapStepCreateRuntime<K, V>
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        sessionResources.createRuntime(request.getDirectory(),
-                state.getKeyTypeDescriptor(), state.getValueTypeDescriptor(),
-                state.getConfiguration(), state.getExecutorRegistry());
+        this.state = state;
+        final SegmentIndexRuntime<K, V> runtime = new SegmentIndexRuntime<>(
+                state.getKeyTypeDescriptor(),
+                state.getCoreStorage(),
+                state.getRuntimeTopologyRuntime(),
+                state.getRuntimeServices());
+        sessionResources.setRuntime(runtime, state.getExecutorRegistry());
+        state.markIndexRuntimeCreated();
     }
 
     @Override
     void closeResource() {
-        sessionResources.closeRuntimeAfterFailedInitialization();
+        if (state != null && state.indexRuntimeWasCreated()) {
+            sessionResources.closeRuntimeAfterFailedInitialization();
+        }
     }
 }

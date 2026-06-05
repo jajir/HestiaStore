@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
@@ -14,6 +15,12 @@ import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinat
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
+
+/**
+ * TODO replace class with SegmentIndexBootstrapRequest amd
+ * SegmentIndexBootstrapState builders that enforce correct resource
+ * initialization order and availability
+ */
 
 /**
  * Holds package-private session resources while bootstrap steps live outside
@@ -56,8 +63,7 @@ public final class SegmentIndexSessionResources<K, V> {
     }
 
     public void runStartupConsistencyCheck() {
-        final IndexConsistencyCoordinator<K, V> coordinator =
-                consistencyCoordinator();
+        final IndexConsistencyCoordinator<K, V> coordinator = consistencyCoordinator();
         coordinator.runStartupConsistencyCheck(
                 coordinator::checkAndRepairConsistency);
     }
@@ -76,18 +82,19 @@ public final class SegmentIndexSessionResources<K, V> {
                 operationGate);
     }
 
-    public void createRuntime(final Directory directory,
-            final TypeDescriptor<K> keyTypeDescriptor,
-            final TypeDescriptor<V> valueTypeDescriptor,
-            final EffectiveIndexConfiguration<K, V> configuration,
+    public void setRuntime(final SegmentIndexRuntime<K, V> runtime,
             final ExecutorRegistry executorRegistry) {
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
-        runtime = SegmentIndexRuntime.create(directory, keyTypeDescriptor,
-                valueTypeDescriptor, configuration, executorRegistry,
-                operationStatsRecorder(), maintenanceStatsRecorder(),
-                splitStatsRecorder(),
-                stateMachine()::getState, stateMachine()::markRuntimeFailure);
+        this.runtime = Vldtn.requireNonNull(runtime, "runtime");
+    }
+
+    public SegmentIndexState currentState() {
+        return stateMachine().getState();
+    }
+
+    public void markRuntimeFailure(final RuntimeException failure) {
+        stateMachine().markRuntimeFailure(failure);
     }
 
     public void closeRuntimeAfterFailedInitialization() {
@@ -171,12 +178,12 @@ public final class SegmentIndexSessionResources<K, V> {
         return Vldtn.requireNonNull(stateMachine, "stateMachine");
     }
 
-    private IndexOperationStatsRecorder operationStatsRecorder() {
+    public IndexOperationStatsRecorder operationStatsRecorder() {
         return Vldtn.requireNonNull(operationStatsRecorder,
                 "operationStatsRecorder");
     }
 
-    private MaintenanceStatsRecorder maintenanceStatsRecorder() {
+    public MaintenanceStatsRecorder maintenanceStatsRecorder() {
         return Vldtn.requireNonNull(maintenanceStatsRecorder,
                 "maintenanceStatsRecorder");
     }
@@ -185,7 +192,7 @@ public final class SegmentIndexSessionResources<K, V> {
         return Vldtn.requireNonNull(executorRegistry, "executorRegistry");
     }
 
-    private SplitStatsRecorder splitStatsRecorder() {
+    public SplitStatsRecorder splitStatsRecorder() {
         return Vldtn.requireNonNull(splitStatsRecorder, "splitStatsRecorder");
     }
 

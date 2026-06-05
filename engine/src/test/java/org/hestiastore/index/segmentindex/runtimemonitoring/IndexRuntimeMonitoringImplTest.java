@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.junit.jupiter.api.Test;
 
 class IndexRuntimeMonitoringImplTest {
@@ -23,9 +25,12 @@ class IndexRuntimeMonitoringImplTest {
     void snapshot_exposesSuppliedStateAndMetrics() {
         final SegmentIndexMetricsSnapshot metricsSnapshot = mock(
                 SegmentIndexMetricsSnapshot.class);
-        final IndexRuntimeMonitoringImpl runtimeMonitoring = new IndexRuntimeMonitoringImpl(effective(buildConf()),
-                () -> SegmentIndexState.READY,
-                () -> metricsSnapshot);
+        final RuntimeMetricsCollector metricsCollector = mock(
+                RuntimeMetricsCollector.class);
+        when(metricsCollector.metricsSnapshot()).thenReturn(metricsSnapshot);
+        final IndexRuntimeMonitoringImpl runtimeMonitoring =
+                new IndexRuntimeMonitoringImpl(effective(buildConf()),
+                        () -> SegmentIndexState.READY, metricsCollector);
 
         final IndexRuntimeSnapshot snapshot = runtimeMonitoring.snapshot();
 

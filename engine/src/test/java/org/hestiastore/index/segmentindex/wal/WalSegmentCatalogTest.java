@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import static org.hestiastore.index.segmentindex.wal.WalRuntimeTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,12 +13,13 @@ class WalSegmentCatalogTest {
 
     @Test
     void cleanupDeletesCheckpointedSealedSegments() {
-        final IndexWalConfiguration wal = IndexWalConfiguration.builder().segmentSizeBytes(16L).build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .segmentSizeBytes(16L).build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
                 storage);
-        final WalSegmentCatalog catalog = new WalSegmentCatalog(wal, storage,
-                metadataCatalog);
+        final WalSegmentCatalog catalog = new WalSegmentCatalog(effective(wal),
+                storage, metadataCatalog);
 
         final WalSegmentDescriptor first = catalog.ensureActiveSegmentFor(1L,
                 8);
@@ -35,13 +37,14 @@ class WalSegmentCatalogTest {
 
     @Test
     void retentionPressureRequiresMoreThanActiveSegment() {
-        final IndexWalConfiguration wal = IndexWalConfiguration.builder().segmentSizeBytes(64L)
-                .maxBytesBeforeForcedCheckpoint(1L).build();
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .segmentSizeBytes(64L).maxBytesBeforeForcedCheckpoint(1L)
+                .build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
                 storage);
-        final WalSegmentCatalog catalog = new WalSegmentCatalog(wal, storage,
-                metadataCatalog);
+        final WalSegmentCatalog catalog = new WalSegmentCatalog(effective(wal),
+                storage, metadataCatalog);
 
         final WalSegmentDescriptor active = catalog.ensureActiveSegmentFor(1L,
                 4);

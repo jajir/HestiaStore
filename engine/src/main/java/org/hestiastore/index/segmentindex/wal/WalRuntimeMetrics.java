@@ -57,8 +57,7 @@ final class WalRuntimeMetrics {
     }
 
     static WalStats emptySnapshot() {
-        return new WalStats(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0, 0L, 0L, 0L, 0L, 0L,
-                0L, 0L);
+        return WalStats.empty();
     }
 
     static void updateMax(final AtomicLong target, final long candidate) {

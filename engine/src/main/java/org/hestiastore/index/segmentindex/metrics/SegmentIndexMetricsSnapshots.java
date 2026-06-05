@@ -13,7 +13,7 @@ import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
@@ -36,7 +36,7 @@ final class SegmentIndexMetricsSnapshots {
      * @param splitStatsSupplier split runtime stats supplier
      * @param executorRegistry executor runtime registry
      * @param runtimeTuningState mutable runtime tuning state
-     * @param walRuntime WAL runtime
+     * @param walStatsSupplier WAL stats supplier
      * @param indexOperationStatsSupplier point-operation stats supplier
      * @param maintenanceStatsSupplier maintenance stats supplier
      * @param compactRequestHighWaterMark compact request high-water mark
@@ -54,7 +54,7 @@ final class SegmentIndexMetricsSnapshots {
             final Supplier<SplitStats> splitStatsSupplier,
             final ExecutorRegistry executorRegistry,
             final RuntimeTuningState runtimeTuningState,
-            final WalRuntime<K, V> walRuntime,
+            final Supplier<WalStats> walStatsSupplier,
             final Supplier<IndexOperationStats> indexOperationStatsSupplier,
             final Supplier<MaintenanceStats> maintenanceStatsSupplier,
             final AtomicLong compactRequestHighWaterMark,
@@ -70,7 +70,7 @@ final class SegmentIndexMetricsSnapshots {
                 .withExecutorRegistry(executorRegistry)
                 .withRuntimeTuningState(runtimeTuningState)
                 .withChunkStoreCache(new LruChunkStoreCache<>(0))
-                .withWalRuntime(walRuntime)
+                .withWalStatsSupplier(walStatsSupplier)
                 .withIndexOperationStatsSupplier(indexOperationStatsSupplier)
                 .withMaintenanceStatsSupplier(maintenanceStatsSupplier)
                 .withCompactRequestHighWaterMark(compactRequestHighWaterMark)

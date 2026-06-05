@@ -1,8 +1,11 @@
 package org.hestiastore.index.segmentindex.core.session;
 
+import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 
 final class IndexInternalTestSupport {
@@ -17,26 +20,15 @@ final class IndexInternalTestSupport {
             final TypeDescriptor<V> valueTypeDescriptor,
             final EffectiveIndexConfiguration<K, V> configuration,
             final ExecutorRegistry executorRegistry) {
-        final SegmentIndexSessionResources<K, V> sessionResources =
-                new SegmentIndexSessionResources<>();
+        Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
+        Vldtn.requireNonNull(valueTypeDescriptor, "valueTypeDescriptor");
         try {
-            sessionResources.acquireDirectoryLock(directory);
-            sessionResources.createSessionInfrastructure();
-            sessionResources.createRuntime(directory, keyTypeDescriptor,
-                    valueTypeDescriptor, configuration, executorRegistry);
-            final IndexInternal<K, V> index = sessionResources.createIndex(
-                    configuration, keyTypeDescriptor);
-            sessionResources.recoverFromWal();
-            sessionResources.cleanupOrphanedSegmentDirectories();
-            sessionResources.markReady();
-            if (sessionResources.wasStaleLockRecovered()) {
-                sessionResources.runStartupConsistencyCheck();
+            new IndexConfigurationStorage<K, V>(directory).save(configuration);
+            return SegmentIndexFactory.openStored(directory);
+        } finally {
+            if (!executorRegistry.wasClosed()) {
+                executorRegistry.close();
             }
-            sessionResources.requestFullSplitScan();
-            return index;
-        } catch (final RuntimeException failure) {
-            sessionResources.closeRuntimeAfterFailedInitialization();
-            throw failure;
         }
     }
 }

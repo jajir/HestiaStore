@@ -27,7 +27,10 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
+import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
@@ -163,7 +166,7 @@ class SegmentIndexBootstrapOperationTest {
         final MemDirectory directory = new MemDirectory();
         final SegmentIndexBootstrapRequest<Integer, String> request = request(
                 directory,
-                buildConf("bootstrap-operation-runtime-cleanup", false),
+                buildConfWithWal("bootstrap-operation-runtime-cleanup"),
                 true);
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
@@ -175,6 +178,64 @@ class SegmentIndexBootstrapOperationTest {
         assertTrue(state.getExecutorRegistry().wasClosed());
         assertTrue(SegmentIndexTestAccess
                 .keyToSegmentMap(state.getInternalIndex())
+                .wasClosed());
+        assertWalClosed(state);
+    }
+
+    @Test
+    void failureAfterCoreStorageClosesCoreStorage() {
+        final SegmentIndexBootstrapState<Integer, String> state =
+                runBootstrapExpectingFailureAfterRuntimeStep(1,
+                        "bootstrap-operation-core-cleanup");
+
+        assertTrue(state.getCoreStorage().keyToSegmentMap()
+                .wasClosed());
+    }
+
+    @Test
+    void failureAfterRuntimeTopologyClosesSplitAndCoreStorage() {
+        final SegmentIndexBootstrapState<Integer, String> state =
+                runBootstrapExpectingFailureAfterRuntimeStep(2,
+                        "bootstrap-operation-topology-cleanup");
+
+        assertSplitServiceClosed(state);
+        assertTrue(state.getCoreStorage().keyToSegmentMap()
+                .wasClosed());
+    }
+
+    @Test
+    void failureAfterRuntimeWalClosesWalSplitAndCoreStorage() {
+        final SegmentIndexBootstrapState<Integer, String> state =
+                runBootstrapExpectingFailureAfterRuntimeStep(3,
+                        "bootstrap-operation-wal-cleanup");
+
+        assertWalClosed(state);
+        assertSplitServiceClosed(state);
+        assertTrue(state.getCoreStorage().keyToSegmentMap()
+                .wasClosed());
+    }
+
+    @Test
+    void failureAfterRuntimeServicesClosesEarlierRuntimeResources() {
+        final SegmentIndexBootstrapState<Integer, String> state =
+                runBootstrapExpectingFailureAfterRuntimeStep(4,
+                        "bootstrap-operation-services-cleanup");
+
+        assertWalClosed(state);
+        assertSplitServiceClosed(state);
+        assertTrue(state.getCoreStorage().keyToSegmentMap()
+                .wasClosed());
+    }
+
+    @Test
+    void failureAfterRuntimeCreationClosesEarlierRuntimeResources() {
+        final SegmentIndexBootstrapState<Integer, String> state =
+                runBootstrapExpectingFailureAfterRuntimeStep(5,
+                        "bootstrap-operation-runtime-creation-cleanup");
+
+        assertWalClosed(state);
+        assertSplitServiceClosed(state);
+        assertTrue(state.getCoreStorage().keyToSegmentMap()
                 .wasClosed());
     }
 
@@ -379,7 +440,16 @@ class SegmentIndexBootstrapOperationTest {
     private static IndexConfiguration<Integer, String> buildConf(
             final String indexName, final boolean contextLoggingEnabled,
             final int registryLifecycleThreads) {
-        return IndexConfiguration.<Integer, String>builder()
+        return buildConf(indexName, contextLoggingEnabled,
+                registryLifecycleThreads, null);
+    }
+
+    private static IndexConfiguration<Integer, String> buildConf(
+            final String indexName, final boolean contextLoggingEnabled,
+            final int registryLifecycleThreads,
+            final IndexWalConfiguration walConfiguration) {
+        final IndexConfigurationBuilder<Integer, String> builder =
+                IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))
                 .identity(identity -> identity.valueClass(String.class))
                 .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
@@ -400,8 +470,17 @@ class SegmentIndexBootstrapOperationTest {
                 .maintenance(maintenance -> maintenance.segmentThreads(1))
                 .maintenance(maintenance -> maintenance.registryLifecycleThreads(registryLifecycleThreads))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
-                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
-                .build();
+                .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())));
+        if (walConfiguration != null) {
+            builder.wal(wal -> wal.configuration(walConfiguration));
+        }
+        return builder.build();
+    }
+
+    private static IndexConfiguration<Integer, String> buildConfWithWal(
+            final String indexName) {
+        return buildConf(indexName, false, 1,
+                IndexWalConfiguration.builder().build());
     }
 
     private static IndexConfiguration<Integer, String> buildConfWithInvalidKeyDescriptor(
@@ -488,10 +567,70 @@ class SegmentIndexBootstrapOperationTest {
                 commonStepsThroughExecutor(sessionResources);
         steps.add(new BootstrapStepCreateSessionInfrastructure<>(
                 sessionResources));
-        steps.add(new BootstrapStepCreateRuntime<>(sessionResources));
+        addRuntimeSteps(steps, sessionResources, 5);
         steps.add(new BootstrapStepCreateIndex<>(sessionResources));
         steps.add(nextStep);
         return List.copyOf(steps);
+    }
+
+    private static List<SegmentIndexBootstrapStep<Integer, String>> stepsThroughRuntimeStepThen(
+            final int runtimeStepCount,
+            final SegmentIndexBootstrapStep<Integer, String> nextStep) {
+        final SegmentIndexSessionResources<Integer, String> sessionResources =
+                new SegmentIndexSessionResources<>();
+        final List<SegmentIndexBootstrapStep<Integer, String>> steps =
+                commonStepsThroughExecutor(sessionResources);
+        steps.add(new BootstrapStepCreateSessionInfrastructure<>(
+                sessionResources));
+        addRuntimeSteps(steps, sessionResources, runtimeStepCount);
+        steps.add(nextStep);
+        return List.copyOf(steps);
+    }
+
+    private static void addRuntimeSteps(
+            final List<SegmentIndexBootstrapStep<Integer, String>> steps,
+            final SegmentIndexSessionResources<Integer, String> sessionResources,
+            final int runtimeStepCount) {
+        final List<SegmentIndexBootstrapStep<Integer, String>> runtimeSteps =
+                List.of(new BootstrapStepOpenCoreStorage<>(),
+                        new BootstrapStepCreateRuntimeTopology<>(
+                                sessionResources),
+                        new BootstrapStepOpenRuntimeWal<>(),
+                        new BootstrapStepCreateRuntimeServices<>(
+                                sessionResources),
+                        new BootstrapStepCreateRuntime<>(sessionResources));
+        steps.addAll(runtimeSteps.subList(0, runtimeStepCount));
+    }
+
+    private static SegmentIndexBootstrapState<Integer, String> runBootstrapExpectingFailureAfterRuntimeStep(
+            final int runtimeStepCount, final String indexName) {
+        final MemDirectory directory = new MemDirectory();
+        final SegmentIndexBootstrapRequest<Integer, String> request = request(
+                directory, buildConfWithWal(indexName), true);
+        final SegmentIndexBootstrapState<Integer, String> state =
+                new SegmentIndexBootstrapState<>();
+
+        assertThrows(RuntimeException.class,
+                () -> runBootstrapLikeOperation(request, state,
+                        stepsThroughRuntimeStepThen(runtimeStepCount,
+                                failingStep())));
+
+        assertTrue(directory.isFileExists(LOCK_FILE_NAME));
+        assertTrue(state.getExecutorRegistry().wasClosed());
+        return state;
+    }
+
+    private static void assertSplitServiceClosed(
+            final SegmentIndexBootstrapState<Integer, String> state) {
+        assertThrows(RuntimeException.class,
+                () -> state.getRuntimeSplitService()
+                        .hintSplitCandidate(SegmentId.of(1)));
+    }
+
+    private static void assertWalClosed(
+            final SegmentIndexBootstrapState<Integer, String> state) {
+        assertThrows(RuntimeException.class,
+                () -> state.getRuntimeWalRuntime().appendPut(1, "one"));
     }
 
     private static List<SegmentIndexBootstrapStep<Integer, String>> stepsThroughMdcCallWrapperThen(

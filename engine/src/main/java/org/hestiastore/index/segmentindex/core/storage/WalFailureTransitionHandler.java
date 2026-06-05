@@ -34,7 +34,7 @@ final class WalFailureTransitionHandler {
     }
 
     RuntimeException propagate(final RuntimeException failure) {
-        if (!walRuntime.isEnabled() || !walRuntime.hasSyncFailure()) {
+        if (!walRuntime.hasSyncFailure()) {
             return failure;
         }
         final SegmentIndexState state = stateSupplier.get();

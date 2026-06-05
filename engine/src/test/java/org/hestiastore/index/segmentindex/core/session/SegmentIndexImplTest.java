@@ -85,12 +85,16 @@ class SegmentIndexImplTest {
         doThrow(new IllegalStateException("open failed")).when(directory)
                 .openSubDirectory(anyString());
 
-        try (registry) {
+        try {
             assertThrows(RuntimeException.class,
                     () -> IndexInternalTestSupport.createStarted(directory,
                             new TypeDescriptorInteger(),
                             new TypeDescriptorShortString(), effective(conf),
                             registry));
+        } finally {
+            if (!registry.wasClosed()) {
+                registry.close();
+            }
         }
 
         assertTrue(directory.isFileExists(".lock"));

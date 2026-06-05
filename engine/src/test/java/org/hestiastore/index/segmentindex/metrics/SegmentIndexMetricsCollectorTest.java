@@ -15,14 +15,12 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
@@ -30,7 +28,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
@@ -68,7 +66,6 @@ class SegmentIndexMetricsCollectorTest {
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
     private ExecutorRegistry executorRegistry;
-    private WalRuntime<Integer, String> walRuntime;
     private SegmentIndexMetricsCollector<Integer, String> collector;
 
     @BeforeEach
@@ -80,12 +77,11 @@ class SegmentIndexMetricsCollectorTest {
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(123L);
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
         collector = SegmentIndexMetricsCollector.create(
                 effective(conf), keyToSegmentMap, segmentRegistry,
                 () -> new SplitStats(4L, 3, 0, 0L, 0L), executorRegistry,
                 RuntimeTuningState.fromConfiguration(effective(conf)),
-                new LruChunkStoreCache<>(0), walRuntime,
+                new LruChunkStoreCache<>(0), WalStats::empty,
                 operationStatsRecorder::statsSnapshot,
                 maintenanceStatsRecorder::statsSnapshot,
                 compactRequestHighWaterMark, flushRequestHighWaterMark,
@@ -94,9 +90,6 @@ class SegmentIndexMetricsCollectorTest {
 
     @AfterEach
     void tearDown() {
-        if (walRuntime != null) {
-            walRuntime.close();
-        }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             executorRegistry.close();
         }
@@ -161,7 +154,8 @@ class SegmentIndexMetricsCollectorTest {
                                 () -> new SplitStats(0L, 0, 0, 0L, 0L),
                                 executorRegistry,
                                 mock(RuntimeTuningState.class),
-                                new LruChunkStoreCache<>(0), walRuntime,
+                                new LruChunkStoreCache<>(0),
+                                WalStats::empty,
                                 operationStatsRecorder::statsSnapshot,
                                 maintenanceStatsRecorder::statsSnapshot,
                                 compactRequestHighWaterMark,

@@ -12,11 +12,11 @@ component "Lifecycle and lock state\ncore.session\n\nSegmentIndexSessionOwner\nI
 
 component "Operation facades\n\nSegmentIndexPointOperationFacade\nSegmentIndexReadFacade\nMaintenanceService" as FACADES
 
-component "Runtime opening\ncore.session\n\nSegmentIndexRuntime\nSegmentIndexRuntimeFactory\nSegmentIndexRuntimeOpenContext\nSegmentIndexRuntimeServices" as RUNTIME
+component "Runtime opening\ncore.bootstrap + core.session\n\nSegmentIndexBootstrapSteps\nSegmentIndexRuntime\nSegmentIndexRuntimeServices" as RUNTIME
 
 component "Topology runtime\ncore.topology\n\nSegmentTopologyRuntime\nSegmentTopology\nSplitService" as TOPOLOGY_RUNTIME
 
-component "Core storage runtime\ncore.storage\n\nSegmentIndexCoreStorageFactory\nSegmentIndexCoreStorageOpenSpec\nIndexWalCoordinator\nSegmentIndexCoreStorage" as CORE_STORAGE
+component "Core storage\ncore.storage\n\nSegmentIndexCoreStorage\nSegmentIndexCoreStorageFactory\nSegmentIndexCoreStorageOpenSpec\nIndexWalCoordinator" as CORE_STORAGE
 
 component "Split runtime\ncore.split\n\nSplitServiceBuilder\nSplitServiceImpl\nSplitPolicyCoordinator" as SPLIT_RUNTIME
 

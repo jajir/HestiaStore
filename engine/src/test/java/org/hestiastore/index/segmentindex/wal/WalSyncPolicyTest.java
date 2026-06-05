@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import static org.hestiastore.index.segmentindex.wal.WalRuntimeTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,18 +14,20 @@ class WalSyncPolicyTest {
 
     @Test
     void syncModeFlushesPendingBytesImmediately() {
-        final IndexWalConfiguration wal = IndexWalConfiguration.builder().durability(WalDurabilityMode.SYNC)
+        final IndexWalConfiguration wal = IndexWalConfiguration.builder()
+                .durability(WalDurabilityMode.SYNC)
                 .build();
         final WalStorageMem storage = new WalStorageMem(new MemDirectory());
         final WalMetadataCatalog metadataCatalog = new WalMetadataCatalog(
                 storage);
-        final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
-                storage, metadataCatalog);
+        final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(
+                effective(wal), storage, metadataCatalog);
         final WalRuntimeMetrics metrics = new WalRuntimeMetrics();
         final Object monitor = new Object();
         final AtomicBoolean closed = new AtomicBoolean(false);
-        final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage, metrics,
-                monitor, segmentCatalog::segments, closed::get);
+        final WalSyncPolicy syncPolicy = new WalSyncPolicy(effective(wal),
+                storage, metrics, monitor, segmentCatalog::segments,
+                closed::get);
 
         synchronized (monitor) {
             final WalSegmentDescriptor segment = segmentCatalog

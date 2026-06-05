@@ -16,7 +16,7 @@ import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService
  * @param <K> key type
  * @param <V> value type
  */
-interface SegmentTopologyRuntimeAccess<K, V> {
+public interface SegmentTopologyRuntimeAccess<K, V> {
 
     static <K, V> SegmentTopologyRuntimeAccess<K, V> create(
             final SplitService splitService,

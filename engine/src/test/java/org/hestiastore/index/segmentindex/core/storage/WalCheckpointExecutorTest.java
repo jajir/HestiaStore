@@ -33,7 +33,6 @@ class WalCheckpointExecutorTest {
                         new WalFailureTransitionHandler(walRuntime,
                                 () -> SegmentIndexState.READY,
                                 handledFailure::set));
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.hasSyncFailure()).thenReturn(true);
         doThrow(failure).when(walRuntime).onCheckpoint(0L);
 

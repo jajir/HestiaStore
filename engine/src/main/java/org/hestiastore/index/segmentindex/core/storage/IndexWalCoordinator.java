@@ -1,14 +1,13 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -16,29 +15,13 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
  * transition coordination for the segment index runtime.
  */
 @SuppressWarnings("java:S107")
-public final class IndexWalCoordinator<K, V> {
+public final class IndexWalCoordinator<K, V> implements AutoCloseable {
 
-    private final WalRuntime<K, V> walRuntime;
-    private final WalReplayProgressTracker<K, V> walReplayProgressTracker;
-    private final WalCheckpointExecutor<K, V> walCheckpointExecutor;
-    private final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator;
-    private final WalFailureTransitionHandler walFailureTransitionHandler;
+    private final IndexWalCoordinatorDelegate<K, V> delegate;
 
-    @SuppressWarnings("java:S107")
-    private IndexWalCoordinator(final WalRuntime<K, V> walRuntime,
-            final WalReplayProgressTracker<K, V> walReplayProgressTracker,
-            final WalCheckpointExecutor<K, V> walCheckpointExecutor,
-            final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator,
-            final WalFailureTransitionHandler walFailureTransitionHandler) {
-        this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
-        this.walReplayProgressTracker = Vldtn.requireNonNull(
-                walReplayProgressTracker, "walReplayProgressTracker");
-        this.retentionPressureCoordinator = Vldtn.requireNonNull(
-                retentionPressureCoordinator, "retentionPressureCoordinator");
-        this.walFailureTransitionHandler = Vldtn.requireNonNull(
-                walFailureTransitionHandler, "walFailureTransitionHandler");
-        this.walCheckpointExecutor = Vldtn.requireNonNull(
-                walCheckpointExecutor, "walCheckpointExecutor");
+    private IndexWalCoordinator(
+            final IndexWalCoordinatorDelegate<K, V> delegate) {
+        this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 
     @SuppressWarnings("java:S107")
@@ -51,31 +34,30 @@ public final class IndexWalCoordinator<K, V> {
             final Supplier<SegmentIndexState> stateSupplier,
             final Consumer<RuntimeException> failureHandler,
             final AtomicLong lastAppliedWalLsn) {
-        final WalReplayProgressTracker<K, V> replayProgressTracker =
-                new WalReplayProgressTracker<>(
-                        Vldtn.requireNonNull(walRuntime, "walRuntime"),
-                        Vldtn.requireNonNull(lastAppliedWalLsn,
-                                "lastAppliedWalLsn"));
-        final WalFailureTransitionHandler failureTransitionHandler =
-                new WalFailureTransitionHandler(walRuntime,
-                        Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
-                        Vldtn.requireNonNull(failureHandler,
-                                "failureHandler"));
-        final WalCheckpointExecutor<K, V> checkpointExecutor =
-                new WalCheckpointExecutor<>(walRuntime, lastAppliedWalLsn,
-                        failureTransitionHandler);
-        final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator =
-                new WalRetentionPressureCoordinator<>(
-                        Vldtn.requireNonNull(conf, "conf"), walRuntime,
-                        Vldtn.requireNonNull(retryPolicy, "retryPolicy"),
-                        Vldtn.requireNonNull(prepareDurableStateAction,
-                                "prepareDurableStateAction"),
-                        Vldtn.requireNonNull(flushDurableStateAction,
-                                "flushDurableStateAction"),
-                        checkpointExecutor::checkpointInternal);
-        return new IndexWalCoordinator<>(walRuntime, replayProgressTracker,
-                checkpointExecutor, retentionPressureCoordinator,
-                failureTransitionHandler);
+        Vldtn.requireTrue(Vldtn.requireNonNull(conf, "conf").wal().isEnabled(),
+                "WAL configuration must be enabled to create active WAL coordinator.");
+        return new IndexWalCoordinator<>(ActiveIndexWalCoordinator.create(conf,
+                Vldtn.requireNonNull(walRuntime, "walRuntime"),
+                Vldtn.requireNonNull(retryPolicy, "retryPolicy"),
+                Vldtn.requireNonNull(prepareDurableStateAction,
+                        "prepareDurableStateAction"),
+                Vldtn.requireNonNull(flushDurableStateAction,
+                        "flushDurableStateAction"),
+                Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
+                Vldtn.requireNonNull(failureHandler, "failureHandler"),
+                Vldtn.requireNonNull(lastAppliedWalLsn,
+                        "lastAppliedWalLsn")));
+    }
+
+    /**
+     * Creates disabled WAL coordination.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @return disabled WAL coordinator
+     */
+    public static <K, V> IndexWalCoordinator<K, V> disabled() {
+        return new IndexWalCoordinator<>(new DisabledIndexWalCoordinator<>());
     }
 
     /**
@@ -84,17 +66,14 @@ public final class IndexWalCoordinator<K, V> {
      * @param replayConsumer replay consumer invoked for each recovered entry
      */
     public void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
-        walReplayProgressTracker.recover(replayConsumer);
+        delegate.recover(replayConsumer);
     }
 
     /**
-     * Runs a checkpoint when WAL is enabled.
+     * Runs a WAL checkpoint.
      */
     public void checkpoint() {
-        if (!isWalEnabled()) {
-            return;
-        }
-        walCheckpointExecutor.checkpoint();
+        delegate.checkpoint();
     }
 
     /**
@@ -105,7 +84,7 @@ public final class IndexWalCoordinator<K, V> {
      * @return appended WAL LSN or {@code 0} when WAL is disabled
      */
     public long appendPut(final K key, final V value) {
-        return appendWalEntry(() -> walRuntime.appendPut(key, value));
+        return delegate.appendPut(key, value);
     }
 
     /**
@@ -115,7 +94,7 @@ public final class IndexWalCoordinator<K, V> {
      * @return appended WAL LSN or {@code 0} when WAL is disabled
      */
     public long appendDelete(final K key) {
-        return appendWalEntry(() -> walRuntime.appendDelete(key));
+        return delegate.appendDelete(key);
     }
 
     /**
@@ -124,27 +103,11 @@ public final class IndexWalCoordinator<K, V> {
      * @param walLsn applied WAL LSN
      */
     public void recordAppliedLsn(final long walLsn) {
-        walReplayProgressTracker.recordAppliedLsn(walLsn);
+        delegate.recordAppliedLsn(walLsn);
     }
 
-    private boolean isWalEnabled() {
-        return walRuntime.isEnabled();
-    }
-
-    private long appendWalEntry(final LongSupplier appendAction) {
-        if (!isWalEnabled()) {
-            return 0L;
-        }
-        try {
-            retentionPressureCoordinator.enforceIfNeeded();
-            return appendAction.getAsLong();
-        } catch (final RuntimeException failure) {
-            throw propagateWalRuntimeFailure(failure);
-        }
-    }
-
-    private RuntimeException propagateWalRuntimeFailure(
-            final RuntimeException failure) {
-        return walFailureTransitionHandler.propagate(failure);
+    @Override
+    public void close() {
+        delegate.close();
     }
 }

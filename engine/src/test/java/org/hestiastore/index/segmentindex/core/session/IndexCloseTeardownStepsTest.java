@@ -44,7 +44,7 @@ class IndexCloseTeardownStepsTest {
         final var closeSteps = IndexCloseTeardownSteps
                 .<Integer, String>closeSteps();
 
-        assertEquals(11, closeSteps.size());
+        assertEquals(10, closeSteps.size());
     }
 
     @Test
@@ -66,12 +66,10 @@ class IndexCloseTeardownStepsTest {
         inOrder.verify(context).runtime();
         inOrder.verify(runtime).flushAndWait();
         inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeSegmentRegistry();
-        inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeKeyToSegmentMapIfOpen();
+        inOrder.verify(runtime).closeCoreStorage();
         inOrder.verify(context).operationStatsRecorder();
         inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeWalRuntime();
+        inOrder.verify(runtime).closeWalCoordinator();
         inOrder.verify(context).executorRegistry();
         inOrder.verify(executorRegistry).close();
         inOrder.verify(context).stateMachine();

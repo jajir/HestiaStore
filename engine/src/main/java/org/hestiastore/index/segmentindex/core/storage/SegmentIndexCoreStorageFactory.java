@@ -21,32 +21,69 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 public final class SegmentIndexCoreStorageFactory<K, V> {
 
     private final SegmentIndexCoreStorageOpenSpec<K, V> openSpec;
-    private final SegmentIndexCoreStorageOpenObserver<K, V> openObserver;
 
     public SegmentIndexCoreStorageFactory(
-            final SegmentIndexCoreStorageOpenSpec<K, V> openSpec,
-            final SegmentIndexCoreStorageOpenObserver<K, V> openObserver) {
+            final SegmentIndexCoreStorageOpenSpec<K, V> openSpec) {
         this.openSpec = Vldtn.requireNonNull(openSpec, "openSpec");
-        this.openObserver = Vldtn.requireNonNull(openObserver,
-                "openObserver");
     }
 
     public SegmentIndexCoreStorage<K, V> create() {
-        final RuntimeTuningState runtimeTuningState = RuntimeTuningState
-                .fromConfiguration(openSpec.conf());
-        final KeyToSegmentMapImpl<K> keyToSegmentMapDelegate = new KeyToSegmentMapImpl<>(
-                openSpec.directoryFacade(), openSpec.keyTypeDescriptor());
-        final KeyToSegmentMap<K> keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
-                keyToSegmentMapDelegate);
-        openObserver.onKeyToSegmentMapCreated(keyToSegmentMap);
-        final ChunkStoreCache<K, V> chunkStoreCache =
-                newChunkStoreCache(openSpec.conf());
-        final SegmentRegistry<K, V> segmentRegistry = newSegmentRegistry(
-                chunkStoreCache);
-        openObserver.onSegmentRegistryCreated(segmentRegistry);
-        return new SegmentIndexCoreStorage<>(runtimeTuningState, keyToSegmentMap,
-                segmentRegistry, chunkStoreCache,
-                newRetryPolicy(openSpec.conf()));
+        KeyToSegmentMap<K> keyToSegmentMap = null;
+        SegmentRegistry<K, V> segmentRegistry = null;
+        try {
+            final RuntimeTuningState runtimeTuningState = RuntimeTuningState
+                    .fromConfiguration(openSpec.conf());
+            final KeyToSegmentMapImpl<K> keyToSegmentMapDelegate =
+                    new KeyToSegmentMapImpl<>(
+                            openSpec.directoryFacade(),
+                            openSpec.keyTypeDescriptor());
+            keyToSegmentMap = new KeyToSegmentMapSynchronizedAdapter<>(
+                    keyToSegmentMapDelegate);
+            final ChunkStoreCache<K, V> chunkStoreCache =
+                    newChunkStoreCache(openSpec.conf());
+            segmentRegistry = newSegmentRegistry(chunkStoreCache);
+            return new SegmentIndexCoreStorage<>(runtimeTuningState,
+                    keyToSegmentMap, segmentRegistry, chunkStoreCache,
+                    newRetryPolicy(openSpec.conf()));
+        } catch (final RuntimeException failure) {
+            throw cleanupFailedCreate(failure, segmentRegistry,
+                    keyToSegmentMap);
+        }
+    }
+
+    private RuntimeException cleanupFailedCreate(
+            final RuntimeException failure,
+            final SegmentRegistry<K, V> segmentRegistry,
+            final KeyToSegmentMap<K> keyToSegmentMap) {
+        closeSegmentRegistry(segmentRegistry, failure);
+        closeKeyToSegmentMap(keyToSegmentMap, failure);
+        return failure;
+    }
+
+    private void closeSegmentRegistry(
+            final SegmentRegistry<K, V> segmentRegistry,
+            final RuntimeException failure) {
+        if (segmentRegistry == null) {
+            return;
+        }
+        try {
+            segmentRegistry.close();
+        } catch (final RuntimeException cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
+    }
+
+    private void closeKeyToSegmentMap(
+            final KeyToSegmentMap<K> keyToSegmentMap,
+            final RuntimeException failure) {
+        if (keyToSegmentMap == null || keyToSegmentMap.wasClosed()) {
+            return;
+        }
+        try {
+            keyToSegmentMap.close();
+        } catch (final RuntimeException cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
     }
 
     private SegmentRegistry<K, V> newSegmentRegistry(

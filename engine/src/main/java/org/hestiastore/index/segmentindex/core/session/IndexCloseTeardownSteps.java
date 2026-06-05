@@ -25,10 +25,9 @@ final class IndexCloseTeardownSteps {
         steps.add(new CloseSplitRuntime<>());
         steps.add(new SealAsyncMaintenanceAndWait<>());
         steps.add(new FlushAndWait<>());
-        steps.add(new CloseSegmentRegistry<>());
-        steps.add(new CloseKeyToSegmentMapIfOpen<>());
+        steps.add(new CloseCoreStorage<>());
         steps.add(new LogOperationCounts<>());
-        steps.add(new ReleaseWalRuntime<>());
+        steps.add(new CloseWalCoordinator<>());
         steps.add(new CloseExecutorRegistry<>());
         steps.add(new FinishClosedState<>());
         steps.add(new ReleaseDirectoryLock<>());
@@ -71,21 +70,12 @@ final class IndexCloseTeardownSteps {
         }
     }
 
-    private static final class CloseSegmentRegistry<K, V>
+    private static final class CloseCoreStorage<K, V>
             implements SegmentIndexTeardownStep<IndexCloseCoordinator<K, V>> {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeSegmentRegistry();
-        }
-    }
-
-    private static final class CloseKeyToSegmentMapIfOpen<K, V>
-            implements SegmentIndexTeardownStep<IndexCloseCoordinator<K, V>> {
-
-        @Override
-        public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeKeyToSegmentMapIfOpen();
+            context.runtime().closeCoreStorage();
         }
     }
 
@@ -110,12 +100,12 @@ final class IndexCloseTeardownSteps {
         }
     }
 
-    private static final class ReleaseWalRuntime<K, V>
+    private static final class CloseWalCoordinator<K, V>
             implements SegmentIndexTeardownStep<IndexCloseCoordinator<K, V>> {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeWalRuntime();
+            context.runtime().closeWalCoordinator();
         }
     }
 

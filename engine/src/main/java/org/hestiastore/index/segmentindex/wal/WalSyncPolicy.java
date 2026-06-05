@@ -9,8 +9,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +18,7 @@ final class WalSyncPolicy {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(WalSyncPolicy.class);
 
-    private final IndexWalConfiguration wal;
+    private final EffectiveIndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalRuntimeMetrics metrics;
     private final Object monitor;
@@ -32,8 +31,9 @@ final class WalSyncPolicy {
     private long pendingSyncBytes = 0L;
     private RuntimeException syncFailure;
 
-    WalSyncPolicy(final IndexWalConfiguration wal, final WalStorage storage,
-            final WalRuntimeMetrics metrics, final Object monitor,
+    WalSyncPolicy(final EffectiveIndexWalConfiguration wal,
+            final WalStorage storage, final WalRuntimeMetrics metrics,
+            final Object monitor,
             final Supplier<List<WalSegmentDescriptor>> segmentsSupplier,
             final BooleanSupplier closedSupplier) {
         this.wal = wal;
@@ -54,18 +54,18 @@ final class WalSyncPolicy {
 
     void afterAppend(final long lsn, final int recordBytes,
             final String segmentName) {
-        if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
+        if (wal.isAsyncDurabilityMode()) {
             return;
         }
         pendingSyncHighLsn = Math.max(pendingSyncHighLsn, lsn);
         pendingSyncBytes += recordBytes;
         pendingSyncSegmentNames.add(segmentName);
-        if (wal.getDurabilityMode() == WalDurabilityMode.SYNC
+        if (wal.isSyncDurabilityMode()
                 || wal.getGroupSyncDelayMillis() <= 0
                 || pendingSyncBytes >= wal.getGroupSyncMaxBatchBytes()) {
             syncGroupPendingLocked();
         }
-        if (wal.getDurabilityMode() == WalDurabilityMode.GROUP_SYNC) {
+        if (wal.isGroupSyncDurabilityMode()) {
             waitUntilDurableLocked(lsn);
         }
     }
@@ -84,7 +84,7 @@ final class WalSyncPolicy {
     }
 
     void syncGroupPendingLocked() {
-        if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC) {
+        if (wal.isAsyncDurabilityMode()) {
             return;
         }
         checkSyncFailure();
@@ -124,8 +124,7 @@ final class WalSyncPolicy {
     }
 
     void closeAndFlushPending() {
-        if (wal.getDurabilityMode() == WalDurabilityMode.ASYNC
-                || syncFailure != null) {
+        if (wal.isAsyncDurabilityMode() || syncFailure != null) {
             return;
         }
         try {

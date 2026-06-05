@@ -15,6 +15,18 @@ import java.util.stream.Stream;
 import org.hestiastore.index.IndexException;
 
 /**
+ * FIXME this class have to be rafactored. 
+ * It mixing:
+ * CLI parsing and exit code handling.
+ * WAL verification.
+ * WAL dump logic.
+ * Text and JSON formatting.
+ * Segment discovery.
+ * Metadata/checkpoint validation.
+ * Low-level WAL record frame parsing.
+ * 
+ */
+/**
  * Command-line helper for WAL inspection and verification.
  */
 @SuppressWarnings({ "java:S3776", "java:S6541" })
@@ -112,7 +124,8 @@ public final class WalTool {
                             file.getFileName().toString(), offset,
                             "Partial record length prefix.");
                 }
-                final int bodyLen = WalRuntime.readInt(bytes, (int) offset);
+                final int bodyLen = WalRecordCodec.readInt(bytes,
+                        (int) offset);
                 if (bodyLen < MIN_RECORD_BODY_SIZE
                         || bodyLen > MAX_RECORD_BODY_SIZE) {
                     return new VerifyResult(false, files.size(), records, maxLsn,
@@ -125,7 +138,8 @@ public final class WalTool {
                             "Truncated WAL record body.");
                 }
                 final int bodyOffset = (int) (offset + 4L);
-                final int storedCrc = WalRuntime.readInt(bytes, bodyOffset);
+                final int storedCrc = WalRecordCodec.readInt(bytes,
+                        bodyOffset);
                 final int computedCrc = WalRuntime.computeCrc32(bytes,
                         bodyOffset + 4, bodyLen - 4);
                 if (storedCrc != computedCrc) {
@@ -142,9 +156,9 @@ public final class WalTool {
                             file.getFileName().toString(), offset,
                             "Invalid WAL operation code.");
                 }
-                final int keyLen = WalRuntime.readInt(bytes, p);
+                final int keyLen = WalRecordCodec.readInt(bytes, p);
                 p += 4;
-                final int valueLen = WalRuntime.readInt(bytes, p);
+                final int valueLen = WalRecordCodec.readInt(bytes, p);
                 p += 4;
                 if (keyLen <= 0 || valueLen < 0
                         || p + keyLen + valueLen != bodyOffset + bodyLen) {
@@ -219,7 +233,8 @@ public final class WalTool {
                     invalidOffset = offset;
                     break;
                 }
-                final int bodyLen = WalRuntime.readInt(bytes, (int) offset);
+                final int bodyLen = WalRecordCodec.readInt(bytes,
+                        (int) offset);
                 if (bodyLen < MIN_RECORD_BODY_SIZE
                         || bodyLen > MAX_RECORD_BODY_SIZE) {
                     invalidTail = true;
@@ -234,7 +249,8 @@ public final class WalTool {
                     break;
                 }
                 final int bodyOffset = (int) (offset + 4L);
-                final int storedCrc = WalRuntime.readInt(bytes, bodyOffset);
+                final int storedCrc = WalRecordCodec.readInt(bytes,
+                        bodyOffset);
                 final int computedCrc = WalRuntime.computeCrc32(bytes,
                         bodyOffset + 4, bodyLen - 4);
                 if (storedCrc != computedCrc) {
@@ -254,9 +270,9 @@ public final class WalTool {
                     invalidOffset = offset;
                     break;
                 }
-                final int keyLen = WalRuntime.readInt(bytes, p);
+                final int keyLen = WalRecordCodec.readInt(bytes, p);
                 p += 4;
-                final int valueLen = WalRuntime.readInt(bytes, p);
+                final int valueLen = WalRecordCodec.readInt(bytes, p);
                 p += 4;
                 if (keyLen <= 0 || valueLen < 0
                         || p + keyLen + valueLen != bodyOffset + bodyLen) {
@@ -474,18 +490,18 @@ public final class WalTool {
         for (int i = 0; i < value.length(); i++) {
             final char ch = value.charAt(i);
             switch (ch) {
-            case '\\' -> escaped.append("\\\\");
-            case '"' -> escaped.append("\\\"");
-            case '\n' -> escaped.append("\\n");
-            case '\r' -> escaped.append("\\r");
-            case '\t' -> escaped.append("\\t");
-            default -> {
-                if (ch < 0x20) {
-                    escaped.append(String.format("\\u%04x", (int) ch));
-                } else {
-                    escaped.append(ch);
+                case '\\' -> escaped.append("\\\\");
+                case '"' -> escaped.append("\\\"");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> {
+                    if (ch < 0x20) {
+                        escaped.append(String.format("\\u%04x", (int) ch));
+                    } else {
+                        escaped.append(ch);
+                    }
                 }
-            }
             }
         }
         return escaped.toString();

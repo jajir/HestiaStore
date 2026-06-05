@@ -6,25 +6,24 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.EntryIterator;
+import org.hestiastore.index.segment.SegmentIteratorIsolation;
+import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
-import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -166,8 +165,7 @@ class IndexContextLoggingAdapterTest {
     void wrapsInternalOperationsWithMdc() {
         final SegmentWindow window = SegmentWindow.unbounded();
         final EntryIterator<String, String> iterator = mockIterator();
-        final AtomicReference<String> mdcAtOpenSegmentIterator =
-                new AtomicReference<>();
+        final AtomicReference<String> mdcAtOpenSegmentIterator = new AtomicReference<>();
         when(delegate.openSegmentIterator(window)).thenAnswer(invocation -> {
             mdcAtOpenSegmentIterator.set(MDC.get("index.name"));
             return iterator;

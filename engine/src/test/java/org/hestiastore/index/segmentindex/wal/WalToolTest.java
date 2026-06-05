@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import static org.hestiastore.index.segmentindex.wal.WalRuntimeTestSupport.effective;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,7 +28,7 @@ class WalToolTest {
         final Path root = Files.createTempDirectory("hestia-wal-tool-valid-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
             runtime.appendDelete("a");
@@ -44,7 +45,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-corrupted-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -86,7 +87,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-format-tmp-only-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -105,7 +106,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-format-stale-tmp-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -125,7 +126,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-invalid-checkpoint-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -146,7 +147,7 @@ class WalToolTest {
                 "hestia-wal-tool-invalid-checkpoint-checksum-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
             runtime.onCheckpoint(1L);
@@ -171,7 +172,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-checkpoint-tmp-only-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
             runtime.onCheckpoint(1L);
@@ -192,7 +193,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-checkpoint-invalid-tmp-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -212,7 +213,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-checkpoint-ahead-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -235,7 +236,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-invalid-segment-name-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -254,7 +255,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-segment-directory-entry-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -274,7 +275,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-non-canonical-segment-name-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -295,7 +296,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-non-monotonic-lsn-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -315,7 +316,7 @@ class WalToolTest {
         final Path root = Files.createTempDirectory("hestia-wal-tool-dump-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
             runtime.appendDelete("a");
@@ -334,7 +335,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-dump-invalid-tail-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -355,7 +356,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-dump-format-tmp-only-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -373,7 +374,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-run-verify-fails-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -396,7 +397,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-run-verify-passes-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -412,7 +413,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-run-verify-json-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
             runtime.appendDelete("a");
@@ -432,7 +433,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-run-verify-json-fail-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }
@@ -457,7 +458,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-run-dump-json-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
             runtime.appendDelete("a");
@@ -478,7 +479,7 @@ class WalToolTest {
                 .createTempDirectory("hestia-wal-tool-invalid-option-");
         final IndexWalConfiguration wal = IndexWalConfiguration.builder().build();
         try (WalRuntime<String, String> runtime = WalRuntime
-                .open(new FsNioDirectory(root.toFile()), wal, STRING_DESCRIPTOR,
+                .open(new FsNioDirectory(root.toFile()), effective(wal), STRING_DESCRIPTOR,
                         STRING_DESCRIPTOR)) {
             runtime.appendPut("a", "1");
         }

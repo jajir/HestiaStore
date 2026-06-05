@@ -61,7 +61,7 @@ public final class ZeroByteSequence implements ByteSequence {
         }
         final int newLength = toExclusive - fromInclusive;
         if (newLength == 0) {
-            return ByteSequence.EMPTY;
+            return EMPTY;
         }
         if (newLength == length) {
             return this;

@@ -3,8 +3,7 @@ package org.hestiastore.index.segmentindex.wal;
 import java.util.List;
 
 import org.hestiastore.index.IndexException;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,15 +13,15 @@ final class WalRecoveryManager<K, V> {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(WalRecoveryManager.class);
 
-    private final IndexWalConfiguration wal;
+    private final EffectiveIndexWalConfiguration wal;
     private final WalStorage storage;
     private final WalMetadataCatalog metadataCatalog;
     private final WalRecordCodec<K, V> recordCodec;
     private final WalSegmentCatalog segmentCatalog;
     private final WalRuntimeMetrics metrics;
 
-    WalRecoveryManager(final IndexWalConfiguration wal, final WalStorage storage,
-            final WalMetadataCatalog metadataCatalog,
+    WalRecoveryManager(final EffectiveIndexWalConfiguration wal,
+            final WalStorage storage, final WalMetadataCatalog metadataCatalog,
             final WalRecordCodec<K, V> recordCodec,
             final WalSegmentCatalog segmentCatalog,
             final WalRuntimeMetrics metrics) {
@@ -175,7 +174,7 @@ final class WalRecoveryManager<K, V> {
 
     private void handleInvalidTail(final String fileName, final long validBytes) {
         metrics.recordCorruption();
-        if (wal.getCorruptionPolicy() == WalCorruptionPolicy.FAIL_FAST) {
+        if (wal.isFailFastCorruptionPolicy()) {
             LOGGER.error(
                     "event=wal_recovery_tail_repair action=fail_fast segment={} validBytes={}",
                     fileName, validBytes);

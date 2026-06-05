@@ -90,7 +90,7 @@ public class SegmentConf {
      * @param segmentConf source configuration
      */
     public SegmentConf(final SegmentConf segmentConf) {
-        this(SegmentConf.builder(segmentConf));
+        this(builder(segmentConf));
     }
 
     private static int requireSet(final Integer value,

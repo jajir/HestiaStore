@@ -1,36 +1,70 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.effectiveConfiguration;
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.executorRegistry;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.request;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.stateWithRuntimeInputs;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
+import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
+import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
+import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class BootstrapStepCreateRuntimeTest {
 
-    @Mock
     private SegmentIndexSessionResources<Integer, String> sessionResources;
-
-    @Mock
     private ExecutorRegistry executorRegistry;
-
     private BootstrapStepCreateRuntime<Integer, String> step;
+    private SegmentIndexBootstrapState<Integer, String> state;
+    private SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime;
+    private KeyToSegmentMap<Integer> keyToSegmentMap;
+    private SegmentRegistry<Integer, String> segmentRegistry;
+    private IndexWalCoordinator<Integer, String> walCoordinator;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
+        sessionResources = new SegmentIndexSessionResources<>();
+        sessionResources.createSessionInfrastructure();
         step = new BootstrapStepCreateRuntime<>(sessionResources);
+        topologyRuntime = mock(SegmentTopologyRuntimeAccess.class);
+        keyToSegmentMap = mock(KeyToSegmentMap.class);
+        segmentRegistry = mock(SegmentRegistry.class);
+        walCoordinator = mock(IndexWalCoordinator.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (executorRegistry != null && !executorRegistry.wasClosed()) {
+            executorRegistry.close();
+        }
     }
 
     @Test
@@ -40,25 +74,54 @@ class BootstrapStepCreateRuntimeTest {
     }
 
     @Test
-    void apply_createsRuntimeThroughSessionResources() {
-        final MemDirectory directory = new MemDirectory();
-        final EffectiveIndexConfiguration<Integer, String> configuration =
-                effectiveConfiguration("bootstrap-step-runtime");
-        final SegmentIndexBootstrapState<Integer, String> state =
-                stateWithRuntimeInputs(configuration, executorRegistry);
+    void apply_createsRuntimeAndStoresItInSessionResources() {
+        prepareRuntimeState("bootstrap-step-runtime");
 
         assertDoesNotThrow(() -> step.apply(
-                request(directory, SegmentIndexBootstrapMode.CREATE), state));
+                request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
+                state));
 
-        verify(sessionResources).createRuntime(directory,
-                state.getKeyTypeDescriptor(), state.getValueTypeDescriptor(),
-                configuration, executorRegistry);
+        assertTrue(state.indexRuntimeWasCreated());
     }
 
     @Test
     void closeResource_closesRuntimeAfterFailedInitialization() {
-        assertDoesNotThrow(step::closeResource);
+        prepareRuntimeState("bootstrap-step-runtime-rollback");
+        step.apply(request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
+                state);
+        when(keyToSegmentMap.wasClosed()).thenReturn(false);
 
-        verify(sessionResources).closeRuntimeAfterFailedInitialization();
+        step.closeResource();
+
+        verify(topologyRuntime).closeSplitRuntime();
+        verify(segmentRegistry).close();
+        verify(keyToSegmentMap).close();
+        verify(walCoordinator).close();
+    }
+
+    @Test
+    void closeResource_isNoopBeforeRuntimeWasCreated() {
+        assertDoesNotThrow(step::closeResource);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void prepareRuntimeState(final String indexName) {
+        final EffectiveIndexConfiguration<Integer, String> configuration =
+                effectiveConfiguration(indexName);
+        executorRegistry = executorRegistry(configuration);
+        state = stateWithRuntimeInputs(configuration, executorRegistry);
+        state.setCoreStorage(new SegmentIndexCoreStorage<>(
+                mock(RuntimeTuningState.class), keyToSegmentMap,
+                segmentRegistry, mock(ChunkStoreCache.class),
+                mock(IndexRetryPolicy.class)));
+        state.setRuntimeTopologyRuntime(topologyRuntime);
+        state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
+                walCoordinator,
+                mock(SegmentIndexOperationAccess.class),
+                mock(MaintenanceService.class),
+                mock(SegmentRuntimeLimitApplier.class),
+                mock(RuntimeMetricsCollector.class),
+                mock(IndexRuntimeMonitoring.class),
+                mock(RuntimeTuning.class)));
     }
 }

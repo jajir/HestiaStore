@@ -1,0 +1,97 @@
+package org.hestiastore.index.segmentindex.core.bootstrap;
+
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.closeRuntimePreparationResources;
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.effectiveConfiguration;
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.executorRegistry;
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.request;
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.stateWithRuntimeInputs;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class BootstrapStepCreateRuntimeTopologyTest {
+
+    private SegmentIndexSessionResources<Integer, String> sessionResources;
+    private ExecutorRegistry executorRegistry;
+    private SegmentIndexBootstrapState<Integer, String> state;
+    private BootstrapStepCreateRuntimeTopology<Integer, String> step;
+    private MemDirectory directory;
+
+    @BeforeEach
+    void setUp() {
+        sessionResources = new SegmentIndexSessionResources<>();
+        sessionResources.createSessionInfrastructure();
+        step = new BootstrapStepCreateRuntimeTopology<>(sessionResources);
+        directory = new MemDirectory();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (state != null) {
+            closeRuntimePreparationResources(state);
+        }
+        if (executorRegistry != null && !executorRegistry.wasClosed()) {
+            executorRegistry.close();
+        }
+    }
+
+    @Test
+    void constructor_rejectsNullSessionResources() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new BootstrapStepCreateRuntimeTopology<Integer, String>(
+                        null));
+    }
+
+    @Test
+    void apply_populatesTopologyState() {
+        prepareCoreStorage("bootstrap-step-topology");
+
+        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
+
+        assertNotNull(state.getRuntimeSegmentLeaseService());
+        assertNotNull(state.getRuntimeSplitService());
+        assertNotNull(state.getRuntimeTopologyRuntime());
+    }
+
+    @Test
+    void closeResource_closesSplitServiceOnRollback() {
+        prepareCoreStorage("bootstrap-step-topology-rollback");
+        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
+
+        step.closeResource();
+
+        assertThrows(RuntimeException.class,
+                () -> state.getRuntimeSplitService()
+                        .hintSplitCandidate(SegmentId.of(1)));
+    }
+
+    @Test
+    void closeResource_skipsCleanupAfterRuntimeWasCreated() {
+        prepareCoreStorage("bootstrap-step-topology-runtime-created");
+        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
+        state.markIndexRuntimeCreated();
+
+        step.closeResource();
+
+        assertDoesNotThrow(() -> state.getRuntimeSplitService()
+                .hintSplitCandidate(SegmentId.of(1)));
+    }
+
+    private void prepareCoreStorage(final String indexName) {
+        final EffectiveIndexConfiguration<Integer, String> configuration =
+                effectiveConfiguration(indexName);
+        executorRegistry = executorRegistry(configuration);
+        state = stateWithRuntimeInputs(configuration, executorRegistry);
+        new BootstrapStepOpenCoreStorage<Integer, String>().apply(
+                request(directory, SegmentIndexBootstrapMode.CREATE), state);
+    }
+}

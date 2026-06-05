@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +54,6 @@ class IndexWalCoordinatorTest {
 
     @Test
     void recover_updatesLastAppliedLsnFromRecoveryMax() {
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.recover(any()))
                 .thenReturn(new WalRuntime.RecoveryResult(3L, 7L, false));
         lastAppliedWalLsn.set(5L);
@@ -68,7 +67,6 @@ class IndexWalCoordinatorTest {
 
     @Test
     void appendPut_forcesCheckpointUntilRetentionPressureClears() {
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.isRetentionPressure()).thenReturn(true, true, false);
         when(walRuntime.appendPut(1, "v1")).thenReturn(11L);
         lastAppliedWalLsn.set(9L);
@@ -85,7 +83,6 @@ class IndexWalCoordinatorTest {
     @Test
     void appendDelete_routesSyncFailureToErrorHandler() {
         final IndexException failure = new IndexException("sync failure");
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.isRetentionPressure()).thenReturn(false);
         when(walRuntime.appendDelete(7)).thenThrow(failure);
         when(walRuntime.hasSyncFailure()).thenReturn(true);
@@ -101,7 +98,6 @@ class IndexWalCoordinatorTest {
     void checkpoint_ignoresSyncFailureWhenIndexAlreadyClosed() {
         final IndexException failure = new IndexException("sync failure");
         coordinator = newCoordinator(() -> SegmentIndexState.CLOSED);
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.hasSyncFailure()).thenReturn(true);
         doThrow(failure).when(walRuntime).onCheckpoint(0L);
 
@@ -112,14 +108,40 @@ class IndexWalCoordinatorTest {
 
     @Test
     void recordAppliedLsn_keepsMaximumObservedValue() {
-        when(walRuntime.isEnabled()).thenReturn(true);
-
         coordinator.recordAppliedLsn(4L);
         coordinator.recordAppliedLsn(2L);
         coordinator.recordAppliedLsn(9L);
 
         assertEquals(9L, lastAppliedWalLsn.get());
-        verify(walRuntime, times(3)).isEnabled();
+    }
+
+    @Test
+    void disabledCoordinator_returnsZeroAndDoesNotTouchWalRuntime() {
+        coordinator = IndexWalCoordinator.disabled();
+
+        coordinator.recover(replayRecord -> {
+        });
+        coordinator.checkpoint();
+        coordinator.recordAppliedLsn(11L);
+
+        assertEquals(0L, coordinator.appendPut(1, "v1"));
+        assertEquals(0L, coordinator.appendDelete(1));
+        assertEquals(0L, lastAppliedWalLsn.get());
+        verify(walRuntime, never()).appendPut(1, "v1");
+    }
+
+    @Test
+    void create_rejectsDisabledConfiguration() {
+        final IndexConfiguration<Integer, String> disabledConf =
+                buildConf(IndexWalConfiguration.EMPTY);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> IndexWalCoordinator.create(effective(disabledConf),
+                        walRuntime, new IndexRetryPolicy(1, 10),
+                        drainCalls::incrementAndGet,
+                        flushCalls::incrementAndGet,
+                        () -> SegmentIndexState.READY, handledFailure::set,
+                        lastAppliedWalLsn));
     }
 
     private IndexWalCoordinator<Integer, String> newCoordinator(
@@ -131,6 +153,13 @@ class IndexWalCoordinatorTest {
     }
 
     private IndexConfiguration<Integer, String> buildConf() {
+        return buildConf(IndexWalConfiguration.builder()
+                .maxBytesBeforeForcedCheckpoint(1024L)
+                .build());
+    }
+
+    private IndexConfiguration<Integer, String> buildConf(
+            final IndexWalConfiguration walConfiguration) {
         return IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class))
                 .identity(identity -> identity.valueClass(String.class))
@@ -152,9 +181,7 @@ class IndexWalCoordinatorTest {
                 .io(io -> io.diskBufferSizeBytes(1024))
                 .filters(filters -> filters.encodingFilters(List.of(new ChunkFilterDoNothing())))
                 .filters(filters -> filters.decodingFilters(List.of(new ChunkFilterDoNothing())))
-                .wal(wal -> wal.configuration(IndexWalConfiguration.builder()
-                        .maxBytesBeforeForcedCheckpoint(1024L)
-                        .build()))
+                .wal(wal -> wal.configuration(walConfiguration))
                 .build();
     }
 }

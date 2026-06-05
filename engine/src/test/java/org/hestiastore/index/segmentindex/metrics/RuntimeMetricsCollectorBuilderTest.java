@@ -9,11 +9,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
-import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
@@ -21,7 +19,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentindex.wal.WalStats;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
@@ -51,7 +49,6 @@ class RuntimeMetricsCollectorBuilderTest {
     private AtomicLong flushRequestHighWaterMark;
     private AtomicLong lastAppliedWalLsn;
     private ExecutorRegistry executorRegistry;
-    private WalRuntime<Integer, String> walRuntime;
 
     @BeforeEach
     void setUp() {
@@ -64,14 +61,10 @@ class RuntimeMetricsCollectorBuilderTest {
         flushRequestHighWaterMark = new AtomicLong();
         lastAppliedWalLsn = new AtomicLong(42L);
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        walRuntime = WalRuntime.open(new MemDirectory(), IndexWalConfiguration.EMPTY, null, null);
     }
 
     @AfterEach
     void tearDown() {
-        if (walRuntime != null) {
-            walRuntime.close();
-        }
         if (executorRegistry != null && !executorRegistry.wasClosed()) {
             executorRegistry.close();
         }
@@ -118,7 +111,7 @@ class RuntimeMetricsCollectorBuilderTest {
                 .withExecutorRegistry(executorRegistry)
                 .withRuntimeTuningState(runtimeTuningState)
                 .withChunkStoreCache(new LruChunkStoreCache<>(0))
-                .withWalRuntime(walRuntime)
+                .withWalStatsSupplier(WalStats::empty)
                 .withIndexOperationStatsSupplier(
                         operationStatsRecorder::statsSnapshot)
                 .withMaintenanceStatsSupplier(

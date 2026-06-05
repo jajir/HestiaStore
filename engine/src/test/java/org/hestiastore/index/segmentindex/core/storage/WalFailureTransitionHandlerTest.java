@@ -27,7 +27,6 @@ class WalFailureTransitionHandlerTest {
                 new WalFailureTransitionHandler(walRuntime,
                         () -> SegmentIndexState.READY, handledFailure::set);
         final IndexException failure = new IndexException("sync failure");
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.hasSyncFailure()).thenReturn(true);
 
         assertSame(failure, handler.propagate(failure));
@@ -41,7 +40,6 @@ class WalFailureTransitionHandlerTest {
                         () -> SegmentIndexState.CLOSED, failure -> {
                         });
         final IndexException failure = new IndexException("sync failure");
-        when(walRuntime.isEnabled()).thenReturn(true);
         when(walRuntime.hasSyncFailure()).thenReturn(true);
 
         assertSame(failure, handler.propagate(failure));
