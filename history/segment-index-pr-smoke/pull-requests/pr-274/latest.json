@@ -1,0 +1,12 @@
+{
+  "branch": "HEAD",
+  "channel": "pr-274",
+  "comparisonJsonPath": "history/segment-index-pr-smoke/pull-requests/pr-274/2026/06/2026-06-05T05-30-02.031868+00-00_28fb82603e2d_26997225980/comparison-vs-previous.json",
+  "comparisonMarkdownPath": "history/segment-index-pr-smoke/pull-requests/pr-274/2026/06/2026-06-05T05-30-02.031868+00-00_28fb82603e2d_26997225980/comparison-vs-previous.md",
+  "prNumber": "274",
+  "profile": "segment-index-pr-smoke",
+  "runPath": "history/segment-index-pr-smoke/pull-requests/pr-274/2026/06/2026-06-05T05-30-02.031868+00-00_28fb82603e2d_26997225980",
+  "sha": "28fb82603e2db372c324277c37dfacd122552c5b",
+  "summaryPath": "history/segment-index-pr-smoke/pull-requests/pr-274/2026/06/2026-06-05T05-30-02.031868+00-00_28fb82603e2d_26997225980/summary.json",
+  "timestampUtc": "2026-06-05T05:30:02.031868+00:00"
+}
