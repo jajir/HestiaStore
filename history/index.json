@@ -830,8 +830,8 @@
         "271": {
           "channel": "pr-271",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-271/latest.json",
-          "sha": "e2f10654ef0ff7092c68bac79e5902aa5e26a2be",
-          "timestampUtc": "2026-06-04T02:11:17.908443+00:00"
+          "sha": "050410ccb15738b7e7d78ca5becc5e22db08e3a3",
+          "timestampUtc": "2026-06-05T05:44:37.319405+00:00"
         },
         "272": {
           "channel": "pr-272",
