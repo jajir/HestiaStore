@@ -15,8 +15,9 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
 import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -106,7 +107,8 @@ class SegmentIndexBootstrapPipelineTest {
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
         final List<Boolean> calls = new ArrayList<>();
-        final IndexInternal<Integer, String> index = mockIndex();
+        final SegmentIndexResourceClosingAdapter<Integer, String> index =
+                mockIndex();
         final SegmentIndexBootstrapPipeline<Integer, String> pipeline =
                 new SegmentIndexBootstrapPipeline<>(List.of(
                         new RequestStateAssertingStep(request, state, calls),
@@ -119,7 +121,8 @@ class SegmentIndexBootstrapPipelineTest {
 
     @Test
     void run_returnsCreatedResultForCreateMode() {
-        final IndexInternal<Integer, String> index = mockIndex();
+        final SegmentIndexResourceClosingAdapter<Integer, String> index =
+                mockIndex();
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
         final SegmentIndexBootstrapPipeline<Integer, String> pipeline =
@@ -135,7 +138,8 @@ class SegmentIndexBootstrapPipelineTest {
 
     @Test
     void run_returnsOpenedResultForOpenMode() {
-        final IndexInternal<Integer, String> index = mockIndex();
+        final SegmentIndexResourceClosingAdapter<Integer, String> index =
+                mockIndex();
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
         final SegmentIndexBootstrapPipeline<Integer, String> pipeline =
@@ -231,8 +235,9 @@ class SegmentIndexBootstrapPipelineTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static IndexInternal<Integer, String> mockIndex() {
-        return mock(IndexInternal.class);
+    private static SegmentIndexResourceClosingAdapter<Integer, String> mockIndex() {
+        return new SegmentIndexResourceClosingAdapter<>(
+                mock(SegmentIndexSessionHandle.class));
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {
@@ -359,9 +364,10 @@ class SegmentIndexBootstrapPipelineTest {
     private static final class SetIndexStep
             extends SegmentIndexBootstrapStep<Integer, String> {
 
-        private final IndexInternal<Integer, String> index;
+        private final SegmentIndexResourceClosingAdapter<Integer, String> index;
 
-        private SetIndexStep(final IndexInternal<Integer, String> index) {
+        private SetIndexStep(
+                final SegmentIndexResourceClosingAdapter<Integer, String> index) {
             this.index = index;
         }
 

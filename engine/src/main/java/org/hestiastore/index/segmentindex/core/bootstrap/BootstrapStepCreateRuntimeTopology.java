@@ -6,7 +6,6 @@ import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResour
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
-import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.streaming.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService;
@@ -41,7 +40,7 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
         splitService = newSplitService(request, state, coreStorage,
                 segmentLeaseService);
         final SegmentTopologyRuntimeAccess<K, V> topologyRuntime =
-                newTopologyRuntime(request, coreStorage, splitService);
+                newTopologyRuntime(coreStorage, splitService);
         state.setRuntimeSegmentLeaseService(segmentLeaseService);
         state.setRuntimeSplitService(splitService);
         state.setRuntimeTopologyRuntime(topologyRuntime);
@@ -100,7 +99,6 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
     }
 
     private SegmentTopologyRuntimeAccess<K, V> newTopologyRuntime(
-            final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexCoreStorage<K, V> coreStorage,
             final SplitService splitService) {
         final StableSegmentOperationAccess<K, V> stableSegmentGateway =
@@ -112,15 +110,8 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
                 DirectSegmentAccess.create(coreStorage.keyToSegmentMap(),
                         coreStorage.segmentRegistry(),
                         coreStorage.retryPolicy());
-        final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator =
-                IndexRecoveryCleanupCoordinator.create(
-                        request.getDirectory(),
-                        coreStorage.keyToSegmentMap(),
-                        coreStorage.segmentRegistry(),
-                        coreStorage.retryPolicy());
         return SegmentTopologyRuntimeAccess.create(splitService,
-                streamingService, directSegmentAccess,
-                recoveryCleanupCoordinator);
+                streamingService, directSegmentAccess);
     }
 
     private SegmentStreamingService<K, V> newStreamingService(

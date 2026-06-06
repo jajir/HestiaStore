@@ -38,12 +38,16 @@ class SegmentIndexCoreStorageTest {
     @Mock
     private IndexRetryPolicy retryPolicy;
 
+    @Mock
+    private StorageService<Integer, String> storageService;
+
     @Test
     void constructorRejectsNullRuntimeTuningState() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> new SegmentIndexCoreStorage<>(null, keyToSegmentMap,
-                        segmentRegistry, chunkStoreCache, retryPolicy));
+                        segmentRegistry, chunkStoreCache, retryPolicy,
+                        storageService));
 
         assertEquals("Property 'runtimeTuningState' must not be null.",
                 ex.getMessage());
@@ -59,6 +63,7 @@ class SegmentIndexCoreStorageTest {
         assertSame(segmentRegistry, coreStorage.segmentRegistry());
         assertSame(chunkStoreCache, coreStorage.chunkStoreCache());
         assertSame(retryPolicy, coreStorage.retryPolicy());
+        assertSame(storageService, coreStorage.storageService());
     }
 
     @Test
@@ -110,6 +115,6 @@ class SegmentIndexCoreStorageTest {
     private SegmentIndexCoreStorage<Integer, String> newCoreStorage() {
         return new SegmentIndexCoreStorage<>(runtimeTuningState,
                 keyToSegmentMap, segmentRegistry, chunkStoreCache,
-                retryPolicy);
+                retryPolicy, storageService);
     }
 }

@@ -27,18 +27,17 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexTestAccess;
-import org.hestiastore.index.properties.IndexPropertiesSchema;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -265,7 +264,7 @@ class SegmentIndexBootstrapOperationTest {
 
         try {
             assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-            assertInstanceOf(IndexInternal.class, wrappedIndex(index));
+            assertFalse(wrappedIndex(index) instanceof IndexContextLoggingAdapter);
         } finally {
             index.close();
         }
@@ -393,7 +392,7 @@ class SegmentIndexBootstrapOperationTest {
     void tryOpenReturnsEmptyWithoutConfigurationAndDoesNotAcquireLock() {
         final MemDirectory directory = new MemDirectory();
 
-        final Optional<IndexInternal<Integer, String>> index =
+        final Optional<SegmentIndexResourceClosingAdapter<Integer, String>> index =
                 SegmentIndexBootstrapOperation.create(directory,
                         buildConf("bootstrap-operation-try-open-empty", false),
                         null)
@@ -412,7 +411,7 @@ class SegmentIndexBootstrapOperationTest {
                 .create()
                 .close();
 
-        final Optional<IndexInternal<Integer, String>> index =
+        final Optional<SegmentIndexResourceClosingAdapter<Integer, String>> index =
                 SegmentIndexBootstrapOperation.create(directory,
                         buildConf("bootstrap-operation-try-open", false),
                         null)

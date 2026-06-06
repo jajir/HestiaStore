@@ -6,7 +6,6 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
-import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
 import org.hestiastore.index.segmentindex.core.streaming.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService;
 
@@ -21,19 +20,12 @@ public interface SegmentTopologyRuntimeAccess<K, V> {
     static <K, V> SegmentTopologyRuntimeAccess<K, V> create(
             final SplitService splitService,
             final SegmentStreamingService<K, V> streamingService,
-            final DirectSegmentAccess<K, V> directSegmentAccess,
-            final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator) {
+            final DirectSegmentAccess<K, V> directSegmentAccess) {
         return new SegmentTopologyRuntimeAccessImpl<>(
                 Vldtn.requireNonNull(splitService, "splitService"),
                 Vldtn.requireNonNull(streamingService, "streamingService"),
-                Vldtn.requireNonNull(directSegmentAccess, "directSegmentAccess"),
-                Vldtn.requireNonNull(recoveryCleanupCoordinator,
-                        "recoveryCleanupCoordinator"));
+                Vldtn.requireNonNull(directSegmentAccess, "directSegmentAccess"));
     }
-
-    void cleanupOrphanedSegmentDirectories();
-
-    boolean hasSegmentLockFile(SegmentId segmentId);
 
     void invalidateSegmentIterators();
 

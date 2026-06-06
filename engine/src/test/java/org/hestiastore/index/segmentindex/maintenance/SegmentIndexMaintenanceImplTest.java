@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,14 +20,17 @@ class SegmentIndexMaintenanceImplTest {
     private MaintenanceService maintenanceService;
 
     @Mock
-    private IndexConsistencyCoordinator<Object, Object> consistencyCoordinator;
+    private StorageService<Object, Object> storageService;
+
+    @Mock
+    private Runnable requestFullSplitScan;
 
     private SegmentIndexMaintenance maintenance;
 
     @BeforeEach
     void setUp() {
         maintenance = new SegmentIndexMaintenanceImpl(maintenanceService,
-                consistencyCoordinator);
+                storageService, requestFullSplitScan);
     }
 
     @Test
@@ -44,17 +47,22 @@ class SegmentIndexMaintenanceImplTest {
         verify(maintenanceService).compactAndWait();
         verify(maintenanceService).flush();
         verify(maintenanceService).flushAndWait();
-        verify(consistencyCoordinator).checkAndRepairConsistency();
-        verifyNoMoreInteractions(maintenanceService, consistencyCoordinator);
+        verify(storageService).checkAndRepairConsistency();
+        verify(requestFullSplitScan).run();
+        verifyNoMoreInteractions(maintenanceService, storageService,
+                requestFullSplitScan);
     }
 
     @Test
     void constructorRejectsMissingCollaborators() {
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceImpl(null,
-                        consistencyCoordinator));
+                        storageService, requestFullSplitScan));
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceImpl(maintenanceService,
-                        null));
+                        null, requestFullSplitScan));
+        assertThrows(IllegalArgumentException.class,
+                () -> new SegmentIndexMaintenanceImpl(maintenanceService,
+                        storageService, null));
     }
 }

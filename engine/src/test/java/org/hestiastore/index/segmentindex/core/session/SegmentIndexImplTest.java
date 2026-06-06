@@ -16,6 +16,7 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
@@ -29,13 +30,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentIndexImplTest {
 
     private ExecutorRegistry executorRegistry;
-    private IndexInternal<Integer, String> index;
+    private SegmentIndex<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        index = IndexInternalTestSupport.createStarted(
+        index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), effective(conf),
@@ -67,7 +68,7 @@ class SegmentIndexImplTest {
         final MemDirectory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> conf = buildConf();
         final ExecutorRegistry registry = ExecutorRegistryFixture.from(conf);
-        try (IndexInternal<Integer, String> lockedIndex = IndexInternalTestSupport.createStarted(directory,
+        try (SegmentIndex<Integer, String> lockedIndex = SegmentIndexSessionTestSupport.createStarted(directory,
                         new TypeDescriptorInteger(),
                         new TypeDescriptorShortString(), effective(conf),
                         registry)) {
@@ -87,7 +88,7 @@ class SegmentIndexImplTest {
 
         try {
             assertThrows(RuntimeException.class,
-                    () -> IndexInternalTestSupport.createStarted(directory,
+                    () -> SegmentIndexSessionTestSupport.createStarted(directory,
                             new TypeDescriptorInteger(),
                             new TypeDescriptorShortString(), effective(conf),
                             registry));

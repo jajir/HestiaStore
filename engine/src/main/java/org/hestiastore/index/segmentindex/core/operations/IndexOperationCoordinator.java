@@ -4,7 +4,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -18,19 +18,19 @@ final class IndexOperationCoordinator<K, V>
 
     private final IndexOperationStatsRecorder statsRecorder;
     private final SegmentLeaseService<K, V> segmentLeaseService;
-    private final IndexWalCoordinator<K, V> walCoordinator;
+    private final StorageService<K, V> storageService;
     private final TypeDescriptor<V> valueTypeDescriptor;
 
     IndexOperationCoordinator(final TypeDescriptor<V> valueTypeDescriptor,
             final IndexOperationStatsRecorder statsRecorder,
             final SegmentLeaseService<K, V> segmentLeaseService,
-            final IndexWalCoordinator<K, V> walCoordinator) {
+            final StorageService<K, V> storageService) {
         this.statsRecorder = Vldtn.requireNonNull(statsRecorder,
                 "statsRecorder");
         this.segmentLeaseService = Vldtn.requireNonNull(segmentLeaseService,
                 "segmentLeaseService");
-        this.walCoordinator = Vldtn.requireNonNull(walCoordinator,
-                "walCoordinator");
+        this.storageService = Vldtn.requireNonNull(storageService,
+                "storageService");
         this.valueTypeDescriptor = Vldtn.requireNonNull(valueTypeDescriptor,
                 "valueTypeDescriptor");
     }
@@ -42,9 +42,10 @@ final class IndexOperationCoordinator<K, V>
         final V nonNullValue = requireValue(value);
         statsRecorder.recordPutRequest();
         rejectTombstoneValue(nonNullValue);
-        final long walLsn = walCoordinator.appendPut(nonNullKey, nonNullValue);
+        final long walLsn = storageService.appendWalPut(nonNullKey,
+                nonNullValue);
         writeToSegment(nonNullKey, nonNullValue);
-        walCoordinator.recordAppliedLsn(walLsn);
+        storageService.recordAppliedWalLsn(walLsn);
         recordWriteLatency(startedNanos);
     }
 
@@ -63,9 +64,9 @@ final class IndexOperationCoordinator<K, V>
         final long startedNanos = startWriteOperation();
         final K nonNullKey = requireKey(key);
         statsRecorder.recordDeleteRequest();
-        final long walLsn = walCoordinator.appendDelete(nonNullKey);
+        final long walLsn = storageService.appendWalDelete(nonNullKey);
         writeToSegment(nonNullKey, tombstoneValue());
-        walCoordinator.recordAppliedLsn(walLsn);
+        storageService.recordAppliedWalLsn(walLsn);
         recordWriteLatency(startedNanos);
     }
 
@@ -76,7 +77,7 @@ final class IndexOperationCoordinator<K, V>
                 .requireNonNull(replayRecord, "replayRecord");
         writeToSegment(nonNullReplayRecord.getKey(),
                 replayValue(nonNullReplayRecord));
-        walCoordinator.recordAppliedLsn(nonNullReplayRecord.getLsn());
+        storageService.recordAppliedWalLsn(nonNullReplayRecord.getLsn());
     }
 
     private V readFromSegment(final K key) {

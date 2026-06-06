@@ -75,7 +75,7 @@ class IndexCloseCoordinatorTest {
         inOrder.verify(runtime).sealAsyncMaintenanceAndWait();
         inOrder.verify(runtime).flushAndWait();
         inOrder.verify(runtime).closeCoreStorage();
-        inOrder.verify(runtime).closeWalCoordinator();
+        inOrder.verify(runtime).closeWal();
         inOrder.verify(executorRegistry).close();
         inOrder.verify(stateMachine).completeClose();
         inOrder.verify(fileLock).unlock();
@@ -91,7 +91,7 @@ class IndexCloseCoordinatorTest {
 
         assertSame(failure, thrown);
         verify(runtime).flushAndWait();
-        verify(runtime).closeWalCoordinator();
+        verify(runtime).closeWal();
         verify(executorRegistry).close();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
@@ -107,7 +107,7 @@ class IndexCloseCoordinatorTest {
                 () -> closeCoordinator.close());
 
         assertSame(failure, thrown);
-        verify(runtime).closeWalCoordinator();
+        verify(runtime).closeWal();
         verify(stateMachine).completeClose();
         verify(fileLock).unlock();
         verify(stateMachine).markRuntimeFailure(failure);
@@ -119,7 +119,7 @@ class IndexCloseCoordinatorTest {
                 "core storage failed");
         final IndexException secondFailure = new IndexException("wal failed");
         doThrow(firstFailure).when(runtime).closeCoreStorage();
-        doThrow(secondFailure).when(runtime).closeWalCoordinator();
+        doThrow(secondFailure).when(runtime).closeWal();
 
         final IndexException thrown = assertThrows(IndexException.class,
                 () -> closeCoordinator.close());

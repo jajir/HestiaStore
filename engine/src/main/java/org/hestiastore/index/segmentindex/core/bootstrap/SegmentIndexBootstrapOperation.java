@@ -6,7 +6,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 
 /**
  * Opens one segment-index bootstrap operation and owns cleanup until the
@@ -38,15 +38,15 @@ final class SegmentIndexBootstrapOperation<K, V> {
         this.chunkFilterProviderResolver = chunkFilterProviderResolver;
     }
 
-    IndexInternal<K, V> create() {
+    SegmentIndexResourceClosingAdapter<K, V> create() {
         return openSession(SegmentIndexBootstrapMode.CREATE).requireIndex();
     }
 
-    IndexInternal<K, V> open() {
+    SegmentIndexResourceClosingAdapter<K, V> open() {
         return openSession(SegmentIndexBootstrapMode.OPEN).requireIndex();
     }
 
-    Optional<IndexInternal<K, V>> tryOpen() {
+    Optional<SegmentIndexResourceClosingAdapter<K, V>> tryOpen() {
         return openSession(SegmentIndexBootstrapMode.TRY_OPEN).index();
     }
 

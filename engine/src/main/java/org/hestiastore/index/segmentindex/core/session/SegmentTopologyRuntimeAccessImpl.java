@@ -6,13 +6,12 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
-import org.hestiastore.index.segmentindex.core.storage.IndexRecoveryCleanupCoordinator;
 import org.hestiastore.index.segmentindex.core.streaming.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService;
 
 /**
  * Owns the segment-topology subsystem that coordinates direct access, stable
- * segment maintenance, full split scans, and recovery cleanup.
+ * segment maintenance, and full split scans.
  *
  * @param <K> key type
  * @param <V> value type
@@ -23,29 +22,15 @@ final class SegmentTopologyRuntimeAccessImpl<K, V>
     private final SplitService splitService;
     private final SegmentStreamingService<K, V> streamingService;
     private final DirectSegmentAccess<K, V> directSegmentAccess;
-    private final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator;
 
     SegmentTopologyRuntimeAccessImpl(final SplitService splitService,
             final SegmentStreamingService<K, V> streamingService,
-            final DirectSegmentAccess<K, V> directSegmentAccess,
-            final IndexRecoveryCleanupCoordinator<K, V> recoveryCleanupCoordinator) {
+            final DirectSegmentAccess<K, V> directSegmentAccess) {
         this.splitService = Vldtn.requireNonNull(splitService, "splitService");
         this.streamingService = Vldtn.requireNonNull(streamingService,
                 "streamingService");
         this.directSegmentAccess = Vldtn.requireNonNull(directSegmentAccess,
                 "directSegmentAccess");
-        this.recoveryCleanupCoordinator = Vldtn.requireNonNull(
-                recoveryCleanupCoordinator, "recoveryCleanupCoordinator");
-    }
-
-    @Override
-    public void cleanupOrphanedSegmentDirectories() {
-        recoveryCleanupCoordinator.cleanupOrphanedSegmentDirectories();
-    }
-
-    @Override
-    public boolean hasSegmentLockFile(final SegmentId segmentId) {
-        return recoveryCleanupCoordinator.hasSegmentLockFile(segmentId);
     }
 
     @Override

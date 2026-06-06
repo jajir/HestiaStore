@@ -7,8 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,20 +33,15 @@ class SegmentIndexSessionOwnerTest {
 
     @Test
     void delegatesStateAndRuntimeViews() {
-        final SegmentIndexMetricsSnapshot metricsSnapshot =
-                mock(SegmentIndexMetricsSnapshot.class);
         final RuntimeTuning runtimeConfiguration = mock(RuntimeTuning.class);
-        when(stateMachine.getState()).thenReturn(SegmentIndexState.READY);
-        when(runtime.metricsSnapshot()).thenReturn(metricsSnapshot);
         when(runtime.runtimeTuning()).thenReturn(runtimeConfiguration);
 
-        assertSame(SegmentIndexState.READY, owner.getState());
-        assertSame(metricsSnapshot, owner.metricsSnapshot());
         assertSame(runtimeConfiguration, owner.runtimeTuning());
         assertSame(stateMachine, owner.stateMachine());
         assertSame(runtime, owner.runtime());
     }
 
+    @Test
     void closeDelegatesToCloseCoordinator() {
         owner.close();
 

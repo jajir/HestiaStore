@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
@@ -36,7 +35,7 @@ import org.slf4j.MDC;
 class IndexContextLoggingAdapterTest {
 
     @Mock
-    private IndexInternal<String, String> delegate;
+    private SegmentIndexSessionHandle<String, String> delegate;
 
     @Mock
     private SegmentIndexMaintenance maintenance;
@@ -162,22 +161,6 @@ class IndexContextLoggingAdapterTest {
     }
 
     @Test
-    void wrapsInternalOperationsWithMdc() {
-        final SegmentWindow window = SegmentWindow.unbounded();
-        final EntryIterator<String, String> iterator = mockIterator();
-        final AtomicReference<String> mdcAtOpenSegmentIterator = new AtomicReference<>();
-        when(delegate.openSegmentIterator(window)).thenAnswer(invocation -> {
-            mdcAtOpenSegmentIterator.set(MDC.get("index.name"));
-            return iterator;
-        });
-
-        assertSame(iterator, adapter.openSegmentIterator(window));
-
-        assertEquals("idx", mdcAtOpenSegmentIterator.get());
-        assertNull(MDC.get("index.name"));
-    }
-
-    @Test
     void restoresPreviousMdcForSegmentIndexDataFacade() {
         final AtomicReference<String> mdcAtCompact = new AtomicReference<>();
         final AtomicReference<String> mdcAtCompactAndWait = new AtomicReference<>();
@@ -275,10 +258,5 @@ class IndexContextLoggingAdapterTest {
         for (final AtomicReference<String> mdcValue : mdcValues) {
             assertEquals("idx", mdcValue.get());
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static EntryIterator<String, String> mockIterator() {
-        return mock(EntryIterator.class);
     }
 }

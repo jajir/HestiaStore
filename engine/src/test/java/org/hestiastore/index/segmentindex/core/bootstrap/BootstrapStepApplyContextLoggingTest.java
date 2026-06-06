@@ -9,9 +9,9 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BootstrapStepApplyContextLoggingTest {
 
     @Mock
-    private IndexInternal<Integer, String> internalIndex;
+    private SegmentIndexSessionHandle<Integer, String> internalIndex;
 
     @Mock
     private RuntimeTuning runtimeTuning;

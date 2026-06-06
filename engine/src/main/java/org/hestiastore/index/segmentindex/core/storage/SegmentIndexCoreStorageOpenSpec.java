@@ -6,6 +6,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 
+//TODO why we need that, strange name
 /**
  * Validated input bundle for opening core storage collaborators.
  *

@@ -2,10 +2,8 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 
 /**
  * Owns lifecycle, state, and runtime collaborators behind one internal
@@ -31,10 +29,6 @@ final class SegmentIndexSessionOwner<K, V> {
                 "closeCoordinator");
     }
 
-    SegmentIndexState getState() {
-        return stateMachine.getState();
-    }
-
     void ensureOperational() {
         stateMachine.ensureOperational();
     }
@@ -45,10 +39,6 @@ final class SegmentIndexSessionOwner<K, V> {
 
     void close() {
         closeCoordinator.close();
-    }
-
-    SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return runtime.metricsSnapshot();
     }
 
     IndexRuntimeMonitoring runtimeMonitoring() {

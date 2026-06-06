@@ -2,26 +2,25 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import java.util.stream.Stream;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 
 /**
  * Wraps an internal index and ensures lifecycle close hooks run alongside
  * the index.
  */
 public final class SegmentIndexResourceClosingAdapter<K, V>
-        extends AbstractCloseableResource implements IndexInternal<K, V> {
+        extends SegmentIndexSessionHandle<K, V> {
 
-    private final IndexInternal<K, V> delegate;
+    private final SegmentIndexSessionHandle<K, V> delegate;
 
-    public SegmentIndexResourceClosingAdapter(final IndexInternal<K, V> index) {
+    public SegmentIndexResourceClosingAdapter(
+            final SegmentIndexSessionHandle<K, V> index) {
         this.delegate = Vldtn.requireNonNull(index, "index");
     }
 
@@ -73,13 +72,6 @@ public final class SegmentIndexResourceClosingAdapter<K, V>
             final SegmentIteratorIsolation isolation) {
         ensureOpen();
         return delegate.getStream(isolation);
-    }
-
-    @Override
-    public EntryIterator<K, V> openSegmentIterator(
-            final SegmentWindow segmentWindows) {
-        ensureOpen();
-        return delegate.openSegmentIterator(segmentWindows);
     }
 
     @Override

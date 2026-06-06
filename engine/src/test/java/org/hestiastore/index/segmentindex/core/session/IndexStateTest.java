@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
@@ -12,7 +9,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +24,12 @@ class IndexStateTest {
 
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
-    private IndexInternal<Integer, String> index;
+    private SegmentIndex<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalTestSupport.createStarted(
+        index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));

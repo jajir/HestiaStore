@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -19,12 +20,12 @@ class IndexConsistencyCoordinatorTest {
     private static final SegmentId OTHER_SEGMENT_ID = SegmentId.of(8);
 
     @Test
-    void checkAndRepairConsistency_runsDefaultFilterCleanupAndRescan() {
+    void checkAndRepairConsistency_runsDefaultFilterAndCleanup() {
         final AtomicReference<Predicate<SegmentId>> filterRef = new AtomicReference<>();
         final StringBuilder calls = new StringBuilder();
         final IndexConsistencyCoordinator<Integer, String> coordinator = new IndexConsistencyCoordinator<>(
                 () -> calls.append("verify>"), filterRef::set,
-                () -> calls.append("cleanup>"), () -> calls.append("scan>"),
+                () -> calls.append("cleanup>"),
                 MATCHED_SEGMENT_ID::equals);
 
         coordinator.checkAndRepairConsistency();
@@ -32,7 +33,7 @@ class IndexConsistencyCoordinatorTest {
         assertNotNull(filterRef.get());
         assertTrue(filterRef.get().test(MATCHED_SEGMENT_ID));
         assertTrue(filterRef.get().test(OTHER_SEGMENT_ID));
-        assertEquals("verify>cleanup>scan>", calls.toString());
+        assertEquals("verify>cleanup>", calls.toString());
     }
 
     @Test
@@ -41,10 +42,9 @@ class IndexConsistencyCoordinatorTest {
         final IndexConsistencyCoordinator<Integer, String> coordinator = new IndexConsistencyCoordinator<>(
                 () -> {
                 }, filterRef::set, () -> {
-                }, () -> {
                 }, MATCHED_SEGMENT_ID::equals);
 
-        coordinator.runStartupConsistencyCheck(coordinator::checkAndRepairConsistency);
+        coordinator.runStartupConsistencyCheck();
 
         assertTrue(filterRef.get().test(MATCHED_SEGMENT_ID));
         assertFalse(filterRef.get().test(OTHER_SEGMENT_ID));
@@ -53,21 +53,24 @@ class IndexConsistencyCoordinatorTest {
     @Test
     void runStartupConsistencyCheck_resetsStartupFilterAfterFailure() {
         final AtomicReference<Predicate<SegmentId>> filterRef = new AtomicReference<>();
+        final AtomicBoolean fail = new AtomicBoolean(true);
         final IllegalStateException failure = new IllegalStateException("boom");
         final IndexConsistencyCoordinator<Integer, String> coordinator = new IndexConsistencyCoordinator<>(
                 () -> {
-                }, filterRef::set, () -> {
+                }, segmentFilter -> {
+                    filterRef.set(segmentFilter);
+                    if (fail.get()) {
+                        throw failure;
+                    }
                 }, () -> {
                 }, MATCHED_SEGMENT_ID::equals);
 
         final IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
-                () -> coordinator.runStartupConsistencyCheck(() -> {
-                    coordinator.checkAndRepairConsistency();
-                    throw failure;
-                }));
+                coordinator::runStartupConsistencyCheck);
         assertSame(failure, ex);
 
+        fail.set(false);
         coordinator.checkAndRepairConsistency();
 
         assertTrue(filterRef.get().test(MATCHED_SEGMENT_ID));

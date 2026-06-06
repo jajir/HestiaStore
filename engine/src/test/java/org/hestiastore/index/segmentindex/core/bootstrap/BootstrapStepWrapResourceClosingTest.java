@@ -9,8 +9,8 @@ import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BootstrapStepWrapResourceClosingTest {
 
     @Mock
-    private IndexInternal<Integer, String> managedIndex;
+    private SegmentIndexSessionHandle<Integer, String> managedIndex;
 
     @Mock
     private ExecutorRegistry executorRegistry;

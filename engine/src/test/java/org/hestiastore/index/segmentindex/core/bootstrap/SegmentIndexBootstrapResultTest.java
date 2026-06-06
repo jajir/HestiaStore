@@ -6,14 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexBootstrapResultTest {
 
     @Test
     void createdRequiresIndex() {
-        final IndexInternal<Integer, String> index = mockIndex();
+        final SegmentIndexResourceClosingAdapter<Integer, String> index =
+                mockIndex();
 
         final SegmentIndexBootstrapResult<Integer, String> result =
                 SegmentIndexBootstrapResult.created(index);
@@ -27,7 +29,8 @@ class SegmentIndexBootstrapResultTest {
 
     @Test
     void openedRequiresIndex() {
-        final IndexInternal<Integer, String> index = mockIndex();
+        final SegmentIndexResourceClosingAdapter<Integer, String> index =
+                mockIndex();
 
         final SegmentIndexBootstrapResult<Integer, String> result =
                 SegmentIndexBootstrapResult.opened(index);
@@ -50,7 +53,8 @@ class SegmentIndexBootstrapResultTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static IndexInternal<Integer, String> mockIndex() {
-        return mock(IndexInternal.class);
+    private static SegmentIndexResourceClosingAdapter<Integer, String> mockIndex() {
+        return new SegmentIndexResourceClosingAdapter<>(
+                mock(SegmentIndexSessionHandle.class));
     }
 }

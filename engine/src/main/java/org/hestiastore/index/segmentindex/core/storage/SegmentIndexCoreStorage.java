@@ -8,6 +8,7 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningStat
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
+//FIXME: This is service locator and in wrong package. Remove it.
 /**
  * Core storage collaborators opened before split and maintenance services are
  * created.
@@ -23,12 +24,14 @@ public final class SegmentIndexCoreStorage<K, V>
     private final SegmentRegistry<K, V> segmentRegistry;
     private final ChunkStoreCache<K, V> chunkStoreCache;
     private final IndexRetryPolicy retryPolicy;
+    private final StorageService<K, V> storageService;
 
     public SegmentIndexCoreStorage(final RuntimeTuningState runtimeTuningState,
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final ChunkStoreCache<K, V> chunkStoreCache,
-            final IndexRetryPolicy retryPolicy) {
+            final IndexRetryPolicy retryPolicy,
+            final StorageService<K, V> storageService) {
         this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
                 "runtimeTuningState");
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
@@ -38,6 +41,8 @@ public final class SegmentIndexCoreStorage<K, V>
         this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
                 "chunkStoreCache");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+        this.storageService = Vldtn.requireNonNull(storageService,
+                "storageService");
     }
 
     public RuntimeTuningState runtimeTuningState() {
@@ -58,6 +63,10 @@ public final class SegmentIndexCoreStorage<K, V>
 
     public IndexRetryPolicy retryPolicy() {
         return retryPolicy;
+    }
+
+    public StorageService<K, V> storageService() {
+        return storageService;
     }
 
     @Override

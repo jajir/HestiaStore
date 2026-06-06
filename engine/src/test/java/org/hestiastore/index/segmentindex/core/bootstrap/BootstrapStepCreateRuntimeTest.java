@@ -16,7 +16,6 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.configuration.tuning.SegmentRuntimeLimitApplier;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
@@ -24,9 +23,8 @@ import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationA
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
-import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -46,7 +44,7 @@ class BootstrapStepCreateRuntimeTest {
     private SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime;
     private KeyToSegmentMap<Integer> keyToSegmentMap;
     private SegmentRegistry<Integer, String> segmentRegistry;
-    private IndexWalCoordinator<Integer, String> walCoordinator;
+    private StorageService<Integer, String> storageService;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -57,7 +55,7 @@ class BootstrapStepCreateRuntimeTest {
         topologyRuntime = mock(SegmentTopologyRuntimeAccess.class);
         keyToSegmentMap = mock(KeyToSegmentMap.class);
         segmentRegistry = mock(SegmentRegistry.class);
-        walCoordinator = mock(IndexWalCoordinator.class);
+        storageService = mock(StorageService.class);
     }
 
     @AfterEach
@@ -96,7 +94,7 @@ class BootstrapStepCreateRuntimeTest {
         verify(topologyRuntime).closeSplitRuntime();
         verify(segmentRegistry).close();
         verify(keyToSegmentMap).close();
-        verify(walCoordinator).close();
+        verify(storageService).closeWal();
     }
 
     @Test
@@ -113,14 +111,11 @@ class BootstrapStepCreateRuntimeTest {
         state.setCoreStorage(new SegmentIndexCoreStorage<>(
                 mock(RuntimeTuningState.class), keyToSegmentMap,
                 segmentRegistry, mock(ChunkStoreCache.class),
-                mock(IndexRetryPolicy.class)));
+                mock(IndexRetryPolicy.class), storageService));
         state.setRuntimeTopologyRuntime(topologyRuntime);
         state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
-                walCoordinator,
                 mock(SegmentIndexOperationAccess.class),
                 mock(MaintenanceService.class),
-                mock(SegmentRuntimeLimitApplier.class),
-                mock(RuntimeMetricsCollector.class),
                 mock(IndexRuntimeMonitoring.class),
                 mock(RuntimeTuning.class)));
     }

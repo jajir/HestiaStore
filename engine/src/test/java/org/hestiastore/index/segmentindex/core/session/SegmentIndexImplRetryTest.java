@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -11,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
@@ -22,7 +20,9 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -38,7 +38,7 @@ class SegmentIndexImplRetryTest {
     private final TypeDescriptorInteger tdi = new TypeDescriptorInteger();
     private final TypeDescriptorShortString tds = new TypeDescriptorShortString();
 
-    private IndexInternal<Integer, String> index;
+    private SegmentIndex<Integer, String> index;
 
     @Mock
     private Segment<Integer, String> segment;
@@ -109,9 +109,9 @@ class SegmentIndexImplRetryTest {
         }
     }
 
-    private IndexInternal<Integer, String> newIndex() {
+    private SegmentIndex<Integer, String> newIndex() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        return IndexInternalTestSupport.createStarted(
+        return SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(), tdi, tds, effective(conf),
                 ExecutorRegistryFixture.from(conf));
     }
@@ -175,8 +175,9 @@ class SegmentIndexImplRetryTest {
             final Field mapField = cache.getClass().getDeclaredField("map");
             mapField.setAccessible(true);
             @SuppressWarnings("unchecked")
-            final java.util.concurrent.ConcurrentHashMap<SegmentId, Object> map = (java.util.concurrent.ConcurrentHashMap<SegmentId, Object>) mapField
-                    .get(cache);
+            final ConcurrentHashMap<SegmentId, Object> map =
+                    (ConcurrentHashMap<SegmentId, Object>) mapField
+                            .get(cache);
             final Class<?> entryClass = Class.forName(
                     "org.hestiastore.index.segmentregistry.SegmentRegistryCache$Entry");
             final var ctor = entryClass.getDeclaredConstructor(long.class);

@@ -1,7 +1,7 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
@@ -19,9 +19,9 @@ import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -31,8 +31,8 @@ class SegmentIndexFactoryTest {
     void tryOpenReturnsEmptyWhenConfigurationDoesNotExist() {
         final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .defaultResolver();
-        final Optional<IndexInternal<Integer, String>> index = SegmentIndexFactory
-                .tryOpen(new MemDirectory(), registry);
+        final Optional<SegmentIndexResourceClosingAdapter<Integer, String>> index =
+                SegmentIndexFactory.tryOpen(new MemDirectory(), registry);
 
         assertTrue(index.isEmpty());
     }
@@ -45,12 +45,12 @@ class SegmentIndexFactoryTest {
                 .withProvider(new FactoryChunkFilterProvider()).build();
         final IndexConfiguration<Integer, String> configuration = customConf();
 
-        final IndexInternal<Integer, String> created = SegmentIndexFactory
+        final SegmentIndex<Integer, String> created = SegmentIndexFactory
                 .create(directory, configuration, registry);
         created.close();
 
-        final Optional<IndexInternal<Integer, String>> reopened = SegmentIndexFactory
-                .tryOpen(directory, registry);
+        final Optional<SegmentIndexResourceClosingAdapter<Integer, String>> reopened =
+                SegmentIndexFactory.tryOpen(directory, registry);
         assertTrue(reopened.isPresent());
         assertFalse(reopened.get().wasClosed());
         reopened.get().close();
@@ -65,7 +65,7 @@ class SegmentIndexFactoryTest {
         final IndexConfiguration<Integer, String> configuration = customConf(
                 resolver);
 
-        final IndexInternal<Integer, String> index = SegmentIndexFactory.create(
+        final SegmentIndex<Integer, String> index = SegmentIndexFactory.create(
                 directory, configuration);
 
         assertFalse(index.wasClosed());
@@ -74,7 +74,7 @@ class SegmentIndexFactoryTest {
 
     @Test
     void createWrapsRuntimeIndexWithContextLoggingWhenEnabled() {
-        final IndexInternal<Integer, String> index = SegmentIndexFactory.create(
+        final SegmentIndex<Integer, String> index = SegmentIndexFactory.create(
                 new MemDirectory(),
                 buildConf("segment-index-factory-logging-test", true),
                 ChunkFilterProviderResolverImpl.defaultResolver());
@@ -87,13 +87,13 @@ class SegmentIndexFactoryTest {
 
     @Test
     void createWrapsConcurrentRuntimeIndexWhenContextLoggingDisabled() {
-        final IndexInternal<Integer, String> index = SegmentIndexFactory.create(
+        final SegmentIndex<Integer, String> index = SegmentIndexFactory.create(
                 new MemDirectory(),
                 buildConf("segment-index-factory-plain-test", false),
                 ChunkFilterProviderResolverImpl.defaultResolver());
 
         assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-        assertInstanceOf(IndexInternal.class, wrappedIndex(index));
+        assertFalse(wrappedIndex(index) instanceof IndexContextLoggingAdapter);
 
         index.close();
     }
@@ -137,7 +137,7 @@ class SegmentIndexFactoryTest {
         return builder.build();
     }
 
-    private Object wrappedIndex(final IndexInternal<Integer, String> index) {
+    private Object wrappedIndex(final SegmentIndex<Integer, String> index) {
         try {
             final Field field = index.getClass().getDeclaredField("delegate");
             field.setAccessible(true);

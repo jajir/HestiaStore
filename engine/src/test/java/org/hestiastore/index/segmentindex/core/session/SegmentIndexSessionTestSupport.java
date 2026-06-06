@@ -3,18 +3,19 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 
-final class IndexInternalTestSupport {
+final class SegmentIndexSessionTestSupport {
 
-    private IndexInternalTestSupport() {
+    private SegmentIndexSessionTestSupport() {
     }
 
     @SuppressWarnings("java:S107")
-    static <K, V> IndexInternal<K, V> createStarted(
+    static <K, V> SegmentIndex<K, V> createStarted(
             final Directory directory,
             final TypeDescriptor<K> keyTypeDescriptor,
             final TypeDescriptor<V> valueTypeDescriptor,

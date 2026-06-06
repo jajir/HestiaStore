@@ -1,27 +1,25 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
 import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Field;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -46,7 +44,7 @@ public final class SegmentIndexRuntimeTestAccess {
         try {
             new IndexConfigurationStorage<K, V>(directoryFacade)
                     .save(effective(conf));
-            final IndexInternal<K, V> index = SegmentIndexFactory
+            final SegmentIndex<K, V> index = SegmentIndexFactory
                     .openStored(directoryFacade);
             return new OpenedRuntime<>(index, runtimeFromIndex(index));
         } finally {
@@ -79,9 +77,8 @@ public final class SegmentIndexRuntimeTestAccess {
     public static <K, V> WalRuntime<K, V> walRuntime(
             final SegmentIndexRuntime<K, V> runtime) {
         try {
-            final IndexWalCoordinator<K, V> walCoordinator =
-                    runtime.walCoordinator();
-            final Field delegateField = IndexWalCoordinator.class
+            final Object walCoordinator = walCoordinator(runtime);
+            final Field delegateField = walCoordinator.getClass()
                     .getDeclaredField("delegate");
             delegateField.setAccessible(true);
             final Object delegate = delegateField.get(walCoordinator);
@@ -108,9 +105,24 @@ public final class SegmentIndexRuntimeTestAccess {
         return topologyRuntime(castRuntime(runtime));
     }
 
-    public static <K, V> IndexWalCoordinator<K, V> walCoordinator(
+    public static <K, V> StorageService<K, V> storageService(
             final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.walCoordinator();
+        return runtime.storageService();
+    }
+
+    private static <K, V> Object walCoordinator(
+            final SegmentIndexRuntime<K, V> runtime) {
+        try {
+            final StorageService<K, V> storageService =
+                    runtime.storageService();
+            final Field walCoordinatorField = storageService.getClass()
+                    .getDeclaredField("walCoordinator");
+            walCoordinatorField.setAccessible(true);
+            return walCoordinatorField.get(storageService);
+        } catch (final ReflectiveOperationException ex) {
+            throw new IllegalStateException(
+                    "Unable to unwrap WAL coordinator for test access", ex);
+        }
     }
 
     public static <K, V> SegmentIndexOperationAccess<K, V> operationAccess(
@@ -121,11 +133,6 @@ public final class SegmentIndexRuntimeTestAccess {
     public static <K, V> RuntimeTuningState runtimeTuningState(
             final SegmentIndexRuntime<K, V> runtime) {
         return runtime.coreStorage().runtimeTuningState();
-    }
-
-    public static <K, V> Supplier<SegmentIndexMetricsSnapshot> metricsSnapshotSupplier(
-            final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.metricsSnapshotSupplier();
     }
 
     public static <K, V> RuntimeTuning runtimeTuning(
@@ -184,10 +191,10 @@ public final class SegmentIndexRuntimeTestAccess {
 
     private static final class OpenedRuntime<K, V> {
 
-        private final IndexInternal<K, V> index;
+        private final SegmentIndex<K, V> index;
         private final SegmentIndexRuntime<K, V> runtime;
 
-        OpenedRuntime(final IndexInternal<K, V> index,
+        OpenedRuntime(final SegmentIndex<K, V> index,
                 final SegmentIndexRuntime<K, V> runtime) {
             this.index = Vldtn.requireNonNull(index, "index");
             this.runtime = Vldtn.requireNonNull(runtime, "runtime");

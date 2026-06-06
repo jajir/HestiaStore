@@ -3,7 +3,7 @@ package org.hestiastore.index.segmentindex.core.operations;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -19,14 +19,14 @@ public interface SegmentIndexOperationAccess<K, V> {
             final TypeDescriptor<V> valueTypeDescriptor,
             final IndexOperationStatsRecorder statsRecorder,
             final SegmentLeaseService<K, V> segmentLeaseService,
-            final IndexWalCoordinator<K, V> walCoordinator) {
+            final StorageService<K, V> storageService) {
         return new IndexOperationCoordinator<>(
                 Vldtn.requireNonNull(valueTypeDescriptor,
                         "valueTypeDescriptor"),
                 Vldtn.requireNonNull(statsRecorder, "statsRecorder"),
                 Vldtn.requireNonNull(segmentLeaseService,
                         "segmentLeaseService"),
-                Vldtn.requireNonNull(walCoordinator, "walCoordinator"));
+                Vldtn.requireNonNull(storageService, "storageService"));
     }
 
     void put(K key, V value);

@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,25 +16,27 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexImplConcurrencyTest {
 
-    private IndexInternal<Integer, String> index;
+    private SegmentIndex<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalTestSupport.createStarted(
+        index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), effective(conf),
@@ -190,7 +189,7 @@ class SegmentIndexImplConcurrencyTest {
         if (index != null && !index.wasClosed()) {
             index.close();
         }
-        index = IndexInternalTestSupport.createStarted(
+        index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(),
                 new TypeDescriptorShortString(), effective(conf),
