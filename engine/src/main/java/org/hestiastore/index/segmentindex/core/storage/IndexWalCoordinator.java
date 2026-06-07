@@ -15,7 +15,7 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
  * transition coordination for the segment index runtime.
  */
 @SuppressWarnings("java:S107")
-public final class IndexWalCoordinator<K, V> implements AutoCloseable {
+final class IndexWalCoordinator<K, V> implements AutoCloseable {
 
     private final IndexWalCoordinatorDelegate<K, V> delegate;
 
@@ -25,7 +25,7 @@ public final class IndexWalCoordinator<K, V> implements AutoCloseable {
     }
 
     @SuppressWarnings("java:S107")
-    public static <K, V> IndexWalCoordinator<K, V> create(
+    static <K, V> IndexWalCoordinator<K, V> create(
             final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final IndexRetryPolicy retryPolicy,
@@ -56,7 +56,7 @@ public final class IndexWalCoordinator<K, V> implements AutoCloseable {
      * @param <V> value type
      * @return disabled WAL coordinator
      */
-    public static <K, V> IndexWalCoordinator<K, V> disabled() {
+    static <K, V> IndexWalCoordinator<K, V> disabled() {
         return new IndexWalCoordinator<>(new DisabledIndexWalCoordinator<>());
     }
 
@@ -65,14 +65,14 @@ public final class IndexWalCoordinator<K, V> implements AutoCloseable {
      *
      * @param replayConsumer replay consumer invoked for each recovered entry
      */
-    public void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
+    void recover(final WalRuntime.ReplayConsumer<K, V> replayConsumer) {
         delegate.recover(replayConsumer);
     }
 
     /**
      * Runs a WAL checkpoint.
      */
-    public void checkpoint() {
+    void checkpoint() {
         delegate.checkpoint();
     }
 
@@ -83,7 +83,7 @@ public final class IndexWalCoordinator<K, V> implements AutoCloseable {
      * @param value entry value
      * @return appended WAL LSN or {@code 0} when WAL is disabled
      */
-    public long appendPut(final K key, final V value) {
+    long appendPut(final K key, final V value) {
         return delegate.appendPut(key, value);
     }
 
@@ -93,7 +93,7 @@ public final class IndexWalCoordinator<K, V> implements AutoCloseable {
      * @param key deleted key
      * @return appended WAL LSN or {@code 0} when WAL is disabled
      */
-    public long appendDelete(final K key) {
+    long appendDelete(final K key) {
         return delegate.appendDelete(key);
     }
 
@@ -102,7 +102,7 @@ public final class IndexWalCoordinator<K, V> implements AutoCloseable {
      *
      * @param walLsn applied WAL LSN
      */
-    public void recordAppliedLsn(final long walLsn) {
+    void recordAppliedLsn(final long walLsn) {
         delegate.recordAppliedLsn(walLsn);
     }
 

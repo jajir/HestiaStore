@@ -1,22 +1,18 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
-import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.Test;
 
@@ -35,23 +31,8 @@ class SegmentIndexResourceClosingAdapterTest {
     }
 
     @Test
-    void delegatesInternalOperations() {
-        final IndexInternal<String, String> delegate = mockIndex();
-        final SegmentWindow window = SegmentWindow.unbounded();
-        final EntryIterator<String, String> iterator = mockIterator();
-        when(delegate.openSegmentIterator(window)).thenReturn(iterator);
-
-        try (SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
-                delegate)) {
-            assertSame(iterator, adapter.openSegmentIterator(window));
-        }
-
-        verify(delegate).openSegmentIterator(window);
-    }
-
-    @Test
     void putAfterCloseFailsBeforeDelegate() {
-        final IndexInternal<String, String> delegate = mockIndex();
+        final SegmentIndexSessionHandle<String, String> delegate = mockIndex();
         final SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
                 delegate);
         adapter.close();
@@ -66,8 +47,8 @@ class SegmentIndexResourceClosingAdapterTest {
         verify(delegate, never()).put("key", "value");
     }
 
-    private static final class NoopSegmentIndex extends AbstractCloseableResource
-            implements IndexInternal<String, String> {
+    private static final class NoopSegmentIndex
+            extends SegmentIndexSessionHandle<String, String> {
 
         @Override
         public void put(final String key, final String value) {
@@ -88,12 +69,6 @@ class SegmentIndexResourceClosingAdapterTest {
         public Stream<Entry<String, String>> getStream(
                 final SegmentWindow segmentWindows) {
             return Stream.empty();
-        }
-
-        @Override
-        public EntryIterator<String, String> openSegmentIterator(
-                final SegmentWindow segmentWindows) {
-            return mockIterator();
         }
 
         @Override
@@ -118,12 +93,7 @@ class SegmentIndexResourceClosingAdapterTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static IndexInternal<String, String> mockIndex() {
-        return mock(IndexInternal.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static EntryIterator<String, String> mockIterator() {
-        return mock(EntryIterator.class);
+    private static SegmentIndexSessionHandle<String, String> mockIndex() {
+        return mock(SegmentIndexSessionHandle.class);
     }
 }

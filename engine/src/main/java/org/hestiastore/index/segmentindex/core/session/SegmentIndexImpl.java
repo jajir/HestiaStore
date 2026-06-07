@@ -6,18 +6,17 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.sorteddatafile.EntryComparator;
 
 /**
@@ -27,8 +26,7 @@ import org.hestiastore.index.sorteddatafile.EntryComparator;
  * @param <K> key type
  * @param <V> value type
  */
-class SegmentIndexImpl<K, V> extends AbstractCloseableResource
-        implements IndexInternal<K, V> {
+class SegmentIndexImpl<K, V> extends SegmentIndexSessionHandle<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;
@@ -74,27 +72,13 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     }
 
     /**
-     * Opens a segment iterator over the provided window using
-     * {@link SegmentIteratorIsolation#FAIL_FAST}.
-     *
-     * @param segmentWindows window selecting segments to iterate
-     * @return iterator over the selected segments
-     */
-    @Override
-    public EntryIterator<K, V> openSegmentIterator(
-            SegmentWindow segmentWindows) {
-        return openSegmentIterator(segmentWindows,
-                SegmentIteratorIsolation.FAIL_FAST);
-    }
-
-    /**
      * Opens a segment iterator using the provided isolation level.
      *
      * @param segmentWindows window selecting segments to iterate
      * @param isolation      iterator isolation mode
      * @return entry iterator over the selected segments
      */
-    public EntryIterator<K, V> openSegmentIterator(
+    EntryIterator<K, V> openSegmentIterator(
             final SegmentWindow segmentWindows,
             final SegmentIteratorIsolation isolation) {
         return readFacade.openWindowIterator(segmentWindows, isolation);

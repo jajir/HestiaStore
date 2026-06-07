@@ -27,7 +27,7 @@ final class IndexCloseTeardownSteps {
         steps.add(new FlushAndWait<>());
         steps.add(new CloseCoreStorage<>());
         steps.add(new LogOperationCounts<>());
-        steps.add(new CloseWalCoordinator<>());
+        steps.add(new CloseWal<>());
         steps.add(new CloseExecutorRegistry<>());
         steps.add(new FinishClosedState<>());
         steps.add(new ReleaseDirectoryLock<>());
@@ -100,12 +100,12 @@ final class IndexCloseTeardownSteps {
         }
     }
 
-    private static final class CloseWalCoordinator<K, V>
+    private static final class CloseWal<K, V>
             implements SegmentIndexTeardownStep<IndexCloseCoordinator<K, V>> {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeWalCoordinator();
+            context.runtime().closeWal();
         }
     }
 

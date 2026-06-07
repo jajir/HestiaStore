@@ -1,9 +1,6 @@
 package org.hestiastore.index.segmentindex.core.session;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
-
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -21,21 +18,23 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class IndexInternalTest {
+class SegmentIndexSessionTest {
 
-    private IndexInternal<Integer, String> index;
+    private SegmentIndex<Integer, String> index;
 
     @BeforeEach
     void setUp() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        index = IndexInternalTestSupport.createStarted(
+        index = SegmentIndexSessionTestSupport.createStarted(
                 new MemDirectory(),
                 new TypeDescriptorInteger(), new TypeDescriptorShortString(), effective(conf),
                 ExecutorRegistryFixture.from(conf));
@@ -95,8 +94,7 @@ class IndexInternalTest {
                 List.of(Entry.of(1, "one")).iterator(), hasNextCalls, nextCalls,
                 closeCalls);
 
-        final RecordingIndex streamingIndex = new RecordingIndex(iterator,
-                buildConf());
+        final RecordingIndex streamingIndex = new RecordingIndex(iterator);
         try (Stream<Entry<Integer, String>> stream = streamingIndex.getStream(
                 SegmentWindow.unbounded(),
                 SegmentIteratorIsolation.FULL_ISOLATION)) {
@@ -123,8 +121,7 @@ class IndexInternalTest {
                 List.of(Entry.of(1, "one"), Entry.of(2, "two")).iterator(),
                 hasNextCalls, nextCalls, closeCalls);
 
-        final RecordingIndex streamingIndex = new RecordingIndex(iterator,
-                buildConf());
+        final RecordingIndex streamingIndex = new RecordingIndex(iterator);
         try (Stream<Entry<Integer, String>> stream = streamingIndex.getStream(
                 SegmentWindow.unbounded(),
                 SegmentIteratorIsolation.FAIL_FAST)) {
@@ -209,8 +206,7 @@ class IndexInternalTest {
         private final EntryIterator<Integer, String> iterator;
         private SegmentIteratorIsolation lastIsolation;
 
-        private RecordingIndex(final EntryIterator<Integer, String> iterator,
-                final IndexConfiguration<Integer, String> conf) {
+        private RecordingIndex(final EntryIterator<Integer, String> iterator) {
             super(new TypeDescriptorInteger(), mockPointOperationFacade(),
                     mockReadFacade(), mock(SegmentIndexMaintenance.class),
                     mockSessionOwner());
@@ -218,7 +214,7 @@ class IndexInternalTest {
         }
 
         @Override
-        public EntryIterator<Integer, String> openSegmentIterator(
+        EntryIterator<Integer, String> openSegmentIterator(
                 final SegmentWindow segmentWindow,
                 final SegmentIteratorIsolation isolation) {
             lastIsolation = isolation;

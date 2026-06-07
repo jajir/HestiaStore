@@ -11,10 +11,10 @@ import org.hestiastore.index.segment.SegmentId;
  * @param <K> key type
  * @param <V> value type
  */
-public final class IndexConsistencyCoordinator<K, V> {
+final class IndexConsistencyCoordinator<K, V> {
 
     @FunctionalInterface
-    public interface ConsistencyCheckRunner {
+    interface ConsistencyCheckRunner {
 
         void run(Predicate<SegmentId> segmentFilter);
     }
@@ -22,14 +22,12 @@ public final class IndexConsistencyCoordinator<K, V> {
     private final Runnable verifyUniqueSegmentIds;
     private final ConsistencyCheckRunner consistencyCheckRunner;
     private final Runnable cleanupOrphanedSegmentDirectories;
-    private final Runnable requestFullSplitScan;
     private final Predicate<SegmentId> startupSegmentFilter;
     private boolean startupSegmentLockValidationEnabled;
 
-    public IndexConsistencyCoordinator(final Runnable verifyUniqueSegmentIds,
+    IndexConsistencyCoordinator(final Runnable verifyUniqueSegmentIds,
             final ConsistencyCheckRunner consistencyCheckRunner,
             final Runnable cleanupOrphanedSegmentDirectories,
-            final Runnable requestFullSplitScan,
             final Predicate<SegmentId> startupSegmentFilter) {
         this.verifyUniqueSegmentIds = Vldtn
                 .requireNonNull(verifyUniqueSegmentIds, "verifyUniqueSegmentIds");
@@ -38,24 +36,20 @@ public final class IndexConsistencyCoordinator<K, V> {
         this.cleanupOrphanedSegmentDirectories = Vldtn.requireNonNull(
                 cleanupOrphanedSegmentDirectories,
                 "cleanupOrphanedSegmentDirectories");
-        this.requestFullSplitScan = Vldtn.requireNonNull(
-                requestFullSplitScan, "requestFullSplitScan");
         this.startupSegmentFilter = Vldtn.requireNonNull(startupSegmentFilter,
                 "startupSegmentFilter");
     }
 
-    public void checkAndRepairConsistency() {
+    void checkAndRepairConsistency() {
         verifyUniqueSegmentIds.run();
         consistencyCheckRunner.run(resolveSegmentFilter());
         cleanupOrphanedSegmentDirectories.run();
-        requestFullSplitScan.run();
     }
 
-    public void runStartupConsistencyCheck(final Runnable consistencyCheck) {
-        Vldtn.requireNonNull(consistencyCheck, "consistencyCheck");
+    void runStartupConsistencyCheck() {
         startupSegmentLockValidationEnabled = true;
         try {
-            consistencyCheck.run();
+            checkAndRepairConsistency();
         } finally {
             startupSegmentLockValidationEnabled = false;
         }

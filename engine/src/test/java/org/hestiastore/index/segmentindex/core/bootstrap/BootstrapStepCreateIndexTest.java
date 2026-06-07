@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class BootstrapStepCreateIndexTest {
     private SegmentIndexSessionResources<Integer, String> sessionResources;
 
     @Mock
-    private IndexInternal<Integer, String> internalIndex;
+    private SegmentIndexSessionHandle<Integer, String> internalIndex;
 
     private BootstrapStepCreateIndex<Integer, String> step;
 

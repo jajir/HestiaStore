@@ -55,8 +55,6 @@ class SegmentTopologyRuntimeTest {
                 SegmentIndexRuntimeTestAccess.topologyRuntime(runtime);
 
         assertDoesNotThrow(topologyRuntime::requestFullSplitScan);
-        assertDoesNotThrow(
-                topologyRuntime::cleanupOrphanedSegmentDirectories);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

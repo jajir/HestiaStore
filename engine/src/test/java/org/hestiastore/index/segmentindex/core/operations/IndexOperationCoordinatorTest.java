@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +28,7 @@ class IndexOperationCoordinatorTest {
     private SegmentLeaseService<Integer, String> segmentLeaseService;
 
     @Mock
-    private IndexWalCoordinator<Integer, String> walCoordinator;
+    private StorageService<Integer, String> storageService;
 
     @Mock
     private SegmentLease<Integer, String> segmentLease;
@@ -43,12 +43,12 @@ class IndexOperationCoordinatorTest {
     void setUp() {
         statsRecorder = new IndexOperationStatsRecorder();
         coordinator = new IndexOperationCoordinator<>(typeDescriptor,
-                statsRecorder, segmentLeaseService, walCoordinator);
+                statsRecorder, segmentLeaseService, storageService);
     }
 
     @Test
     void putWritesThroughSegmentLeaseServiceAndRecordsAppliedWalLsn() {
-        when(walCoordinator.appendPut(1, "one")).thenReturn(7L);
+        when(storageService.appendWalPut(1, "one")).thenReturn(7L);
         when(segmentLeaseService.acquireForWrite(1)).thenReturn(segmentLease);
         when(segmentLease.segment()).thenReturn(blockingSegment);
 
@@ -57,7 +57,7 @@ class IndexOperationCoordinatorTest {
         assertEquals(1L, statsRecorder.statsSnapshot().getPutCount());
         verify(blockingSegment).put(1, "one");
         verify(segmentLease).close();
-        verify(walCoordinator).recordAppliedLsn(7L);
+        verify(storageService).recordAppliedWalLsn(7L);
     }
 
     @Test
@@ -84,7 +84,7 @@ class IndexOperationCoordinatorTest {
 
     @Test
     void deleteWritesTombstoneThroughSegmentLeaseServiceAndRecordsAppliedWalLsn() {
-        when(walCoordinator.appendDelete(1)).thenReturn(8L);
+        when(storageService.appendWalDelete(1)).thenReturn(8L);
         when(segmentLeaseService.acquireForWrite(1)).thenReturn(segmentLease);
         when(segmentLease.segment()).thenReturn(blockingSegment);
 
@@ -94,7 +94,7 @@ class IndexOperationCoordinatorTest {
         verify(blockingSegment).put(1,
                 TypeDescriptorShortString.TOMBSTONE_VALUE);
         verify(segmentLease).close();
-        verify(walCoordinator).recordAppliedLsn(8L);
+        verify(storageService).recordAppliedWalLsn(8L);
     }
 
     @Test
@@ -115,7 +115,7 @@ class IndexOperationCoordinatorTest {
         verify(blockingSegment).put(3,
                 TypeDescriptorShortString.TOMBSTONE_VALUE);
         verify(segmentLease).close();
-        verify(walCoordinator).recordAppliedLsn(11L);
+        verify(storageService).recordAppliedWalLsn(11L);
     }
 
     @Test

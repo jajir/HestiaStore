@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 
 /**
@@ -11,7 +10,7 @@ final class BootstrapStepWrapResourceClosing<K, V>
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        final IndexInternal<K, V> returnedIndex = new SegmentIndexResourceClosingAdapter<>(
+        final SegmentIndexResourceClosingAdapter<K, V> returnedIndex = new SegmentIndexResourceClosingAdapter<>(
                 state.getManagedIndex());
         state.setIndex(returnedIndex);
     }

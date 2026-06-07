@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.maintenance;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.storage.IndexConsistencyCoordinator;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 
 /**
  * Default {@link SegmentIndexMaintenance} implementation backed by index
@@ -12,15 +12,19 @@ public final class SegmentIndexMaintenanceImpl
         implements SegmentIndexMaintenance {
 
     private final MaintenanceService maintenanceService;
-    private final IndexConsistencyCoordinator<?, ?> consistencyCoordinator;
+    private final StorageService<?, ?> storageService;
+    private final Runnable requestFullSplitScan;
 
     public SegmentIndexMaintenanceImpl(
             final MaintenanceService maintenanceService,
-            final IndexConsistencyCoordinator<?, ?> consistencyCoordinator) {
+            final StorageService<?, ?> storageService,
+            final Runnable requestFullSplitScan) {
         this.maintenanceService = Vldtn.requireNonNull(maintenanceService,
                 "maintenanceService");
-        this.consistencyCoordinator = Vldtn.requireNonNull(
-                consistencyCoordinator, "consistencyCoordinator");
+        this.storageService = Vldtn.requireNonNull(storageService,
+                "storageService");
+        this.requestFullSplitScan = Vldtn.requireNonNull(
+                requestFullSplitScan, "requestFullSplitScan");
     }
 
     @Override
@@ -45,6 +49,7 @@ public final class SegmentIndexMaintenanceImpl
 
     @Override
     public void checkAndRepairConsistency() {
-        consistencyCoordinator.checkAndRepairConsistency();
+        storageService.checkAndRepairConsistency();
+        requestFullSplitScan.run();
     }
 }

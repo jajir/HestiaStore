@@ -69,7 +69,7 @@ class IndexCloseTeardownStepsTest {
         inOrder.verify(runtime).closeCoreStorage();
         inOrder.verify(context).operationStatsRecorder();
         inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeWalCoordinator();
+        inOrder.verify(runtime).closeWal();
         inOrder.verify(context).executorRegistry();
         inOrder.verify(executorRegistry).close();
         inOrder.verify(context).stateMachine();

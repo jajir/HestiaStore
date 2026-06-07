@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @param <K>
  * @param <V>
  */
-public final class IndexConsistencyChecker<K, V> {
+final class IndexConsistencyChecker<K, V> {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(IndexConsistencyChecker.class);
     private static final String ERROR_MSG = "Index is broken. "
@@ -34,14 +34,14 @@ public final class IndexConsistencyChecker<K, V> {
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final Predicate<SegmentId> segmentFilter;
 
-    public IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
+    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor) {
         this(keyToSegmentMap, segmentRegistry, keyTypeDescriptor,
                 segmentId -> true);
     }
 
-    public IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
+    IndexConsistencyChecker(final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final TypeDescriptor<K> keyTypeDescriptor,
             final Predicate<SegmentId> segmentFilter) {
@@ -58,7 +58,7 @@ public final class IndexConsistencyChecker<K, V> {
      * Scans all segments and verifies map-to-segment consistency, attempting to
      * repair obvious corruption when possible.
      */
-    public void checkAndRepairConsistency() {
+    void checkAndRepairConsistency() {
         final Snapshot<K> snapshot = keyToSegmentMap.snapshot();
         snapshot.getSegmentIds(SegmentWindow.unbounded()).forEach(segmentId -> {
             if (segmentId == null) {

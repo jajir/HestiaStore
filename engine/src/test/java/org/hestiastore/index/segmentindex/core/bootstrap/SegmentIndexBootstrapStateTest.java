@@ -11,11 +11,12 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,13 +29,10 @@ class SegmentIndexBootstrapStateTest {
     private ExecutorRegistry executorRegistry;
 
     @Mock
-    private IndexInternal<Integer, String> internalIndex;
+    private SegmentIndexSessionHandle<Integer, String> internalIndex;
 
     @Mock
-    private IndexInternal<Integer, String> managedIndex;
-
-    @Mock
-    private IndexInternal<Integer, String> index;
+    private SegmentIndexSessionHandle<Integer, String> managedIndex;
 
     @Test
     void productGettersThrowBeforeMatchingSetterIsCalled() {
@@ -70,6 +68,8 @@ class SegmentIndexBootstrapStateTest {
                 new TypeDescriptorShortString();
         final IndexMdcCallWrapper callWrapper =
                 new IndexMdcCallWrapper("bootstrap-state-test");
+        final SegmentIndexResourceClosingAdapter<Integer, String> index =
+                new SegmentIndexResourceClosingAdapter<>(managedIndex);
 
         state.setConfiguration(configuration);
         state.setConfigurationWriteRequired(true);

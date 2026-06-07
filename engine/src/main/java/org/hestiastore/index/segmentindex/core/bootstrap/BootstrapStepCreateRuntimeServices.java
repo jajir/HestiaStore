@@ -20,8 +20,8 @@ import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResour
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
-import org.hestiastore.index.segmentindex.core.storage.IndexWalCoordinator;
 import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
@@ -58,9 +58,10 @@ final class BootstrapStepCreateRuntimeServices<K, V>
                 });
         final MaintenanceService maintenance = newMaintenance(coreStorage,
                 splitService, state, () -> checkpointAction.get().run());
-        final IndexWalCoordinator<K, V> walCoordinator =
-                newWalCoordinator(state, coreStorage, maintenance);
-        checkpointAction.set(walCoordinator::checkpoint);
+        final StorageService<K, V> storageService =
+                coreStorage.storageService();
+        initializeWal(state, storageService, maintenance);
+        checkpointAction.set(storageService::checkpointWal);
         final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier =
                 new SegmentRuntimeLimitApplier<>(coreStorage.segmentRegistry(),
                         coreStorage.segmentRegistry().runtime(),
@@ -74,10 +75,8 @@ final class BootstrapStepCreateRuntimeServices<K, V>
         final RuntimeTuning runtimeTuning = newRuntimeTuning(request, state,
                 coreStorage, topologyRuntime, runtimeLimitApplier);
         state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
-                walCoordinator,
-                newOperationAccess(state, segmentLeaseService, walCoordinator),
-                maintenance, runtimeLimitApplier, runtimeMetricsCollector,
-                runtimeMonitoring, runtimeTuning));
+                newOperationAccess(state, segmentLeaseService, storageService),
+                maintenance, runtimeMonitoring, runtimeTuning));
     }
 
     private MaintenanceService newMaintenance(
@@ -99,15 +98,13 @@ final class BootstrapStepCreateRuntimeServices<K, V>
                 .build();
     }
 
-    private IndexWalCoordinator<K, V> newWalCoordinator(
+    private void initializeWal(
             final SegmentIndexBootstrapState<K, V> state,
-            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final StorageService<K, V> storageService,
             final MaintenanceService maintenance) {
-        if (!state.getConfiguration().wal().isEnabled()) {
-            return IndexWalCoordinator.disabled();
-        }
-        return IndexWalCoordinator.create(state.getConfiguration(),
-                state.getRuntimeWalRuntime(), coreStorage.retryPolicy(), () -> { },
+        storageService.initializeWal(state.getConfiguration(),
+                state.hasRuntimeWalRuntime() ? state.getRuntimeWalRuntime() : null,
+                () -> { },
                 maintenance::flushAndWait, sessionResources::currentState,
                 sessionResources::markRuntimeFailure,
                 state.lastAppliedWalLsn());
@@ -116,12 +113,12 @@ final class BootstrapStepCreateRuntimeServices<K, V>
     private SegmentIndexOperationAccess<K, V> newOperationAccess(
             final SegmentIndexBootstrapState<K, V> state,
             final SegmentLeaseService<K, V> segmentLeaseService,
-            final IndexWalCoordinator<K, V> walCoordinator) {
+            final StorageService<K, V> storageService) {
         return SegmentIndexOperationAccess.create(
                 state.getValueTypeDescriptor(),
                 sessionResources.operationStatsRecorder(),
                 segmentLeaseService,
-                walCoordinator);
+                storageService);
     }
 
     private RuntimeMetricsCollector newMetricsCollector(

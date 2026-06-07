@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex.core.storage;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.chunkstorecache.LruChunkStoreCache;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.IndexRetryPolicy;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
@@ -42,9 +42,18 @@ public final class SegmentIndexCoreStorageFactory<K, V> {
             final ChunkStoreCache<K, V> chunkStoreCache =
                     newChunkStoreCache(openSpec.conf());
             segmentRegistry = newSegmentRegistry(chunkStoreCache);
+            final IndexRetryPolicy retryPolicy = newRetryPolicy(openSpec.conf());
+            final StorageService<K, V> storageService =
+                    StorageService.<K, V>builder()
+                            .withDirectoryFacade(openSpec.directoryFacade())
+                            .withKeyToSegmentMap(keyToSegmentMap)
+                            .withSegmentRegistry(segmentRegistry)
+                            .withKeyTypeDescriptor(openSpec.keyTypeDescriptor())
+                            .withRetryPolicy(retryPolicy)
+                            .build();
             return new SegmentIndexCoreStorage<>(runtimeTuningState,
                     keyToSegmentMap, segmentRegistry, chunkStoreCache,
-                    newRetryPolicy(openSpec.conf()));
+                    retryPolicy, storageService);
         } catch (final RuntimeException failure) {
             throw cleanupFailedCreate(failure, segmentRegistry,
                     keyToSegmentMap);

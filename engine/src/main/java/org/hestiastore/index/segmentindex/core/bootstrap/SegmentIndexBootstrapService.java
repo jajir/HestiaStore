@@ -6,7 +6,7 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.chunkstore.ChunkFilterProviderResolver;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.session.IndexInternal;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 
 /**
  * Internal bootstrap facade used by {@link SegmentIndexFactory} to create or
@@ -28,12 +28,12 @@ final class SegmentIndexBootstrapService {
         this.directory = Vldtn.requireNonNull(directory, "directory");
     }
 
-    <K, V> IndexInternal<K, V> create(
+    <K, V> SegmentIndexResourceClosingAdapter<K, V> create(
             final IndexConfiguration<K, V> userProvidedConfiguration) {
         return operation(userProvidedConfiguration, null).create();
     }
 
-    <K, V> IndexInternal<K, V> create(
+    <K, V> SegmentIndexResourceClosingAdapter<K, V> create(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
@@ -41,12 +41,12 @@ final class SegmentIndexBootstrapService {
         return operation(userProvidedConfiguration, validatedResolver).create();
     }
 
-    <K, V> IndexInternal<K, V> open(
+    <K, V> SegmentIndexResourceClosingAdapter<K, V> open(
             final IndexConfiguration<K, V> userProvidedConfiguration) {
         return operation(userProvidedConfiguration, null).open();
     }
 
-    <K, V> IndexInternal<K, V> open(
+    <K, V> SegmentIndexResourceClosingAdapter<K, V> open(
             final IndexConfiguration<K, V> userProvidedConfiguration,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
@@ -54,11 +54,11 @@ final class SegmentIndexBootstrapService {
         return operation(userProvidedConfiguration, validatedResolver).open();
     }
 
-    <K, V> IndexInternal<K, V> openStored() {
+    <K, V> SegmentIndexResourceClosingAdapter<K, V> openStored() {
         return open(emptyConfiguration());
     }
 
-    <K, V> IndexInternal<K, V> openStored(
+    <K, V> SegmentIndexResourceClosingAdapter<K, V> openStored(
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
                 chunkFilterProviderResolver);
@@ -66,11 +66,11 @@ final class SegmentIndexBootstrapService {
                 .open();
     }
 
-    <K, V> Optional<IndexInternal<K, V>> tryOpen() {
+    <K, V> Optional<SegmentIndexResourceClosingAdapter<K, V>> tryOpen() {
         return this.<K, V>operation(emptyConfiguration(), null).tryOpen();
     }
 
-    <K, V> Optional<IndexInternal<K, V>> tryOpen(
+    <K, V> Optional<SegmentIndexResourceClosingAdapter<K, V>> tryOpen(
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
         final ChunkFilterProviderResolver validatedResolver = requireChunkFilterProviderResolver(
                 chunkFilterProviderResolver);
