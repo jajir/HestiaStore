@@ -66,12 +66,19 @@ public final class SegmentIndexRuntimeTestAccess {
 
     public static <K> KeyToSegmentMap<K> keyToSegmentMap(
             final SegmentIndexRuntime<K, ?> runtime) {
-        return runtime.coreStorage().keyToSegmentMap();
+        @SuppressWarnings("unchecked")
+        final KeyToSegmentMap<K> keyToSegmentMap = (KeyToSegmentMap<K>) field(
+                segmentLeaseService(runtime), "keyToSegmentMap");
+        return keyToSegmentMap;
     }
 
     public static <K, V> SegmentRegistry<K, V> segmentRegistry(
             final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.coreStorage().segmentRegistry();
+        @SuppressWarnings("unchecked")
+        final SegmentRegistry<K, V> segmentRegistry =
+                (SegmentRegistry<K, V>) field(segmentLeaseService(runtime),
+                        "segmentRegistry");
+        return segmentRegistry;
     }
 
     public static <K, V> WalRuntime<K, V> walRuntime(
@@ -86,8 +93,7 @@ public final class SegmentIndexRuntimeTestAccess {
                     .getDeclaredField("walRuntime");
             walRuntimeField.setAccessible(true);
             @SuppressWarnings("unchecked")
-            final WalRuntime<K, V> walRuntime =
-                    (WalRuntime<K, V>) walRuntimeField.get(delegate);
+            final WalRuntime<K, V> walRuntime = (WalRuntime<K, V>) walRuntimeField.get(delegate);
             return walRuntime;
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
@@ -113,8 +119,7 @@ public final class SegmentIndexRuntimeTestAccess {
     private static <K, V> Object walCoordinator(
             final SegmentIndexRuntime<K, V> runtime) {
         try {
-            final StorageService<K, V> storageService =
-                    runtime.storageService();
+            final StorageService<K, V> storageService = runtime.storageService();
             final Field walCoordinatorField = storageService.getClass()
                     .getDeclaredField("walCoordinator");
             walCoordinatorField.setAccessible(true);
@@ -132,7 +137,8 @@ public final class SegmentIndexRuntimeTestAccess {
 
     public static <K, V> RuntimeTuningState runtimeTuningState(
             final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.coreStorage().runtimeTuningState();
+        return (RuntimeTuningState) field(runtime.runtimeTuning(),
+                "runtimeTuningState");
     }
 
     public static <K, V> RuntimeTuning runtimeTuning(
@@ -142,8 +148,7 @@ public final class SegmentIndexRuntimeTestAccess {
 
     public static <K, V> void closeRuntime(final SegmentIndexRuntime<K, V> runtime,
             final String indexName, final ExecutorRegistry executorRegistry) {
-        final SegmentIndexStateMachine stateMachine =
-                new SegmentIndexStateMachine();
+        final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
         stateMachine.markReady();
         new IndexCloseCoordinator<>(indexName, stateMachine,
                 mock(SegmentIndexOperationGate.class),
@@ -169,6 +174,30 @@ public final class SegmentIndexRuntimeTestAccess {
             return (SegmentIndexRuntime<K, V>) openedRuntime.runtime;
         }
         return (SegmentIndexRuntime<K, V>) runtime;
+    }
+
+    private static Object segmentLeaseService(
+            final SegmentIndexRuntime<?, ?> runtime) {
+        return field(runtime.operationAccess(), "segmentLeaseService");
+    }
+
+    private static Object field(final Object target, final String fieldName) {
+        Class<?> type = target.getClass();
+        while (type != null) {
+            try {
+                final Field result = type.getDeclaredField(fieldName);
+                result.setAccessible(true);
+                return result.get(target);
+            } catch (final NoSuchFieldException ex) {
+                type = type.getSuperclass();
+            } catch (final IllegalAccessException ex) {
+                throw new IllegalStateException(
+                        "Unable to access field '" + fieldName + "'", ex);
+            }
+        }
+        throw new IllegalStateException(
+                "Field '" + fieldName + "' not found on "
+                        + target.getClass().getName());
     }
 
     @SuppressWarnings("unchecked")

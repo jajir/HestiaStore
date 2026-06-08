@@ -7,9 +7,8 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -39,78 +38,156 @@ public final class SplitServiceBuilder<K, V> {
     SplitServiceBuilder() {
     }
 
+    /**
+     * Sets the effective index configuration used by split policy decisions.
+     *
+     * @param conf effective index configuration
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> conf(
             final EffectiveIndexConfiguration<K, V> conf) {
         this.conf = conf;
         return this;
     }
 
+    /**
+     * Sets runtime tuning state used by the autonomous split policy.
+     *
+     * @param runtimeTuningState runtime tuning state
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> runtimeTuningState(
             final RuntimeTuningState runtimeTuningState) {
         this.runtimeTuningState = runtimeTuningState;
         return this;
     }
 
+    /**
+     * Sets the route map updated when prepared splits are published.
+     *
+     * @param keyToSegmentMap key-to-segment map
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> keyToSegmentMap(
             final KeyToSegmentMap<K> keyToSegmentMap) {
         this.keyToSegmentMap = keyToSegmentMap;
         return this;
     }
 
+    /**
+     * Sets the lease service used to acquire and drain split candidates.
+     *
+     * @param segmentLeaseService segment lease service
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> segmentLeaseService(
             final SegmentLeaseService<K, V> segmentLeaseService) {
         this.segmentLeaseService = segmentLeaseService;
         return this;
     }
 
+    /**
+     * Sets the segment registry used to load and publish split segments.
+     *
+     * @param segmentRegistry segment registry
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> segmentRegistry(
             final SegmentRegistry<K, V> segmentRegistry) {
         this.segmentRegistry = segmentRegistry;
         return this;
     }
 
+    /**
+     * Sets the root directory used for prepared segment materialization.
+     *
+     * @param directoryFacade directory facade
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> directoryFacade(
             final Directory directoryFacade) {
         this.directoryFacade = directoryFacade;
         return this;
     }
 
+    /**
+     * Sets the executor used for split work execution.
+     *
+     * @param splitExecutor split executor
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> splitExecutor(
             final Executor splitExecutor) {
         this.splitExecutor = splitExecutor;
         return this;
     }
 
+    /**
+     * Sets the executor used for autonomous split policy workers.
+     *
+     * @param workerExecutor worker executor
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> workerExecutor(
             final Executor workerExecutor) {
         this.workerExecutor = workerExecutor;
         return this;
     }
 
+    /**
+     * Sets the scheduler used for autonomous split policy ticks.
+     *
+     * @param splitPolicyScheduler split policy scheduler
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> splitPolicyScheduler(
             final ScheduledExecutorService splitPolicyScheduler) {
         this.splitPolicyScheduler = splitPolicyScheduler;
         return this;
     }
 
+    /**
+     * Sets the runtime state supplier used before scheduling split work.
+     *
+     * @param stateSupplier runtime state supplier
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> stateSupplier(
             final Supplier<SegmentIndexState> stateSupplier) {
         this.stateSupplier = stateSupplier;
         return this;
     }
 
+    /**
+     * Sets the failure handler used when split workers fail.
+     *
+     * @param failureHandler runtime failure handler
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> failureHandler(
             final Consumer<RuntimeException> failureHandler) {
         this.failureHandler = failureHandler;
         return this;
     }
 
+    /**
+     * Sets the split telemetry recorder.
+     *
+     * @param statsRecorder stats recorder
+     * @return this builder
+     */
     public SplitServiceBuilder<K, V> statsRecorder(
             final SplitStatsRecorder statsRecorder) {
         this.statsRecorder = statsRecorder;
         return this;
     }
 
+    /**
+     * Builds the split service and creates package-local retry policy objects
+     * from the configured maintenance retry values.
+     *
+     * @return split service
+     */
     public SplitService build() {
         final SplitFailureReporter failureReporter = SplitFailureReporter
                 .from(Vldtn.requireNonNull(failureHandler, "failureHandler"));
@@ -127,7 +204,7 @@ public final class SplitServiceBuilder<K, V> {
                         Vldtn.requireNonNull(directoryFacade,
                                 "directoryFacade"),
                         validatedSegmentRegistry.materialization());
-        final IndexRetryPolicy retryPolicy = new IndexRetryPolicy(
+        final SplitRetryPolicy retryPolicy = new SplitRetryPolicy(
                 validatedConf.maintenance().busyBackoffMillis(),
                 validatedConf.maintenance().busyTimeoutMillis());
         final RouteSplitPreparationService<K, V> preparationService =

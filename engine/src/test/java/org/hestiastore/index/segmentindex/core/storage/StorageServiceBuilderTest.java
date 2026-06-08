@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,10 @@ class StorageServiceBuilderTest {
                         .withKeyToSegmentMap(mockKeyToSegmentMap())
                         .withSegmentRegistry(mockSegmentRegistry())
                         .withKeyTypeDescriptor(mockKeyTypeDescriptor())
-                        .withRetryPolicy(mock(IndexRetryPolicy.class));
+                        .withStorageCleanupBusyBackoffMillis(1)
+                        .withStorageCleanupBusyTimeoutMillis(10)
+                        .withWalBackpressureBusyBackoffMillis(1)
+                        .withWalBackpressureBusyTimeoutMillis(10);
 
         final IllegalArgumentException ex =
                 assertThrows(IllegalArgumentException.class, builder::build);
@@ -44,7 +46,10 @@ class StorageServiceBuilderTest {
                 .withKeyToSegmentMap(mockKeyToSegmentMap())
                 .withSegmentRegistry(mockSegmentRegistry())
                 .withKeyTypeDescriptor(mockKeyTypeDescriptor())
-                .withRetryPolicy(mock(IndexRetryPolicy.class));
+                .withStorageCleanupBusyBackoffMillis(1)
+                .withStorageCleanupBusyTimeoutMillis(10)
+                .withWalBackpressureBusyBackoffMillis(1)
+                .withWalBackpressureBusyTimeoutMillis(10);
     }
 
     @SuppressWarnings("unchecked")

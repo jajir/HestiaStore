@@ -7,7 +7,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationStatus;
@@ -17,6 +16,12 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Default streaming service for mapped stable segments.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class SegmentStreamingServiceImpl<K, V>
         implements SegmentStreamingService<K, V> {
 
@@ -28,13 +33,13 @@ final class SegmentStreamingServiceImpl<K, V>
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
-    private final IndexRetryPolicy retryPolicy;
+    private final StreamingRetryPolicy retryPolicy;
 
     SegmentStreamingServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
-            final IndexRetryPolicy retryPolicy) {
+            final StreamingRetryPolicy retryPolicy) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,

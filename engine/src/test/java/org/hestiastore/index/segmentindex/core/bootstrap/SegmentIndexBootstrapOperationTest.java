@@ -184,58 +184,53 @@ class SegmentIndexBootstrapOperationTest {
     @Test
     void failureAfterCoreStorageClosesCoreStorage() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(1,
+                runBootstrapExpectingFailureAfterRuntimeStep(4,
                         "bootstrap-operation-core-cleanup");
 
-        assertTrue(state.getCoreStorage().keyToSegmentMap()
-                .wasClosed());
+        assertTrue(state.getKeyToSegmentMap().wasClosed());
     }
 
     @Test
     void failureAfterRuntimeTopologyClosesSplitAndCoreStorage() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(2,
+                runBootstrapExpectingFailureAfterRuntimeStep(5,
                         "bootstrap-operation-topology-cleanup");
 
         assertSplitServiceClosed(state);
-        assertTrue(state.getCoreStorage().keyToSegmentMap()
-                .wasClosed());
+        assertTrue(state.getKeyToSegmentMap().wasClosed());
     }
 
     @Test
     void failureAfterRuntimeWalClosesWalSplitAndCoreStorage() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(3,
+                runBootstrapExpectingFailureAfterRuntimeStep(6,
                         "bootstrap-operation-wal-cleanup");
 
         assertWalClosed(state);
         assertSplitServiceClosed(state);
-        assertTrue(state.getCoreStorage().keyToSegmentMap()
-                .wasClosed());
+        assertTrue(state.getKeyToSegmentMap().wasClosed());
     }
 
     @Test
     void failureAfterRuntimeServicesClosesEarlierRuntimeResources() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(4,
+                runBootstrapExpectingFailureAfterRuntimeStep(7,
                         "bootstrap-operation-services-cleanup");
 
         assertWalClosed(state);
         assertSplitServiceClosed(state);
-        assertTrue(state.getCoreStorage().keyToSegmentMap()
-                .wasClosed());
+        assertTrue(state.getKeyToSegmentMap().wasClosed());
     }
 
     @Test
     void failureAfterRuntimeCreationClosesEarlierRuntimeResources() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(5,
+                runBootstrapExpectingFailureAfterRuntimeStep(8,
                         "bootstrap-operation-runtime-creation-cleanup");
 
         assertWalClosed(state);
         assertSplitServiceClosed(state);
-        assertTrue(state.getCoreStorage().keyToSegmentMap()
-                .wasClosed());
+        assertTrue(state.getKeyToSegmentMap().wasClosed());
     }
 
     @Test
@@ -566,7 +561,7 @@ class SegmentIndexBootstrapOperationTest {
                 commonStepsThroughExecutor(sessionResources);
         steps.add(new BootstrapStepCreateSessionInfrastructure<>(
                 sessionResources));
-        addRuntimeSteps(steps, sessionResources, 5);
+        addRuntimeSteps(steps, sessionResources, 8);
         steps.add(new BootstrapStepCreateIndex<>(sessionResources));
         steps.add(nextStep);
         return List.copyOf(steps);
@@ -591,7 +586,10 @@ class SegmentIndexBootstrapOperationTest {
             final SegmentIndexSessionResources<Integer, String> sessionResources,
             final int runtimeStepCount) {
         final List<SegmentIndexBootstrapStep<Integer, String>> runtimeSteps =
-                List.of(new BootstrapStepOpenCoreStorage<>(),
+                List.of(new BootstrapStepOpenKeyToSegmentMap<>(),
+                        new BootstrapStepCreateChunkStoreCache<>(),
+                        new BootstrapStepOpenSegmentRegistry<>(),
+                        new BootstrapStepOpenCoreStorage<>(),
                         new BootstrapStepCreateRuntimeTopology<>(
                                 sessionResources),
                         new BootstrapStepOpenRuntimeWal<>(),

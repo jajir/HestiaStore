@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningConfigurationMapper;
@@ -20,7 +21,6 @@ import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResour
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
@@ -46,8 +46,6 @@ final class BootstrapStepCreateRuntimeServices<K, V>
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        final SegmentIndexCoreStorage<K, V> coreStorage =
-                state.getCoreStorage();
         final SegmentTopologyRuntimeAccess<K, V> topologyRuntime =
                 state.getRuntimeTopologyRuntime();
         final SegmentLeaseService<K, V> segmentLeaseService =
@@ -56,40 +54,42 @@ final class BootstrapStepCreateRuntimeServices<K, V>
         final AtomicReference<Runnable> checkpointAction =
                 new AtomicReference<>(() -> {
                 });
-        final MaintenanceService maintenance = newMaintenance(coreStorage,
-                splitService, state, () -> checkpointAction.get().run());
+        final MaintenanceService maintenance = newMaintenance(splitService,
+                state, () -> checkpointAction.get().run());
         final StorageService<K, V> storageService =
-                coreStorage.storageService();
+                state.getStorageService();
         initializeWal(state, storageService, maintenance);
         checkpointAction.set(storageService::checkpointWal);
         final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier =
-                new SegmentRuntimeLimitApplier<>(coreStorage.segmentRegistry(),
-                        coreStorage.segmentRegistry().runtime(),
-                        coreStorage.chunkStoreCache());
+                new SegmentRuntimeLimitApplier<>(state.getSegmentRegistry(),
+                        state.getSegmentRegistry().runtime(),
+                        state.getChunkStoreCache());
         final RuntimeMetricsCollector runtimeMetricsCollector =
-                newMetricsCollector(state, coreStorage, splitService);
+                newMetricsCollector(state, splitService);
         final IndexRuntimeMonitoring runtimeMonitoring =
                 new IndexRuntimeMonitoringImpl(state.getConfiguration(),
                         sessionResources::currentState,
                         runtimeMetricsCollector);
         final RuntimeTuning runtimeTuning = newRuntimeTuning(request, state,
-                coreStorage, topologyRuntime, runtimeLimitApplier);
+                topologyRuntime, runtimeLimitApplier);
         state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
                 newOperationAccess(state, segmentLeaseService, storageService),
                 maintenance, runtimeMonitoring, runtimeTuning));
     }
 
     private MaintenanceService newMaintenance(
-            final SegmentIndexCoreStorage<K, V> coreStorage,
             final SplitService splitService,
             final SegmentIndexBootstrapState<K, V> state,
             final Runnable checkpointAction) {
+        final EffectiveIndexMaintenanceConfiguration maintenance =
+                state.getConfiguration().maintenance();
         return MaintenanceService.<K, V>builder()
-                .keyToSegmentMap(coreStorage.keyToSegmentMap())
+                .keyToSegmentMap(state.getKeyToSegmentMap())
                 .stableSegmentGateway(StableSegmentOperationAccess.create(
-                        coreStorage.segmentRegistry()))
+                        state.getSegmentRegistry()))
                 .splitService(splitService)
-                .retryPolicy(coreStorage.retryPolicy())
+                .busyBackoffMillis(maintenance.busyBackoffMillis())
+                .busyTimeoutMillis(maintenance.busyTimeoutMillis())
                 .statsRecorder(sessionResources.maintenanceStatsRecorder())
                 .maintenanceExecutor(
                         state.getExecutorRegistry()
@@ -123,17 +123,16 @@ final class BootstrapStepCreateRuntimeServices<K, V>
 
     private RuntimeMetricsCollector newMetricsCollector(
             final SegmentIndexBootstrapState<K, V> state,
-            final SegmentIndexCoreStorage<K, V> coreStorage,
             final SplitService splitService) {
         return RuntimeMetricsCollector.<K, V>builder()
                 .withConf(state.getConfiguration())
-                .withKeyToSegmentMap(coreStorage.keyToSegmentMap())
-                .withSegmentRegistry(coreStorage.segmentRegistry())
+                .withKeyToSegmentMap(state.getKeyToSegmentMap())
+                .withSegmentRegistry(state.getSegmentRegistry())
                 .withSplitStatsSupplier(() -> splitService.splitStatsView()
                         .statsSnapshot())
                 .withExecutorRegistry(state.getExecutorRegistry())
-                .withRuntimeTuningState(coreStorage.runtimeTuningState())
-                .withChunkStoreCache(coreStorage.chunkStoreCache())
+                .withRuntimeTuningState(state.getRuntimeTuningState())
+                .withChunkStoreCache(state.getChunkStoreCache())
                 .withWalStatsSupplier(walStatsSupplier(state))
                 .withIndexOperationStatsSupplier(sessionResources
                         .operationStatsRecorder()::statsSnapshot)
@@ -160,13 +159,12 @@ final class BootstrapStepCreateRuntimeServices<K, V>
     private RuntimeTuning newRuntimeTuning(
             final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state,
-            final SegmentIndexCoreStorage<K, V> coreStorage,
             final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
             final SegmentRuntimeLimitApplier<K, V> runtimeLimitApplier) {
         final Directory directory = request.getDirectory();
         final EffectiveIndexConfiguration<K, V> configuration =
                 state.getConfiguration();
-        return new RuntimeTuningServiceImpl(coreStorage.runtimeTuningState(),
+        return new RuntimeTuningServiceImpl(state.getRuntimeTuningState(),
                 runtimeLimitApplier::apply,
                 topologyRuntime::requestFullSplitScan,
                 snapshot -> persistRuntimeTuning(directory, configuration,

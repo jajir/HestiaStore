@@ -3,7 +3,6 @@ package org.hestiastore.index.segmentindex.core.storage;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -19,7 +18,10 @@ public final class StorageServiceBuilder<K, V> {
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
     private TypeDescriptor<K> keyTypeDescriptor;
-    private IndexRetryPolicy retryPolicy;
+    private Integer storageCleanupBusyBackoffMillis;
+    private Integer storageCleanupBusyTimeoutMillis;
+    private Integer walBackpressureBusyBackoffMillis;
+    private Integer walBackpressureBusyTimeoutMillis;
 
     StorageServiceBuilder() {
     }
@@ -78,14 +80,54 @@ public final class StorageServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the retry policy used for transient busy cleanup states.
+     * Sets the backoff value used to create the package-local storage cleanup
+     * retry policy.
      *
-     * @param retryPolicy retry policy
+     * @param busyBackoffMillis backoff in milliseconds
      * @return this builder
      */
-    public StorageServiceBuilder<K, V> withRetryPolicy(
-            final IndexRetryPolicy retryPolicy) {
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    public StorageServiceBuilder<K, V> withStorageCleanupBusyBackoffMillis(
+            final int busyBackoffMillis) {
+        storageCleanupBusyBackoffMillis = busyBackoffMillis;
+        return this;
+    }
+
+    /**
+     * Sets the timeout value used to create the package-local storage cleanup
+     * retry policy.
+     *
+     * @param busyTimeoutMillis timeout in milliseconds
+     * @return this builder
+     */
+    public StorageServiceBuilder<K, V> withStorageCleanupBusyTimeoutMillis(
+            final int busyTimeoutMillis) {
+        storageCleanupBusyTimeoutMillis = busyTimeoutMillis;
+        return this;
+    }
+
+    /**
+     * Sets the backoff value used to create the package-local WAL
+     * backpressure retry policy.
+     *
+     * @param busyBackoffMillis backoff in milliseconds
+     * @return this builder
+     */
+    public StorageServiceBuilder<K, V> withWalBackpressureBusyBackoffMillis(
+            final int busyBackoffMillis) {
+        walBackpressureBusyBackoffMillis = busyBackoffMillis;
+        return this;
+    }
+
+    /**
+     * Sets the timeout value used to create the package-local WAL
+     * backpressure retry policy.
+     *
+     * @param busyTimeoutMillis timeout in milliseconds
+     * @return this builder
+     */
+    public StorageServiceBuilder<K, V> withWalBackpressureBusyTimeoutMillis(
+            final int busyTimeoutMillis) {
+        walBackpressureBusyTimeoutMillis = busyTimeoutMillis;
         return this;
     }
 
@@ -103,14 +145,25 @@ public final class StorageServiceBuilder<K, V> {
                 .requireNonNull(segmentRegistry, "segmentRegistry");
         final TypeDescriptor<K> validatedKeyTypeDescriptor = Vldtn
                 .requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
-        final IndexRetryPolicy validatedRetryPolicy = Vldtn
-                .requireNonNull(retryPolicy, "retryPolicy");
+        final StorageCleanupRetryPolicy storageCleanupRetryPolicy =
+                new StorageCleanupRetryPolicy(Vldtn.requireNonNull(
+                        storageCleanupBusyBackoffMillis,
+                        "storageCleanupBusyBackoffMillis"),
+                        Vldtn.requireNonNull(storageCleanupBusyTimeoutMillis,
+                                "storageCleanupBusyTimeoutMillis"));
+        final WalBackpressureRetryPolicy walBackpressureRetryPolicy =
+                new WalBackpressureRetryPolicy(Vldtn.requireNonNull(
+                        walBackpressureBusyBackoffMillis,
+                        "walBackpressureBusyBackoffMillis"),
+                        Vldtn.requireNonNull(walBackpressureBusyTimeoutMillis,
+                                "walBackpressureBusyTimeoutMillis"));
         final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector =
                 new RecoverySegmentDirectoryInspector<>(
                         validatedDirectoryFacade, validatedKeyToSegmentMap);
         final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover =
                 new OrphanedSegmentDirectoryRemover<>(
-                        validatedSegmentRegistry, validatedRetryPolicy);
+                        validatedSegmentRegistry,
+                        storageCleanupRetryPolicy);
         return new StorageServiceImpl<>(segmentDirectoryInspector,
                 orphanedSegmentDirectoryRemover,
                 new IndexConsistencyCoordinator<>(
@@ -124,6 +177,6 @@ public final class StorageServiceBuilder<K, V> {
                                 .discoverOrphanedSegmentDirectories()
                                 .forEach(orphanedSegmentDirectoryRemover::remove),
                         segmentDirectoryInspector::hasSegmentLockFile),
-                validatedRetryPolicy);
+                walBackpressureRetryPolicy);
     }
 }

@@ -7,24 +7,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 
+/**
+ * In-memory route topology that coordinates route leases, drains, and
+ * reconciliation with route-map snapshots.
+ *
+ * @param <K> key type
+ */
 final class SegmentTopologyImpl<K> implements SegmentTopology<K> {
 
     private static final String OPERATION_DRAIN = "drainRouteLeases";
 
     private final Object monitor = new Object();
     private final Map<SegmentId, RouteEntry> routes = new HashMap<>();
-    private final BusyRetryPolicy retryPolicy;
+    private final RouteDrainRetryPolicy retryPolicy;
     private long version;
 
     SegmentTopologyImpl(final Snapshot<K> snapshot,
-            final BusyRetryPolicy retryPolicy) {
+            final RouteDrainRetryPolicy retryPolicy) {
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
         reconcile(snapshot);
     }

@@ -16,7 +16,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
@@ -63,7 +62,8 @@ class MaintenanceServiceTest {
                     .keyToSegmentMap(keyToSegmentMap)
                     .stableSegmentGateway(stableSegmentGateway)
                     .splitService(splitService)
-                    .retryPolicy(new IndexRetryPolicy(1, 10))
+                    .busyBackoffMillis(1)
+                    .busyTimeoutMillis(10)
                     .statsRecorder(new MaintenanceStatsRecorder())
                     .maintenanceExecutor(maintenanceExecutor)
                     .checkpointAction(checkpointAction)
@@ -109,7 +109,8 @@ class MaintenanceServiceTest {
                 .keyToSegmentMap(keyToSegmentMap)
                 .stableSegmentGateway(stableSegmentGateway)
                 .splitService(splitService)
-                .retryPolicy(new IndexRetryPolicy(1, 10))
+                .busyBackoffMillis(1)
+                .busyTimeoutMillis(10)
                 .statsRecorder(new MaintenanceStatsRecorder());
 
         final IllegalArgumentException ex = assertThrows(
@@ -136,7 +137,8 @@ class MaintenanceServiceTest {
                             .keyToSegmentMap(keyToSegmentMap)
                             .stableSegmentGateway(stableSegmentGateway)
                             .splitService(splitService)
-                            .retryPolicy(new IndexRetryPolicy(1, 10))
+                            .busyBackoffMillis(1)
+                            .busyTimeoutMillis(10)
                             .statsRecorder(new MaintenanceStatsRecorder())
                             .maintenanceExecutor(maintenanceExecutor);
 

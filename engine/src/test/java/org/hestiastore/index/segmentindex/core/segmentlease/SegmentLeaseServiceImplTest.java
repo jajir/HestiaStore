@@ -20,7 +20,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
@@ -48,7 +47,7 @@ class SegmentLeaseServiceImplTest {
     private BlockingSegment<Integer, String> blockingSegment;
 
     @Mock
-    private IndexRetryPolicy retryPolicy;
+    private SegmentAccessRetryPolicy retryPolicy;
 
     private KeyToSegmentMap<Integer> keyToSegmentMap;
     private SegmentTopology<Integer> segmentTopology;
@@ -60,7 +59,9 @@ class SegmentLeaseServiceImplTest {
                 new KeyToSegmentMapImpl<>(new MemDirectory(),
                         new TypeDescriptorInteger()));
         segmentTopology = SegmentTopology.<Integer>builder()
-                .snapshot(keyToSegmentMap.snapshot()).retryPolicy(retryPolicy)
+                .snapshot(keyToSegmentMap.snapshot())
+                .busyBackoffMillis(1)
+                .busyTimeoutMillis(1000)
                 .build();
         service = new SegmentLeaseServiceImpl<>(keyToSegmentMap,
                 segmentRegistry, segmentTopology, retryPolicy);

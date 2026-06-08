@@ -202,7 +202,7 @@ Key classes:
 1. Resolve write route via key→segment map and `SegmentLeaseService`
 1. Write latest `(k,v)` into the routed segment write cache
 1. If the route is draining, stale, closed, or transiently busy: retry through
-   `IndexRetryPolicy`
+   segment-access retry settings
 
 ## Where to Look in the Code
 

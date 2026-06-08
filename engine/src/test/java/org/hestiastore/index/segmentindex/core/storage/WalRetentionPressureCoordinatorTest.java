@@ -12,7 +12,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,7 @@ class WalRetentionPressureCoordinatorTest {
         final AtomicInteger checkpointCalls = new AtomicInteger();
         final WalRetentionPressureCoordinator<Integer, String> coordinator =
                 new WalRetentionPressureCoordinator<>(effective(buildConf()),
-                        walRuntime, new IndexRetryPolicy(1, 10),
+                        walRuntime, new WalBackpressureRetryPolicy(1, 10),
                         prepareCalls::incrementAndGet,
                         flushCalls::incrementAndGet,
                         checkpointCalls::incrementAndGet);

@@ -21,7 +21,6 @@ import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -137,7 +136,7 @@ class IndexWalCoordinatorTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> IndexWalCoordinator.create(effective(disabledConf),
-                        walRuntime, new IndexRetryPolicy(1, 10),
+                        walRuntime, new WalBackpressureRetryPolicy(1, 10),
                         drainCalls::incrementAndGet,
                         flushCalls::incrementAndGet,
                         () -> SegmentIndexState.READY, handledFailure::set,
@@ -147,9 +146,9 @@ class IndexWalCoordinatorTest {
     private IndexWalCoordinator<Integer, String> newCoordinator(
             final java.util.function.Supplier<SegmentIndexState> stateSupplier) {
         return IndexWalCoordinator.create(effective(buildConf()), walRuntime,
-                new IndexRetryPolicy(1, 10), drainCalls::incrementAndGet,
-                flushCalls::incrementAndGet, stateSupplier, handledFailure::set,
-                lastAppliedWalLsn);
+                new WalBackpressureRetryPolicy(1, 10),
+                drainCalls::incrementAndGet, flushCalls::incrementAndGet,
+                stateSupplier, handledFailure::set, lastAppliedWalLsn);
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

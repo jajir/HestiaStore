@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -19,7 +18,8 @@ class SegmentLeaseServiceBuilderTest {
                         .keyToSegmentMap(mockKeyToSegmentMap())
                         .segmentRegistry(mockSegmentRegistry())
                         .segmentTopology(mockSegmentTopology())
-                        .retryPolicy(mock(IndexRetryPolicy.class))
+                        .busyBackoffMillis(1)
+                        .busyTimeoutMillis(10)
                         .build();
 
         assertNotNull(service);
@@ -31,7 +31,8 @@ class SegmentLeaseServiceBuilderTest {
                 SegmentLeaseService.<Integer, String>builder()
                         .segmentRegistry(mockSegmentRegistry())
                         .segmentTopology(mockSegmentTopology())
-                        .retryPolicy(mock(IndexRetryPolicy.class));
+                        .busyBackoffMillis(1)
+                        .busyTimeoutMillis(10);
 
         assertThrows(IllegalArgumentException.class, builder::build);
     }

@@ -23,9 +23,11 @@ final class BootstrapStepCreateRuntime<K, V>
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
         this.state = state;
+        // TODO it's huge smell pass callback here.
         final SegmentIndexRuntime<K, V> runtime = new SegmentIndexRuntime<>(
                 state.getKeyTypeDescriptor(),
-                state.getCoreStorage(),
+                state.getStorageService(),
+                state::closeCoreStorage,
                 state.getRuntimeTopologyRuntime(),
                 state.getRuntimeServices());
         sessionResources.setRuntime(runtime, state.getExecutorRegistry());

@@ -1,37 +1,43 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageFactory;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorageOpenSpec;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 
 /**
- * Opens core storage and owns rollback cleanup until the runtime takes ownership.
+ * Creates the storage package entry point from already opened storage
+ * resources.
  */
 final class BootstrapStepOpenCoreStorage<K, V>
         extends SegmentIndexBootstrapStep<K, V> {
 
-    private SegmentIndexBootstrapState<K, V> state;
-    private SegmentIndexCoreStorage<K, V> coreStorage;
-
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        this.state = state;
-        final SegmentIndexCoreStorageOpenSpec<K, V> openSpec =
-                new SegmentIndexCoreStorageOpenSpec<>(
-                        request.getDirectory(), state.getKeyTypeDescriptor(),
-                        state.getValueTypeDescriptor(), state.getConfiguration(),
-                        state.getExecutorRegistry());
-        coreStorage = new SegmentIndexCoreStorageFactory<>(openSpec).create();
-        state.setCoreStorage(coreStorage);
-    }
-
-    @Override
-    void closeResource() {
-        if (state == null || state.indexRuntimeWasCreated()
-                || coreStorage == null) {
-            return;
-        }
-        coreStorage.close();
+        final EffectiveIndexConfiguration<K, V> conf =
+                state.getConfiguration();
+        final RuntimeTuningState runtimeTuningState = RuntimeTuningState
+                .fromConfiguration(conf);
+        final EffectiveIndexMaintenanceConfiguration maintenance =
+                conf.maintenance();
+        final StorageService<K, V> storageService =
+                StorageService.<K, V>builder()
+                        .withDirectoryFacade(request.getDirectory())
+                        .withKeyToSegmentMap(state.getKeyToSegmentMap())
+                        .withSegmentRegistry(state.getSegmentRegistry())
+                        .withKeyTypeDescriptor(state.getKeyTypeDescriptor())
+                        .withStorageCleanupBusyBackoffMillis(
+                                maintenance.busyBackoffMillis())
+                        .withStorageCleanupBusyTimeoutMillis(
+                                maintenance.busyTimeoutMillis())
+                        .withWalBackpressureBusyBackoffMillis(
+                                maintenance.busyBackoffMillis())
+                        .withWalBackpressureBusyTimeoutMillis(
+                                maintenance.busyTimeoutMillis())
+                        .build();
+        state.setCoreStorageRuntime(new CoreStorageRuntime<>(
+                runtimeTuningState, storageService));
     }
 }

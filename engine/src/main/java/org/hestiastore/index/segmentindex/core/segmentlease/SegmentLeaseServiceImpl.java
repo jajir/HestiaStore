@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology.RouteDrain;
@@ -18,6 +17,13 @@ import org.hestiastore.index.segmentindex.mapping.Snapshot;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
+/**
+ * Default segment lease service coordinating route leases with segment registry
+ * handles.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 final class SegmentLeaseServiceImpl<K, V>
         implements SegmentLeaseService<K, V> {
 
@@ -27,13 +33,13 @@ final class SegmentLeaseServiceImpl<K, V>
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentTopology<K> segmentTopology;
-    private final IndexRetryPolicy retryPolicy;
+    private final SegmentAccessRetryPolicy retryPolicy;
 
     SegmentLeaseServiceImpl(
             final KeyToSegmentMap<K> keyToSegmentMap,
             final SegmentRegistry<K, V> segmentRegistry,
             final SegmentTopology<K> segmentTopology,
-            final IndexRetryPolicy retryPolicy) {
+            final SegmentAccessRetryPolicy retryPolicy) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,

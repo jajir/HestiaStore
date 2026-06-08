@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.MemDirectory;
@@ -31,7 +30,6 @@ class SegmentTopologyTest {
 
     private KeyToSegmentMap<Integer> keyToSegmentMap;
     private ExecutorService executor;
-    private BusyRetryPolicy retryPolicy;
 
     @BeforeEach
     void setUp() {
@@ -39,7 +37,6 @@ class SegmentTopologyTest {
                 new KeyToSegmentMapImpl<>(new MemDirectory(),
                         new TypeDescriptorInteger()));
         executor = Executors.newSingleThreadExecutor();
-        retryPolicy = new BusyRetryPolicy(1, 1000);
     }
 
     @AfterEach
@@ -122,8 +119,7 @@ class SegmentTopologyTest {
     @Test
     void drainTimesOutWhenInflightLeaseRemainsOpen() {
         keyToSegmentMap.extendMaxKeyIfNeeded(100);
-        final SegmentTopology<Integer> topology = newTopology(
-                new BusyRetryPolicy(1, 1));
+        final SegmentTopology<Integer> topology = newTopology(1);
         final SegmentTopology.RouteLease lease = topology
                 .tryAcquire(SegmentId.of(0), keyToSegmentMap.snapshot()
                         .version())
@@ -162,7 +158,9 @@ class SegmentTopologyTest {
         final Snapshot<Integer> olderSnapshot = keyToSegmentMap.snapshot();
         final SegmentTopology<Integer> topology = SegmentTopology
                 .<Integer>builder().snapshot(olderSnapshot)
-                .retryPolicy(retryPolicy).build();
+                .busyBackoffMillis(1)
+                .busyTimeoutMillis(1000)
+                .build();
         applySplitPlan();
         final Snapshot<Integer> newerSnapshot = keyToSegmentMap.snapshot();
         topology.reconcile(newerSnapshot);
@@ -182,14 +180,15 @@ class SegmentTopologyTest {
     }
 
     private SegmentTopology<Integer> newTopology() {
-        return newTopology(retryPolicy);
+        return newTopology(1000);
     }
 
-    private SegmentTopology<Integer> newTopology(
-            final BusyRetryPolicy topologyRetryPolicy) {
+    private SegmentTopology<Integer> newTopology(final int busyTimeoutMillis) {
         return SegmentTopology.<Integer>builder()
                 .snapshot(keyToSegmentMap.snapshot())
-                .retryPolicy(topologyRetryPolicy).build();
+                .busyBackoffMillis(1)
+                .busyTimeoutMillis(busyTimeoutMillis)
+                .build();
     }
 
     private void applySplitPlan() {

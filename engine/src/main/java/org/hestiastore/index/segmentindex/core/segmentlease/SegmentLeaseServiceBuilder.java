@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.segmentlease;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -17,7 +16,8 @@ public final class SegmentLeaseServiceBuilder<K, V> {
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
     private SegmentTopology<K> segmentTopology;
-    private IndexRetryPolicy retryPolicy;
+    private Integer busyBackoffMillis;
+    private Integer busyTimeoutMillis;
 
     SegmentLeaseServiceBuilder() {
     }
@@ -62,14 +62,28 @@ public final class SegmentLeaseServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the retry policy used while waiting for route leases.
+     * Sets the backoff value used to create the package-local segment access
+     * retry policy.
      *
-     * @param retryPolicy retry policy
+     * @param busyBackoffMillis backoff in milliseconds
      * @return this builder
      */
-    public SegmentLeaseServiceBuilder<K, V> retryPolicy(
-            final IndexRetryPolicy retryPolicy) {
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    public SegmentLeaseServiceBuilder<K, V> busyBackoffMillis(
+            final int busyBackoffMillis) {
+        this.busyBackoffMillis = busyBackoffMillis;
+        return this;
+    }
+
+    /**
+     * Sets the timeout value used to create the package-local segment access
+     * retry policy.
+     *
+     * @param busyTimeoutMillis timeout in milliseconds
+     * @return this builder
+     */
+    public SegmentLeaseServiceBuilder<K, V> busyTimeoutMillis(
+            final int busyTimeoutMillis) {
+        this.busyTimeoutMillis = busyTimeoutMillis;
         return this;
     }
 
@@ -83,6 +97,9 @@ public final class SegmentLeaseServiceBuilder<K, V> {
                 Vldtn.requireNonNull(keyToSegmentMap, "keyToSegmentMap"),
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(segmentTopology, "segmentTopology"),
-                Vldtn.requireNonNull(retryPolicy, "retryPolicy"));
+                new SegmentAccessRetryPolicy(Vldtn.requireNonNull(
+                        busyBackoffMillis, "busyBackoffMillis"),
+                        Vldtn.requireNonNull(busyTimeoutMillis,
+                                "busyTimeoutMillis")));
     }
 }

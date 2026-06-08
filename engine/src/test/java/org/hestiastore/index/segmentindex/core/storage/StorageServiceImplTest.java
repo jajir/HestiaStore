@@ -20,7 +20,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentDirectoryLayout;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
@@ -62,7 +61,10 @@ class StorageServiceImplTest {
                 .withKeyToSegmentMap(synchronizedKeyToSegmentMap)
                 .withSegmentRegistry(segmentRegistry)
                 .withKeyTypeDescriptor(new TypeDescriptorInteger())
-                .withRetryPolicy(new IndexRetryPolicy(1, 10))
+                .withStorageCleanupBusyBackoffMillis(1)
+                .withStorageCleanupBusyTimeoutMillis(10)
+                .withWalBackpressureBusyBackoffMillis(1)
+                .withWalBackpressureBusyTimeoutMillis(10)
                 .build();
     }
 

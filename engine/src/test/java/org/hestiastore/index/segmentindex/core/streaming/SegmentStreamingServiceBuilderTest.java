@@ -13,7 +13,6 @@ import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -43,7 +42,8 @@ class SegmentStreamingServiceBuilderTest {
                         .keyToSegmentMap(keyToSegmentMap)
                         .segmentRegistry(segmentRegistry)
                         .stableSegmentGateway(stableSegmentGateway)
-                        .retryPolicy(new IndexRetryPolicy(1, 10))
+                        .busyBackoffMillis(1)
+                        .busyTimeoutMillis(10)
                         .build();
 
         assertSame(iterator, service.openIterator(segmentId,

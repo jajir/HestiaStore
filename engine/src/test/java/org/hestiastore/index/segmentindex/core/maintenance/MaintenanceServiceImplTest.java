@@ -24,7 +24,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
@@ -296,7 +295,7 @@ class MaintenanceServiceImplTest {
         final MaintenanceServiceImpl<Integer, String> maintenance =
                 new MaintenanceServiceImpl<>(
                         mappedSegments, mock(StableSegmentOperationAccess.class),
-                        splitService, new IndexRetryPolicy(1, 25),
+                        splitService, new MaintenanceRetryPolicy(1, 25),
                         new MaintenanceStatsRecorder(), maintenanceExecutor,
                         checkpointAction);
         final CountDownLatch taskStarted = new CountDownLatch(1);
@@ -352,8 +351,8 @@ class MaintenanceServiceImplTest {
         };
     }
 
-    private static IndexRetryPolicy retryPolicy() {
-        return new IndexRetryPolicy(1, 1_000);
+    private static MaintenanceRetryPolicy retryPolicy() {
+        return new MaintenanceRetryPolicy(1, 1_000);
     }
 
     private void awaitMaintenanceExecutorClosed() {

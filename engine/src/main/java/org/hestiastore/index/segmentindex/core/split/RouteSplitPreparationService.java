@@ -9,7 +9,6 @@ import org.hestiastore.index.OperationStatus;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +27,11 @@ final class RouteSplitPreparationService<K, V> {
             .getLogger(RouteSplitPreparationService.class);
 
     private final DefaultSegmentMaterializationService<K, V> materializationService;
-    private final IndexRetryPolicy retryPolicy;
+    private final SplitRetryPolicy retryPolicy;
 
     RouteSplitPreparationService(
             final DefaultSegmentMaterializationService<K, V> materializationService,
-            final IndexRetryPolicy retryPolicy) {
+            final SplitRetryPolicy retryPolicy) {
         this.materializationService = Vldtn.requireNonNull(
                 materializationService, "materializationService");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");

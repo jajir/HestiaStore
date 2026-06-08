@@ -8,7 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
@@ -39,7 +38,7 @@ class DefaultBlockingSegmentTest {
     void setUp() {
         handle = new DefaultBlockingSegment<>(SEGMENT_ID,
                 () -> segmentRegistry.loadSegment(SEGMENT_ID).getSegment(),
-                new BusyRetryPolicy(1, 25));
+                new RegistrySegmentAccessRetryPolicy(1, 25));
     }
 
     @Test
