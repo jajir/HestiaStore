@@ -16,7 +16,7 @@ component "Runtime opening\ncore.bootstrap + core.session\n\nSegmentIndexBootstr
 
 component "Topology runtime\ncore.topology\n\nSegmentTopologyRuntime\nSegmentTopology\nSplitService" as TOPOLOGY_RUNTIME
 
-component "Core storage\ncore.storage\n\nSegmentIndexCoreStorage\nSegmentIndexCoreStorageFactory\nSegmentIndexCoreStorageOpenSpec\nIndexWalCoordinator" as CORE_STORAGE
+component "Core storage\ncore.storage\n\nStorageService\nStorageServiceBuilder\nStorageServiceImpl\nCoreStorageRuntime\nIndexWalCoordinator" as CORE_STORAGE
 
 component "Split runtime\ncore.split\n\nSplitServiceBuilder\nSplitServiceImpl\nSplitPolicyCoordinator" as SPLIT_RUNTIME
 
@@ -40,7 +40,7 @@ API --> SESSION : public calls
 SESSION --> SESSION_STATE : lifecycle and lock ownership
 SESSION --> FACADES : point, read, maintenance entry points
 FACADES --> RUNTIME : tracked access to runtime services
-RUNTIME --> CORE_STORAGE : open route map and registry
+RUNTIME --> CORE_STORAGE : assemble storage service
 RUNTIME --> TOPOLOGY_RUNTIME : create topology services
 TOPOLOGY_RUNTIME --> SPLIT_RUNTIME : own split runtime
 RUNTIME --> WAL_RUNTIME : open WAL runtime

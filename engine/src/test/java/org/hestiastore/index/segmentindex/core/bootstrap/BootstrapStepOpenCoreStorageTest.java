@@ -5,7 +5,6 @@ import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTes
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.executorRegistry;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.request;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.stateWithRuntimeInputs;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,6 +18,7 @@ import org.junit.jupiter.api.Test;
 class BootstrapStepOpenCoreStorageTest {
 
     private ExecutorRegistry executorRegistry;
+    private MemDirectory directory;
     private SegmentIndexBootstrapState<Integer, String> state;
     private BootstrapStepOpenCoreStorage<Integer, String> step;
 
@@ -41,42 +41,38 @@ class BootstrapStepOpenCoreStorageTest {
     void apply_populatesCoreStorageInState() {
         prepareState("bootstrap-step-core-storage");
 
-        step.apply(request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
+        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE),
                 state);
 
-        assertNotNull(state.getCoreStorage());
-        assertNotNull(state.getCoreStorage().keyToSegmentMap());
-        assertNotNull(state.getCoreStorage().segmentRegistry());
+        assertTrue(state.hasCoreStorage());
+        assertNotNull(state.getRuntimeTuningState());
+        assertNotNull(state.getStorageService());
     }
 
     @Test
-    void closeResource_closesCoreStorageOnRollback() {
+    void closeResource_doesNotOwnEarlierStorageResources() {
         prepareState("bootstrap-step-core-storage-rollback");
-        step.apply(request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
+        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE),
                 state);
 
         step.closeResource();
 
-        assertTrue(state.getCoreStorage().keyToSegmentMap().wasClosed());
-    }
-
-    @Test
-    void closeResource_skipsCleanupAfterRuntimeWasCreated() {
-        prepareState("bootstrap-step-core-storage-runtime-created");
-        step.apply(request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
-                state);
-        state.markIndexRuntimeCreated();
-
-        step.closeResource();
-
-        assertFalse(state.getCoreStorage().keyToSegmentMap()
-                .wasClosed());
+        assertTrue(state.hasCoreStorage());
     }
 
     private void prepareState(final String indexName) {
         final EffectiveIndexConfiguration<Integer, String> configuration =
                 effectiveConfiguration(indexName);
+        directory = new MemDirectory();
         executorRegistry = executorRegistry(configuration);
         state = stateWithRuntimeInputs(configuration, executorRegistry);
+        final SegmentIndexBootstrapRequest<Integer, String> request =
+                request(directory, SegmentIndexBootstrapMode.CREATE);
+        new BootstrapStepOpenKeyToSegmentMap<Integer, String>().apply(request,
+                state);
+        new BootstrapStepCreateChunkStoreCache<Integer, String>().apply(
+                request, state);
+        new BootstrapStepOpenSegmentRegistry<Integer, String>().apply(request,
+                state);
     }
 }

@@ -15,7 +15,6 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigurationStorage;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 
 final class BootstrapStepTestSupport {
 
@@ -151,11 +150,10 @@ final class BootstrapStepTestSupport {
             failure = closeIgnoringFailure(
                     state.getRuntimeSplitService()::close, failure);
         }
-        if (state.hasCoreStorage()) {
-            final SegmentIndexCoreStorage<K, V> coreStorage =
-                    state.getCoreStorage();
-            if (!coreStorage.wasClosed()) {
-                failure = closeIgnoringFailure(coreStorage::close, failure);
+        if (state.hasKeyToSegmentMap()) {
+            if (!state.getKeyToSegmentMap().wasClosed()) {
+                failure = closeIgnoringFailure(state::closeCoreStorage,
+                        failure);
             }
         }
         if (state.hasRuntimeWalRuntime()) {

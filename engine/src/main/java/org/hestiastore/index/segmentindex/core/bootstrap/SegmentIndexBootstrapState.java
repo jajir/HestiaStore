@@ -3,8 +3,10 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
@@ -12,9 +14,12 @@ import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServic
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
+import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
 /**
  * Mutable products created during one segment-index bootstrap run.
@@ -38,7 +43,11 @@ final class SegmentIndexBootstrapState<K, V> {
     private SegmentIndexSessionHandle<K, V> managedIndex;
     private SegmentIndexResourceClosingAdapter<K, V> index;
     private SegmentIndexBootstrapResult<K, V> result;
-    private SegmentIndexCoreStorage<K, V> coreStorage;
+    private RuntimeTuningState runtimeTuningState;
+    private KeyToSegmentMap<K> keyToSegmentMap;
+    private ChunkStoreCache<K, V> chunkStoreCache;
+    private SegmentRegistry<K, V> segmentRegistry;
+    private StorageService<K, V> storageService;
     private SegmentLeaseService<K, V> runtimeSegmentLeaseService;
     private SplitService runtimeSplitService;
     private SegmentTopologyRuntimeAccess<K, V> runtimeTopologyRuntime;
@@ -159,16 +168,108 @@ final class SegmentIndexBootstrapState<K, V> {
         return lastAppliedWalLsn;
     }
 
-    void setCoreStorage(final SegmentIndexCoreStorage<K, V> coreStorage) {
-        this.coreStorage = Vldtn.requireNonNull(coreStorage, "coreStorage");
+    void setKeyToSegmentMap(final KeyToSegmentMap<K> keyToSegmentMap) {
+        this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
+                "keyToSegmentMap");
+    }
+
+    boolean hasKeyToSegmentMap() {
+        return keyToSegmentMap != null;
+    }
+
+    void setChunkStoreCache(
+            final ChunkStoreCache<K, V> chunkStoreCache) {
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
+    }
+
+    void setSegmentRegistry(
+            final SegmentRegistry<K, V> segmentRegistry) {
+        this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
+                "segmentRegistry");
+    }
+
+    void setCoreStorageRuntime(
+            final CoreStorageRuntime<K, V> coreStorageRuntime) {
+        final CoreStorageRuntime<K, V> validatedCoreStorageRuntime =
+                Vldtn.requireNonNull(coreStorageRuntime,
+                        "coreStorageRuntime");
+        runtimeTuningState =
+                validatedCoreStorageRuntime.getRuntimeTuningState();
+        storageService = validatedCoreStorageRuntime.getStorageService();
     }
 
     boolean hasCoreStorage() {
-        return coreStorage != null;
+        return storageService != null;
     }
 
-    SegmentIndexCoreStorage<K, V> getCoreStorage() {
-        return requireInitialized(coreStorage, "coreStorage");
+    RuntimeTuningState getRuntimeTuningState() {
+        return requireInitialized(runtimeTuningState, "runtimeTuningState");
+    }
+
+    KeyToSegmentMap<K> getKeyToSegmentMap() {
+        return requireInitialized(keyToSegmentMap, "keyToSegmentMap");
+    }
+
+    SegmentRegistry<K, V> getSegmentRegistry() {
+        return requireInitialized(segmentRegistry, "segmentRegistry");
+    }
+
+    ChunkStoreCache<K, V> getChunkStoreCache() {
+        return requireInitialized(chunkStoreCache, "chunkStoreCache");
+    }
+
+    StorageService<K, V> getStorageService() {
+        return requireInitialized(storageService, "storageService");
+    }
+
+    /**
+     * Closes opened core storage resources during failed bootstrap before the
+     * runtime takes ownership.
+     */
+    void closeCoreStorage() {
+        RuntimeException failure = null;
+        failure = closeSegmentRegistry(failure);
+        failure = closeKeyToSegmentMap(failure);
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private RuntimeException closeSegmentRegistry(
+            final RuntimeException failure) {
+        if (segmentRegistry == null) {
+            return failure;
+        }
+        try {
+            segmentRegistry.close();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            return appendCleanupFailure(failure, cleanupFailure);
+        }
+    }
+
+    private RuntimeException closeKeyToSegmentMap(
+            final RuntimeException failure) {
+        if (keyToSegmentMap == null || keyToSegmentMap.wasClosed()) {
+            return failure;
+        }
+        try {
+            keyToSegmentMap.close();
+            return failure;
+        } catch (final RuntimeException cleanupFailure) {
+            return appendCleanupFailure(failure, cleanupFailure);
+        }
+    }
+
+    private RuntimeException appendCleanupFailure(
+            final RuntimeException failure,
+            final RuntimeException cleanupFailure) {
+        if (failure == null) {
+            return cleanupFailure;
+        }
+        failure.addSuppressed(cleanupFailure);
+        return failure;
     }
 
     void setRuntimeSegmentLeaseService(

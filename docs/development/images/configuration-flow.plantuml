@@ -24,7 +24,7 @@ package "Bootstrap and adapters" {
 
 package "Concrete runtime objects" {
   [ExecutorRegistry] as ExecutorRegistry
-  [SegmentIndexCoreStorage] as CoreStorage
+  [StorageService\ncore.storage] as CoreStorage
   [SegmentRegistry] as SegmentRegistry
   [SegmentBuilder / Segment] as Segment
   [WalRuntime] as WalRuntime
@@ -41,7 +41,7 @@ EffectiveConfiguration --> Bootstrap : bootstrap state
 Bootstrap --> RuntimeBuilders : pass effective sections
 
 RuntimeBuilders --> ExecutorRegistry : identity, logging,\nmaintenance
-RuntimeBuilders --> CoreStorage : runtime tuning,\nchunk cache, retry
+RuntimeBuilders --> CoreStorage : storage facade,\nretry
 RuntimeBuilders --> SegmentRegistry : segment cache,\nbusy retry
 RuntimeBuilders --> Segment : segment, write path,\nbloom, IO, filters
 RuntimeBuilders --> WalRuntime : WAL runtime settings\nand type descriptors

@@ -13,7 +13,6 @@ import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.slf4j.Logger;
@@ -31,14 +30,14 @@ class SegmentsIterator<K, V> extends AbstractCloseableResource
 
     private static final Logger LOGGER = LoggerFactory
             .getLogger(SegmentsIterator.class);
-    private static final IndexRetryPolicy DEFAULT_RETRY_POLICY = new IndexRetryPolicy(
+    private static final StreamingRetryPolicy DEFAULT_RETRY_POLICY = new StreamingRetryPolicy(
             IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS,
             IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS);
     private static final String OPEN_ITERATOR_OPERATION = "openIterator";
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final SegmentIteratorIsolation isolation;
-    private final IndexRetryPolicy retryPolicy;
+    private final StreamingRetryPolicy retryPolicy;
     private final List<SegmentId> ids;
     private Entry<K, V> currentEntry = null;
     private Entry<K, V> nextEntry = null;

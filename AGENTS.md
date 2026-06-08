@@ -41,7 +41,10 @@
 - Avoid inner enums and exception classes when a separate file is clearer.
 - Avoid non-trivial inner classes when a separate file is clearer; if an inner class grows beyond roughly 20 lines or carries its own state and behavior, prefer a dedicated top-level class.
 - Prefer clear, descriptive class names such as `*Adapter`, `*Cache`, and `*Descriptor`.
-- Add Javadoc for public types and non-trivial logic.
+- Javadoc is mandatory before finishing a Java change for every new or changed
+  public type, public constructor, public method, and non-trivial
+  package-private type or method. Treat lifecycle, concurrency, persistence,
+  package-boundary, and architectural decisions as non-trivial logic.
 - Do not use fully qualified class names in code; use explicit imports instead.
 - Remove unused imports in every touched file before finishing.
 - Benchmark sources under `benchmarks/src/...` are especially prone to stale imports after refactors, so do a final unused-import pass there before updating a PR.

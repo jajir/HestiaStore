@@ -17,7 +17,6 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -58,7 +57,7 @@ class SegmentStreamingServiceImplTest {
                 keyToSegmentMap);
         service = new SegmentStreamingServiceImpl<>(
                 synchronizedKeyToSegmentMap, segmentRegistry,
-                stableSegmentGateway, new IndexRetryPolicy(1, 10));
+                stableSegmentGateway, new StreamingRetryPolicy(1, 10));
     }
 
     @AfterEach

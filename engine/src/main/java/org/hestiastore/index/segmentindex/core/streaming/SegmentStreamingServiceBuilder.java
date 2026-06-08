@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.streaming;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -17,7 +16,8 @@ public final class SegmentStreamingServiceBuilder<K, V> {
     private KeyToSegmentMap<K> keyToSegmentMap;
     private SegmentRegistry<K, V> segmentRegistry;
     private StableSegmentOperationAccess<K, V> stableSegmentGateway;
-    private IndexRetryPolicy retryPolicy;
+    private Integer busyBackoffMillis;
+    private Integer busyTimeoutMillis;
 
     SegmentStreamingServiceBuilder() {
     }
@@ -62,14 +62,28 @@ public final class SegmentStreamingServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the retry policy used for transient busy states.
+     * Sets the backoff value used to create the package-local streaming retry
+     * policy.
      *
-     * @param retryPolicy retry policy
+     * @param busyBackoffMillis backoff in milliseconds
      * @return this builder
      */
-    public SegmentStreamingServiceBuilder<K, V> retryPolicy(
-            final IndexRetryPolicy retryPolicy) {
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    public SegmentStreamingServiceBuilder<K, V> busyBackoffMillis(
+            final int busyBackoffMillis) {
+        this.busyBackoffMillis = busyBackoffMillis;
+        return this;
+    }
+
+    /**
+     * Sets the timeout value used to create the package-local streaming retry
+     * policy.
+     *
+     * @param busyTimeoutMillis timeout in milliseconds
+     * @return this builder
+     */
+    public SegmentStreamingServiceBuilder<K, V> busyTimeoutMillis(
+            final int busyTimeoutMillis) {
+        this.busyTimeoutMillis = busyTimeoutMillis;
         return this;
     }
 
@@ -84,6 +98,9 @@ public final class SegmentStreamingServiceBuilder<K, V> {
                 Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),
-                Vldtn.requireNonNull(retryPolicy, "retryPolicy"));
+                new StreamingRetryPolicy(Vldtn.requireNonNull(
+                        busyBackoffMillis, "busyBackoffMillis"),
+                        Vldtn.requireNonNull(busyTimeoutMillis,
+                                "busyTimeoutMillis")));
     }
 }

@@ -13,7 +13,6 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
@@ -23,7 +22,7 @@ import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationA
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
+import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
@@ -108,10 +107,11 @@ class BootstrapStepCreateRuntimeTest {
                 effectiveConfiguration(indexName);
         executorRegistry = executorRegistry(configuration);
         state = stateWithRuntimeInputs(configuration, executorRegistry);
-        state.setCoreStorage(new SegmentIndexCoreStorage<>(
-                mock(RuntimeTuningState.class), keyToSegmentMap,
-                segmentRegistry, mock(ChunkStoreCache.class),
-                mock(IndexRetryPolicy.class), storageService));
+        state.setKeyToSegmentMap(keyToSegmentMap);
+        state.setChunkStoreCache(mock(ChunkStoreCache.class));
+        state.setSegmentRegistry(segmentRegistry);
+        state.setCoreStorageRuntime(new CoreStorageRuntime<>(
+                mock(RuntimeTuningState.class), storageService));
         state.setRuntimeTopologyRuntime(topologyRuntime);
         state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
                 mock(SegmentIndexOperationAccess.class),

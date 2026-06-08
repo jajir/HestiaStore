@@ -16,7 +16,6 @@ import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,7 @@ class RouteSplitPreparationServiceTest {
     @BeforeEach
     void setUp() {
         preparationService = new RouteSplitPreparationService<>(
-                materializationService, new IndexRetryPolicy(1, 1));
+                materializationService, new SplitRetryPolicy(1, 1));
     }
 
     @Test

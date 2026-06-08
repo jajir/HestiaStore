@@ -4,7 +4,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.LongSupplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -20,7 +19,8 @@ public final class MaintenanceServiceBuilder<K, V> {
     private KeyToSegmentMap<K> keyToSegmentMap;
     private StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private SplitService splitService;
-    private IndexRetryPolicy retryPolicy;
+    private Integer busyBackoffMillis;
+    private Integer busyTimeoutMillis;
     private MaintenanceStatsRecorder statsRecorder;
     private ExecutorService maintenanceExecutor;
     private Runnable checkpointAction;
@@ -69,14 +69,28 @@ public final class MaintenanceServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the retry policy used for transient busy states.
+     * Sets the backoff value used to create the package-local maintenance retry
+     * policy.
      *
-     * @param retryPolicy retry policy
+     * @param busyBackoffMillis backoff in milliseconds
      * @return this builder
      */
-    public MaintenanceServiceBuilder<K, V> retryPolicy(
-            final IndexRetryPolicy retryPolicy) {
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    public MaintenanceServiceBuilder<K, V> busyBackoffMillis(
+            final int busyBackoffMillis) {
+        this.busyBackoffMillis = busyBackoffMillis;
+        return this;
+    }
+
+    /**
+     * Sets the timeout value used to create the package-local maintenance retry
+     * policy.
+     *
+     * @param busyTimeoutMillis timeout in milliseconds
+     * @return this builder
+     */
+    public MaintenanceServiceBuilder<K, V> busyTimeoutMillis(
+            final int busyTimeoutMillis) {
+        this.busyTimeoutMillis = busyTimeoutMillis;
         return this;
     }
 
@@ -139,7 +153,10 @@ public final class MaintenanceServiceBuilder<K, V> {
                 Vldtn.requireNonNull(stableSegmentGateway,
                         "stableSegmentGateway"),
                 Vldtn.requireNonNull(splitService, "splitService"),
-                Vldtn.requireNonNull(retryPolicy, "retryPolicy"),
+                new MaintenanceRetryPolicy(Vldtn.requireNonNull(
+                        busyBackoffMillis, "busyBackoffMillis"),
+                        Vldtn.requireNonNull(busyTimeoutMillis,
+                                "busyTimeoutMillis")),
                 Vldtn.requireNonNull(statsRecorder, "statsRecorder"),
                 Vldtn.requireNonNull(maintenanceExecutor,
                         "maintenanceExecutor"),

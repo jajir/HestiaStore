@@ -88,11 +88,19 @@ class BootstrapStepCreateRuntimeServicesTest {
                 effectiveConfiguration(configurationWithWal(indexName));
         executorRegistry = executorRegistry(configuration);
         state = stateWithRuntimeInputs(configuration, executorRegistry);
-        new BootstrapStepOpenCoreStorage<Integer, String>().apply(
-                request(directory, SegmentIndexBootstrapMode.CREATE), state);
+        final SegmentIndexBootstrapRequest<Integer, String> request =
+                request(directory, SegmentIndexBootstrapMode.CREATE);
+        new BootstrapStepOpenKeyToSegmentMap<Integer, String>().apply(request,
+                state);
+        new BootstrapStepCreateChunkStoreCache<Integer, String>().apply(
+                request, state);
+        new BootstrapStepOpenSegmentRegistry<Integer, String>().apply(request,
+                state);
+        new BootstrapStepOpenCoreStorage<Integer, String>().apply(request,
+                state);
         new BootstrapStepCreateRuntimeTopology<>(sessionResources).apply(
-                request(directory, SegmentIndexBootstrapMode.CREATE), state);
+                request, state);
         new BootstrapStepOpenRuntimeWal<Integer, String>().apply(
-                request(directory, SegmentIndexBootstrapMode.CREATE), state);
+                request, state);
     }
 }

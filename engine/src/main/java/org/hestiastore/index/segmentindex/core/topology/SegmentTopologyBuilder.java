@@ -1,6 +1,5 @@
 package org.hestiastore.index.segmentindex.core.topology;
 
-import org.hestiastore.index.BusyRetryPolicy;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.mapping.Snapshot;
 
@@ -12,7 +11,8 @@ import org.hestiastore.index.segmentindex.mapping.Snapshot;
 public final class SegmentTopologyBuilder<K> {
 
     private Snapshot<K> snapshot;
-    private BusyRetryPolicy retryPolicy;
+    private Integer busyBackoffMillis;
+    private Integer busyTimeoutMillis;
 
     SegmentTopologyBuilder() {
     }
@@ -29,14 +29,28 @@ public final class SegmentTopologyBuilder<K> {
     }
 
     /**
-     * Sets the retry policy used while waiting for route leases to drain.
+     * Sets the backoff value used to create the package-local route drain
+     * retry policy.
      *
-     * @param retryPolicy retry policy
+     * @param busyBackoffMillis backoff in milliseconds
      * @return this builder
      */
-    public SegmentTopologyBuilder<K> retryPolicy(
-            final BusyRetryPolicy retryPolicy) {
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+    public SegmentTopologyBuilder<K> busyBackoffMillis(
+            final int busyBackoffMillis) {
+        this.busyBackoffMillis = busyBackoffMillis;
+        return this;
+    }
+
+    /**
+     * Sets the timeout value used to create the package-local route drain retry
+     * policy.
+     *
+     * @param busyTimeoutMillis timeout in milliseconds
+     * @return this builder
+     */
+    public SegmentTopologyBuilder<K> busyTimeoutMillis(
+            final int busyTimeoutMillis) {
+        this.busyTimeoutMillis = busyTimeoutMillis;
         return this;
     }
 
@@ -48,6 +62,9 @@ public final class SegmentTopologyBuilder<K> {
     public SegmentTopology<K> build() {
         return new SegmentTopologyImpl<>(
                 Vldtn.requireNonNull(snapshot, "snapshot"),
-                Vldtn.requireNonNull(retryPolicy, "retryPolicy"));
+                new RouteDrainRetryPolicy(Vldtn.requireNonNull(
+                        busyBackoffMillis, "busyBackoffMillis"),
+                        Vldtn.requireNonNull(busyTimeoutMillis,
+                                "busyTimeoutMillis")));
     }
 }

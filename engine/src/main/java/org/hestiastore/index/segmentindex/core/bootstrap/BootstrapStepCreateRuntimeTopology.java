@@ -1,12 +1,12 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.streaming.DirectSegmentAccess;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentStreamingService;
 import org.hestiastore.index.segmentindex.core.topology.SegmentTopology;
@@ -31,16 +31,13 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
         this.state = state;
-        final SegmentIndexCoreStorage<K, V> coreStorage =
-                state.getCoreStorage();
         final SegmentTopology<K> segmentTopology =
-                newSegmentTopology(coreStorage);
+                newSegmentTopology(state);
         final SegmentLeaseService<K, V> segmentLeaseService =
-                newSegmentLeaseService(coreStorage, segmentTopology);
-        splitService = newSplitService(request, state, coreStorage,
-                segmentLeaseService);
+                newSegmentLeaseService(state, segmentTopology);
+        splitService = newSplitService(request, state, segmentLeaseService);
         final SegmentTopologyRuntimeAccess<K, V> topologyRuntime =
-                newTopologyRuntime(coreStorage, splitService);
+                newTopologyRuntime(state, splitService);
         state.setRuntimeSegmentLeaseService(segmentLeaseService);
         state.setRuntimeSplitService(splitService);
         state.setRuntimeTopologyRuntime(topologyRuntime);
@@ -56,35 +53,40 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
     }
 
     private SegmentTopology<K> newSegmentTopology(
-            final SegmentIndexCoreStorage<K, V> coreStorage) {
+            final SegmentIndexBootstrapState<K, V> state) {
+        final EffectiveIndexMaintenanceConfiguration maintenance =
+                state.getConfiguration().maintenance();
         return SegmentTopology.<K>builder()
-                .snapshot(coreStorage.keyToSegmentMap().snapshot())
-                .retryPolicy(coreStorage.retryPolicy())
+                .snapshot(state.getKeyToSegmentMap().snapshot())
+                .busyBackoffMillis(maintenance.busyBackoffMillis())
+                .busyTimeoutMillis(maintenance.busyTimeoutMillis())
                 .build();
     }
 
     private SegmentLeaseService<K, V> newSegmentLeaseService(
-            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final SegmentIndexBootstrapState<K, V> state,
             final SegmentTopology<K> segmentTopology) {
+        final EffectiveIndexMaintenanceConfiguration maintenance =
+                state.getConfiguration().maintenance();
         return SegmentLeaseService.<K, V>builder()
-                .keyToSegmentMap(coreStorage.keyToSegmentMap())
-                .segmentRegistry(coreStorage.segmentRegistry())
+                .keyToSegmentMap(state.getKeyToSegmentMap())
+                .segmentRegistry(state.getSegmentRegistry())
                 .segmentTopology(segmentTopology)
-                .retryPolicy(coreStorage.retryPolicy())
+                .busyBackoffMillis(maintenance.busyBackoffMillis())
+                .busyTimeoutMillis(maintenance.busyTimeoutMillis())
                 .build();
     }
 
     private SplitService newSplitService(
             final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state,
-            final SegmentIndexCoreStorage<K, V> coreStorage,
             final SegmentLeaseService<K, V> segmentLeaseService) {
         return SplitService.<K, V>builder()
                 .conf(state.getConfiguration())
-                .runtimeTuningState(coreStorage.runtimeTuningState())
-                .keyToSegmentMap(coreStorage.keyToSegmentMap())
+                .runtimeTuningState(state.getRuntimeTuningState())
+                .keyToSegmentMap(state.getKeyToSegmentMap())
                 .segmentLeaseService(segmentLeaseService)
-                .segmentRegistry(coreStorage.segmentRegistry())
+                .segmentRegistry(state.getSegmentRegistry())
                 .directoryFacade(request.getDirectory())
                 .splitExecutor(state.getExecutorRegistry()
                         .getSplitMaintenanceExecutor())
@@ -99,29 +101,35 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
     }
 
     private SegmentTopologyRuntimeAccess<K, V> newTopologyRuntime(
-            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final SegmentIndexBootstrapState<K, V> state,
             final SplitService splitService) {
         final StableSegmentOperationAccess<K, V> stableSegmentGateway =
                 StableSegmentOperationAccess.create(
-                        coreStorage.segmentRegistry());
+                        state.getSegmentRegistry());
         final SegmentStreamingService<K, V> streamingService =
-                newStreamingService(coreStorage, stableSegmentGateway);
+                newStreamingService(state, stableSegmentGateway);
         final DirectSegmentAccess<K, V> directSegmentAccess =
-                DirectSegmentAccess.create(coreStorage.keyToSegmentMap(),
-                        coreStorage.segmentRegistry(),
-                        coreStorage.retryPolicy());
+                DirectSegmentAccess.create(state.getKeyToSegmentMap(),
+                        state.getSegmentRegistry(),
+                        state.getConfiguration().maintenance()
+                                .busyBackoffMillis(),
+                        state.getConfiguration().maintenance()
+                                .busyTimeoutMillis());
         return SegmentTopologyRuntimeAccess.create(splitService,
                 streamingService, directSegmentAccess);
     }
 
     private SegmentStreamingService<K, V> newStreamingService(
-            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final SegmentIndexBootstrapState<K, V> state,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway) {
+        final EffectiveIndexMaintenanceConfiguration maintenance =
+                state.getConfiguration().maintenance();
         return SegmentStreamingService.<K, V>builder()
-                .keyToSegmentMap(coreStorage.keyToSegmentMap())
-                .segmentRegistry(coreStorage.segmentRegistry())
+                .keyToSegmentMap(state.getKeyToSegmentMap())
+                .segmentRegistry(state.getSegmentRegistry())
                 .stableSegmentGateway(stableSegmentGateway)
-                .retryPolicy(coreStorage.retryPolicy())
+                .busyBackoffMillis(maintenance.busyBackoffMillis())
+                .busyTimeoutMillis(maintenance.busyTimeoutMillis())
                 .build();
     }
 }

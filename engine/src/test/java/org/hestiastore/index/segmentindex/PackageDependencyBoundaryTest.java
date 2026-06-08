@@ -46,6 +46,8 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.executorregistry..";
     private static final String SEGMENT_INDEX_METRICS_PACKAGES =
             "org.hestiastore.index.segmentindex.metrics..";
+    private static final String SEGMENT_INDEX_CORE_PACKAGES =
+            "org.hestiastore.index.segmentindex.core..";
     private static final String SEGMENT_INDEX_MAPPING_PACKAGES =
             "org.hestiastore.index.segmentindex.mapping..";
     private static final String SEGMENT_INDEX_EFFECTIVE_CONFIGURATION_PACKAGES =
@@ -157,7 +159,19 @@ class PackageDependencyBoundaryTest {
             .resideInAPackage(SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES)//
             .should()//
             .dependOnClassesThat()//
-            .resideInAPackage(SEGMENT_INDEX_PUBLIC_API_PACKAGE);
+            .resideInAPackage(SEGMENT_INDEX_PUBLIC_API_PACKAGE)
+            .because("bootstrap composes runtime internals and must not reach through the public SegmentIndex API package for helper objects.");
+
+    @ArchTest
+    static final ArchRule concrete_retry_policies_are_package_private = classes()//
+            .that()//
+            .resideInAnyPackage(SEGMENT_INDEX_CORE_PACKAGES,
+                    SEGMENT_REGISTRY_PACKAGES)//
+            .and()//
+            .haveSimpleNameEndingWith("RetryPolicy")//
+            .should()//
+            .bePackagePrivate()
+            .because("retry policies are package-local implementation details; dependent packages pass retry settings to the package entry point instead of sharing policy objects.");
 
     @ArchTest
     static final ArchRule mapping_does_not_depend_on_split = noClasses()//
@@ -217,13 +231,14 @@ class PackageDependencyBoundaryTest {
             .because("StorageService is the storage boundary used by controlled runtime, bootstrap, operation, and maintenance entry points; broad direct use would turn it into a service locator.");
 
     @ArchTest
-    static final ArchRule only_storage_package_builds_storage_service = noClasses()//
+    static final ArchRule only_storage_and_bootstrap_build_storage_service = noClasses()//
             .that()//
-            .resideOutsideOfPackages(SEGMENT_INDEX_CORE_STORAGE_PACKAGES)//
+            .resideOutsideOfPackages(SEGMENT_INDEX_CORE_STORAGE_PACKAGES,
+                    SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES)//
             .should()//
             .dependOnClassesThat()//
             .areAssignableTo(StorageServiceBuilder.class)
-            .because("storage service construction wires physical directory, map, registry, and retry dependencies, so it should stay inside the storage package.");
+            .because("bootstrap owns startup composition and storage owns storage internals; other packages should use StorageService instead of constructing storage services directly.");
 
     @ArchTest
     static final ArchRule storage_consistency_internals_are_package_private = classes()//

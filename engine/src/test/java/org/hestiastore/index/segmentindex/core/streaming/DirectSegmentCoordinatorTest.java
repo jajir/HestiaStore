@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -28,7 +27,7 @@ class DirectSegmentCoordinatorTest {
     private SegmentRegistry<Integer, String> segmentRegistry;
 
     @Mock
-    private IndexRetryPolicy retryPolicy;
+    private StreamingRetryPolicy retryPolicy;
 
     private DirectSegmentCoordinator<Integer, String> coordinator;
 

@@ -9,7 +9,6 @@ import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
-import org.hestiastore.index.segmentindex.core.storage.SegmentIndexCoreStorage;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 
@@ -22,46 +21,56 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
 public final class SegmentIndexRuntime<K, V>
         implements SegmentIndexDataAccess<K, V> {
 
-    private final SegmentIndexCoreStorage<K, V> coreStorage;
+    private final StorageService<K, V> storageService;
+    private final Runnable closeCoreStorageAction;
     private final SegmentTopologyRuntimeAccess<K, V> topologyRuntime;
     private final SegmentIndexRuntimeServices<K, V> services;
 
+    /**
+     * Creates a running segment-index runtime from already opened package
+     * services.
+     *
+     * @param keyTypeDescriptor key descriptor validated during bootstrap
+     * @param storageService storage package entry point
+     * @param closeCoreStorageAction action that closes opened storage resources
+     * @param topologyRuntime topology and streaming runtime access
+     * @param services operation, maintenance, tuning, and monitoring services
+     */
     public SegmentIndexRuntime(final TypeDescriptor<K> keyTypeDescriptor,
-            final SegmentIndexCoreStorage<K, V> coreStorage,
+            final StorageService<K, V> storageService,
+            final Runnable closeCoreStorageAction,
             final SegmentTopologyRuntimeAccess<K, V> topologyRuntime,
             final SegmentIndexRuntimeServices<K, V> services) {
         Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor");
-        this.coreStorage = Vldtn.requireNonNull(coreStorage, "coreStorage");
+        this.storageService = Vldtn.requireNonNull(storageService,
+                "storageService");
+        this.closeCoreStorageAction = Vldtn.requireNonNull(
+                closeCoreStorageAction, "closeCoreStorageAction");
         this.topologyRuntime = Vldtn.requireNonNull(topologyRuntime,
                 "topologyRuntime");
         this.services = Vldtn.requireNonNull(services, "services");
     }
 
     void recoverFromWal() {
-        coreStorage.storageService().recoverFromWal(
-                services.operationAccess()::replayWalRecord);
+        storageService.recoverFromWal(services.operationAccess()::replayWalRecord);
     }
 
     void cleanupOrphanedSegmentDirectories() {
-        coreStorage.storageService().cleanupOrphanedSegmentDirectories();
+        storageService.cleanupOrphanedSegmentDirectories();
     }
 
     boolean hasSegmentLockFile(final SegmentId segmentId) {
-        return coreStorage.storageService().hasSegmentLockFile(segmentId);
+        return storageService.hasSegmentLockFile(segmentId);
     }
 
     void runStartupConsistencyCheck() {
-        coreStorage.storageService().runStartupConsistencyCheck();
+        storageService.runStartupConsistencyCheck();
         requestFullSplitScan();
     }
 
     void checkAndRepairConsistency() {
-        coreStorage.storageService().checkAndRepairConsistency();
+        storageService.checkAndRepairConsistency();
         requestFullSplitScan();
-    }
-
-    SegmentIndexCoreStorage<K, V> coreStorage() {
-        return coreStorage;
     }
 
     SegmentTopologyRuntimeAccess<K, V> topologyRuntime() {
@@ -69,7 +78,7 @@ public final class SegmentIndexRuntime<K, V>
     }
 
     StorageService<K, V> storageService() {
-        return coreStorage.storageService();
+        return storageService;
     }
 
     SegmentIndexOperationAccess<K, V> operationAccess() {
@@ -112,7 +121,7 @@ public final class SegmentIndexRuntime<K, V>
     }
 
     void closeCoreStorage() {
-        coreStorage.close();
+        closeCoreStorageAction.run();
     }
 
     @Override
@@ -141,7 +150,7 @@ public final class SegmentIndexRuntime<K, V>
     }
 
     void closeWal() {
-        coreStorage.storageService().closeWal();
+        storageService.closeWal();
     }
 
     void closeAfterFailedInitialization() {

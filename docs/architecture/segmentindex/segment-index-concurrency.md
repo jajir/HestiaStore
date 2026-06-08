@@ -52,12 +52,13 @@
 
 ## API Behavior
 - put/get/delete: retry on topology drain, stale route-map versions, registry
-  BUSY, and per-segment BUSY using IndexRetryPolicy
+  BUSY, and per-segment BUSY using the segment-access retry settings
   (`maintenance().busyBackoffMillis()` +
   `maintenance().busyTimeoutMillis()`). A segment CLOSED result restarts
   routing from a fresh snapshot. Timeouts throw IndexException.
 - flush/compact: start maintenance on each segment and return once accepted;
-  do not wait for IO completion; BUSY retries follow IndexRetryPolicy.
+  do not wait for IO completion; BUSY retries follow maintenance retry
+  settings.
 - flushAndWait/compactAndWait: wait for each segment to return to `READY`
   (or `CLOSED`); do not call from a segment maintenance executor thread.
 - getStream: captures a snapshot of segment ids and iterates them using the
@@ -80,7 +81,8 @@
   reconciliation, then hands admitted work to SplitExecutionCoordinator.
 - Admitted splits run on the shared split-maintenance executor; only one split
   per segment id can be in flight.
-- RouteSplitCoordinator retries BUSY using IndexRetryPolicy; timeouts throw.
+- RouteSplitCoordinator retries BUSY using split retry settings; timeouts
+  throw.
 - SplitPolicyCoordinator uses `SegmentLeaseService.tryAcquireMappedSegment(...)`
   to inspect candidate size without combining topology and registry access
   itself.
@@ -162,7 +164,9 @@ Notes:
   ownership.
 - StableSegmentOperationGateway: single-attempt stable-segment operation access
   through SegmentRegistry.
-- IndexRetryPolicy: backoff + timeout for BUSY retries.
+- Named retry policies: backoff + timeout for BUSY retries. Current defaults
+  come from `maintenance().busyBackoffMillis()` and
+  `maintenance().busyTimeoutMillis()`.
 - StableSegmentOperationResult/StableSegmentOperationStatus: internal
   OK/BUSY/CLOSED/ERROR wrapper for stable-segment operations.
 - KeyToSegmentMap: mapping, snapshot versioning, and persistence of segment ids.

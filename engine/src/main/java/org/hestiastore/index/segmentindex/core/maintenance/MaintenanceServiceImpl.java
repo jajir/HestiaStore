@@ -9,7 +9,6 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationResult;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationStatus;
@@ -35,7 +34,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final StableSegmentOperationAccess<K, V> stableSegmentGateway;
     private final SplitService splitService;
-    private final IndexRetryPolicy retryPolicy;
+    private final MaintenanceRetryPolicy retryPolicy;
     private final MaintenanceStatsRecorder statsRecorder;
     private final ExecutorService maintenanceExecutor;
     private final Runnable checkpointAction;
@@ -49,7 +48,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService splitService,
-            final IndexRetryPolicy retryPolicy,
+            final MaintenanceRetryPolicy retryPolicy,
             final MaintenanceStatsRecorder statsRecorder,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction) {
@@ -62,7 +61,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final KeyToSegmentMap<K> keyToSegmentMap,
             final StableSegmentOperationAccess<K, V> stableSegmentGateway,
             final SplitService splitService,
-            final IndexRetryPolicy retryPolicy,
+            final MaintenanceRetryPolicy retryPolicy,
             final MaintenanceStatsRecorder statsRecorder,
             final ExecutorService maintenanceExecutor,
             final Runnable checkpointAction,

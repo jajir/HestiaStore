@@ -26,6 +26,9 @@ final class SegmentIndexBootstrapSteps {
         steps.add(createExecutorRegistry());
         steps.add(new BootstrapStepCreateSessionInfrastructure<>(
                 sessionResources));
+        steps.add(new BootstrapStepOpenKeyToSegmentMap<>());
+        steps.add(new BootstrapStepCreateChunkStoreCache<>());
+        steps.add(new BootstrapStepOpenSegmentRegistry<>());
         steps.add(new BootstrapStepOpenCoreStorage<>());
         steps.add(new BootstrapStepCreateRuntimeTopology<>(sessionResources));
         steps.add(new BootstrapStepOpenRuntimeWal<>());

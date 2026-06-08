@@ -6,7 +6,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * Backoff/timeout policy for retrying BUSY operations.
  */
-public class BusyRetryPolicy {
+public abstract class BusyRetryPolicy {
 
     private final int timeoutMillis;
     private final long backoffNanos;
@@ -84,6 +84,13 @@ public class BusyRetryPolicy {
         return System.nanoTime() - startNanos >= timeoutNanos;
     }
 
+    /**
+     * Formats the timeout message for a failed retry loop.
+     *
+     * @param operation operation label used by the caller
+     * @param target optional retry target
+     * @return timeout message
+     */
     protected String formatTimeoutMessage(final String operation,
             final Object target) {
         return String.format("%s '%s' timed out after %d ms%s",
@@ -91,6 +98,13 @@ public class BusyRetryPolicy {
                 formatTarget(target));
     }
 
+    /**
+     * Formats the interruption message for a failed retry loop.
+     *
+     * @param operation operation label used by the caller
+     * @param target optional retry target
+     * @return interruption message
+     */
     protected String formatInterruptedMessage(final String operation,
             final Object target) {
         return String.format("%s '%s' was interrupted%s",

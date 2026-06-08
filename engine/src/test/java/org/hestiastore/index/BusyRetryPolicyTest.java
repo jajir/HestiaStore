@@ -14,7 +14,7 @@ class BusyRetryPolicyTest {
 
     @Test
     void backoffOrThrow_throwsWhenTimedOut() {
-        final BusyRetryPolicy policy = new BusyRetryPolicy(1, 1);
+        final BusyRetryPolicy policy = new TestBusyRetryPolicy(1, 1);
         final long startNanos = System.nanoTime()
                 - TimeUnit.MILLISECONDS.toNanos(5);
         final SegmentId segmentId = SegmentId.of(1);
@@ -28,7 +28,7 @@ class BusyRetryPolicyTest {
 
     @Test
     void backoffOrThrow_doesNotThrowBeforeTimeout() {
-        final BusyRetryPolicy policy = new BusyRetryPolicy(1, 10);
+        final BusyRetryPolicy policy = new TestBusyRetryPolicy(1, 10);
         final long startNanos = policy.startNanos();
 
         assertDoesNotThrow(() -> policy.backoffOrThrow(startNanos, "get",
@@ -37,7 +37,7 @@ class BusyRetryPolicyTest {
 
     @Test
     void backoffOrThrow_preservesInterruptStatus() {
-        final BusyRetryPolicy policy = new BusyRetryPolicy(1, 10);
+        final BusyRetryPolicy policy = new TestBusyRetryPolicy(1, 10);
         final long startNanos = policy.startNanos();
         Thread.currentThread().interrupt();
         try {
@@ -48,6 +48,14 @@ class BusyRetryPolicyTest {
             assertTrue(Thread.currentThread().isInterrupted());
         } finally {
             Thread.interrupted();
+        }
+    }
+
+    private static final class TestBusyRetryPolicy extends BusyRetryPolicy {
+
+        TestBusyRetryPolicy(final int backoffMillis,
+                final int timeoutMillis) {
+            super(backoffMillis, timeoutMillis);
         }
     }
 }

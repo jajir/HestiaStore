@@ -1,11 +1,10 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -24,11 +23,26 @@ final class IndexWalCoordinator<K, V> implements AutoCloseable {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
     }
 
+    /**
+     * Creates active WAL coordination for enabled WAL configuration.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @param conf effective index configuration
+     * @param walRuntime WAL runtime
+     * @param retryPolicy package-local WAL backpressure retry policy
+     * @param prepareDurableStateAction action run before checkpoint durability
+     * @param flushDurableStateAction action that flushes durable state
+     * @param stateSupplier runtime state supplier
+     * @param failureHandler runtime failure handler
+     * @param lastAppliedWalLsn last durable WAL LSN tracker
+     * @return active WAL coordinator
+     */
     @SuppressWarnings("java:S107")
     static <K, V> IndexWalCoordinator<K, V> create(
             final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
-            final IndexRetryPolicy retryPolicy,
+            final WalBackpressureRetryPolicy retryPolicy,
             final Runnable prepareDurableStateAction,
             final Runnable flushDurableStateAction,
             final Supplier<SegmentIndexState> stateSupplier,

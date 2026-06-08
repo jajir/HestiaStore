@@ -17,7 +17,6 @@ import org.hestiastore.index.OperationResult;
 import org.hestiastore.index.segment.Segment;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexMaintenanceConfiguration;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
@@ -63,7 +62,7 @@ class RouteSplitCoordinatorTest {
         coordinator = new RouteSplitCoordinator<>(
                 new SegmentIndexSplitPolicyThreshold<>(),
                 new RouteSplitPreparationService<>(materializationService,
-                        new IndexRetryPolicy(maintenance.busyBackoffMillis(),
+                        new SplitRetryPolicy(maintenance.busyBackoffMillis(),
                                 maintenance.busyTimeoutMillis())));
         splitPlan = new SegmentRouteSplit<>(PARENT_SEGMENT_ID, LOWER_SEGMENT_ID,
                 UPPER_SEGMENT_ID, 2, null);

@@ -71,7 +71,7 @@ Current index-level split behavior:
 - `SegmentSplitLease` drains the parent route before child materialization,
   and publish updates `KeyToSegmentMap`
 - writes to the affected route may see transient internal `BUSY` and are
-  retried by `IndexRetryPolicy`
+  retried with segment-access retry settings
 
 Important boundary:
 

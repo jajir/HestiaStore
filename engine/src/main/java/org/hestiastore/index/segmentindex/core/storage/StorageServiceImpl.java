@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.IndexRetryPolicy;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
@@ -19,14 +18,14 @@ final class StorageServiceImpl<K, V> implements StorageService<K, V> {
     private final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector;
     private final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover;
     private final IndexConsistencyCoordinator<K, V> consistencyCoordinator;
-    private final IndexRetryPolicy retryPolicy;
+    private final WalBackpressureRetryPolicy walBackpressureRetryPolicy;
     private IndexWalCoordinator<K, V> walCoordinator;
 
     StorageServiceImpl(
             final RecoverySegmentDirectoryInspector<K> segmentDirectoryInspector,
             final OrphanedSegmentDirectoryRemover<K, V> orphanedSegmentDirectoryRemover,
             final IndexConsistencyCoordinator<K, V> consistencyCoordinator,
-            final IndexRetryPolicy retryPolicy) {
+            final WalBackpressureRetryPolicy walBackpressureRetryPolicy) {
         this.segmentDirectoryInspector = Vldtn.requireNonNull(
                 segmentDirectoryInspector, "segmentDirectoryInspector");
         this.orphanedSegmentDirectoryRemover = Vldtn.requireNonNull(
@@ -34,7 +33,8 @@ final class StorageServiceImpl<K, V> implements StorageService<K, V> {
                 "orphanedSegmentDirectoryRemover");
         this.consistencyCoordinator = Vldtn.requireNonNull(
                 consistencyCoordinator, "consistencyCoordinator");
-        this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
+        this.walBackpressureRetryPolicy = Vldtn.requireNonNull(
+                walBackpressureRetryPolicy, "walBackpressureRetryPolicy");
         walCoordinator = IndexWalCoordinator.disabled();
     }
 
@@ -76,7 +76,8 @@ final class StorageServiceImpl<K, V> implements StorageService<K, V> {
             return;
         }
         walCoordinator = IndexWalCoordinator.create(validatedConf,
-                Vldtn.requireNonNull(walRuntime, "walRuntime"), retryPolicy,
+                Vldtn.requireNonNull(walRuntime, "walRuntime"),
+                walBackpressureRetryPolicy,
                 Vldtn.requireNonNull(prepareDurableStateAction,
                         "prepareDurableStateAction"),
                 Vldtn.requireNonNull(flushDurableStateAction,
