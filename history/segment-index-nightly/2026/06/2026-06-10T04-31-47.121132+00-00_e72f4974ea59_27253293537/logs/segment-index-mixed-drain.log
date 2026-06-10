@@ -1,0 +1,78 @@
+# JMH version: 1.37
+# VM version: JDK 21.0.11, OpenJDK 64-Bit Server VM, 21.0.11+10-LTS
+# VM invoker: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java
+# VM options: <none>
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 2 s each
+# Measurement: 5 iterations, 2 s each
+# Timeout: 10 min per iteration
+# Threads: 20 threads (1 group; 4x "getWorkload", 16x "putWorkload" in each group), will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed
+# Parameters: (hotKeySpace = 256, workloadMode = drainOnly)
+
+# Run progress: 0.00% complete, ETA 00:00:14
+# Fork: 1 of 1
+# Warmup Iteration   1: SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+231017.461 ops/s
+# Warmup Iteration   2: 464944.524 ops/s
+Iteration   1: 521404.414 ops/s
+                 getWorkload: 516204.151 ops/s
+                 putWorkload: 5200.263 ops/s
+
+Iteration   2: 523229.401 ops/s
+                 getWorkload: 517897.392 ops/s
+                 putWorkload: 5332.010 ops/s
+
+Iteration   3: 520989.829 ops/s
+                 getWorkload: 515550.794 ops/s
+                 putWorkload: 5439.035 ops/s
+
+Iteration   4: 526363.331 ops/s
+                 getWorkload: 520990.665 ops/s
+                 putWorkload: 5372.666 ops/s
+
+Iteration   5: 501259.788 ops/s
+                 getWorkload: 495837.787 ops/s
+                 putWorkload: 5422.001 ops/s
+
+
+
+Result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed":
+  518649.353 ±(99.9%) 38310.882 ops/s [Average]
+  (min, avg, max) = (501259.788, 518649.353, 526363.331), stdev = 9949.214
+  CI (99.9%): [480338.471, 556960.234] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:getWorkload":
+  513296.158 ±(99.9%) 38444.361 ops/s [Average]
+  (min, avg, max) = (495837.787, 513296.158, 520990.665), stdev = 9983.879
+  CI (99.9%): [474851.796, 551740.519] (assumes normal distribution)
+
+Secondary result "org.hestiastore.benchmark.segmentindex.SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:putWorkload":
+  5353.195 ±(99.9%) 366.919 ops/s [Average]
+  (min, avg, max) = (5200.263, 5353.195, 5439.035), stdev = 95.288
+  CI (99.9%): [4986.276, 5720.114] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:16
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                           (hotKeySpace)  (workloadMode)   Mode  Cnt       Score       Error  Units
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed                        256       drainOnly  thrpt    5  518649.353 ± 38310.882  ops/s
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:getWorkload            256       drainOnly  thrpt    5  513296.158 ± 38444.361  ops/s
+SegmentIndexMixedDrainBenchmark.partitionedIngestMixed:putWorkload            256       drainOnly  thrpt    5    5353.195 ±   366.919  ops/s
+
+Benchmark result is saved to /home/runner/work/_temp/benchmark-results/candidate/raw/segment-index-mixed-drain.json
