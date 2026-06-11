@@ -1,7 +1,7 @@
 package org.hestiastore.index.monitoring;
 
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 
 /**
  * Read-only monitoring view of one logical index.
@@ -9,25 +9,29 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 public interface MonitoredIndex {
 
     /**
+     * Immutable runtime snapshot for the index.
+     *
+     * @return runtime snapshot
+     */
+    IndexRuntimeSnapshot runtimeSnapshot();
+
+    /**
      * Logical index name.
      *
      * @return index name
      */
-    String indexName();
+    default String indexName() {
+        return runtimeSnapshot().indexName();
+    }
 
     /**
      * Current lifecycle state of the index.
      *
      * @return lifecycle state
      */
-    SegmentIndexState state();
-
-    /**
-     * Immutable metrics snapshot for the index.
-     *
-     * @return metrics snapshot
-     */
-    SegmentIndexMetricsSnapshot metricsSnapshot();
+    default SegmentIndexState state() {
+        return runtimeSnapshot().state();
+    }
 
     /**
      * Convenience readiness flag.

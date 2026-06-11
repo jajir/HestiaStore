@@ -30,7 +30,7 @@ class MetricsResponseTest {
 
         assertEquals("idx", response.indexName());
         assertEquals("READY", response.state());
-        assertEquals(1L, response.getOperationCount());
+        assertEquals(1L, response.readOperationCount());
         assertEquals(2L, response.putOperationCount());
         assertEquals(3L, response.deleteOperationCount());
         assertEquals(0.01D, response.bloomFilterProbabilityOfFalsePositive());

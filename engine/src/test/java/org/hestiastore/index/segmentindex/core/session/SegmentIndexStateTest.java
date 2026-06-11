@@ -45,16 +45,16 @@ class SegmentIndexStateTest {
 
     @Test
     void readyAndClosedStatesAreExposed() {
-        assertEquals(SegmentIndexState.READY, index.runtimeMonitoring().snapshot().getState());
+        assertEquals(SegmentIndexState.READY, index.runtimeMonitoring().snapshot().state());
         index.close();
-        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
+        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().state());
     }
 
     @Test
     void errorStateRejectsOperations() {
         SegmentIndexTestAccess.stateMachine(errorIndex)
                 .markRuntimeFailure(new IllegalStateException("boom"));
-        assertEquals(SegmentIndexState.ERROR, errorIndex.runtimeMonitoring().snapshot().getState());
+        assertEquals(SegmentIndexState.ERROR, errorIndex.runtimeMonitoring().snapshot().state());
         assertThrows(IllegalStateException.class, () -> errorIndex.get(1));
     }
 

@@ -1,7 +1,6 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
@@ -22,11 +21,8 @@ import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAcc
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
-import org.hestiastore.index.segmentindex.metrics.RuntimeMetricsCollector;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringImpl;
-import org.hestiastore.index.segmentindex.wal.WalRuntime;
-import org.hestiastore.index.segmentindex.wal.WalStats;
+import org.hestiastore.index.segmentindex.wal.WalMonitoringView;
 
 /**
  * Creates WAL coordination, maintenance, metrics, monitoring, and tuning
@@ -64,12 +60,8 @@ final class BootstrapStepCreateRuntimeServices<K, V>
                 new SegmentRuntimeLimitApplier<>(state.getSegmentRegistry(),
                         state.getSegmentRegistry().runtime(),
                         state.getChunkStoreCache());
-        final RuntimeMetricsCollector runtimeMetricsCollector =
-                newMetricsCollector(state, splitService);
         final IndexRuntimeMonitoring runtimeMonitoring =
-                new IndexRuntimeMonitoringImpl(state.getConfiguration(),
-                        sessionResources::currentState,
-                        runtimeMetricsCollector);
+                newRuntimeMonitoring(state, splitService);
         final RuntimeTuning runtimeTuning = newRuntimeTuning(request, state,
                 topologyRuntime, runtimeLimitApplier);
         state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
@@ -121,39 +113,37 @@ final class BootstrapStepCreateRuntimeServices<K, V>
                 storageService);
     }
 
-    private RuntimeMetricsCollector newMetricsCollector(
+    private IndexRuntimeMonitoring newRuntimeMonitoring(
             final SegmentIndexBootstrapState<K, V> state,
             final SplitService splitService) {
-        return RuntimeMetricsCollector.<K, V>builder()
+        return IndexRuntimeMonitoring.<K, V>builder()
                 .withConf(state.getConfiguration())
                 .withKeyToSegmentMap(state.getKeyToSegmentMap())
                 .withSegmentRegistry(state.getSegmentRegistry())
-                .withSplitStatsSupplier(() -> splitService.splitStatsView()
-                        .statsSnapshot())
+                .withSplitStatsView(splitService.splitStatsView())
                 .withExecutorRegistry(state.getExecutorRegistry())
                 .withRuntimeTuningState(state.getRuntimeTuningState())
                 .withChunkStoreCache(state.getChunkStoreCache())
-                .withWalStatsSupplier(walStatsSupplier(state))
-                .withIndexOperationStatsSupplier(sessionResources
-                        .operationStatsRecorder()::statsSnapshot)
-                .withMaintenanceStatsSupplier(sessionResources
-                        .maintenanceStatsRecorder()::statsSnapshot)
+                .withWalMonitoringView(walMonitoringView(state))
+                .withIndexOperationStatsRecorder(
+                        sessionResources.operationStatsRecorder())
+                .withMaintenanceStatsRecorder(
+                        sessionResources.maintenanceStatsRecorder())
                 .withCompactRequestHighWaterMark(
                         state.compactRequestHighWaterMark())
                 .withFlushRequestHighWaterMark(
                         state.flushRequestHighWaterMark())
                 .withLastAppliedWalLsn(state.lastAppliedWalLsn())
-                .withStateSupplier(sessionResources::currentState)
+                .withStateView(sessionResources)
                 .build();
     }
 
-    private Supplier<WalStats> walStatsSupplier(
+    private WalMonitoringView walMonitoringView(
             final SegmentIndexBootstrapState<K, V> state) {
         if (!state.getConfiguration().wal().isEnabled()) {
-            return WalStats::empty;
+            return WalMonitoringView.empty();
         }
-        final WalRuntime<K, V> walRuntime = state.getRuntimeWalRuntime();
-        return walRuntime::statsSnapshot;
+        return state.getRuntimeWalRuntime();
     }
 
     private RuntimeTuning newRuntimeTuning(

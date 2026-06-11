@@ -283,12 +283,12 @@ class WalRuntimeTest {
             assertTrue(runtime.statsSnapshot().segmentCount() > 1);
 
             runtime.onCheckpoint(checkpointLsn);
-            final WalStats afterFirst = runtime.statsSnapshot();
+            final WalMonitoring afterFirst = runtime.statsSnapshot();
             assertTrue(afterFirst.segmentCount() <= 1);
 
             runtime.onCheckpoint(checkpointLsn);
             runtime.onCheckpoint(checkpointLsn - 1L);
-            final WalStats afterRepeat = runtime.statsSnapshot();
+            final WalMonitoring afterRepeat = runtime.statsSnapshot();
 
             assertEquals(afterFirst.segmentCount(), afterRepeat.segmentCount());
             assertEquals(afterFirst.retainedBytes(), afterRepeat.retainedBytes());

@@ -409,10 +409,10 @@ class SegmentIndexConcurrencyStressIT {
         if (splitObserved.get()) {
             return;
         }
-        final var snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-        if (snapshot.getSplitScheduleCount() > 0
-                || snapshot.getSplitInFlightCount() > 0
-                || snapshot.getSegmentCount() > 1) {
+        final var snapshot = index.runtimeMonitoring().snapshot();
+        if (snapshot.split().scheduleCount() > 0
+                || snapshot.split().inFlightCount() > 0
+                || snapshot.segments().count() > 1) {
             splitObserved.set(true);
         }
     }

@@ -8,7 +8,7 @@ import org.hestiastore.index.segmentindex.SegmentIndexState;
 /**
  * Atomic state machine for SegmentIndex lifecycle transitions.
  */
-public final class SegmentIndexStateMachine {
+public final class SegmentIndexStateMachine implements SegmentIndexStateView {
 
     private final AtomicReference<SegmentIndexState> state =
             new AtomicReference<>(SegmentIndexState.OPENING);
@@ -21,6 +21,16 @@ public final class SegmentIndexStateMachine {
      */
     public SegmentIndexState getState() {
         return state.get();
+    }
+
+    /**
+     * Returns the current SegmentIndex state through the read-only state view.
+     *
+     * @return current state
+     */
+    @Override
+    public SegmentIndexState currentState() {
+        return getState();
     }
 
     /**

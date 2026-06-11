@@ -27,11 +27,6 @@ final class HestiaStoreMetricNames {
     static final String INDEX_BUFFERED_WRITE_KEY_LIMIT = "hestiastore_index_buffered_write_key_limit";
     static final String SPLIT_TASK_START_DELAY_P95_MICROS = "hestiastore_split_task_start_delay_p95_micros";
     static final String SPLIT_TASK_RUN_LATENCY_P95_MICROS = "hestiastore_split_task_run_latency_p95_micros";
-    static final String DRAIN_TASK_START_DELAY_P95_MICROS = "hestiastore_drain_task_start_delay_p95_micros";
-    static final String DRAIN_TASK_RUN_LATENCY_P95_MICROS = "hestiastore_drain_task_run_latency_p95_micros";
-    static final String PUT_BUSY_RETRY_TOTAL = "hestiastore_put_busy_retry_total";
-    static final String PUT_BUSY_TIMEOUT_TOTAL = "hestiastore_put_busy_timeout_total";
-    static final String PUT_BUSY_WAIT_P95_MICROS = "hestiastore_put_busy_wait_p95_micros";
     static final String FLUSH_ACCEPTED_TO_READY_P95_MICROS = "hestiastore_flush_accepted_to_ready_p95_micros";
     static final String COMPACT_ACCEPTED_TO_READY_P95_MICROS = "hestiastore_compact_accepted_to_ready_p95_micros";
     static final String FLUSH_BUSY_RETRY_TOTAL = "hestiastore_flush_busy_retry_total";

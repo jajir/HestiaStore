@@ -50,13 +50,13 @@
                         <h3>Stats about loaded segments in registry</h3>
                         <div class="line"><span>Number of segments</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.segmentCount)}">0</strong></div>
-                        <div class="line"><span>Segment states (ready/maintenance/error/closed/busy)</span><strong
+                        <div class="line"><span>Segment states (ready/maintenance/error/closed/unloaded mapped)</span><strong
                                 class="value-runtime"><span
                                     th:text="${node.formatWholeNumber(idx.segmentReadyCount)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.segmentMaintenanceCount)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.segmentErrorCount)}">0</span> / <span
                                     th:text="${node.formatWholeNumber(idx.segmentClosedCount)}">0</span> / <span
-                                    th:text="${node.formatWholeNumber(idx.segmentBusyCount)}">0</span></strong></div>
+                                    th:text="${node.formatWholeNumber(idx.unloadedMappedSegmentCount)}">0</span></strong></div>
                         <div class="line"><span>No. of Keys</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.totalSegmentKeys)}">0</strong></div>
                         <div class="line"><span>No. of keys in Segment Cache</span><strong class="value-runtime"
@@ -96,8 +96,8 @@
 
                     <article class="card section">
                         <h3>Operations</h3>
-                        <div class="line"><span>Total Get Operations</span><strong class="value-runtime"
-                                th:text="${node.formatWholeNumber(idx.getOps)}">0</strong></div>
+                        <div class="line"><span>Total Read Operations</span><strong class="value-runtime"
+                                th:text="${node.formatWholeNumber(idx.readOps)}">0</strong></div>
                         <div class="line"><span>Total Put Operations</span><strong class="value-runtime"
                                 th:text="${node.formatWholeNumber(idx.putOps)}">0</strong></div>
                         <div class="line"><span>Total Delete Operations</span><strong class="value-runtime"

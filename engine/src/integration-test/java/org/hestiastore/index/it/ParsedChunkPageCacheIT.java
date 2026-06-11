@@ -14,7 +14,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.junit.jupiter.api.Test;
 
 class ParsedChunkPageCacheIT {
@@ -29,12 +29,12 @@ class ParsedChunkPageCacheIT {
             assertEquals("value-3", index.get(3));
             assertEquals("value-3", index.get(3));
 
-            final SegmentIndexMetricsSnapshot metrics = metrics(index);
-            assertEquals(4, metrics.getChunkStoreCachePageLimit());
-            assertEquals(1, metrics.getChunkStoreCachePageCount());
-            assertEquals(1L, metrics.getChunkStoreCacheMissCount());
-            assertEquals(1L, metrics.getChunkStoreCacheLoadCount());
-            assertEquals(1L, metrics.getChunkStoreCacheHitCount());
+            final IndexRuntimeSnapshot metrics = metrics(index);
+            assertEquals(4, metrics.chunkStoreCache().pageLimit());
+            assertEquals(1, metrics.chunkStoreCache().pageCount());
+            assertEquals(1L, metrics.chunkStoreCache().missCount());
+            assertEquals(1L, metrics.chunkStoreCache().loadCount());
+            assertEquals(1L, metrics.chunkStoreCache().hitCount());
         }
     }
 
@@ -52,7 +52,7 @@ class ParsedChunkPageCacheIT {
 
             index.delete(2);
             assertNull(index.get(2));
-            assertEquals(1L, metrics(index).getChunkStoreCacheLoadCount());
+            assertEquals(1L, metrics(index).chunkStoreCache().loadCount());
         }
     }
 
@@ -64,14 +64,14 @@ class ParsedChunkPageCacheIT {
         try (SegmentIndex<Integer, String> index = SegmentIndex.open(
                 directory)) {
             assertEquals("value-1", index.get(1));
-            assertEquals(1, metrics(index).getChunkStoreCachePageCount());
+            assertEquals(1, metrics(index).chunkStoreCache().pageCount());
 
             index.put(1, "new-1");
             index.maintenance().compactAndWait();
 
-            final SegmentIndexMetricsSnapshot afterCompaction = metrics(index);
-            assertEquals(0, afterCompaction.getChunkStoreCachePageCount());
-            assertTrue(afterCompaction.getChunkStoreCacheInvalidationCount()
+            final IndexRuntimeSnapshot afterCompaction = metrics(index);
+            assertEquals(0, afterCompaction.chunkStoreCache().pageCount());
+            assertTrue(afterCompaction.chunkStoreCache().invalidationCount()
                     > 0L);
             assertEquals("new-1", index.get(1));
         }
@@ -87,9 +87,9 @@ class ParsedChunkPageCacheIT {
             assertEquals("value-4", index.get(4));
             assertEquals("value-4", index.get(4));
 
-            final SegmentIndexMetricsSnapshot metrics = metrics(index);
-            assertEquals(1L, metrics.getChunkStoreCacheLoadCount());
-            assertEquals(1L, metrics.getChunkStoreCacheHitCount());
+            final IndexRuntimeSnapshot metrics = metrics(index);
+            assertEquals(1L, metrics.chunkStoreCache().loadCount());
+            assertEquals(1L, metrics.chunkStoreCache().hitCount());
         }
     }
 
@@ -104,9 +104,9 @@ class ParsedChunkPageCacheIT {
         }
     }
 
-    private static SegmentIndexMetricsSnapshot metrics(
+    private static IndexRuntimeSnapshot metrics(
             final SegmentIndex<Integer, String> index) {
-        return index.runtimeMonitoring().snapshot().getMetrics();
+        return index.runtimeMonitoring().snapshot();
     }
 
     private static IndexConfiguration<Integer, String> configuration(

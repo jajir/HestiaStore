@@ -35,7 +35,9 @@ import java.util.stream.Collectors;
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.monitoring.MonitoredIndexProvider;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentRuntimeMetrics;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningField;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
@@ -47,17 +49,30 @@ import org.hestiastore.monitoring.json.api.ActionRequest;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
 import org.hestiastore.monitoring.json.api.ActionType;
+import org.hestiastore.monitoring.json.api.BloomFilterReportResponse;
+import org.hestiastore.monitoring.json.api.ChunkStoreCacheReportResponse;
 import org.hestiastore.monitoring.json.api.ConfigPatchRequest;
 import org.hestiastore.monitoring.json.api.ConfigViewResponse;
 import org.hestiastore.monitoring.json.api.ErrorResponse;
+import org.hestiastore.monitoring.json.api.ExecutorReportResponse;
 import org.hestiastore.monitoring.json.api.IndexReportResponse;
 import org.hestiastore.monitoring.json.api.JvmMetricsResponse;
+import org.hestiastore.monitoring.json.api.LatencyReportResponse;
 import org.hestiastore.monitoring.json.api.ManagementApiPaths;
+import org.hestiastore.monitoring.json.api.MaintenanceReportResponse;
 import org.hestiastore.monitoring.json.api.NodeReportResponse;
+import org.hestiastore.monitoring.json.api.OperationReportResponse;
+import org.hestiastore.monitoring.json.api.RegistryCacheReportResponse;
+import org.hestiastore.monitoring.json.api.SegmentReportResponse;
 import org.hestiastore.monitoring.json.api.SegmentRuntimeReportResponse;
+import org.hestiastore.monitoring.json.api.SplitReportResponse;
+import org.hestiastore.monitoring.json.api.WalReportResponse;
+import org.hestiastore.monitoring.json.api.WritePathReportResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
@@ -111,7 +126,13 @@ public final class ManagementAgentServer
     private final ConcurrentMap<ActionRequestKey, CompletableFuture<ActionReplay>> actionReplays = new ConcurrentHashMap<>();
     private final int maxActionReplays;
     private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
+            .registerModule(new JavaTimeModule())
+            .setVisibility(PropertyAccessor.FIELD,
+                    JsonAutoDetect.Visibility.ANY)
+            .setVisibility(PropertyAccessor.GETTER,
+                    JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.IS_GETTER,
+                    JsonAutoDetect.Visibility.NONE);
     private final HttpServer server;
     private final ExecutorService requestExecutor;
 
@@ -818,7 +839,7 @@ public final class ManagementAgentServer
                 return true;
             }
             final SegmentIndexState state = index.runtimeMonitoring().snapshot()
-                    .getState();
+                    .state();
             if (state == SegmentIndexState.CLOSED) {
                 logger.info("Removing CLOSED index from reporting: {}",
                         indexName);
@@ -859,85 +880,183 @@ public final class ManagementAgentServer
     }
 
     private IndexReportResponse toIndexReport(final RegisteredIndex monitored) {
-        final SegmentIndexMetricsSnapshot snapshot = monitored
-                .metricsSnapshot();
-        final SegmentIndexState state = monitored.state();
+        final IndexRuntimeSnapshot snapshot = monitored
+                .runtimeSnapshot();
+        final SegmentIndexState state = snapshot.state();
         return new IndexReportResponse(monitored.indexName(), state.name(),
                 state == SegmentIndexState.READY,
-                snapshot.getGetOperationCount(),
-                snapshot.getPutOperationCount(),
-                snapshot.getDeleteOperationCount(),
-                snapshot.getRegistryCacheHitCount(),
-                snapshot.getRegistryCacheMissCount(),
-                snapshot.getRegistryCacheLoadCount(),
-                snapshot.getRegistryCacheEvictionCount(),
-                snapshot.getRegistryCacheSize(),
-                snapshot.getRegistryCacheLimit(),
-                snapshot.getSegmentCacheKeyLimitPerSegment(),
-                snapshot.getChunkStoreCachePageLimit(),
-                snapshot.getChunkStoreCachePageCount(),
-                snapshot.getChunkStoreCacheEntryCount(),
-                snapshot.getChunkStoreCacheHitCount(),
-                snapshot.getChunkStoreCacheMissCount(),
-                snapshot.getChunkStoreCacheLoadCount(),
-                snapshot.getChunkStoreCacheEvictionCount(),
-                snapshot.getChunkStoreCacheInvalidationCount(),
-                snapshot.getSegmentWriteCacheKeyLimit(),
-                snapshot.getSegmentWriteCacheKeyLimitDuringMaintenance(),
-                snapshot.getIndexBufferedWriteKeyLimit(),
-                snapshot.getSegmentCount(), snapshot.getSegmentReadyCount(),
-                snapshot.getSegmentMaintenanceCount(),
-                snapshot.getSegmentErrorCount(),
-                snapshot.getSegmentClosedCount(),
-                snapshot.getSegmentBusyCount(), snapshot.getTotalSegmentKeys(),
-                snapshot.getTotalSegmentCacheKeys(),
-                snapshot.getTotalBufferedWriteKeys(),
-                snapshot.getTotalDeltaCacheFiles(),
-                snapshot.getCompactRequestCount(),
-                snapshot.getFlushRequestCount(),
-                snapshot.getSplitScheduleCount(),
-                snapshot.getSplitInFlightCount(),
-                snapshot.getMaintenanceQueueSize(),
-                snapshot.getMaintenanceQueueCapacity(),
-                snapshot.getSplitQueueSize(), snapshot.getSplitQueueCapacity(),
-                snapshot.getReadLatencyP50Micros(),
-                snapshot.getReadLatencyP95Micros(),
-                snapshot.getReadLatencyP99Micros(),
-                snapshot.getWriteLatencyP50Micros(),
-                snapshot.getWriteLatencyP95Micros(),
-                snapshot.getWriteLatencyP99Micros(),
-                snapshot.getBloomFilterHashFunctions(),
-                snapshot.getBloomFilterIndexSizeInBytes(),
-                snapshot.getBloomFilterProbabilityOfFalsePositive(),
-                snapshot.getBloomFilterRequestCount(),
-                snapshot.getBloomFilterRefusedCount(),
-                snapshot.getBloomFilterPositiveCount(),
-                snapshot.getBloomFilterFalsePositiveCount(),
+                toOperations(snapshot),
+                toRegistryCache(snapshot),
+                toChunkStoreCache(snapshot),
+                toSegments(snapshot),
+                toWritePath(snapshot),
+                toMaintenance(snapshot),
+                toSplit(snapshot),
+                toLatency(snapshot),
+                toBloomFilter(snapshot),
+                toWal(snapshot));
+    }
+
+    private OperationReportResponse toOperations(
+            final IndexRuntimeSnapshot snapshot) {
+        return new OperationReportResponse(
+                snapshot.operations().readOperationCount(),
+                snapshot.operations().putOperationCount(),
+                snapshot.operations().deleteOperationCount());
+    }
+
+    private RegistryCacheReportResponse toRegistryCache(
+            final IndexRuntimeSnapshot snapshot) {
+        return new RegistryCacheReportResponse(
+                snapshot.registryCache().hitCount(),
+                snapshot.registryCache().missCount(),
+                snapshot.registryCache().loadCount(),
+                snapshot.registryCache().evictionCount(),
+                snapshot.registryCache().size(),
+                snapshot.registryCache().limit());
+    }
+
+    private ChunkStoreCacheReportResponse toChunkStoreCache(
+            final IndexRuntimeSnapshot snapshot) {
+        return new ChunkStoreCacheReportResponse(
+                snapshot.chunkStoreCache().pageLimit(),
+                snapshot.chunkStoreCache().pageCount(),
+                snapshot.chunkStoreCache().entryCount(),
+                snapshot.chunkStoreCache().hitCount(),
+                snapshot.chunkStoreCache().missCount(),
+                snapshot.chunkStoreCache().loadCount(),
+                snapshot.chunkStoreCache().evictionCount(),
+                snapshot.chunkStoreCache().invalidationCount());
+    }
+
+    private SegmentReportResponse toSegments(
+            final IndexRuntimeSnapshot snapshot) {
+        return new SegmentReportResponse(
+                snapshot.segments().cacheKeyLimitPerSegment(),
+                snapshot.segments().count(),
+                snapshot.segments().readyCount(),
+                snapshot.segments().maintenanceCount(),
+                snapshot.segments().errorCount(),
+                snapshot.segments().closedCount(),
+                snapshot.segments().unloadedMappedSegmentCount(),
+                snapshot.segments().totalKeys(),
+                snapshot.segments().totalCacheKeys(),
+                snapshot.segments().totalDeltaCacheFiles(),
                 toSegmentRuntimeSections(snapshot));
     }
 
+    private WritePathReportResponse toWritePath(
+            final IndexRuntimeSnapshot snapshot) {
+        return new WritePathReportResponse(
+                snapshot.writePath().segmentWriteCacheKeyLimit(),
+                snapshot.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance(),
+                snapshot.writePath().indexBufferedWriteKeyLimit(),
+                snapshot.writePath().totalBufferedWriteKeys());
+    }
+
+    private MaintenanceReportResponse toMaintenance(
+            final IndexRuntimeSnapshot snapshot) {
+        return new MaintenanceReportResponse(
+                snapshot.maintenance().compactRequestCount(),
+                snapshot.maintenance().flushRequestCount(),
+                snapshot.maintenance().flushAcceptedToReadyP95Micros(),
+                snapshot.maintenance().compactAcceptedToReadyP95Micros(),
+                snapshot.maintenance().flushBusyRetryCount(),
+                snapshot.maintenance().compactBusyRetryCount(),
+                toExecutor(snapshot.maintenance().indexExecutor()),
+                toExecutor(snapshot.maintenance().stableSegmentExecutor()));
+    }
+
+    private SplitReportResponse toSplit(
+            final IndexRuntimeSnapshot snapshot) {
+        return new SplitReportResponse(
+                snapshot.split().scheduleCount(),
+                snapshot.split().inFlightCount(),
+                snapshot.split().blockedCount(),
+                snapshot.split().taskStartDelayP95Micros(),
+                snapshot.split().taskRunLatencyP95Micros(),
+                toExecutor(snapshot.split().executor()));
+    }
+
+    private ExecutorReportResponse toExecutor(
+            final SegmentIndexExecutorMetrics metrics) {
+        return new ExecutorReportResponse(metrics.activeThreadCount(),
+                metrics.queueSize(), metrics.queueCapacity(),
+                metrics.completedTaskCount(), metrics.rejectedTaskCount(),
+                metrics.callerRunsCount());
+    }
+
+    private LatencyReportResponse toLatency(
+            final IndexRuntimeSnapshot snapshot) {
+        return new LatencyReportResponse(
+                snapshot.latency().readP50Micros(),
+                snapshot.latency().readP95Micros(),
+                snapshot.latency().readP99Micros(),
+                snapshot.latency().writeP50Micros(),
+                snapshot.latency().writeP95Micros(),
+                snapshot.latency().writeP99Micros());
+    }
+
+    private BloomFilterReportResponse toBloomFilter(
+            final IndexRuntimeSnapshot snapshot) {
+        return new BloomFilterReportResponse(
+                snapshot.bloomFilter().hashFunctions(),
+                snapshot.bloomFilter().indexSizeInBytes(),
+                snapshot.bloomFilter().probabilityOfFalsePositive(),
+                snapshot.bloomFilter().requestCount(),
+                snapshot.bloomFilter().refusedCount(),
+                snapshot.bloomFilter().positiveCount(),
+                snapshot.bloomFilter().falsePositiveCount());
+    }
+
+    private WalReportResponse toWal(
+            final IndexRuntimeSnapshot snapshot) {
+        return new WalReportResponse(
+                snapshot.wal().enabled(),
+                snapshot.wal().appendCount(),
+                snapshot.wal().appendBytes(),
+                snapshot.wal().syncCount(),
+                snapshot.wal().syncFailureCount(),
+                snapshot.wal().corruptionCount(),
+                snapshot.wal().truncationCount(),
+                snapshot.wal().retainedBytes(),
+                snapshot.wal().segmentCount(),
+                snapshot.wal().durableLsn(),
+                snapshot.wal().checkpointLsn(),
+                snapshot.wal().checkpointLagLsn(),
+                snapshot.wal().pendingSyncBytes(),
+                snapshot.wal().appliedLsn(),
+                snapshot.wal().syncTotalNanos(),
+                snapshot.wal().syncMaxNanos(),
+                snapshot.wal().syncBatchBytesTotal(),
+                snapshot.wal().syncBatchBytesMax(),
+                snapshot.wal().syncAverageNanos(),
+                snapshot.wal().syncAverageBatchBytes());
+    }
+
     private List<SegmentRuntimeReportResponse> toSegmentRuntimeSections(
-            final SegmentIndexMetricsSnapshot snapshot) {
-        return snapshot.getSegmentRuntimeSnapshots().stream()
+            final IndexRuntimeSnapshot snapshot) {
+        return snapshot.segments().runtimeMetrics().stream()
                 .map(this::toSegmentRuntimeSection).toList();
     }
 
     private SegmentRuntimeReportResponse toSegmentRuntimeSection(
-            final SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot segment) {
-        return new SegmentRuntimeReportResponse(segment.getSegmentId(),
-                segment.getState().name(),
-                segment.getNumberOfKeysInDeltaCache(),
-                segment.getNumberOfKeysInSegment(),
-                segment.getNumberOfKeysInScarceIndex(),
-                segment.getNumberOfKeysInSegmentCache(),
-                segment.getNumberOfKeysInWriteCache(),
-                segment.getNumberOfDeltaCacheFiles(),
-                segment.getCompactRequestCount(),
-                segment.getFlushRequestCount(),
-                segment.getBloomFilterRequestCount(),
-                segment.getBloomFilterRefusedCount(),
-                segment.getBloomFilterPositiveCount(),
-                segment.getBloomFilterFalsePositiveCount());
+            final SegmentIndexSegmentRuntimeMetrics segment) {
+        return new SegmentRuntimeReportResponse(segment.segmentId(),
+                segment.state().name(),
+                segment.numberOfKeysInDeltaCache(),
+                segment.numberOfKeysInSegment(),
+                segment.numberOfKeysInScarceIndex(),
+                segment.numberOfKeysInSegmentCache(),
+                segment.numberOfKeysInWriteCache(),
+                segment.numberOfDeltaCacheFiles(),
+                segment.compactRequestCount(),
+                segment.flushRequestCount(),
+                segment.bloomFilterRequestCount(),
+                segment.bloomFilterRefusedCount(),
+                segment.bloomFilterPositiveCount(),
+                segment.bloomFilterFalsePositiveCount());
     }
 
     private ConfigViewResponse toConfigViewResponse(
@@ -1354,12 +1473,12 @@ public final class ManagementAgentServer
 
         @Override
         public SegmentIndexState state() {
-            return index.runtimeMonitoring().snapshot().getState();
+            return index.runtimeMonitoring().snapshot().state();
         }
 
         @Override
-        public SegmentIndexMetricsSnapshot metricsSnapshot() {
-            return index.runtimeMonitoring().snapshot().getMetrics();
+        public IndexRuntimeSnapshot runtimeSnapshot() {
+            return index.runtimeMonitoring().snapshot();
         }
     }
 

@@ -109,7 +109,7 @@ Examples in code:
 
 - If WAL is disabled, call `flushAndWait()` on periodic boundaries and always before shutdown to persist in‑memory writes.
 - If another thread observes the index during shutdown, expect `getState()` /
-  `metricsSnapshot().getState()` to report `CLOSING` until the final `CLOSED`
+  `runtimeMonitoring().snapshot().state()` to report `CLOSING` until the final `CLOSED`
   transition.
 - If WAL is enabled, configure durability mode (`ASYNC`, `GROUP_SYNC`, `SYNC`) based on loss tolerance and latency targets.
 - After a crash, reopen the index; WAL-enabled indexes rebuild routing, replay

@@ -140,7 +140,7 @@ class SegmentIndexImplPutTest {
             final RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> index.put(1, "one"));
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
+            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().state());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {
             clearWalSyncFailure(index);
@@ -158,7 +158,7 @@ class SegmentIndexImplPutTest {
             final RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> index.maintenance().flushAndWait());
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
+            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().state());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {
             clearWalSyncFailure(index);
@@ -176,7 +176,7 @@ class SegmentIndexImplPutTest {
             final RuntimeException exception = assertThrows(RuntimeException.class,
                     () -> index.delete(1));
             assertTrue(exception.getMessage().contains("WAL sync failure"));
-            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().getState());
+            assertEquals(SegmentIndexState.ERROR, index.runtimeMonitoring().snapshot().state());
             assertThrows(IllegalStateException.class, () -> index.get(1));
         } finally {
             clearWalSyncFailure(index);
@@ -223,7 +223,7 @@ class SegmentIndexImplPutTest {
         index.put(2, "two");
         assertEquals("one", index.get(1));
         assertEquals("two", index.get(2));
-        assertEquals(SegmentIndexState.READY, index.runtimeMonitoring().snapshot().getState());
+        assertEquals(SegmentIndexState.READY, index.runtimeMonitoring().snapshot().state());
     }
 
     private void resetIndex(final int maxKeysInSegment,

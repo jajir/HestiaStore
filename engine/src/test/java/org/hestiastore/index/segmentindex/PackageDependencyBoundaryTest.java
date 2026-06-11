@@ -45,7 +45,7 @@ class PackageDependencyBoundaryTest {
     private static final String SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES =
             "org.hestiastore.index.segmentindex.core.executorregistry..";
     private static final String SEGMENT_INDEX_METRICS_PACKAGES =
-            "org.hestiastore.index.segmentindex.metrics..";
+            "org.hestiastore.index.segmentindex.runtimemonitoring..";
     private static final String SEGMENT_INDEX_CORE_PACKAGES =
             "org.hestiastore.index.segmentindex.core..";
     private static final String SEGMENT_INDEX_MAPPING_PACKAGES =

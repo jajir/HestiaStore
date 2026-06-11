@@ -5,14 +5,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
 import org.junit.jupiter.api.Test;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -25,13 +34,11 @@ class HestiaStoreMicrometerBinderTest {
         final SegmentIndex<Integer, String> index = mock(SegmentIndex.class);
         final IndexRuntimeMonitoring runtimeMonitoring = mock(
                 IndexRuntimeMonitoring.class);
-        final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
+        final AtomicReference<IndexRuntimeSnapshot> snapshotRef = new AtomicReference<>(
                 snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 29,
                         37L, 2, 50));
         when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
-        when(runtimeMonitoring.snapshot()).thenAnswer(inv -> new IndexRuntimeSnapshot(
-                "orders", snapshotRef.get().getState(), snapshotRef.get(),
-                Instant.now()));
+        when(runtimeMonitoring.snapshot()).thenAnswer(inv -> snapshotRef.get());
 
         final SimpleMeterRegistry registry = new SimpleMeterRegistry();
         new HestiaStoreMicrometerBinder(
@@ -46,39 +53,49 @@ class HestiaStoreMicrometerBinderTest {
         assertMetrics(registry, 5D, 8D, 13D, 9D, 13D, 15D, 41D, 0D, 0D, 70);
     }
 
-    private SegmentIndexMetricsSnapshot snapshot(final long getCount,
+    private IndexRuntimeSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
             final SegmentIndexState state, final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
             final int indexBufferedWriteKeyLimit,
             final long splitScheduleCount, final int splitInFlightCount,
             final int executorBase) {
-        return new SegmentIndexMetricsSnapshot(
-                getCount, putCount, deleteCount,
-                0L, 0L, 0L, 0L,
-                0, 0,
-                0, segmentWriteCacheKeyLimit,
-                segmentWriteCacheKeyLimitDuringMaintenance,
-                indexBufferedWriteKeyLimit, 0, 0, 0, 0, 0, 0,
-                0L, 0L, 0L, 0L,
-                0L, 0L, splitScheduleCount,
-                splitInFlightCount, executorBase, executorBase + 1,
-                executorBase + 5, executorBase + 6, executorBase + 2,
-                executorBase + 3L, executorBase + 4L, executorBase + 7,
-                executorBase + 8L, executorBase + 9L, executorBase + 12,
-                executorBase + 10, executorBase + 11, executorBase + 13L,
-                executorBase + 14L,
-                0L, 0L, 0L,
-                0L, 0L, 0L,
-                0, 0, 0D,
-                0L, 0L, 0L, 0L,
-                false, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                executorBase + 15L,
-                executorBase + 16L, executorBase + 17L, executorBase + 18L,
-                executorBase + 19, executorBase + 20L, executorBase + 21L,
-                executorBase + 22L, executorBase + 23L, executorBase + 24L,
-                executorBase + 25L, List.of(), state);
+        final SegmentIndexExecutorMetrics indexExecutor =
+                new SegmentIndexExecutorMetrics(executorBase + 2, executorBase,
+                        executorBase + 1, executorBase + 3L,
+                        executorBase + 4L, 0L);
+        final SegmentIndexExecutorMetrics splitExecutor =
+                new SegmentIndexExecutorMetrics(executorBase + 7,
+                        executorBase + 5, executorBase + 6,
+                        executorBase + 8L, executorBase + 9L, 0L);
+        final SegmentIndexExecutorMetrics stableExecutor =
+                new SegmentIndexExecutorMetrics(executorBase + 12,
+                        executorBase + 10, executorBase + 11,
+                        executorBase + 13L, 0L, executorBase + 14L);
+        return new IndexRuntimeSnapshot(
+                "orders",
+                state,
+                Instant.EPOCH,
+                new SegmentIndexOperationMetrics(getCount, putCount,
+                        deleteCount),
+                new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L, 0, 0),
+                new SegmentIndexChunkStoreCacheMetrics(0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L),
+                new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
+                        0L, java.util.List.of()),
+                new SegmentIndexWritePathMetrics(segmentWriteCacheKeyLimit,
+                        segmentWriteCacheKeyLimitDuringMaintenance,
+                        indexBufferedWriteKeyLimit, 0L),
+                new SegmentIndexMaintenanceMetrics(0L, 0L, executorBase + 22L,
+                        executorBase + 23L, executorBase + 24L,
+                        executorBase + 25L, indexExecutor, stableExecutor),
+                new SegmentIndexSplitMetrics(splitScheduleCount,
+                        splitInFlightCount, 0, executorBase + 15L,
+                        executorBase + 16L, splitExecutor),
+                new SegmentIndexLatencyMetrics(0L, 0L, 0L, 0L, 0L, 0L),
+                new SegmentIndexBloomFilterMetrics(0, 0, 0D, 0L, 0L, 0L, 0L),
+                new SegmentIndexWalMetrics(false, 0L, 0L, 0L, 0L, 0L, 0L,
+                        0L, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L));
     }
 
     private static void assertMetrics(final SimpleMeterRegistry registry,
@@ -104,16 +121,6 @@ class HestiaStoreMicrometerBinderTest {
                 executorBase + 15D);
         assertGauge(registry, "hestiastore_split_task_run_latency_p95_micros",
                 executorBase + 16D);
-        assertGauge(registry, "hestiastore_drain_task_start_delay_p95_micros",
-                executorBase + 17D);
-        assertGauge(registry, "hestiastore_drain_task_run_latency_p95_micros",
-                executorBase + 18D);
-        assertFunctionCounter(registry, "hestiastore_put_busy_retry_total",
-                executorBase + 19D);
-        assertFunctionCounter(registry, "hestiastore_put_busy_timeout_total",
-                executorBase + 20D);
-        assertGauge(registry, "hestiastore_put_busy_wait_p95_micros",
-                executorBase + 21D);
         assertGauge(registry,
                 "hestiastore_flush_accepted_to_ready_p95_micros",
                 executorBase + 22D);

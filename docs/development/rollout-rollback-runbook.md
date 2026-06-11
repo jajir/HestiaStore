@@ -48,7 +48,7 @@ Rollback is stage-local. Do not roll back `engine` unless stage A itself fails.
 After rollback deployment, run:
 
 ```bash
-mvn -pl engine test -Dtest=IntegrationSegmentIndexMetricsSnapshotConcurrencyTest
+mvn -pl engine test -Dtest=IntegrationIndexRuntimeSnapshotConcurrencyTest
 mvn -pl monitoring-prometheus test -Dtest=HestiaStorePrometheusExporterTest
 mvn -pl monitoring-rest-json test -Dtest=ManagementAgentServerTest,ManagementAgentServerSecurityTest
 mvn -pl monitoring-console-web test

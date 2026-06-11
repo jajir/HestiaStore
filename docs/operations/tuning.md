@@ -59,8 +59,8 @@ Bloom filters mainly help negative lookups.
 
 If WAL is enabled:
 
-- monitor `getWalSyncAvgNanos()`, `getWalPendingSyncBytes()`, and
-  `getWalRetainedBytes()`
+- monitor `wal().syncAverageNanos()`, `wal().pendingSyncBytes()`, and
+  `wal().retainedBytes()`
 - compare `ASYNC`, `GROUP_SYNC`, and `SYNC` only against your durability target
 - use the canary rollout before enabling WAL broadly
 

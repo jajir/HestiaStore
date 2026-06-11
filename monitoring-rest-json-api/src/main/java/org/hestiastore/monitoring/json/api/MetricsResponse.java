@@ -7,7 +7,7 @@ import java.util.Objects;
  * Metrics payload returned by management API.
  */
 public record MetricsResponse(String indexName, String state,
-        long getOperationCount, long putOperationCount,
+        long readOperationCount, long putOperationCount,
         long deleteOperationCount, long registryCacheHitCount,
         long registryCacheMissCount, long registryCacheLoadCount,
         long registryCacheEvictionCount, int registryCacheSize,
@@ -17,7 +17,8 @@ public record MetricsResponse(String indexName, String state,
         int indexBufferedWriteKeyLimit,
         int segmentCount, int segmentReadyCount,
         int segmentMaintenanceCount, int segmentErrorCount,
-        int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
+        int segmentClosedCount, int unloadedMappedSegmentCount,
+        long totalSegmentKeys,
         long totalSegmentCacheKeys, long totalBufferedWriteKeys,
         long totalDeltaCacheFiles, long compactRequestCount,
         long flushRequestCount, long splitScheduleCount, int splitInFlightCount,
@@ -40,7 +41,7 @@ public record MetricsResponse(String indexName, String state,
     public MetricsResponse {
         indexName = normalize(indexName, "indexName");
         state = normalize(state, "state");
-        requireNotNegative(getOperationCount, "getOperationCount");
+        requireNotNegative(readOperationCount, "readOperationCount");
         requireNotNegative(putOperationCount, "putOperationCount");
         requireNotNegative(deleteOperationCount, "deleteOperationCount");
         requireNotNegative(registryCacheHitCount, "registryCacheHitCount");
@@ -63,7 +64,8 @@ public record MetricsResponse(String indexName, String state,
         requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
         requireNotNegative(segmentErrorCount, "segmentErrorCount");
         requireNotNegative(segmentClosedCount, "segmentClosedCount");
-        requireNotNegative(segmentBusyCount, "segmentBusyCount");
+        requireNotNegative(unloadedMappedSegmentCount,
+                "unloadedMappedSegmentCount");
         requireNotNegative(totalSegmentKeys, "totalSegmentKeys");
         requireNotNegative(totalSegmentCacheKeys, "totalSegmentCacheKeys");
         requireNotNegative(totalBufferedWriteKeys, "totalBufferedWriteKeys");

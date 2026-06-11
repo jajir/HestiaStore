@@ -45,10 +45,10 @@ final class WalRuntimeMetrics {
         truncationCount.increment();
     }
 
-    WalStats snapshot(final long retainedBytes, final int segmentCount,
+    WalMonitoring snapshot(final long retainedBytes, final int segmentCount,
             final long durableLsn, final long checkpointLsn,
             final long pendingSyncBytes) {
-        return new WalStats(appendCount.sum(), appendBytes.sum(),
+        return new WalMonitoring(appendCount.sum(), appendBytes.sum(),
                 syncCount.sum(), syncFailureCount.sum(), corruptionCount.sum(),
                 truncationCount.sum(), retainedBytes, segmentCount, durableLsn,
                 checkpointLsn, pendingSyncBytes, syncTotalNanos.sum(),
@@ -56,8 +56,8 @@ final class WalRuntimeMetrics {
                 syncBatchBytesMax.get());
     }
 
-    static WalStats emptySnapshot() {
-        return WalStats.empty();
+    static WalMonitoring emptySnapshot() {
+        return WalMonitoring.empty();
     }
 
     static void updateMax(final AtomicLong target, final long candidate) {

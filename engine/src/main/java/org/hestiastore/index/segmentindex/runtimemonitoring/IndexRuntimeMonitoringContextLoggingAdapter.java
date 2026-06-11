@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.runtimemonitoring;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 
 /**
  * MDC-aware wrapper around runtime monitoring snapshots.
