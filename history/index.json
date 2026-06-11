@@ -884,8 +884,8 @@
         "280": {
           "channel": "pr-280",
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-280/latest.json",
-          "sha": "e0f94aa4e67a4fb1f32c90908ad5da1efc9c7757",
-          "timestampUtc": "2026-06-11T07:51:30.606818+00:00"
+          "sha": "efa8cc16c636aaa77cbbcc10606a9b3f6ffa4c30",
+          "timestampUtc": "2026-06-11T08:37:04.328075+00:00"
         }
       },
       "sha": "ec66db06e098be9f665626456c1b5db07b2abb7c",
