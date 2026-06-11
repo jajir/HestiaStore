@@ -58,16 +58,14 @@ final class StableSegmentRuntimeCollector<K, V> {
             final StableSegmentRuntimeMetrics metrics) {
         int accountedMappedSegmentCount = 0;
         for (final BlockingSegment<K, V> segmentHandle : loadedSegmentsSnapshot()) {
-            if (segmentHandle == null) {
-                continue;
+            if (segmentHandle != null) {
+                final SegmentRuntimeSnapshot segmentRuntime =
+                        runtimeSnapshot(segmentHandle);
+                if (mappedSegmentIdSet.contains(segmentRuntime.getSegmentId())) {
+                    accountedMappedSegmentCount++;
+                    accumulateMappedSegmentMetrics(metrics, segmentRuntime);
+                }
             }
-            final SegmentRuntimeSnapshot segmentRuntime =
-                    runtimeSnapshot(segmentHandle);
-            if (!mappedSegmentIdSet.contains(segmentRuntime.getSegmentId())) {
-                continue;
-            }
-            accountedMappedSegmentCount++;
-            accumulateMappedSegmentMetrics(metrics, segmentRuntime);
         }
         return accountedMappedSegmentCount;
     }

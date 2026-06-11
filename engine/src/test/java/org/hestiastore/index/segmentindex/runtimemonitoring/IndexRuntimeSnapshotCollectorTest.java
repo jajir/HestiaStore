@@ -22,6 +22,7 @@ import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
@@ -31,6 +32,7 @@ import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecor
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
+import org.hestiastore.index.segmentindex.core.split.SplitStatsView;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.wal.WalMonitoringView;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
@@ -160,20 +162,27 @@ class IndexRuntimeSnapshotCollectorTest {
 
     @Test
     void createRejectsNullConfiguration() {
+        final SplitStatsView splitStatsView =
+                () -> new SplitStats(0L, 0, 0, 0L, 0L);
+        final RuntimeTuningState runtimeTuningState =
+                mock(RuntimeTuningState.class);
+        final LruChunkStoreCache<Integer, String> chunkStoreCache =
+                new LruChunkStoreCache<>(0);
+        final WalMonitoringView walMonitoringView = WalMonitoringView.empty();
+        final SegmentIndexStateView stateView = readyStateView();
+
         final IllegalArgumentException ex = org.junit.jupiter.api.Assertions
                 .assertThrows(IllegalArgumentException.class,
                         () -> IndexRuntimeSnapshotCollector.create(null,
                                 keyToSegmentMap, segmentRegistry,
-                                () -> new SplitStats(0L, 0, 0, 0L, 0L),
-                                executorRegistry,
-                                mock(RuntimeTuningState.class),
-                                new LruChunkStoreCache<>(0),
-                                WalMonitoringView.empty(),
+                                splitStatsView, executorRegistry,
+                                runtimeTuningState, chunkStoreCache,
+                                walMonitoringView,
                                 operationStatsRecorder,
                                 maintenanceStatsRecorder,
                                 compactRequestHighWaterMark,
                                 flushRequestHighWaterMark, lastAppliedWalLsn,
-                                readyStateView()));
+                                stateView));
 
         assertEquals(CONF_PROPERTY_MESSAGE, ex.getMessage());
     }

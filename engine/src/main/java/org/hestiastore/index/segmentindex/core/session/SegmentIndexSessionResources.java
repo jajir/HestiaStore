@@ -16,11 +16,9 @@ import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIterat
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
 
-/**
- * TODO replace class with SegmentIndexBootstrapRequest amd
- * SegmentIndexBootstrapState builders that enforce correct resource
- * initialization order and availability
- */
+// TODO replace class with SegmentIndexBootstrapRequest and
+// SegmentIndexBootstrapState builders that enforce correct resource
+// initialization order and availability.
 
 /**
  * Holds package-private session resources while bootstrap steps live outside

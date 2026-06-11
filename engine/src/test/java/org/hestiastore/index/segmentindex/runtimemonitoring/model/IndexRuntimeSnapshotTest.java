@@ -85,32 +85,37 @@ class IndexRuntimeSnapshotTest {
 
     @Test
     void constructorRejectsNullMetricSection() {
+        final SegmentIndexRegistryCacheMetrics registryCache =
+                new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L, 0, 0);
+        final SegmentIndexChunkStoreCacheMetrics chunkStoreCache =
+                new SegmentIndexChunkStoreCacheMetrics(0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L);
+        final SegmentIndexSegmentMetrics segments =
+                new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
+                        0L, List.of());
+        final SegmentIndexWritePathMetrics writePath =
+                new SegmentIndexWritePathMetrics(0, 0, 0, 0L);
+        final SegmentIndexExecutorMetrics executor =
+                new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
+        final SegmentIndexMaintenanceMetrics maintenance =
+                new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L, 0L, 0L,
+                        executor, executor);
+        final SegmentIndexSplitMetrics split =
+                new SegmentIndexSplitMetrics(0L, 0, 0, 0L, 0L, executor);
+        final SegmentIndexLatencyMetrics latency =
+                new SegmentIndexLatencyMetrics(0L, 0L, 0L, 0L, 0L, 0L);
+        final SegmentIndexBloomFilterMetrics bloomFilter =
+                new SegmentIndexBloomFilterMetrics(0, 0, 0D, 0L, 0L, 0L, 0L);
+        final SegmentIndexWalMetrics wal =
+                new SegmentIndexWalMetrics(false, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                        0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> new IndexRuntimeSnapshot("orders", SegmentIndexState.READY,
-                        Instant.EPOCH, null,
-                        new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L,
-                                0, 0),
-                        new SegmentIndexChunkStoreCacheMetrics(0, 0, 0L, 0L,
-                                0L, 0L, 0L, 0L),
-                        new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0,
-                                0L, 0L, 0L, List.of()),
-                        new SegmentIndexWritePathMetrics(0, 0, 0, 0L),
-                        new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L,
-                                0L, 0L,
-                                new SegmentIndexExecutorMetrics(0, 0, 0, 0L,
-                                        0L, 0L),
-                                new SegmentIndexExecutorMetrics(0, 0, 0, 0L,
-                                        0L, 0L)),
-                        new SegmentIndexSplitMetrics(0L, 0, 0, 0L, 0L,
-                                new SegmentIndexExecutorMetrics(0, 0, 0, 0L,
-                                        0L, 0L)),
-                        new SegmentIndexLatencyMetrics(0L, 0L, 0L, 0L, 0L,
-                                0L),
-                        new SegmentIndexBloomFilterMetrics(0, 0, 0D, 0L, 0L,
-                                0L, 0L),
-                        new SegmentIndexWalMetrics(false, 0L, 0L, 0L, 0L, 0L,
-                                0L, 0L, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L)));
+                        Instant.EPOCH, null, registryCache, chunkStoreCache,
+                        segments, writePath, maintenance, split, latency,
+                        bloomFilter, wal));
 
         assertEquals("Property 'operations' must not be null.",
                 ex.getMessage());

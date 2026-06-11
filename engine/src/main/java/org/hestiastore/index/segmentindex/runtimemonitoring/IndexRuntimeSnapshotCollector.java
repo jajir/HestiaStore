@@ -27,6 +27,8 @@ import org.hestiastore.index.segmentregistry.SegmentRegistry;
 final class IndexRuntimeSnapshotCollector<K, V>
         implements IndexRuntimeMonitoring {
 
+    private static final String PROPERTY_SEGMENT_REGISTRY = "segmentRegistry";
+
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector;
     private final ExecutorRegistry executorRegistry;
@@ -48,7 +50,7 @@ final class IndexRuntimeSnapshotCollector<K, V>
             final IndexRuntimeSnapshotFactory<K, V> snapshotFactory,
             final Clock clock) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
-                "segmentRegistry");
+                PROPERTY_SEGMENT_REGISTRY);
         this.stableSegmentRuntimeCollector = Vldtn.requireNonNull(
                 stableSegmentRuntimeCollector, "stableSegmentRuntimeCollector");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
@@ -106,12 +108,13 @@ final class IndexRuntimeSnapshotCollector<K, V>
             final SegmentIndexStateView stateView,
             final Clock clock) {
         return new IndexRuntimeSnapshotCollector<>(
-                Vldtn.requireNonNull(segmentRegistry, "segmentRegistry"),
+                Vldtn.requireNonNull(segmentRegistry,
+                        PROPERTY_SEGMENT_REGISTRY),
                 new StableSegmentRuntimeCollector<>(
                         Vldtn.requireNonNull(keyToSegmentMap,
                                 "keyToSegmentMap"),
                         Vldtn.requireNonNull(segmentRegistry,
-                                "segmentRegistry")),
+                                PROPERTY_SEGMENT_REGISTRY)),
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry"),
                 Vldtn.requireNonNull(walMonitoringView, "walMonitoringView"),
                 Vldtn.requireNonNull(maintenanceStatsRecorder,

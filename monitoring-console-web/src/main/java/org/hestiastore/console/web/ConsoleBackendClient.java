@@ -69,6 +69,7 @@ public class ConsoleBackendClient {
     private static final String API_ACTION_FLUSH = "/api/v1/actions/flush";
     private static final String API_ACTION_COMPACT = "/api/v1/actions/compact";
     private static final String API_CONFIG = "/api/v1/config";
+    private static final String FIELD_INDEX_NAME = "indexName";
     private static final String FIELD_CAPTURED_AT = "capturedAt";
     private static final String FIELD_STATE = "state";
     private static final String DEFAULT_STATE = "ERROR";
@@ -227,9 +228,10 @@ public class ConsoleBackendClient {
                 StandardCharsets.UTF_8);
         try {
             final JsonNode config = getJson(node,
-                    API_CONFIG + "?indexName=" + encodedIndexName);
+                    API_CONFIG + "?" + FIELD_INDEX_NAME + "="
+                            + encodedIndexName);
             return Optional.of(new RuntimeConfigView(
-                    config.path("indexName").asText(indexName.trim()),
+                    config.path(FIELD_INDEX_NAME).asText(indexName.trim()),
                     parseConfigMap(config.path("original")),
                     parseConfigMap(config.path("current")),
                     parseStringList(config.path("supportedKeys")),
@@ -772,7 +774,7 @@ public class ConsoleBackendClient {
         final List<RemoteMonitoredIndex> parsed = new ArrayList<>();
         for (final JsonNode indexNode : indexesNode) {
             parsed.add(new RemoteMonitoredIndex(
-                    indexNode.path("indexName").asText("unknown-index"),
+                    indexNode.path(FIELD_INDEX_NAME).asText("unknown-index"),
                     parseState(
                             indexNode.path(FIELD_STATE).asText(DEFAULT_STATE)),
                     parseRuntimeSnapshot(indexNode, capturedAt)));
@@ -792,7 +794,7 @@ public class ConsoleBackendClient {
         final JsonNode latency = indexNode.path("latency");
         final JsonNode bloomFilter = indexNode.path("bloomFilter");
         final JsonNode wal = indexNode.path("wal");
-        final String indexName = indexNode.path("indexName").asText(
+        final String indexName = indexNode.path(FIELD_INDEX_NAME).asText(
                 "unknown-index");
         final SegmentIndexState state = parseState(
                 indexNode.path(FIELD_STATE).asText(DEFAULT_STATE));

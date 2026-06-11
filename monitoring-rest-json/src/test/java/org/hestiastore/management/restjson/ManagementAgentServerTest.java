@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,20 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.monitoring.json.api.ActionResponse;
 import org.hestiastore.monitoring.json.api.ActionStatus;
@@ -129,6 +143,27 @@ class ManagementAgentServerTest {
             assertTrue(!indexNode.has("maxNumberOfImmutableRunsPerPartition"));
             assertFalse(indexNode.toString().contains("drain"));
         }
+    }
+
+    @Test
+    void reportEndpointMapsWalFieldsInApiOrder() throws Exception {
+        final String indexName = "wal-report-index";
+        final SegmentIndexWalMetrics wal =
+                new SegmentIndexWalMetrics(true, 1L, 2L, 3L, 4L, 5L, 6L, 7L,
+                        8, 9L, 10L, 11L, 12L, 13L, 14L, 15L, 16L);
+        server.addIndex(indexName, monitoredIndexWithSnapshot(
+                runtimeSnapshotWithWal(indexName, wal)));
+
+        final HttpResponse<String> response = send("GET",
+                ManagementApiPaths.REPORT, null);
+        assertEquals(200, response.statusCode());
+        final JsonNode indexNode = findIndexNode(
+                objectMapper.readTree(response.body()), indexName);
+        final JsonNode walNode = indexNode.path("wal");
+
+        assertEquals(11L, walNode.path("pendingSyncBytes").asLong());
+        assertEquals(12L, walNode.path("appliedLsn").asLong());
+        assertEquals(2L, walNode.path("checkpointLagLsn").asLong());
     }
 
     @Test
@@ -527,6 +562,49 @@ class ManagementAgentServerTest {
             }
         }
         return fail("Missing index report for " + indexName);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SegmentIndex<Integer, String> monitoredIndexWithSnapshot(
+            final IndexRuntimeSnapshot snapshot) {
+        final IndexRuntimeMonitoring monitoring = () -> snapshot;
+        final InvocationHandler handler = (proxy, method, args) -> {
+            return switch (method.getName()) {
+                case "runtimeMonitoring" -> monitoring;
+                case "wasClosed" -> false;
+                case "close" -> null;
+                case "toString" -> "monitoredIndex("
+                        + snapshot.indexName() + ")";
+                case "hashCode" -> System.identityHashCode(proxy);
+                case "equals" -> proxy == args[0];
+                default -> throw new UnsupportedOperationException(
+                        method.getName());
+            };
+        };
+        return (SegmentIndex<Integer, String>) Proxy.newProxyInstance(
+                SegmentIndex.class.getClassLoader(),
+                new Class<?>[] { SegmentIndex.class }, handler);
+    }
+
+    private static IndexRuntimeSnapshot runtimeSnapshotWithWal(
+            final String indexName, final SegmentIndexWalMetrics wal) {
+        final SegmentIndexExecutorMetrics executor =
+                new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
+        return new IndexRuntimeSnapshot(indexName, SegmentIndexState.READY,
+                Instant.EPOCH,
+                new SegmentIndexOperationMetrics(0L, 0L, 0L),
+                new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L, 0, 0),
+                new SegmentIndexChunkStoreCacheMetrics(0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L),
+                new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
+                        0L, List.of()),
+                new SegmentIndexWritePathMetrics(0, 0, 0, 0L),
+                new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L, 0L, 0L,
+                        executor, executor),
+                new SegmentIndexSplitMetrics(0L, 0, 0, 0L, 0L, executor),
+                new SegmentIndexLatencyMetrics(0L, 0L, 0L, 0L, 0L, 0L),
+                new SegmentIndexBloomFilterMetrics(0, 0, 0D, 0L, 0L, 0L, 0L),
+                wal);
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,
