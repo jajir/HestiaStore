@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.time.Instant;
 import java.util.Arrays;
@@ -41,68 +43,50 @@ class ManagementApiContractTest {
     }
 
     @Test
-    void indexReportRecordComponentsRemainStable() {
-        assertRecordComponents(IndexReportResponse.class,
-                List.of("indexName", "state", "ready", "getOperationCount",
-                        "putOperationCount", "deleteOperationCount",
-                        "registryCacheHitCount", "registryCacheMissCount",
-                        "registryCacheLoadCount",
-                        "registryCacheEvictionCount", "registryCacheSize",
-                        "registryCacheLimit",
-                        "segmentCacheKeyLimitPerSegment",
-                        "chunkStoreCachePageLimit",
-                        "chunkStoreCachePageCount",
-                        "chunkStoreCacheEntryCount",
-                        "chunkStoreCacheHitCount",
-                        "chunkStoreCacheMissCount",
-                        "chunkStoreCacheLoadCount",
-                        "chunkStoreCacheEvictionCount",
-                        "chunkStoreCacheInvalidationCount",
-                        "segmentWriteCacheKeyLimit",
-                        "segmentWriteCacheKeyLimitDuringMaintenance",
-                        "indexBufferedWriteKeyLimit",
-                        "segmentCount", "segmentReadyCount",
-                        "segmentMaintenanceCount", "segmentErrorCount",
-                        "segmentClosedCount", "segmentBusyCount",
-                        "totalSegmentKeys", "totalSegmentCacheKeys",
-                        "totalBufferedWriteKeys", "totalDeltaCacheFiles",
-                        "compactRequestCount", "flushRequestCount",
-                        "splitScheduleCount", "splitInFlightCount",
-                        "maintenanceQueueSize", "maintenanceQueueCapacity",
-                        "splitQueueSize", "splitQueueCapacity",
-                        "readLatencyP50Micros", "readLatencyP95Micros",
-                        "readLatencyP99Micros", "writeLatencyP50Micros",
-                        "writeLatencyP95Micros", "writeLatencyP99Micros",
-                        "bloomFilterHashFunctions",
-                        "bloomFilterIndexSizeInBytes",
-                        "bloomFilterProbabilityOfFalsePositive",
-                        "bloomFilterRequestCount",
-                        "bloomFilterRefusedCount",
-                        "bloomFilterPositiveCount",
-                        "bloomFilterFalsePositiveCount",
-                        "segmentRuntimeSnapshots"),
-                List.of(String.class, String.class, boolean.class,
-                        long.class, long.class, long.class, long.class,
-                        long.class, long.class, long.class,
-                        int.class, int.class, int.class,
-                        int.class, int.class, long.class, long.class,
-                        long.class, long.class, long.class, long.class,
-                        int.class, int.class, int.class, int.class, int.class,
-                        int.class, int.class, int.class, int.class,
-                        long.class, long.class, long.class, long.class,
-                        long.class, long.class, long.class,
-                        int.class, int.class, int.class, int.class, int.class,
-                        long.class, long.class, long.class, long.class,
-                        long.class, long.class,
-                        int.class, int.class, double.class,
-                        long.class, long.class, long.class, long.class,
-                        List.class));
+    void indexReportGroupedAccessorsRemainStable() throws Exception {
+        assertFalse(IndexReportResponse.class.isRecord());
+        final Constructor<IndexReportResponse> constructor =
+                IndexReportResponse.class.getConstructor(String.class,
+                        String.class, boolean.class,
+                        OperationReportResponse.class,
+                        RegistryCacheReportResponse.class,
+                        ChunkStoreCacheReportResponse.class,
+                        SegmentReportResponse.class,
+                        WritePathReportResponse.class,
+                        MaintenanceReportResponse.class,
+                        SplitReportResponse.class,
+                        LatencyReportResponse.class,
+                        BloomFilterReportResponse.class,
+                        WalReportResponse.class);
+        assertNotNull(constructor);
+        assertAccessor(IndexReportResponse.class, "indexName", String.class);
+        assertAccessor(IndexReportResponse.class, "state", String.class);
+        assertAccessor(IndexReportResponse.class, "ready", boolean.class);
+        assertAccessor(IndexReportResponse.class, "operations",
+                OperationReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "registryCache",
+                RegistryCacheReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "chunkStoreCache",
+                ChunkStoreCacheReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "segments",
+                SegmentReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "writePath",
+                WritePathReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "maintenance",
+                MaintenanceReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "split",
+                SplitReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "latency",
+                LatencyReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "bloomFilter",
+                BloomFilterReportResponse.class);
+        assertAccessor(IndexReportResponse.class, "wal", WalReportResponse.class);
     }
 
     @Test
     void metricsRecordComponentsRemainStable() {
         assertRecordComponents(MetricsResponse.class,
-                List.of("indexName", "state", "getOperationCount",
+                List.of("indexName", "state", "readOperationCount",
                         "putOperationCount", "deleteOperationCount",
                         "registryCacheHitCount", "registryCacheMissCount",
                         "registryCacheLoadCount",
@@ -114,7 +98,7 @@ class ManagementApiContractTest {
                         "indexBufferedWriteKeyLimit",
                         "segmentCount", "segmentReadyCount",
                         "segmentMaintenanceCount", "segmentErrorCount",
-                        "segmentClosedCount", "segmentBusyCount",
+                        "segmentClosedCount", "unloadedMappedSegmentCount",
                         "totalSegmentKeys", "totalSegmentCacheKeys",
                         "totalBufferedWriteKeys", "totalDeltaCacheFiles",
                         "compactRequestCount", "flushRequestCount",
@@ -232,5 +216,13 @@ class ManagementApiContractTest {
                     "Unexpected component type at index " + i + " for "
                             + recordType.getSimpleName());
         }
+    }
+
+    private void assertAccessor(final Class<?> type, final String accessorName,
+            final Class<?> expectedReturnType) throws Exception {
+        final Method method = type.getMethod(accessorName);
+        assertEquals(expectedReturnType, method.getReturnType(),
+                "Unexpected return type for " + type.getSimpleName() + "."
+                        + accessorName + "()");
     }
 }

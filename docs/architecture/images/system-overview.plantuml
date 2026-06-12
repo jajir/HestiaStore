@@ -18,7 +18,7 @@ rectangle "HestiaStore Engine" {
     component "Segment\nwrite cache + main SST\nBloom + delta cache" as segment
   }
 
-  component "metricsSnapshot()" as metrics
+  component "runtimeSnapshot()" as metrics
 }
 
 database "Index directory\nsegment files" as files

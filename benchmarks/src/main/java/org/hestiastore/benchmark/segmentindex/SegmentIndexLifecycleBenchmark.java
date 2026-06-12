@@ -76,7 +76,8 @@ public class SegmentIndexLifecycleBenchmark {
     @Threads(1)
     public int openExisting() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
-            return workingCopy.index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount();
+            return workingCopy.index.runtimeMonitoring().snapshot()
+                    .segments().count();
         }
     }
 
@@ -85,7 +86,8 @@ public class SegmentIndexLifecycleBenchmark {
     public int openAndCheckAndRepairConsistency() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
             workingCopy.index.maintenance().checkAndRepairConsistency();
-            return workingCopy.index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount();
+            return workingCopy.index.runtimeMonitoring().snapshot()
+                    .segments().count();
         }
     }
 
@@ -94,7 +96,8 @@ public class SegmentIndexLifecycleBenchmark {
     public int openAndCompact() throws IOException {
         try (WorkingCopy workingCopy = openWorkingCopy()) {
             workingCopy.index.maintenance().compactAndWait();
-            return workingCopy.index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount();
+            return workingCopy.index.runtimeMonitoring().snapshot()
+                    .segments().count();
         }
     }
 

@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+
 import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -203,8 +205,8 @@ class IntegrationSegmentIndexIteratorTest {
                 index.put(i, "stable-" + i);
             }
             index.maintenance().flushAndWait();
-            awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                    && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
+            awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                    && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                     10_000L);
 
             final List<Entry<Integer, String>> expected = IntStream.range(0, 48)
@@ -223,20 +225,20 @@ class IntegrationSegmentIndexIteratorTest {
                 assertTrue(patchResult.applied());
 
                 assertEquals(expected, preSplitStream.toList());
-                assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
+                assertEquals(1, index.runtimeMonitoring().snapshot().segments().count());
             }
 
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-                return snapshot.getSegmentCount() > 1
-                        && snapshot.getSplitInFlightCount() == 0;
+                final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                return snapshot.segments().count() > 1
+                        && snapshot.split().inFlightCount() == 0;
             }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
 
             assertEquals("stable-5", index.get(5));
             assertEquals("stable-18", index.get(18));
             assertEquals("stable-44", index.get(44));
             assertFullIsolationSnapshot(index, expected);
-            assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1);
+            assertTrue(index.runtimeMonitoring().snapshot().segments().count() > 1);
         }
     }
 
@@ -247,8 +249,8 @@ class IntegrationSegmentIndexIteratorTest {
                 index.put(i, "stable-" + i);
             }
             index.maintenance().flushAndWait();
-            awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                    && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
+            awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                    && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                     10_000L);
 
             try (var stream = index.getStream(SegmentWindow.unbounded(),
@@ -269,9 +271,9 @@ class IntegrationSegmentIndexIteratorTest {
                 assertTrue(patchResult.applied());
 
                 awaitCondition(() -> {
-                    final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-                    return snapshot.getSegmentCount() > 1
-                            && snapshot.getSplitInFlightCount() == 0;
+                    final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                    return snapshot.segments().count() > 1
+                            && snapshot.split().inFlightCount() == 0;
                 }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
 
                 while (iterator.hasNext()) {

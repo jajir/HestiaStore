@@ -494,8 +494,8 @@ class SegmentIndexConcurrentIT {
                     coldWriteCount.get(),
                     "Expected all cold-range writes to complete");
 
-            assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1
-                    || index.runtimeMonitoring().snapshot().getMetrics().getSplitScheduleCount() > 0,
+            assertTrue(index.runtimeMonitoring().snapshot().segments().count() > 1
+                    || index.runtimeMonitoring().snapshot().split().scheduleCount() > 0,
                     "Expected autonomous split scheduling under hot-range load");
             awaitSplitPublished(index, 30_000L);
             setSplitThreshold(index, 10_000_000);
@@ -579,8 +579,8 @@ class SegmentIndexConcurrentIT {
                                     + entry.getKey());
                 }
 
-                assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1
-                        || index.runtimeMonitoring().snapshot().getMetrics().getSplitScheduleCount() > 0,
+                assertTrue(index.runtimeMonitoring().snapshot().segments().count() > 1
+                        || index.runtimeMonitoring().snapshot().split().scheduleCount() > 0,
                         "Expected split evidence to survive close/reopen rotation");
 
                 final int additionalColdKey = 3_000_000 + rotation;
@@ -609,7 +609,7 @@ class SegmentIndexConcurrentIT {
                         "Unexpected final reopened value for cold key "
                                 + entry.getKey());
             }
-            assertTrue(index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1,
+            assertTrue(index.runtimeMonitoring().snapshot().segments().count() > 1,
                     "Expected persisted child routes after rotation reopens");
         } finally {
             if (index != null && !index.wasClosed()) {
@@ -793,10 +793,10 @@ class SegmentIndexConcurrentIT {
     private static void awaitSplitIdle(final SegmentIndex<Integer, Integer> index,
             final long timeoutMillis) {
         awaitCondition(() -> {
-            final var snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            return snapshot.getSplitInFlightCount() == 0
-                    && snapshot.getSplitQueueSize() == 0
-                    && snapshot.getSplitMaintenanceActiveThreadCount() == 0;
+            final var snapshot = index.runtimeMonitoring().snapshot();
+            return snapshot.split().inFlightCount() == 0
+                    && snapshot.split().executor().queueSize() == 0
+                    && snapshot.split().executor().activeThreadCount() == 0;
         }, timeoutMillis);
     }
 
@@ -814,8 +814,8 @@ class SegmentIndexConcurrentIT {
     private static void awaitSplitEvidence(
             final SegmentIndex<Integer, Integer> index,
             final long timeoutMillis) {
-        awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1
-                || index.runtimeMonitoring().snapshot().getMetrics().getSplitScheduleCount() > 0,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() > 1
+                || index.runtimeMonitoring().snapshot().split().scheduleCount() > 0,
                 timeoutMillis);
     }
 
@@ -823,9 +823,9 @@ class SegmentIndexConcurrentIT {
             final SegmentIndex<Integer, Integer> index,
             final long timeoutMillis) {
         awaitCondition(() -> {
-            final var snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            return snapshot.getSegmentCount() > 1
-                    && snapshot.getSplitInFlightCount() == 0;
+            final var snapshot = index.runtimeMonitoring().snapshot();
+            return snapshot.segments().count() > 1
+                    && snapshot.split().inFlightCount() == 0;
         }, timeoutMillis);
     }
 

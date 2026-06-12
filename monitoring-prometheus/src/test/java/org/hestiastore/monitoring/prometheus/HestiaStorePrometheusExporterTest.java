@@ -4,16 +4,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -26,13 +35,10 @@ class HestiaStorePrometheusExporterTest {
                 SegmentIndex.class);
         final IndexRuntimeMonitoring runtimeMonitoring = Mockito.mock(
                 IndexRuntimeMonitoring.class);
-        final SegmentIndexMetricsSnapshot metricsSnapshot = snapshot(7L, 11L,
+        final IndexRuntimeSnapshot runtimeSnapshot = snapshot(7L, 11L,
                 13L, SegmentIndexState.READY);
         Mockito.when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
-        Mockito.when(runtimeMonitoring.snapshot())
-                .thenReturn(new IndexRuntimeSnapshot("orders",
-                        SegmentIndexState.READY, metricsSnapshot,
-                        Instant.now()));
+        Mockito.when(runtimeMonitoring.snapshot()).thenReturn(runtimeSnapshot);
 
         final String scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
@@ -52,19 +58,17 @@ class HestiaStorePrometheusExporterTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void scrape_exportsExactSplitDrainAndBacklogValuesAndRefreshes() {
+    void scrape_exportsExactSplitBacklogValuesAndRefreshes() {
         final SegmentIndex<Integer, String> index = Mockito.mock(
                 SegmentIndex.class);
         final IndexRuntimeMonitoring runtimeMonitoring = Mockito.mock(
                 IndexRuntimeMonitoring.class);
-        final AtomicReference<SegmentIndexMetricsSnapshot> snapshotRef = new AtomicReference<>(
+        final AtomicReference<IndexRuntimeSnapshot> snapshotRef = new AtomicReference<>(
                 snapshot(1L, 2L, 3L, SegmentIndexState.READY, 7, 11, 29, 37L,
                         2));
         Mockito.when(index.runtimeMonitoring()).thenReturn(runtimeMonitoring);
         Mockito.when(runtimeMonitoring.snapshot()).thenAnswer(
-                inv -> new IndexRuntimeSnapshot("orders",
-                        snapshotRef.get().getState(), snapshotRef.get(),
-                        Instant.now()));
+                inv -> snapshotRef.get());
 
         String scrape = HestiaStorePrometheusExporter.scrape(
                 new PrometheusSegmentIndexSource("orders", index));
@@ -102,39 +106,43 @@ class HestiaStorePrometheusExporterTest {
         return Double.parseDouble(matcher.group(1));
     }
 
-    private SegmentIndexMetricsSnapshot snapshot(final long getCount,
+    private IndexRuntimeSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
             final SegmentIndexState state) {
         return snapshot(getCount, putCount, deleteCount, state, 0, 0, 0, 0L,
                 0);
     }
 
-    private SegmentIndexMetricsSnapshot snapshot(final long getCount,
+    private IndexRuntimeSnapshot snapshot(final long getCount,
             final long putCount, final long deleteCount,
             final SegmentIndexState state, final int segmentWriteCacheKeyLimit,
             final int segmentWriteCacheKeyLimitDuringMaintenance,
             final int indexBufferedWriteKeyLimit,
             final long splitScheduleCount, final int splitInFlightCount) {
-        return new SegmentIndexMetricsSnapshot(
-                getCount, putCount, deleteCount,
-                0L, 0L, 0L, 0L,
-                0, 0,
-                0, segmentWriteCacheKeyLimit,
-                segmentWriteCacheKeyLimitDuringMaintenance,
-                indexBufferedWriteKeyLimit, 0, 0, 0, 0, 0, 0,
-                0L, 0L, 0L, 0L,
-                0L, 0L, splitScheduleCount,
-                splitInFlightCount, 0, 0, 0, 0,
-                0, 0L, 0L, 0, 0L, 0L, 0, 0, 0, 0L, 0L,
-                0L, 0L, 0L,
-                0L, 0L, 0L,
-                0, 0, 0D,
-                0L, 0L, 0L, 0L,
-                false, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                List.<SegmentIndexMetricsSnapshot.SegmentMetricsSnapshot>of(),
-                state);
+        final SegmentIndexExecutorMetrics emptyExecutor =
+                new SegmentIndexExecutorMetrics(0, 0, 0, 0L, 0L, 0L);
+        return new IndexRuntimeSnapshot(
+                "orders",
+                state,
+                Instant.EPOCH,
+                new SegmentIndexOperationMetrics(getCount, putCount,
+                        deleteCount),
+                new SegmentIndexRegistryCacheMetrics(0L, 0L, 0L, 0L, 0, 0),
+                new SegmentIndexChunkStoreCacheMetrics(0, 0, 0L, 0L, 0L, 0L,
+                        0L, 0L),
+                new SegmentIndexSegmentMetrics(0, 0, 0, 0, 0, 0, 0, 0L, 0L,
+                        0L, java.util.List.of()),
+                new SegmentIndexWritePathMetrics(segmentWriteCacheKeyLimit,
+                        segmentWriteCacheKeyLimitDuringMaintenance,
+                        indexBufferedWriteKeyLimit, 0L),
+                new SegmentIndexMaintenanceMetrics(0L, 0L, 0L, 0L, 0L, 0L,
+                        emptyExecutor, emptyExecutor),
+                new SegmentIndexSplitMetrics(splitScheduleCount,
+                        splitInFlightCount, 0, 0L, 0L, emptyExecutor),
+                new SegmentIndexLatencyMetrics(0L, 0L, 0L, 0L, 0L, 0L),
+                new SegmentIndexBloomFilterMetrics(0, 0, 0D, 0L, 0L, 0L, 0L),
+                new SegmentIndexWalMetrics(false, 0L, 0L, 0L, 0L, 0L, 0L,
+                        0L, 0, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L));
     }
 
     private void assertSamples(final String scrape, final double getCount,

@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import org.hestiastore.index.monitoring.MonitoredIndex;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 
 /**
@@ -36,13 +36,13 @@ public final class MicrometerSegmentIndexSource implements MonitoredIndex {
     /** {@inheritDoc} */
     @Override
     public SegmentIndexState state() {
-        return index.runtimeMonitoring().snapshot().getState();
+        return index.runtimeMonitoring().snapshot().state();
     }
 
     /** {@inheritDoc} */
     @Override
-    public SegmentIndexMetricsSnapshot metricsSnapshot() {
-        return index.runtimeMonitoring().snapshot().getMetrics();
+    public IndexRuntimeSnapshot runtimeSnapshot() {
+        return index.runtimeMonitoring().snapshot();
     }
 
     private static String normalize(final String value, final String name) {

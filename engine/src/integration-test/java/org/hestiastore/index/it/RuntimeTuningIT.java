@@ -101,8 +101,8 @@ class RuntimeTuningIT {
             assertTrue(result.applied());
             assertEquals(5, index.runtimeTuning().current()
                     .chunkStoreCache().pageLimit());
-            assertEquals(5, index.runtimeMonitoring().snapshot().getMetrics()
-                    .getChunkStoreCachePageLimit());
+            assertEquals(5, index.runtimeMonitoring().snapshot()
+                    .chunkStoreCache().pageLimit());
             assertTrue(changePaths(result)
                     .contains("chunkStoreCache.pageLimit"));
         }

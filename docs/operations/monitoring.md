@@ -8,75 +8,67 @@ For rollout and rollback procedures, see
 
 ## Metrics Source
 
-Use `SegmentIndex.runtimeMonitoring().snapshot().getMetrics()` as the canonical in-process source.
+Use `SegmentIndex.runtimeMonitoring().snapshot()` as the canonical in-process source.
 Export these values into your monitoring stack (Micrometer/Prometheus, etc.)
 at a fixed scrape interval.
 
-For new in-process integrations, prefer the explicit write-path and maintenance
-views over the legacy partition-named compatibility fields:
+For in-process integrations, use the grouped runtime monitoring model:
 
-- `getWritePathMetrics()`
-- `getSegmentWriteCacheKeyLimit()`
-- `getSegmentWriteCacheKeyLimitDuringMaintenance()`
-- `getIndexBufferedWriteKeyLimit()`
+- `snapshot.operations()`
+- `snapshot.segments()`
+- `snapshot.writePath()`
+- `snapshot.maintenance()`
+- `snapshot.split()`
+- `snapshot.wal()`
 
 ## Core Index Signals
 
 - Throughput:
-  - `getOperationCount`, `putOperationCount`, `deleteOperationCount`
+  - `operations().readOperationCount()`, `operations().putOperationCount()`,
+    `operations().deleteOperationCount()`
 - Cache behavior:
-  - `registryCacheHitCount`, `registryCacheMissCount`, `registryCacheEvictionCount`
+  - `registryCache().hitCount()`, `registryCache().missCount()`,
+    `registryCache().evictionCount()`
 - Segment write path:
-  - `totalBufferedWriteKeys`
-  - `totalDeltaCacheFiles`
-  - `putBusyRetryCount`
-  - `putBusyTimeoutCount`
+  - `writePath().totalBufferedWriteKeys()`
+  - `segments().totalDeltaCacheFiles()`
 - Latency:
-  - `readLatencyP50/P95/P99Micros`
-  - `writeLatencyP50/P95/P99Micros`
+  - `latency().readP50Micros()`, `latency().readP95Micros()`,
+    `latency().readP99Micros()`
+  - `latency().writeP50Micros()`, `latency().writeP95Micros()`,
+    `latency().writeP99Micros()`
 - State:
-  - `state` (`OPENING`, `READY`, `CLOSING`, `ERROR`, `CLOSED`)
+  - `snapshot().state()` (`OPENING`, `READY`, `CLOSING`, `ERROR`, `CLOSED`)
 
 ## Split And Maintenance Signals
 
 In the current direct-to-segment runtime, these are the primary topology and
 maintenance indicators:
 
-- `getSplitScheduleCount()`
-- `getSplitInFlightCount()`
-- `getSplitBlockedPartitionCount()`
-- `getSplitTaskStartDelayP95Micros()`
-- `getSplitTaskRunLatencyP95Micros()`
-- `getFlushAcceptedToReadyP95Micros()`
-- `getCompactAcceptedToReadyP95Micros()`
-- `getStableSegmentMaintenanceQueueSize()`
-- `getStableSegmentMaintenanceActiveThreadCount()`
-
-Compatibility note:
-
-- partition-named fields remain in `metricsSnapshot()` for backward
-  compatibility with older dashboards and management clients
-- in the direct-to-segment runtime those partition-overlay counters should
-  normally remain `0`
-- `drain*` counters are also compatibility names and should not be treated as
-  evidence of a separate drain subsystem
-- new dashboards and alerts should prefer the explicit split, maintenance, WAL,
-  and segment-write-path fields above
+- `split().scheduleCount()`
+- `split().inFlightCount()`
+- `split().blockedCount()`
+- `split().taskStartDelayP95Micros()`
+- `split().taskRunLatencyP95Micros()`
+- `maintenance().flushAcceptedToReadyP95Micros()`
+- `maintenance().compactAcceptedToReadyP95Micros()`
+- `maintenance().stableSegmentExecutor().queueSize()`
+- `maintenance().stableSegmentExecutor().activeThreadCount()`
 
 ## WAL Signals
 
-Use these fields whenever `isWalEnabled()` is `true`:
+Use these fields whenever `wal().enabled()` is `true`:
 
 - Append throughput:
-  - `getWalAppendCount()`
-  - `getWalAppendBytes()`
+  - `wal().appendCount()`
+  - `wal().appendBytes()`
 - Sync health:
-  - `getWalSyncCount()`
-  - `getWalSyncFailureCount()`
-  - `getWalSyncAvgNanos()`
-  - `getWalSyncMaxNanos()`
-  - `getWalSyncAvgBatchBytes()`
-  - `getWalSyncBatchBytesMax()`
+  - `wal().syncCount()`
+  - `wal().syncFailureCount()`
+  - `wal().syncAverageNanos()`
+  - `wal().syncMaxNanos()`
+  - `wal().syncAverageBatchBytes()`
+  - `wal().syncBatchBytesMax()`
 - Recovery/corruption:
   - `getWalCorruptionCount()`
   - `getWalTruncationCount()`
@@ -111,10 +103,6 @@ Start with these baseline alerts and tune per workload:
   - severity: warning
 - `wal pending sync growth`:
   - condition: `getWalPendingSyncBytes()` grows without recovery for 10+ minutes
-  - severity: warning
-- `write busy retries growing`:
-  - condition: `getPutBusyRetryCount()` grows continuously together with write
-    latency
   - severity: warning
 - `split queue delay spike`:
   - condition: `getSplitTaskStartDelayP95Micros()` remains elevated above

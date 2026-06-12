@@ -28,7 +28,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
  * @param <K> key type
  * @param <V> value type
  */
-public final class WalRuntime<K, V> implements AutoCloseable {
+public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable {
 
     /**
      * Directory name that stores WAL metadata and segment files under an index
@@ -312,7 +312,13 @@ public final class WalRuntime<K, V> implements AutoCloseable {
         }
     }
 
-    public WalStats statsSnapshot() {
+    /**
+     * Returns the current immutable WAL monitoring snapshot.
+     *
+     * @return WAL monitoring snapshot
+     */
+    @Override
+    public WalMonitoring statsSnapshot() {
         synchronized (monitor) {
             return metrics.snapshot(segmentCatalog.retainedBytes(),
                     segmentCatalog.segmentCount(), syncPolicy.durableLsn(),

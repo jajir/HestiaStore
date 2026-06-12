@@ -6,6 +6,7 @@ import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
@@ -16,19 +17,19 @@ import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
 
 /**
- * TODO replace class with SegmentIndexBootstrapRequest amd
- * SegmentIndexBootstrapState builders that enforce correct resource
- * initialization order and availability
- */
-
-/**
  * Holds package-private session resources while bootstrap steps live outside
  * the session package.
+ * <p>
+ * A future bootstrap model can replace this holder with
+ * SegmentIndexBootstrapRequest and SegmentIndexBootstrapState builders that
+ * enforce resource initialization order and availability.
+ * </p>
  *
  * @param <K> key type
  * @param <V> value type
  */
-public final class SegmentIndexSessionResources<K, V> {
+public final class SegmentIndexSessionResources<K, V>
+        implements SegmentIndexStateView {
 
     private IndexDirectoryLock directoryLock;
     private SegmentIndexStateMachine stateMachine;
@@ -85,6 +86,12 @@ public final class SegmentIndexSessionResources<K, V> {
         this.runtime = Vldtn.requireNonNull(runtime, "runtime");
     }
 
+    /**
+     * Returns the current segment-index lifecycle state.
+     *
+     * @return current segment-index lifecycle state
+     */
+    @Override
     public SegmentIndexState currentState() {
         return stateMachine().getState();
     }

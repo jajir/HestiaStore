@@ -1,126 +1,74 @@
 package org.hestiastore.monitoring.json.api;
 
-import java.util.List;
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 
 /**
- * Per-index metrics section inside node report payload.
+ * Per-index grouped metrics section inside node report payload.
  */
-public record IndexReportResponse(String indexName, String state,
-        boolean ready,
-        long getOperationCount, long putOperationCount,
-        long deleteOperationCount, long registryCacheHitCount,
-        long registryCacheMissCount, long registryCacheLoadCount,
-        long registryCacheEvictionCount, int registryCacheSize,
-        int registryCacheLimit, int segmentCacheKeyLimitPerSegment,
-        int chunkStoreCachePageLimit, int chunkStoreCachePageCount,
-        long chunkStoreCacheEntryCount, long chunkStoreCacheHitCount,
-        long chunkStoreCacheMissCount, long chunkStoreCacheLoadCount,
-        long chunkStoreCacheEvictionCount,
-        long chunkStoreCacheInvalidationCount,
-        int segmentWriteCacheKeyLimit,
-        int segmentWriteCacheKeyLimitDuringMaintenance,
-        int indexBufferedWriteKeyLimit,
-        int segmentCount, int segmentReadyCount,
-        int segmentMaintenanceCount, int segmentErrorCount,
-        int segmentClosedCount, int segmentBusyCount, long totalSegmentKeys,
-        long totalSegmentCacheKeys, long totalBufferedWriteKeys,
-        long totalDeltaCacheFiles, long compactRequestCount,
-        long flushRequestCount, long splitScheduleCount, int splitInFlightCount,
-        int maintenanceQueueSize, int maintenanceQueueCapacity,
-        int splitQueueSize, int splitQueueCapacity,
-        long readLatencyP50Micros, long readLatencyP95Micros,
-        long readLatencyP99Micros, long writeLatencyP50Micros,
-        long writeLatencyP95Micros, long writeLatencyP99Micros,
-        int bloomFilterHashFunctions,
-        int bloomFilterIndexSizeInBytes,
-        double bloomFilterProbabilityOfFalsePositive,
-        long bloomFilterRequestCount, long bloomFilterRefusedCount,
-        long bloomFilterPositiveCount, long bloomFilterFalsePositiveCount,
-        List<SegmentRuntimeReportResponse> segmentRuntimeSnapshots) {
+public final class IndexReportResponse {
+
+    private final String indexName;
+    private final String state;
+    private final boolean ready;
+    private final OperationReportResponse operations;
+    private final RegistryCacheReportResponse registryCache;
+    private final ChunkStoreCacheReportResponse chunkStoreCache;
+    private final SegmentReportResponse segments;
+    private final WritePathReportResponse writePath;
+    private final MaintenanceReportResponse maintenance;
+    private final SplitReportResponse split;
+    private final LatencyReportResponse latency;
+    private final BloomFilterReportResponse bloomFilter;
+    private final WalReportResponse wal;
 
     /**
      * Creates validated per-index metrics payload.
+     *
+     * @param indexName logical index name
+     * @param state lifecycle state name
+     * @param ready whether the index is ready
+     * @param operations operation metrics
+     * @param registryCache registry cache metrics
+     * @param chunkStoreCache chunk-store cache metrics
+     * @param segments segment metrics
+     * @param writePath write-path metrics
+     * @param maintenance maintenance metrics
+     * @param split split metrics
+     * @param latency latency metrics
+     * @param bloomFilter Bloom filter metrics
+     * @param wal WAL metrics
      */
-    public IndexReportResponse {
-        indexName = normalize(indexName, "indexName");
-        state = normalize(state, "state");
-        requireNotNegative(getOperationCount, "getOperationCount");
-        requireNotNegative(putOperationCount, "putOperationCount");
-        requireNotNegative(deleteOperationCount, "deleteOperationCount");
-        requireNotNegative(registryCacheHitCount, "registryCacheHitCount");
-        requireNotNegative(registryCacheMissCount, "registryCacheMissCount");
-        requireNotNegative(registryCacheLoadCount, "registryCacheLoadCount");
-        requireNotNegative(registryCacheEvictionCount,
-                "registryCacheEvictionCount");
-        requireNotNegative(registryCacheSize, "registryCacheSize");
-        requireNotNegative(registryCacheLimit, "registryCacheLimit");
-        requireNotNegative(chunkStoreCachePageLimit,
-                "chunkStoreCachePageLimit");
-        requireNotNegative(chunkStoreCachePageCount,
-                "chunkStoreCachePageCount");
-        requireNotNegative(chunkStoreCacheEntryCount,
-                "chunkStoreCacheEntryCount");
-        requireNotNegative(chunkStoreCacheHitCount,
-                "chunkStoreCacheHitCount");
-        requireNotNegative(chunkStoreCacheMissCount,
-                "chunkStoreCacheMissCount");
-        requireNotNegative(chunkStoreCacheLoadCount,
-                "chunkStoreCacheLoadCount");
-        requireNotNegative(chunkStoreCacheEvictionCount,
-                "chunkStoreCacheEvictionCount");
-        requireNotNegative(chunkStoreCacheInvalidationCount,
-                "chunkStoreCacheInvalidationCount");
-        requireNotNegative(segmentCacheKeyLimitPerSegment,
-                "segmentCacheKeyLimitPerSegment");
-        requireNotNegative(segmentWriteCacheKeyLimit,
-                "segmentWriteCacheKeyLimit");
-        requireNotNegative(segmentWriteCacheKeyLimitDuringMaintenance,
-                "segmentWriteCacheKeyLimitDuringMaintenance");
-        requireNotNegative(indexBufferedWriteKeyLimit,
-                "indexBufferedWriteKeyLimit");
-        requireNotNegative(segmentCount, "segmentCount");
-        requireNotNegative(segmentReadyCount, "segmentReadyCount");
-        requireNotNegative(segmentMaintenanceCount, "segmentMaintenanceCount");
-        requireNotNegative(segmentErrorCount, "segmentErrorCount");
-        requireNotNegative(segmentClosedCount, "segmentClosedCount");
-        requireNotNegative(segmentBusyCount, "segmentBusyCount");
-        requireNotNegative(totalSegmentKeys, "totalSegmentKeys");
-        requireNotNegative(totalSegmentCacheKeys, "totalSegmentCacheKeys");
-        requireNotNegative(totalBufferedWriteKeys, "totalBufferedWriteKeys");
-        requireNotNegative(totalDeltaCacheFiles, "totalDeltaCacheFiles");
-        requireNotNegative(compactRequestCount, "compactRequestCount");
-        requireNotNegative(flushRequestCount, "flushRequestCount");
-        requireNotNegative(splitScheduleCount, "splitScheduleCount");
-        requireNotNegative(splitInFlightCount, "splitInFlightCount");
-        requireNotNegative(maintenanceQueueSize, "maintenanceQueueSize");
-        requireNotNegative(maintenanceQueueCapacity,
-                "maintenanceQueueCapacity");
-        requireNotNegative(splitQueueSize, "splitQueueSize");
-        requireNotNegative(splitQueueCapacity, "splitQueueCapacity");
-        requireNotNegative(readLatencyP50Micros, "readLatencyP50Micros");
-        requireNotNegative(readLatencyP95Micros, "readLatencyP95Micros");
-        requireNotNegative(readLatencyP99Micros, "readLatencyP99Micros");
-        requireNotNegative(writeLatencyP50Micros, "writeLatencyP50Micros");
-        requireNotNegative(writeLatencyP95Micros, "writeLatencyP95Micros");
-        requireNotNegative(writeLatencyP99Micros, "writeLatencyP99Micros");
-        requireNotNegative(bloomFilterHashFunctions,
-                "bloomFilterHashFunctions");
-        requireNotNegative(bloomFilterIndexSizeInBytes,
-                "bloomFilterIndexSizeInBytes");
-        if (bloomFilterProbabilityOfFalsePositive < 0D) {
-            throw new IllegalArgumentException(
-                    "bloomFilterProbabilityOfFalsePositive must be >= 0");
-        }
-        requireNotNegative(bloomFilterRequestCount, "bloomFilterRequestCount");
-        requireNotNegative(bloomFilterRefusedCount, "bloomFilterRefusedCount");
-        requireNotNegative(bloomFilterPositiveCount,
-                "bloomFilterPositiveCount");
-        requireNotNegative(bloomFilterFalsePositiveCount,
-                "bloomFilterFalsePositiveCount");
-        segmentRuntimeSnapshots = List.copyOf(
-                Objects.requireNonNull(segmentRuntimeSnapshots,
-                        "segmentRuntimeSnapshots"));
+    @ConstructorProperties({ "indexName", "state", "ready", "operations",
+            "registryCache", "chunkStoreCache", "segments", "writePath",
+            "maintenance", "split", "latency", "bloomFilter", "wal" })
+    @SuppressWarnings("java:S107")
+    public IndexReportResponse(final String indexName, final String state,
+            final boolean ready, final OperationReportResponse operations,
+            final RegistryCacheReportResponse registryCache,
+            final ChunkStoreCacheReportResponse chunkStoreCache,
+            final SegmentReportResponse segments,
+            final WritePathReportResponse writePath,
+            final MaintenanceReportResponse maintenance,
+            final SplitReportResponse split,
+            final LatencyReportResponse latency,
+            final BloomFilterReportResponse bloomFilter,
+            final WalReportResponse wal) {
+        this.indexName = normalize(indexName, "indexName");
+        this.state = normalize(state, "state");
+        this.ready = ready;
+        this.operations = Objects.requireNonNull(operations, "operations");
+        this.registryCache = Objects.requireNonNull(registryCache,
+                "registryCache");
+        this.chunkStoreCache = Objects.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
+        this.segments = Objects.requireNonNull(segments, "segments");
+        this.writePath = Objects.requireNonNull(writePath, "writePath");
+        this.maintenance = Objects.requireNonNull(maintenance, "maintenance");
+        this.split = Objects.requireNonNull(split, "split");
+        this.latency = Objects.requireNonNull(latency, "latency");
+        this.bloomFilter = Objects.requireNonNull(bloomFilter, "bloomFilter");
+        this.wal = Objects.requireNonNull(wal, "wal");
     }
 
     private static String normalize(final String value, final String name) {
@@ -131,10 +79,120 @@ public record IndexReportResponse(String indexName, String state,
         return normalized;
     }
 
-    private static void requireNotNegative(final long value,
-            final String name) {
-        if (value < 0L) {
-            throw new IllegalArgumentException(name + " must be >= 0");
-        }
+    /**
+     * Returns logical index name.
+     *
+     * @return logical index name
+     */
+    public String indexName() {
+        return indexName;
+    }
+
+    /**
+     * Returns lifecycle state name.
+     *
+     * @return lifecycle state name
+     */
+    public String state() {
+        return state;
+    }
+
+    /**
+     * Returns whether the index is ready.
+     *
+     * @return true when the index is ready
+     */
+    public boolean ready() {
+        return ready;
+    }
+
+    /**
+     * Returns operation metrics.
+     *
+     * @return operation metrics
+     */
+    public OperationReportResponse operations() {
+        return operations;
+    }
+
+    /**
+     * Returns registry cache metrics.
+     *
+     * @return registry cache metrics
+     */
+    public RegistryCacheReportResponse registryCache() {
+        return registryCache;
+    }
+
+    /**
+     * Returns chunk-store cache metrics.
+     *
+     * @return chunk-store cache metrics
+     */
+    public ChunkStoreCacheReportResponse chunkStoreCache() {
+        return chunkStoreCache;
+    }
+
+    /**
+     * Returns segment metrics.
+     *
+     * @return segment metrics
+     */
+    public SegmentReportResponse segments() {
+        return segments;
+    }
+
+    /**
+     * Returns write-path metrics.
+     *
+     * @return write-path metrics
+     */
+    public WritePathReportResponse writePath() {
+        return writePath;
+    }
+
+    /**
+     * Returns maintenance metrics.
+     *
+     * @return maintenance metrics
+     */
+    public MaintenanceReportResponse maintenance() {
+        return maintenance;
+    }
+
+    /**
+     * Returns split metrics.
+     *
+     * @return split metrics
+     */
+    public SplitReportResponse split() {
+        return split;
+    }
+
+    /**
+     * Returns latency metrics.
+     *
+     * @return latency metrics
+     */
+    public LatencyReportResponse latency() {
+        return latency;
+    }
+
+    /**
+     * Returns Bloom filter metrics.
+     *
+     * @return Bloom filter metrics
+     */
+    public BloomFilterReportResponse bloomFilter() {
+        return bloomFilter;
+    }
+
+    /**
+     * Returns WAL metrics.
+     *
+     * @return WAL metrics
+     */
+    public WalReportResponse wal() {
+        return wal;
     }
 }

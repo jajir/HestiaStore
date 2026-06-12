@@ -129,13 +129,13 @@ Exit codes:
 
 Monitor these first:
 
-- `getWalSyncFailureCount()`
-- `getWalCorruptionCount()`
-- `getWalTruncationCount()`
-- `getWalRetainedBytes()`
-- `getWalCheckpointLagLsn()`
-- `getWalPendingSyncBytes()`
-- `getWalSyncAvgNanos()`
+- `wal().syncFailureCount()`
+- `wal().corruptionCount()`
+- `wal().truncationCount()`
+- `wal().retainedBytes()`
+- `wal().checkpointLagLsn()`
+- `wal().pendingSyncBytes()`
+- `wal().syncAverageNanos()`
 
 When retained WAL exceeds `maxBytesBeforeForcedCheckpoint`, the write path
 applies forced checkpoint behavior and backpressure until retained WAL drops.
@@ -154,16 +154,16 @@ Structured log events include:
 - `event=wal_sync_failure`
 - `event=wal_sync_failure_transition`
 
-## Metrics exposed by `metricsSnapshot()`
+## Metrics exposed by `runtimeMonitoring().snapshot().wal()`
 
-- throughput: `getWalAppendCount()`, `getWalAppendBytes()`
-- durability: `getWalSyncCount()`, `getWalSyncFailureCount()`, `getWalDurableLsn()`
-- corruption and recovery: `getWalCorruptionCount()`, `getWalTruncationCount()`
+- throughput: `wal().appendCount()`, `wal().appendBytes()`
+- durability: `wal().syncCount()`, `wal().syncFailureCount()`, `wal().durableLsn()`
+- corruption and recovery: `wal().corruptionCount()`, `wal().truncationCount()`
 - retention and checkpointing:
-  `getWalRetainedBytes()`, `getWalSegmentCount()`, `getWalCheckpointLsn()`,
-  `getWalCheckpointLagLsn()`
-- pending work: `getWalPendingSyncBytes()`, `getWalAppliedLsn()`
+  `wal().retainedBytes()`, `wal().segmentCount()`, `wal().checkpointLsn()`,
+  `wal().checkpointLagLsn()`
+- pending work: `wal().pendingSyncBytes()`, `wal().appliedLsn()`
 - sync latency and batch sizing:
-  `getWalSyncTotalNanos()`, `getWalSyncMaxNanos()`, `getWalSyncAvgNanos()`,
-  `getWalSyncBatchBytesTotal()`, `getWalSyncBatchBytesMax()`,
-  `getWalSyncAvgBatchBytes()`
+  `wal().syncTotalNanos()`, `wal().syncMaxNanos()`, `wal().syncAverageNanos()`,
+  `wal().syncBatchBytesTotal()`, `wal().syncBatchBytesMax()`,
+  `wal().syncAverageBatchBytes()`

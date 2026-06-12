@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
@@ -260,8 +262,8 @@ class IntegrationSegmentIndexConcurrencyTest {
         final long deadline = System.nanoTime()
                 + TimeUnit.SECONDS.toNanos(10L);
         while (System.nanoTime() < deadline) {
-            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            if (snapshot.getSplitInFlightCount() == 0) {
+            final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            if (snapshot.split().inFlightCount() == 0) {
                 return;
             }
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20L));

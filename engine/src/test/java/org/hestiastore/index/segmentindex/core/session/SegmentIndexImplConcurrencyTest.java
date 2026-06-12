@@ -20,7 +20,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.SegmentIndexMetricsSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
@@ -106,8 +106,8 @@ class SegmentIndexImplConcurrencyTest {
     void writesAndReadsSucceedBeforeAndAfterSplitRemapsRoutes() {
         recreateIndex(buildAutonomousSplitConf());
         seedStableRange(48);
-        awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                 10_000L);
         assertEquals("stable-30", index.get(30));
 
@@ -115,7 +115,7 @@ class SegmentIndexImplConcurrencyTest {
 
         awaitSplitObservedWhileWriting();
         setSplitThreshold(10_000_000);
-        awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() > 1,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() > 1,
                 30_000L);
 
         final String finalValue = "final-5";
@@ -225,11 +225,11 @@ class SegmentIndexImplConcurrencyTest {
     }
 
     private boolean hasSplitActivity() {
-        final SegmentIndexMetricsSnapshot snapshot =
-                index.runtimeMonitoring().snapshot().getMetrics();
-        return snapshot.getSplitScheduleCount() > 0
-                || snapshot.getSplitInFlightCount() > 0
-                || snapshot.getSegmentCount() > 1;
+        final IndexRuntimeSnapshot snapshot =
+                index.runtimeMonitoring().snapshot();
+        return snapshot.split().scheduleCount() > 0
+                || snapshot.split().inFlightCount() > 0
+                || snapshot.segments().count() > 1;
     }
 
     private static void awaitCondition(final Supplier<Boolean> condition,

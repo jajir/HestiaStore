@@ -50,10 +50,10 @@ final class WalCheckpointExecutor<K, V> {
         if (!LOGGER.isDebugEnabled()) {
             return;
         }
-        final var walStats = walRuntime.statsSnapshot();
+        final var walMonitoring = walRuntime.statsSnapshot();
         LOGGER.debug(
                 "WAL checkpoint: durableLsn={}, checkpointLsn={}, retainedBytes={}, segments={}",
-                walStats.durableLsn(), walStats.checkpointLsn(),
-                walStats.retainedBytes(), walStats.segmentCount());
+                walMonitoring.durableLsn(), walMonitoring.checkpointLsn(),
+                walMonitoring.retainedBytes(), walMonitoring.segmentCount());
     }
 }

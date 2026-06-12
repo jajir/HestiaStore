@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex;
 
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -68,7 +70,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("overlay-44", reopened.get(44));
             assertEquals("overlay-49", reopened.get(49));
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().segments().count());
         }
     }
 
@@ -83,7 +85,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory,
                 conf)) {
             seedStableSegment(index);
-            assertEquals(1, index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
+            assertEquals(1, index.runtimeMonitoring().snapshot().segments().count());
             applyOverlayMutations(index);
 
             crashSnapshot = copyDirectoryWithoutLocks(directory);
@@ -112,7 +114,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             assertEquals("overlay-44", reopened.get(44));
             assertEquals("overlay-49", reopened.get(49));
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.runtimeMonitoring().snapshot().getMetrics().getSegmentCount(),
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().segments().count(),
                     "Interrupted split artifacts must not publish child routes.");
         }
 
@@ -151,7 +153,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
         try (SegmentIndex<Integer, String> reopened = SegmentIndex
                 .open(directory)) {
             assertIntegerIndexSnapshot(reopened, expected);
-            assertEquals(1, reopened.runtimeMonitoring().snapshot().getMetrics().getSegmentCount());
+            assertEquals(1, reopened.runtimeMonitoring().snapshot().segments().count());
         }
     }
 
@@ -399,8 +401,8 @@ class IntegrationSegmentIndexWalRecoveryTest {
 
             maintenanceAction.accept(index);
             awaitCondition(() -> {
-                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-                return snapshot.getSplitInFlightCount() == 0;
+                final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                return snapshot.split().inFlightCount() == 0;
             }, 10_000L);
             assertIntegerIndexSnapshot(index, expected);
 
@@ -461,8 +463,8 @@ class IntegrationSegmentIndexWalRecoveryTest {
             index.put(i, "stable-" + i);
         }
         index.maintenance().flushAndWait();
-        awaitCondition(() -> index.runtimeMonitoring().snapshot().getMetrics().getSegmentCount() == 1
-                && index.runtimeMonitoring().snapshot().getMetrics().getSplitInFlightCount() == 0,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().segments().count() == 1
+                && index.runtimeMonitoring().snapshot().split().inFlightCount() == 0,
                 10_000L);
     }
 
@@ -554,11 +556,11 @@ class IntegrationSegmentIndexWalRecoveryTest {
                     .create(directory, conf)) {
                 index.put("k1", "v1");
                 index.maintenance().flushAndWait();
-                final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-                assertFalse(snapshot.isWalEnabled());
-                assertEquals(0L, snapshot.getWalAppendCount());
-                assertEquals(0L, snapshot.getWalSyncCount());
-                assertEquals(0L, snapshot.getWalRetainedBytes());
+                final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                assertFalse(snapshot.wal().enabled());
+                assertEquals(0L, snapshot.wal().appendCount());
+                assertEquals(0L, snapshot.wal().syncCount());
+                assertEquals(0L, snapshot.wal().retainedBytes());
             }
 
             assertFalse(Files.exists(tempDir.resolve("wal")));
@@ -587,14 +589,14 @@ class IntegrationSegmentIndexWalRecoveryTest {
             for (int i = 0; i < 300; i++) {
                 index.put("bp-" + i, "value-" + i);
             }
-            final SegmentIndexMetricsSnapshot snapshot = index.runtimeMonitoring().snapshot().getMetrics();
-            assertTrue(snapshot.isWalEnabled());
-            assertTrue(snapshot.getWalAppendCount() >= 300L);
-            assertTrue(snapshot.getWalCheckpointLsn() > 0L,
+            final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            assertTrue(snapshot.wal().enabled());
+            assertTrue(snapshot.wal().appendCount() >= 300L);
+            assertTrue(snapshot.wal().checkpointLsn() > 0L,
                     "Expected forced checkpoint under retention pressure.");
-            assertTrue(snapshot.getWalDurableLsn() >= snapshot.getWalCheckpointLsn());
-            assertEquals(0L, snapshot.getWalSyncFailureCount());
-            assertTrue(snapshot.getWalRetainedBytes() <= wal
+            assertTrue(snapshot.wal().durableLsn() >= snapshot.wal().checkpointLsn());
+            assertEquals(0L, snapshot.wal().syncFailureCount());
+            assertTrue(snapshot.wal().retainedBytes() <= wal
                     .getMaxBytesBeforeForcedCheckpoint()
                     + wal.getSegmentSizeBytes());
             assertEquals("value-299", index.get("bp-299"));

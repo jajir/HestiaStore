@@ -141,10 +141,10 @@ class SegmentIndexAsyncMaintenanceTest {
         index.maintenance().flushAndWait();
 
         index.close();
-        awaitCondition(() -> index.runtimeMonitoring().snapshot().getState() == SegmentIndexState.CLOSED,
+        awaitCondition(() -> index.runtimeMonitoring().snapshot().state() == SegmentIndexState.CLOSED,
                 750L);
 
-        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
+        assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().state());
     }
 
     @Test
@@ -173,8 +173,7 @@ class SegmentIndexAsyncMaintenanceTest {
             final Future<?> closeTask = executor.submit(index::close);
             awaitCondition(
                     () -> index.runtimeMonitoring()
-                            .snapshot()
-                            .getState() == SegmentIndexState.CLOSING,
+                            .snapshot().state() == SegmentIndexState.CLOSING,
                     5_000L);
             assertFalse(closeTask.isDone());
 
@@ -187,7 +186,7 @@ class SegmentIndexAsyncMaintenanceTest {
 
         assertTrue(index.wasClosed());
         assertEquals(SegmentIndexState.CLOSED,
-                index.runtimeMonitoring().snapshot().getState());
+                index.runtimeMonitoring().snapshot().state());
     }
 
     @Test
@@ -217,11 +216,11 @@ class SegmentIndexAsyncMaintenanceTest {
                 assertTrue(started.await(1, TimeUnit.SECONDS));
 
                 awaitCondition(
-                        () -> index.runtimeMonitoring().snapshot().getState() == SegmentIndexState.CLOSING,
+                        () -> index.runtimeMonitoring().snapshot().state() == SegmentIndexState.CLOSING,
                         5_000L);
                 assertFalse(closeTask.isDone());
-                assertEquals(SegmentIndexState.CLOSING, index.runtimeMonitoring().snapshot().getMetrics()
-                        .getState());
+                assertEquals(SegmentIndexState.CLOSING, index.runtimeMonitoring().snapshot()
+                        .state());
                 assertEquals(SegmentState.MAINTENANCE_RUNNING,
                         stateRef.get());
 
@@ -234,7 +233,7 @@ class SegmentIndexAsyncMaintenanceTest {
                 }
             }
 
-            assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().getState());
+            assertEquals(SegmentIndexState.CLOSED, index.runtimeMonitoring().snapshot().state());
         } finally {
             executor.shutdownNow();
         }
