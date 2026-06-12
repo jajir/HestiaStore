@@ -143,8 +143,7 @@ public interface SegmentIndex<K, V> extends CloseableResource {
      */
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory) {
-        return SegmentIndexFactory.<M, N>tryOpen(directory)
-                .map(index -> index);
+        return SegmentIndexFactory.tryOpen(directory);
     }
 
     /**
@@ -162,8 +161,8 @@ public interface SegmentIndex<K, V> extends CloseableResource {
     static <M, N> Optional<SegmentIndex<M, N>> tryOpen(
             final Directory directory,
             final ChunkFilterProviderResolver chunkFilterProviderResolver) {
-        return SegmentIndexFactory.<M, N>tryOpen(directory,
-                chunkFilterProviderResolver).map(index -> index);
+        return SegmentIndexFactory.tryOpen(directory,
+                chunkFilterProviderResolver);
     }
 
     /**

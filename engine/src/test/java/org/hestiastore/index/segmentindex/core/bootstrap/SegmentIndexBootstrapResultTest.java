@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexBootstrapResultTest {
@@ -55,6 +55,6 @@ class SegmentIndexBootstrapResultTest {
     @SuppressWarnings("unchecked")
     private static SegmentIndexResourceClosingAdapter<Integer, String> mockIndex() {
         return new SegmentIndexResourceClosingAdapter<>(
-                mock(SegmentIndexSessionHandle.class));
+                mock(SegmentIndexSessionResource.class));
     }
 }

@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.logging;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,7 +19,7 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatc
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
@@ -32,22 +32,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
-class IndexContextLoggingAdapterTest {
+class SegmentIndexMdcLoggingAdapterTest {
 
     @Mock
-    private SegmentIndexSessionHandle<String, String> delegate;
+    private SegmentIndexSessionResource<String, String> delegate;
 
     @Mock
     private SegmentIndexMaintenance maintenance;
 
-    private IndexContextLoggingAdapter<String, String> adapter;
+    private SegmentIndexMdcLoggingAdapter<String, String> adapter;
 
     @BeforeEach
     void setUp() {
         when(delegate.runtimeTuning()).thenReturn(mock(RuntimeTuning.class));
         when(delegate.runtimeMonitoring()).thenReturn(mock(IndexRuntimeMonitoring.class));
         when(delegate.maintenance()).thenReturn(maintenance);
-        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcCallWrapper("idx"));
+        adapter = new SegmentIndexMdcLoggingAdapter<>(delegate, new IndexMdcCallWrapper("idx"));
     }
 
     @AfterEach
@@ -62,7 +62,7 @@ class IndexContextLoggingAdapterTest {
     void constructorRejectsBlankIndexName() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> new IndexContextLoggingAdapter<>(delegate,
+                () -> new SegmentIndexMdcLoggingAdapter<>(delegate,
                         new IndexMdcCallWrapper("  ")));
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
@@ -142,7 +142,7 @@ class IndexContextLoggingAdapterTest {
             mdcAtApply.set(MDC.get("index.name"));
             return mock(RuntimeTuningResult.class);
         });
-        adapter = new IndexContextLoggingAdapter<>(delegate, new IndexMdcCallWrapper("idx"));
+        adapter = new SegmentIndexMdcLoggingAdapter<>(delegate, new IndexMdcCallWrapper("idx"));
 
         final RuntimeTuning wrappedRuntimeTuning = adapter.runtimeTuning();
         assertSame(wrappedRuntimeTuning, adapter.runtimeTuning());

@@ -34,7 +34,7 @@ import org.hestiastore.index.segmentindex.configuration.persistence.IndexConfigu
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationBuilder;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.logging.SegmentIndexMdcLoggingAdapter;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexTestAccess;
@@ -101,7 +101,7 @@ class SegmentIndexBootstrapOperationTest {
 
         try {
             assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-            assertInstanceOf(IndexContextLoggingAdapter.class,
+            assertInstanceOf(SegmentIndexMdcLoggingAdapter.class,
                     wrappedIndex(index));
         } finally {
             index.close();
@@ -176,7 +176,7 @@ class SegmentIndexBootstrapOperationTest {
         assertTrue(directory.isFileExists(LOCK_FILE_NAME));
         assertTrue(state.getExecutorRegistry().wasClosed());
         assertTrue(SegmentIndexTestAccess
-                .keyToSegmentMap(state.getInternalIndex())
+                .keyToSegmentMap(state.getIndexHandle())
                 .wasClosed());
         assertWalClosed(state);
     }
@@ -259,14 +259,14 @@ class SegmentIndexBootstrapOperationTest {
 
         try {
             assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-            assertFalse(wrappedIndex(index) instanceof IndexContextLoggingAdapter);
+            assertFalse(wrappedIndex(index) instanceof SegmentIndexMdcLoggingAdapter);
         } finally {
             index.close();
         }
     }
 
     @Test
-    void scopedStartupApplyAndRollbackRunInsideIndexMdcScope() {
+    void startupApplyAndRollbackDoNotRunInsideIndexMdcScope() {
         final MemDirectory directory = new MemDirectory();
         final RuntimeException failure = new IllegalStateException(
                 "bootstrap failed");
@@ -278,17 +278,17 @@ class SegmentIndexBootstrapOperationTest {
 
         final RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> runBootstrapLikeOperation(request, state,
-                        stepsThroughMdcCallWrapperThen(
+                        stepsThroughConfigurationThen(
                                 mdcRecordingStep("resource", calls, failure))));
 
         assertSame(failure, thrown);
-        assertEquals(List.of("apply resource:bootstrap-operation-mdc",
-                "close resource:bootstrap-operation-mdc"), calls);
+        assertEquals(List.of("apply resource:null", "close resource:null"),
+                calls);
         assertNull(MDC.get(MDC_INDEX_NAME_KEY));
     }
 
     @Test
-    void scopedStartupFailureRestoresExistingIndexMdcScope() {
+    void startupFailureLeavesExistingIndexMdcScopeUntouched() {
         final MemDirectory directory = new MemDirectory();
         final SegmentIndexBootstrapRequest<Integer, String> request = request(
                 directory, buildConf("bootstrap-operation-mdc-restore", true),
@@ -299,7 +299,7 @@ class SegmentIndexBootstrapOperationTest {
         MDC.put(MDC_INDEX_NAME_KEY, "outer");
         assertThrows(RuntimeException.class,
                 () -> runBootstrapLikeOperation(request, state,
-                        stepsThroughMdcCallWrapperThen(failingStep())));
+                        stepsThroughConfigurationThen(failingStep())));
 
         assertEquals("outer", MDC.get(MDC_INDEX_NAME_KEY));
     }
@@ -630,13 +630,12 @@ class SegmentIndexBootstrapOperationTest {
                 () -> state.getRuntimeWalRuntime().appendPut(1, "one"));
     }
 
-    private static List<SegmentIndexBootstrapStep<Integer, String>> stepsThroughMdcCallWrapperThen(
+    private static List<SegmentIndexBootstrapStep<Integer, String>> stepsThroughConfigurationThen(
             final SegmentIndexBootstrapStep<Integer, String> nextStep) {
         final SegmentIndexSessionResources<Integer, String> sessionResources =
                 new SegmentIndexSessionResources<>();
         return List.of(new BootstrapStepAcquireDirectoryLock<>(sessionResources),
-                SegmentIndexBootstrapSteps.resolveConfiguration(),
-                SegmentIndexBootstrapSteps.createMdcCallWrapper(), nextStep);
+                SegmentIndexBootstrapSteps.resolveConfiguration(), nextStep);
     }
 
     private static List<SegmentIndexBootstrapStep<Integer, String>> commonStepsThroughExecutor(
@@ -645,7 +644,6 @@ class SegmentIndexBootstrapOperationTest {
                 new ArrayList<>();
         steps.add(new BootstrapStepAcquireDirectoryLock<>(sessionResources));
         steps.add(SegmentIndexBootstrapSteps.resolveConfiguration());
-        steps.add(SegmentIndexBootstrapSteps.createMdcCallWrapper());
         steps.add(SegmentIndexBootstrapSteps.resolveTypeDescriptors());
         steps.add(SegmentIndexBootstrapSteps.writeConfiguration());
         steps.add(SegmentIndexBootstrapSteps.createExecutorRegistry());

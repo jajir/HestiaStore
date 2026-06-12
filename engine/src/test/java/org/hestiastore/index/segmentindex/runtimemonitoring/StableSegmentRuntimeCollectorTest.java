@@ -101,7 +101,7 @@ class StableSegmentRuntimeCollectorTest {
         assertEquals(0L, metrics.getTotalBloomFilterRefusedCount());
         assertEquals(10L, metrics.getTotalBloomFilterPositiveCount());
         assertEquals(1L, metrics.getTotalBloomFilterFalsePositiveCount());
-        assertEquals(2, metrics.getStableSegmentMetricsSnapshots().size());
+        assertEquals(2, metrics.getStableSegmentRuntimeSnapshots().size());
         verify(readySegmentRuntime).getRuntimeSnapshot();
         verify(maintenanceSegmentRuntime).getRuntimeSnapshot();
         verify(unmappedSegmentRuntime).getRuntimeSnapshot();
@@ -115,7 +115,7 @@ class StableSegmentRuntimeCollectorTest {
 
         assertEquals(0, metrics.getTotalMappedStableSegmentCount());
         assertEquals(0, metrics.getUnloadedMappedStableSegmentCount());
-        assertEquals(0, metrics.getStableSegmentMetricsSnapshots().size());
+        assertEquals(0, metrics.getStableSegmentRuntimeSnapshots().size());
     }
 
     private static SegmentRuntimeSnapshot segmentRuntimeSnapshot(

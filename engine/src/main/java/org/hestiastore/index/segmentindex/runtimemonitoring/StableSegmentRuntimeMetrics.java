@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentRuntimeMetrics;
 
 /**
  * Mutable aggregate of loaded stable-segment runtime metrics.
@@ -28,7 +27,7 @@ final class StableSegmentRuntimeMetrics {
     private long totalBloomFilterRefusedCount;
     private long totalBloomFilterPositiveCount;
     private long totalBloomFilterFalsePositiveCount;
-    private final List<SegmentIndexSegmentRuntimeMetrics> stableSegmentMetricsSnapshots =
+    private final List<SegmentRuntimeSnapshot> stableSegmentRuntimeSnapshots =
             new ArrayList<>();
 
     void setTotalMappedStableSegmentCount(final int count) {
@@ -82,37 +81,50 @@ final class StableSegmentRuntimeMetrics {
     }
 
     void addSegmentRuntimeSnapshot(final SegmentRuntimeSnapshot segmentRuntime) {
-        final SegmentIndexSegmentRuntimeMetrics metrics =
-                new SegmentIndexSegmentRuntimeMetrics(
-                        segmentRuntime.getSegmentId().getName(),
-                        segmentRuntime.getState(),
-                        segmentRuntime.getNumberOfKeysInDeltaCache(),
-                        segmentRuntime.getNumberOfKeysInSegment(),
-                        segmentRuntime.getNumberOfKeysInScarceIndex(),
-                        segmentRuntime.getNumberOfKeysInSegmentCache(),
-                        segmentRuntime.getNumberOfKeysInWriteCache(),
-                        segmentRuntime.getNumberOfDeltaCacheFiles(),
-                        segmentRuntime.getNumberOfCompacts(),
-                        segmentRuntime.getNumberOfFlushes(),
-                        segmentRuntime.getBloomFilterRequestCount(),
-                        segmentRuntime.getBloomFilterRefusedCount(),
-                        segmentRuntime.getBloomFilterPositiveCount(),
-                        segmentRuntime.getBloomFilterFalsePositiveCount());
-        totalStableSegmentKeyCount += nonNegative(segmentRuntime.getNumberOfKeys(),
+        final SegmentRuntimeSnapshot snapshot = Vldtn.requireNonNull(
+                segmentRuntime, "segmentRuntime");
+        final long numberOfKeys = nonNegative(snapshot.getNumberOfKeys(),
                 "numberOfKeys");
-        totalStableSegmentCacheKeyCount += metrics.numberOfKeysInSegmentCache();
+        final long numberOfKeysInSegmentCache = nonNegative(
+                snapshot.getNumberOfKeysInSegmentCache(),
+                "numberOfKeysInSegmentCache");
+        final int numberOfKeysInWriteCache = nonNegative(
+                snapshot.getNumberOfKeysInWriteCache(),
+                "numberOfKeysInWriteCache");
+        final int numberOfDeltaCacheFiles = nonNegative(
+                snapshot.getNumberOfDeltaCacheFiles(),
+                "numberOfDeltaCacheFiles");
+        final long compactRequestCount = nonNegative(
+                snapshot.getNumberOfCompacts(), "compactRequestCount");
+        final long flushRequestCount = nonNegative(snapshot.getNumberOfFlushes(),
+                "flushRequestCount");
+        final long bloomFilterRequestCount = nonNegative(
+                snapshot.getBloomFilterRequestCount(),
+                "bloomFilterRequestCount");
+        final long bloomFilterRefusedCount = nonNegative(
+                snapshot.getBloomFilterRefusedCount(),
+                "bloomFilterRefusedCount");
+        final long bloomFilterPositiveCount = nonNegative(
+                snapshot.getBloomFilterPositiveCount(),
+                "bloomFilterPositiveCount");
+        final long bloomFilterFalsePositiveCount = nonNegative(
+                snapshot.getBloomFilterFalsePositiveCount(),
+                "bloomFilterFalsePositiveCount");
+
+        totalStableSegmentKeyCount += numberOfKeys;
+        totalStableSegmentCacheKeyCount += numberOfKeysInSegmentCache;
         totalStableSegmentWriteBufferKeyCount +=
-                metrics.numberOfKeysInWriteCache();
+                numberOfKeysInWriteCache;
         totalStableSegmentDeltaCacheFileCount +=
-                metrics.numberOfDeltaCacheFiles();
-        totalCompactRequestCount += metrics.compactRequestCount();
-        totalFlushRequestCount += metrics.flushRequestCount();
-        totalBloomFilterRequestCount += metrics.bloomFilterRequestCount();
-        totalBloomFilterRefusedCount += metrics.bloomFilterRefusedCount();
-        totalBloomFilterPositiveCount += metrics.bloomFilterPositiveCount();
+                numberOfDeltaCacheFiles;
+        totalCompactRequestCount += compactRequestCount;
+        totalFlushRequestCount += flushRequestCount;
+        totalBloomFilterRequestCount += bloomFilterRequestCount;
+        totalBloomFilterRefusedCount += bloomFilterRefusedCount;
+        totalBloomFilterPositiveCount += bloomFilterPositiveCount;
         totalBloomFilterFalsePositiveCount +=
-                metrics.bloomFilterFalsePositiveCount();
-        stableSegmentMetricsSnapshots.add(metrics);
+                bloomFilterFalsePositiveCount;
+        stableSegmentRuntimeSnapshots.add(snapshot);
     }
 
     long getTotalStableSegmentKeyCount() {
@@ -155,8 +167,8 @@ final class StableSegmentRuntimeMetrics {
         return totalBloomFilterFalsePositiveCount;
     }
 
-    List<SegmentIndexSegmentRuntimeMetrics> getStableSegmentMetricsSnapshots() {
-        return stableSegmentMetricsSnapshots;
+    List<SegmentRuntimeSnapshot> getStableSegmentRuntimeSnapshots() {
+        return List.copyOf(stableSegmentRuntimeSnapshots);
     }
 
     private static int nonNegative(final int value, final String name) {

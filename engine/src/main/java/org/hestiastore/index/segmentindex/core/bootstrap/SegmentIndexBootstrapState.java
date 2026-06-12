@@ -11,12 +11,11 @@ import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -37,10 +36,7 @@ final class SegmentIndexBootstrapState<K, V> {
     private TypeDescriptor<K> keyTypeDescriptor;
     private TypeDescriptor<V> valueTypeDescriptor;
     private ExecutorRegistry executorRegistry;
-    private IndexMdcCallWrapper indexMdcCallWrapper;
-    // FIXME why to store x time the same?
-    private SegmentIndexSessionHandle<K, V> internalIndex;
-    private SegmentIndexSessionHandle<K, V> managedIndex;
+    private SegmentIndexSessionResource<K, V> indexHandle;
     private SegmentIndexResourceClosingAdapter<K, V> index;
     private SegmentIndexBootstrapResult<K, V> result;
     private RuntimeTuningState runtimeTuningState;
@@ -104,36 +100,13 @@ final class SegmentIndexBootstrapState<K, V> {
         return requireInitialized(executorRegistry, "executorRegistry");
     }
 
-    void setIndexMdcCallWrapper(
-            final IndexMdcCallWrapper indexMdcCallWrapper) {
-        this.indexMdcCallWrapper = Vldtn.requireNonNull(indexMdcCallWrapper,
-                "indexMdcCallWrapper");
+    void setIndexHandle(
+            final SegmentIndexSessionResource<K, V> indexHandle) {
+        this.indexHandle = Vldtn.requireNonNull(indexHandle, "indexHandle");
     }
 
-    boolean hasIndexMdcCallWrapper() {
-        return indexMdcCallWrapper != null;
-    }
-
-    IndexMdcCallWrapper getIndexMdcCallWrapper() {
-        return requireInitialized(indexMdcCallWrapper, "indexMdcCallWrapper");
-    }
-
-    void setInternalIndex(
-            final SegmentIndexSessionHandle<K, V> internalIndex) {
-        this.internalIndex = Vldtn.requireNonNull(internalIndex,
-                "internalIndex");
-    }
-
-    SegmentIndexSessionHandle<K, V> getInternalIndex() {
-        return requireInitialized(internalIndex, "internalIndex");
-    }
-
-    void setManagedIndex(final SegmentIndexSessionHandle<K, V> managedIndex) {
-        this.managedIndex = Vldtn.requireNonNull(managedIndex, "managedIndex");
-    }
-
-    SegmentIndexSessionHandle<K, V> getManagedIndex() {
-        return requireInitialized(managedIndex, "managedIndex");
+    SegmentIndexSessionResource<K, V> getIndexHandle() {
+        return requireInitialized(indexHandle, "indexHandle");
     }
 
     void setIndex(final SegmentIndexResourceClosingAdapter<K, V> index) {

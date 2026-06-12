@@ -133,6 +133,9 @@ class IndexRuntimeSnapshotCollectorTest {
         final IndexRuntimeSnapshot secondSnapshot =
                 collector.snapshot();
 
+        assertEquals(1L, firstSnapshot.operations().readOperationCount());
+        assertEquals(1L, firstSnapshot.operations().putOperationCount());
+        assertEquals(1L, firstSnapshot.operations().deleteOperationCount());
         assertEquals(11L, firstSnapshot.registryCache().hitCount());
         assertEquals(1, firstSnapshot.segments().count());
         assertEquals(1, firstSnapshot.segments().readyCount());
@@ -146,6 +149,8 @@ class IndexRuntimeSnapshotCollectorTest {
         assertEquals(123L, firstSnapshot.wal().appliedLsn());
         assertEquals(CAPTURED_AT, firstSnapshot.capturedAt());
         assertFalse(firstSnapshot.wal().enabled());
+        assertEquals(4L, firstSnapshot.split().scheduleCount());
+        assertEquals(3, firstSnapshot.split().inFlightCount());
         assertEquals(SegmentIndexState.READY, firstSnapshot.state());
         assertEquals(1, firstSnapshot.segments().runtimeMetrics().size());
         assertNotNull(firstSnapshot.segments().runtimeMetrics().get(0));

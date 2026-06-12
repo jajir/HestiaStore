@@ -57,7 +57,7 @@ class StableSegmentRuntimeMetricsTest {
         assertEquals(11L, metrics.getTotalBloomFilterRefusedCount());
         assertEquals(12L, metrics.getTotalBloomFilterPositiveCount());
         assertEquals(13L, metrics.getTotalBloomFilterFalsePositiveCount());
-        assertEquals(1, metrics.getStableSegmentMetricsSnapshots().size());
+        assertEquals(1, metrics.getStableSegmentRuntimeSnapshots().size());
     }
 
     @Test
@@ -74,6 +74,6 @@ class StableSegmentRuntimeMetricsTest {
 
         assertEquals("Property 'numberOfKeys' must be greater than or equal to 0",
                 error.getMessage());
-        assertEquals(0, metrics.getStableSegmentMetricsSnapshots().size());
+        assertEquals(0, metrics.getStableSegmentRuntimeSnapshots().size());
     }
 }

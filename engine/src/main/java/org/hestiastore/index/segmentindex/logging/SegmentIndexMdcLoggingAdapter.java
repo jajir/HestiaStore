@@ -1,17 +1,16 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.logging;
 
 import java.util.stream.Stream;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
-import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceContextLoggingAdapter;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringContextLoggingAdapter;
 
 /**
  * Adapter that wraps an internal index and ensures that the
@@ -21,27 +20,28 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
  * @param <K> type of keys stored in the index
  * @param <V> type of values stored in the index
  */
-public final class IndexContextLoggingAdapter<K, V>
-        extends SegmentIndexSessionHandle<K, V> {
-    private final SegmentIndexSessionHandle<K, V> delegate;
+public final class SegmentIndexMdcLoggingAdapter<K, V>
+        extends AbstractCloseableResource
+        implements SegmentIndexSessionResource<K, V> {
+    private final SegmentIndexSessionResource<K, V> delegate;
     private final IndexMdcCallWrapper contextCallWrapper;
     private final RuntimeTuning runtimeConfiguration;
     private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenance;
 
-    public IndexContextLoggingAdapter(
-            final SegmentIndexSessionHandle<K, V> delegate,
+    public SegmentIndexMdcLoggingAdapter(
+            final SegmentIndexSessionResource<K, V> delegate,
             final IndexMdcCallWrapper contextCallWrapper) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
         this.contextCallWrapper = Vldtn.requireNonNull(contextCallWrapper,
                 "contextCallWrapper");
         this.runtimeConfiguration =
-                new RuntimeTuningContextLoggingAdapter(
+                new RuntimeTuningMdcLoggingAdapter(
                         delegate.runtimeTuning(), this.contextCallWrapper);
         this.runtimeMonitoring =
-                new IndexRuntimeMonitoringContextLoggingAdapter(
+                new IndexRuntimeMonitoringMdcLoggingAdapter(
                         delegate.runtimeMonitoring(), this.contextCallWrapper);
-        this.maintenance = new SegmentIndexMaintenanceContextLoggingAdapter(
+        this.maintenance = new SegmentIndexMaintenanceMdcLoggingAdapter(
                 delegate.maintenance(), this.contextCallWrapper);
     }
 

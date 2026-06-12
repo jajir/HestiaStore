@@ -20,6 +20,7 @@ import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionInfrastructure;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
@@ -49,7 +50,8 @@ class BootstrapStepCreateRuntimeTest {
     @SuppressWarnings("unchecked")
     void setUp() {
         sessionResources = new SegmentIndexSessionResources<>();
-        sessionResources.createSessionInfrastructure();
+        sessionResources.setSessionInfrastructure(
+                SegmentIndexSessionInfrastructure.create());
         step = new BootstrapStepCreateRuntime<>(sessionResources);
         topologyRuntime = mock(SegmentTopologyRuntimeAccess.class);
         keyToSegmentMap = mock(KeyToSegmentMap.class);

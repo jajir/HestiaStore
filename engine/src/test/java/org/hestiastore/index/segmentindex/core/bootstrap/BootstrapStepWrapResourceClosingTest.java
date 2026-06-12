@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BootstrapStepWrapResourceClosingTest {
 
     @Mock
-    private SegmentIndexSessionHandle<Integer, String> managedIndex;
+    private SegmentIndexSessionResource<Integer, String> indexHandle;
 
     @Mock
     private ExecutorRegistry executorRegistry;
@@ -34,10 +34,10 @@ class BootstrapStepWrapResourceClosingTest {
     }
 
     @Test
-    void apply_wrapsManagedIndexWithResourceClosingAdapter() {
+    void apply_wrapsIndexHandleWithResourceClosingAdapter() {
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
-        state.setManagedIndex(managedIndex);
+        state.setIndexHandle(indexHandle);
         state.setExecutorRegistry(executorRegistry);
 
         assertDoesNotThrow(() -> step.apply(
@@ -46,21 +46,21 @@ class BootstrapStepWrapResourceClosingTest {
 
         assertInstanceOf(SegmentIndexResourceClosingAdapter.class,
                 state.getIndex());
-        assertNotSame(managedIndex, state.getIndex());
+        assertNotSame(indexHandle, state.getIndex());
     }
 
     @Test
-    void returnedIndexCloseClosesManagedIndexOnly() {
+    void returnedIndexCloseClosesIndexHandleOnly() {
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
-        state.setManagedIndex(managedIndex);
+        state.setIndexHandle(indexHandle);
         state.setExecutorRegistry(executorRegistry);
         step.apply(request(new MemDirectory(), SegmentIndexBootstrapMode.OPEN),
                 state);
 
         assertDoesNotThrow(() -> state.getIndex().close());
 
-        verify(managedIndex).close();
+        verify(indexHandle).close();
         verify(executorRegistry, never()).close();
     }
 }

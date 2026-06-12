@@ -16,8 +16,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -83,21 +82,20 @@ class SegmentIndexBootstrapPipelineTest {
     }
 
     @Test
-    void run_executesStepsAndCleanupInsideMdcScopeAfterCallWrapperExists() {
+    void run_leavesStepsAndCleanupOutsideMdcScope() {
         final List<String> calls = new ArrayList<>();
         final RuntimeException failure = new IllegalStateException("boom");
         final SegmentIndexBootstrapPipeline<Integer, String> pipeline =
-                new SegmentIndexBootstrapPipeline<>(List.of(
-                        new CallWrapperStep("bootstrap-pipeline-test", calls),
-                        new MdcRecordingStep("resource", calls, failure)));
+                new SegmentIndexBootstrapPipeline<>(
+                        List.of(new MdcRecordingStep("resource", calls,
+                                failure)));
 
         final RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> pipeline.run(request(), new SegmentIndexBootstrapState<>()));
 
         assertSame(failure, thrown);
-        assertEquals(List.of("apply resource:bootstrap-pipeline-test",
-                "close resource:bootstrap-pipeline-test",
-                "close scope:bootstrap-pipeline-test"), calls);
+        assertEquals(List.of("apply resource:null", "close resource:null"),
+                calls);
         assertNull(MDC.get(MDC_INDEX_NAME_KEY));
     }
 
@@ -237,7 +235,7 @@ class SegmentIndexBootstrapPipelineTest {
     @SuppressWarnings("unchecked")
     private static SegmentIndexResourceClosingAdapter<Integer, String> mockIndex() {
         return new SegmentIndexResourceClosingAdapter<>(
-                mock(SegmentIndexSessionHandle.class));
+                mock(SegmentIndexSessionResource.class));
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {
@@ -303,31 +301,6 @@ class SegmentIndexBootstrapPipelineTest {
             if (closeFailure != null) {
                 throw closeFailure;
             }
-        }
-    }
-
-    private static final class CallWrapperStep
-            extends SegmentIndexBootstrapStep<Integer, String> {
-
-        private final String indexName;
-        private final List<String> calls;
-
-        private CallWrapperStep(final String indexName,
-                final List<String> calls) {
-            this.indexName = indexName;
-            this.calls = calls;
-        }
-
-        @Override
-        void apply(
-                final SegmentIndexBootstrapRequest<Integer, String> request,
-                final SegmentIndexBootstrapState<Integer, String> state) {
-            state.setIndexMdcCallWrapper(new IndexMdcCallWrapper(indexName));
-        }
-
-        @Override
-        void closeResource() {
-            calls.add("close scope:" + MDC.get(MDC_INDEX_NAME_KEY));
         }
     }
 

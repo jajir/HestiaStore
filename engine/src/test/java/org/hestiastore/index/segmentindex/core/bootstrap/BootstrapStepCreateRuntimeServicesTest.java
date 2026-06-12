@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionInfrastructure;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,8 @@ class BootstrapStepCreateRuntimeServicesTest {
     @BeforeEach
     void setUp() {
         sessionResources = new SegmentIndexSessionResources<>();
-        sessionResources.createSessionInfrastructure();
+        sessionResources.setSessionInfrastructure(
+                SegmentIndexSessionInfrastructure.create());
         step = new BootstrapStepCreateRuntimeServices<>(sessionResources);
         directory = new MemDirectory();
     }

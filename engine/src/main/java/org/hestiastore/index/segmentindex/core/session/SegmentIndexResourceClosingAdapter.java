@@ -2,6 +2,7 @@ package org.hestiastore.index.segmentindex.core.session;
 
 import java.util.stream.Stream;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
@@ -15,12 +16,13 @@ import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitori
  * the index.
  */
 public final class SegmentIndexResourceClosingAdapter<K, V>
-        extends SegmentIndexSessionHandle<K, V> {
+        extends AbstractCloseableResource
+        implements SegmentIndexSessionResource<K, V> {
 
-    private final SegmentIndexSessionHandle<K, V> delegate;
+    private final SegmentIndexSessionResource<K, V> delegate;
 
     public SegmentIndexResourceClosingAdapter(
-            final SegmentIndexSessionHandle<K, V> index) {
+            final SegmentIndexSessionResource<K, V> index) {
         this.delegate = Vldtn.requireNonNull(index, "index");
     }
 

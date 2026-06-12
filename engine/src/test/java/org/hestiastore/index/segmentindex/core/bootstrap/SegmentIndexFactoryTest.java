@@ -21,7 +21,7 @@ import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.logging.SegmentIndexMdcLoggingAdapter;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +31,7 @@ class SegmentIndexFactoryTest {
     void tryOpenReturnsEmptyWhenConfigurationDoesNotExist() {
         final ChunkFilterProviderResolver registry = ChunkFilterProviderResolverImpl
                 .defaultResolver();
-        final Optional<SegmentIndexResourceClosingAdapter<Integer, String>> index =
+        final Optional<SegmentIndex<Integer, String>> index =
                 SegmentIndexFactory.tryOpen(new MemDirectory(), registry);
 
         assertTrue(index.isEmpty());
@@ -49,7 +49,7 @@ class SegmentIndexFactoryTest {
                 .create(directory, configuration, registry);
         created.close();
 
-        final Optional<SegmentIndexResourceClosingAdapter<Integer, String>> reopened =
+        final Optional<SegmentIndex<Integer, String>> reopened =
                 SegmentIndexFactory.tryOpen(directory, registry);
         assertTrue(reopened.isPresent());
         assertFalse(reopened.get().wasClosed());
@@ -80,7 +80,7 @@ class SegmentIndexFactoryTest {
                 ChunkFilterProviderResolverImpl.defaultResolver());
 
         assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-        assertInstanceOf(IndexContextLoggingAdapter.class, wrappedIndex(index));
+        assertInstanceOf(SegmentIndexMdcLoggingAdapter.class, wrappedIndex(index));
 
         index.close();
     }
@@ -93,7 +93,7 @@ class SegmentIndexFactoryTest {
                 ChunkFilterProviderResolverImpl.defaultResolver());
 
         assertInstanceOf(SegmentIndexResourceClosingAdapter.class, index);
-        assertFalse(wrappedIndex(index) instanceof IndexContextLoggingAdapter);
+        assertFalse(wrappedIndex(index) instanceof SegmentIndexMdcLoggingAdapter);
 
         index.close();
     }

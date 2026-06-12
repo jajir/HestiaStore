@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.logging;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
@@ -11,7 +11,6 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatc
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningSnapshot;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningValidation;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
-class RuntimeTuningContextLoggingAdapterTest {
+class RuntimeTuningMdcLoggingAdapterTest {
 
     @AfterEach
     void tearDown() {
@@ -58,8 +57,8 @@ class RuntimeTuningContextLoggingAdapterTest {
             return result;
         });
 
-        final RuntimeTuningContextLoggingAdapter adapter =
-                new RuntimeTuningContextLoggingAdapter(delegate,
+        final RuntimeTuningMdcLoggingAdapter adapter =
+                new RuntimeTuningMdcLoggingAdapter(delegate,
                         new IndexMdcCallWrapper("idx"));
 
         assertSame(actual, adapter.current());

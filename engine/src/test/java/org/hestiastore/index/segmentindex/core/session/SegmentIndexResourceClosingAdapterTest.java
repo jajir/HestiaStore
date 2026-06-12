@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import java.util.stream.Stream;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
@@ -32,7 +33,7 @@ class SegmentIndexResourceClosingAdapterTest {
 
     @Test
     void putAfterCloseFailsBeforeDelegate() {
-        final SegmentIndexSessionHandle<String, String> delegate = mockIndex();
+        final SegmentIndexSessionResource<String, String> delegate = mockIndex();
         final SegmentIndexResourceClosingAdapter<String, String> adapter = new SegmentIndexResourceClosingAdapter<>(
                 delegate);
         adapter.close();
@@ -48,7 +49,8 @@ class SegmentIndexResourceClosingAdapterTest {
     }
 
     private static final class NoopSegmentIndex
-            extends SegmentIndexSessionHandle<String, String> {
+            extends AbstractCloseableResource
+            implements SegmentIndexSessionResource<String, String> {
 
         @Override
         public void put(final String key, final String value) {
@@ -93,7 +95,7 @@ class SegmentIndexResourceClosingAdapterTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static SegmentIndexSessionHandle<String, String> mockIndex() {
-        return mock(SegmentIndexSessionHandle.class);
+    private static SegmentIndexSessionResource<String, String> mockIndex() {
+        return mock(SegmentIndexSessionResource.class);
     }
 }

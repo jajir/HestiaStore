@@ -1,17 +1,21 @@
 package org.hestiastore.index.segmentindex.runtimemonitoring;
 
+import java.util.List;
+
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorStats;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentRuntimeMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
@@ -99,7 +103,33 @@ final class IndexRuntimeSnapshotProjection<K, V> {
                 stable.getTotalStableSegmentKeyCount(),
                 stable.getTotalStableSegmentCacheKeyCount(),
                 stable.getTotalStableSegmentDeltaCacheFileCount(),
-                stable.getStableSegmentMetricsSnapshots());
+                segmentRuntimeMetrics(stable));
+    }
+
+    private List<SegmentIndexSegmentRuntimeMetrics> segmentRuntimeMetrics(
+            final StableSegmentRuntimeMetrics stable) {
+        return stable.getStableSegmentRuntimeSnapshots().stream()
+                .map(this::segmentRuntimeMetrics)
+                .toList();
+    }
+
+    private SegmentIndexSegmentRuntimeMetrics segmentRuntimeMetrics(
+            final SegmentRuntimeSnapshot segmentRuntime) {
+        return new SegmentIndexSegmentRuntimeMetrics(
+                segmentRuntime.getSegmentId().getName(),
+                segmentRuntime.getState(),
+                segmentRuntime.getNumberOfKeysInDeltaCache(),
+                segmentRuntime.getNumberOfKeysInSegment(),
+                segmentRuntime.getNumberOfKeysInScarceIndex(),
+                segmentRuntime.getNumberOfKeysInSegmentCache(),
+                segmentRuntime.getNumberOfKeysInWriteCache(),
+                segmentRuntime.getNumberOfDeltaCacheFiles(),
+                segmentRuntime.getNumberOfCompacts(),
+                segmentRuntime.getNumberOfFlushes(),
+                segmentRuntime.getBloomFilterRequestCount(),
+                segmentRuntime.getBloomFilterRefusedCount(),
+                segmentRuntime.getBloomFilterPositiveCount(),
+                segmentRuntime.getBloomFilterFalsePositiveCount());
     }
 
     private SegmentIndexWritePathMetrics writePath(

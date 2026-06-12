@@ -44,8 +44,12 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.streaming..";
     private static final String SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES =
             "org.hestiastore.index.segmentindex.core.executorregistry..";
-    private static final String SEGMENT_INDEX_METRICS_PACKAGES =
+    private static final String SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES =
             "org.hestiastore.index.segmentindex.runtimemonitoring..";
+    private static final String SEGMENT_INDEX_LOGGING_PACKAGES =
+            "org.hestiastore.index.segmentindex.logging..";
+    private static final String SEGMENT_INDEX_MONITORING_PACKAGES =
+            "org.hestiastore.index.monitoring..";
     private static final String SEGMENT_INDEX_CORE_PACKAGES =
             "org.hestiastore.index.segmentindex.core..";
     private static final String SEGMENT_INDEX_MAPPING_PACKAGES =
@@ -62,6 +66,8 @@ class PackageDependencyBoundaryTest {
             "org.hestiastore.index.segmentindex.core.control..";
     private static final String SEGMENT_INDEX_PUBLIC_API_PACKAGE =
             "org.hestiastore.index.segmentindex";
+    private static final String SEGMENT_INDEX_FACTORY_CLASS =
+            "org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory";
     private static final String STORAGE_CONSISTENCY_CHECKER_CLASS =
             "org.hestiastore.index.segmentindex.core.storage.IndexConsistencyChecker";
     private static final String STORAGE_CONSISTENCY_COORDINATOR_CLASS =
@@ -102,7 +108,7 @@ class PackageDependencyBoundaryTest {
                     SEGMENT_INDEX_CORE_MAINTENANCE_PACKAGES,
                     SEGMENT_INDEX_CORE_STREAMING_PACKAGES,
                     SEGMENT_INDEX_CORE_STABLE_SEGMENT_PACKAGES,
-                    SEGMENT_INDEX_METRICS_PACKAGES)
+                    SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES)
             .because("storage owns persisted state, WAL, recovery, and consistency work; it must not depend on runtime orchestration packages.");
 
     @ArchTest
@@ -157,10 +163,12 @@ class PackageDependencyBoundaryTest {
     static final ArchRule bootstrap_does_not_depend_on_segment_index_public_api_package = noClasses()//
             .that()//
             .resideInAPackage(SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES)//
+            .and()//
+            .doNotHaveFullyQualifiedName(SEGMENT_INDEX_FACTORY_CLASS)//
             .should()//
             .dependOnClassesThat()//
             .resideInAPackage(SEGMENT_INDEX_PUBLIC_API_PACKAGE)
-            .because("bootstrap composes runtime internals and must not reach through the public SegmentIndex API package for helper objects.");
+            .because("bootstrap composes runtime internals and must not reach through the public SegmentIndex API package for helper objects; SegmentIndexFactory is the public bootstrap facade.");
 
     @ArchTest
     static final ArchRule concrete_retry_policies_are_package_private = classes()//
@@ -285,5 +293,20 @@ class PackageDependencyBoundaryTest {
                     SEGMENT_INDEX_CORE_EXECUTOR_REGISTRY_PACKAGES)//
             .should()//
             .dependOnClassesThat()//
-            .resideInAnyPackage(SEGMENT_INDEX_METRICS_PACKAGES);
+            .resideInAnyPackage(SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES);
+
+    @ArchTest
+    static final ArchRule only_monitoring_api_and_runtime_exposure_depend_on_runtime_monitoring = noClasses()//
+            .that()//
+            .resideOutsideOfPackages(
+                    SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES,
+                    SEGMENT_INDEX_PUBLIC_API_PACKAGE,
+                    SEGMENT_INDEX_MONITORING_PACKAGES,
+                    SEGMENT_INDEX_LOGGING_PACKAGES,
+                    SEGMENT_INDEX_CORE_BOOTSTRAP_PACKAGES,
+                    SEGMENT_INDEX_CORE_SESSION_PACKAGES)//
+            .should()//
+            .dependOnClassesThat()//
+            .resideInAnyPackage(SEGMENT_INDEX_RUNTIME_MONITORING_PACKAGES)
+            .because("runtime monitoring should stay behind the public SegmentIndex API, monitoring infrastructure, MDC logging adapters, bootstrap composition, and session-level API exposure.");
 }

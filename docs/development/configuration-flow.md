@@ -85,19 +85,19 @@ and `segmentSplitKeyThreshold` during open.
 construction:
 
 1. `BootstrapStepResolveConfiguration` resolves or merges the effective config.
-2. `BootstrapStepCreateMdcCallWrapper` uses `logging.contextEnabled()` and
-   `identity.name()`.
-3. `BootstrapStepResolveTypeDescriptors` instantiates key and value
+2. `BootstrapStepResolveTypeDescriptors` instantiates key and value
    descriptors from `identity`.
-4. `BootstrapStepWriteConfiguration` persists the effective config when needed.
-5. `BootstrapStepCreateExecutorRegistry` maps maintenance and logging settings
+3. `BootstrapStepWriteConfiguration` persists the effective config when needed.
+4. `BootstrapStepCreateExecutorRegistry` maps maintenance and logging settings
    to runtime executors.
-6. `BootstrapStepOpenCoreStorage` passes the effective config into core
+5. `BootstrapStepOpenCoreStorage` passes the effective config into core
    storage construction.
-7. `BootstrapStepOpenRuntimeWal` opens WAL runtime resources when WAL is
+6. `BootstrapStepOpenRuntimeWal` opens WAL runtime resources when WAL is
    enabled.
-8. `BootstrapStepCreateRuntimeServices` wires WAL coordination, maintenance,
+7. `BootstrapStepCreateRuntimeServices` wires WAL coordination, maintenance,
    metrics, monitoring, and runtime tuning.
+8. `BootstrapStepApplyContextLogging` uses `logging.contextEnabled()` and
+   `identity.name()` to wrap the runtime index when context logging is enabled.
 
 After this point, execution packages receive concrete runtime collaborators
 that were built from the effective configuration.

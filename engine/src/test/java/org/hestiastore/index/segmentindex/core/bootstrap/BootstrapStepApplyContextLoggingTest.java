@@ -1,5 +1,7 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.configuration;
+import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.effectiveConfiguration;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.request;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -9,9 +11,9 @@ import static org.mockito.Mockito.when;
 
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.logging.SegmentIndexMdcLoggingAdapter;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class BootstrapStepApplyContextLoggingTest {
 
     @Mock
-    private SegmentIndexSessionHandle<Integer, String> internalIndex;
+    private SegmentIndexSessionResource<Integer, String> indexHandle;
 
     @Mock
     private RuntimeTuning runtimeTuning;
@@ -43,40 +45,46 @@ class BootstrapStepApplyContextLoggingTest {
     }
 
     @Test
-    void apply_usesInternalIndexDirectlyWhenMdcCallWrapperIsMissing() {
+    void apply_keepsIndexHandleWhenContextLoggingDisabled() {
+        final IndexConfiguration<Integer, String> configuration = configuration(
+                "bootstrap-step-context-logging-disabled", false);
         final SegmentIndexBootstrapState<Integer, String> state =
-                stateWithInternalIndex();
+                stateWithIndexHandle(configuration);
 
         assertDoesNotThrow(() -> step.apply(
-                request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
+                request(new MemDirectory(), configuration,
+                        SegmentIndexBootstrapMode.CREATE),
                 state));
 
-        assertSame(internalIndex, state.getManagedIndex());
+        assertSame(indexHandle, state.getIndexHandle());
     }
 
     @Test
-    void apply_wrapsInternalIndexWhenMdcCallWrapperExists() {
-        when(internalIndex.runtimeTuning()).thenReturn(runtimeTuning);
-        when(internalIndex.runtimeMonitoring()).thenReturn(runtimeMonitoring);
-        when(internalIndex.maintenance()).thenReturn(maintenance);
+    void apply_wrapsIndexHandleWhenContextLoggingEnabled() {
+        when(indexHandle.runtimeTuning()).thenReturn(runtimeTuning);
+        when(indexHandle.runtimeMonitoring()).thenReturn(runtimeMonitoring);
+        when(indexHandle.maintenance()).thenReturn(maintenance);
+        final IndexConfiguration<Integer, String> configuration = configuration(
+                "bootstrap-step-context-logging-enabled", true);
         final SegmentIndexBootstrapState<Integer, String> state =
-                stateWithInternalIndex();
-        state.setIndexMdcCallWrapper(new IndexMdcCallWrapper(
-                "bootstrap-step-context-logging"));
+                stateWithIndexHandle(configuration);
 
         assertDoesNotThrow(() -> step.apply(
-                request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
+                request(new MemDirectory(), configuration,
+                        SegmentIndexBootstrapMode.CREATE),
                 state));
 
-        assertInstanceOf(IndexContextLoggingAdapter.class,
-                state.getManagedIndex());
-        assertNotSame(internalIndex, state.getManagedIndex());
+        assertInstanceOf(SegmentIndexMdcLoggingAdapter.class,
+                state.getIndexHandle());
+        assertNotSame(indexHandle, state.getIndexHandle());
     }
 
-    private SegmentIndexBootstrapState<Integer, String> stateWithInternalIndex() {
+    private SegmentIndexBootstrapState<Integer, String> stateWithIndexHandle(
+            final IndexConfiguration<Integer, String> configuration) {
         final SegmentIndexBootstrapState<Integer, String> state =
                 new SegmentIndexBootstrapState<>();
-        state.setInternalIndex(internalIndex);
+        state.setConfiguration(effectiveConfiguration(configuration));
+        state.setIndexHandle(indexHandle);
         return state;
     }
 }

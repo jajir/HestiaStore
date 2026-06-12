@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.maintenance;
+package org.hestiastore.index.segmentindex.logging;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doAnswer;
@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class)
-class SegmentIndexMaintenanceContextLoggingAdapterTest {
+class SegmentIndexMaintenanceMdcLoggingAdapterTest {
 
     @AfterEach
     void tearDown() {
@@ -52,8 +52,8 @@ class SegmentIndexMaintenanceContextLoggingAdapterTest {
             return null;
         }).when(delegate).checkAndRepairConsistency();
 
-        final SegmentIndexMaintenanceContextLoggingAdapter adapter =
-                new SegmentIndexMaintenanceContextLoggingAdapter(delegate,
+        final SegmentIndexMaintenanceMdcLoggingAdapter adapter =
+                new SegmentIndexMaintenanceMdcLoggingAdapter(delegate,
                         new IndexMdcCallWrapper("idx"));
         adapter.compact();
         adapter.compactAndWait();

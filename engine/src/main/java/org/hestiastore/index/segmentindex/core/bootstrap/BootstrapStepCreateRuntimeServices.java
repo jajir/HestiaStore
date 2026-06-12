@@ -22,6 +22,7 @@ import org.hestiastore.index.segmentindex.core.split.SplitService;
 import org.hestiastore.index.segmentindex.core.stablesegment.StableSegmentOperationAccess;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoringBuilder;
 import org.hestiastore.index.segmentindex.wal.WalMonitoringView;
 
 /**
@@ -116,7 +117,7 @@ final class BootstrapStepCreateRuntimeServices<K, V>
     private IndexRuntimeMonitoring newRuntimeMonitoring(
             final SegmentIndexBootstrapState<K, V> state,
             final SplitService splitService) {
-        return IndexRuntimeMonitoring.<K, V>builder()
+        return IndexRuntimeMonitoringBuilder.<K, V>builder()
                 .withConf(state.getConfiguration())
                 .withKeyToSegmentMap(state.getKeyToSegmentMap())
                 .withSegmentRegistry(state.getSegmentRegistry())

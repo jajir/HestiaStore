@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.logging.IndexMdcScope;
 
 /**
  * Runs segment-index bootstrap steps and rolls back completed steps after a
@@ -34,8 +33,7 @@ final class SegmentIndexBootstrapPipeline<K, V> {
         try {
             for (final SegmentIndexBootstrapStep<K, V> step : steps) {
                 appliedSteps.add(step);
-                runInScope(nonNullState,
-                        () -> step.apply(nonNullRequest, nonNullState));
+                step.apply(nonNullRequest, nonNullState);
                 if (nonNullState.hasResult()) {
                     final SegmentIndexBootstrapResult<K, V> result =
                             nonNullState.getResult();
@@ -71,7 +69,7 @@ final class SegmentIndexBootstrapPipeline<K, V> {
         for (int i = appliedSteps.size() - 1; i >= 0; i--) {
             final SegmentIndexBootstrapStep<K, V> step = appliedSteps.get(i);
             try {
-                runInScope(state, step::closeResource);
+                step.closeResource();
             } catch (final RuntimeException cleanupFailure) {
                 failure.addSuppressed(cleanupFailure);
             }
@@ -89,7 +87,7 @@ final class SegmentIndexBootstrapPipeline<K, V> {
         for (int i = appliedSteps.size() - 1; i >= 0; i--) {
             final SegmentIndexBootstrapStep<K, V> step = appliedSteps.get(i);
             try {
-                runInScope(state, step::closeResource);
+                step.closeResource();
             } catch (final RuntimeException cleanupFailure) {
                 if (firstCleanupFailure == null) {
                     firstCleanupFailure = cleanupFailure;
@@ -103,15 +101,4 @@ final class SegmentIndexBootstrapPipeline<K, V> {
         }
     }
 
-    private void runInScope(final SegmentIndexBootstrapState<K, V> state,
-            final Runnable action) {
-        if (!state.hasIndexMdcCallWrapper()) {
-            action.run();
-            return;
-        }
-        try (IndexMdcScope ignored = state.getIndexMdcCallWrapper()
-                .openScope()) {
-            action.run();
-        }
-    }
 }

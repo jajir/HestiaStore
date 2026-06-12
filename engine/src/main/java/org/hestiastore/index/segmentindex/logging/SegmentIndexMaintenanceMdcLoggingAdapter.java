@@ -1,18 +1,18 @@
-package org.hestiastore.index.segmentindex.maintenance;
+package org.hestiastore.index.segmentindex.logging;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 
 /**
  * Adds index MDC context around maintenance commands.
  */
-public final class SegmentIndexMaintenanceContextLoggingAdapter
+public final class SegmentIndexMaintenanceMdcLoggingAdapter
         implements SegmentIndexMaintenance {
 
     private final SegmentIndexMaintenance delegate;
     private final IndexMdcCallWrapper contextCallWrapper;
 
-    public SegmentIndexMaintenanceContextLoggingAdapter(
+    public SegmentIndexMaintenanceMdcLoggingAdapter(
             final SegmentIndexMaintenance delegate,
             final IndexMdcCallWrapper contextCallWrapper) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");

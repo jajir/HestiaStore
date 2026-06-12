@@ -26,13 +26,12 @@ class IndexLoggingMessageIT {
     private static final String LOCK_FILE_NAME = ".lock";
     private static final String LOG_PATTERN = "%d{ISO8601} %-5level [%t] "
             + "index='%X{index.name}' %msg%n%throwable";
-    private static final String EXPECTED_FORMAT_FRAGMENT = " INFO  [main] index='logging-message-it' ";
-    private static final String EXPECTED_FORMAT_FRAGMENT_MISSING = " INFO  [main] index='' ";
+    private static final String EXPECTED_BOOTSTRAP_FORMAT_FRAGMENT = " INFO  [main] index='' ";
     private static final String EXPECTED_RECOVERY_MESSAGE = "Recovered stale index lock (.lock). Index is going to be checked "
             + "for consistency and unlocked.";
 
     @Test
-    void verify_do_logs_contains_index_name_loggin_set_to_true() {
+    void verify_bootstrap_log_omits_index_name_when_context_logging_enabled() {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)
@@ -41,17 +40,11 @@ class IndexLoggingMessageIT {
                 .logging(logging -> logging.contextEnabled(true))
                 .build();
         final String logs = prepareLogMessages(directory, configuration);
-        assertAll(
-                () -> assertTrue(logs.contains(EXPECTED_FORMAT_FRAGMENT),
-                        () -> "Expected formatted INFO log fragment in:\n"
-                                + logs),
-                () -> assertTrue(logs.contains(EXPECTED_RECOVERY_MESSAGE),
-                        () -> "Expected stale lock recovery message in:\n"
-                                + logs));
+        assertBootstrapRecoveryLog(logs);
     }
 
     @Test
-    void verify_do_logs_contains_index_name_loggin_is_not_set() {
+    void verify_bootstrap_log_omits_index_name_when_context_logging_uses_default() {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)
@@ -59,17 +52,11 @@ class IndexLoggingMessageIT {
                         .name("logging-message-it"))
                 .build();
         final String logs = prepareLogMessages(directory, configuration);
-        assertAll(
-                () -> assertTrue(logs.contains(EXPECTED_FORMAT_FRAGMENT),
-                        () -> "Expected formatted INFO log fragment in:\n"
-                                + logs),
-                () -> assertTrue(logs.contains(EXPECTED_RECOVERY_MESSAGE),
-                        () -> "Expected stale lock recovery message in:\n"
-                                + logs));
+        assertBootstrapRecoveryLog(logs);
     }
 
     @Test
-    void verify_logs_do_not_contains_index_name() {
+    void verify_bootstrap_log_omits_index_name_when_context_logging_disabled() {
         final Directory directory = new MemDirectory();
         final IndexConfiguration<Integer, String> configuration = IndexConfiguration.<Integer, String>builder()
                 .identity(identity -> identity.keyClass(Integer.class)
@@ -78,8 +65,13 @@ class IndexLoggingMessageIT {
                 .logging(logging -> logging.contextEnabled(false))
                 .build();
         final String logs = prepareLogMessages(directory, configuration);
+        assertBootstrapRecoveryLog(logs);
+    }
+
+    private static void assertBootstrapRecoveryLog(final String logs) {
         assertAll(
-                () -> assertTrue(logs.contains(EXPECTED_FORMAT_FRAGMENT_MISSING),
+                () -> assertTrue(
+                        logs.contains(EXPECTED_BOOTSTRAP_FORMAT_FRAGMENT),
                         () -> "Expected formatted INFO log fragment in:\n"
                                 + logs),
                 () -> assertTrue(logs.contains(EXPECTED_RECOVERY_MESSAGE),
