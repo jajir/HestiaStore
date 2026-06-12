@@ -1,19 +1,19 @@
-package org.hestiastore.index.segmentindex.runtimemonitoring;
+package org.hestiastore.index.segmentindex.logging;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
 
 /**
  * MDC-aware wrapper around runtime monitoring snapshots.
  */
-public final class IndexRuntimeMonitoringContextLoggingAdapter
+public final class IndexRuntimeMonitoringMdcLoggingAdapter
         implements IndexRuntimeMonitoring {
 
     private final IndexRuntimeMonitoring delegate;
     private final IndexMdcCallWrapper contextCallWrapper;
 
-    public IndexRuntimeMonitoringContextLoggingAdapter(
+    public IndexRuntimeMonitoringMdcLoggingAdapter(
             final IndexRuntimeMonitoring delegate,
             final IndexMdcCallWrapper contextCallWrapper) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");

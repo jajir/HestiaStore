@@ -31,40 +31,63 @@ final class IndexRuntimeSnapshotCollector<K, V>
 
     private final SegmentRegistry<K, V> segmentRegistry;
     private final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector;
+    private final SplitStatsView splitStatsView;
     private final ExecutorRegistry executorRegistry;
+    private final RuntimeTuningState runtimeTuningState;
+    private final ChunkStoreCache<K, V> chunkStoreCache;
     private final WalMonitoringView walMonitoringView;
+    private final IndexOperationStatsRecorder indexOperationStatsRecorder;
     private final MaintenanceStatsRecorder maintenanceStatsRecorder;
     private final AtomicLong compactRequestHighWaterMark;
     private final AtomicLong flushRequestHighWaterMark;
-    private final IndexRuntimeSnapshotFactory<K, V> snapshotFactory;
+    private final AtomicLong lastAppliedWalLsn;
+    private final SegmentIndexStateView stateView;
+    private final IndexRuntimeSnapshotProjection<K, V> snapshotProjection;
     private final Clock clock;
 
     private IndexRuntimeSnapshotCollector(
             final SegmentRegistry<K, V> segmentRegistry,
             final StableSegmentRuntimeCollector<K, V> stableSegmentRuntimeCollector,
+            final SplitStatsView splitStatsView,
             final ExecutorRegistry executorRegistry,
+            final RuntimeTuningState runtimeTuningState,
+            final ChunkStoreCache<K, V> chunkStoreCache,
             final WalMonitoringView walMonitoringView,
+            final IndexOperationStatsRecorder indexOperationStatsRecorder,
             final MaintenanceStatsRecorder maintenanceStatsRecorder,
             final AtomicLong compactRequestHighWaterMark,
             final AtomicLong flushRequestHighWaterMark,
-            final IndexRuntimeSnapshotFactory<K, V> snapshotFactory,
+            final AtomicLong lastAppliedWalLsn,
+            final SegmentIndexStateView stateView,
+            final IndexRuntimeSnapshotProjection<K, V> snapshotProjection,
             final Clock clock) {
         this.segmentRegistry = Vldtn.requireNonNull(segmentRegistry,
                 PROPERTY_SEGMENT_REGISTRY);
         this.stableSegmentRuntimeCollector = Vldtn.requireNonNull(
                 stableSegmentRuntimeCollector, "stableSegmentRuntimeCollector");
+        this.splitStatsView = Vldtn.requireNonNull(splitStatsView,
+                "splitStatsView");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
+        this.runtimeTuningState = Vldtn.requireNonNull(runtimeTuningState,
+                "runtimeTuningState");
+        this.chunkStoreCache = Vldtn.requireNonNull(chunkStoreCache,
+                "chunkStoreCache");
         this.walMonitoringView = Vldtn.requireNonNull(walMonitoringView,
                 "walMonitoringView");
+        this.indexOperationStatsRecorder = Vldtn.requireNonNull(
+                indexOperationStatsRecorder, "indexOperationStatsRecorder");
         this.maintenanceStatsRecorder = Vldtn.requireNonNull(
                 maintenanceStatsRecorder, "maintenanceStatsRecorder");
         this.compactRequestHighWaterMark = Vldtn.requireNonNull(
                 compactRequestHighWaterMark, "compactRequestHighWaterMark");
         this.flushRequestHighWaterMark = Vldtn.requireNonNull(
                 flushRequestHighWaterMark, "flushRequestHighWaterMark");
-        this.snapshotFactory = Vldtn.requireNonNull(snapshotFactory,
-                "snapshotFactory");
+        this.lastAppliedWalLsn = Vldtn.requireNonNull(lastAppliedWalLsn,
+                "lastAppliedWalLsn");
+        this.stateView = Vldtn.requireNonNull(stateView, "stateView");
+        this.snapshotProjection = Vldtn.requireNonNull(snapshotProjection,
+                "snapshotProjection");
         this.clock = Vldtn.requireNonNull(clock, "clock");
     }
 
@@ -115,18 +138,22 @@ final class IndexRuntimeSnapshotCollector<K, V>
                                 "keyToSegmentMap"),
                         Vldtn.requireNonNull(segmentRegistry,
                                 PROPERTY_SEGMENT_REGISTRY)),
+                Vldtn.requireNonNull(splitStatsView, "splitStatsView"),
                 Vldtn.requireNonNull(executorRegistry, "executorRegistry"),
+                Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
+                Vldtn.requireNonNull(chunkStoreCache, "chunkStoreCache"),
                 Vldtn.requireNonNull(walMonitoringView, "walMonitoringView"),
+                Vldtn.requireNonNull(indexOperationStatsRecorder,
+                        "indexOperationStatsRecorder"),
                 Vldtn.requireNonNull(maintenanceStatsRecorder,
                         "maintenanceStatsRecorder"),
                 Vldtn.requireNonNull(compactRequestHighWaterMark,
                         "compactRequestHighWaterMark"),
                 Vldtn.requireNonNull(flushRequestHighWaterMark,
                         "flushRequestHighWaterMark"),
-                newSnapshotFactory(conf, splitStatsView,
-                        runtimeTuningState, chunkStoreCache,
-                        indexOperationStatsRecorder, lastAppliedWalLsn,
-                        stateView),
+                Vldtn.requireNonNull(lastAppliedWalLsn, "lastAppliedWalLsn"),
+                Vldtn.requireNonNull(stateView, "stateView"),
+                newSnapshotProjection(conf),
                 Vldtn.requireNonNull(clock, "clock"));
     }
 
@@ -139,35 +166,35 @@ final class IndexRuntimeSnapshotCollector<K, V>
                 executorRegistry.statsSnapshot();
         final MaintenanceStats maintenanceStats =
                 maintenanceStatsRecorder.statsSnapshot();
-        return snapshotFactory.create(capturedAt,
-                segmentRegistry.metricsSnapshot(), stableSegmentRuntime,
-                executorSnapshot,
-                walMonitoringView.statsSnapshot(), maintenanceStats,
-                resolveRequestCount(maintenanceStats.getCompactRequestCount(),
-                        compactRequestHighWaterMark,
-                        stableSegmentRuntime.getTotalCompactRequestCount()),
-                resolveRequestCount(maintenanceStats.getFlushRequestCount(),
-                        flushRequestHighWaterMark,
-                        stableSegmentRuntime.getTotalFlushRequestCount()));
+        final CollectedRuntimeMonitoringData collected =
+                new CollectedRuntimeMonitoringData(capturedAt,
+                        indexOperationStatsRecorder.statsSnapshot(),
+                        segmentRegistry.metricsSnapshot(), chunkStoreCache.stats(),
+                        stableSegmentRuntime, executorSnapshot,
+                        splitStatsView.statsSnapshot(),
+                        walMonitoringView.statsSnapshot(), maintenanceStats,
+                        resolveRequestCount(
+                                maintenanceStats.getCompactRequestCount(),
+                                compactRequestHighWaterMark,
+                                stableSegmentRuntime
+                                        .getTotalCompactRequestCount()),
+                        resolveRequestCount(
+                                maintenanceStats.getFlushRequestCount(),
+                                flushRequestHighWaterMark,
+                                stableSegmentRuntime.getTotalFlushRequestCount()),
+                        lastAppliedWalLsn.get(), runtimeTuningState.cacheKeyLimit(),
+                        runtimeTuningState.segmentWriteCacheKeyLimit(),
+                        runtimeTuningState
+                                .segmentWriteCacheKeyLimitDuringMaintenance(),
+                        runtimeTuningState.indexBufferedWriteKeyLimit(),
+                        stateView.currentState());
+        return snapshotProjection.project(collected);
     }
 
-    private static <K, V> IndexRuntimeSnapshotFactory<K, V> newSnapshotFactory(
-            final EffectiveIndexConfiguration<K, V> conf,
-            final SplitStatsView splitStatsView,
-            final RuntimeTuningState runtimeTuningState,
-            final ChunkStoreCache<K, V> chunkStoreCache,
-            final IndexOperationStatsRecorder indexOperationStatsRecorder,
-            final AtomicLong lastAppliedWalLsn,
-            final SegmentIndexStateView stateView) {
-        return new IndexRuntimeSnapshotFactory<>(
-                Vldtn.requireNonNull(conf, "conf"),
-                Vldtn.requireNonNull(splitStatsView, "splitStatsView"),
-                Vldtn.requireNonNull(chunkStoreCache, "chunkStoreCache"),
-                Vldtn.requireNonNull(runtimeTuningState, "runtimeTuningState"),
-                Vldtn.requireNonNull(indexOperationStatsRecorder,
-                        "indexOperationStatsRecorder"),
-                Vldtn.requireNonNull(lastAppliedWalLsn, "lastAppliedWalLsn"),
-                Vldtn.requireNonNull(stateView, "stateView"));
+    private static <K, V> IndexRuntimeSnapshotProjection<K, V> newSnapshotProjection(
+            final EffectiveIndexConfiguration<K, V> conf) {
+        return new IndexRuntimeSnapshotProjection<>(
+                Vldtn.requireNonNull(conf, "conf"));
     }
 
     private static long resolveRequestCount(final long fallbackCount,

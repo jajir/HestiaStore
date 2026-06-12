@@ -4,37 +4,32 @@ import static org.hestiastore.index.segmentindex.configuration.effective.Effecti
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
-import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCacheStats;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
-import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStats;
+import org.hestiastore.index.segmentindex.core.operations.IndexOperationStats;
 import org.hestiastore.index.segmentindex.core.split.SplitStats;
-import org.hestiastore.index.segmentindex.core.split.SplitStatsView;
 import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentRuntimeMetrics;
 import org.hestiastore.index.segmentindex.wal.WalMonitoring;
 import org.hestiastore.index.segmentregistry.SegmentRegistryCacheStats;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-class IndexRuntimeSnapshotFactoryTest {
+class IndexRuntimeSnapshotProjectionTest {
 
     private ExecutorRegistry executorRegistry;
 
@@ -46,62 +41,59 @@ class IndexRuntimeSnapshotFactoryTest {
     }
 
     @Test
-    void createBuildsSnapshotFromCollectedRuntimeInputs() {
+    void projectBuildsSnapshotFromCollectedRuntimeInputs() {
         final IndexConfiguration<Integer, String> conf = buildConf();
-        final IndexOperationStatsRecorder operationStatsRecorder =
-                new IndexOperationStatsRecorder();
-        final MaintenanceStatsRecorder maintenanceStatsRecorder =
-                new MaintenanceStatsRecorder();
-        operationStatsRecorder.recordGetRequest();
-        operationStatsRecorder.recordPutRequest();
         executorRegistry = ExecutorRegistryFixture.from(conf);
-        final SplitStatsView splitStatsView = mock(SplitStatsView.class);
-        @SuppressWarnings("unchecked")
-        final ChunkStoreCache<Integer, String> chunkStoreCache = mock(
-                ChunkStoreCache.class);
-        when(splitStatsView.statsSnapshot())
-                .thenReturn(new SplitStats(3L, 2, 0, 0L, 0L));
-        when(chunkStoreCache.stats())
-                .thenReturn(new ChunkStoreCacheStats(5, 2, 4L, 6L, 7L, 8L,
-                        9L, 10L));
         final Instant capturedAt = Instant.parse("2026-06-10T08:15:30Z");
-        final IndexRuntimeSnapshotFactory<Integer, String> factory =
-                new IndexRuntimeSnapshotFactory<>(effective(conf),
-                        splitStatsView, chunkStoreCache,
-                        RuntimeTuningState.fromConfiguration(effective(conf)),
-                        operationStatsRecorder, new AtomicLong(17L),
-                        readyStateView());
+        final IndexRuntimeSnapshotProjection<Integer, String> projection =
+                new IndexRuntimeSnapshotProjection<>(effective(conf));
+        final SegmentId segmentId = SegmentId.of(1);
         final StableSegmentRuntimeMetrics stableSegmentRuntime =
                 new StableSegmentRuntimeMetrics();
         stableSegmentRuntime.setTotalMappedStableSegmentCount(1);
         stableSegmentRuntime.incrementReadyStableSegmentCount();
         stableSegmentRuntime.addSegmentRuntimeSnapshot(
-                new SegmentRuntimeSnapshot(SegmentId.of(1),
-                        SegmentState.READY, 0L, 8L, 0L, 5L, 2, 3, 5L, 7L, 9L,
-                        1L, 8L, 1L));
+                new SegmentRuntimeSnapshot(segmentId, SegmentState.READY, 0L,
+                        8L, 0L, 5L, 2, 3, 5L, 7L, 9L, 1L, 8L, 1L));
+        final CollectedRuntimeMonitoringData collected =
+                new CollectedRuntimeMonitoringData(capturedAt,
+                        new IndexOperationStats(1L, 1L, 0L, 0L, 0L, 0L, 0L, 0L,
+                                0L),
+                        new SegmentRegistryCacheStats(11L, 12L, 13L, 14L, 2,
+                                9),
+                        new ChunkStoreCacheStats(5, 2, 4L, 6L, 7L, 8L, 9L,
+                                10L),
+                        stableSegmentRuntime, executorRegistry.statsSnapshot(),
+                        new SplitStats(3L, 2, 0, 0L, 0L), WalMonitoring.empty(),
+                        new MaintenanceStats(0L, 0L, 0L, 0L, 0L, 0L), 5L, 7L,
+                        17L, 10, 5, 6, 7, SegmentIndexState.READY);
 
-        final IndexRuntimeSnapshot snapshot = factory.create(capturedAt,
-                new SegmentRegistryCacheStats(11L, 12L, 13L, 14L, 2, 9),
-                stableSegmentRuntime, executorRegistry.statsSnapshot(),
-                WalMonitoring.empty(),
-                maintenanceStatsRecorder.statsSnapshot(),
-                5L, 7L);
+        final IndexRuntimeSnapshot snapshot = projection.project(collected);
 
+        assertEquals(1L, snapshot.operations().readOperationCount());
+        assertEquals(1L, snapshot.operations().putOperationCount());
         assertEquals(11L, snapshot.registryCache().hitCount());
         assertEquals(5, snapshot.chunkStoreCache().pageLimit());
         assertEquals(6L, snapshot.chunkStoreCache().hitCount());
         assertEquals(1, snapshot.segments().count());
+        final SegmentIndexSegmentRuntimeMetrics segmentRuntime =
+                snapshot.segments().runtimeMetrics().get(0);
+        assertEquals(segmentId.getName(), segmentRuntime.segmentId());
+        assertEquals(SegmentState.READY, segmentRuntime.state());
+        assertEquals(5L, segmentRuntime.numberOfKeysInSegmentCache());
+        assertEquals(2, segmentRuntime.numberOfKeysInWriteCache());
+        assertEquals(3, segmentRuntime.numberOfDeltaCacheFiles());
+        assertEquals(5L, segmentRuntime.compactRequestCount());
+        assertEquals(7L, segmentRuntime.flushRequestCount());
+        assertEquals(9L, segmentRuntime.bloomFilterRequestCount());
+        assertEquals(1L, segmentRuntime.bloomFilterRefusedCount());
+        assertEquals(8L, segmentRuntime.bloomFilterPositiveCount());
+        assertEquals(1L, segmentRuntime.bloomFilterFalsePositiveCount());
         assertEquals(5L, snapshot.maintenance().compactRequestCount());
         assertEquals(7L, snapshot.maintenance().flushRequestCount());
         assertEquals(17L, snapshot.wal().appliedLsn());
         assertEquals(capturedAt, snapshot.capturedAt());
         assertFalse(snapshot.wal().enabled());
-    }
-
-    private static SegmentIndexStateMachine readyStateView() {
-        final SegmentIndexStateMachine stateView = new SegmentIndexStateMachine();
-        stateView.markReady();
-        return stateView;
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {
@@ -110,7 +102,7 @@ class IndexRuntimeSnapshotFactoryTest {
                 .identity(identity -> identity.valueClass(String.class))
                 .identity(identity -> identity.keyTypeDescriptor(new TypeDescriptorInteger()))
                 .identity(identity -> identity.valueTypeDescriptor(new TypeDescriptorShortString()))
-                .identity(identity -> identity.name("runtime-snapshot-factory"))
+                .identity(identity -> identity.name("runtime-snapshot-projection"))
                 .logging(logging -> logging.contextEnabled(false))
                 .segment(segment -> segment.cacheKeyLimit(10))
                 .writePath(writePath -> writePath.segmentWriteCacheKeyLimit(5))

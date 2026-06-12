@@ -1,9 +1,10 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
-import org.hestiastore.index.segmentindex.core.session.IndexContextLoggingAdapter;
+import org.hestiastore.index.segmentindex.logging.SegmentIndexMdcLoggingAdapter;
+import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 
 /**
- * Wraps the internal index with MDC context logging when enabled.
+ * Wraps the current index handle with MDC context logging when enabled.
  */
 final class BootstrapStepApplyContextLogging<K, V>
         extends SegmentIndexBootstrapStep<K, V> {
@@ -11,11 +12,12 @@ final class BootstrapStepApplyContextLogging<K, V>
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        if (!state.hasIndexMdcCallWrapper()) {
-            state.setManagedIndex(state.getInternalIndex());
+        final var configuration = state.getConfiguration();
+        if (!configuration.logging().contextEnabled()) {
             return;
         }
-        state.setManagedIndex(new IndexContextLoggingAdapter<>(
-                state.getInternalIndex(), state.getIndexMdcCallWrapper()));
+        state.setIndexHandle(new SegmentIndexMdcLoggingAdapter<>(
+                state.getIndexHandle(), new IndexMdcCallWrapper(
+                        configuration.identity().name())));
     }
 }

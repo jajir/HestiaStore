@@ -3,6 +3,7 @@ package org.hestiastore.index.segmentindex.core.bootstrap;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.request;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 
 import org.hestiastore.index.directory.MemDirectory;
@@ -40,6 +41,6 @@ class BootstrapStepCreateSessionInfrastructureTest {
                 request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
                 new SegmentIndexBootstrapState<>()));
 
-        verify(sessionResources).createSessionInfrastructure();
+        verify(sessionResources).setSessionInfrastructure(any());
     }
 }

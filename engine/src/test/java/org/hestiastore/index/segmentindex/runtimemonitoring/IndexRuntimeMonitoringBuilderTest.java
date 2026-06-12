@@ -51,6 +51,11 @@ class IndexRuntimeMonitoringBuilderTest {
     private AtomicLong lastAppliedWalLsn;
     private ExecutorRegistry executorRegistry;
 
+    @Test
+    void builderReturnsIndexRuntimeMonitoringBuilder() {
+        assertNotNull(IndexRuntimeMonitoringBuilder.builder());
+    }
+
     @BeforeEach
     void setUp() {
         conf = SegmentIndexMetricsTestConfigurationFactory.build(
@@ -102,7 +107,7 @@ class IndexRuntimeMonitoringBuilderTest {
     }
 
     private IndexRuntimeMonitoringBuilder<Integer, String> completeBuilder() {
-        return IndexRuntimeMonitoring.<Integer, String>builder()
+        return IndexRuntimeMonitoringBuilder.<Integer, String>builder()
                 .withConf(conf)
                 .withKeyToSegmentMap(keyToSegmentMap)
                 .withSegmentRegistry(segmentRegistry)

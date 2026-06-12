@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionInfrastructure;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 
 /**
@@ -20,6 +21,7 @@ final class BootstrapStepCreateSessionInfrastructure<K, V>
     @Override
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
-        sessionResources.createSessionInfrastructure();
+        sessionResources.setSessionInfrastructure(
+                SegmentIndexSessionInfrastructure.create());
     }
 }

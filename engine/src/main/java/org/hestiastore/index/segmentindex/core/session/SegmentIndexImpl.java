@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.hestiastore.index.AbstractCloseableResource;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.Vldtn;
@@ -26,7 +27,8 @@ import org.hestiastore.index.sorteddatafile.EntryComparator;
  * @param <K> key type
  * @param <V> value type
  */
-class SegmentIndexImpl<K, V> extends SegmentIndexSessionHandle<K, V> {
+class SegmentIndexImpl<K, V> extends AbstractCloseableResource
+        implements SegmentIndexSessionResource<K, V> {
 
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;

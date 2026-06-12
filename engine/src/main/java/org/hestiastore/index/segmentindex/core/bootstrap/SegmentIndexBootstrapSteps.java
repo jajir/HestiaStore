@@ -20,7 +20,6 @@ final class SegmentIndexBootstrapSteps {
         steps.add(new BootstrapStepAcquireDirectoryLock<>(sessionResources));
         steps.add(rejectExistingConfigurationForCreate());
         steps.add(resolveConfiguration());
-        steps.add(createMdcCallWrapper());
         steps.add(resolveTypeDescriptors());
         steps.add(writeConfiguration());
         steps.add(createExecutorRegistry());
@@ -51,10 +50,6 @@ final class SegmentIndexBootstrapSteps {
 
     static <K, V> SegmentIndexBootstrapStep<K, V> rejectExistingConfigurationForCreate() {
         return new BootstrapStepRejectExistingConfigurationForCreate<>();
-    }
-
-    static <K, V> SegmentIndexBootstrapStep<K, V> createMdcCallWrapper() {
-        return new BootstrapStepCreateMdcCallWrapper<>();
     }
 
     static <K, V> SegmentIndexBootstrapStep<K, V> resolveTypeDescriptors() {

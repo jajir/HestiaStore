@@ -15,8 +15,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexResourceClosingAdapter;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionHandle;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
+import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -29,10 +28,7 @@ class SegmentIndexBootstrapStateTest {
     private ExecutorRegistry executorRegistry;
 
     @Mock
-    private SegmentIndexSessionHandle<Integer, String> internalIndex;
-
-    @Mock
-    private SegmentIndexSessionHandle<Integer, String> managedIndex;
+    private SegmentIndexSessionResource<Integer, String> indexHandle;
 
     @Test
     void productGettersThrowBeforeMatchingSetterIsCalled() {
@@ -46,13 +42,9 @@ class SegmentIndexBootstrapStateTest {
         assertThrows(IllegalStateException.class,
                 state::getValueTypeDescriptor);
         assertThrows(IllegalStateException.class, state::getExecutorRegistry);
-        assertThrows(IllegalStateException.class,
-                state::getIndexMdcCallWrapper);
-        assertThrows(IllegalStateException.class, state::getInternalIndex);
-        assertThrows(IllegalStateException.class, state::getManagedIndex);
+        assertThrows(IllegalStateException.class, state::getIndexHandle);
         assertThrows(IllegalStateException.class, state::getIndex);
         assertThrows(IllegalStateException.class, state::getResult);
-        assertFalse(state.hasIndexMdcCallWrapper());
         assertFalse(state.hasResult());
     }
 
@@ -66,19 +58,15 @@ class SegmentIndexBootstrapStateTest {
                 new TypeDescriptorInteger();
         final TypeDescriptorShortString valueTypeDescriptor =
                 new TypeDescriptorShortString();
-        final IndexMdcCallWrapper callWrapper =
-                new IndexMdcCallWrapper("bootstrap-state-test");
         final SegmentIndexResourceClosingAdapter<Integer, String> index =
-                new SegmentIndexResourceClosingAdapter<>(managedIndex);
+                new SegmentIndexResourceClosingAdapter<>(indexHandle);
 
         state.setConfiguration(configuration);
         state.setConfigurationWriteRequired(true);
         state.setKeyTypeDescriptor(keyTypeDescriptor);
         state.setValueTypeDescriptor(valueTypeDescriptor);
         state.setExecutorRegistry(executorRegistry);
-        state.setIndexMdcCallWrapper(callWrapper);
-        state.setInternalIndex(internalIndex);
-        state.setManagedIndex(managedIndex);
+        state.setIndexHandle(indexHandle);
         state.setIndex(index);
         state.setResult(SegmentIndexBootstrapResult.opened(index));
 
@@ -87,10 +75,7 @@ class SegmentIndexBootstrapStateTest {
         assertSame(keyTypeDescriptor, state.getKeyTypeDescriptor());
         assertSame(valueTypeDescriptor, state.getValueTypeDescriptor());
         assertSame(executorRegistry, state.getExecutorRegistry());
-        assertSame(callWrapper, state.getIndexMdcCallWrapper());
-        assertTrue(state.hasIndexMdcCallWrapper());
-        assertSame(internalIndex, state.getInternalIndex());
-        assertSame(managedIndex, state.getManagedIndex());
+        assertSame(indexHandle, state.getIndexHandle());
         assertSame(index, state.getIndex());
         assertTrue(state.hasResult());
         assertSame(index, state.getResult().requireIndex());
@@ -110,11 +95,7 @@ class SegmentIndexBootstrapStateTest {
         assertThrows(IllegalArgumentException.class,
                 () -> state.setExecutorRegistry(null));
         assertThrows(IllegalArgumentException.class,
-                () -> state.setIndexMdcCallWrapper(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> state.setInternalIndex(null));
-        assertThrows(IllegalArgumentException.class,
-                () -> state.setManagedIndex(null));
+                () -> state.setIndexHandle(null));
         assertThrows(IllegalArgumentException.class, () -> state.setIndex(null));
         assertThrows(IllegalArgumentException.class,
                 () -> state.setResult(null));

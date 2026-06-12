@@ -2,7 +2,7 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.concurrent.atomic.LongAdder;
 
-import org.hestiastore.index.segmentindex.core.telemetry.OperationLatencyTracker;
+import org.hestiastore.index.segmentindex.core.OperationLatencyTracker;
 
 /**
  * Mutable recorder for split runtime statistics.

@@ -43,6 +43,17 @@ public final class IndexRuntimeMonitoringBuilder<K, V> {
     }
 
     /**
+     * Creates a builder for runtime monitoring views.
+     *
+     * @param <K> key type
+     * @param <V> value type
+     * @return runtime monitoring builder
+     */
+    public static <K, V> IndexRuntimeMonitoringBuilder<K, V> builder() {
+        return new IndexRuntimeMonitoringBuilder<>();
+    }
+
+    /**
      * Sets the effective index configuration.
      *
      * @param conf effective index configuration

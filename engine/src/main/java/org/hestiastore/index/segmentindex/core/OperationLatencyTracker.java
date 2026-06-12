@@ -1,4 +1,4 @@
-package org.hestiastore.index.segmentindex.core.telemetry;
+package org.hestiastore.index.segmentindex.core;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
@@ -14,6 +14,17 @@ public final class OperationLatencyTracker {
     private final AtomicLong totalSamples = new AtomicLong();
     private final AtomicLongArray nanos = new AtomicLongArray(SAMPLE_SIZE);
 
+    /**
+     * Creates an empty latency tracker.
+     */
+    public OperationLatencyTracker() {
+    }
+
+    /**
+     * Records one latency sample.
+     *
+     * @param value latency in nanoseconds; negative values are ignored
+     */
     public void recordNanos(final long value) {
         if (value < 0L) {
             return;
@@ -23,6 +34,12 @@ public final class OperationLatencyTracker {
         nanos.set(index, value);
     }
 
+    /**
+     * Estimates a percentile from the current rolling sample window.
+     *
+     * @param percentile percentile in the {@code (0, 1]} interval
+     * @return estimated percentile latency in microseconds
+     */
     public long percentileMicros(final double percentile) {
         if (percentile <= 0D || percentile > 1D) {
             throw new IllegalArgumentException("percentile must be in (0,1]");

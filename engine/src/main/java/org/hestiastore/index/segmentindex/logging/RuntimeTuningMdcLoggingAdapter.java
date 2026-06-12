@@ -1,7 +1,6 @@
-package org.hestiastore.index.segmentindex.core.session;
+package org.hestiastore.index.segmentindex.logging;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.logging.IndexMdcCallWrapper;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
@@ -11,12 +10,12 @@ import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningVali
 /**
  * MDC-aware wrapper around runtime tuning management.
  */
-public final class RuntimeTuningContextLoggingAdapter implements RuntimeTuning {
+public final class RuntimeTuningMdcLoggingAdapter implements RuntimeTuning {
 
     private final RuntimeTuning delegate;
     private final IndexMdcCallWrapper contextCallWrapper;
 
-    public RuntimeTuningContextLoggingAdapter(
+    public RuntimeTuningMdcLoggingAdapter(
             final RuntimeTuning delegate,
             final IndexMdcCallWrapper contextCallWrapper) {
         this.delegate = Vldtn.requireNonNull(delegate, "delegate");
