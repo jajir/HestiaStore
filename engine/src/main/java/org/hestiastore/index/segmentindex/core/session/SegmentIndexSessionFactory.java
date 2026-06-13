@@ -3,8 +3,8 @@ package org.hestiastore.index.segmentindex.core.session;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.streaming.SegmentIndexEntryIteratorDecorator;
+import org.hestiastore.index.segmentindex.maintenance.IndexConsistencyRepairService;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenanceImpl;
 
@@ -25,33 +25,39 @@ public final class SegmentIndexSessionFactory {
      * @param resources initialized session resources
      * @param configuration effective index configuration
      * @param keyTypeDescriptor key type descriptor
+     * @param assemblyInput concrete runtime collaborators used to assemble the
+     *            session handle
      * @return created session index
      */
     public static <K, V> SegmentIndexSessionResource<K, V> createIndex(
             final SegmentIndexSessionResources<K, V> resources,
             final EffectiveIndexConfiguration<K, V> configuration,
-            final TypeDescriptor<K> keyTypeDescriptor) {
+            final TypeDescriptor<K> keyTypeDescriptor,
+            final SegmentIndexSessionAssemblyInput<K, V> assemblyInput) {
         final SegmentIndexSessionResources<K, V> initializedResources =
                 Vldtn.requireNonNull(resources, "resources");
         final EffectiveIndexConfiguration<K, V> initializedConfiguration =
                 Vldtn.requireNonNull(configuration, "configuration");
-        final SegmentIndexRuntime<K, V> initializedRuntime =
-                initializedResources.runtime();
+        final SegmentIndexSessionAssemblyInput<K, V> input = Vldtn
+                .requireNonNull(assemblyInput, "assemblyInput");
         final SegmentIndexSessionInfrastructure<K, V> infrastructure =
                 initializedResources.sessionInfrastructure();
+        final SegmentIndexDataAccess<K, V> dataAccess =
+                newDataAccess(input);
         final SegmentIndexPointOperationFacade<K, V> pointOperationFacade =
-                newPointOperationFacade(infrastructure, initializedRuntime);
+                newPointOperationFacade(infrastructure, dataAccess);
         final SegmentIndexReadFacade<K, V> readFacade = newReadFacade(
-                initializedConfiguration, infrastructure, initializedRuntime);
+                initializedConfiguration, infrastructure, dataAccess);
         final SegmentIndexSessionOwner<K, V> sessionOwner = newSessionOwner(
                 initializedResources, initializedConfiguration, infrastructure,
-                initializedRuntime);
+                input);
         final SegmentIndexMaintenance maintenanceApi = newMaintenanceApi(
-                sessionOwner, infrastructure.trackedRunner(),
-                initializedRuntime.maintenance(), initializedRuntime);
+                infrastructure.trackedRunner(), input);
         return new SegmentIndexImpl<>(
                 Vldtn.requireNonNull(keyTypeDescriptor, "keyTypeDescriptor"),
                 pointOperationFacade, readFacade,
+                input.runtimeTuning(),
+                input.runtimeMonitoring(),
                 maintenanceApi, sessionOwner);
     }
 
@@ -61,6 +67,12 @@ public final class SegmentIndexSessionFactory {
                     final SegmentIndexDataAccess<K, V> dataAccess) {
         return new SegmentIndexPointOperationFacade<>(
                 infrastructure.trackedRunner(), dataAccess);
+    }
+
+    private static <K, V> SegmentIndexDataAccess<K, V> newDataAccess(
+            final SegmentIndexSessionAssemblyInput<K, V> input) {
+        return new SegmentIndexDataAccessImpl<>(input.operationAccess(),
+                input.topologyRuntime());
     }
 
     private static <K, V> SegmentIndexReadFacade<K, V> newReadFacade(
@@ -76,27 +88,35 @@ public final class SegmentIndexSessionFactory {
             final SegmentIndexSessionResources<K, V> resources,
             final EffectiveIndexConfiguration<K, V> configuration,
             final SegmentIndexSessionInfrastructure<K, V> infrastructure,
-            final SegmentIndexRuntime<K, V> runtime) {
-        return new SegmentIndexSessionOwner<>(infrastructure.stateMachine(),
-                runtime,
-                new IndexCloseCoordinator<>(configuration.identity().name(),
+            final SegmentIndexSessionAssemblyInput<K, V> input) {
+        final IndexRuntimeCloseResources<K, V> closeResources =
+                new IndexRuntimeCloseResources<>(
+                        input.topologyRuntime(),
+                        input.maintenance(),
+                        input.coreStorageRuntime(),
+                        input.storageService());
+        return new SegmentIndexSessionOwner<>(
+                infrastructure.stateMachine(),
+                new IndexCloseCoordinator<>(
+                        configuration.identity().name(),
                         infrastructure.stateMachine(),
                         infrastructure.operationGate(),
-                        infrastructure.operationStatsRecorder(), runtime,
+                        infrastructure.operationStatsRecorder(),
+                        closeResources,
                         resources.executorRegistry(),
                         resources.directoryLock()));
     }
 
     private static <K, V> SegmentIndexMaintenance newMaintenanceApi(
-            final SegmentIndexSessionOwner<K, V> sessionOwner,
             final SegmentIndexTrackedOperationRunner<K, V> trackedRunner,
-            final MaintenanceService maintenance,
-            final SegmentIndexRuntime<K, V> runtime) {
+            final SegmentIndexSessionAssemblyInput<K, V> input) {
+        final IndexConsistencyRepairService consistencyRepairService =
+                new StorageTopologyConsistencyRepairService(
+                        input.storageService(), input.topologyRuntime());
         final SegmentIndexMaintenance maintenanceApi =
-                new SegmentIndexMaintenanceImpl(maintenance,
-                        runtime.storageService(),
-                        runtime::requestFullSplitScan);
+                new SegmentIndexMaintenanceImpl(input.maintenance(),
+                        consistencyRepairService);
         return new SegmentIndexMaintenanceSessionAdapter<>(maintenanceApi,
-                sessionOwner, trackedRunner);
+                input.topologyRuntime(), trackedRunner);
     }
 }

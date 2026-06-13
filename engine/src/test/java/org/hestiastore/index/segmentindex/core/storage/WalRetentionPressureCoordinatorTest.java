@@ -2,11 +2,11 @@ package org.hestiastore.index.segmentindex.core.storage;
 
 import static org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationTestSupport.effective;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
@@ -27,23 +27,19 @@ class WalRetentionPressureCoordinatorTest {
 
     @Test
     void enforceIfNeededRunsForcedCheckpointUntilPressureClears() {
-        final AtomicInteger prepareCalls = new AtomicInteger();
-        final AtomicInteger flushCalls = new AtomicInteger();
-        final AtomicInteger checkpointCalls = new AtomicInteger();
+        @SuppressWarnings("unchecked")
+        final WalRetentionPressureCheckpoint<Integer, String> checkpoint =
+                mock(WalRetentionPressureCheckpoint.class);
         final WalRetentionPressureCoordinator<Integer, String> coordinator =
                 new WalRetentionPressureCoordinator<>(effective(buildConf()),
                         walRuntime, new WalBackpressureRetryPolicy(1, 10),
-                        prepareCalls::incrementAndGet,
-                        flushCalls::incrementAndGet,
-                        checkpointCalls::incrementAndGet);
+                        checkpoint);
         when(walRuntime.isRetentionPressure()).thenReturn(true, true, false);
         when(walRuntime.retainedBytes()).thenReturn(99L);
 
         coordinator.enforceIfNeeded();
 
-        assertEquals(1, prepareCalls.get());
-        assertEquals(1, flushCalls.get());
-        assertEquals(1, checkpointCalls.get());
+        verify(checkpoint).forceCheckpoint();
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

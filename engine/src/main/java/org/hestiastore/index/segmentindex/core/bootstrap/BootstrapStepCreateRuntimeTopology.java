@@ -45,7 +45,7 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
 
     @Override
     void closeResource() {
-        if (state == null || state.indexRuntimeWasCreated()
+        if (state == null || state.runtimeCloseOwnershipTransferred()
                 || splitService == null) {
             return;
         }
@@ -94,8 +94,8 @@ final class BootstrapStepCreateRuntimeTopology<K, V>
                         .getIndexMaintenanceExecutor())
                 .splitPolicyScheduler(state.getExecutorRegistry()
                         .getSplitPolicyScheduler())
-                .stateSupplier(sessionResources::currentState)
-                .failureHandler(sessionResources::markRuntimeFailure)
+                .stateView(sessionResources)
+                .failureReporter(sessionResources::markRuntimeFailure)
                 .statsRecorder(sessionResources.splitStatsRecorder())
                 .build();
     }

@@ -1,12 +1,6 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -57,21 +51,9 @@ public interface StorageService<K, V> {
      * Initializes WAL coordination for this storage service. Disabled WAL
      * configuration installs a no-op coordinator.
      *
-     * @param conf effective index configuration
-     * @param walRuntime WAL runtime, required when WAL is enabled
-     * @param prepareDurableStateAction action run before checkpoint durability
-     * @param flushDurableStateAction action that flushes durable state
-     * @param stateSupplier runtime state supplier
-     * @param failureHandler runtime failure handler
-     * @param lastAppliedWalLsn last durable WAL LSN tracker
+     * @param initialization named WAL runtime initialization collaborators
      */
-    void initializeWal(EffectiveIndexConfiguration<K, V> conf,
-            WalRuntime<K, V> walRuntime,
-            Runnable prepareDurableStateAction,
-            Runnable flushDurableStateAction,
-            Supplier<SegmentIndexState> stateSupplier,
-            Consumer<RuntimeException> failureHandler,
-            AtomicLong lastAppliedWalLsn);
+    void initializeWal(WalRuntimeInitialization<K, V> initialization);
 
     /**
      * Replays unapplied WAL entries into the runtime.

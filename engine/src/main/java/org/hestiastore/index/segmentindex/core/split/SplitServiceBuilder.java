@@ -2,14 +2,12 @@ package org.hestiastore.index.segmentindex.core.split;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
@@ -31,8 +29,8 @@ public final class SplitServiceBuilder<K, V> {
     private Executor splitExecutor;
     private Executor workerExecutor;
     private ScheduledExecutorService splitPolicyScheduler;
-    private Supplier<SegmentIndexState> stateSupplier;
-    private Consumer<RuntimeException> failureHandler;
+    private SegmentIndexStateView stateView;
+    private SplitFailureReporter failureReporter;
     private SplitStatsRecorder statsRecorder;
 
     SplitServiceBuilder() {
@@ -147,26 +145,26 @@ public final class SplitServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the runtime state supplier used before scheduling split work.
+     * Sets the runtime state view used before scheduling split work.
      *
-     * @param stateSupplier runtime state supplier
+     * @param stateView runtime state view
      * @return this builder
      */
-    public SplitServiceBuilder<K, V> stateSupplier(
-            final Supplier<SegmentIndexState> stateSupplier) {
-        this.stateSupplier = stateSupplier;
+    public SplitServiceBuilder<K, V> stateView(
+            final SegmentIndexStateView stateView) {
+        this.stateView = stateView;
         return this;
     }
 
     /**
-     * Sets the failure handler used when split workers fail.
+     * Sets the failure reporter used when split workers fail.
      *
-     * @param failureHandler runtime failure handler
+     * @param failureReporter split failure reporter
      * @return this builder
      */
-    public SplitServiceBuilder<K, V> failureHandler(
-            final Consumer<RuntimeException> failureHandler) {
-        this.failureHandler = failureHandler;
+    public SplitServiceBuilder<K, V> failureReporter(
+            final SplitFailureReporter failureReporter) {
+        this.failureReporter = failureReporter;
         return this;
     }
 
@@ -189,8 +187,8 @@ public final class SplitServiceBuilder<K, V> {
      * @return split service
      */
     public SplitService build() {
-        final SplitFailureReporter failureReporter = SplitFailureReporter
-                .from(Vldtn.requireNonNull(failureHandler, "failureHandler"));
+        final SplitFailureReporter validatedFailureReporter = Vldtn
+                .requireNonNull(failureReporter, "failureReporter");
         final SplitStatsRecorder validatedStatsRecorder = Vldtn.requireNonNull(
                 statsRecorder, "statsRecorder");
         final EffectiveIndexConfiguration<K, V> validatedConf = Vldtn
@@ -224,7 +222,7 @@ public final class SplitServiceBuilder<K, V> {
                         validatedSegmentLeaseService,
                         routeSplitCoordinator, routeSplitPublishCoordinator,
                         Vldtn.requireNonNull(splitExecutor, "splitExecutor"),
-                        failureReporter, validatedStatsRecorder);
+                        validatedFailureReporter, validatedStatsRecorder);
         final SplitPolicyCoordinator<K, V> splitPolicyCoordinator =
                 new SplitPolicyCoordinator<>(validatedConf,
                         Vldtn.requireNonNull(runtimeTuningState,
@@ -234,8 +232,8 @@ public final class SplitServiceBuilder<K, V> {
                         Vldtn.requireNonNull(workerExecutor, "workerExecutor"),
                         Vldtn.requireNonNull(splitPolicyScheduler,
                                 "splitPolicyScheduler"),
-                        Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
-                        failureReporter, validatedStatsRecorder,
+                        Vldtn.requireNonNull(stateView, "stateView"),
+                        validatedFailureReporter, validatedStatsRecorder,
                         new SplitPolicyState(), new SplitCandidateRegistry());
         final ManagedSplitRuntimeState managedState =
                 new ManagedSplitRuntimeState();

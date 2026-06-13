@@ -48,7 +48,7 @@ final class IndexCloseTeardownSteps {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeSplitRuntime();
+            context.closeResources().closeSplitRuntime();
         }
     }
 
@@ -57,7 +57,7 @@ final class IndexCloseTeardownSteps {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().sealAsyncMaintenanceAndWait();
+            context.closeResources().sealAsyncMaintenanceAndWait();
         }
     }
 
@@ -66,7 +66,7 @@ final class IndexCloseTeardownSteps {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().flushAndWait();
+            context.closeResources().flushAndWait();
         }
     }
 
@@ -75,7 +75,7 @@ final class IndexCloseTeardownSteps {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeCoreStorage();
+            context.closeResources().closeCoreStorage();
         }
     }
 
@@ -105,7 +105,7 @@ final class IndexCloseTeardownSteps {
 
         @Override
         public void apply(final IndexCloseCoordinator<K, V> context) {
-            context.runtime().closeWal();
+            context.closeResources().closeWal();
         }
     }
 

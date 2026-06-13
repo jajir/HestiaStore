@@ -4,7 +4,7 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
- * Opens WAL runtime resources and owns rollback cleanup until runtime creation.
+ * Opens WAL runtime resources and owns rollback cleanup until runtime close ownership transfer.
  */
 final class BootstrapStepOpenRuntimeWal<K, V>
         extends SegmentIndexBootstrapStep<K, V> {
@@ -28,7 +28,7 @@ final class BootstrapStepOpenRuntimeWal<K, V>
 
     @Override
     void closeResource() {
-        if (state == null || state.indexRuntimeWasCreated()
+        if (state == null || state.runtimeCloseOwnershipTransferred()
                 || walRuntime == null) {
             return;
         }

@@ -33,7 +33,7 @@ final class BootstrapStepOpenSegmentRegistry<K, V>
 
     @Override
     void closeResource() {
-        if (state == null || state.indexRuntimeWasCreated()
+        if (state == null || state.runtimeCloseOwnershipTransferred()
                 || segmentRegistry == null) {
             return;
         }

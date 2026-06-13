@@ -6,6 +6,7 @@ import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTes
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.executorRegistry;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.request;
 import static org.hestiastore.index.segmentindex.core.bootstrap.BootstrapStepTestSupport.stateWithRuntimeInputs;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,12 +20,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class BootstrapStepCreateRuntimeServicesTest {
+class BootstrapRuntimeServiceStepsTest {
 
     private SegmentIndexSessionResources<Integer, String> sessionResources;
     private ExecutorRegistry executorRegistry;
     private SegmentIndexBootstrapState<Integer, String> state;
-    private BootstrapStepCreateRuntimeServices<Integer, String> step;
     private MemDirectory directory;
 
     @BeforeEach
@@ -32,7 +32,6 @@ class BootstrapStepCreateRuntimeServicesTest {
         sessionResources = new SegmentIndexSessionResources<>();
         sessionResources.setSessionInfrastructure(
                 SegmentIndexSessionInfrastructure.create());
-        step = new BootstrapStepCreateRuntimeServices<>(sessionResources);
         directory = new MemDirectory();
     }
 
@@ -47,42 +46,58 @@ class BootstrapStepCreateRuntimeServicesTest {
     }
 
     @Test
-    void constructor_rejectsNullSessionResources() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new BootstrapStepCreateRuntimeServices<Integer, String>(
-                        null));
+    void constructors_rejectMissingSessionResources() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new BootstrapStepCreateMaintenance<Integer, String>(
+                                null)),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new BootstrapStepInitializeWal<Integer, String>(
+                                null)),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new BootstrapStepCreateRuntimeMonitoring<Integer, String>(
+                                null)),
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> new BootstrapStepCreateOperationAccess<Integer, String>(
+                                null)));
     }
 
     @Test
-    void apply_populatesRuntimeServicesInState() {
-        prepareRuntimeInputs("bootstrap-step-services");
+    void steps_populateRuntimeCollaboratorsInState() {
+        prepareRuntimeInputs("bootstrap-runtime-service-steps");
 
-        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
+        applyRuntimeServiceSteps();
 
-        assertNotNull(state.getRuntimeServices());
+        assertNotNull(state.getRuntimeMaintenanceService());
+        assertNotNull(state.getRuntimeMaintenanceCheckpoint());
+        assertNotNull(state.getRuntimeMonitoring());
+        assertNotNull(state.getRuntimeTuning());
+        assertNotNull(state.getRuntimeOperationAccess());
     }
 
     @Test
-    void closeResource_keepsEarlierRuntimeResourcesOpenOnRollback() {
-        prepareRuntimeInputs("bootstrap-step-services-rollback");
-        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
+    void initializeWal_bindsMaintenanceCheckpointToStorage() {
+        prepareRuntimeInputs("bootstrap-runtime-service-steps-wal");
 
-        step.closeResource();
+        applyRuntimeServiceSteps();
 
         assertDoesNotThrow(
-                () -> state.getRuntimeWalRuntime().appendPut(1, "one"));
+                () -> state.getRuntimeMaintenanceCheckpoint().checkpoint());
     }
 
-    @Test
-    void closeResource_keepsEarlierRuntimeResourcesOpenAfterRuntimeWasCreated() {
-        prepareRuntimeInputs("bootstrap-step-services-runtime-created");
-        step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
-        state.markIndexRuntimeCreated();
-
-        step.closeResource();
-
-        assertDoesNotThrow(
-                () -> state.getRuntimeWalRuntime().appendPut(1, "one"));
+    private void applyRuntimeServiceSteps() {
+        final SegmentIndexBootstrapRequest<Integer, String> request =
+                request(directory, SegmentIndexBootstrapMode.CREATE);
+        new BootstrapStepCreateMaintenance<>(sessionResources).apply(request,
+                state);
+        new BootstrapStepInitializeWal<>(sessionResources).apply(request,
+                state);
+        new BootstrapStepCreateRuntimeMonitoring<>(sessionResources).apply(
+                request, state);
+        new BootstrapStepCreateRuntimeTuning<Integer, String>().apply(request,
+                state);
+        new BootstrapStepCreateOperationAccess<>(sessionResources).apply(
+                request, state);
     }
 
     private void prepareRuntimeInputs(final String indexName) {

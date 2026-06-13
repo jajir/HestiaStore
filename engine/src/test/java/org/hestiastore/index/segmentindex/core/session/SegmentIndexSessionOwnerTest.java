@@ -4,9 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,27 +16,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SegmentIndexSessionOwnerTest {
 
     private SegmentIndexStateMachine stateMachine;
-    private SegmentIndexRuntime<Integer, String> runtime;
     private IndexCloseCoordinator<Integer, String> closeCoordinator;
     private SegmentIndexSessionOwner<Integer, String> owner;
 
     @BeforeEach
     void setUp() {
         stateMachine = mock(SegmentIndexStateMachine.class);
-        runtime = mock(SegmentIndexRuntime.class);
         closeCoordinator = mock(IndexCloseCoordinator.class);
-        owner = new SegmentIndexSessionOwner<>(stateMachine, runtime,
-                closeCoordinator);
+        owner = new SegmentIndexSessionOwner<>(stateMachine, closeCoordinator);
     }
 
     @Test
-    void delegatesStateAndRuntimeViews() {
-        final RuntimeTuning runtimeConfiguration = mock(RuntimeTuning.class);
-        when(runtime.runtimeTuning()).thenReturn(runtimeConfiguration);
-
-        assertSame(runtimeConfiguration, owner.runtimeTuning());
+    void exposesStateMachine() {
         assertSame(stateMachine, owner.stateMachine());
-        assertSame(runtime, owner.runtime());
     }
 
     @Test
@@ -53,12 +43,5 @@ class SegmentIndexSessionOwnerTest {
         assertDoesNotThrow(owner::ensureOperational);
 
         verify(stateMachine).ensureOperational();
-    }
-
-    @Test
-    void invalidateSegmentIteratorsDelegatesToRuntime() {
-        assertDoesNotThrow(owner::invalidateSegmentIterators);
-
-        verify(runtime).invalidateSegmentIterators();
     }
 }

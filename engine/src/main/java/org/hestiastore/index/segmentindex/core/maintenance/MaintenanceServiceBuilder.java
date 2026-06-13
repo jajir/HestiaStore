@@ -23,7 +23,7 @@ public final class MaintenanceServiceBuilder<K, V> {
     private Integer busyTimeoutMillis;
     private MaintenanceStatsRecorder statsRecorder;
     private ExecutorService maintenanceExecutor;
-    private Runnable checkpointAction;
+    private MaintenanceCheckpoint checkpoint;
     private LongSupplier nanoTimeSupplier = System::nanoTime;
 
     MaintenanceServiceBuilder() {
@@ -122,16 +122,15 @@ public final class MaintenanceServiceBuilder<K, V> {
     }
 
     /**
-     * Sets the action that checkpoints WAL after blocking maintenance reaches a
-     * durable state.
+     * Sets the collaborator that checkpoints durable state after blocking
+     * maintenance reaches a durable state.
      *
-     * @param checkpointAction checkpoint action
+     * @param checkpoint checkpoint collaborator
      * @return this builder
      */
-    public MaintenanceServiceBuilder<K, V> checkpointAction(
-            final Runnable checkpointAction) {
-        this.checkpointAction = Vldtn.requireNonNull(checkpointAction,
-                "checkpointAction");
+    public MaintenanceServiceBuilder<K, V> checkpoint(
+            final MaintenanceCheckpoint checkpoint) {
+        this.checkpoint = Vldtn.requireNonNull(checkpoint, "checkpoint");
         return this;
     }
 
@@ -160,7 +159,7 @@ public final class MaintenanceServiceBuilder<K, V> {
                 Vldtn.requireNonNull(statsRecorder, "statsRecorder"),
                 Vldtn.requireNonNull(maintenanceExecutor,
                         "maintenanceExecutor"),
-                Vldtn.requireNonNull(checkpointAction, "checkpointAction"),
+                Vldtn.requireNonNull(checkpoint, "checkpoint"),
                 Vldtn.requireNonNull(nanoTimeSupplier, "nanoTimeSupplier"));
     }
 }

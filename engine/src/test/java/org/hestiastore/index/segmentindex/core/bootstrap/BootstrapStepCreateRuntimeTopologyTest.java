@@ -77,10 +77,10 @@ class BootstrapStepCreateRuntimeTopologyTest {
     }
 
     @Test
-    void closeResource_skipsCleanupAfterRuntimeWasCreated() {
+    void closeResource_skipsCleanupAfterRuntimeCloseOwnershipTransferred() {
         prepareCoreStorage("bootstrap-step-topology-runtime-created");
         step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
-        state.markIndexRuntimeCreated();
+        state.markRuntimeCloseOwnershipTransferred();
 
         step.closeResource();
 

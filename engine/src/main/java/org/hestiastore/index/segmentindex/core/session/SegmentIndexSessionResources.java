@@ -8,6 +8,7 @@ import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry
 import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
+import org.hestiastore.index.segmentindex.core.storage.WalRuntimeFailureHandler;
 
 /**
  * Holds package-private session resources while bootstrap steps live outside
@@ -22,12 +23,11 @@ import org.hestiastore.index.segmentindex.core.split.SplitStatsRecorder;
  * @param <V> value type
  */
 public final class SegmentIndexSessionResources<K, V>
-        implements SegmentIndexStateView {
+        implements SegmentIndexStateView, WalRuntimeFailureHandler {
 
     private IndexDirectoryLock directoryLock;
     private SegmentIndexSessionInfrastructure<K, V> sessionInfrastructure;
     private ExecutorRegistry executorRegistry;
-    private SegmentIndexRuntime<K, V> runtime;
 
     public void acquireDirectoryLock(final Directory directory) {
         directoryLock = new IndexDirectoryLock(directory);
@@ -37,24 +37,8 @@ public final class SegmentIndexSessionResources<K, V>
         return directoryLock().wasStaleLockRecovered();
     }
 
-    public void recoverFromWal() {
-        runtime().recoverFromWal();
-    }
-
-    public void cleanupOrphanedSegmentDirectories() {
-        runtime().cleanupOrphanedSegmentDirectories();
-    }
-
     public void markReady() {
         sessionInfrastructure().markReady();
-    }
-
-    public void runStartupConsistencyCheck() {
-        runtime().runStartupConsistencyCheck();
-    }
-
-    public void requestFullSplitScan() {
-        runtime().requestFullSplitScan();
     }
 
     /**
@@ -69,11 +53,14 @@ public final class SegmentIndexSessionResources<K, V>
                 sessionInfrastructure, "sessionInfrastructure");
     }
 
-    public void setRuntime(final SegmentIndexRuntime<K, V> runtime,
-            final ExecutorRegistry executorRegistry) {
+    /**
+     * Installs the executor registry owned by the live session.
+     *
+     * @param executorRegistry executor registry used by runtime and close flow
+     */
+    public void setExecutorRegistry(final ExecutorRegistry executorRegistry) {
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
-        this.runtime = Vldtn.requireNonNull(runtime, "runtime");
     }
 
     /**
@@ -90,10 +77,14 @@ public final class SegmentIndexSessionResources<K, V>
         sessionInfrastructure().markRuntimeFailure(failure);
     }
 
-    public void closeRuntimeAfterFailedInitialization() {
-        if (runtime != null) {
-            runtime.closeAfterFailedInitialization();
-        }
+    /**
+     * Records a WAL runtime failure on the owning session.
+     *
+     * @param failure WAL runtime failure
+     */
+    @Override
+    public void handleWalRuntimeFailure(final RuntimeException failure) {
+        markRuntimeFailure(failure);
     }
 
     IndexDirectoryLock directoryLock() {
@@ -119,10 +110,6 @@ public final class SegmentIndexSessionResources<K, V>
 
     public SplitStatsRecorder splitStatsRecorder() {
         return sessionInfrastructure().splitStatsRecorder();
-    }
-
-    SegmentIndexRuntime<K, V> runtime() {
-        return Vldtn.requireNonNull(runtime, "runtime");
     }
 
 }

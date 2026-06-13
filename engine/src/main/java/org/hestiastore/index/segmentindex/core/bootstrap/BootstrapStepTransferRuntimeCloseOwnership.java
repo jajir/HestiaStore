@@ -1,19 +1,20 @@
 package org.hestiastore.index.segmentindex.core.bootstrap;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntime;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 
 /**
- * Creates runtime resources and owns failed-startup runtime cleanup.
+ * Transfers failed-bootstrap runtime cleanup ownership away from earlier
+ * opening steps.
  */
-final class BootstrapStepCreateRuntime<K, V>
+final class BootstrapStepTransferRuntimeCloseOwnership<K, V>
         extends SegmentIndexBootstrapStep<K, V> {
 
     private final SegmentIndexSessionResources<K, V> sessionResources;
     private SegmentIndexBootstrapState<K, V> state;
+    private BootstrapRuntimeCloseResources<K, V> closeResources;
 
-    BootstrapStepCreateRuntime(
+    BootstrapStepTransferRuntimeCloseOwnership(
             final SegmentIndexSessionResources<K, V> sessionResources) {
         this.sessionResources = Vldtn.requireNonNull(sessionResources,
                 "sessionResources");
@@ -23,21 +24,19 @@ final class BootstrapStepCreateRuntime<K, V>
     void apply(final SegmentIndexBootstrapRequest<K, V> request,
             final SegmentIndexBootstrapState<K, V> state) {
         this.state = state;
-        // TODO it's huge smell pass callback here.
-        final SegmentIndexRuntime<K, V> runtime = new SegmentIndexRuntime<>(
-                state.getKeyTypeDescriptor(),
-                state.getStorageService(),
-                state::closeCoreStorage,
+        closeResources = new BootstrapRuntimeCloseResources<>(
                 state.getRuntimeTopologyRuntime(),
-                state.getRuntimeServices());
-        sessionResources.setRuntime(runtime, state.getExecutorRegistry());
-        state.markIndexRuntimeCreated();
+                state.getCoreStorageRuntime(),
+                state.getStorageService());
+        sessionResources.setExecutorRegistry(state.getExecutorRegistry());
+        state.markRuntimeCloseOwnershipTransferred();
     }
 
     @Override
     void closeResource() {
-        if (state != null && state.indexRuntimeWasCreated()) {
-            sessionResources.closeRuntimeAfterFailedInitialization();
+        if (state != null && state.runtimeCloseOwnershipTransferred()
+                && closeResources != null) {
+            closeResources.closeAfterFailedInitialization();
         }
     }
 }

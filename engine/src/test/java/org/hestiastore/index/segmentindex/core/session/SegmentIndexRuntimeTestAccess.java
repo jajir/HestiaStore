@@ -17,10 +17,13 @@ import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.bootstrap.SegmentIndexFactory;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
+import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
 import org.hestiastore.index.segmentindex.core.operations.IndexOperationStatsRecorder;
 import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
+import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 
@@ -54,37 +57,35 @@ public final class SegmentIndexRuntimeTestAccess {
         }
     }
 
-    public static <K, V> SegmentIndexRuntime<K, V> runtime(
-            final Object runtime) {
-        return castRuntime(runtime);
+    public static Object runtime(final Object runtime) {
+        return castRuntimeView(runtime);
     }
 
     public static <K> KeyToSegmentMap<K> keyToSegmentMap(
             final Object runtime) {
-        return keyToSegmentMap(castRuntime(runtime));
-    }
-
-    public static <K> KeyToSegmentMap<K> keyToSegmentMap(
-            final SegmentIndexRuntime<K, ?> runtime) {
         @SuppressWarnings("unchecked")
         final KeyToSegmentMap<K> keyToSegmentMap = (KeyToSegmentMap<K>) field(
-                segmentLeaseService(runtime), "keyToSegmentMap");
+                segmentLeaseService(castRuntimeView(runtime)),
+                "keyToSegmentMap");
         return keyToSegmentMap;
     }
 
     public static <K, V> SegmentRegistry<K, V> segmentRegistry(
-            final SegmentIndexRuntime<K, V> runtime) {
+            final Object runtime) {
         @SuppressWarnings("unchecked")
         final SegmentRegistry<K, V> segmentRegistry =
-                (SegmentRegistry<K, V>) field(segmentLeaseService(runtime),
+                (SegmentRegistry<K, V>) field(
+                        segmentLeaseService(castRuntimeView(runtime)),
                         "segmentRegistry");
         return segmentRegistry;
     }
 
     public static <K, V> WalRuntime<K, V> walRuntime(
-            final SegmentIndexRuntime<K, V> runtime) {
+            final Object runtime) {
         try {
-            final Object walCoordinator = walCoordinator(runtime);
+            final SegmentIndexRuntimeView<K, V> runtimeView =
+                    castRuntimeView(runtime);
+            final Object walCoordinator = walCoordinator(runtimeView);
             final Field delegateField = walCoordinator.getClass()
                     .getDeclaredField("delegate");
             delegateField.setAccessible(true);
@@ -93,7 +94,8 @@ public final class SegmentIndexRuntimeTestAccess {
                     .getDeclaredField("walRuntime");
             walRuntimeField.setAccessible(true);
             @SuppressWarnings("unchecked")
-            final WalRuntime<K, V> walRuntime = (WalRuntime<K, V>) walRuntimeField.get(delegate);
+            final WalRuntime<K, V> walRuntime =
+                    (WalRuntime<K, V>) walRuntimeField.get(delegate);
             return walRuntime;
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
@@ -102,24 +104,24 @@ public final class SegmentIndexRuntimeTestAccess {
     }
 
     public static <K, V> SegmentTopologyRuntimeAccess<K, V> topologyRuntime(
-            final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.topologyRuntime();
-    }
-
-    public static <K, V> SegmentTopologyRuntimeAccess<K, V> topologyRuntime(
             final Object runtime) {
-        return topologyRuntime(castRuntime(runtime));
+        final SegmentIndexRuntimeView<K, V> runtimeView =
+                castRuntimeView(runtime);
+        return runtimeView.topologyRuntime();
     }
 
     public static <K, V> StorageService<K, V> storageService(
-            final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.storageService();
+            final Object runtime) {
+        final SegmentIndexRuntimeView<K, V> runtimeView =
+                castRuntimeView(runtime);
+        return runtimeView.coreStorageRuntime().getStorageService();
     }
 
     private static <K, V> Object walCoordinator(
-            final SegmentIndexRuntime<K, V> runtime) {
+            final SegmentIndexRuntimeView<K, V> runtime) {
         try {
-            final StorageService<K, V> storageService = runtime.storageService();
+            final StorageService<K, V> storageService = runtime
+                    .coreStorageRuntime().getStorageService();
             final Field walCoordinatorField = storageService.getClass()
                     .getDeclaredField("walCoordinator");
             walCoordinatorField.setAccessible(true);
@@ -131,28 +133,37 @@ public final class SegmentIndexRuntimeTestAccess {
     }
 
     public static <K, V> SegmentIndexOperationAccess<K, V> operationAccess(
-            final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.operationAccess();
+            final Object runtime) {
+        final SegmentIndexRuntimeView<K, V> runtimeView =
+                castRuntimeView(runtime);
+        return runtimeView.operationAccess();
     }
 
     public static <K, V> RuntimeTuningState runtimeTuningState(
-            final SegmentIndexRuntime<K, V> runtime) {
-        return (RuntimeTuningState) field(runtime.runtimeTuning(),
+            final Object runtime) {
+        return (RuntimeTuningState) field(castRuntimeView(runtime).runtimeTuning(),
                 "runtimeTuningState");
     }
 
     public static <K, V> RuntimeTuning runtimeTuning(
-            final SegmentIndexRuntime<K, V> runtime) {
-        return runtime.runtimeTuning();
+            final Object runtime) {
+        return castRuntimeView(runtime).runtimeTuning();
     }
 
-    public static <K, V> void closeRuntime(final SegmentIndexRuntime<K, V> runtime,
+    public static <K, V> void closeRuntime(
+            final SegmentIndexRuntimeView<K, V> runtime,
             final String indexName, final ExecutorRegistry executorRegistry) {
         final SegmentIndexStateMachine stateMachine = new SegmentIndexStateMachine();
         stateMachine.markReady();
+        final IndexRuntimeCloseResources<K, V> closeResources =
+                new IndexRuntimeCloseResources<>(
+                        runtime.topologyRuntime(),
+                        runtime.maintenance(),
+                        runtime.coreStorageRuntime(),
+                        runtime.coreStorageRuntime().getStorageService());
         new IndexCloseCoordinator<>(indexName, stateMachine,
                 mock(SegmentIndexOperationGate.class),
-                new IndexOperationStatsRecorder(), runtime,
+                new IndexOperationStatsRecorder(), closeResources,
                 executorRegistry,
                 new IndexDirectoryLock(new MemDirectory()))
                 .close();
@@ -164,21 +175,26 @@ public final class SegmentIndexRuntimeTestAccess {
             openedRuntime.index.close();
             return;
         }
-        closeRuntime(castRuntime(runtime), indexName, executorRegistry);
+        closeRuntime(castRuntimeView(runtime), indexName, executorRegistry);
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentIndexRuntime<K, V> castRuntime(
+    private static <K, V> SegmentIndexRuntimeView<K, V> castRuntimeView(
             final Object runtime) {
         if (runtime instanceof OpenedRuntime<?, ?> openedRuntime) {
-            return (SegmentIndexRuntime<K, V>) openedRuntime.runtime;
+            return (SegmentIndexRuntimeView<K, V>) openedRuntime.runtime;
         }
-        return (SegmentIndexRuntime<K, V>) runtime;
+        return (SegmentIndexRuntimeView<K, V>) runtime;
     }
 
     private static Object segmentLeaseService(
-            final SegmentIndexRuntime<?, ?> runtime) {
+            final SegmentIndexRuntimeView<?, ?> runtime) {
         return field(runtime.operationAccess(), "segmentLeaseService");
+    }
+
+    private static Object segmentLeaseService(
+            final SegmentIndexOperationAccess<?, ?> operationAccess) {
+        return field(operationAccess, "segmentLeaseService");
     }
 
     private static Object field(final Object target, final String fieldName) {
@@ -201,7 +217,35 @@ public final class SegmentIndexRuntimeTestAccess {
     }
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SegmentIndexRuntime<K, V> runtimeFromIndex(
+    static <K, V> SegmentIndexRuntimeView<K, V> runtimeFromIndex(
+            final Object index) {
+        final SegmentIndexImpl<K, V> implementation = indexImplementation(
+                index);
+        final SegmentIndexDataAccessImpl<K, V> dataAccess =
+                dataAccess(implementation);
+        final Object maintenance = maintenanceDelegate(implementation);
+        final SegmentIndexOperationAccess<K, V> operationAccess =
+                operationAccess(dataAccess);
+        return new SegmentIndexRuntimeView<>(
+                new CoreStorageRuntime<>(
+                        runtimeTuningState(implementation.runtimeTuning()),
+                        storageServiceFromMaintenance(maintenance),
+                        segmentRegistry(operationAccess),
+                        keyToSegmentMap(operationAccess)),
+                topologyRuntime(dataAccess),
+                operationAccess,
+                maintenanceService(maintenance),
+                implementation.runtimeMonitoring(),
+                implementation.runtimeTuning());
+    }
+
+    private static RuntimeTuningState runtimeTuningState(
+            final RuntimeTuning runtimeTuning) {
+        return (RuntimeTuningState) field(runtimeTuning, "runtimeTuningState");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SegmentIndexImpl<K, V> indexImplementation(
             final Object index) {
         Object current = index;
         while (!(current instanceof SegmentIndexImpl<?, ?>)) {
@@ -215,16 +259,74 @@ public final class SegmentIndexRuntimeTestAccess {
                         "Unable to unwrap segment index for test access", ex);
             }
         }
-        return ((SegmentIndexImpl<K, V>) current).runtime();
+        return (SegmentIndexImpl<K, V>) current;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SegmentIndexDataAccessImpl<K, V> dataAccess(
+            final SegmentIndexImpl<K, V> implementation) {
+        final Object pointOperationFacade = field(implementation,
+                "pointOperationFacade");
+        return (SegmentIndexDataAccessImpl<K, V>) field(pointOperationFacade,
+                "dataAccess");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SegmentIndexOperationAccess<K, V> operationAccess(
+            final SegmentIndexDataAccessImpl<K, V> dataAccess) {
+        return (SegmentIndexOperationAccess<K, V>) field(dataAccess,
+                "operationAccess");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K> KeyToSegmentMap<K> keyToSegmentMap(
+            final SegmentIndexOperationAccess<K, ?> operationAccess) {
+        return (KeyToSegmentMap<K>) field(segmentLeaseService(operationAccess),
+                "keyToSegmentMap");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SegmentRegistry<K, V> segmentRegistry(
+            final SegmentIndexOperationAccess<K, V> operationAccess) {
+        return (SegmentRegistry<K, V>) field(
+                segmentLeaseService(operationAccess), "segmentRegistry");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SegmentTopologyRuntimeAccess<K, V> topologyRuntime(
+            final SegmentIndexDataAccessImpl<K, V> dataAccess) {
+        return (SegmentTopologyRuntimeAccess<K, V>) field(dataAccess,
+                "topologyRuntime");
+    }
+
+    private static Object maintenanceDelegate(
+            final SegmentIndexImpl<?, ?> implementation) {
+        final SegmentIndexMaintenance maintenanceApi =
+                implementation.maintenance();
+        return field(maintenanceApi, "delegate");
+    }
+
+    private static MaintenanceService maintenanceService(
+            final Object maintenance) {
+        return (MaintenanceService) field(maintenance, "maintenanceService");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> StorageService<K, V> storageServiceFromMaintenance(
+            final Object maintenance) {
+        final Object consistencyRepairService = field(maintenance,
+                "consistencyRepairService");
+        return (StorageService<K, V>) field(consistencyRepairService,
+                "storageService");
     }
 
     private static final class OpenedRuntime<K, V> {
 
         private final SegmentIndex<K, V> index;
-        private final SegmentIndexRuntime<K, V> runtime;
+        private final SegmentIndexRuntimeView<K, V> runtime;
 
         OpenedRuntime(final SegmentIndex<K, V> index,
-                final SegmentIndexRuntime<K, V> runtime) {
+                final SegmentIndexRuntimeView<K, V> runtime) {
             this.index = Vldtn.requireNonNull(index, "index");
             this.runtime = Vldtn.requireNonNull(runtime, "runtime");
         }

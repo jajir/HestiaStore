@@ -1,10 +1,8 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,16 +17,15 @@ final class WalFailureTransitionHandler {
             .getLogger(WalFailureTransitionHandler.class);
 
     private final WalRuntime<?, ?> walRuntime;
-    private final Supplier<SegmentIndexState> stateSupplier;
-    private final Consumer<RuntimeException> failureHandler;
+    private final SegmentIndexStateView stateView;
+    private final WalRuntimeFailureHandler failureHandler;
 
     WalFailureTransitionHandler(
             final WalRuntime<?, ?> walRuntime,
-            final Supplier<SegmentIndexState> stateSupplier,
-            final Consumer<RuntimeException> failureHandler) {
+            final SegmentIndexStateView stateView,
+            final WalRuntimeFailureHandler failureHandler) {
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
-        this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
-                "stateSupplier");
+        this.stateView = Vldtn.requireNonNull(stateView, "stateView");
         this.failureHandler = Vldtn.requireNonNull(failureHandler,
                 "failureHandler");
     }
@@ -37,7 +34,7 @@ final class WalFailureTransitionHandler {
         if (!walRuntime.hasSyncFailure()) {
             return failure;
         }
-        final SegmentIndexState state = stateSupplier.get();
+        final SegmentIndexState state = stateView.currentState();
         if (state == SegmentIndexState.CLOSED
                 || state == SegmentIndexState.ERROR) {
             return failure;
@@ -45,7 +42,7 @@ final class WalFailureTransitionHandler {
         LOGGER.error(
                 "event=wal_sync_failure_transition state={} action=transition_to_error reason=wal_sync_failure",
                 state, failure);
-        failureHandler.accept(failure);
+        failureHandler.handleWalRuntimeFailure(failure);
         return failure;
     }
 }

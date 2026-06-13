@@ -1,13 +1,7 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.segment.SegmentId;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -62,30 +56,15 @@ final class StorageServiceImpl<K, V> implements StorageService<K, V> {
 
     @Override
     public void initializeWal(
-            final EffectiveIndexConfiguration<K, V> conf,
-            final WalRuntime<K, V> walRuntime,
-            final Runnable prepareDurableStateAction,
-            final Runnable flushDurableStateAction,
-            final Supplier<SegmentIndexState> stateSupplier,
-            final Consumer<RuntimeException> failureHandler,
-            final AtomicLong lastAppliedWalLsn) {
-        final EffectiveIndexConfiguration<K, V> validatedConf =
-                Vldtn.requireNonNull(conf, "conf");
-        if (!validatedConf.wal().isEnabled()) {
+            final WalRuntimeInitialization<K, V> initialization) {
+        final WalRuntimeInitialization<K, V> walInitialization =
+                Vldtn.requireNonNull(initialization, "initialization");
+        if (!walInitialization.configuration().wal().isEnabled()) {
             walCoordinator = IndexWalCoordinator.disabled();
             return;
         }
-        walCoordinator = IndexWalCoordinator.create(validatedConf,
-                Vldtn.requireNonNull(walRuntime, "walRuntime"),
-                walBackpressureRetryPolicy,
-                Vldtn.requireNonNull(prepareDurableStateAction,
-                        "prepareDurableStateAction"),
-                Vldtn.requireNonNull(flushDurableStateAction,
-                        "flushDurableStateAction"),
-                Vldtn.requireNonNull(stateSupplier, "stateSupplier"),
-                Vldtn.requireNonNull(failureHandler, "failureHandler"),
-                Vldtn.requireNonNull(lastAppliedWalLsn,
-                        "lastAppliedWalLsn"));
+        walCoordinator = IndexWalCoordinator.create(walInitialization,
+                walBackpressureRetryPolicy);
     }
 
     @Override

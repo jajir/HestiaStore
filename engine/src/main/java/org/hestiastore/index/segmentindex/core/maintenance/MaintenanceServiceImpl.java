@@ -37,7 +37,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
     private final MaintenanceRetryPolicy retryPolicy;
     private final MaintenanceStatsRecorder statsRecorder;
     private final ExecutorService maintenanceExecutor;
-    private final Runnable checkpointAction;
+    private final MaintenanceCheckpoint checkpoint;
     private final LongSupplier nanoTimeSupplier;
     private final AtomicBoolean asyncMaintenanceClosed =
             new AtomicBoolean(false);
@@ -51,10 +51,10 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final MaintenanceRetryPolicy retryPolicy,
             final MaintenanceStatsRecorder statsRecorder,
             final ExecutorService maintenanceExecutor,
-            final Runnable checkpointAction) {
+            final MaintenanceCheckpoint checkpoint) {
         this(keyToSegmentMap, stableSegmentGateway, splitService,
                 retryPolicy, statsRecorder, maintenanceExecutor,
-                checkpointAction, System::nanoTime);
+                checkpoint, System::nanoTime);
     }
 
     MaintenanceServiceImpl(
@@ -64,7 +64,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
             final MaintenanceRetryPolicy retryPolicy,
             final MaintenanceStatsRecorder statsRecorder,
             final ExecutorService maintenanceExecutor,
-            final Runnable checkpointAction,
+            final MaintenanceCheckpoint checkpoint,
             final LongSupplier nanoTimeSupplier) {
         this.keyToSegmentMap = Vldtn.requireNonNull(keyToSegmentMap,
                 "keyToSegmentMap");
@@ -76,8 +76,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
                 "statsRecorder");
         this.maintenanceExecutor = Vldtn.requireNonNull(maintenanceExecutor,
                 "maintenanceExecutor");
-        this.checkpointAction = Vldtn.requireNonNull(checkpointAction,
-                "checkpointAction");
+        this.checkpoint = Vldtn.requireNonNull(checkpoint, "checkpoint");
         this.nanoTimeSupplier = Vldtn.requireNonNull(nanoTimeSupplier,
                 "nanoTimeSupplier");
     }
@@ -291,7 +290,7 @@ final class MaintenanceServiceImpl<K, V> implements MaintenanceService {
         splitService.awaitQuiescence();
         rerunIfTopologyChanged(topologyVersion, rerunAction);
         keyToSegmentMap.flushIfDirty();
-        checkpointAction.run();
+        checkpoint.checkpoint();
     }
 
     private void rerunIfTopologyChanged(final long topologyVersion,

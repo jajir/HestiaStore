@@ -38,6 +38,7 @@ final class BootstrapStepOpenCoreStorage<K, V>
                                 maintenance.busyTimeoutMillis())
                         .build();
         state.setCoreStorageRuntime(new CoreStorageRuntime<>(
-                runtimeTuningState, storageService));
+                runtimeTuningState, storageService,
+                state.getSegmentRegistry(), state.getKeyToSegmentMap()));
     }
 }

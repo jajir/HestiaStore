@@ -20,17 +20,15 @@ public final class SegmentIndexTestAccess {
     @SuppressWarnings("unchecked")
     public static <K> KeyToSegmentMap<K> keyToSegmentMap(final Object index) {
         return (KeyToSegmentMap<K>) SegmentIndexRuntimeTestAccess
-                .keyToSegmentMap(unwrap(index).runtime());
+                .keyToSegmentMap(runtime(index));
     }
 
     public static Object segmentRegistry(final Object index) {
-        return SegmentIndexRuntimeTestAccess.segmentRegistry(unwrap(index)
-                .runtime());
+        return SegmentIndexRuntimeTestAccess.segmentRegistry(runtime(index));
     }
 
     public static WalRuntime<?, ?> walRuntime(final Object index) {
-        return SegmentIndexRuntimeTestAccess.walRuntime(unwrap(index)
-                .runtime());
+        return SegmentIndexRuntimeTestAccess.walRuntime(runtime(index));
     }
 
     public static SegmentIndexStateMachine stateMachine(final Object index) {
@@ -60,5 +58,9 @@ public final class SegmentIndexTestAccess {
             }
         }
         return (SegmentIndexImpl<?, ?>) current;
+    }
+
+    private static Object runtime(final Object index) {
+        return SegmentIndexRuntimeTestAccess.runtimeFromIndex(index);
     }
 }

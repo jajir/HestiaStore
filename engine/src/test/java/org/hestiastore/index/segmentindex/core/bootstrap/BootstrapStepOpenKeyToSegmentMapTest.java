@@ -61,11 +61,11 @@ class BootstrapStepOpenKeyToSegmentMapTest {
     }
 
     @Test
-    void closeResource_skipsCleanupAfterRuntimeWasCreated() {
+    void closeResource_skipsCleanupAfterRuntimeCloseOwnershipTransferred() {
         prepareState("bootstrap-step-key-map-runtime-created");
         step.apply(request(directory, SegmentIndexBootstrapMode.CREATE),
                 state);
-        state.markIndexRuntimeCreated();
+        state.markRuntimeCloseOwnershipTransferred();
 
         step.closeResource();
 

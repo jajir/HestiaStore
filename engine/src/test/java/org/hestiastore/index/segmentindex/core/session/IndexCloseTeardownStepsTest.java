@@ -25,7 +25,7 @@ class IndexCloseTeardownStepsTest {
     private SegmentIndexOperationGate operationGate;
 
     @Mock
-    private SegmentIndexRuntime<Integer, String> runtime;
+    private IndexRuntimeCloseResources<Integer, String> closeResources;
 
     @Mock
     private IndexOperationStatsRecorder operationStatsRecorder;
@@ -55,21 +55,22 @@ class IndexCloseTeardownStepsTest {
 
         closeSteps.forEach(step -> step.apply(context));
 
-        final InOrder inOrder = inOrder(context, operationGate, runtime,
+        final InOrder inOrder = inOrder(context, operationGate,
+                closeResources,
                 executorRegistry, stateMachine, directoryLock);
         inOrder.verify(context).operationGate();
         inOrder.verify(operationGate).awaitOperationDrain();
-        inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeSplitRuntime();
-        inOrder.verify(context).runtime();
-        inOrder.verify(runtime).sealAsyncMaintenanceAndWait();
-        inOrder.verify(context).runtime();
-        inOrder.verify(runtime).flushAndWait();
-        inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeCoreStorage();
+        inOrder.verify(context).closeResources();
+        inOrder.verify(closeResources).closeSplitRuntime();
+        inOrder.verify(context).closeResources();
+        inOrder.verify(closeResources).sealAsyncMaintenanceAndWait();
+        inOrder.verify(context).closeResources();
+        inOrder.verify(closeResources).flushAndWait();
+        inOrder.verify(context).closeResources();
+        inOrder.verify(closeResources).closeCoreStorage();
         inOrder.verify(context).operationStatsRecorder();
-        inOrder.verify(context).runtime();
-        inOrder.verify(runtime).closeWal();
+        inOrder.verify(context).closeResources();
+        inOrder.verify(closeResources).closeWal();
         inOrder.verify(context).executorRegistry();
         inOrder.verify(executorRegistry).close();
         inOrder.verify(context).stateMachine();
@@ -93,7 +94,7 @@ class IndexCloseTeardownStepsTest {
 
     private void stubContext() {
         when(context.operationGate()).thenReturn(operationGate);
-        when(context.runtime()).thenReturn(runtime);
+        when(context.closeResources()).thenReturn(closeResources);
         when(context.operationStatsRecorder()).thenReturn(
                 operationStatsRecorder);
         when(context.executorRegistry()).thenReturn(executorRegistry);

@@ -20,9 +20,11 @@ import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -208,7 +210,9 @@ class SegmentIndexSessionTest {
 
         private RecordingIndex(final EntryIterator<Integer, String> iterator) {
             super(new TypeDescriptorInteger(), mockPointOperationFacade(),
-                    mockReadFacade(), mock(SegmentIndexMaintenance.class),
+                    mockReadFacade(), mock(RuntimeTuning.class),
+                    mock(IndexRuntimeMonitoring.class),
+                    mock(SegmentIndexMaintenance.class),
                     mockSessionOwner());
             this.iterator = iterator;
         }

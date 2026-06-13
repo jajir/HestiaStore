@@ -5,7 +5,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
@@ -14,6 +13,7 @@ import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
@@ -37,7 +37,7 @@ final class SplitPolicyCoordinator<K, V> {
     private final KeyToSegmentMap<K> keyToSegmentMap;
     private final SegmentLeaseService<K, V> segmentLeaseService;
     private final SplitExecutionCoordinator<K, V> splitExecutionCoordinator;
-    private final Supplier<SegmentIndexState> stateSupplier;
+    private final SegmentIndexStateView stateView;
     private final SplitPolicyState policyState;
     private final SplitCandidateRegistry candidateRegistry;
     private final Executor workerExecutor;
@@ -52,7 +52,7 @@ final class SplitPolicyCoordinator<K, V> {
             final SplitExecutionCoordinator<K, V> splitExecutionCoordinator,
             final Executor workerExecutor,
             final ScheduledExecutorService splitPolicyScheduler,
-            final Supplier<SegmentIndexState> stateSupplier,
+            final SegmentIndexStateView stateView,
             final SplitFailureReporter failureReporter,
             final SplitTelemetry telemetry,
             final SplitPolicyState policyState,
@@ -66,8 +66,7 @@ final class SplitPolicyCoordinator<K, V> {
                 "segmentLeaseService");
         this.splitExecutionCoordinator = Vldtn.requireNonNull(
                 splitExecutionCoordinator, "splitExecutionCoordinator");
-        this.stateSupplier = Vldtn.requireNonNull(stateSupplier,
-                "stateSupplier");
+        this.stateView = Vldtn.requireNonNull(stateView, "stateView");
         this.policyState = Vldtn.requireNonNull(policyState, "policyState");
         this.candidateRegistry = Vldtn.requireNonNull(candidateRegistry,
                 "candidateRegistry");
@@ -247,7 +246,7 @@ final class SplitPolicyCoordinator<K, V> {
     }
 
     private boolean isClosedOrClosingState() {
-        final SegmentIndexState state = stateSupplier.get();
+        final SegmentIndexState state = stateView.currentState();
         return state == SegmentIndexState.CLOSING
                 || state == SegmentIndexState.CLOSED
                 || state == SegmentIndexState.ERROR;
