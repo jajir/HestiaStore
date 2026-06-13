@@ -1,13 +1,8 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.function.LongSupplier;
-import java.util.function.Supplier;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -17,7 +12,6 @@ import org.hestiastore.index.segmentindex.wal.WalRuntime;
  * @param <K> key type
  * @param <V> value type
  */
-@SuppressWarnings("java:S107")
 final class ActiveIndexWalCoordinator<K, V>
         implements IndexWalCoordinatorDelegate<K, V> {
 
@@ -27,7 +21,6 @@ final class ActiveIndexWalCoordinator<K, V>
     private final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator;
     private final WalFailureTransitionHandler walFailureTransitionHandler;
 
-    @SuppressWarnings("java:S107")
     private ActiveIndexWalCoordinator(final WalRuntime<K, V> walRuntime,
             final WalReplayProgressTracker<K, V> walReplayProgressTracker,
             final WalCheckpointExecutor<K, V> walCheckpointExecutor,
@@ -44,29 +37,30 @@ final class ActiveIndexWalCoordinator<K, V>
                 walFailureTransitionHandler, "walFailureTransitionHandler");
     }
 
-    @SuppressWarnings("java:S107")
     static <K, V> ActiveIndexWalCoordinator<K, V> create(
-            final EffectiveIndexConfiguration<K, V> conf,
-            final WalRuntime<K, V> walRuntime,
-            final WalBackpressureRetryPolicy retryPolicy,
-            final Runnable prepareDurableStateAction,
-            final Runnable flushDurableStateAction,
-            final Supplier<SegmentIndexState> stateSupplier,
-            final Consumer<RuntimeException> failureHandler,
-            final AtomicLong lastAppliedWalLsn) {
+            final WalRuntimeInitialization<K, V> initialization,
+            final WalBackpressureRetryPolicy retryPolicy) {
+        final WalRuntimeInitialization<K, V> walInitialization =
+                Vldtn.requireNonNull(initialization, "initialization");
+        final WalRuntime<K, V> walRuntime = walInitialization.walRuntime();
         final WalReplayProgressTracker<K, V> replayProgressTracker =
-                new WalReplayProgressTracker<>(walRuntime, lastAppliedWalLsn);
+                new WalReplayProgressTracker<>(walRuntime,
+                        walInitialization.lastAppliedWalLsn());
         final WalFailureTransitionHandler failureTransitionHandler =
-                new WalFailureTransitionHandler(walRuntime, stateSupplier,
-                        failureHandler);
+                new WalFailureTransitionHandler(walRuntime,
+                        walInitialization.stateView(),
+                        walInitialization.failureHandler());
         final WalCheckpointExecutor<K, V> checkpointExecutor =
-                new WalCheckpointExecutor<>(walRuntime, lastAppliedWalLsn,
+                new WalCheckpointExecutor<>(walRuntime,
+                        walInitialization.lastAppliedWalLsn(),
                         failureTransitionHandler);
+        final WalRetentionPressureCheckpoint<K, V> retentionPressureCheckpoint =
+                new WalRetentionPressureCheckpoint<>(
+                        walInitialization.durableState(), checkpointExecutor);
         final WalRetentionPressureCoordinator<K, V> retentionPressureCoordinator =
-                new WalRetentionPressureCoordinator<>(conf, walRuntime,
-                        retryPolicy, prepareDurableStateAction,
-                        flushDurableStateAction,
-                        checkpointExecutor::checkpointInternal);
+                new WalRetentionPressureCoordinator<>(
+                        walInitialization.configuration(), walRuntime,
+                        retryPolicy, retentionPressureCheckpoint);
         return new ActiveIndexWalCoordinator<>(walRuntime,
                 replayProgressTracker, checkpointExecutor,
                 retentionPressureCoordinator, failureTransitionHandler);

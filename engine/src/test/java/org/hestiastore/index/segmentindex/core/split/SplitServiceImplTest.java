@@ -25,19 +25,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
+import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.segment.SegmentId;
+import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexMaintenanceConfiguration;
-import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.directory.Directory;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLease;
 import org.hestiastore.index.segmentindex.core.segmentlease.SegmentLeaseService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapImpl;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMapSynchronizedAdapter;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -118,7 +118,8 @@ class SplitServiceImplTest {
         final SegmentRegistry<String, String> registry = mockSegmentRegistry();
         final ScheduledExecutorService scheduler = mock(
                 ScheduledExecutorService.class);
-        final Supplier<SegmentIndexState> stateSupplier = () -> SegmentIndexState.READY;
+        final SegmentIndexStateView stateView =
+                () -> SegmentIndexState.READY;
 
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
@@ -132,8 +133,8 @@ class SplitServiceImplTest {
                         .splitExecutor(directExecutor())
                         .workerExecutor(directExecutor())
                         .splitPolicyScheduler(scheduler)
-                        .stateSupplier(stateSupplier)
-                        .failureHandler(failure -> {
+                        .stateView(stateView)
+                        .failureReporter(failure -> {
                         })
                         .statsRecorder(new SplitStatsRecorder())
                         .build());
@@ -475,7 +476,7 @@ class SplitServiceImplTest {
 
     private SplitServiceImpl<String, String> newRuntime(
             final Executor workerExecutor,
-            final Supplier<SegmentIndexState> stateSupplier,
+            final SegmentIndexStateView stateView,
             final SplitPolicyState policyState) {
         final ManagedSplitRuntimeState managedState = new ManagedSplitRuntimeState();
         final SplitStatsRecorder statsRecorder = new SplitStatsRecorder();
@@ -484,7 +485,7 @@ class SplitServiceImplTest {
                 new SplitPolicyCoordinator<>(conf, runtimeTuningState,
                         synchronizedKeyToSegmentMap, segmentLeaseService,
                         splitExecutionCoordinator, workerExecutor,
-                        splitPolicyScheduler, stateSupplier,
+                        splitPolicyScheduler, stateView,
                         SplitFailureReporter.noOp(),
                         statsRecorder, policyState,
                         new SplitCandidateRegistry()),

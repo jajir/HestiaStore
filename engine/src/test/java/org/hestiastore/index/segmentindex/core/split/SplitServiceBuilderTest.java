@@ -49,8 +49,8 @@ class SplitServiceBuilderTest {
                     .splitExecutor(directExecutor())
                     .workerExecutor(directExecutor())
                     .splitPolicyScheduler(scheduler)
-                    .stateSupplier(() -> SegmentIndexState.READY)
-                    .failureHandler(ex -> {
+                    .stateView(() -> SegmentIndexState.READY)
+                    .failureReporter(ex -> {
                     })
                     .statsRecorder(new SplitStatsRecorder())
                     .build();
@@ -75,8 +75,8 @@ class SplitServiceBuilderTest {
                     .splitExecutor(directExecutor())
                     .workerExecutor(directExecutor())
                     .splitPolicyScheduler(scheduler)
-                    .stateSupplier(() -> SegmentIndexState.READY)
-                    .failureHandler(ex2 -> {
+                    .stateView(() -> SegmentIndexState.READY)
+                    .failureReporter(ex2 -> {
                     })
                     .statsRecorder(new SplitStatsRecorder());
 

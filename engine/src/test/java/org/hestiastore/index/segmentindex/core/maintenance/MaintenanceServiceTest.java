@@ -47,7 +47,7 @@ class MaintenanceServiceTest {
                 StableSegmentOperationAccess.class);
         final SplitService splitService = mock(
                 SplitService.class);
-        final Runnable checkpointAction = mock(Runnable.class);
+        final MaintenanceCheckpoint checkpoint = mock(MaintenanceCheckpoint.class);
         final ExecutorService maintenanceExecutor =
                 Executors.newSingleThreadExecutor();
         final SegmentId segmentId = SegmentId.of(1);
@@ -66,7 +66,7 @@ class MaintenanceServiceTest {
                     .busyTimeoutMillis(10)
                     .statsRecorder(new MaintenanceStatsRecorder())
                     .maintenanceExecutor(maintenanceExecutor)
-                    .checkpointAction(checkpointAction)
+                    .checkpoint(checkpoint)
                     .build();
 
             maintenance.compact();
@@ -122,7 +122,7 @@ class MaintenanceServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void builderRejectsMissingCheckpointAction() {
+    void builderRejectsMissingCheckpoint() {
         final KeyToSegmentMap<Integer> keyToSegmentMap = mock(
                 KeyToSegmentMap.class);
         final StableSegmentOperationAccess<Integer, String> stableSegmentGateway = mock(
@@ -145,7 +145,7 @@ class MaintenanceServiceTest {
             final IllegalArgumentException ex = assertThrows(
                     IllegalArgumentException.class, builder::build);
 
-            assertEquals("Property 'checkpointAction' must not be null.",
+            assertEquals("Property 'checkpoint' must not be null.",
                     ex.getMessage());
         } finally {
             maintenanceExecutor.shutdownNow();

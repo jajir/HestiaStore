@@ -33,12 +33,29 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
     private final TypeDescriptor<K> keyTypeDescriptor;
     private final SegmentIndexPointOperationFacade<K, V> pointOperationFacade;
     private final SegmentIndexReadFacade<K, V> readFacade;
+    private final RuntimeTuning runtimeTuning;
+    private final IndexRuntimeMonitoring runtimeMonitoring;
     private final SegmentIndexMaintenance maintenanceApi;
     private final SegmentIndexSessionOwner<K, V> sessionOwner;
 
+    /**
+     * Creates the session index API from already assembled operation, read,
+     * runtime view, maintenance, and lifecycle collaborators.
+     *
+     * @param keyTypeDescriptor key type descriptor used for stream ordering
+     * @param pointOperationFacade point operation API collaborator
+     * @param readFacade read and iterator API collaborator
+     * @param runtimeTuning runtime tuning API view
+     * @param runtimeMonitoring runtime monitoring API view
+     * @param maintenanceApi maintenance API view
+     * @param sessionOwner lifecycle owner for state checks and close
+     *            coordination
+     */
     SegmentIndexImpl(final TypeDescriptor<K> keyTypeDescriptor,
             final SegmentIndexPointOperationFacade<K, V> pointOperationFacade,
             final SegmentIndexReadFacade<K, V> readFacade,
+            final RuntimeTuning runtimeTuning,
+            final IndexRuntimeMonitoring runtimeMonitoring,
             final SegmentIndexMaintenance maintenanceApi,
             final SegmentIndexSessionOwner<K, V> sessionOwner) {
         this.keyTypeDescriptor = Vldtn.requireNonNull(keyTypeDescriptor,
@@ -46,6 +63,10 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         this.pointOperationFacade = Vldtn.requireNonNull(pointOperationFacade,
                 "pointOperationFacade");
         this.readFacade = Vldtn.requireNonNull(readFacade, "readFacade");
+        this.runtimeTuning = Vldtn.requireNonNull(runtimeTuning,
+                "runtimeTuning");
+        this.runtimeMonitoring = Vldtn.requireNonNull(runtimeMonitoring,
+                "runtimeMonitoring");
         this.maintenanceApi = Vldtn.requireNonNull(maintenanceApi,
                 "maintenanceApi");
         this.sessionOwner = Vldtn.requireNonNull(sessionOwner, "sessionOwner");
@@ -174,20 +195,16 @@ class SegmentIndexImpl<K, V> extends AbstractCloseableResource
         return sessionOwner.stateMachine();
     }
 
-    final SegmentIndexRuntime<K, V> runtime() {
-        return sessionOwner.runtime();
-    }
-
     /** {@inheritDoc} */
     @Override
     public RuntimeTuning runtimeTuning() {
-        return sessionOwner.runtimeTuning();
+        return runtimeTuning;
     }
 
     /** {@inheritDoc} */
     @Override
     public IndexRuntimeMonitoring runtimeMonitoring() {
-        return sessionOwner.runtimeMonitoring();
+        return runtimeMonitoring;
     }
 
 }

@@ -152,7 +152,11 @@ final class BootstrapStepTestSupport {
         }
         if (state.hasKeyToSegmentMap()) {
             if (!state.getKeyToSegmentMap().wasClosed()) {
-                failure = closeIgnoringFailure(state::closeCoreStorage,
+                failure = closeIgnoringFailure(
+                        state.hasCoreStorage()
+                                ? state.getCoreStorageRuntime()
+                                        ::closeCoreStorage
+                                : state.getKeyToSegmentMap()::close,
                         failure);
             }
         }

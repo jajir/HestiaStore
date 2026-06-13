@@ -74,10 +74,10 @@ class BootstrapStepOpenRuntimeWalTest {
     }
 
     @Test
-    void closeResource_skipsCleanupAfterRuntimeWasCreated() {
+    void closeResource_skipsCleanupAfterRuntimeCloseOwnershipTransferred() {
         prepareState("bootstrap-step-wal-runtime-created");
         step.apply(request(directory, SegmentIndexBootstrapMode.CREATE), state);
-        state.markIndexRuntimeCreated();
+        state.markRuntimeCloseOwnershipTransferred();
 
         step.closeResource();
 

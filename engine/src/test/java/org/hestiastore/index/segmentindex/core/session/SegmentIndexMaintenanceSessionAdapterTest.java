@@ -25,7 +25,7 @@ class SegmentIndexMaintenanceSessionAdapterTest {
     private SegmentIndexMaintenance delegate;
 
     @Mock
-    private SegmentIndexSessionOwner<Integer, String> sessionOwner;
+    private SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime;
 
     @Mock
     private SegmentIndexTrackedOperationRunner<Integer, String> trackedRunner;
@@ -35,7 +35,7 @@ class SegmentIndexMaintenanceSessionAdapterTest {
         enablePassThroughTracking();
         final SegmentIndexMaintenance adapter =
                 new SegmentIndexMaintenanceSessionAdapter<>(delegate,
-                        sessionOwner, trackedRunner);
+                        topologyRuntime, trackedRunner);
 
         assertDoesNotThrow(() -> {
             adapter.compact();
@@ -46,18 +46,18 @@ class SegmentIndexMaintenanceSessionAdapterTest {
         });
 
         verify(trackedRunner, times(5)).runTrackedVoid(any(Runnable.class));
-        final InOrder inOrder = inOrder(delegate, sessionOwner);
+        final InOrder inOrder = inOrder(delegate, topologyRuntime);
         inOrder.verify(delegate).compact();
-        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(topologyRuntime).invalidateSegmentIterators();
         inOrder.verify(delegate).compactAndWait();
-        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(topologyRuntime).invalidateSegmentIterators();
         inOrder.verify(delegate).flush();
-        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(topologyRuntime).invalidateSegmentIterators();
         inOrder.verify(delegate).flushAndWait();
-        inOrder.verify(sessionOwner).invalidateSegmentIterators();
+        inOrder.verify(topologyRuntime).invalidateSegmentIterators();
         inOrder.verify(delegate).checkAndRepairConsistency();
-        inOrder.verify(sessionOwner).invalidateSegmentIterators();
-        verifyNoMoreInteractions(delegate, sessionOwner, trackedRunner);
+        inOrder.verify(topologyRuntime).invalidateSegmentIterators();
+        verifyNoMoreInteractions(delegate, topologyRuntime, trackedRunner);
     }
 
     @Test
@@ -67,29 +67,29 @@ class SegmentIndexMaintenanceSessionAdapterTest {
                 .flush();
         final SegmentIndexMaintenance adapter =
                 new SegmentIndexMaintenanceSessionAdapter<>(delegate,
-                        sessionOwner, trackedRunner);
+                        topologyRuntime, trackedRunner);
 
         assertThrows(IllegalStateException.class, adapter::flush);
 
         verify(trackedRunner).runTrackedVoid(any(Runnable.class));
         verify(delegate).flush();
-        verify(sessionOwner, never()).invalidateSegmentIterators();
-        verifyNoMoreInteractions(delegate, sessionOwner, trackedRunner);
+        verify(topologyRuntime, never()).invalidateSegmentIterators();
+        verifyNoMoreInteractions(delegate, topologyRuntime, trackedRunner);
     }
 
     @Test
     void constructorRejectsMissingCollaborators() {
         assertDoesNotThrow(() -> new SegmentIndexMaintenanceSessionAdapter<>(
-                delegate, sessionOwner, trackedRunner));
+                delegate, topologyRuntime, trackedRunner));
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceSessionAdapter<>(null,
-                        sessionOwner, trackedRunner));
+                        topologyRuntime, trackedRunner));
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceSessionAdapter<>(delegate,
                         null, trackedRunner));
         assertThrows(IllegalArgumentException.class,
                 () -> new SegmentIndexMaintenanceSessionAdapter<>(delegate,
-                        sessionOwner, null));
+                        topologyRuntime, null));
     }
 
     private void enablePassThroughTracking() {

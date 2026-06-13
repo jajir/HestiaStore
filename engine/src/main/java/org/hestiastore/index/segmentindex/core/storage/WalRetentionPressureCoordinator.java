@@ -28,9 +28,7 @@ final class WalRetentionPressureCoordinator<K, V> {
     private final EffectiveIndexConfiguration<K, V> conf;
     private final WalRuntime<K, V> walRuntime;
     private final WalBackpressureRetryPolicy retryPolicy;
-    private final Runnable prepareDurableStateAction;
-    private final Runnable flushDurableStateAction;
-    private final Runnable checkpointAction;
+    private final WalRetentionPressureCheckpoint<K, V> checkpoint;
     private final AtomicLong walRetentionPressureLastWarnNanos = new AtomicLong(
             0L);
     private final AtomicBoolean walRetentionPressureWarnActive = new AtomicBoolean(
@@ -40,18 +38,11 @@ final class WalRetentionPressureCoordinator<K, V> {
             final EffectiveIndexConfiguration<K, V> conf,
             final WalRuntime<K, V> walRuntime,
             final WalBackpressureRetryPolicy retryPolicy,
-            final Runnable prepareDurableStateAction,
-            final Runnable flushDurableStateAction,
-            final Runnable checkpointAction) {
+            final WalRetentionPressureCheckpoint<K, V> checkpoint) {
         this.conf = Vldtn.requireNonNull(conf, "conf");
         this.walRuntime = Vldtn.requireNonNull(walRuntime, "walRuntime");
         this.retryPolicy = Vldtn.requireNonNull(retryPolicy, "retryPolicy");
-        this.prepareDurableStateAction = Vldtn.requireNonNull(
-                prepareDurableStateAction, "prepareDurableStateAction");
-        this.flushDurableStateAction = Vldtn.requireNonNull(
-                flushDurableStateAction, "flushDurableStateAction");
-        this.checkpointAction = Vldtn.requireNonNull(checkpointAction,
-                "checkpointAction");
+        this.checkpoint = Vldtn.requireNonNull(checkpoint, "checkpoint");
     }
 
     void enforceIfNeeded() {
@@ -74,9 +65,7 @@ final class WalRetentionPressureCoordinator<K, V> {
     }
 
     private void forceDurableStateCheckpoint() {
-        prepareDurableStateAction.run();
-        flushDurableStateAction.run();
-        checkpointAction.run();
+        checkpoint.forceCheckpoint();
     }
 
     private void logWalRetentionPressureStartIfNeeded() {

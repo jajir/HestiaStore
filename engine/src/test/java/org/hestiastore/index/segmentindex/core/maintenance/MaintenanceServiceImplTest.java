@@ -54,7 +54,7 @@ class MaintenanceServiceImplTest {
     private SplitService splitService;
 
     @Mock
-    private Runnable checkpointAction;
+    private MaintenanceCheckpoint checkpoint;
 
     private Directory directory;
     private KeyToSegmentMapImpl<String> keyToSegmentMap;
@@ -75,7 +75,7 @@ class MaintenanceServiceImplTest {
         service = new MaintenanceServiceImpl<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway,
                 splitService, retryPolicy(), statsRecorder, maintenanceExecutor,
-                checkpointAction);
+                checkpoint);
     }
 
     @AfterEach
@@ -112,7 +112,8 @@ class MaintenanceServiceImplTest {
                 StableSegmentOperationAccess.class);
         final SplitService splitServiceValue = mock(
                 SplitService.class);
-        final Runnable checkpoint = mock(Runnable.class);
+        final MaintenanceCheckpoint checkpointValue = mock(
+                MaintenanceCheckpoint.class);
         final SegmentId segmentId = SegmentId.of(7);
         when(mappedSegments.getSegmentIds()).thenReturn(List.of(segmentId));
         when(stableSegments.flush(segmentId)).thenReturn(StableSegmentOperationResult.busy());
@@ -120,7 +121,7 @@ class MaintenanceServiceImplTest {
                 new MaintenanceServiceImpl<>(
                         mappedSegments, stableSegments, splitServiceValue,
                         retryPolicy(), new MaintenanceStatsRecorder(),
-                        maintenanceExecutor, checkpoint);
+                        maintenanceExecutor, checkpointValue);
 
         maintenance.flush();
 
@@ -134,7 +135,7 @@ class MaintenanceServiceImplTest {
         service = new MaintenanceServiceImpl<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway, splitService,
                 retryPolicy(), statsRecorder, maintenanceExecutor,
-                checkpointAction, sequenceNanoTimeSupplier(10_000L, 35_000L));
+                checkpoint, sequenceNanoTimeSupplier(10_000L, 35_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.flush(segmentId))
                 .thenReturn(StableSegmentOperationResult.busy())
@@ -154,7 +155,7 @@ class MaintenanceServiceImplTest {
         service = new MaintenanceServiceImpl<>(
                 synchronizedKeyToSegmentMap, stableSegmentGateway, splitService,
                 retryPolicy(), statsRecorder, maintenanceExecutor,
-                checkpointAction, sequenceNanoTimeSupplier(20_000L, 68_000L));
+                checkpoint, sequenceNanoTimeSupplier(20_000L, 68_000L));
         when(segmentHandle.getRuntime()).thenReturn(runtime);
         when(stableSegmentGateway.compact(segmentId))
                 .thenReturn(StableSegmentOperationResult.busy())
@@ -239,7 +240,7 @@ class MaintenanceServiceImplTest {
 
         verify(splitService, times(2)).awaitQuiescence();
         verify(stableSegmentGateway).flush(segmentId);
-        verify(checkpointAction).run();
+        verify(checkpoint).checkpoint();
     }
 
     @Test
@@ -253,7 +254,7 @@ class MaintenanceServiceImplTest {
                         mappedSegments, mock(StableSegmentOperationAccess.class),
                         splitService, retryPolicy(),
                         new MaintenanceStatsRecorder(), maintenanceExecutor,
-                        checkpointAction);
+                        checkpoint);
         final CountDownLatch taskStarted = new CountDownLatch(1);
         final CountDownLatch releaseTask = new CountDownLatch(1);
         when(mappedSegments.getSegmentIds()).thenAnswer(invocation -> {
@@ -283,7 +284,7 @@ class MaintenanceServiceImplTest {
         service.flushAndWait();
 
         verify(stableSegmentGateway).flush(segmentId);
-        verify(checkpointAction).run();
+        verify(checkpoint).checkpoint();
     }
 
     @Test
@@ -297,7 +298,7 @@ class MaintenanceServiceImplTest {
                         mappedSegments, mock(StableSegmentOperationAccess.class),
                         splitService, new MaintenanceRetryPolicy(1, 25),
                         new MaintenanceStatsRecorder(), maintenanceExecutor,
-                        checkpointAction);
+                        checkpoint);
         final CountDownLatch taskStarted = new CountDownLatch(1);
         final CountDownLatch releaseTask = new CountDownLatch(1);
         final CountDownLatch taskFinished = new CountDownLatch(1);
@@ -338,7 +339,7 @@ class MaintenanceServiceImplTest {
         verify(splitService, times(2)).awaitQuiescence();
         verify(stableSegmentGateway).compact(segmentId);
         verify(stableSegmentGateway).flush(segmentId);
-        verify(checkpointAction).run();
+        verify(checkpoint).checkpoint();
     }
 
     private static LongSupplier sequenceNanoTimeSupplier(

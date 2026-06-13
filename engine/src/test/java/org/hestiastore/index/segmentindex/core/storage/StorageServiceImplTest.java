@@ -147,11 +147,11 @@ class StorageServiceImplTest {
                 new AtomicReference<>();
         when(walRuntime.appendPut(1, "one")).thenReturn(7L);
 
-        storageService.initializeWal(effective(buildConf()), walRuntime,
+        storageService.initializeWal(new WalRuntimeInitialization<>(
+                effective(buildConf()), walRuntime,
                 () -> {
-                }, () -> {
-                }, () -> SegmentIndexState.READY, handledFailure::set,
-                lastAppliedWalLsn);
+                }, () -> SegmentIndexState.READY,
+                handledFailure::set, lastAppliedWalLsn));
         final long walLsn = storageService.appendWalPut(1, "one");
         storageService.recordAppliedWalLsn(walLsn);
         storageService.checkpointWal();

@@ -161,7 +161,7 @@ class SegmentIndexBootstrapOperationTest {
     }
 
     @Test
-    void failureAfterRuntimeCreationClosesRuntimeResourcesAndKeepsLock() {
+    void failureAfterRuntimeCloseOwnershipTransferClosesRuntimeResourcesAndKeepsLock() {
         final MemDirectory directory = new MemDirectory();
         final SegmentIndexBootstrapRequest<Integer, String> request = request(
                 directory,
@@ -212,10 +212,10 @@ class SegmentIndexBootstrapOperationTest {
     }
 
     @Test
-    void failureAfterRuntimeServicesClosesEarlierRuntimeResources() {
+    void failureAfterWalInitializationClosesEarlierRuntimeResources() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(7,
-                        "bootstrap-operation-services-cleanup");
+                runBootstrapExpectingFailureAfterRuntimeStep(8,
+                        "bootstrap-operation-wal-initialization-cleanup");
 
         assertWalClosed(state);
         assertSplitServiceClosed(state);
@@ -223,9 +223,9 @@ class SegmentIndexBootstrapOperationTest {
     }
 
     @Test
-    void failureAfterRuntimeCreationClosesEarlierRuntimeResources() {
+    void failureAfterRuntimeCloseOwnershipTransferClosesEarlierRuntimeResources() {
         final SegmentIndexBootstrapState<Integer, String> state =
-                runBootstrapExpectingFailureAfterRuntimeStep(8,
+                runBootstrapExpectingFailureAfterRuntimeStep(12,
                         "bootstrap-operation-runtime-creation-cleanup");
 
         assertWalClosed(state);
@@ -561,7 +561,7 @@ class SegmentIndexBootstrapOperationTest {
                 commonStepsThroughExecutor(sessionResources);
         steps.add(new BootstrapStepCreateSessionInfrastructure<>(
                 sessionResources));
-        addRuntimeSteps(steps, sessionResources, 8);
+        addRuntimeSteps(steps, sessionResources, 12);
         steps.add(new BootstrapStepCreateIndex<>(sessionResources));
         steps.add(nextStep);
         return List.copyOf(steps);
@@ -593,9 +593,16 @@ class SegmentIndexBootstrapOperationTest {
                         new BootstrapStepCreateRuntimeTopology<>(
                                 sessionResources),
                         new BootstrapStepOpenRuntimeWal<>(),
-                        new BootstrapStepCreateRuntimeServices<>(
+                        new BootstrapStepCreateMaintenance<>(
                                 sessionResources),
-                        new BootstrapStepCreateRuntime<>(sessionResources));
+                        new BootstrapStepInitializeWal<>(sessionResources),
+                        new BootstrapStepCreateRuntimeMonitoring<>(
+                                sessionResources),
+                        new BootstrapStepCreateRuntimeTuning<>(),
+                        new BootstrapStepCreateOperationAccess<>(
+                                sessionResources),
+                        new BootstrapStepTransferRuntimeCloseOwnership<>(
+                                sessionResources));
         steps.addAll(runtimeSteps.subList(0, runtimeStepCount));
     }
 

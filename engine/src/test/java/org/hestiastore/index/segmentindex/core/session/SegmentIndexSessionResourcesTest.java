@@ -1,14 +1,11 @@
 package org.hestiastore.index.segmentindex.core.session;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
 import org.junit.jupiter.api.Test;
 
 class SegmentIndexSessionResourcesTest {
@@ -61,21 +58,22 @@ class SegmentIndexSessionResourcesTest {
     }
 
     @Test
-    void setRuntime_rejectsNullRuntime() {
+    void handleWalRuntimeFailure_delegatesToInstalledInfrastructure() {
+        final SegmentIndexSessionResources<Integer, String> resources =
+                resourcesWithInfrastructure();
+
+        resources.handleWalRuntimeFailure(new RuntimeException("failure"));
+
+        assertEquals(SegmentIndexState.ERROR, resources.currentState());
+    }
+
+    @Test
+    void setExecutorRegistry_rejectsNull() {
         final SegmentIndexSessionResources<Integer, String> resources =
                 new SegmentIndexSessionResources<>();
 
         assertThrows(IllegalArgumentException.class,
-                () -> resources.setRuntime(null,
-                        mock(ExecutorRegistry.class)));
-    }
-
-    @Test
-    void closeRuntimeAfterFailedInitialization_isNoopWithoutRuntime() {
-        final SegmentIndexSessionResources<Integer, String> resources =
-                new SegmentIndexSessionResources<>();
-
-        assertDoesNotThrow(resources::closeRuntimeAfterFailedInitialization);
+                () -> resources.setExecutorRegistry(null));
     }
 
     @Test

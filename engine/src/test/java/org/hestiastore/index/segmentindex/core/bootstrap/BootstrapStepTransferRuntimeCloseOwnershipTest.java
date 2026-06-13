@@ -14,19 +14,14 @@ import static org.mockito.Mockito.when;
 import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningState;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistry;
-import org.hestiastore.index.segmentindex.core.maintenance.MaintenanceService;
-import org.hestiastore.index.segmentindex.core.operations.SegmentIndexOperationAccess;
-import org.hestiastore.index.segmentindex.core.session.SegmentIndexRuntimeServices;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionInfrastructure;
 import org.hestiastore.index.segmentindex.core.session.SegmentIndexSessionResources;
 import org.hestiastore.index.segmentindex.core.session.SegmentTopologyRuntimeAccess;
 import org.hestiastore.index.segmentindex.core.storage.CoreStorageRuntime;
 import org.hestiastore.index.segmentindex.core.storage.StorageService;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,11 +30,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class BootstrapStepCreateRuntimeTest {
+class BootstrapStepTransferRuntimeCloseOwnershipTest {
 
     private SegmentIndexSessionResources<Integer, String> sessionResources;
     private ExecutorRegistry executorRegistry;
-    private BootstrapStepCreateRuntime<Integer, String> step;
+    private BootstrapStepTransferRuntimeCloseOwnership<Integer, String> step;
     private SegmentIndexBootstrapState<Integer, String> state;
     private SegmentTopologyRuntimeAccess<Integer, String> topologyRuntime;
     private KeyToSegmentMap<Integer> keyToSegmentMap;
@@ -52,7 +47,8 @@ class BootstrapStepCreateRuntimeTest {
         sessionResources = new SegmentIndexSessionResources<>();
         sessionResources.setSessionInfrastructure(
                 SegmentIndexSessionInfrastructure.create());
-        step = new BootstrapStepCreateRuntime<>(sessionResources);
+        step = new BootstrapStepTransferRuntimeCloseOwnership<>(
+                sessionResources);
         topologyRuntime = mock(SegmentTopologyRuntimeAccess.class);
         keyToSegmentMap = mock(KeyToSegmentMap.class);
         segmentRegistry = mock(SegmentRegistry.class);
@@ -69,23 +65,24 @@ class BootstrapStepCreateRuntimeTest {
     @Test
     void constructor_rejectsNullSessionResources() {
         assertThrows(IllegalArgumentException.class,
-                () -> new BootstrapStepCreateRuntime<Integer, String>(null));
+                () -> new BootstrapStepTransferRuntimeCloseOwnership<Integer, String>(
+                        null));
     }
 
     @Test
-    void apply_createsRuntimeAndStoresItInSessionResources() {
-        prepareRuntimeState("bootstrap-step-runtime");
+    void apply_marksRuntimeCloseOwnershipTransferred() {
+        prepareRuntimeState("bootstrap-step-close-ownership");
 
         assertDoesNotThrow(() -> step.apply(
                 request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
                 state));
 
-        assertTrue(state.indexRuntimeWasCreated());
+        assertTrue(state.runtimeCloseOwnershipTransferred());
     }
 
     @Test
     void closeResource_closesRuntimeAfterFailedInitialization() {
-        prepareRuntimeState("bootstrap-step-runtime-rollback");
+        prepareRuntimeState("bootstrap-step-close-ownership-rollback");
         step.apply(request(new MemDirectory(), SegmentIndexBootstrapMode.CREATE),
                 state);
         when(keyToSegmentMap.wasClosed()).thenReturn(false);
@@ -99,7 +96,7 @@ class BootstrapStepCreateRuntimeTest {
     }
 
     @Test
-    void closeResource_isNoopBeforeRuntimeWasCreated() {
+    void closeResource_isNoopBeforeRuntimeCloseOwnershipTransfers() {
         assertDoesNotThrow(step::closeResource);
     }
 
@@ -113,12 +110,8 @@ class BootstrapStepCreateRuntimeTest {
         state.setChunkStoreCache(mock(ChunkStoreCache.class));
         state.setSegmentRegistry(segmentRegistry);
         state.setCoreStorageRuntime(new CoreStorageRuntime<>(
-                mock(RuntimeTuningState.class), storageService));
+                mock(RuntimeTuningState.class), storageService,
+                segmentRegistry, keyToSegmentMap));
         state.setRuntimeTopologyRuntime(topologyRuntime);
-        state.setRuntimeServices(new SegmentIndexRuntimeServices<>(
-                mock(SegmentIndexOperationAccess.class),
-                mock(MaintenanceService.class),
-                mock(IndexRuntimeMonitoring.class),
-                mock(RuntimeTuning.class)));
     }
 }

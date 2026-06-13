@@ -20,9 +20,10 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
+import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.core.SegmentIndexStateView;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,6 @@ class IndexWalCoordinatorTest {
     private WalRuntime<Integer, String> walRuntime;
 
     private AtomicLong lastAppliedWalLsn;
-    private AtomicInteger drainCalls;
     private AtomicInteger flushCalls;
     private AtomicReference<RuntimeException> handledFailure;
     private IndexWalCoordinator<Integer, String> coordinator;
@@ -45,7 +45,6 @@ class IndexWalCoordinatorTest {
     @BeforeEach
     void setUp() {
         lastAppliedWalLsn = new AtomicLong(0L);
-        drainCalls = new AtomicInteger(0);
         flushCalls = new AtomicInteger(0);
         handledFailure = new AtomicReference<>();
         coordinator = newCoordinator(() -> SegmentIndexState.READY);
@@ -73,7 +72,6 @@ class IndexWalCoordinatorTest {
         final long lsn = coordinator.appendPut(1, "v1");
 
         assertEquals(11L, lsn);
-        assertEquals(1, drainCalls.get());
         assertEquals(1, flushCalls.get());
         verify(walRuntime).onCheckpoint(9L);
         verify(walRuntime).appendPut(1, "v1");
@@ -135,20 +133,21 @@ class IndexWalCoordinatorTest {
                 buildConf(IndexWalConfiguration.EMPTY);
 
         assertThrows(IllegalArgumentException.class,
-                () -> IndexWalCoordinator.create(effective(disabledConf),
-                        walRuntime, new WalBackpressureRetryPolicy(1, 10),
-                        drainCalls::incrementAndGet,
-                        flushCalls::incrementAndGet,
-                        () -> SegmentIndexState.READY, handledFailure::set,
-                        lastAppliedWalLsn));
+                () -> IndexWalCoordinator.create(
+                        new WalRuntimeInitialization<>(effective(disabledConf),
+                                null, flushCalls::incrementAndGet,
+                                () -> SegmentIndexState.READY,
+                                handledFailure::set, lastAppliedWalLsn),
+                        new WalBackpressureRetryPolicy(1, 10)));
     }
 
     private IndexWalCoordinator<Integer, String> newCoordinator(
-            final java.util.function.Supplier<SegmentIndexState> stateSupplier) {
-        return IndexWalCoordinator.create(effective(buildConf()), walRuntime,
-                new WalBackpressureRetryPolicy(1, 10),
-                drainCalls::incrementAndGet, flushCalls::incrementAndGet,
-                stateSupplier, handledFailure::set, lastAppliedWalLsn);
+            final SegmentIndexStateView stateView) {
+        return IndexWalCoordinator.create(new WalRuntimeInitialization<>(
+                effective(buildConf()), walRuntime,
+                flushCalls::incrementAndGet, stateView,
+                handledFailure::set, lastAppliedWalLsn),
+                new WalBackpressureRetryPolicy(1, 10));
     }
 
     private IndexConfiguration<Integer, String> buildConf() {

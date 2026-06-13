@@ -27,7 +27,7 @@ final class BootstrapStepOpenKeyToSegmentMap<K, V>
 
     @Override
     void closeResource() {
-        if (state == null || state.indexRuntimeWasCreated()
+        if (state == null || state.runtimeCloseOwnershipTransferred()
                 || keyToSegmentMap == null || keyToSegmentMap.wasClosed()) {
             return;
         }

@@ -31,14 +31,16 @@ final class BootstrapStepCompleteStartup<K, V>
         final String indexName = state.getConfiguration().identity().name();
 
         LOGGER.debug("Opening index '{}'.", indexName);
-        sessionResources.recoverFromWal();
-        sessionResources.cleanupOrphanedSegmentDirectories();
+        state.getStorageService().recoverFromWal(
+                state.getRuntimeOperationAccess()::replayWalRecord);
+        state.getStorageService().cleanupOrphanedSegmentDirectories();
         sessionResources.markReady();
         if (sessionResources.wasStaleLockRecovered()) {
             LOGGER.info(STALE_LOCK_RECOVERY_MESSAGE);
-            sessionResources.runStartupConsistencyCheck();
+            state.getStorageService().runStartupConsistencyCheck();
+            state.getRuntimeTopologyRuntime().requestFullSplitScan();
         }
-        sessionResources.requestFullSplitScan();
+        state.getRuntimeTopologyRuntime().requestFullSplitScan();
         LOGGER.debug("Index '{}' opened.", indexName);
     }
 }

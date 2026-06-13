@@ -20,7 +20,7 @@ final class IndexCloseCoordinator<K, V> {
     private final SegmentIndexStateMachine stateMachine;
     private final SegmentIndexOperationGate operationGate;
     private final IndexOperationStatsRecorder operationStatsRecorder;
-    private final SegmentIndexRuntime<K, V> runtime;
+    private final IndexRuntimeCloseResources<K, V> closeResources;
     private final ExecutorRegistry executorRegistry;
     private final IndexDirectoryLock directoryLock;
 
@@ -28,7 +28,7 @@ final class IndexCloseCoordinator<K, V> {
             final SegmentIndexStateMachine stateMachine,
             final SegmentIndexOperationGate operationGate,
             final IndexOperationStatsRecorder operationStatsRecorder,
-            final SegmentIndexRuntime<K, V> runtime,
+            final IndexRuntimeCloseResources<K, V> closeResources,
             final ExecutorRegistry executorRegistry,
             final IndexDirectoryLock directoryLock) {
         this.indexName = Vldtn.requireNonNull(indexName, "indexName");
@@ -38,7 +38,8 @@ final class IndexCloseCoordinator<K, V> {
                 "operationGate");
         this.operationStatsRecorder = Vldtn.requireNonNull(
                 operationStatsRecorder, "operationStatsRecorder");
-        this.runtime = Vldtn.requireNonNull(runtime, "runtime");
+        this.closeResources = Vldtn.requireNonNull(closeResources,
+                "closeResources");
         this.executorRegistry = Vldtn.requireNonNull(executorRegistry,
                 "executorRegistry");
         this.directoryLock = Vldtn.requireNonNull(directoryLock,
@@ -66,8 +67,8 @@ final class IndexCloseCoordinator<K, V> {
         return operationGate;
     }
 
-    SegmentIndexRuntime<K, V> runtime() {
-        return runtime;
+    IndexRuntimeCloseResources<K, V> closeResources() {
+        return closeResources;
     }
 
     IndexOperationStatsRecorder operationStatsRecorder() {
