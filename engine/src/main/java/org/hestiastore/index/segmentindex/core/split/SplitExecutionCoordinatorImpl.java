@@ -17,6 +17,8 @@ import org.hestiastore.index.segmentindex.core.segmentlease.SegmentSplitLease;
 import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
 import org.hestiastore.index.segmentindex.mapping.SegmentRouteSplit;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of split scheduling and split-publish admission.
@@ -27,6 +29,8 @@ import org.hestiastore.index.segmentregistry.BlockingSegment;
 final class SplitExecutionCoordinatorImpl<K, V>
         implements SplitExecutionCoordinator<K, V> {
 
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(SplitExecutionCoordinatorImpl.class);
     private static final long SPLIT_RESCHEDULE_COOLDOWN_MILLIS = 500L;
     private static final long SPLIT_RESCHEDULE_COOLDOWN_NANOS = TimeUnit.MILLISECONDS
             .toNanos(SPLIT_RESCHEDULE_COOLDOWN_MILLIS);
@@ -240,9 +244,11 @@ final class SplitExecutionCoordinatorImpl<K, V>
             final long splitThreshold, final long observedKeyCount,
             final long startNanos) {
         boolean splitApplied = false;
+        RuntimeException failure = null;
         try {
             splitApplied = tryApplyPreparedSplit(segmentId, splitThreshold);
         } catch (final RuntimeException e) {
+            failure = e;
             splitFailure.compareAndSet(null, e);
             failureReporter.reportFailure(e);
         } finally {
@@ -251,6 +257,13 @@ final class SplitExecutionCoordinatorImpl<K, V>
         }
         final long durationNanos = Math.max(0L,
                 nanoTimeSupplier.getAsLong() - startNanos);
+        if (failure == null) {
+            logSplitFinished(segmentId, splitThreshold, observedKeyCount,
+                    splitApplied, durationNanos);
+        } else {
+            logSplitFailed(segmentId, splitThreshold, observedKeyCount,
+                    durationNanos, failure);
+        }
         observeSplitDuration(durationNanos);
         if (splitApplied) {
             splitAttemptStates.remove(segmentId);
@@ -282,10 +295,12 @@ final class SplitExecutionCoordinatorImpl<K, V>
         final Optional<SegmentSplitLease<K, V>> splitLease =
                 segmentLeaseService.tryAcquireForSplit(segmentId);
         if (splitLease.isEmpty()) {
+            logSplitSkippedBecauseDrainUnavailable(segmentId, splitThreshold);
             return false;
         }
         try (SegmentSplitLease<K, V> lease = splitLease.get()) {
             if (isClosedCandidate(lease.segment())) {
+                logSplitAbortedBecauseSegmentClosed(segmentId);
                 return false;
             }
             final SegmentRouteSplit<K> routeSplit = prepareSplit(
@@ -385,6 +400,49 @@ final class SplitExecutionCoordinatorImpl<K, V>
             return Long.MAX_VALUE;
         }
         return value * multiplier;
+    }
+
+    private void logSplitSkippedBecauseDrainUnavailable(
+            final SegmentId segmentId, final long splitThreshold) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                    "Route split skipped because route drain could not be acquired: segment='{}' threshold='{}'",
+                    segmentId, splitThreshold);
+        }
+    }
+
+    private void logSplitAbortedBecauseSegmentClosed(
+            final SegmentId segmentId) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                    "Route split aborted because parent segment was already closed after route drain: segment='{}'",
+                    segmentId);
+        }
+    }
+
+    private void logSplitFinished(final SegmentId segmentId,
+            final long splitThreshold, final long observedKeyCount,
+            final boolean splitApplied, final long durationNanos) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(
+                    "Route split finished: segment='{}' threshold='{}' observedKeyCount='{}' outcome='{}' durationMillis='{}'",
+                    segmentId, splitThreshold, observedKeyCount,
+                    splitApplied ? "published" : "not-published",
+                    nanosToMillis(durationNanos));
+        }
+    }
+
+    private void logSplitFailed(final SegmentId segmentId,
+            final long splitThreshold, final long observedKeyCount,
+            final long durationNanos, final RuntimeException failure) {
+        LOGGER.warn(
+                "Route split failed: segment='{}' threshold='{}' observedKeyCount='{}' durationMillis='{}'",
+                segmentId, splitThreshold, observedKeyCount,
+                nanosToMillis(durationNanos), failure);
+    }
+
+    private static long nanosToMillis(final long nanos) {
+        return TimeUnit.NANOSECONDS.toMillis(Math.max(0L, nanos));
     }
 
     private void markSplitStarted() {

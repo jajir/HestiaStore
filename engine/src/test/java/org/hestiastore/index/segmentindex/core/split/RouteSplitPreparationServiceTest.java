@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -71,9 +72,46 @@ class RouteSplitPreparationServiceTest {
         assertNull(prepared);
     }
 
+    @Test
+    void prepareReturnsMaterializedSplitWhenRecountFallsBelowThresholdButChildMinimumIsSatisfied() {
+        final SegmentRouteSplit<Integer> routeSplit = new SegmentRouteSplit<>(
+                SegmentId.of(1), SegmentId.of(2), SegmentId.of(3), 3, null);
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(entries(6)))
+                .thenReturn(iteratorResult(entries(6)));
+        when(materializationService.materializeRouteSplit(eq(parentSegment),
+                eq(3L), any())).thenReturn(routeSplit);
+
+        final SegmentRouteSplit<Integer> prepared = preparationService.prepare(
+                parentSegment, 10L);
+
+        assertNotNull(prepared);
+        verify(parentSegment, times(2))
+                .openIterator(SegmentIteratorIsolation.FULL_ISOLATION);
+        verify(materializationService).materializeRouteSplit(eq(parentSegment),
+                eq(3L), any());
+    }
+
+    @Test
+    void prepareReturnsNullWhenRecountFallsBelowThresholdAndChildMinimumIsNotSatisfied() {
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(entries(5)));
+
+        final SegmentRouteSplit<Integer> prepared = preparationService.prepare(
+                parentSegment, 10L);
+
+        assertNull(prepared);
+        verifyNoInteractions(materializationService);
+    }
+
     private static List<Entry<Integer, String>> entries() {
+        return entries(4);
+    }
+
+    private static List<Entry<Integer, String>> entries(final int count) {
         return List.of(Entry.of(1, "a"), Entry.of(2, "b"), Entry.of(3, "c"),
-                Entry.of(4, "d"));
+                Entry.of(4, "d"), Entry.of(5, "e"), Entry.of(6, "f"))
+                .subList(0, count);
     }
 
     private static OperationResult<EntryIterator<Integer, String>> iteratorResult(

@@ -104,6 +104,50 @@ class RouteSplitCoordinatorTest {
         verifyNoInteractions(materializationService);
     }
 
+    @Test
+    void tryPrepareSplitReturnsNullWhenVisibleRecountFallsBelowThreshold() {
+        when(parentHandle.getRuntime()).thenReturn(parentRuntime);
+        when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
+        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(4L);
+        when(parentHandle.getSegment()).thenReturn(parentSegment);
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(List.of(Entry.of(1, "a"),
+                        Entry.of(2, "b"), Entry.of(3, "c"))));
+
+        final SegmentRouteSplit<Integer> prepared = coordinator
+                .tryPrepareSplit(parentHandle, 4L);
+
+        assertNull(prepared);
+        verifyNoInteractions(materializationService);
+    }
+
+    @Test
+    void tryPrepareSplitContinuesWhenRecountFallsBelowThresholdButChildMinimumIsSatisfied() {
+        when(parentHandle.getRuntime()).thenReturn(parentRuntime);
+        when(parentHandle.getId()).thenReturn(PARENT_SEGMENT_ID);
+        when(parentRuntime.getNumberOfKeysInCache()).thenReturn(10L);
+        when(parentHandle.getSegment()).thenReturn(parentSegment);
+        when(parentSegment.openIterator(SegmentIteratorIsolation.FULL_ISOLATION))
+                .thenReturn(iteratorResult(List.of(Entry.of(1, "a"),
+                        Entry.of(2, "b"), Entry.of(3, "c"),
+                        Entry.of(4, "d"), Entry.of(5, "e"),
+                        Entry.of(6, "f"))))
+                .thenReturn(iteratorResult(List.of(Entry.of(1, "a"),
+                        Entry.of(2, "b"), Entry.of(3, "c"),
+                        Entry.of(4, "d"), Entry.of(5, "e"),
+                        Entry.of(6, "f"))));
+        when(materializationService.materializeRouteSplit(
+                eq(parentSegment), eq(3L), any()))
+                .thenReturn(splitPlan);
+
+        final SegmentRouteSplit<Integer> prepared = coordinator
+                .tryPrepareSplit(parentHandle, 10L);
+
+        assertNotNull(prepared);
+        verify(materializationService).materializeRouteSplit(
+                eq(parentSegment), eq(3L), any());
+    }
+
     private static List<Entry<Integer, String>> entries() {
         return List.of(Entry.of(1, "a"), Entry.of(2, "b"), Entry.of(3, "c"),
                 Entry.of(4, "d"));
