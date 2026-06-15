@@ -1,6 +1,7 @@
 package org.hestiastore.index.directory;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,5 +65,16 @@ class FsDirectoryTest {
 
         assertThrows(IndexException.class,
                 () -> directory.openSubDirectory("sub"));
+    }
+
+    @Test
+    void test_getFileNames_missing_directory_throwsIndexException() {
+        assertTrue(tempDir.delete());
+
+        final IndexException exception = assertThrows(IndexException.class,
+                () -> directory.getFileNames());
+
+        assertEquals(String.format("Unable to list directory '%s'.",
+                tempDir.getAbsolutePath()), exception.getMessage());
     }
 }

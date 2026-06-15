@@ -214,6 +214,10 @@ final class SegmentCompacter<K, V> {
         try (Stream<String> files = directory.getFileNames()) {
             files.filter(name -> name.startsWith(deltaPrefix))
                     .forEach(name -> deleteFile(directory, name));
+        } catch (final RuntimeException e) {
+            logger.warn(
+                    "Failed to list delta-cache files during compaction cleanup: segment='{}' cleanupVersion='{}' deltaPrefix='{}' directory='{}'",
+                    layout.getSegmentId(), version, deltaPrefix, directory, e);
         }
     }
 
