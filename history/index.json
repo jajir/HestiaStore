@@ -904,6 +904,12 @@
           "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-284/latest.json",
           "sha": "b73721861987383934aba1579f4747242c21c76f",
           "timestampUtc": "2026-06-14T06:37:07.493810+00:00"
+        },
+        "286": {
+          "channel": "pr-286",
+          "latestPointerPath": "history/segment-index-pr-smoke/pull-requests/pr-286/latest.json",
+          "sha": "af378b9d5c3a2f71cd46240553eb253bc998f6e7",
+          "timestampUtc": "2026-06-15T20:44:17.082983+00:00"
         }
       },
       "sha": "1912aeb3cdf5d5e5748b841b244c8640aad43d62",
