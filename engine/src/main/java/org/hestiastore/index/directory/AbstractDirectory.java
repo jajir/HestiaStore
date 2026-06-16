@@ -56,7 +56,13 @@ public abstract class AbstractDirectory implements Directory {
 
     @Override
     public Stream<String> getFileNames() {
-        return Arrays.stream(directory.list());
+        final String[] fileNames = directory.list();
+        if (fileNames == null) {
+            throw new IndexException(String.format(
+                    "Unable to list directory '%s'.",
+                    directory.getAbsolutePath()));
+        }
+        return Arrays.stream(fileNames);
     }
 
     @Override
