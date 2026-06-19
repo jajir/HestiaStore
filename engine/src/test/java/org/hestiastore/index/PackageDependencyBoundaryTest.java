@@ -24,13 +24,11 @@ class PackageDependencyBoundaryTest {
     private static final String SORTED_DATA_FILE_PACKAGE = "org.hestiastore.index.sorteddatafile";
     private static final String CACHE_PACKAGES = "org.hestiastore.index.cache..";
     private static final String[] CORE_FORBIDDEN_PACKAGES = {
-            "org.hestiastore.index.monitoring..",
             "org.hestiastore.index.management..",
             "org.hestiastore.monitoring..",
             "org.hestiastore.management..",
             "org.hestiastore.console.." };
     private static final String[] CORE_EXCLUDED_PACKAGES = {
-            "org.hestiastore.index.monitoring..",
             "org.hestiastore.index.management..",
             "org.hestiastore.console.." };
     private static final String[] SEGMENT_FORBIDDEN_PACKAGES = {

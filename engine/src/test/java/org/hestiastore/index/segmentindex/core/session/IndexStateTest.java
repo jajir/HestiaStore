@@ -10,14 +10,14 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Verifies that {@link SegmentIndexImpl} rejects operations after the index is
+ * Verifies that {@link SegmentIndexSession} rejects operations after the index is
  * closed, exercising the SegmentIndex lifecycle transitions.
  */
 class IndexStateTest {
@@ -44,7 +44,7 @@ class IndexStateTest {
 
     /**
      * Ensures that all public operations fail with an
-     * {@link IllegalStateException} once {@link SegmentIndexImpl#close()} has
+     * {@link IllegalStateException} once {@link SegmentIndexSession#close()} has
      * completed.
      */
     @Test

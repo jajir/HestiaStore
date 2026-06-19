@@ -32,21 +32,21 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import org.hestiastore.index.monitoring.MonitoredIndex;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
 import org.hestiastore.index.segment.SegmentState;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexBloomFilterMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexChunkStoreCacheMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexLatencyMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexMaintenanceMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexOperationMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexRegistryCacheMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentRuntimeMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSplitMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWalMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexWritePathMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexBloomFilterMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexChunkStoreCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexLatencyMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexMaintenanceMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexOperationMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRegistryCacheMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentRuntimeMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSplitMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWalMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexWritePathMetrics;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -693,7 +693,7 @@ public class ConsoleBackendClient {
             final String capturedAt, final long nowNanos) {
         final List<IndexRow> rows = new ArrayList<>();
         for (final RemoteMonitoredIndex monitoredIndex : monitoredIndexes) {
-            final IndexRuntimeSnapshot snapshot = monitoredIndex
+            final SegmentIndexRuntimeSnapshot snapshot = monitoredIndex
                     .runtimeSnapshot();
             final long totalOps = nonNegativeLong(
                     snapshot.operations().readOperationCount())
@@ -782,7 +782,7 @@ public class ConsoleBackendClient {
         return List.copyOf(parsed);
     }
 
-    private IndexRuntimeSnapshot parseRuntimeSnapshot(
+    private SegmentIndexRuntimeSnapshot parseRuntimeSnapshot(
             final JsonNode indexNode, final Instant capturedAt) {
         final JsonNode operations = indexNode.path("operations");
         final JsonNode registryCache = indexNode.path("registryCache");
@@ -798,7 +798,7 @@ public class ConsoleBackendClient {
                 "unknown-index");
         final SegmentIndexState state = parseState(
                 indexNode.path(FIELD_STATE).asText(DEFAULT_STATE));
-        return new IndexRuntimeSnapshot(
+        return new SegmentIndexRuntimeSnapshot(
                 indexName,
                 state,
                 capturedAt,
@@ -1470,7 +1470,7 @@ public class ConsoleBackendClient {
 
     private record RemoteMonitoredIndex(String indexName,
             SegmentIndexState state,
-            IndexRuntimeSnapshot runtimeSnapshot)
+            SegmentIndexRuntimeSnapshot runtimeSnapshot)
             implements MonitoredIndex {
     }
 

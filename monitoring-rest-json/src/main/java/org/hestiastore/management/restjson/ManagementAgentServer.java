@@ -32,14 +32,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.hestiastore.index.monitoring.MonitoredIndex;
-import org.hestiastore.index.monitoring.MonitoredIndexProvider;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndexProvider;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexExecutorMetrics;
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.SegmentIndexSegmentRuntimeMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexExecutorMetrics;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexSegmentRuntimeMetrics;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningField;
+import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningKey;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatchBuilder;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
@@ -98,22 +98,22 @@ public final class ManagementAgentServer
     private static final int MAX_AUDIT_RECORDS = 10_000;
     private static final int MAX_ACTION_REPLAYS = 10_000;
     private static final int MAX_REQUEST_BODY_BYTES = 1_048_576;
-    private static final Map<RuntimeTuningField, String> API_NAME_BY_RUNTIME_FIELD = Map
-            .of(RuntimeTuningField.SEGMENT_CACHED_SEGMENT_LIMIT,
+    private static final Map<RuntimeTuningKey, String> API_NAME_BY_RUNTIME_FIELD = Map
+            .of(RuntimeTuningKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                     "maxNumberOfSegmentsInCache",
-                    RuntimeTuningField.SEGMENT_CACHE_KEY_LIMIT,
+                    RuntimeTuningKey.MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                     "maxNumberOfKeysInSegmentCache",
-                    RuntimeTuningField.WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT,
+                    RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT,
                     "segmentWriteCacheKeyLimit",
-                    RuntimeTuningField.WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
+                    RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                     "segmentWriteCacheKeyLimitDuringMaintenance",
-                    RuntimeTuningField.WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT,
+                    RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
                     "indexBufferedWriteKeyLimit",
-                    RuntimeTuningField.WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD,
+                    RuntimeTuningKey.SEGMENT_SPLIT_KEY_THRESHOLD,
                     "segmentSplitKeyThreshold",
-                    RuntimeTuningField.CHUNK_STORE_CACHE_PAGE_LIMIT,
+                    RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT,
                     "chunkStoreCachePageLimit");
-    private static final Map<String, RuntimeTuningField> RUNTIME_FIELD_BY_API_NAME = buildRuntimeFieldByApiName();
+    private static final Map<String, RuntimeTuningKey> RUNTIME_FIELD_BY_API_NAME = buildRuntimeFieldByApiName();
     private static final List<String> SUPPORTED_RUNTIME_CONFIG_KEYS = API_NAME_BY_RUNTIME_FIELD
             .values().stream().sorted().toList();
 
@@ -880,7 +880,7 @@ public final class ManagementAgentServer
     }
 
     private IndexReportResponse toIndexReport(final RegisteredIndex monitored) {
-        final IndexRuntimeSnapshot snapshot = monitored
+        final SegmentIndexRuntimeSnapshot snapshot = monitored
                 .runtimeSnapshot();
         final SegmentIndexState state = snapshot.state();
         return new IndexReportResponse(monitored.indexName(), state.name(),
@@ -898,7 +898,7 @@ public final class ManagementAgentServer
     }
 
     private OperationReportResponse toOperations(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new OperationReportResponse(
                 snapshot.operations().readOperationCount(),
                 snapshot.operations().putOperationCount(),
@@ -906,7 +906,7 @@ public final class ManagementAgentServer
     }
 
     private RegistryCacheReportResponse toRegistryCache(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new RegistryCacheReportResponse(
                 snapshot.registryCache().hitCount(),
                 snapshot.registryCache().missCount(),
@@ -917,7 +917,7 @@ public final class ManagementAgentServer
     }
 
     private ChunkStoreCacheReportResponse toChunkStoreCache(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new ChunkStoreCacheReportResponse(
                 snapshot.chunkStoreCache().pageLimit(),
                 snapshot.chunkStoreCache().pageCount(),
@@ -930,7 +930,7 @@ public final class ManagementAgentServer
     }
 
     private SegmentReportResponse toSegments(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new SegmentReportResponse(
                 snapshot.segments().cacheKeyLimitPerSegment(),
                 snapshot.segments().count(),
@@ -946,7 +946,7 @@ public final class ManagementAgentServer
     }
 
     private WritePathReportResponse toWritePath(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new WritePathReportResponse(
                 snapshot.writePath().segmentWriteCacheKeyLimit(),
                 snapshot.writePath()
@@ -956,7 +956,7 @@ public final class ManagementAgentServer
     }
 
     private MaintenanceReportResponse toMaintenance(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new MaintenanceReportResponse(
                 snapshot.maintenance().compactRequestCount(),
                 snapshot.maintenance().flushRequestCount(),
@@ -969,7 +969,7 @@ public final class ManagementAgentServer
     }
 
     private SplitReportResponse toSplit(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new SplitReportResponse(
                 snapshot.split().scheduleCount(),
                 snapshot.split().inFlightCount(),
@@ -988,7 +988,7 @@ public final class ManagementAgentServer
     }
 
     private LatencyReportResponse toLatency(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new LatencyReportResponse(
                 snapshot.latency().readP50Micros(),
                 snapshot.latency().readP95Micros(),
@@ -999,7 +999,7 @@ public final class ManagementAgentServer
     }
 
     private BloomFilterReportResponse toBloomFilter(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new BloomFilterReportResponse(
                 snapshot.bloomFilter().hashFunctions(),
                 snapshot.bloomFilter().indexSizeInBytes(),
@@ -1011,7 +1011,7 @@ public final class ManagementAgentServer
     }
 
     private WalReportResponse toWal(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return new WalReportResponse(
                 snapshot.wal().enabled(),
                 snapshot.wal().appendCount(),
@@ -1036,7 +1036,7 @@ public final class ManagementAgentServer
     }
 
     private List<SegmentRuntimeReportResponse> toSegmentRuntimeSections(
-            final IndexRuntimeSnapshot snapshot) {
+            final SegmentIndexRuntimeSnapshot snapshot) {
         return snapshot.segments().runtimeMetrics().stream()
                 .map(this::toSegmentRuntimeSection).toList();
     }
@@ -1079,7 +1079,7 @@ public final class ManagementAgentServer
         for (final Map.Entry<String, String> entry : request.values()
                 .entrySet()) {
             final String key = entry.getKey();
-            final RuntimeTuningField runtimeField = RUNTIME_FIELD_BY_API_NAME
+            final RuntimeTuningKey runtimeField = RUNTIME_FIELD_BY_API_NAME
                     .get(key);
             if (runtimeField == null) {
                 throw new ConfigKeyNotSupportedException("Config key '" + key
@@ -1103,27 +1103,22 @@ public final class ManagementAgentServer
 
     private static void applyRuntimePatchValue(
             final RuntimeTuningPatchBuilder builder,
-            final RuntimeTuningField field, final int value) {
+            final RuntimeTuningKey field, final int value) {
         switch (field) {
-            case SEGMENT_CACHED_SEGMENT_LIMIT -> builder
-                    .segment(segment -> segment.cachedSegmentLimit(value));
-            case SEGMENT_CACHE_KEY_LIMIT -> builder
-                    .segment(segment -> segment.cacheKeyLimit(value));
-            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT -> builder
-                    .writePath(writePath -> writePath
-                            .segmentWriteCacheKeyLimit(value));
-            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> builder
-                    .writePath(writePath -> writePath
-                            .segmentWriteCacheKeyLimitDuringMaintenance(
-                                    value));
-            case WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT -> builder
-                    .writePath(writePath -> writePath
-                            .indexBufferedWriteKeyLimit(value));
-            case WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD -> builder
-                    .writePath(writePath -> writePath
-                            .segmentSplitKeyThreshold(value));
+            case MAX_NUMBER_OF_SEGMENTS_IN_CACHE -> builder
+                    .cachedSegmentLimit(value);
+            case MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE -> builder
+                    .cacheKeyLimit(value);
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT -> builder
+                    .segmentWriteCacheKeyLimit(value);
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> builder
+                    .segmentWriteCacheKeyLimitDuringMaintenance(value);
+            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> builder
+                    .indexBufferedWriteKeyLimit(value);
+            case SEGMENT_SPLIT_KEY_THRESHOLD -> builder
+                    .segmentSplitKeyThreshold(value);
             case CHUNK_STORE_CACHE_PAGE_LIMIT -> builder
-                    .chunkStoreCache(cache -> cache.pageLimit(value));
+                    .chunkStoreCachePageLimit(value);
         }
     }
 
@@ -1178,7 +1173,7 @@ public final class ManagementAgentServer
     private static Map<String, Integer> toApiConfigMap(
             final RuntimeTuningSnapshot runtimeValues) {
         final LinkedHashMap<String, Integer> values = new LinkedHashMap<>();
-        for (final Map.Entry<RuntimeTuningField, String> entry : API_NAME_BY_RUNTIME_FIELD
+        for (final Map.Entry<RuntimeTuningKey, String> entry : API_NAME_BY_RUNTIME_FIELD
                 .entrySet()) {
             values.put(entry.getValue(),
                     Integer.valueOf(value(runtimeValues, entry.getKey())));
@@ -1187,20 +1182,20 @@ public final class ManagementAgentServer
     }
 
     private static int value(final RuntimeTuningSnapshot snapshot,
-            final RuntimeTuningField field) {
+            final RuntimeTuningKey field) {
         return switch (field) {
-            case SEGMENT_CACHED_SEGMENT_LIMIT -> snapshot.segment()
+            case MAX_NUMBER_OF_SEGMENTS_IN_CACHE -> snapshot.segment()
                     .cachedSegmentLimit();
-            case SEGMENT_CACHE_KEY_LIMIT -> snapshot.segment()
+            case MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE -> snapshot.segment()
                     .cacheKeyLimit();
-            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT -> snapshot
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT -> snapshot
                     .writePath().segmentWriteCacheKeyLimit();
-            case WRITE_PATH_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> snapshot
+            case SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE -> snapshot
                     .writePath()
                     .segmentWriteCacheKeyLimitDuringMaintenance();
-            case WRITE_PATH_INDEX_BUFFERED_WRITE_KEY_LIMIT -> snapshot
+            case INDEX_BUFFERED_WRITE_KEY_LIMIT -> snapshot
                     .writePath().indexBufferedWriteKeyLimit();
-            case WRITE_PATH_SEGMENT_SPLIT_KEY_THRESHOLD -> snapshot.writePath()
+            case SEGMENT_SPLIT_KEY_THRESHOLD -> snapshot.writePath()
                     .segmentSplitKeyThreshold();
             case CHUNK_STORE_CACHE_PAGE_LIMIT -> snapshot.chunkStoreCache()
                     .pageLimit();
@@ -1396,10 +1391,10 @@ public final class ManagementAgentServer
         }
     }
 
-    private static Map<String, RuntimeTuningField> buildRuntimeFieldByApiName() {
-        final LinkedHashMap<String, RuntimeTuningField> values =
+    private static Map<String, RuntimeTuningKey> buildRuntimeFieldByApiName() {
+        final LinkedHashMap<String, RuntimeTuningKey> values =
                 new LinkedHashMap<>();
-        for (final Map.Entry<RuntimeTuningField, String> entry : API_NAME_BY_RUNTIME_FIELD
+        for (final Map.Entry<RuntimeTuningKey, String> entry : API_NAME_BY_RUNTIME_FIELD
                 .entrySet()) {
             values.put(entry.getValue(), entry.getKey());
         }
@@ -1477,7 +1472,7 @@ public final class ManagementAgentServer
         }
 
         @Override
-        public IndexRuntimeSnapshot runtimeSnapshot() {
+        public SegmentIndexRuntimeSnapshot runtimeSnapshot() {
             return index.runtimeMonitoring().snapshot();
         }
     }

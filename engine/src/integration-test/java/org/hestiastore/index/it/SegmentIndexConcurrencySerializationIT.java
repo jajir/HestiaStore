@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.hestiastore.index.datatype.TypeDescriptorString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 
@@ -104,7 +104,7 @@ class SegmentIndexConcurrencySerializationIT {
 
     private static IndexConfiguration<String, String> readLockConf(
             final String name) {
-        final IndexConfigurationContract defaults = new IndexConfigurationContract() {
+        final IndexConfigurationDefaults defaults = new IndexConfigurationDefaults() {
         };
         return IndexConfiguration.<String, String>builder()//
                 .identity(identity -> identity.keyClass(String.class)

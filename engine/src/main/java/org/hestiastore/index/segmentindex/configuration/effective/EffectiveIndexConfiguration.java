@@ -1,6 +1,7 @@
 package org.hestiastore.index.segmentindex.configuration.effective;
 
 import org.hestiastore.index.Vldtn;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 
 /**
  * Fully resolved, validated index configuration used for persistence and
@@ -19,7 +20,7 @@ public final class EffectiveIndexConfiguration<K, V> {
     private final EffectiveIndexMaintenanceConfiguration maintenance;
     private final EffectiveIndexIoConfiguration io;
     private final EffectiveIndexLoggingConfiguration logging;
-    private final EffectiveIndexWalConfiguration wal;
+    private final IndexWalConfiguration wal;
     private final EffectiveIndexFilterConfiguration filters;
     private final EffectiveIndexChunkStoreCacheConfiguration chunkStoreCache;
 
@@ -31,7 +32,7 @@ public final class EffectiveIndexConfiguration<K, V> {
             final EffectiveIndexMaintenanceConfiguration maintenance,
             final EffectiveIndexIoConfiguration io,
             final EffectiveIndexLoggingConfiguration logging,
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final EffectiveIndexFilterConfiguration filters) {
         this(identity, segment, writePath, bloomFilter, maintenance, io,
                 logging, wal, filters,
@@ -46,7 +47,7 @@ public final class EffectiveIndexConfiguration<K, V> {
             final EffectiveIndexMaintenanceConfiguration maintenance,
             final EffectiveIndexIoConfiguration io,
             final EffectiveIndexLoggingConfiguration logging,
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final EffectiveIndexFilterConfiguration filters,
             final EffectiveIndexChunkStoreCacheConfiguration chunkStoreCache) {
         this.identity = Vldtn.requireNonNull(identity, "identity");
@@ -62,7 +63,7 @@ public final class EffectiveIndexConfiguration<K, V> {
         this.maintenance = Vldtn.requireNonNull(maintenance, "maintenance");
         this.io = Vldtn.requireNonNull(io, "io");
         this.logging = Vldtn.requireNonNull(logging, "logging");
-        this.wal = EffectiveIndexWalConfiguration.orEmpty(wal);
+        this.wal = IndexWalConfiguration.orEmpty(wal);
         this.filters = Vldtn.requireNonNull(filters, "filters");
         Vldtn.requireTrue(this.segment.maxKeys() >= 4,
                 "MaxNumberOfKeysInSegment must be greater or equal to 4");
@@ -102,7 +103,7 @@ public final class EffectiveIndexConfiguration<K, V> {
         return logging;
     }
 
-    public EffectiveIndexWalConfiguration wal() {
+    public IndexWalConfiguration wal() {
         return wal;
     }
 
@@ -118,7 +119,7 @@ public final class EffectiveIndexConfiguration<K, V> {
         return chunkStoreCache;
     }
 
-    private static void validateWal(final EffectiveIndexWalConfiguration wal) {
+    private static void validateWal(final IndexWalConfiguration wal) {
         if (!wal.isEnabled()) {
             return;
         }

@@ -45,7 +45,7 @@ There are three separate responsibilities:
 3. `configuration.persistence`
 
    Persistence code lives here. `IndexConfigurationManager` coordinates create
-   and open resolution. `IndexConfigurationStorage` stores the effective
+   and open resolution. `IndexConfigurationStore` stores the effective
    configuration in `manifest.txt` through `IndexPropertiesSchema`.
 
 Runtime and storage code should consume `EffectiveIndexConfiguration`, not
@@ -56,8 +56,8 @@ Runtime and storage code should consume `EffectiveIndexConfiguration`, not
 On create, `EffectiveIndexConfigurationResolver.resolveForCreate(...)`:
 
 1. requires key class, value class, and index name
-2. chooses defaults from `IndexConfigurationRegistry` or
-   `IndexConfigurationContract`
+2. chooses defaults from `IndexConfigurationDefaultsRegistry` or
+   `IndexConfigurationDefaults`
 3. resolves key and value type descriptor names
 4. computes derived segment and write-path values
 5. resolves Bloom filter, maintenance, I/O, logging, WAL, filters, and
@@ -124,7 +124,7 @@ cache.
 Uses maintenance timing values with the route map, segment registry, and type
 descriptors to create the storage service. `SegmentIndexBootstrapOperation`
 also creates `RuntimeTuningState` from the effective configuration and stores
-it in `CoreStorageRuntime`.
+it in `OpenedStorageRuntime`.
 
 `segmentregistry`:
 Uses the effective configuration, type descriptors, executors, and chunk page
@@ -144,7 +144,7 @@ active WAL coordinator. Active coordination also reads WAL retention limits.
 `configuration.tuning`:
 Uses `runtimeTuning` to seed runtime tuning state. Tuning changes are applied to
 registry cache limits, loaded segments, and the chunk-store cache limit, then
-persisted back through `IndexConfigurationStorage`.
+persisted back through `IndexConfigurationStore`.
 
 `metrics` and `runtimemonitoring`:
 Include effective configuration in runtime metrics and monitoring snapshots.
@@ -157,7 +157,7 @@ When adding or changing configuration:
 2. Add or update the resolved section in `configuration.effective`.
 3. Define create defaults and open merge rules in
    `EffectiveIndexConfigurationResolver`.
-4. Persist stable values through `IndexConfigurationStorage` and
+4. Persist stable values through `IndexConfigurationStore` and
    `IndexPropertiesSchema`.
 5. Apply the effective value in the runtime package that owns the behavior.
 6. Keep execution packages dependent on effective values, not nullable user

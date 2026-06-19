@@ -9,15 +9,15 @@ import org.hestiastore.index.Vldtn;
  */
 public final class RuntimeTuningPatch {
 
-    private final Map<RuntimeSettingKey, RuntimeTuningValue> values;
+    private final Map<RuntimeTuningKey, RuntimeTuningValue> values;
     private final Long expectedRevision;
 
     RuntimeTuningPatch(
-            final Map<RuntimeSettingKey, RuntimeTuningValue> values,
+            final Map<RuntimeTuningKey, RuntimeTuningValue> values,
             final Long expectedRevision) {
-        final Map<RuntimeSettingKey, RuntimeTuningValue> input =
+        final Map<RuntimeTuningKey, RuntimeTuningValue> input =
                 Vldtn.requireNotEmptyMap(values, "values");
-        for (final Map.Entry<RuntimeSettingKey, RuntimeTuningValue> entry : input
+        for (final Map.Entry<RuntimeTuningKey, RuntimeTuningValue> entry : input
                 .entrySet()) {
             Vldtn.requireNonNull(entry.getKey(), "key");
             Vldtn.requireNonNull(entry.getValue(), "value");
@@ -39,7 +39,7 @@ public final class RuntimeTuningPatch {
         return new RuntimeTuningPatchBuilder();
     }
 
-    Map<RuntimeSettingKey, RuntimeTuningValue> values() {
+    Map<RuntimeTuningKey, RuntimeTuningValue> values() {
         return values;
     }
 

@@ -30,7 +30,7 @@ class SegmentWindowTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> SegmentWindow.of(-43, 17));
 
-        assertEquals("offset must be ≥ 0 (was -43)", e.getMessage());
+        assertEquals("offset must be >= 0 (was -43)", e.getMessage());
     }
 
     @Test
@@ -38,7 +38,7 @@ class SegmentWindowTest {
         final Exception e = assertThrows(IllegalArgumentException.class,
                 () -> SegmentWindow.of(43, -17));
 
-        assertEquals("limit must be ≥ 0 (was -17)", e.getMessage());
+        assertEquals("limit must be >= 0 (was -17)", e.getMessage());
     }
 
 }

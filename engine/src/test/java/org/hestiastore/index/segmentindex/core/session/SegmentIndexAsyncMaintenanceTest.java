@@ -33,9 +33,9 @@ import org.hestiastore.index.segment.SegmentRuntimeSnapshot;
 import org.hestiastore.index.segment.SegmentState;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentIndexState;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,17 +84,19 @@ class SegmentIndexAsyncMaintenanceTest {
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
             final Segment<Integer, String> mockedSegment = mockBlockingSegment(
-                    started, stateRef, true);
+                    segmentId, started, stateRef, true);
             replaceSegment(registry, segmentId, mockedSegment);
-
-            final Future<?> flushTask = executor
-                    .submit(() -> index.maintenance().flushAndWait());
-            assertTrue(started.await(1, TimeUnit.SECONDS));
-            assertFalse(flushTask.isDone());
-            assertNotNull(stateRef.get());
-            stateRef.set(SegmentState.READY);
-            flushTask.get(1, TimeUnit.SECONDS);
-            replaceSegment(registry, segmentId, originalSegment);
+            try {
+                final Future<?> flushTask = executor
+                        .submit(() -> index.maintenance().flushAndWait());
+                assertTrue(started.await(1, TimeUnit.SECONDS));
+                assertFalse(flushTask.isDone());
+                assertNotNull(stateRef.get());
+                stateRef.set(SegmentState.READY);
+                flushTask.get(1, TimeUnit.SECONDS);
+            } finally {
+                replaceSegment(registry, segmentId, originalSegment);
+            }
         } finally {
             executor.shutdownNow();
             index.close();
@@ -118,17 +120,19 @@ class SegmentIndexAsyncMaintenanceTest {
             final AtomicReference<SegmentState> stateRef = new AtomicReference<>(
                     SegmentState.READY);
             final Segment<Integer, String> mockedSegment = mockBlockingSegment(
-                    started, stateRef, false);
+                    segmentId, started, stateRef, false);
             replaceSegment(registry, segmentId, mockedSegment);
-
-            final Future<?> compactTask = executor
-                    .submit(() -> index.maintenance().compactAndWait());
-            assertTrue(started.await(1, TimeUnit.SECONDS));
-            assertFalse(compactTask.isDone());
-            assertNotNull(stateRef.get());
-            stateRef.set(SegmentState.READY);
-            compactTask.get(1, TimeUnit.SECONDS);
-            replaceSegment(registry, segmentId, originalSegment);
+            try {
+                final Future<?> compactTask = executor
+                        .submit(() -> index.maintenance().compactAndWait());
+                assertTrue(started.await(1, TimeUnit.SECONDS));
+                assertFalse(compactTask.isDone());
+                assertNotNull(stateRef.get());
+                stateRef.set(SegmentState.READY);
+                compactTask.get(1, TimeUnit.SECONDS);
+            } finally {
+                replaceSegment(registry, segmentId, originalSegment);
+            }
         } finally {
             executor.shutdownNow();
             index.close();
@@ -270,9 +274,11 @@ class SegmentIndexAsyncMaintenanceTest {
     }
 
     private Segment<Integer, String> mockBlockingSegment(
+            final SegmentId segmentId,
             final CountDownLatch started,
             final AtomicReference<SegmentState> stateRef,
             final boolean forFlush) {
+        lenient().when(blockingSegment.getId()).thenReturn(segmentId);
         when(blockingSegment.getState()).thenAnswer(
                 invocation -> stateRef.get());
         lenient().when(blockingSegment.flush()).thenAnswer(invocation -> {
@@ -382,7 +388,7 @@ class SegmentIndexAsyncMaintenanceTest {
                 .segmentRegistry(index);
     }
 
-    private static <K, V> KeyToSegmentMap<K> readKeyToSegmentMap(
+    private static <K, V> SegmentRouteMap<K> readKeyToSegmentMap(
             final Object index) {
         return SegmentIndexTestAccess.keyToSegmentMap(index);
     }
@@ -421,12 +427,15 @@ class SegmentIndexAsyncMaintenanceTest {
             final Field valueField = entryClass.getDeclaredField("value");
             valueField.setAccessible(true);
             valueField.set(entry, segment);
-            map.put(segmentId, entry);
-            final Field sizeField = cache.getClass().getDeclaredField("size");
-            sizeField.setAccessible(true);
-            final java.util.concurrent.atomic.AtomicInteger size = (java.util.concurrent.atomic.AtomicInteger) sizeField
-                    .get(cache);
-            size.incrementAndGet();
+            if (map.put(segmentId, entry) == null) {
+                final Field sizeField = cache.getClass().getDeclaredField(
+                        "size");
+                sizeField.setAccessible(true);
+                final java.util.concurrent.atomic.AtomicInteger size =
+                        (java.util.concurrent.atomic.AtomicInteger) sizeField
+                                .get(cache);
+                size.incrementAndGet();
+            }
         } catch (final ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to update registry cache for test", ex);

@@ -91,7 +91,7 @@ on the [Benchmarks](why-hestiastore/benchmarks.md) page.
 ```java
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 
 Directory directory = new MemDirectory();

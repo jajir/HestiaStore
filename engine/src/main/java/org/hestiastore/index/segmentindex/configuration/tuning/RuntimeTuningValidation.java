@@ -12,14 +12,14 @@ public final class RuntimeTuningValidation {
 
     private final boolean valid;
     private final List<RuntimeTuningValidationIssue> issues;
-    private final Map<RuntimeSettingKey, RuntimeTuningValue> normalizedValues;
+    private final Map<RuntimeTuningKey, RuntimeTuningValue> normalizedValues;
 
     RuntimeTuningValidation(final boolean valid,
             final List<RuntimeTuningValidationIssue> issues,
-            final Map<RuntimeSettingKey, RuntimeTuningValue> normalizedValues) {
+            final Map<RuntimeTuningKey, RuntimeTuningValue> normalizedValues) {
         final List<RuntimeTuningValidationIssue> issueList =
                 Vldtn.requireNonNull(issues, "issues");
-        final Map<RuntimeSettingKey, RuntimeTuningValue> values = Vldtn
+        final Map<RuntimeTuningKey, RuntimeTuningValue> values = Vldtn
                 .requireNonNull(normalizedValues, "normalizedValues");
         Vldtn.requireTrue(!valid || issueList.isEmpty(),
                 "valid=true requires empty issues");
@@ -38,7 +38,7 @@ public final class RuntimeTuningValidation {
         return issues;
     }
 
-    Map<RuntimeSettingKey, RuntimeTuningValue> normalizedValues() {
+    Map<RuntimeTuningKey, RuntimeTuningValue> normalizedValues() {
         return normalizedValues;
     }
 }

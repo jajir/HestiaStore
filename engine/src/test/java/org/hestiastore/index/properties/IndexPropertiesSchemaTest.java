@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,10 +88,10 @@ class IndexPropertiesSchemaTest {
                 IndexPropertiesSchema.CURRENT_INDEX_CONFIGURATION_SCHEMA_VERSION,
                 view.getInt(IndexPropertiesSchema.SCHEMA_VERSION_KEY));
         assertEquals(
-                IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT,
+                IndexConfigurationDefaults.DEFAULT_SEGMENT_CACHE_KEY_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE));
-        final int expectedSegmentWriteCacheKeyLimit = IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT
+        final int expectedSegmentWriteCacheKeyLimit = IndexConfigurationDefaults.DEFAULT_SEGMENT_CACHE_KEY_LIMIT
                 / 2;
         final int expectedMaintenanceLimit = Math.max(
                 expectedSegmentWriteCacheKeyLimit * 2,
@@ -101,14 +101,14 @@ class IndexPropertiesSchemaTest {
         assertEquals(expectedMaintenanceLimit, view.getInt(
                 IndexPropertiesSchema.IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE));
         assertEquals(expectedMaintenanceLimit
-                * IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT,
+                * IndexConfigurationDefaults.DEFAULT_CACHED_SEGMENT_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_BUFFERED_WRITE_KEY_LIMIT));
-        assertEquals(IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT,
+        assertEquals(IndexConfigurationDefaults.DEFAULT_DELTA_CACHE_FILE_LIMIT,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES));
         assertEquals(
-                IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
+                IndexConfigurationDefaults.DEFAULT_REGISTRY_LIFECYCLE_THREADS,
                 view.getInt(
                         IndexPropertiesSchema.IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS));
         assertEquals("", view.getString(

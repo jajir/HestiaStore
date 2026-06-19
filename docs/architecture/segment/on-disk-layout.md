@@ -37,7 +37,7 @@ Notes:
 - Delta/overlay: `vNN-delta-NNNN.cache`
 - Key→segment map: `index.map`
 
-Code: `segment/SegmentFiles.java`, `segmentindex/mapping/KeyToSegmentMap.java`.
+Code: `segment/SegmentFiles.java`, `segmentindex/routemap/SegmentRouteMap.java`.
 
 ## Atomic Commit Pattern (`*.tmp` + rename)
 

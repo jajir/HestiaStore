@@ -65,7 +65,7 @@ nav:
             - Caching Strategy: architecture/segmentindex/caching.md
             - Cache LRU: architecture/segmentindex/cache-lru.md
             - Performance Model & Sizing: architecture/segmentindex/performance.md
-            - Metrics Snapshot: architecture/segmentindex/metrics-snapshot.md
+            - Metrics RouteMapSnapshot: architecture/segmentindex/metrics-snapshot.md
             - Segment Index Concurrency: architecture/segmentindex/segment-index-concurrency.md
         - Segment:
             - Overview: architecture/segment/index.md

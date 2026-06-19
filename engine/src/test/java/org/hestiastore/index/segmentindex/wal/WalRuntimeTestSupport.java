@@ -9,8 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 
 final class WalRuntimeTestSupport {
 
@@ -21,29 +20,29 @@ final class WalRuntimeTestSupport {
             final IndexWalConfiguration wal, final WalStorage storage,
             final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
-        final EffectiveIndexWalConfiguration resolvedWal =
+        final IndexWalConfiguration resolvedWal =
                 requireEnabledWal(effective(wal));
         return createRuntime(resolvedWal,
                 Vldtn.requireNonNull(storage, "storage"), keyDescriptor,
                 valueDescriptor);
     }
 
-    static EffectiveIndexWalConfiguration effective(
+    static IndexWalConfiguration effective(
             final IndexWalConfiguration wal) {
-        return EffectiveIndexWalConfiguration.fromIndexWalConfiguration(wal);
+        return IndexWalConfiguration.orEmpty(wal);
     }
 
-    private static EffectiveIndexWalConfiguration requireEnabledWal(
-            final EffectiveIndexWalConfiguration wal) {
-        final EffectiveIndexWalConfiguration resolvedWal =
-                EffectiveIndexWalConfiguration.orEmpty(wal);
+    private static IndexWalConfiguration requireEnabledWal(
+            final IndexWalConfiguration wal) {
+        final IndexWalConfiguration resolvedWal =
+                IndexWalConfiguration.orEmpty(wal);
         Vldtn.requireTrue(resolvedWal.isEnabled(),
                 "WAL configuration must be enabled to create WalRuntime.");
         return resolvedWal;
     }
 
     private static <K, V> WalRuntime<K, V> createRuntime(
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
         final Object monitor = new Object();
@@ -61,7 +60,7 @@ final class WalRuntimeTestSupport {
         final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
                 storage, metadataCatalog);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
-                metrics, monitor, segmentCatalog::segments, closed::get);
+                metrics, monitor, segmentCatalog, closed);
         final WalWriter<K, V> writer = new WalWriter<>(wal, storage,
                 recordCodec, segmentCatalog, metrics, syncPolicy);
         final WalRecoveryManager<K, V> recoveryManager =
@@ -75,7 +74,7 @@ final class WalRuntimeTestSupport {
     }
 
     private static ScheduledExecutorService newGroupSyncExecutor(
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final WalSyncPolicy syncPolicy) {
         if (!wal.isGroupSyncDurabilityMode()
                 || wal.getGroupSyncDelayMillis() <= 0) {

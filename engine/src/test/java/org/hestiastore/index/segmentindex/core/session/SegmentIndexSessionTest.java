@@ -22,12 +22,13 @@ import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuning;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
 import org.hestiastore.index.segmentindex.core.executorregistry.ExecutorRegistryFixture;
-import org.hestiastore.index.segmentindex.core.operations.IndexOperationCoordinator;
-import org.hestiastore.index.segmentindex.maintenance.SegmentIndexMaintenance;
-import org.hestiastore.index.segmentindex.runtimemonitoring.IndexRuntimeMonitoring;
+import org.hestiastore.index.segmentindex.core.execution.PointOperationCoordinator;
+import org.hestiastore.index.segmentindex.core.execution.SegmentIteratorService;
+import org.hestiastore.index.segmentindex.SegmentIndexMaintenance;
+import org.hestiastore.index.segmentindex.monitoring.SegmentIndexRuntimeMonitoring;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -206,7 +207,7 @@ class SegmentIndexSessionTest {
     }
 
     private static final class RecordingIndex
-            extends SegmentIndexImpl<Integer, String> {
+            extends SegmentIndexSession<Integer, String> {
 
         private final EntryIterator<Integer, String> iterator;
         private SegmentIteratorIsolation lastIsolation;
@@ -218,11 +219,10 @@ class SegmentIndexSessionTest {
         private RecordingIndex(final EntryIterator<Integer, String> iterator,
                 final SegmentIndexStateMachine stateMachine) {
             super(new TypeDescriptorInteger(),
-                    new SegmentIndexTrackedOperationRunner(stateMachine,
-                            SegmentIndexOperationGate.create()),
-                    mockOperationAccess(), mockTopologyRuntime(),
+                    SessionOperationGate.create(),
+                    mockOperationAccess(), mockStreamingService(),
                     recordingConfiguration(), mock(RuntimeTuning.class),
-                    mock(IndexRuntimeMonitoring.class),
+                    mock(SegmentIndexRuntimeMonitoring.class),
                     mock(SegmentIndexMaintenance.class),
                     stateMachine, mockCloseCoordinator());
             this.iterator = iterator;
@@ -284,15 +284,15 @@ class SegmentIndexSessionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static IndexOperationCoordinator<Integer, String>
+    private static PointOperationCoordinator<Integer, String>
             mockOperationAccess() {
-        return mock(IndexOperationCoordinator.class);
+        return mock(PointOperationCoordinator.class);
     }
 
     @SuppressWarnings("unchecked")
-    private static SegmentTopologyRuntimeAccess<Integer, String>
-            mockTopologyRuntime() {
-        return mock(SegmentTopologyRuntimeAccess.class);
+    private static SegmentIteratorService<Integer, String>
+            mockStreamingService() {
+        return mock(SegmentIteratorService.class);
     }
 
     private static EffectiveIndexConfiguration<Integer, String>
@@ -330,8 +330,8 @@ class SegmentIndexSessionTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static IndexCloseCoordinator<Integer, String> mockCloseCoordinator() {
-        return mock(IndexCloseCoordinator.class);
+    private static SessionCloseCoordinator<Integer, String> mockCloseCoordinator() {
+        return mock(SessionCloseCoordinator.class);
     }
 
     private static SegmentIndexStateMachine newReadyStateMachine() {

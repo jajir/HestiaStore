@@ -7,11 +7,11 @@ import org.hestiastore.index.Vldtn;
  */
 public final class RuntimeTuningChange {
 
-    private final RuntimeTuningField field;
+    private final RuntimeTuningKey field;
     private final RuntimeTuningValue before;
     private final RuntimeTuningValue after;
 
-    public RuntimeTuningChange(final RuntimeTuningField field,
+    public RuntimeTuningChange(final RuntimeTuningKey field,
             final RuntimeTuningValue before, final RuntimeTuningValue after) {
         this.field = Vldtn.requireNonNull(field, "field");
         this.before = Vldtn.requireNonNull(before, "before");
@@ -20,7 +20,7 @@ public final class RuntimeTuningChange {
                 "before and after must differ");
     }
 
-    public RuntimeTuningField field() {
+    public RuntimeTuningKey field() {
         return field;
     }
 

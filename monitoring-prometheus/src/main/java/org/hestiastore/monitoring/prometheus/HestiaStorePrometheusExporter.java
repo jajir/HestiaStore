@@ -1,6 +1,6 @@
 package org.hestiastore.monitoring.prometheus;
 
-import org.hestiastore.index.monitoring.MonitoredIndex;
+import org.hestiastore.index.segmentindex.monitoring.MonitoredIndex;
 import org.hestiastore.monitoring.micrometer.HestiaStoreMicrometerBinder;
 
 import io.micrometer.prometheusmetrics.PrometheusConfig;

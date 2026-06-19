@@ -43,7 +43,7 @@ the SegmentIndex integration level.
   - Classes: `scarceindex/ScarceIndex`, `ScarceIndexSnapshot`
 
 - Key→segment map: max-key to SegmentId mapping
-  - Class: `segmentindex/mapping/KeyToSegmentMap` (TreeMap, persisted to
+  - Class: `segmentindex/routemap/SegmentRouteMap` (TreeMap, persisted to
     `index.map`)
 
 ## Write‑Time Caches
@@ -57,7 +57,8 @@ the SegmentIndex integration level.
   later merges them into the main SST.
 
 Code:
-`segmentindex/core/streaming/DirectSegmentCoordinator`,
+`segmentindex/core/execution/PointOperationCoordinator`,
+`segmentindex/core/routing/MappedSegmentLeaseService`,
 `segment/SegmentWritePath`,
 `segment/SegmentMaintenanceService`.
 
@@ -92,7 +93,8 @@ Code:
   - providers: `segment/SegmentDataProvider` implementations
 
 Code:
-`segmentindex/core/streaming/DirectSegmentCoordinator`,
+`segmentindex/core/execution/PointOperationCoordinator`,
+`segmentindex/core/routing/MappedSegmentLeaseService`,
 `segment/SegmentImpl#get`,
 `segment/SegmentSearcher`,
 `segment/SegmentCache`,
@@ -106,7 +108,7 @@ Code:
   `SegmentDeltaCacheController.clear()`; rebuilt on demand from delta files.
 - Segment write cache: frozen snapshots are flushed to delta cache files and
   then retired by segment maintenance.
-- KeyToSegmentMap: persisted via `flushIfDirty()` when updated; survives
+- SegmentRouteMap: persisted via `flushIfDirty()` when updated; survives
   process restarts by reading `index.map`.
 
 ## Configuration Knobs
@@ -173,9 +175,11 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
 ## Code Pointers
 
 - Routed direct writes:
-  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/execution/PointOperationCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java`
 - Routed direct reads:
-  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/execution/PointOperationCoordinator.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java`
 - Segment caches and providers:
   `src/main/java/org/hestiastore/index/segmentindex/*SegmentData*`,
   `src/main/java/org/hestiastore/index/segment/SegmentData*`
@@ -183,7 +187,7 @@ See: `segmentindex/IndexConfiguration`, `segment/SegmentConf`.
   `src/main/java/org/hestiastore/index/cache/CacheLru.java`,
   `src/main/java/org/hestiastore/index/cache/CacheLruImpl.java`
 - Key→segment map:
-  `src/main/java/org/hestiastore/index/segmentindex/mapping/KeyToSegmentMap.java`
+  `src/main/java/org/hestiastore/index/segmentindex/routemap/SegmentRouteMap.java`
 
 ## Related Glossary
 

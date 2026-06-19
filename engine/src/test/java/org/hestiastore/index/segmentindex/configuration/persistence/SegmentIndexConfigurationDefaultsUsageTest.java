@@ -7,10 +7,10 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationRegistry;
+import org.hestiastore.index.segmentindex.configuration.defaults.IndexConfigurationDefaultsRegistry;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -30,13 +30,13 @@ class SegmentIndexConfigurationDefaultsUsageTest {
                 .identity(identity -> identity.name("defaults-check-index"))//
                 .build();
 
-        final IndexConfigurationContract defaults = IndexConfigurationRegistry
+        final IndexConfigurationDefaults defaults = IndexConfigurationDefaultsRegistry
                 .get(Integer.class).orElseThrow(() -> new IllegalStateException(
                         "Missing contract defaults for Integer"));
 
         try (SegmentIndex<Integer, String> index = SegmentIndex.create(directory, sparseConfiguration)) {
             final EffectiveIndexConfiguration<Integer, String> actual =
-                    new IndexConfigurationStorage<Integer, String>(directory)
+                    new IndexConfigurationStore<Integer, String>(directory)
                             .load();
 
             assertEquals(defaults.segment().cacheKeyLimit(),

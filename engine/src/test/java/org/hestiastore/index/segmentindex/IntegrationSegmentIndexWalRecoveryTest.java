@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,9 +23,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.WalCorruptionPolicy;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -401,7 +401,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
 
             maintenanceAction.accept(index);
             awaitCondition(() -> {
-                final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
                 return snapshot.split().inFlightCount() == 0;
             }, 10_000L);
             assertIntegerIndexSnapshot(index, expected);
@@ -556,7 +556,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
                     .create(directory, conf)) {
                 index.put("k1", "v1");
                 index.maintenance().flushAndWait();
-                final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
                 assertFalse(snapshot.wal().enabled());
                 assertEquals(0L, snapshot.wal().appendCount());
                 assertEquals(0L, snapshot.wal().syncCount());
@@ -589,7 +589,7 @@ class IntegrationSegmentIndexWalRecoveryTest {
             for (int i = 0; i < 300; i++) {
                 index.put("bp-" + i, "value-" + i);
             }
-            final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
             assertTrue(snapshot.wal().enabled());
             assertTrue(snapshot.wal().appendCount() >= 300L);
             assertTrue(snapshot.wal().checkpointLsn() > 0L,

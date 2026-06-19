@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.hestiastore.index.Vldtn;
-import org.hestiastore.index.chunkstore.ChunkFilterSpec;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
 
@@ -17,10 +16,10 @@ import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndex
  */
 public class IndexConfigurationManager<K, V> {
 
-    private final IndexConfigurationStorage<K, V> confStorage;
+    private final IndexConfigurationStore<K, V> confStorage;
 
     public IndexConfigurationManager(
-            final IndexConfigurationStorage<K, V> confStorage) {
+            final IndexConfigurationStore<K, V> confStorage) {
         this.confStorage = Vldtn.requireNonNull(confStorage, "confStorage");
     }
 
@@ -40,9 +39,9 @@ public class IndexConfigurationManager<K, V> {
         return resolveForCreate(request).configuration();
     }
 
-    public IndexConfigurationResolution<K, V> resolveForCreate(
+    public ResolvedIndexConfiguration<K, V> resolveForCreate(
             final IndexConfiguration<K, V> request) {
-        return IndexConfigurationResolution.of(
+        return ResolvedIndexConfiguration.of(
                 EffectiveIndexConfigurationResolver.resolveForCreate(request,
                         confStorage.chunkFilterProviderResolver()),
                 true);
@@ -56,7 +55,7 @@ public class IndexConfigurationManager<K, V> {
 
     public EffectiveIndexConfiguration<K, V> mergeWithStored(
             final IndexConfiguration<K, V> request) {
-        final IndexConfigurationResolution<K, V> resolution = resolveForOpen(
+        final ResolvedIndexConfiguration<K, V> resolution = resolveForOpen(
                 request);
         if (resolution.writeRequired()) {
             confStorage.save(resolution.configuration());
@@ -64,128 +63,54 @@ public class IndexConfigurationManager<K, V> {
         return resolution.configuration();
     }
 
-    public IndexConfigurationResolution<K, V> resolveForOpen(
+    public ResolvedIndexConfiguration<K, V> resolveForOpen(
             final IndexConfiguration<K, V> request) {
         final EffectiveIndexConfiguration<K, V> stored = confStorage.load();
         final EffectiveIndexConfiguration<K, V> merged =
                 EffectiveIndexConfigurationResolver.mergeWithStored(stored,
                         request, confStorage.chunkFilterProviderResolver());
-        return IndexConfigurationResolution.of(merged,
+        return ResolvedIndexConfiguration.of(merged,
                 !sameConfiguration(stored, merged));
     }
 
     private boolean sameConfiguration(
             final EffectiveIndexConfiguration<K, V> left,
             final EffectiveIndexConfiguration<K, V> right) {
-        return sameIdentity(left, right)
-                && sameSegment(left, right)
-                && sameWritePath(left, right)
-                && sameBloomFilter(left, right)
-                && sameMaintenance(left, right)
-                && sameIo(left, right)
-                && sameLogging(left, right)
-                && sameChunkStoreCache(left, right)
-                && left.wal().equals(right.wal())
-                && sameFilters(left.filters().encodingChunkFilterSpecs(),
-                        right.filters().encodingChunkFilterSpecs())
-                && sameFilters(left.filters().decodingChunkFilterSpecs(),
-                        right.filters().decodingChunkFilterSpecs());
+        return canonicalConfiguration(left).equals(canonicalConfiguration(right));
     }
 
-    private boolean sameIdentity(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.identity().name().equals(right.identity().name())
-                && left.identity().keyClass().equals(right.identity().keyClass())
-                && left.identity().valueClass()
-                        .equals(right.identity().valueClass())
-                && left.identity().keyTypeDescriptor()
-                        .equals(right.identity().keyTypeDescriptor())
-                && left.identity().valueTypeDescriptor()
-                        .equals(right.identity().valueTypeDescriptor());
-    }
-
-    private boolean sameSegment(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.segment().maxKeys() == right.segment().maxKeys()
-                && left.segment().chunkKeyLimit() == right.segment()
-                        .chunkKeyLimit()
-                && left.segment().cacheKeyLimit() == right.segment()
-                        .cacheKeyLimit()
-                && left.segment().cachedSegmentLimit() == right.segment()
-                        .cachedSegmentLimit()
-                && left.segment().deltaCacheFileLimit() == right.segment()
-                        .deltaCacheFileLimit();
-    }
-
-    private boolean sameWritePath(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.writePath().segmentWriteCacheKeyLimit() == right.writePath()
-                .segmentWriteCacheKeyLimit()
-                && left.writePath()
-                        .segmentWriteCacheKeyLimitDuringMaintenance() == right
-                                .writePath()
-                                .segmentWriteCacheKeyLimitDuringMaintenance()
-                && left.writePath().indexBufferedWriteKeyLimit() == right
-                        .writePath().indexBufferedWriteKeyLimit()
-                && left.writePath().segmentSplitKeyThreshold() == right
-                        .writePath().segmentSplitKeyThreshold();
-    }
-
-    private boolean sameBloomFilter(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.bloomFilter().hashFunctions() == right.bloomFilter()
-                .hashFunctions()
-                && left.bloomFilter().indexSizeBytes() == right.bloomFilter()
-                        .indexSizeBytes()
-                && Double.compare(left.bloomFilter()
-                        .falsePositiveProbability(),
-                        right.bloomFilter()
-                                .falsePositiveProbability()) == 0;
-    }
-
-    private boolean sameMaintenance(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.maintenance().segmentThreads() == right.maintenance()
-                .segmentThreads()
-                && left.maintenance().indexThreads() == right.maintenance()
-                        .indexThreads()
-                && left.maintenance().registryLifecycleThreads() == right
-                        .maintenance().registryLifecycleThreads()
-                && left.maintenance().busyBackoffMillis() == right
-                        .maintenance().busyBackoffMillis()
-                && left.maintenance().busyTimeoutMillis() == right
-                        .maintenance().busyTimeoutMillis()
-                && left.maintenance().backgroundAutoEnabled() == right
-                        .maintenance().backgroundAutoEnabled();
-    }
-
-    private boolean sameIo(final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.io().diskBufferSizeBytes() == right.io()
-                .diskBufferSizeBytes();
-    }
-
-    private boolean sameLogging(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.logging().contextEnabled() == right.logging()
-                .contextEnabled();
-    }
-
-    private boolean sameChunkStoreCache(
-            final EffectiveIndexConfiguration<K, V> left,
-            final EffectiveIndexConfiguration<K, V> right) {
-        return left.chunkStoreCache().pageLimit() == right.chunkStoreCache()
-                .pageLimit();
-    }
-
-    private boolean sameFilters(final List<ChunkFilterSpec> left,
-            final List<ChunkFilterSpec> right) {
-        return left.equals(right);
+    private List<?> canonicalConfiguration(
+            final EffectiveIndexConfiguration<K, V> configuration) {
+        return List.of(
+                configuration.identity().name(),
+                configuration.identity().keyClass(),
+                configuration.identity().valueClass(),
+                configuration.identity().keyTypeDescriptor(),
+                configuration.identity().valueTypeDescriptor(),
+                configuration.segment().maxKeys(),
+                configuration.segment().chunkKeyLimit(),
+                configuration.segment().cacheKeyLimit(),
+                configuration.segment().cachedSegmentLimit(),
+                configuration.segment().deltaCacheFileLimit(),
+                configuration.writePath().segmentWriteCacheKeyLimit(),
+                configuration.writePath()
+                        .segmentWriteCacheKeyLimitDuringMaintenance(),
+                configuration.writePath().indexBufferedWriteKeyLimit(),
+                configuration.writePath().segmentSplitKeyThreshold(),
+                configuration.bloomFilter().hashFunctions(),
+                configuration.bloomFilter().indexSizeBytes(),
+                configuration.bloomFilter().falsePositiveProbability(),
+                configuration.maintenance().segmentThreads(),
+                configuration.maintenance().indexThreads(),
+                configuration.maintenance().registryLifecycleThreads(),
+                configuration.maintenance().busyBackoffMillis(),
+                configuration.maintenance().busyTimeoutMillis(),
+                configuration.maintenance().backgroundAutoEnabled(),
+                configuration.io().diskBufferSizeBytes(),
+                configuration.logging().contextEnabled(),
+                configuration.chunkStoreCache().pageLimit(),
+                configuration.wal(),
+                configuration.filters().encodingChunkFilterSpecs(),
+                configuration.filters().decodingChunkFilterSpecs());
     }
 }

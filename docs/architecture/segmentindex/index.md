@@ -26,7 +26,7 @@ concern above stable segments.
 - [Cache LRU](cache-lru.md) — bounded LRU behavior and trade-offs.
 - [Performance Model & Sizing](performance.md) — throughput/latency model and
   tuning knobs.
-- [Metrics Snapshot](metrics-snapshot.md) — stable index telemetry contract.
+- [Metrics RouteMapSnapshot](metrics-snapshot.md) — stable index telemetry contract.
 - [Segment Index Concurrency](segment-index-concurrency.md) — index
   thread-safety and lifecycle behavior, including `OPENING`, `READY`,
   `CLOSING`, `CLOSED`, and `ERROR`.

@@ -7,16 +7,16 @@ import org.hestiastore.index.Vldtn;
  */
 public final class RuntimeTuningValidationIssue {
 
-    private final RuntimeTuningField field;
+    private final RuntimeTuningKey field;
     private final String message;
 
-    public RuntimeTuningValidationIssue(final RuntimeTuningField field,
+    public RuntimeTuningValidationIssue(final RuntimeTuningKey field,
             final String message) {
         this.field = field;
         this.message = Vldtn.requireNotBlank(message, "message");
     }
 
-    public RuntimeTuningField field() {
+    public RuntimeTuningKey field() {
         return field;
     }
 

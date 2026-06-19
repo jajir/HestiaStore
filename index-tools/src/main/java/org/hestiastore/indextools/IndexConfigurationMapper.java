@@ -5,11 +5,10 @@ import java.util.List;
 import org.hestiastore.index.chunkstore.ChunkFilterSpec;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfigurationResolver;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.api.WalDurabilityMode;
 
 final class IndexConfigurationMapper {
 
@@ -169,7 +168,7 @@ final class IndexConfigurationMapper {
         return spec;
     }
 
-    private static WalManifest toManifest(final EffectiveIndexWalConfiguration wal) {
+    private static WalManifest toManifest(final IndexWalConfiguration wal) {
         final WalManifest manifest = new WalManifest();
         manifest.setEnabled(wal.isEnabled());
         manifest.setDurabilityMode(wal.getDurabilityMode().name());
@@ -179,7 +178,6 @@ final class IndexConfigurationMapper {
         manifest.setMaxBytesBeforeForcedCheckpoint(
                 wal.getMaxBytesBeforeForcedCheckpoint());
         manifest.setCorruptionPolicy(wal.getCorruptionPolicy().name());
-        manifest.setEpochSupport(wal.isEpochSupport());
         return manifest;
     }
 
@@ -198,7 +196,7 @@ final class IndexConfigurationMapper {
                         manifest.getMaxBytesBeforeForcedCheckpoint())
                 .corruptionPolicy(WalCorruptionPolicy
                         .valueOf(manifest.getCorruptionPolicy()))
-                .epochSupport(manifest.isEpochSupport()).build();
+                .build();
     }
 
     @SuppressWarnings("unchecked")

@@ -10,8 +10,8 @@ import java.util.Set;
 
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.bloomfilter.BloomFilterBuilder;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfigurationContract;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfigurationDefaults;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 
 /**
  * Shared properties schema metadata and migration helpers for index files.
@@ -95,8 +95,6 @@ public final class IndexPropertiesSchema {
         public static final String PROP_WAL_GROUP_SYNC_MAX_BATCH_BYTES = "wal.groupSyncMaxBatchBytes";
         public static final String PROP_WAL_MAX_BYTES_BEFORE_FORCED_CHECKPOINT = "wal.maxBytesBeforeForcedCheckpoint";
         public static final String PROP_WAL_CORRUPTION_POLICY = "wal.corruptionPolicy";
-        public static final String PROP_WAL_EPOCH_SUPPORT = "wal.epochSupport";
-
         public static final String CONFIGURATION_FILENAME = "manifest.txt";
 
         private IndexConfigurationKeys() {
@@ -349,7 +347,7 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_BACKGROUND_MAINTENANCE_AUTO_ENABLED,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
+                        IndexConfigurationDefaults.DEFAULT_BACKGROUND_MAINTENANCE_AUTO_ENABLED));
     }
 
     private static void addSegmentDefaults(
@@ -357,7 +355,7 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CACHE,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT));
+                        IndexConfigurationDefaults.DEFAULT_SEGMENT_CACHE_KEY_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_SEGMENT_WRITE_CACHE_KEY_LIMIT,
                 IndexPropertiesSchema::defaultSegmentWriteCacheKeyLimit);
@@ -370,18 +368,18 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_KEYS_IN_SEGMENT_CHUNK,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_SEGMENT_CHUNK_KEY_LIMIT));
+                        IndexConfigurationDefaults.DEFAULT_SEGMENT_CHUNK_KEY_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_DELTA_CACHE_FILES,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_DELTA_CACHE_FILE_LIMIT));
+                        IndexConfigurationDefaults.DEFAULT_DELTA_CACHE_FILE_LIMIT));
         defaults.put(
                 IndexConfigurationKeys.PROP_SEGMENT_SPLIT_KEY_THRESHOLD,
                 IndexPropertiesSchema::defaultSegmentSplitKeyThreshold);
         defaults.put(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT));
+                        IndexConfigurationDefaults.DEFAULT_CACHED_SEGMENT_LIMIT));
     }
 
     private static void addThreadingDefaults(
@@ -389,21 +387,21 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_NUMBER_OF_SEGMENT_MAINTENANCE_THREADS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_SEGMENT_MAINTENANCE_THREADS));
+                        IndexConfigurationDefaults.DEFAULT_SEGMENT_MAINTENANCE_THREADS));
         defaults.put(
                 IndexConfigurationKeys.PROP_NUMBER_OF_INDEX_MAINTENANCE_THREADS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_INDEX_MAINTENANCE_THREADS));
+                        IndexConfigurationDefaults.DEFAULT_INDEX_MAINTENANCE_THREADS));
         defaults.put(
                 IndexConfigurationKeys.PROP_NUMBER_OF_REGISTRY_LIFECYCLE_THREADS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_REGISTRY_LIFECYCLE_THREADS));
+                        IndexConfigurationDefaults.DEFAULT_REGISTRY_LIFECYCLE_THREADS));
         defaults.put(IndexConfigurationKeys.PROP_INDEX_BUSY_BACKOFF_MILLIS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS));
+                        IndexConfigurationDefaults.DEFAULT_INDEX_BUSY_BACKOFF_MILLIS));
         defaults.put(IndexConfigurationKeys.PROP_INDEX_BUSY_TIMEOUT_MILLIS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS));
+                        IndexConfigurationDefaults.DEFAULT_INDEX_BUSY_TIMEOUT_MILLIS));
     }
 
     private static void addBloomAndIoDefaults(
@@ -411,11 +409,11 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_NUMBER_OF_HASH_FUNCTIONS,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_BLOOM_FILTER_HASH_FUNCTIONS));
+                        IndexConfigurationDefaults.DEFAULT_BLOOM_FILTER_HASH_FUNCTIONS));
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_INDEX_SIZE_IN_BYTES,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_BLOOM_FILTER_INDEX_SIZE_BYTES));
+                        IndexConfigurationDefaults.DEFAULT_BLOOM_FILTER_INDEX_SIZE_BYTES));
         defaults.put(
                 IndexConfigurationKeys.PROP_BLOOM_FILTER_PROBABILITY_OF_FALSE_POSITIVE,
                 view -> String.valueOf(
@@ -423,7 +421,7 @@ public final class IndexPropertiesSchema {
         defaults.put(
                 IndexConfigurationKeys.PROP_DISK_IO_BUFFER_SIZE_IN_BYTES,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_DISK_IO_BUFFER_SIZE_BYTES));
+                        IndexConfigurationDefaults.DEFAULT_DISK_IO_BUFFER_SIZE_BYTES));
     }
 
     private static void addChunkFilterDefaults(
@@ -438,7 +436,7 @@ public final class IndexPropertiesSchema {
             final Map<String, DefaultValueProvider> defaults) {
         defaults.put(IndexConfigurationKeys.PROP_CHUNK_STORE_CACHE_PAGE_LIMIT,
                 view -> String.valueOf(
-                        IndexConfigurationContract.DEFAULT_CHUNK_STORE_CACHE_PAGE_LIMIT));
+                        IndexConfigurationDefaults.DEFAULT_CHUNK_STORE_CACHE_PAGE_LIMIT));
     }
 
     private static void addWalDefaults(
@@ -460,8 +458,6 @@ public final class IndexPropertiesSchema {
                         IndexWalConfiguration.DEFAULT_MAX_BYTES_BEFORE_FORCED_CHECKPOINT));
         defaults.put(IndexConfigurationKeys.PROP_WAL_CORRUPTION_POLICY,
                 view -> IndexWalConfiguration.DEFAULT_CORRUPTION_POLICY.name());
-        defaults.put(IndexConfigurationKeys.PROP_WAL_EPOCH_SUPPORT,
-                view -> Boolean.FALSE.toString());
     }
 
     private static String defaultSegmentWriteCacheKeyLimit(
@@ -485,7 +481,7 @@ public final class IndexPropertiesSchema {
         final String segments = view.getString(
                 IndexConfigurationKeys.PROP_MAX_NUMBER_OF_SEGMENTS_IN_CACHE);
         final long segmentCount = segments == null || segments.isBlank()
-                ? IndexConfigurationContract.DEFAULT_CACHED_SEGMENT_LIMIT
+                ? IndexConfigurationDefaults.DEFAULT_CACHED_SEGMENT_LIMIT
                 : Long.parseLong(segments);
         return String.valueOf(Math.max(partitionBuffer,
                 partitionBuffer * Math.max(1L, segmentCount)));
@@ -499,7 +495,7 @@ public final class IndexPropertiesSchema {
             return segmentKeyLimit;
         }
         return String.valueOf(
-                IndexConfigurationContract.DEFAULT_SEGMENT_MAX_KEYS);
+                IndexConfigurationDefaults.DEFAULT_SEGMENT_MAX_KEYS);
     }
 
     private static long resolveSegmentCache(final PropertyView view) {
@@ -508,7 +504,7 @@ public final class IndexPropertiesSchema {
         if (value != null && !value.isBlank()) {
             return Long.parseLong(value);
         }
-        return IndexConfigurationContract.DEFAULT_SEGMENT_CACHE_KEY_LIMIT;
+        return IndexConfigurationDefaults.DEFAULT_SEGMENT_CACHE_KEY_LIMIT;
     }
 
     private static long resolveSegmentWriteCacheKeyLimit(

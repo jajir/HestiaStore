@@ -15,36 +15,13 @@ import java.util.stream.Stream;
 import org.hestiastore.index.IndexException;
 
 /**
- * FIXME this class have to be rafactored. 
- * It mixing:
- * CLI parsing and exit code handling.
- * WAL verification.
- * WAL dump logic.
- * Text and JSON formatting.
- * Segment discovery.
- * Metadata/checkpoint validation.
- * Low-level WAL record frame parsing.
- * 
- */
-/**
  * Command-line helper for WAL inspection and verification.
  */
 @SuppressWarnings({ "java:S3776", "java:S6541" })
 public final class WalTool {
 
-    private static final String SEGMENT_SUFFIX = ".wal";
-    private static final int SEGMENT_FILE_DIGITS = 20;
-    private static final String FORMAT_FILE = "format.meta";
-    private static final String FORMAT_FILE_TMP = "format.meta.tmp";
-    private static final String CHECKPOINT_FILE = "checkpoint.meta";
-    private static final String CHECKPOINT_FILE_TMP = "checkpoint.meta.tmp";
-    private static final String CHECKPOINT_KEY_LSN = "lsn";
-    private static final String CHECKPOINT_KEY_CHECKSUM = "checksum";
     private static final String JSON_FILE_FIELD = "\"file\":";
-    private static final String INVALID_CHECKPOINT_METADATA = "Invalid checkpoint metadata.";
-    private static final int FORMAT_VERSION = 1;
-    private static final int MIN_RECORD_BODY_SIZE = 4 + 8 + 1 + 4 + 4;
-    private static final int MAX_RECORD_BODY_SIZE = 32 * 1024 * 1024;
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
     private enum OutputMode {
         TEXT,
@@ -68,10 +45,11 @@ public final class WalTool {
             printUsage(out);
             return 1;
         }
-        final OutputMode outputMode = parseOutputMode(args, out);
-        if (outputMode == null) {
+        if (!hasValidOutputMode(args)) {
+            printUsage(out);
             return 1;
         }
+        final OutputMode outputMode = outputMode(args);
         final String command = args[0];
         final Path walDirectory = Path.of(args[1]);
         if (!Files.isDirectory(walDirectory)) {
@@ -99,16 +77,16 @@ public final class WalTool {
 
     static VerifyResult verify(final Path walDirectory) {
         final VerifyResult formatResult = verifyFormatMetadata(walDirectory);
-        if (formatResult != null) {
+        if (!formatResult.ok()) {
             return formatResult;
         }
         final CheckpointValidation checkpointValidation = readCheckpointMetadata(
                 walDirectory);
-        if (checkpointValidation.error() != null) {
+        if (checkpointValidation.hasError()) {
             return checkpointValidation.error();
         }
         final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
-        if (segmentDiscovery.error() != null) {
+        if (segmentDiscovery.hasError()) {
             return segmentDiscovery.error();
         }
         final List<Path> files = segmentDiscovery.files();
@@ -116,76 +94,22 @@ public final class WalTool {
         long maxLsn = 0L;
         long previousLsn = 0L;
         for (final Path file : files) {
-            final byte[] bytes = readAll(file);
-            long offset = 0L;
-            while (offset < bytes.length) {
-                if (bytes.length - offset < 4) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "Partial record length prefix.");
-                }
-                final int bodyLen = WalRecordCodec.readInt(bytes,
-                        (int) offset);
-                if (bodyLen < MIN_RECORD_BODY_SIZE
-                        || bodyLen > MAX_RECORD_BODY_SIZE) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "Invalid WAL record body length.");
-                }
-                if (offset + 4L + bodyLen > bytes.length) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "Truncated WAL record body.");
-                }
-                final int bodyOffset = (int) (offset + 4L);
-                final int storedCrc = WalRecordCodec.readInt(bytes,
-                        bodyOffset);
-                final int computedCrc = WalRuntime.computeCrc32(bytes,
-                        bodyOffset + 4, bodyLen - 4);
-                if (storedCrc != computedCrc) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "CRC mismatch.");
-                }
-                int p = bodyOffset + 4;
-                final long lsn = WalRuntime.readLong(bytes, p);
-                p += 8;
-                final byte opCode = bytes[p++];
-                if (opCode != 1 && opCode != 2) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "Invalid WAL operation code.");
-                }
-                final int keyLen = WalRecordCodec.readInt(bytes, p);
-                p += 4;
-                final int valueLen = WalRecordCodec.readInt(bytes, p);
-                p += 4;
-                if (keyLen <= 0 || valueLen < 0
-                        || p + keyLen + valueLen != bodyOffset + bodyLen) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "Invalid key/value frame lengths.");
-                }
-                if (opCode == 2 && valueLen != 0) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "DELETE record must have zero value length.");
-                }
-                if (lsn <= 0L || previousLsn > 0L && lsn <= previousLsn) {
-                    return new VerifyResult(false, files.size(), records, maxLsn,
-                            file.getFileName().toString(), offset,
-                            "Non-monotonic or invalid LSN.");
-                }
-                previousLsn = lsn;
-                maxLsn = Math.max(maxLsn, lsn);
-                records++;
-                offset += 4L + bodyLen;
+            final WalFileScan scan = scanFile(file, previousLsn, true);
+            records += scan.recordCount();
+            maxLsn = Math.max(maxLsn, scan.lastLsn());
+            if (scan.lastLsn() > 0L) {
+                previousLsn = scan.lastLsn();
+            }
+            if (scan.hasInvalidTail()) {
+                return new VerifyResult(false, files.size(), records, maxLsn,
+                        scan.fileName(), scan.invalidTail().offset(),
+                        scan.invalidTail().reason());
             }
         }
-        if (checkpointValidation.checkpointLsn() != null
-                && checkpointValidation.checkpointLsn().longValue() > maxLsn) {
+        if (checkpointValidation.hasCheckpoint()
+                && checkpointValidation.checkpointLsn() > maxLsn) {
             return new VerifyResult(false, files.size(), records, maxLsn,
-                    CHECKPOINT_FILE, -1L,
+                    WalMetadataCatalog.CHECKPOINT_FILE, -1L,
                     "Checkpoint LSN is ahead of max WAL LSN.");
         }
         return new VerifyResult(true, files.size(), records, maxLsn, null, -1L,
@@ -204,124 +128,120 @@ public final class WalTool {
     static void dump(final Path walDirectory, final PrintStream out,
             final OutputMode outputMode) {
         final VerifyResult formatResult = verifyFormatMetadata(walDirectory);
-        if (formatResult != null) {
+        if (!formatResult.ok()) {
             throw metadataError(formatResult);
         }
         final CheckpointValidation checkpointValidation = readCheckpointMetadata(
                 walDirectory);
-        if (checkpointValidation.error() != null) {
+        if (checkpointValidation.hasError()) {
             throw metadataError(checkpointValidation.error());
         }
         final SegmentDiscovery segmentDiscovery = discoverSegments(walDirectory);
-        if (segmentDiscovery.error() != null) {
+        if (segmentDiscovery.hasError()) {
             throw new IndexException(segmentDiscovery.error().errorMessage());
         }
         final List<Path> files = segmentDiscovery.files();
         for (final Path file : files) {
-            final byte[] bytes = readAll(file);
-            long offset = 0L;
-            long records = 0L;
-            long firstLsn = 0L;
-            long lastLsn = 0L;
-            boolean invalidTail = false;
-            String invalidReason = null;
-            long invalidOffset = -1L;
-            while (offset < bytes.length) {
-                if (bytes.length - offset < 4L) {
-                    invalidTail = true;
-                    invalidReason = "Partial record length prefix.";
-                    invalidOffset = offset;
-                    break;
-                }
-                final int bodyLen = WalRecordCodec.readInt(bytes,
-                        (int) offset);
-                if (bodyLen < MIN_RECORD_BODY_SIZE
-                        || bodyLen > MAX_RECORD_BODY_SIZE) {
-                    invalidTail = true;
-                    invalidReason = "Invalid WAL record body length.";
-                    invalidOffset = offset;
-                    break;
-                }
-                if (offset + 4L + bodyLen > bytes.length) {
-                    invalidTail = true;
-                    invalidReason = "Truncated WAL record body.";
-                    invalidOffset = offset;
-                    break;
-                }
-                final int bodyOffset = (int) (offset + 4L);
-                final int storedCrc = WalRecordCodec.readInt(bytes,
-                        bodyOffset);
-                final int computedCrc = WalRuntime.computeCrc32(bytes,
-                        bodyOffset + 4, bodyLen - 4);
-                if (storedCrc != computedCrc) {
-                    invalidTail = true;
-                    invalidReason = "CRC mismatch.";
-                    invalidOffset = offset;
-                    break;
-                }
-                int p = bodyOffset + 4;
-                final long lsn = WalRuntime.readLong(bytes, p);
-                p += 8;
-                final byte opCode = bytes[p++];
-                final String operation = toOperationName(opCode);
-                if (operation == null) {
-                    invalidTail = true;
-                    invalidReason = "Invalid WAL operation code.";
-                    invalidOffset = offset;
-                    break;
-                }
-                final int keyLen = WalRecordCodec.readInt(bytes, p);
-                p += 4;
-                final int valueLen = WalRecordCodec.readInt(bytes, p);
-                p += 4;
-                if (keyLen <= 0 || valueLen < 0
-                        || p + keyLen + valueLen != bodyOffset + bodyLen) {
-                    invalidTail = true;
-                    invalidReason = "Invalid key/value frame lengths.";
-                    invalidOffset = offset;
-                    break;
-                }
-                if ("DELETE".equals(operation) && valueLen != 0) {
-                    invalidTail = true;
-                    invalidReason = "DELETE record must have zero value length.";
-                    invalidOffset = offset;
-                    break;
-                }
+            final WalFileScan scan = scanFile(file, 0L, false);
+            for (final WalToolRecord record : scan.records()) {
                 if (outputMode == OutputMode.JSON) {
-                    out.println(jsonRecord(file.getFileName().toString(), offset,
-                            lsn, operation, keyLen, valueLen, bodyLen));
+                    out.println(jsonRecord(scan.fileName(), record.offset(),
+                            record.lsn(), record.operation(), record.keyLen(),
+                            record.valueLen(), record.bodyLen()));
                 } else {
-                    out.println("record file=" + file.getFileName() + " offset="
-                            + offset + " lsn=" + lsn + " op=" + operation
-                            + " keyLen=" + keyLen + " valueLen=" + valueLen
-                            + " bodyLen=" + bodyLen);
+                    out.println("record file=" + scan.fileName() + " offset="
+                            + record.offset() + " lsn=" + record.lsn()
+                            + " op=" + record.operation() + " keyLen="
+                            + record.keyLen() + " valueLen="
+                            + record.valueLen() + " bodyLen="
+                            + record.bodyLen());
                 }
-                if (records == 0L) {
-                    firstLsn = lsn;
-                }
-                lastLsn = lsn;
-                records++;
-                offset += 4L + bodyLen;
             }
-            if (invalidTail) {
+            if (scan.hasInvalidTail()) {
                 if (outputMode == OutputMode.JSON) {
-                    out.println(jsonInvalidTail(file.getFileName().toString(),
-                            invalidOffset, invalidReason));
+                    out.println(jsonInvalidTail(scan.fileName(),
+                            scan.invalidTail().offset(),
+                            scan.invalidTail().reason()));
                 } else {
-                    out.println("invalid file=" + file.getFileName()
-                            + " offset=" + invalidOffset + " reason="
-                            + invalidReason);
+                    out.println("invalid file=" + scan.fileName() + " offset="
+                            + scan.invalidTail().offset() + " reason="
+                            + scan.invalidTail().reason());
                 }
             }
             if (outputMode == OutputMode.JSON) {
-                out.println(jsonSummary(file.getFileName().toString(),
-                        bytes.length, records, firstLsn, lastLsn));
+                out.println(jsonSummary(scan.fileName(), scan.size(),
+                        scan.recordCount(), scan.firstLsn(), scan.lastLsn()));
             } else {
-                out.println("summary file=" + file.getFileName() + " size="
-                        + bytes.length + " records=" + records + " firstLsn="
-                        + firstLsn + " lastLsn=" + lastLsn);
+                out.println("summary file=" + scan.fileName() + " size="
+                        + scan.size() + " records=" + scan.recordCount()
+                        + " firstLsn=" + scan.firstLsn() + " lastLsn="
+                        + scan.lastLsn());
             }
         }
+    }
+
+    private static WalFileScan scanFile(final Path file,
+            final long previousLsn, final boolean validateLsnOrdering) {
+        final byte[] bytes = readAll(file);
+        final String fileName = file.getFileName().toString();
+        final List<WalToolRecord> records = new ArrayList<>();
+        long offset = 0L;
+        long lastLsn = previousLsn;
+        while (offset < bytes.length) {
+            if (bytes.length - offset < 4L) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "Partial record length prefix.");
+            }
+            final int bodyLen = WalRecordCodec.readInt(bytes, (int) offset);
+            if (bodyLen < WalRecordCodec.MIN_RECORD_BODY_SIZE
+                    || bodyLen > WalRecordCodec.MAX_RECORD_BODY_SIZE) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "Invalid WAL record body length.");
+            }
+            if (offset + 4L + bodyLen > bytes.length) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "Truncated WAL record body.");
+            }
+            final int bodyOffset = (int) (offset + 4L);
+            final int storedCrc = WalRecordCodec.readInt(bytes, bodyOffset);
+            final int computedCrc = WalRecordCodec.computeCrc32(bytes,
+                    bodyOffset + 4, bodyLen - 4);
+            if (storedCrc != computedCrc) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "CRC mismatch.");
+            }
+            int position = bodyOffset + 4;
+            final long lsn = WalRecordCodec.readLong(bytes, position);
+            position += 8;
+            final byte opCode = bytes[position++];
+            if (!isSupportedOperationCode(opCode)) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "Invalid WAL operation code.");
+            }
+            final int keyLen = WalRecordCodec.readInt(bytes, position);
+            position += 4;
+            final int valueLen = WalRecordCodec.readInt(bytes, position);
+            position += 4;
+            if (keyLen <= 0 || valueLen < 0
+                    || position + keyLen + valueLen != bodyOffset + bodyLen) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "Invalid key/value frame lengths.");
+            }
+            if (isDeleteOperationCode(opCode) && valueLen != 0) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "DELETE record must have zero value length.");
+            }
+            if (validateLsnOrdering
+                    && (lsn <= 0L || lastLsn > 0L && lsn <= lastLsn)) {
+                return WalFileScan.invalid(fileName, bytes.length, records,
+                        offset, "Non-monotonic or invalid LSN.");
+            }
+            records.add(new WalToolRecord(offset, lsn, operationName(opCode),
+                    keyLen, valueLen, bodyLen));
+            lastLsn = lsn;
+            offset += 4L + bodyLen;
+        }
+        return WalFileScan.valid(fileName, bytes.length, records);
     }
 
     private static SegmentDiscovery discoverSegments(final Path walDirectory) {
@@ -329,7 +249,7 @@ public final class WalTool {
         try (Stream<Path> listing = Files.list(walDirectory)) {
             candidates = listing
                     .filter(path -> path.getFileName().toString()
-                            .endsWith(SEGMENT_SUFFIX))
+                            .endsWith(WalMetadataCatalog.SEGMENT_SUFFIX))
                     .sorted(Comparator.comparing(Path::getFileName)).toList();
         } catch (IOException e) {
             throw new IndexException(
@@ -347,7 +267,8 @@ public final class WalTool {
                         new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
                                 "WAL segment entry is not a regular file."));
             }
-            final long baseLsn = parseSegmentBaseLsn(fileName);
+            final long baseLsn = WalMetadataCatalog.parseSegmentBaseLsn(
+                    fileName);
             if (baseLsn < 0L) {
                 return new SegmentDiscovery(List.of(),
                         new VerifyResult(false, 0, 0L, 0L, fileName, -1L,
@@ -366,32 +287,16 @@ public final class WalTool {
         return new SegmentDiscovery(files, null);
     }
 
-    private static long parseSegmentBaseLsn(final String fileName) {
-        final String raw = fileName.substring(0,
-                fileName.length() - SEGMENT_SUFFIX.length());
-        if (raw.length() != SEGMENT_FILE_DIGITS) {
-            return -1L;
-        }
-        for (int i = 0; i < raw.length(); i++) {
-            if (!Character.isDigit(raw.charAt(i))) {
-                return -1L;
-            }
-        }
-        try {
-            return Long.parseLong(raw);
-        } catch (NumberFormatException ex) {
-            return -1L;
-        }
+    private static boolean isSupportedOperationCode(final byte opCode) {
+        return opCode == 1 || opCode == 2;
     }
 
-    private static String toOperationName(final byte opCode) {
-        if (opCode == 1) {
-            return "PUT";
-        }
-        if (opCode == 2) {
-            return "DELETE";
-        }
-        return null;
+    private static boolean isDeleteOperationCode(final byte opCode) {
+        return opCode == 2;
+    }
+
+    private static String operationName(final byte opCode) {
+        return isDeleteOperationCode(opCode) ? "DELETE" : "PUT";
     }
 
     private static byte[] readAll(final Path file) {
@@ -407,16 +312,12 @@ public final class WalTool {
         out.println("Usage: WalTool <verify|dump> <walDirectoryPath> [--json]");
     }
 
-    private static OutputMode parseOutputMode(final String[] args,
-            final PrintStream out) {
-        if (args.length == 2) {
-            return OutputMode.TEXT;
-        }
-        if (args.length == 3 && "--json".equals(args[2])) {
-            return OutputMode.JSON;
-        }
-        printUsage(out);
-        return null;
+    private static boolean hasValidOutputMode(final String[] args) {
+        return args.length == 2 || args.length == 3 && "--json".equals(args[2]);
+    }
+
+    private static OutputMode outputMode(final String[] args) {
+        return args.length == 3 ? OutputMode.JSON : OutputMode.TEXT;
     }
 
     private static void printVerifyResult(final VerifyResult result,
@@ -497,7 +398,7 @@ public final class WalTool {
                 case '\t' -> escaped.append("\\t");
                 default -> {
                     if (ch < 0x20) {
-                        escaped.append(String.format("\\u%04x", (int) ch));
+                        appendUnicodeEscape(escaped, ch);
                     } else {
                         escaped.append(ch);
                     }
@@ -507,150 +408,83 @@ public final class WalTool {
         return escaped.toString();
     }
 
+    private static void appendUnicodeEscape(final StringBuilder target,
+            final char ch) {
+        target.append("\\u").append(HEX_DIGITS[ch >>> 12 & 0xF])
+                .append(HEX_DIGITS[ch >>> 8 & 0xF])
+                .append(HEX_DIGITS[ch >>> 4 & 0xF])
+                .append(HEX_DIGITS[ch & 0xF]);
+    }
+
     private static VerifyResult verifyFormatMetadata(final Path walDirectory) {
-        final Path formatFile = walDirectory.resolve(FORMAT_FILE);
+        final Path formatFile = walDirectory.resolve(WalMetadataCatalog.FORMAT_FILE);
         if (Files.exists(formatFile)) {
-            return verifyFormatMetadataFile(formatFile, FORMAT_FILE);
+            return verifyFormatMetadataFile(formatFile,
+                    WalMetadataCatalog.FORMAT_FILE);
         }
-        final Path formatTmpFile = walDirectory.resolve(FORMAT_FILE_TMP);
+        final Path formatTmpFile = walDirectory.resolve(
+                WalMetadataCatalog.FORMAT_FILE_TMP);
         if (Files.exists(formatTmpFile)) {
-            return verifyFormatMetadataFile(formatTmpFile, FORMAT_FILE_TMP);
+            return verifyFormatMetadataFile(formatTmpFile,
+                    WalMetadataCatalog.FORMAT_FILE_TMP);
         }
-        return new VerifyResult(false, 0, 0L, 0L, FORMAT_FILE, -1L,
-                "Missing WAL format metadata.");
+        return VerifyResult.failure(0, 0L, 0L, WalMetadataCatalog.FORMAT_FILE,
+                -1L, "Missing WAL format metadata.");
     }
 
     private static VerifyResult verifyFormatMetadataFile(final Path path,
             final String errorFile) {
-        final byte[] bytes = readAll(path);
-        final String text = new String(bytes, StandardCharsets.US_ASCII).trim();
-        if (text.isEmpty()) {
-            return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
-                    "Empty WAL format metadata.");
+        try {
+            WalMetadataCatalog.validateFormatMetadata(readAll(path));
+            return VerifyResult.ok(0, 0L, 0L);
+        } catch (final RuntimeException e) {
+            return VerifyResult.failure(0, 0L, 0L, errorFile, -1L,
+                    e.getMessage());
         }
-        Integer version = null;
-        Integer checksum = null;
-        for (final String line : text.split("\\R")) {
-            final String[] parts = line.split("=", 2);
-            if (parts.length != 2) {
-                continue;
-            }
-            final String key = parts[0].trim();
-            final String value = parts[1].trim();
-            try {
-                if ("version".equals(key)) {
-                    version = Integer.valueOf(value);
-                } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
-                    checksum = Integer.valueOf(value);
-                }
-            } catch (RuntimeException e) {
-                return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
-                        "Invalid numeric value in WAL format metadata.");
-            }
-        }
-        if (version == null || checksum == null) {
-            return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
-                    "Missing version/checksum in WAL format metadata.");
-        }
-        final byte[] payload = ("version=" + FORMAT_VERSION + "\n")
-                .getBytes(StandardCharsets.US_ASCII);
-        final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
-                payload.length);
-        if (version.intValue() != FORMAT_VERSION
-                || checksum.intValue() != expectedChecksum) {
-            return new VerifyResult(false, 0, 0L, 0L, errorFile, -1L,
-                    "Unsupported or corrupted WAL format metadata.");
-        }
-        return null;
     }
 
     private static CheckpointValidation readCheckpointMetadata(
             final Path walDirectory) {
-        final Path checkpointFile = walDirectory.resolve(CHECKPOINT_FILE);
+        final Path checkpointFile = walDirectory.resolve(
+                WalMetadataCatalog.CHECKPOINT_FILE);
         if (Files.exists(checkpointFile)) {
-            return parseCheckpointMetadataFile(checkpointFile, CHECKPOINT_FILE,
-                    true);
+            return parseCheckpointMetadataFile(checkpointFile,
+                    WalMetadataCatalog.CHECKPOINT_FILE, true);
         }
-        final Path checkpointTmpFile = walDirectory.resolve(CHECKPOINT_FILE_TMP);
+        final Path checkpointTmpFile = walDirectory.resolve(
+                WalMetadataCatalog.CHECKPOINT_FILE_TMP);
         if (Files.exists(checkpointTmpFile)) {
             return parseCheckpointMetadataFile(checkpointTmpFile,
-                    CHECKPOINT_FILE_TMP, false);
+                    WalMetadataCatalog.CHECKPOINT_FILE_TMP, false);
         }
-        return new CheckpointValidation(null, null);
+        return CheckpointValidation.none();
     }
 
     private static CheckpointValidation parseCheckpointMetadataFile(
             final Path path, final String errorFile,
             final boolean failOnInvalidMetadata) {
-        final String text = new String(readAll(path), StandardCharsets.US_ASCII)
-                .trim();
+        final byte[] bytes = readAll(path);
+        final String text = new String(bytes, StandardCharsets.US_ASCII).trim();
         if (text.isEmpty()) {
-            return new CheckpointValidation(null, null);
+            return CheckpointValidation.none();
         }
-        if (!text.contains("=")) {
-            try {
-                final long checkpointLsn = Long.parseLong(text);
-                if (checkpointLsn < 0L) {
-                    return checkpointValidationError(errorFile,
-                            "Negative checkpoint LSN.",
-                            failOnInvalidMetadata);
-                }
-                return new CheckpointValidation(Long.valueOf(checkpointLsn),
-                        null);
-            } catch (RuntimeException e) {
-                return checkpointValidationError(errorFile,
-                        INVALID_CHECKPOINT_METADATA,
-                        failOnInvalidMetadata);
-            }
-        }
-        Long lsn = null;
-        Integer checksum = null;
         try {
-            for (final String line : text.split("\\R")) {
-                final String[] parts = line.split("=", 2);
-                if (parts.length != 2) {
-                    continue;
-                }
-                final String key = parts[0].trim();
-                final String value = parts[1].trim();
-                if (CHECKPOINT_KEY_LSN.equals(key)) {
-                    lsn = Long.valueOf(value);
-                } else if (CHECKPOINT_KEY_CHECKSUM.equals(key)) {
-                    checksum = Integer.valueOf(value);
-                }
-            }
-        } catch (RuntimeException e) {
+            return CheckpointValidation.checkpoint(
+                    WalMetadataCatalog.parseCheckpointMetadata(bytes));
+        } catch (final RuntimeException e) {
             return checkpointValidationError(errorFile,
-                    INVALID_CHECKPOINT_METADATA, failOnInvalidMetadata);
+                    e.getMessage(), failOnInvalidMetadata);
         }
-        if (lsn == null || checksum == null) {
-            return checkpointValidationError(errorFile,
-                    INVALID_CHECKPOINT_METADATA, failOnInvalidMetadata);
-        }
-        if (lsn.longValue() < 0L) {
-            return checkpointValidationError(errorFile,
-                    "Negative checkpoint LSN.", failOnInvalidMetadata);
-        }
-        final byte[] payload = (CHECKPOINT_KEY_LSN + "=" + lsn + "\n")
-                .getBytes(StandardCharsets.US_ASCII);
-        final int expectedChecksum = WalRuntime.computeCrc32(payload, 0,
-                payload.length);
-        if (checksum.intValue() != expectedChecksum) {
-            return checkpointValidationError(errorFile,
-                    "Invalid checkpoint metadata checksum.",
-                    failOnInvalidMetadata);
-        }
-        return new CheckpointValidation(lsn, null);
     }
 
     private static CheckpointValidation checkpointValidationError(
             final String errorFile, final String message,
             final boolean failOnInvalidMetadata) {
         if (!failOnInvalidMetadata) {
-            return new CheckpointValidation(null, null);
+            return CheckpointValidation.none();
         }
-        return new CheckpointValidation(null,
-                new VerifyResult(false, 0, 0L, 0L, errorFile, -1L, message));
+        return CheckpointValidation.error(VerifyResult.failure(0, 0L, 0L,
+                errorFile, -1L, message));
     }
 
     private static IndexException metadataError(final VerifyResult error) {
@@ -658,16 +492,272 @@ public final class WalTool {
                 error.errorFile()));
     }
 
-    record VerifyResult(boolean ok, int fileCount, long recordCount, long maxLsn,
-            String errorFile, long errorOffset, String errorMessage) {
+    static final class VerifyResult {
+        private final boolean ok;
+        private final int fileCount;
+        private final long recordCount;
+        private final long maxLsn;
+        private final String errorFile;
+        private final long errorOffset;
+        private final String errorMessage;
+
+        VerifyResult(final boolean ok, final int fileCount,
+                final long recordCount, final long maxLsn,
+                final String errorFile, final long errorOffset,
+                final String errorMessage) {
+            this.ok = ok;
+            this.fileCount = fileCount;
+            this.recordCount = recordCount;
+            this.maxLsn = maxLsn;
+            this.errorFile = errorFile;
+            this.errorOffset = errorOffset;
+            this.errorMessage = errorMessage;
+        }
+
+        static VerifyResult ok(final int fileCount, final long recordCount,
+                final long maxLsn) {
+            return new VerifyResult(true, fileCount, recordCount, maxLsn, null,
+                    -1L, null);
+        }
+
+        static VerifyResult failure(final int fileCount,
+                final long recordCount, final long maxLsn,
+                final String errorFile, final long errorOffset,
+                final String errorMessage) {
+            return new VerifyResult(false, fileCount, recordCount, maxLsn,
+                    errorFile, errorOffset, errorMessage);
+        }
+
+        boolean ok() {
+            return ok;
+        }
+
+        int fileCount() {
+            return fileCount;
+        }
+
+        long recordCount() {
+            return recordCount;
+        }
+
+        long maxLsn() {
+            return maxLsn;
+        }
+
+        String errorFile() {
+            return errorFile;
+        }
+
+        long errorOffset() {
+            return errorOffset;
+        }
+
+        String errorMessage() {
+            return errorMessage;
+        }
     }
 
-    record SegmentFile(Path path, long baseLsn) {
+    private static final class SegmentFile {
+        private final Path path;
+        private final long baseLsn;
+
+        SegmentFile(final Path path, final long baseLsn) {
+            this.path = path;
+            this.baseLsn = baseLsn;
+        }
+
+        Path path() {
+            return path;
+        }
+
+        long baseLsn() {
+            return baseLsn;
+        }
     }
 
-    record SegmentDiscovery(List<Path> files, VerifyResult error) {
+    private static final class SegmentDiscovery {
+        private final List<Path> files;
+        private final VerifyResult error;
+
+        SegmentDiscovery(final List<Path> files, final VerifyResult error) {
+            this.files = List.copyOf(files);
+            this.error = error;
+        }
+
+        List<Path> files() {
+            return files;
+        }
+
+        VerifyResult error() {
+            return error;
+        }
+
+        boolean hasError() {
+            return error != null;
+        }
     }
 
-    record CheckpointValidation(Long checkpointLsn, VerifyResult error) {
+    private static final class CheckpointValidation {
+        private final boolean hasCheckpoint;
+        private final long checkpointLsn;
+        private final VerifyResult error;
+
+        private CheckpointValidation(final boolean hasCheckpoint,
+                final long checkpointLsn, final VerifyResult error) {
+            this.hasCheckpoint = hasCheckpoint;
+            this.checkpointLsn = checkpointLsn;
+            this.error = error;
+        }
+
+        static CheckpointValidation none() {
+            return new CheckpointValidation(false, 0L, null);
+        }
+
+        static CheckpointValidation checkpoint(final long checkpointLsn) {
+            return new CheckpointValidation(true, checkpointLsn, null);
+        }
+
+        static CheckpointValidation error(final VerifyResult error) {
+            return new CheckpointValidation(false, 0L, error);
+        }
+
+        boolean hasCheckpoint() {
+            return hasCheckpoint;
+        }
+
+        long checkpointLsn() {
+            return checkpointLsn;
+        }
+
+        VerifyResult error() {
+            return error;
+        }
+
+        boolean hasError() {
+            return error != null;
+        }
+    }
+
+    private static final class WalFileScan {
+        private final String fileName;
+        private final long size;
+        private final List<WalToolRecord> records;
+        private final InvalidWalTail invalidTail;
+
+        private WalFileScan(final String fileName, final long size,
+                final List<WalToolRecord> records,
+                final InvalidWalTail invalidTail) {
+            this.fileName = fileName;
+            this.size = size;
+            this.records = List.copyOf(records);
+            this.invalidTail = invalidTail;
+        }
+
+        static WalFileScan valid(final String fileName, final long size,
+                final List<WalToolRecord> records) {
+            return new WalFileScan(fileName, size, records, null);
+        }
+
+        static WalFileScan invalid(final String fileName, final long size,
+                final List<WalToolRecord> records, final long offset,
+                final String reason) {
+            return new WalFileScan(fileName, size, records,
+                    new InvalidWalTail(offset, reason));
+        }
+
+        String fileName() {
+            return fileName;
+        }
+
+        long size() {
+            return size;
+        }
+
+        List<WalToolRecord> records() {
+            return records;
+        }
+
+        long recordCount() {
+            return records.size();
+        }
+
+        long firstLsn() {
+            return records.isEmpty() ? 0L : records.get(0).lsn();
+        }
+
+        long lastLsn() {
+            return records.isEmpty() ? 0L
+                    : records.get(records.size() - 1).lsn();
+        }
+
+        boolean hasInvalidTail() {
+            return invalidTail != null;
+        }
+
+        InvalidWalTail invalidTail() {
+            return invalidTail;
+        }
+    }
+
+    private static final class WalToolRecord {
+        private final long offset;
+        private final long lsn;
+        private final String operation;
+        private final int keyLen;
+        private final int valueLen;
+        private final int bodyLen;
+
+        WalToolRecord(final long offset, final long lsn,
+                final String operation, final int keyLen,
+                final int valueLen, final int bodyLen) {
+            this.offset = offset;
+            this.lsn = lsn;
+            this.operation = operation;
+            this.keyLen = keyLen;
+            this.valueLen = valueLen;
+            this.bodyLen = bodyLen;
+        }
+
+        long offset() {
+            return offset;
+        }
+
+        long lsn() {
+            return lsn;
+        }
+
+        String operation() {
+            return operation;
+        }
+
+        int keyLen() {
+            return keyLen;
+        }
+
+        int valueLen() {
+            return valueLen;
+        }
+
+        int bodyLen() {
+            return bodyLen;
+        }
+    }
+
+    private static final class InvalidWalTail {
+        private final long offset;
+        private final String reason;
+
+        InvalidWalTail(final long offset, final String reason) {
+            this.offset = offset;
+            this.reason = reason;
+        }
+
+        long offset() {
+            return offset;
+        }
+
+        String reason() {
+            return reason;
+        }
     }
 }

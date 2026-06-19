@@ -11,7 +11,7 @@ public interface WalMonitoringView {
      * @return disabled WAL monitoring view
      */
     static WalMonitoringView empty() {
-        return DisabledWalMonitoringView.INSTANCE;
+        return WalMonitoring::empty;
     }
 
     /**

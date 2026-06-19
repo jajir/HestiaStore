@@ -1,5 +1,6 @@
 package org.hestiastore.index.segmentindex.wal;
 
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -11,7 +12,7 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.Vldtn;
 import org.hestiastore.index.datatype.TypeDescriptor;
 import org.hestiastore.index.directory.Directory;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 
 /**
  * Active WAL runtime facade.
@@ -56,7 +57,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
             return switch (code) {
             case 1 -> PUT;
             case 2 -> DELETE;
-            default -> null;
+            default -> throw new IndexException("Invalid WAL operation code.");
             };
         }
     }
@@ -101,8 +102,77 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     /**
      * Recovery summary.
      */
-    public record RecoveryResult(long lastReplayedLsn, long maxLsn,
-            boolean truncatedTail) {
+    public static final class RecoveryResult {
+        private final long lastReplayedLsn;
+        private final long maxLsn;
+        private final boolean truncatedTail;
+
+        /**
+         * Creates a recovery summary.
+         *
+         * @param lastReplayedLsn last LSN replayed into the index
+         * @param maxLsn maximum valid WAL LSN seen during recovery
+         * @param truncatedTail whether recovery truncated an invalid WAL tail
+         */
+        public RecoveryResult(final long lastReplayedLsn, final long maxLsn,
+                final boolean truncatedTail) {
+            this.lastReplayedLsn = lastReplayedLsn;
+            this.maxLsn = maxLsn;
+            this.truncatedTail = truncatedTail;
+        }
+
+        /**
+         * Returns the last LSN replayed into the index.
+         *
+         * @return last replayed LSN
+         */
+        public long lastReplayedLsn() {
+            return lastReplayedLsn;
+        }
+
+        /**
+         * Returns the maximum valid WAL LSN seen during recovery.
+         *
+         * @return maximum WAL LSN
+         */
+        public long maxLsn() {
+            return maxLsn;
+        }
+
+        /**
+         * Returns whether recovery truncated an invalid WAL tail.
+         *
+         * @return true when WAL tail was truncated
+         */
+        public boolean truncatedTail() {
+            return truncatedTail;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof RecoveryResult other)) {
+                return false;
+            }
+            return lastReplayedLsn == other.lastReplayedLsn
+                    && maxLsn == other.maxLsn
+                    && truncatedTail == other.truncatedTail;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(Long.valueOf(lastReplayedLsn),
+                    Long.valueOf(maxLsn), Boolean.valueOf(truncatedTail));
+        }
+
+        @Override
+        public String toString() {
+            return "RecoveryResult[lastReplayedLsn=" + lastReplayedLsn
+                    + ", maxLsn=" + maxLsn + ", truncatedTail="
+                    + truncatedTail + "]";
+        }
     }
 
     /**
@@ -156,12 +226,12 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
      * @return runtime instance
      */
     public static <K, V> WalRuntime<K, V> open(final Directory indexDirectory,
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
         final Directory directory = Vldtn.requireNonNull(indexDirectory,
                 "indexDirectory");
-        final EffectiveIndexWalConfiguration resolvedWal = requireEnabledWal(wal);
+        final IndexWalConfiguration resolvedWal = requireEnabledWal(wal);
         final Directory walDirectory = directory.openSubDirectory(WAL_DIRECTORY);
         final WalRuntime<K, V> runtime = createRuntime(resolvedWal,
                 WalStorageFactory.create(walDirectory), keyDescriptor,
@@ -170,9 +240,9 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         return runtime;
     }
 
-    private static EffectiveIndexWalConfiguration requireEnabledWal(
-            final EffectiveIndexWalConfiguration wal) {
-        final EffectiveIndexWalConfiguration resolvedWal = EffectiveIndexWalConfiguration
+    private static IndexWalConfiguration requireEnabledWal(
+            final IndexWalConfiguration wal) {
+        final IndexWalConfiguration resolvedWal = IndexWalConfiguration
                 .orEmpty(wal);
         Vldtn.requireTrue(resolvedWal.isEnabled(),
                 "WAL configuration must be enabled to create WalRuntime.");
@@ -180,7 +250,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     }
 
     private static <K, V> WalRuntime<K, V> createRuntime(
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final WalStorage storage, final TypeDescriptor<K> keyDescriptor,
             final TypeDescriptor<V> valueDescriptor) {
         final Object monitor = new Object();
@@ -198,7 +268,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         final WalSegmentCatalog segmentCatalog = new WalSegmentCatalog(wal,
                 storage, metadataCatalog);
         final WalSyncPolicy syncPolicy = new WalSyncPolicy(wal, storage,
-                metrics, monitor, segmentCatalog::segments, closed::get);
+                metrics, monitor, segmentCatalog, closed);
         final WalWriter<K, V> writer = new WalWriter<>(wal, storage,
                 recordCodec, segmentCatalog, metrics, syncPolicy);
         final WalRecoveryManager<K, V> recoveryManager =
@@ -210,7 +280,7 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
     }
 
     private static ScheduledExecutorService newGroupSyncExecutor(
-            final EffectiveIndexWalConfiguration wal,
+            final IndexWalConfiguration wal,
             final WalSyncPolicy syncPolicy) {
         if (!wal.isGroupSyncDurabilityMode()
                 || wal.getGroupSyncDelayMillis() <= 0) {
@@ -355,19 +425,6 @@ public final class WalRuntime<K, V> implements WalMonitoringView, AutoCloseable 
         if (closed.get()) {
             throw new IndexException("WAL runtime is already closed.");
         }
-    }
-
-    static int computeCrc32(final byte[] data, final int offset,
-            final int length) {
-        return WalRecordCodec.computeCrc32(data, offset, length);
-    }
-
-    static void putLong(final byte[] bytes, final int offset, final long value) {
-        WalRecordCodec.putLong(bytes, offset, value);
-    }
-
-    static long readLong(final byte[] bytes, final int offset) {
-        return WalRecordCodec.readLong(bytes, offset);
     }
 
     private static final class NamedDaemonThreadFactory

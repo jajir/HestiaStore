@@ -37,9 +37,9 @@ on policy.
   advances so replay no longer needs older records.
 
 Relevant code:
-`segmentindex/core/maintenance/MaintenanceService.java`,
-`segmentindex/core/operations/IndexOperationCoordinator.java`,
-`segmentindex/mapping/KeyToSegmentMap.java`.
+`segmentindex/core/execution/MappedSegmentMaintenanceService.java`,
+`segmentindex/core/execution/PointOperationCoordinator.java`,
+`segmentindex/routemap/SegmentRouteMap.java`.
 
 ## Transactional Write Primitives
 
@@ -71,7 +71,7 @@ Key classes:
   - Writes to a temporary file via `BloomFilterWriterTx.open()` and commits with `rename`; also updates the in‑memory hash snapshot on commit.
 
 - Key→segment map (`index.map`)
-  - Writer: `SortedDataFileWriterTx.execute(…)` inside `KeyToSegmentMap.flushIfDirty()`
+  - Writer: `SortedDataFileWriterTx.execute(…)` inside `SegmentRouteMap.flushIfDirty()`
   - Ensures the map is replaced atomically.
 
 ## What Is Not Transactional
@@ -90,7 +90,7 @@ Code: `properties/PropertyStoreImpl` and `SegmentPropertiesManager`.
 
 - Run `SegmentIndex.maintenance().checkAndRepairConsistency()` after an unexpected shutdown to verify that segments are well‑formed and sorted and that the key→segment map is coherent. This walks all segments, checks ordering and basic invariants, and raises an error if it finds non‑recoverable issues.
 
-Key classes: `segmentindex/IndexConsistencyChecker`, `segment/SegmentConsistencyChecker`.
+Key classes: `segmentindex/RouteMapConsistencyChecker`, `segment/SegmentConsistencyChecker`.
 
 ## Developer Notes: `open()`/`commit()` and `*.tmp`
 

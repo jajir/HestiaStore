@@ -5,53 +5,69 @@ import static org.hestiastore.index.segmentindex.configuration.effective.Effecti
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.hestiastore.index.chunkstore.ChunkFilterDoNothing;
+import org.hestiastore.index.chunkstorecache.ChunkStoreCache;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segment.SegmentRuntimeLimits;
+import org.hestiastore.index.segmentindex.core.split.SplitRuntime;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class RuntimeTuningPatchApplierTest {
 
-    private RuntimeTuningPatchApplier applier;
+    private RuntimeTuningPatchApplier<Integer, String> applier;
     private RuntimeTuningState runtimeTuningState;
-    private AtomicReference<RuntimeTuningSnapshot> appliedLimits;
-    private AtomicInteger splitThresholdRescanCount;
+    private SegmentRegistry<Integer, String> segmentRegistry;
+    private SegmentRegistry.Runtime<Integer, String> segmentRuntime;
+    private ChunkStoreCache<Integer, String> chunkStoreCache;
+    private SplitRuntime<Integer, String> splitService;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
         runtimeTuningState = RuntimeTuningState.fromConfiguration(
                 effective(buildConf()));
-        appliedLimits = new AtomicReference<>();
-        splitThresholdRescanCount = new AtomicInteger(0);
-        applier = new RuntimeTuningPatchApplier(
+        segmentRegistry = mock(SegmentRegistry.class);
+        segmentRuntime = mock(SegmentRegistry.Runtime.class);
+        chunkStoreCache = mock(ChunkStoreCache.class);
+        splitService = mock(SplitRuntime.class);
+        when(segmentRuntime.loadedSegmentsSnapshot()).thenReturn(List.of());
+        applier = new RuntimeTuningPatchApplier<>(
                 new RuntimeTuningPatchValidator(runtimeTuningState),
-                runtimeTuningState, appliedLimits::set,
-                splitThresholdRescanCount::incrementAndGet);
+                runtimeTuningState,
+                new RuntimeSegmentLimitApplier<>(segmentRegistry,
+                        segmentRuntime, chunkStoreCache),
+                splitService);
     }
 
     @Test
     void applyReturnsValidationFailureWithoutApplyingLimits() {
         final RuntimeTuningResult result = applier.apply(RuntimeTuningPatch
                 .builder()
-                .writePath(writePath -> writePath
-                        .segmentWriteCacheKeyLimit(9)
-                        .segmentWriteCacheKeyLimitDuringMaintenance(8))
+                .segmentWriteCacheKeyLimit(9)
+                .segmentWriteCacheKeyLimitDuringMaintenance(8)
                 .build());
 
         assertFalse(result.applied());
         assertEquals(RuntimeTuningApplyStatus.REJECTED, result.status());
         assertEquals(1, result.validation().issues().size());
-        assertNull(appliedLimits.get());
+        verifyNoInteractions(segmentRegistry, segmentRuntime, chunkStoreCache,
+                splitService);
         assertTrue(result.changes().isEmpty());
     }
 
@@ -59,7 +75,7 @@ class RuntimeTuningPatchApplierTest {
     void validateIsTheDryRunPathAndDoesNotMutateState() {
         final RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
                 .expectedRevision(0L)
-                .writePath(writePath -> writePath.segmentSplitKeyThreshold(42))
+                .segmentSplitKeyThreshold(42)
                 .build();
 
         final RuntimeTuningValidation validation =
@@ -68,8 +84,8 @@ class RuntimeTuningPatchApplierTest {
 
         assertTrue(validation.valid());
         assertEquals(0L, runtimeTuningState.revision());
-        assertEquals(0, splitThresholdRescanCount.get());
-        assertNull(appliedLimits.get());
+        verifyNoInteractions(segmentRegistry, segmentRuntime, chunkStoreCache,
+                splitService);
     }
 
     @Test
@@ -77,36 +93,44 @@ class RuntimeTuningPatchApplierTest {
         final RuntimeTuningResult result = applier.apply(RuntimeTuningPatch
                 .builder()
                 .expectedRevision(0L)
-                .writePath(writePath -> writePath.segmentSplitKeyThreshold(42))
+                .segmentSplitKeyThreshold(42)
                 .build());
 
         assertTrue(result.applied());
-        assertNotNull(appliedLimits.get());
-        assertEquals(42, appliedLimits.get().writePath()
-                .segmentSplitKeyThreshold());
-        assertEquals(1, splitThresholdRescanCount.get());
+        assertNotNull(appliedLimits());
+        verify(splitService).requestFullSplitScan();
         assertEquals(1L, result.after().revision());
     }
 
     @Test
     void sideEffectFailureDoesNotMutateRuntimeState() {
-        final RuntimeTuningPatchApplier failingApplier =
-                new RuntimeTuningPatchApplier(
+        doThrow(new IllegalStateException("failed")).when(segmentRegistry)
+                .updateCacheLimit(anyInt());
+        final RuntimeTuningPatchApplier<Integer, String> failingApplier =
+                new RuntimeTuningPatchApplier<>(
                         new RuntimeTuningPatchValidator(runtimeTuningState),
-                        runtimeTuningState, ignored -> {
-                            throw new IllegalStateException("failed");
-                        }, splitThresholdRescanCount::incrementAndGet);
+                        runtimeTuningState,
+                        new RuntimeSegmentLimitApplier<>(segmentRegistry,
+                                segmentRuntime, chunkStoreCache),
+                        splitService);
 
         final RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
                 .expectedRevision(0L)
-                .writePath(writePath -> writePath.segmentSplitKeyThreshold(42))
+                .segmentSplitKeyThreshold(42)
                 .build();
 
         assertThrows(IllegalStateException.class,
                 () -> failingApplier.apply(patch));
         assertEquals(0L, runtimeTuningState.revision());
         assertEquals(50, runtimeTuningState.segmentSplitKeyThreshold());
-        assertEquals(0, splitThresholdRescanCount.get());
+        verifyNoInteractions(splitService);
+    }
+
+    private SegmentRuntimeLimits appliedLimits() {
+        final ArgumentCaptor<SegmentRuntimeLimits> captor = ArgumentCaptor
+                .forClass(SegmentRuntimeLimits.class);
+        verify(segmentRuntime).updateRuntimeLimits(captor.capture());
+        return captor.getValue();
     }
 
     private static IndexConfiguration<Integer, String> buildConf() {

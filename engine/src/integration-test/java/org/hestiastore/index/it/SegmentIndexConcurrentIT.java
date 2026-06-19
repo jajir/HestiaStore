@@ -26,7 +26,7 @@ import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
 import org.hestiastore.index.segmentindex.SegmentIndex;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -767,8 +767,7 @@ class SegmentIndexConcurrentIT {
         final RuntimeTuningResult patchResult = index.runtimeTuning()
                 .apply(RuntimeTuningPatch.builder()
                         .expectedRevision(revision)
-                        .writePath(writePath -> writePath
-                                .segmentSplitKeyThreshold(threshold))
+                        .segmentSplitKeyThreshold(threshold)
                         .build());
         assertTrue(patchResult.applied());
     }

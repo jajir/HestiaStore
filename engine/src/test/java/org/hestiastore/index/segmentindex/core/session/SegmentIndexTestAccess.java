@@ -6,7 +6,7 @@ import org.hestiastore.index.EntryIterator;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
 import org.hestiastore.index.segmentindex.core.SegmentIndexStateMachine;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
 import org.hestiastore.index.segmentindex.wal.WalRuntime;
 
 /**
@@ -18,8 +18,8 @@ public final class SegmentIndexTestAccess {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K> KeyToSegmentMap<K> keyToSegmentMap(final Object index) {
-        return (KeyToSegmentMap<K>) SegmentIndexRuntimeTestAccess
+    public static <K> SegmentRouteMap<K> keyToSegmentMap(final Object index) {
+        return (SegmentRouteMap<K>) SegmentIndexRuntimeTestAccess
                 .keyToSegmentMap(runtime(index));
     }
 
@@ -44,9 +44,9 @@ public final class SegmentIndexTestAccess {
                 segmentWindow, isolation);
     }
 
-    private static SegmentIndexImpl<?, ?> unwrap(final Object index) {
+    private static SegmentIndexSession<?, ?> unwrap(final Object index) {
         Object current = index;
-        while (!(current instanceof SegmentIndexImpl<?, ?>)) {
+        while (!(current instanceof SegmentIndexSession<?, ?>)) {
             try {
                 final Field delegateField = current.getClass().getDeclaredField(
                         "delegate");
@@ -57,7 +57,7 @@ public final class SegmentIndexTestAccess {
                         "Unable to unwrap segment index for test access", ex);
             }
         }
-        return (SegmentIndexImpl<?, ?>) current;
+        return (SegmentIndexSession<?, ?>) current;
     }
 
     private static Object runtime(final Object index) {

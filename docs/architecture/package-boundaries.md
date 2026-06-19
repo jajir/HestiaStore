@@ -59,19 +59,17 @@ Rules:
 
 SegmentIndex internal rules:
 
-- `core.topology` owns runtime route state and must not depend on session or
-  segment lease packages.
-- `core.segmentlease` is the only package that combines `KeyToSegmentMap`,
-  `SegmentTopology`, and `SegmentRegistry` for point-operation leases and
-  split drains.
+- `core.routing` owns runtime route state and scoped segment leases. It may
+  combine `SegmentRouteMap`, `RouteTopology`, and `SegmentRegistry` for
+  point-operation leases and split drains, but must not depend on session,
+  storage, or split orchestration packages.
 - `core.split` may depend on `SegmentRegistry` for child materialization and
-  retired/prepared segment cleanup, but it must not depend on `core.topology`.
-  Split code obtains route-drain access through `SegmentLeaseService`.
+  retired/prepared segment cleanup. Split code obtains route-drain access
+  through `core.routing`.
 - `mapping` must not depend on split orchestration packages.
 
 ## Enforcement
 
 The `PackageDependencyBoundaryTest` classes enforce these rules with ArchUnit.
-The SegmentIndex-specific test includes the `core.split` to `core.topology`
-rule so future split changes keep topology/registry coordination inside
-`core.segmentlease`.
+The SegmentIndex-specific test keeps storage, routing, split, execution, and
+mapping dependencies pointing through the intended package boundaries.

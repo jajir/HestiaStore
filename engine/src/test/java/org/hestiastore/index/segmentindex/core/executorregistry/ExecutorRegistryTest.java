@@ -21,20 +21,7 @@ import org.junit.jupiter.api.Test;
 class ExecutorRegistryTest {
 
     @Test
-    void builderRejectsMissingIndexMaintenanceThreads() {
-        final ExecutorRegistryBuilder builder = ExecutorRegistry.builder()
-                .withSegmentMaintenanceThreads(1)
-                .withSplitMaintenanceThreads(1)
-                .withRegistryMaintenanceThreads(1);
-
-        final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class, builder::build);
-        assertEquals("Property 'indexMaintenanceThreads' must not be null.",
-                ex.getMessage());
-    }
-
-    @Test
-    void builderUsesProvidedValues() {
+    void createUsesProvidedValues() {
         final ExecutorRegistry registry = newRegistry(2, 3, 4);
         try {
             assertNotNull(registry.getIndexMaintenanceExecutor());
@@ -48,7 +35,7 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void builderRejectsNonPositiveSegmentMaintenanceThreads() {
+    void createRejectsNonPositiveSegmentMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> newRegistry(0, 1, 1));
@@ -58,7 +45,7 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void builderRejectsNonPositiveIndexMaintenanceThreads() {
+    void createRejectsNonPositiveIndexMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> newRegistry(1, 0, 1));
@@ -68,19 +55,18 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void builderRejectsNonPositiveSplitMaintenanceThreads() {
-        final ExecutorRegistryBuilder builder = newRegistryBuilder(1, 1, 1)
-                .withSplitMaintenanceThreads(0);
-
+    void createRejectsNonPositiveSplitMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class, builder::build);
+                IllegalArgumentException.class,
+                () -> ExecutorRegistry.create("executor-registry-test",
+                        false, 1, 0, 1, 1, 30_000));
         assertEquals(
                 "Property 'splitMaintenanceThreads' must be greater than 0",
                 ex.getMessage());
     }
 
     @Test
-    void builderRejectsNonPositiveRegistryMaintenanceThreads() {
+    void createRejectsNonPositiveRegistryMaintenanceThreads() {
         final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> newRegistry(1, 1, 0));
@@ -90,13 +76,11 @@ class ExecutorRegistryTest {
     }
 
     @Test
-    void builderRejectsBlankIndexNameWhenContextLoggingEnabled() {
-        final ExecutorRegistryBuilder builder = newRegistryBuilder(1, 1, 1)
-                .withContextLoggingEnabled(true)
-                .withIndexName("  ");
-
+    void createRejectsBlankIndexNameWhenContextLoggingEnabled() {
         final IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class, builder::build);
+                IllegalArgumentException.class,
+                () -> ExecutorRegistry.create("  ", true, 1, 1, 1, 1,
+                        30_000));
         assertEquals("Property 'indexName' must not be blank.",
                 ex.getMessage());
     }
@@ -372,20 +356,9 @@ class ExecutorRegistryTest {
             final int stableSegmentMaintenanceThreads,
             final int indexMaintenanceThreads,
             final int registryMaintenanceThreads) {
-        return newRegistryBuilder(stableSegmentMaintenanceThreads,
-                indexMaintenanceThreads, registryMaintenanceThreads).build();
-    }
-
-    private static ExecutorRegistryBuilder newRegistryBuilder(
-            final int stableSegmentMaintenanceThreads,
-            final int indexMaintenanceThreads,
-            final int registryMaintenanceThreads) {
-        return ExecutorRegistry.builder()
-                .withIndexName("executor-registry-test")
-                .withContextLoggingEnabled(false)
-                .withIndexMaintenanceThreads(indexMaintenanceThreads)
-                .withSplitMaintenanceThreads(indexMaintenanceThreads)
-                .withSegmentMaintenanceThreads(stableSegmentMaintenanceThreads)
-                .withRegistryMaintenanceThreads(registryMaintenanceThreads);
+        return ExecutorRegistry.create("executor-registry-test", false,
+                indexMaintenanceThreads, indexMaintenanceThreads,
+                stableSegmentMaintenanceThreads, registryMaintenanceThreads,
+                30_000);
     }
 }

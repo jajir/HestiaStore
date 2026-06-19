@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.datatype.TypeDescriptorInteger;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
@@ -262,7 +262,7 @@ class IntegrationSegmentIndexConcurrencyTest {
         final long deadline = System.nanoTime()
                 + TimeUnit.SECONDS.toNanos(10L);
         while (System.nanoTime() < deadline) {
-            final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+            final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
             if (snapshot.split().inFlightCount() == 0) {
                 return;
             }

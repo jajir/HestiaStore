@@ -17,7 +17,7 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.FileWriter;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.SegmentIndex;
 import org.junit.jupiter.api.Test;
 

@@ -21,7 +21,7 @@ import org.hestiastore.index.datatype.TypeDescriptorLong;
 import org.hestiastore.index.datatype.TypeDescriptorShortString;
 import org.hestiastore.index.directory.Directory;
 import org.hestiastore.index.directory.MemDirectory;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,7 @@ class SegmentIndexConfigurationStorageTest {
     private static final String TD_LONG = TypeDescriptorLong.class.getName();
     private Directory directory;
 
-    private IndexConfigurationStorage<String, Long> storage;
+    private IndexConfigurationStore<String, Long> storage;
 
     private static final int MAX_KEYS_IN_SEGMENT_CACHE = 5000;
     private static final int MAX_KEYS_IN_ACTIVE_PARTITION = 2500;
@@ -250,7 +250,7 @@ class SegmentIndexConfigurationStorageTest {
     @BeforeEach
     void setup() {
         directory = new MemDirectory();
-        storage = new IndexConfigurationStorage<>(
+        storage = new IndexConfigurationStore<>(
                 directory);
     }
 

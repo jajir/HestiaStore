@@ -71,13 +71,13 @@ Built-in and legacy class-based filters derive their `ChunkFilterSpec`
 automatically through `ChunkFilterSpecs`. Custom providers supply the
 `ChunkFilterSpec` explicitly so metadata can be reopened later.
 
-When `IndexConfigurationStorage` writes metadata, it stores only
+When `IndexConfigurationStore` writes metadata, it stores only
 `List<ChunkFilterSpec>`. Runtime suppliers are discarded at the persistence
 boundary.
 
 ## Reopen and resolve
 
-On reopen, `IndexConfigurationStorage` reads encoded filter specs from
+On reopen, `IndexConfigurationStore` reads encoded filter specs from
 `manifest.txt`, then the index lifecycle asks `ChunkFilterProviderResolver` to
 resolve each spec back into an encoding or decoding supplier.
 

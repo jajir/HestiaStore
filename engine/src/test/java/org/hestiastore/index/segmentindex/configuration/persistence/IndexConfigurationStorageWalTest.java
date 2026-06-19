@@ -14,12 +14,11 @@ import org.hestiastore.index.properties.PropertyStore;
 import org.hestiastore.index.properties.PropertyStoreImpl;
 import org.hestiastore.index.properties.PropertyTransaction;
 import org.hestiastore.index.properties.PropertyWriter;
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.IndexWalConfiguration;
-import org.hestiastore.index.segmentindex.configuration.user.WalCorruptionPolicy;
-import org.hestiastore.index.segmentindex.configuration.user.WalDurabilityMode;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.WalCorruptionPolicy;
+import org.hestiastore.index.segmentindex.configuration.api.WalDurabilityMode;
 import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexConfiguration;
-import org.hestiastore.index.segmentindex.configuration.effective.EffectiveIndexWalConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexWalConfiguration;
 import org.junit.jupiter.api.Test;
 
 class IndexConfigurationStorageWalTest {
@@ -27,7 +26,7 @@ class IndexConfigurationStorageWalTest {
     @Test
     void saveAndLoadRoundTripEnabledWal() {
         final MemDirectory directory = new MemDirectory();
-        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
+        final IndexConfigurationStore<String, String> storage = new IndexConfigurationStore<>(
                 directory);
         final TypeDescriptorShortString typeDescriptor = new TypeDescriptorShortString();
         final IndexWalConfiguration wal = IndexWalConfiguration.builder()//
@@ -37,7 +36,6 @@ class IndexConfigurationStorageWalTest {
                 .groupSyncMaxBatchBytes(512)//
                 .maxBytesBeforeForcedCheckpoint(4096L)//
                 .corruptionPolicy(WalCorruptionPolicy.FAIL_FAST)//
-                .epochSupport(true)//
                 .build();
         final IndexConfiguration<String, String> conf = IndexConfiguration
                 .<String, String>builder()//
@@ -75,7 +73,6 @@ class IndexConfigurationStorageWalTest {
                 loaded.wal().getMaxBytesBeforeForcedCheckpoint());
         assertEquals(WalCorruptionPolicy.FAIL_FAST,
                 loaded.wal().getCorruptionPolicy());
-        assertTrue(loaded.wal().isEpochSupport());
     }
 
     @Test
@@ -102,13 +99,13 @@ class IndexConfigurationStorageWalTest {
                     IndexPropertiesSchema.IndexConfigurationKeys.PROP_INDEX_NAME,
                     "legacy-no-wal");
         }
-        final IndexConfigurationStorage<String, String> storage = new IndexConfigurationStorage<>(
+        final IndexConfigurationStore<String, String> storage = new IndexConfigurationStore<>(
                 directory);
 
         final EffectiveIndexConfiguration<String, String> loaded = storage
                 .load();
 
-        assertSame(EffectiveIndexWalConfiguration.EMPTY, loaded.wal());
+        assertSame(IndexWalConfiguration.EMPTY, loaded.wal());
         assertFalse(loaded.wal().isEnabled());
     }
 }

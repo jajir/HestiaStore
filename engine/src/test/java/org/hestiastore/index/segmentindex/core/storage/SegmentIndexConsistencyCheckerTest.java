@@ -1,8 +1,8 @@
 package org.hestiastore.index.segmentindex.core.storage;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -16,8 +16,8 @@ import org.hestiastore.index.IndexException;
 import org.hestiastore.index.segment.SegmentId;
 import org.hestiastore.index.segment.SegmentIteratorIsolation;
 import org.hestiastore.index.segmentindex.SegmentWindow;
-import org.hestiastore.index.segmentindex.mapping.KeyToSegmentMap;
-import org.hestiastore.index.segmentindex.mapping.Snapshot;
+import org.hestiastore.index.segmentindex.routemap.SegmentRouteMap;
+import org.hestiastore.index.segmentindex.routemap.RouteMapSnapshot;
 import org.hestiastore.index.segmentregistry.BlockingSegment;
 import org.hestiastore.index.segmentregistry.SegmentRegistry;
 import org.junit.jupiter.api.AfterEach;
@@ -34,9 +34,9 @@ class SegmentIndexConsistencyCheckerTest {
     private static final Integer SEGMENT_MAX_KEY = 73;
 
     @Mock
-    private KeyToSegmentMap<Integer> keyToSegmentMap;
+    private SegmentRouteMap<Integer> keyToSegmentMap;
     @Mock
-    private Snapshot<Integer> snapshot;
+    private RouteMapSnapshot<Integer> snapshot;
 
     @Mock
     private SegmentRegistry<Integer, String> segmentRegistry;
@@ -44,16 +44,14 @@ class SegmentIndexConsistencyCheckerTest {
     @Mock
     private BlockingSegment<Integer, String> segmentHandle;
 
-    private IndexConsistencyChecker<Integer, String> checker;
+    private RouteMapConsistencyChecker<Integer, String> checker;
 
     @Test
     void test_noSegments() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of());
 
-        checker.checkAndRepairConsistency();
-
-        assertTrue(true);
+        assertDoesNotThrow(() -> checker.checkAndRepairConsistency());
     }
 
     @Test
@@ -134,19 +132,17 @@ class SegmentIndexConsistencyCheckerTest {
         when(snapshot.findSegmentIdForKey(SEGMENT_MAX_KEY))
                 .thenReturn(SEGMENT_ID);
 
-        checker.checkAndRepairConsistency();
-
-        assertTrue(true);
+        assertDoesNotThrow(() -> checker.checkAndRepairConsistency());
     }
 
     @Test
     void test_segmentFilteredOut_isSkippedWithoutLoading() {
         when(snapshot.getSegmentIds(SegmentWindow.unbounded()))
                 .thenReturn(List.of(SEGMENT_ID));
-        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
-                segmentRegistry, segmentId -> false);
+        checker = new RouteMapConsistencyChecker<>(keyToSegmentMap,
+                segmentRegistry);
 
-        checker.checkAndRepairConsistency();
+        checker.checkAndRepairConsistency(segmentId -> false);
 
         verifyNoInteractions(segmentRegistry);
     }
@@ -156,7 +152,7 @@ class SegmentIndexConsistencyCheckerTest {
     @BeforeEach
     void setUp() {
         when(keyToSegmentMap.snapshot()).thenReturn(snapshot);
-        checker = new IndexConsistencyChecker<>(keyToSegmentMap,
+        checker = new RouteMapConsistencyChecker<>(keyToSegmentMap,
                 segmentRegistry);
     }
 

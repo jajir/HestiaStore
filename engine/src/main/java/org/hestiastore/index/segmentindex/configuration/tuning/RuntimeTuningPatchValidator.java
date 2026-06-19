@@ -24,8 +24,8 @@ final class RuntimeTuningPatchValidator {
 
     RuntimeTuningValidation validate(final RuntimeTuningPatch patch) {
         final List<RuntimeTuningValidationIssue> issues = new ArrayList<>();
-        final EnumMap<RuntimeSettingKey, RuntimeTuningValue> normalized =
-                new EnumMap<>(RuntimeSettingKey.class);
+        final EnumMap<RuntimeTuningKey, RuntimeTuningValue> normalized =
+                new EnumMap<>(RuntimeTuningKey.class);
         if (patch == null) {
             issues.add(new RuntimeTuningValidationIssue(null,
                     "patch must not be null"));
@@ -49,34 +49,25 @@ final class RuntimeTuningPatchValidator {
 
     private void normalizePatchValues(final RuntimeTuningPatch patch,
             final List<RuntimeTuningValidationIssue> issues,
-            final EnumMap<RuntimeSettingKey, RuntimeTuningValue> normalized) {
-        for (final Map.Entry<RuntimeSettingKey, RuntimeTuningValue> entry : patch
+            final EnumMap<RuntimeTuningKey, RuntimeTuningValue> normalized) {
+        for (final Map.Entry<RuntimeTuningKey, RuntimeTuningValue> entry : patch
                 .values().entrySet()) {
-            final RuntimeSettingKey key = entry.getKey();
+            final RuntimeTuningKey key = entry.getKey();
             final RuntimeTuningValue value = entry.getValue();
-            if (value.type() != key.field().valueType()) {
-                issues.add(new RuntimeTuningValidationIssue(key.field(),
-                        "value type must be " + key.field().valueType()));
-                continue;
-            }
-            if (key.field().valueType() != RuntimeTuningValueType.INT) {
-                normalized.put(key, value);
-                continue;
-            }
             final int intValue = value.asInt();
-            if (key == RuntimeSettingKey.CHUNK_STORE_CACHE_PAGE_LIMIT) {
+            if (key == RuntimeTuningKey.CHUNK_STORE_CACHE_PAGE_LIMIT) {
                 normalizeChunkStoreCachePageLimit(issues, normalized, key,
                         value, intValue);
                 continue;
             }
             if (intValue < MIN_GENERAL_VALUE) {
-                issues.add(new RuntimeTuningValidationIssue(key.field(),
+                issues.add(new RuntimeTuningValidationIssue(key,
                         "value must be >= 1"));
                 continue;
             }
-            if (key == RuntimeSettingKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
+            if (key == RuntimeTuningKey.MAX_NUMBER_OF_SEGMENTS_IN_CACHE
                     && intValue < MIN_SEGMENT_CACHE_VALUE) {
-                issues.add(new RuntimeTuningValidationIssue(key.field(),
+                issues.add(new RuntimeTuningValidationIssue(key,
                         "value must be >= 3"));
                 continue;
             }
@@ -86,11 +77,11 @@ final class RuntimeTuningPatchValidator {
 
     private void normalizeChunkStoreCachePageLimit(
             final List<RuntimeTuningValidationIssue> issues,
-            final EnumMap<RuntimeSettingKey, RuntimeTuningValue> normalized,
-            final RuntimeSettingKey key, final RuntimeTuningValue value,
+            final EnumMap<RuntimeTuningKey, RuntimeTuningValue> normalized,
+            final RuntimeTuningKey key, final RuntimeTuningValue value,
             final int intValue) {
         if (intValue < 0) {
-            issues.add(new RuntimeTuningValidationIssue(key.field(),
+            issues.add(new RuntimeTuningValidationIssue(key,
                     "value must be >= 0"));
             return;
         }
@@ -99,27 +90,26 @@ final class RuntimeTuningPatchValidator {
 
     private void validateEffectiveLimits(
             final List<RuntimeTuningValidationIssue> issues,
-            final Map<RuntimeSettingKey, RuntimeTuningValue> normalized) {
-        final Map<RuntimeSettingKey, RuntimeTuningValue> effective =
+            final Map<RuntimeTuningKey, RuntimeTuningValue> normalized) {
+        final Map<RuntimeTuningKey, RuntimeTuningValue> effective =
                 runtimeTuningState.previewEffective(normalized);
         final int segmentWriteCacheLimit = effective.get(
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT)
+                RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT)
                 .asInt();
         final int maintenanceWriteCacheLimit = effective.get(
-                RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
+                RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE)
                 .asInt();
         final int indexBuffer = effective
-                .get(RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
+                .get(RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT)
                 .asInt();
         if (maintenanceWriteCacheLimit <= segmentWriteCacheLimit) {
             issues.add(new RuntimeTuningValidationIssue(
-                    RuntimeSettingKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE
-                            .field(),
+                    RuntimeTuningKey.SEGMENT_WRITE_CACHE_KEY_LIMIT_DURING_MAINTENANCE,
                     "value must be greater than segmentWriteCacheKeyLimit"));
         }
         if (indexBuffer < maintenanceWriteCacheLimit) {
             issues.add(new RuntimeTuningValidationIssue(
-                    RuntimeSettingKey.INDEX_BUFFERED_WRITE_KEY_LIMIT.field(),
+                    RuntimeTuningKey.INDEX_BUFFERED_WRITE_KEY_LIMIT,
                     "value must be >= segmentWriteCacheKeyLimitDuringMaintenance"));
         }
     }

@@ -7,7 +7,7 @@ actor "Spring Context" as Spring
 participant "AesGcmChunkFilterProvider" as Provider
 participant "ChunkFilterProviderResolver" as Resolver
 participant "SegmentIndex.open(..., resolver)" as Open
-participant "IndexConfigurationStorage" as Storage
+participant "IndexConfigurationStore" as Storage
 database "manifest.txt" as Manifest
 participant "Supplier<ChunkFilter>" as Supplier
 participant "ChunkStoreReaderImpl" as Reader

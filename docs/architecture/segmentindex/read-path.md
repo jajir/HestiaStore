@@ -12,7 +12,7 @@ SegmentIndex-level orchestration path.
 ## High‑Level Flow (Point Lookup)
 
 1. API call: `SegmentIndex.get(key)`
-1. Resolve the target segment using `SegmentLeaseService`
+1. Resolve the target segment using `MappedSegmentLeaseService`
 1. Read directly from the routed segment
 1. Inside the segment: consult write cache → delta cache → Bloom filter →
    sparse index → local scan
@@ -22,20 +22,18 @@ in-memory write cache before falling back to stable on-disk state.
 
 ## Entry Point and Routing
 
-- `segmentindex/core/SegmentIndexImpl#get(K)` delegates to
-  `SegmentIndexPointOperationFacade`, which runs the point lookup under index
-  state and close-safety checks.
-- `IndexOperationCoordinator#get(K)` uses `SegmentLeaseService` to resolve the
-  current route, acquire a `SegmentTopology` route lease, and load the segment
+- `segmentindex/core/session/SegmentIndexSession#get(K)` runs the point lookup
+  under index state and close-safety checks.
+- `PointOperationCoordinator#get(K)` uses `MappedSegmentLeaseService` to resolve the
+  current route, acquire a `RouteTopology` route lease, and load the segment
   from `SegmentRegistry`.
 - The loaded segment handles the local `get(K)` lookup.
 
 Key classes:
-`segmentindex/core/session/SegmentIndexImpl.java`,
-`segmentindex/core/session/SegmentIndexPointOperationFacade.java`,
-`segmentindex/core/operations/IndexOperationCoordinator.java`,
-`segmentindex/core/segmentlease/SegmentLeaseService.java`,
-`segmentindex/mapping/KeyToSegmentMap.java`.
+`segmentindex/core/session/SegmentIndexSession.java`,
+`segmentindex/core/execution/PointOperationCoordinator.java`,
+`segmentindex/core/routing/MappedSegmentLeaseService.java`,
+`segmentindex/routemap/SegmentRouteMap.java`.
 
 ## Per‑Segment Read Path
 
@@ -65,8 +63,12 @@ Key classes:
 
 - `SegmentIndex.getStream()` and `SegmentIndex.openSegmentIterator(...)`
   produce iterators over routed segments in order.
-- `DirectSegmentCoordinator.openWindowIterator(...)` opens iterators
-  against a route snapshot.
+- `SegmentIteratorService.openWindowIterator(...)` opens iterators through
+  `MappedSegmentLeaseService`, which owns route snapshots, topology leases, and
+  registry-backed segment handles.
+- Iterator route leases protect segment-handle acquisition and iterator open;
+  they are released after the segment iterator is obtained so an open scan does
+  not block later route remapping.
 - `segment/SegmentImpl.openIterator()` merges the on-disk main SST with the
   segment's delta cache via `MergeDeltaCacheWithIndexIterator`, skipping
   tombstones.
@@ -77,8 +79,8 @@ Key classes:
   changes while the iterator is being opened.
 
 Key classes:
-`segmentindex/core/streaming/DirectSegmentCoordinator.java`,
-`segmentindex/core/streaming/SegmentsIterator.java`,
+`segmentindex/core/execution/SegmentIteratorService.java`,
+`segmentindex/core/execution/StableSegmentsIterator.java`,
 `segment/MergeDeltaCacheWithIndexIterator.java`,
 `EntryIteratorWithLock.java`,
 `OptimisticLock.java`.
@@ -136,9 +138,10 @@ Key classes:
 ## Where to Look in the Code
 
 - Point lookup orchestration:
-  `src/main/java/org/hestiastore/index/segmentindex/core/session/SegmentIndexImpl.java`
-- Direct routed reads:
-  `src/main/java/org/hestiastore/index/segmentindex/core/streaming/DirectSegmentCoordinator.java`
+  `src/main/java/org/hestiastore/index/segmentindex/core/session/SegmentIndexSession.java`
+- Routed reads and iterator leases:
+  `src/main/java/org/hestiastore/index/segmentindex/core/routing/MappedSegmentLeaseService.java`,
+  `src/main/java/org/hestiastore/index/segmentindex/core/execution/SegmentIteratorService.java`
 - Segment search path:
   `src/main/java/org/hestiastore/index/segment/SegmentSearcher.java`
 - Sparse index: `src/main/java/org/hestiastore/index/scarceindex/*`

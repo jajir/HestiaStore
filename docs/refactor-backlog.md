@@ -9,7 +9,7 @@
 [ ] 82. Replace the slow generic `WalStorageDirectory` fallback with an explicit seekable/capability-aware storage path, or reject unsupported backends early.
 [ ] 79.1 Freeze architecture, docs, and migration contract (Risk: HIGH)
 [ ] 79.2 Introduce partition runtime and routing layer (Risk: HIGH)
-[ ] 79.3 Switch `SegmentIndexImpl` read/write/delete paths to partitions (Risk: HIGH)
+[ ] 79.3 Switch `SegmentIndexSession` read/write/delete paths to partitions (Risk: HIGH)
 [ ] 79.4 Implement drain, publish, flush, close, and WAL recovery (Risk: HIGH)
 [ ] 79.6 Clean up config, metrics, control-plane tuning, and obsolete code (Risk: HIGH)
 [ ] 79.7 Refresh unit tests, integration tests, and JMH gates (Risk: HIGH)
@@ -27,16 +27,16 @@
 
 ## Done (Archive)
 
-[x] 97. Clarify `core.session` responsibility boundaries by moving topology runtime composition to `core.topology`, giving core storage its own open spec and observer types, and preserving lifecycle behavior.
+[x] 97. Clarify `core.session` responsibility boundaries by moving topology runtime composition to route/topology internals, giving core storage its own open spec and observer types, and preserving lifecycle behavior.
 [x] 98. Simplify SegmentIndex initialization after the broad assembly refactor by keeping explicit opening points for bootstrap, session startup, and runtime resources while removing pattern-only assembler/request/components layers.
-[x] 89. Rework split routing around a runtime `SegmentTopology` so route handoff, draining, and split publish are owned by topology code while `SegmentRegistry` remains responsible only for physical segment instances and `KeyToSegmentMap` remains responsible only for persisted routing.
-[x] 90. Define the `SegmentTopology` contract with route states such as `ACTIVE`, `DRAINING`, and `RETIRED`, plus `RouteLease` acquisition/release semantics and deterministic drain behavior for in-flight routed operations.
-[x] 91. Add topology bootstrap from the versioned `KeyToSegmentMap` snapshot so startup builds runtime route entries without changing `SegmentRegistry`, `BlockingSegment`, or `Segment` contracts.
-[x] 92. Refactor foreground routed operations to resolve a `KeyToSegmentMap` snapshot, acquire a `SegmentTopology` lease for the resolved segment id and map version, use the existing `SegmentRegistry` to load the segment, and retry from the correct boundary on topology drain, stale version, registry unavailability, segment `BUSY`, or segment `CLOSED`.
+[x] 89. Rework split routing around a runtime `RouteTopology` so route handoff, draining, and split publish are owned by topology code while `SegmentRegistry` remains responsible only for physical segment instances and `SegmentRouteMap` remains responsible only for persisted routing.
+[x] 90. Define the `RouteTopology` contract with route states such as `ACTIVE`, `DRAINING`, and `RETIRED`, plus `RouteLease` acquisition/release semantics and deterministic drain behavior for in-flight routed operations.
+[x] 91. Add topology bootstrap from the versioned `SegmentRouteMap` snapshot so startup builds runtime route entries without changing `SegmentRegistry`, `BlockingSegment`, or `Segment` contracts.
+[x] 92. Refactor foreground routed operations to resolve a `SegmentRouteMap` snapshot, acquire a `RouteTopology` lease for the resolved segment id and map version, use the existing `SegmentRegistry` to load the segment, and retry from the correct boundary on topology drain, stale version, registry unavailability, segment `BUSY`, or segment `CLOSED`.
 [x] 93. Add focused tests for topology lease acquire/release, drain waiting, stale map-version rejection, route retirement, and the retry boundaries used by `put`, `delete` through tombstone writes, and `get`.
-[x] 94. Rework split execution so the parent route moves to `DRAINING` before child materialization, in-flight leases drain, child materialization uses existing registry materialization, child routes publish in `SegmentTopology`, `KeyToSegmentMap` is updated and flushed, and the retired parent segment is cleaned up after publish.
-[x] 95. Define and test the split failure policy for topology publish, `KeyToSegmentMap` persistence failure, child materialization cleanup, parent cleanup retry, and startup recovery from the persisted map.
-[x] 96. Remove the legacy split admission gate after routed operations and split publish use `SegmentTopology` leases, then update concurrency documentation to make `SegmentTopology`, `SegmentRegistry`, and `KeyToSegmentMap` ownership boundaries explicit.
+[x] 94. Rework split execution so the parent route moves to `DRAINING` before child materialization, in-flight leases drain, child materialization uses existing registry materialization, child routes publish in `RouteTopology`, `SegmentRouteMap` is updated and flushed, and the retired parent segment is cleaned up after publish.
+[x] 95. Define and test the split failure policy for topology publish, `SegmentRouteMap` persistence failure, child materialization cleanup, parent cleanup retry, and startup recovery from the persisted map.
+[x] 96. Remove the legacy split admission gate after routed operations and split publish use `RouteTopology` leases, then update concurrency documentation to make `RouteTopology`, `SegmentRegistry`, and `SegmentRouteMap` ownership boundaries explicit.
 [x] 83. Define the new split runtime contract around `hintSplitCandidate(...)`, `awaitQuiescence(...)`, and managed lifecycle shutdown, and remove public scheduling concepts such as full-scan requests from the intended service shape.
 [x] 84. Introduce a managed split runtime skeleton with explicit `OPENING -> RUNNING -> CLOSING -> CLOSED` state transitions and fail-fast behavior for calls made outside `RUNNING`.
 [x] 85. Replace the current split-policy work-state loop with a candidate registry built from `Map<SegmentId, State>` plus a blocking ready queue so split hints are deduplicated and workers block instead of polling.
@@ -105,7 +105,7 @@
 [x] 81.6 Move durability and storage integrity into `core.storage` (Risk: HIGH)
 [x] 81.7 Dissolve `core.runtime` into session, routing, storage, and maintenance (Risk: HIGH)
 [x] 81.8 Dissolve `core.infrastructure` into owning domains (Risk: MEDIUM)
-[x] 81.9 Replace `core.observability` with `segmentindex.runtimemonitoring` (Risk: MEDIUM)
+[x] 81.9 Replace `core.observability` with `segmentindex.monitoring` (Risk: MEDIUM)
 [x] 81.10 Remove `core.internal` and `core.facade` as final package names (Risk: MEDIUM)
 [x] 81.11 Collapse leftover assembly and access vocabulary after package moves (Risk: HIGH)
 [x] 81.12 Finish when `segmentindex.core` reads as domain boundaries, not framework plumbing (Risk: MEDIUM)

@@ -1,6 +1,7 @@
 package org.hestiastore.index.directory;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -34,6 +35,15 @@ public abstract class AbstractDirectory implements Directory {
 
     protected File getDirectory() {
         return directory;
+    }
+
+    /**
+     * Returns the filesystem path backing this directory.
+     *
+     * @return backing directory path
+     */
+    public final Path path() {
+        return directory.toPath();
     }
 
     protected void assureThatFileExists(final File file) {

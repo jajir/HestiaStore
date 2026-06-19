@@ -1,6 +1,6 @@
 package org.hestiastore.index.segmentindex;
 
-import org.hestiastore.index.segmentindex.runtimemonitoring.model.IndexRuntimeSnapshot;
+import org.hestiastore.index.segmentindex.monitoring.model.SegmentIndexRuntimeSnapshot;
 
 import static org.hestiastore.index.datatype.NullValue.NULL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,7 +16,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import org.hestiastore.index.segmentindex.configuration.user.IndexConfiguration;
+import org.hestiastore.index.segmentindex.configuration.api.IndexConfiguration;
 import org.hestiastore.index.Entry;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningPatch;
 import org.hestiastore.index.segmentindex.configuration.tuning.RuntimeTuningResult;
@@ -219,8 +219,7 @@ class IntegrationSegmentIndexIteratorTest {
                 final RuntimeTuningResult patchResult = index.runtimeTuning()
                         .apply(RuntimeTuningPatch.builder()
                                 .expectedRevision(revision)
-                                .writePath(writePath -> writePath
-                                        .segmentSplitKeyThreshold(16))
+                                .segmentSplitKeyThreshold(16)
                                 .build());
                 assertTrue(patchResult.applied());
 
@@ -229,7 +228,7 @@ class IntegrationSegmentIndexIteratorTest {
             }
 
             awaitCondition(() -> {
-                final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
                 return snapshot.segments().count() > 1
                         && snapshot.split().inFlightCount() == 0;
             }, SPLIT_REMAPPING_TIMEOUT_MILLIS);
@@ -265,13 +264,12 @@ class IntegrationSegmentIndexIteratorTest {
                 final RuntimeTuningResult patchResult = index.runtimeTuning()
                         .apply(RuntimeTuningPatch.builder()
                                 .expectedRevision(revision)
-                                .writePath(writePath -> writePath
-                                        .segmentSplitKeyThreshold(16))
+                                .segmentSplitKeyThreshold(16)
                                 .build());
                 assertTrue(patchResult.applied());
 
                 awaitCondition(() -> {
-                    final IndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
+                    final SegmentIndexRuntimeSnapshot snapshot = index.runtimeMonitoring().snapshot();
                     return snapshot.segments().count() > 1
                             && snapshot.split().inFlightCount() == 0;
                 }, SPLIT_REMAPPING_TIMEOUT_MILLIS);

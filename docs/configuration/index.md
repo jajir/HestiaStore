@@ -64,8 +64,7 @@ IndexConfiguration<Integer, Integer> conf = IndexConfiguration
         .groupSyncDelayMillis(5)
         .groupSyncMaxBatchBytes(1024 * 1024)
         .maxBytesBeforeForcedCheckpoint(512L * 1024L * 1024L)
-        .corruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL)
-        .epochSupport(false))
+        .corruptionPolicy(WalCorruptionPolicy.TRUNCATE_INVALID_TAIL))
     .logging(logging -> logging
         .contextEnabled(false))
     .build();
@@ -202,7 +201,6 @@ recovery for acknowledged writes.
   before forced checkpoint/backpressure.
 - `wal(...).corruptionPolicy()` controls recovery behavior for invalid WAL
   tails.
-- `wal(...).epochSupport()` stores the reserved WAL epoch-support flag.
 
 ## Configuration pages by topic
 
@@ -292,7 +290,6 @@ Some names preserve older partition terminology for compatibility.
 | `wal.groupSyncMaxBatchBytes` | `wal().groupSyncMaxBatchBytes()` |
 | `wal.maxBytesBeforeForcedCheckpoint` | `wal().maxBytesBeforeForcedCheckpoint()` |
 | `wal.corruptionPolicy` | `wal().corruptionPolicy()` |
-| `wal.epochSupport` | `wal().epochSupport()` |
 
 Runtime-safe changes can be applied through the runtime tuning API with the typed
 runtime tuning wrapper:
@@ -300,13 +297,11 @@ runtime tuning wrapper:
 ```java
 RuntimeTuningPatch patch = RuntimeTuningPatch.builder()
     .expectedRevision(index.runtimeTuning().current().revision())
-    .segment(segment -> segment
-        .cachedSegmentLimit(128)
-        .cacheKeyLimit(260_000))
-    .writePath(writePath -> writePath
-        .segmentWriteCacheKeyLimit(120_000)
-        .segmentWriteCacheKeyLimitDuringMaintenance(180_000)
-        .indexBufferedWriteKeyLimit(720_000))
+    .cachedSegmentLimit(128)
+    .cacheKeyLimit(260_000)
+    .segmentWriteCacheKeyLimit(120_000)
+    .segmentWriteCacheKeyLimitDuringMaintenance(180_000)
+    .indexBufferedWriteKeyLimit(720_000)
     .build();
 
 index.runtimeTuning().apply(patch);
